@@ -808,8 +808,19 @@ class BaseFDConstraint(oofun):
 class SmoothFDConstraint(BaseFDConstraint):
     isBBC = False
     def __call__(self, point):
-        val = self.oofun(point) 
-        return max((0, self.lb - val, val - self.ub))
+        raise FuncDesignerException('direct constraints call is not implemented')
+#        val = self.oofun(point) 
+#        isFiniteLB = isfinite(self.lb)
+#        isFiniteUB = isfinite(self.ub)
+#        if isFiniteLB and isFiniteUB:
+#            assert self.lb == self.ub, 'not implemented yet'
+#            return val
+#        elif isFiniteLB:
+#            return val - self.lb
+#        elif isFiniteLB:
+#            return val - self.ub
+#        else:
+#            raise FuncDesignerException('FuncDesigner kernel error, inform developers')
     def __init__(self, *args, **kwargs):
         BaseFDConstraint.__init__(self, *args, **kwargs)
         self.lb, self.ub = -inf, inf
