@@ -1,0 +1,97 @@
+See 
+http://openopt.org/Changelog 
+for more convenient rendering
+
+0.24 (2009-June-15) 
+    * New class: MINLP - mixed-integer nonlinear problems
+    * New class: Linear Uniform Norm Problems (LUNP)
+    * Now DFP can handle user-supplied derivatives
+    * Some changes for finite-difference derivatives approximation
+    * New handling of linear equality constraints by ralg and some other changes for the solver
+    * Some important bugfixes, code cleanup, minor doc improvements 
+Backward incompatibilities:
+    * Connection to PSwarm 1.4 instead of 1.3 (Python API is backward-incompatible for 1.4)
+    * Default p.storeIterPoints set to False (it affects r.iterValues.x - for large scale problems it eats quite lot of memory) 
+
+
+0.23 (2009-March-15)
+    * New class SDP (solvers: CVXOPT and DSDP)
+    * New class SOCP (solvers: CVXOPT, in future CVXOPT authors intend to connect DSDP SOCP solver, then it will be connected to OO)
+    * New class DFP (Data Fit Problem, syntax similar to MATLAB lsqcurvefit)
+    * Some changes to NLP/NSP solver ralg
+    * Some more minor changes, code cleanup, bugfixes 
+Changes for named variables syntax:
+    * Check derivatives for oofun
+    * oolin constraints now are rendered into linear ones, provided all inputs of the oolin involved are oovar instances 
+Contributors:
+    * Thanks to Stepan Hlushak for writing GLP solver "de" (based on differential evolution) 
+Backward incompatibilities:
+    * if you provide derivatives for constraints, then for each constraint c_i or h_j: R^n -> R^s_k you should provide dc_i or dh_j with exactly same number of outputs, i.e. R^n -> R^(s_k, n), otherwise correct solution is not guaranteed (for named variables syntax you shouldn't care of the issue, each oofun has single function for obtaining output and no more than a single user-provided function for obtaining output derivatives). 
+
+0.21 (2008-December-15) :
+    * major changes for NLP / NSP solver ralg
+    * new converter: qp2nlp
+    * new converter: lp2nlp
+    * new converter: nllsp2nlp
+    * new converter: nlsp2nlp
+    * new converter: minimax to NLP
+    * Introducing OpenOpt GUI
+    * PSwarm 1.3 has been connected instead of v 1.1. It has much more parameters to modify and ability to use user-supplied callback function.
+    * Lots of changes related to oofun: add oovar and oolin, now fixed oovars can be correctly handled
+    * enhanced iterfcn connection for scipy fmin_cobyla
+    * some doc updates for result structure
+    * new openopt API func: oosolver
+    * some code cleanup and bugfixes
+    * some other minor changes
+Backward incompatibilities:
+    * instead of "from scikits.openopt import ..." now you should use "from openopt import ..."
+    * LSP has been renamed to NLLSP (Non-Linear Least Squares Problem)
+    * for oofuns support of ordinary variables (x) had been ceased (it's hard to keep maintaining), use oovars instead.
+
+0.19 (2008-September-15) :
+ * Some changes for NLP/NSP solver ralg (especially related to handling linear constraints Ax <= b, Aeq x = beq, lb <= x <= ub)
+ * Bugfix for ralg IPOPT linear constraints handling
+ * ALGENCAN v 2.0.x has been connected (v 1.0 is no longer supported, v 2.0.3 or later is required)
+ * bugfix for constrained NLSP graphic output (constrained nssolve isn't turned to latest ralg version yet)
+ * scale parameter for lpSolve (p.scale = {False} | True | 0 | 1)
+ * New OO class LLAVP (linear least absolute values aka linear least deviations)
+ * Improved handling of non-linear functions with restricted dom
+ * GLP (global) solver galileo now can handle integer problems (via p.useInteger = 1 or True)
+ * Another one GLP solver connected: pswarm
+ * Lots of work related to oofun concept (see OO Doc page for details)
+ * Add converters llsp2nlp, llavp2nsp
+ * Convenient handling of maximization problems (via p.goal = 'max' or 'maximum')
+ * Some code clean up and bugfixes
+Backward incompatibility:
+ * Changed objective function in LLSP
+ * MATLAB-style gradtol renamed to gtol (for to provide same syntax to scipy.optimize fmin_bfgs, fmin_cg and less-to-type)
+
+0.18 (2008-June-15) :
+* connection to glpk MILP solver (requires cvxopt v >= 1.0)
+* connection to NLP solver IPOPT (requires pyipopt installation, that is currently available for Linux only)
+* major changes for ralg
+* splitting non-linear constraints can benefit for some solvers
+* unified text output for NLP solvers
+* handling of  maximization problems (via p.goal = 'max' or 'maximum')
+* some bugfixes, lots of code cleanup
+
+0.17 (2008-March-15) :
+* new classes: GLP (global problem), MMP (mini-max problem)
+* several new solvers written: goldenSection, nsmm
+* some more solvers connected: scipy_slsqp, bvls, galileo
+* possibility to change default solver parameters
+* user-defined callback functions
+* changes in auto derivatives check
+* "noise" parameter for noisy functions
+* some changes to NLP/NSP solver ralg
+* some changes in graphical output: initial estimations xlim, ylim
+* scaling
+* some bugfixes
+
+0.15 (2007-December-15):
+* some new classes
+* several new solvers written
+* some more solvers connected
+* NLP/NSP solver ralg can handle constrained problems
+* some bugfixes
+* some enhancements in graphical output (especially for constrained problems)
