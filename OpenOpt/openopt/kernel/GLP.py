@@ -1,0 +1,52 @@
+from ooMisc import assignScript
+from baseProblem import NonLinProblem
+from numpy import asarray, ones, inf, array, iterable, asarray
+from NLP import nlp_init
+from setDefaultIterFuncs import MAX_NON_SUCCESS 
+
+class GLP(NonLinProblem):
+    probType = 'GLP'
+    __optionalData__ = ['lb', 'ub', 'c', 'A', 'b']
+    expectedArgs = ['f']
+    allowedGoals = ['minimum', 'min', 'maximum', 'max']
+    goal = 'minimum'
+    showGoal = False
+    isObjFunValueASingleNumber = True
+    plotOnlyCurrentMinimum= True
+    _currentBestPoint = None
+    _nonSuccessCounter = 0
+    maxNonSuccess = 15
+    
+    def __init__(self, *args, **kwargs):
+        #if len(args) > 1: self.err('incorrect args number for GLP constructor, must be 0..1 + (optionaly) some kwargs')
+
+        NonLinProblem.__init__(self, *args, **kwargs)
+        
+        def maxNonSuccess(p):
+            newPoint = p.point(p.xk)
+            if self._currentBestPoint is None:
+                self._currentBestPoint = newPoint
+                return False
+            elif newPoint.betterThan(self._currentBestPoint):
+                self._currentBestPoint = newPoint
+                self._nonSuccessCounter = 0
+                return False
+            self._nonSuccessCounter += 1
+            if self._nonSuccessCounter > self.maxNonSuccess:
+                return (True, 'Non-Success Number > maxNonSuccess = ' + str(self.maxNonSuccess))
+            else:
+                return False
+        
+        self.kernelIterFuncs[MAX_NON_SUCCESS] = maxNonSuccess
+        if 'lb' in kwargs.keys():
+            self.n = len(kwargs['lb'])
+        elif 'ub' in kwargs.keys():
+            self.n = len(kwargs['ub'])
+        elif 'b' in kwargs.keys():
+            self.n = asarray(b).size
+        
+        self.lb = -inf * ones(self.n)
+        self.ub =  inf * ones(self.n)
+        
+        assignScript(self, kwargs)
+        if 'x0' not in kwargs.keys(): self.x0 = (self.lb + self.ub) / 2.0
