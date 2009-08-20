@@ -1,0 +1,13 @@
+OpenOpt, DerApproximator, FuncDesigner are packages written in Python language (www.python.org) + numpy (www.scipy.org/numpy).
+
+They are stand-alone modules, but DerApproximator is required by some nonlinear solvers from OpenOpt and during automatic differentiation for those FuncDesigner oofuns w/o supplied routines for obtaining derivatives, and FuncDesigner models can be solved/optimized by OpenOpt.
+
+To install them all you could just run (with admin rights, + you should have package "python-setuptools" installed) 
+python install_all
+or
+python develop_all
+Former goes to directories OpenOpt, FuncDesigner, DerApproximator and invokes "python setup.py install" in each of them, latter do same the things with "python setup.py develop" (in-place installation). 
+For involving installation options beyond defaults you should read setuptools doc, go to these directories and perform "python setup.py ..." with desired options.
+
+HTH, 
+Dmitrey.
