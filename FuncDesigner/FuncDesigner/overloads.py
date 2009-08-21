@@ -79,8 +79,6 @@ def log2(inp):
     if not isinstance(inp, oofun): return np.log2(inp)
     return oofun(np.log2, input = inp, d = lambda x: 1.4426950408889634/x if x.size == 1 else np.diag(1.4426950408889634/x))# 1 / (x * log_e(2))
 
-
-#!!!!!!!! TODO: dot derivative!!!!!!!!
 def dot(inp1, inp2):
     #print ('warning - dot() is not properly tested for oofuns yet')
     if not isinstance(inp1, oofun) and not isinstance(inp2, oofun): return np.dot(inp1, inp2)
