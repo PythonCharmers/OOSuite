@@ -15,22 +15,15 @@ f = (lambda x: x[0]**3+x[1]**3-9, lambda x: x[0]-0.5*x[1], lambda x: cos(x[2])+x
 #f = lambda x: [x[0]**3+x[1]**3-9, x[0]-0.5*x[1], cos(x[2])+x[0]-1.5]
 #or f = lambda x: asfarray((x[0]**3+x[1]**3-9, x[0]-0.5*x[1], cos(x[2])+x[0]-1.5))
 
-#optional: gradient
-def DF(x):
-    df = zeros((3,3))
-    df[0,0] = 3*x[0]**2
-    df[0,1] = 3*x[1]**2
-    df[1,0] = 1
-    df[1,1] = -0.5
-    df[2,0] = 1
-    df[2,2] = -sin(x[2])
-    return df
-
+# start point
 x0 = [8,15, 80]
+
+#optional: gradient
+df = (lambda x: [3*x[0]**2, 3*x[1]**2,  0], lambda x: [1, -0.5,  0], lambda x:[1, 0, -sin(x[2])])
 
 #w/o gradient:
 #p = NLSP(f, x0)
-p = NLSP(f, x0, df = DF)
+p = NLSP(f, x0, df = df)
 
 #optional: user-supplied gradient check:
 #p.checkdf()
@@ -41,8 +34,8 @@ p.plot = 1
 p.maxFunEvals = 1e5
 p.iprint = 10
 
-#r = p.solve('scipy_fsolve')
-r = p.solve('nssolve')
+r = p.solve('scipy_fsolve', iprint = 1)
+#r = p.solve('nssolve')
 #or using converter nlsp2nlp, try to minimize sum(f_i(x)^2):
 #r = p.solve('nlp:ralg', plot=1)
 
