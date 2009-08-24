@@ -450,12 +450,6 @@ class NonLinProblem(baseProblem, nonLinFuncs, Args):
             self.xf = self._vector2point(self.xf)
 
     def __prepare__(self):
-        if self.prepared == True:
-            return
-            
-        baseProblem._prepare(self)
-        
-        # TODO: simplify it
         if hasattr(self, 'solver'):
             if not self.solver.__iterfcnConnected__:
                 if self.solver.__funcForIterFcnConnection__ == 'f':
@@ -464,7 +458,13 @@ class NonLinProblem(baseProblem, nonLinFuncs, Args):
                 else:
                     if not hasattr(self, 'df_iter'):
                         self.df_iter = True
-
+        
+        if self.prepared == True:
+            return
+            
+        baseProblem._prepare(self)
+        
+        # TODO: simplify it
         self.__makeCorrectArgs__()
         for s in ('f', 'df', 'd2f', 'c', 'dc', 'd2c', 'h', 'dh', 'd2h'):
             derivativeOrder = len(s)-1
