@@ -34,8 +34,8 @@ p.plot = 1
 p.maxFunEvals = 1e5
 p.iprint = 10
 
-r = p.solve('scipy_fsolve', iprint = 1)
-#r = p.solve('nssolve')
+#r = p.solve('scipy_fsolve')
+r = p.solve('nssolve')
 #or using converter nlsp2nlp, try to minimize sum(f_i(x)^2):
 #r = p.solve('nlp:ralg', plot=1)
 

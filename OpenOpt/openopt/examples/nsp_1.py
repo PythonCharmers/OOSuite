@@ -37,6 +37,6 @@ p.df = lambda x: 1.2 ** arange(len(x)) * sign(x)
 #p.plot = 1
 p.xlim = (inf,  5)
 p.ylim = (0, 5000000)
-r = p.solve('r2', maxVectorNum=70, doBackwardSearch=1, xtol = 1e-6) # ralg is name of a solver
+r = p.solve('ralg', maxVectorNum=70, doBackwardSearch=1, xtol = 1e-6) # ralg is name of a solver
 print 'x_opt:\n', r.xf
 print 'f_opt:', r.ff  # should print small positive number like 0.00056
