@@ -102,14 +102,12 @@ p.checkdc()
 p.checkdh()
 
 solver = 'ralg'
+#solver = 'ipopt'
 #solver = 'scipy_slsqp'
-#print p.dc(p.x0+1e-5)
-#print '----'
-#print p.dh(p.x0+1e-5)
 
 # solve the problem
 r = p.solve(solver) # string argument is solver name
 
 
 # r.xf and r.ff are optim point and optim objFun value
-# r.ff should be something like 132.0522 
+# r.ff should be something like 132.05

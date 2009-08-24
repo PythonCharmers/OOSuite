@@ -176,15 +176,15 @@ def getBestPointAfterTurn(oldPoint, newPoint, altLinInEq=None, maxLS = 3, maxDel
 
 
 # TODO: UNCOMMENT IT WHEN getFuncsAndExtractIndexes() WILL WORK PROPERLY
-#    ind1 = c1 > 0
-#    ind2 = c2 > 0
-#    ind = where(ind1 | ind2)[0]
-#    
-#    _c = zeros(p.nc)
-#    if ind.size != 0:
-#        _c[ind] = p.c((oldPoint.x + newPoint.x) / 2.0, ind)
-#
-#    altPoint._c = _c
+    ind1 = c1 > 0
+    ind2 = c2 > 0
+    ind = where(ind1 | ind2)[0]
+    
+    _c = zeros(p.nc)
+    if ind.size != 0:
+        _c[ind] = p.c((oldPoint.x + newPoint.x) / 2.0, ind)
+
+    altPoint._c = _c
 
 
 
@@ -217,13 +217,13 @@ def getBestPointAfterTurn(oldPoint, newPoint, altLinInEq=None, maxLS = 3, maxDel
             pv /= 2.0
             line_points[pv] = altPoint.f()
 
-        #c2, lin_eq2, lin_ineq2 = prevPoint._c, prevPoint._lin_eq, prevPoint._lin_ineq
+        c2, lin_eq2, lin_ineq2 = prevPoint._c, prevPoint._lin_eq, prevPoint._lin_ineq
         lin_eq2, lin_ineq2 = prevPoint._lin_eq, prevPoint._lin_ineq
-#        ind2 = c2 > 0
-#        ind = where(ind1 | ind2)[0]
-#        _c = zeros(p.nc)
-#        if ind.size != 0: _c[ind] = p.c((oldPoint.x + prevPoint.x) / 2.0, ind)
-#        altPoint._c = _c
+        ind2 = c2 > 0
+        ind = where(ind1 | ind2)[0]
+        _c = zeros(p.nc)
+        if ind.size != 0: _c[ind] = p.c((oldPoint.x + prevPoint.x) / 2.0, ind)
+        altPoint._c = _c
         altPoint._lin_eq = (lin_eq1 + lin_eq2) / 2.0
         altPoint._lin_ineq = (lin_ineq1 + lin_ineq2) / 2.0
 

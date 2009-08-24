@@ -43,6 +43,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
     isObjFunValueASingleNumber = True
     manage = GUI.manage # GUI func
     prepared = False
+    _baseProblemIsPrepared = False
     
     name = 'unnamed'
     state = 'init'# other: paused, running etc
@@ -243,6 +244,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                         setattr(newProb, key, None)
 
     def _prepare(self):
+        if self._baseProblemIsPrepared: return
         if (type(self.f) in [list, tuple] and 'is_oovar' in dir(self.f[0])) or 'is_oovar' in dir(self.f):
             self.namedVariablesStyle = True
             setStartVectorAndTranslators(self)
@@ -325,6 +327,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         if not hasattr(self, 'n'): self.n = self.x0.size
         if not hasattr(self, 'lb'): self.lb = -inf * ones(self.n)
         if not hasattr(self, 'ub'): self.ub =  inf * ones(self.n)        
+        self._baseProblemIsPrepared = True
 
 
 class MatrixProblem(baseProblem):
@@ -450,6 +453,7 @@ class NonLinProblem(baseProblem, nonLinFuncs, Args):
             self.xf = self._vector2point(self.xf)
 
     def __prepare__(self):
+        baseProblem._prepare(self)
         if hasattr(self, 'solver'):
             if not self.solver.__iterfcnConnected__:
                 if self.solver.__funcForIterFcnConnection__ == 'f':
@@ -462,7 +466,7 @@ class NonLinProblem(baseProblem, nonLinFuncs, Args):
         if self.prepared == True:
             return
             
-        baseProblem._prepare(self)
+        
         
         # TODO: simplify it
         self.__makeCorrectArgs__()
