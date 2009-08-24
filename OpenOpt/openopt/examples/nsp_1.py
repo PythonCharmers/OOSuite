@@ -26,7 +26,6 @@ p.maxIter = 5000
 
 #optional (requires matplotlib installed)
 #p.plot = 1
-#p.graphics.plotIterMarkers = False # default true, but with large number of iterations it slows
 #p.graphics.xlabel = 'cputime'#default: time, case-unsensetive; also here maybe 'cputime', 'niter'
 
 #OPTIONAL: user-supplied gradient/subgradient
