@@ -5,12 +5,12 @@ import NLP
 
 class LP(MatrixProblem):
     __optionalData__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub']
+    expectedArgs = ['f']
     def __init__(self, *args, **kwargs):
         kwargs2 = kwargs.copy()
         if len(args) > 0: kwargs2['f'] = args[0]
-        if len(args) > 1: self.err('incorrect args number for LP constructor, must be 0..1 + (optionaly) some kwargs')
         self.probType = 'LP'
-        MatrixProblem.__init__(self)
+        MatrixProblem.__init__(self, *args, **kwargs)
         lp_init(self, kwargs2)
 
     def __prepare__(self):

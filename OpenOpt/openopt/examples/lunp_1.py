@@ -15,7 +15,7 @@ lb = sin(arange(N))
 ub = lb + 1
 p = LUNP(C, d, lb=lb, ub=ub)
 
-r = p.solve('lp:cvxopt_lp', iprint = -1)
+r = p.solve('lp:glpk', iprint = -1)
 
 print 'f_opt:', r.ff
 #print 'x_opt:', r.xf

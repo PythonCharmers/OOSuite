@@ -10,19 +10,21 @@ from numpy import asfarray, ones, inf, dot, asfarray, nan, zeros, isfinite, all
 
 
 class SOCP(MatrixProblem):
+    probType = 'SOCP'
     __optionalData__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub']
+    goal = 'minimum'
+    allowedGoals = ['minimum', 'min']
+    #TODO: add goal=max, maximum
+    showGoal = True
+    expectedArgs = ['f', 'C', 'd']
     # required are f, C, d
     
     def __init__(self, *args, **kwargs):
-        self.probType = 'SOCP'
-        kwargs2 = kwargs.copy()
-        if len(args) > 0: kwargs2['f'] = args[0]
-        if len(args) > 1: kwargs2['C'] = args[1]
-        if len(args) > 2: kwargs2['d'] = args[2]
-        if len(args) > 3: self.err('incorrect args number for SOCP constructor, must be 0..2 + (optionaly) some kwargs')
-        MatrixProblem.__init__(self)
+        MatrixProblem.__init__(self, *args, **kwargs)
+        self.f = asfarray(self.f)
+        self.n = self.f.size
+        if self.x0 is nan: self.x0 = zeros(self.n)
 
-        return socp_init(self, kwargs2)
 
     def objFunc(self, x):
         return asfarray(dot(self.f, x).sum()).flatten()
@@ -43,22 +45,10 @@ class SOCP(MatrixProblem):
 #        self.xf, self.ff, self.rf = r.xf, r.ff, r.rf
 #        return r
 
-def socp_init(p, kwargs):
-    p.goal = 'minimum'
-    p.allowedGoals = ['minimum', 'min']
-    #TODO: add goal=max, maximum
-    p.showGoal = True
 
-    for fn in ('f', ):
-        if fn in kwargs.keys():
-            kwargs[fn] = asfarray(kwargs[fn], float) # TODO: handle the case in runProbSolver()
 
-    p.n = kwargs['f'].size
-    if p.x0 is nan: p.x0 = zeros(p.n)
-    p.lb = -inf * ones(p.n)
-    p.ub =  inf * ones(p.n)
 
-    return assignScript(p, kwargs)
+
 
 #ff = lambda x, QProb: QProb.objFunc(x)
 #def dff(x, QProb):

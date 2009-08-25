@@ -46,7 +46,7 @@ class DFP(NonLinProblem):
         self.f = ff
 
     def objFuncMultiple2Single(self, fv):
-        assert all(fv>=0)
+        assert all(fv.flatten()>=0)
         return fv.sum() # they are squared in other place
 
     def dfp2nlp(self, solver, **solver_params):

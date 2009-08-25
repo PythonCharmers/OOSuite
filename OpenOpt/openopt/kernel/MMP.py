@@ -1,5 +1,5 @@
 from baseProblem import NonLinProblem
-from NLP import nlp_init, NLP
+from NLP import NLP
 from numpy import max, array, hstack, vstack, zeros, ones, inf, asfarray
 from numpy.linalg import norm
 
@@ -8,22 +8,15 @@ class MMP(NonLinProblem):
     Mini-Max Problem
     """
     __optionalData__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'c', 'h']
+    expectedArgs = ['f', 'x0']
+    allowedGoals = ['minimax']
+    probType = 'MMP'
+    isObjFunValueASingleNumber = False
+    showGoal = True
+    goal = 'minimax'
+    
     def __init__(self, *args, **kwargs):
-        if len(args) > 2: self.err('incorrect args number for MMP constructor, must be 0..2 + (optionaly) some kwargs')
-
-        kwargs2 = kwargs.copy()
-        if len(args) > 0: kwargs2['f'] = args[0]
-        if len(args) > 1: kwargs2['x0'] = args[1]
-        NonLinProblem.__init__(self)
-
-        self.allowedGoals = ['minimax']
-
-        nlp_init(self, kwargs2)
-
-        self.probType = 'MMP'
-        self.isObjFunValueASingleNumber = False
-        self.showGoal = True
-        self.goal = 'minimax'
+        NonLinProblem.__init__(self, *args, **kwargs)
 
     def objFuncMultiple2Single(self, fv):
         return max(fv)

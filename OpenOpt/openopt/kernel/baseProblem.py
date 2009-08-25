@@ -8,7 +8,7 @@ from residuals import residuals
 from ooIter import ooIter
 from Point import Point
 from iterPrint import ooTextOutput
-from ooMisc import setNonLinFuncsNumber
+from ooMisc import setNonLinFuncsNumber, assignScript
 from copy import copy as Copy
 try:
     from DerApproximator import check_d1
@@ -141,6 +141,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         # persistent warning, is called no more than 1 times per session
         self.pWarn = ooPWarn
         
+        assignScript(self, kwargs)
         
         if hasattr(self, 'expectedArgs'): 
             if len(self.expectedArgs)<len(args):
@@ -245,7 +246,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
 
     def _prepare(self):
         if self._baseProblemIsPrepared: return
-        if (type(self.f) in [list, tuple] and 'is_oovar' in dir(self.f[0])) or 'is_oovar' in dir(self.f):
+        if hasattr(self, 'f') and ((type(self.f) in [list, tuple] and 'is_oovar' in dir(self.f[0])) or 'is_oovar' in dir(self.f)):
             self.namedVariablesStyle = True
             setStartVectorAndTranslators(self)
             lb, ub = array([-inf] * self.n), array([inf] * self.n)

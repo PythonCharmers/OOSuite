@@ -10,19 +10,22 @@ class LUNP(MatrixProblem):
     allowedGoals = ['minimum', 'min']
     showGoal = False
     #__optionalData__ = ['damp', 'X', 'c']
+    expectedArgs = ['C', 'd']
     def __init__(self, *args, **kwargs):
-        if len(args) > 2: self.err('incorrect args number for LUNP constructor, must be 0..2 + (optionaly) some kwargs')
-        if len(args) > 0: kwargs['C'] = args[0]
-        if len(args) > 1: kwargs['d'] = args[1]
+        MatrixProblem.__init__(self, *args, **kwargs)
+        self.n = self.C.shape[1]
+    #    if 'damp' not in kwargs.keys(): kwargs['damp'] = None
+    #    if 'X' not in kwargs.keys(): kwargs['X'] = nan*ones(self.n)
 
-        MatrixProblem.__init__(self)
-        lunp_init(self, kwargs)
+        if self.x0 is nan: self.x0 = zeros(self.n)
+        
+        #lunp_init(self, kwargs)
 
     def objFunc(self, x):
         r = norm(dot(self.C, x) - self.d) ** 2  /  2.0
 #        if not self.damp is None:
 #            r += self.damp * norm(x-self.X)**2 / 2.0
-        if any(isfinite(self.f)): r += dot(self.f, x)
+#        if any(isfinite(self.f)): r += dot(self.f, x)
         return r
 
     def lunp2lp(self, solver, **solver_params):
@@ -65,19 +68,6 @@ class LUNP(MatrixProblem):
 
 
 
-
-def lunp_init(prob, kwargs):
-    kwargs['C'] = asfarray(kwargs['C'])
-    prob.n = kwargs['C'].shape[1]
-    prob.lb = -inf * ones(prob.n)
-    prob.ub =  inf * ones(prob.n)
-#    if 'damp' not in kwargs.keys(): kwargs['damp'] = None
-#    if 'X' not in kwargs.keys(): kwargs['X'] = nan*ones(prob.n)
-    if 'f' not in kwargs.keys(): kwargs['f'] = nan*ones(prob.n)
-
-    if prob.x0 is nan: prob.x0 = zeros(prob.n)
-
-    return assignScript(prob, kwargs)
 
 #def ff(x, LLSPprob):
 #    r = dot(LLSPprob.C, x) - LLSPprob.d

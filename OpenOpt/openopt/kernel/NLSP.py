@@ -1,5 +1,5 @@
 from baseProblem import NonLinProblem
-from NLP import nlp_init
+
 from numpy.linalg import norm
 from numpy import inf, asfarray, atleast_1d, dot, abs, ndarray
 from setDefaultIterFuncs import FVAL_IS_ENOUGH, SMALL_DELTA_F
@@ -8,22 +8,15 @@ import NLP
 
 class NLSP(NonLinProblem):
     __optionalData__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'c', 'h']
+    probType = 'NLSP'
+    goal = 'minimize residual'
+    allowedGoals = ['minimize residual']
+    isObjFunValueASingleNumber = False
+    showGoal = False
+    expectedArgs = ['f', 'x0']
+    
     def __init__(self, *args, **kwargs):
-        if len(args) > 2: self.err('incorrect args number for NLSP constructor, must be 0..2 + (optionaly) some kwargs')
-
-        kwargs2 = kwargs.copy()
-        if len(args) > 0: kwargs2['f'] = args[0]
-        if len(args) > 1: kwargs2['x0'] = args[1]
-        NonLinProblem.__init__(self)
-
-        self.isObjFunValueASingleNumber = False
-        nlp_init(self, kwargs2)
-
-        self.probType = 'NLSP'
-        self.goal = 'minimize residual'
-        self.allowedGoals = ['minimize residual']
-        self.showGoal = False
-
+        NonLinProblem.__init__(self, *args, **kwargs)
 
     def objFuncMultiple2Single(self, fv):
         return norm(atleast_1d(asfarray(fv)), inf)

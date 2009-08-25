@@ -15,6 +15,7 @@ class QP(MatrixProblem):
     allowedGoals = ['minimum', 'min']
     showGoal = False
     __optionalData__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub']
+    expectedArgs = ['H', 'f']
     
     def __prepare__(self):
         # TODO: handle cvxopt sparse matrix case here
@@ -24,20 +25,15 @@ class QP(MatrixProblem):
         MatrixProblem.__prepare__(self)
     
     def __init__(self, *args, **kwargs):
-        kwargs2 = kwargs.copy()
-        if len(args) > 0: kwargs['H'] = args[0]
-        if len(args) > 1: kwargs['f'] = args[1]
-        if len(args) > 2: self.err('incorrect args number for QP constructor, must be 0..2 + (optionaly) some kwargs')
-        
-        if 'f' in kwargs.keys():
-            kwargs['f'] = ravel(kwargs['f'])
-            self.n = kwargs['f'] .size
-        if 'H' in kwargs.keys():
+        MatrixProblem.__init__(self, *args, **kwargs)
+        if len(args) > 1 or 'f' in kwargs.keys():
+            self.f = ravel(self.f)
+            self.n = self.f.size
+        if len(args) > 0 or 'H' in kwargs.keys():
             # TODO: handle sparse cvxopt matrix H unchanges
             # if not ('cvxopt' in str(type(H)) and 'cvxopt' in p.solver): 
-            kwargs['H'] = asfarray(kwargs['H'], float) # TODO: handle the case in runProbSolver()
-        MatrixProblem.__init__(self)
-        assignScript(self, kwargs)
+            self.H = asfarray(self.H, float) # TODO: handle the case in runProbSolver()
+        
 
     def objFunc(self, x):
         return asfarray(0.5*dot(x, dot(self.H, x)) + dot(self.f, x).sum()).flatten()

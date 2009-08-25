@@ -11,18 +11,20 @@ from numpy import asfarray, ones, inf, dot, asfarray, nan, zeros, isfinite, all
 
 class SDP(MatrixProblem):
     __optionalData__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'S', 'd']
+    expectedArgs = ['f']
+    goal = 'minimum'
+    #TODO: impolement goal = max, maximum for SDP
+    #allowedGoals = ['minimum', 'min', 'maximum', 'max']
+    allowedGoals = ['minimum', 'min']
+    showGoal = True    
     def __init__(self, *args, **kwargs):
         self.probType = 'SDP'
-        #self.S = []
-        #self.d = []
         self.S = {}
         self.d = {}
-        kwargs2 = kwargs.copy()
-        if len(args) > 0: kwargs2['f'] = args[0]
-        if len(args) > 1: self.err('incorrect args number for SDP constructor, must be 0..1 + (optionaly) some kwargs')
-        MatrixProblem.__init__(self)
-
-        return sdp_init(self, kwargs2)
+        MatrixProblem.__init__(self, *args, **kwargs)
+        self.f = asfarray(self.f)
+        self.n = self.f.size
+        if self.x0 is nan: self.x0 = zeros(self.n)
         
     def __prepare__(self):
         MatrixProblem.__prepare__(self)
@@ -72,23 +74,6 @@ class SDP(MatrixProblem):
 #        self.xf, self.ff, self.rf = r.xf, r.ff, r.rf
 #        return r
 
-def sdp_init(p, kwargs):
-    p.goal = 'minimum'
-    #p.allowedGoals = ['minimum', 'min', 'maximum', 'max']
-    #TODO: impolement goal = max, maximum for SDP
-    p.allowedGoals = ['minimum', 'min']
-    p.showGoal = True
-
-    for fn in ('f', ):
-        if fn in kwargs.keys():
-            kwargs[fn] = asfarray(kwargs[fn], float) # TODO: handle the case in runProbSolver()
-    
-    p.n = kwargs['f'].size
-    if p.x0 is nan: p.x0 = zeros(p.n)
-    p.lb = -inf * ones(p.n)
-    p.ub =  inf * ones(p.n)
-
-    return assignScript(p, kwargs)
 
 #ff = lambda x, QProb: QProb.objFunc(x)
 #def dff(x, QProb):

@@ -1,7 +1,6 @@
 from ooMisc import assignScript
 from baseProblem import NonLinProblem
 from numpy import asarray, ones, inf, array, iterable, sort
-from NLP import nlp_init
 
 class MINLP(NonLinProblem):
     __optionalData__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'c', 'h', 'discreteVars']
@@ -12,14 +11,10 @@ class MINLP(NonLinProblem):
     plotOnlyCurrentMinimum = True
     discreteVars = {}
     discrtol = 1e-5 # tolerance required for discrete constraints 
+    expectedArgs = ['f', 'x0']
     def __init__(self, *args, **kwargs):
-        if len(args) > 2: self.err('incorrect args number for MINLP constructor, must be 0..2 + (optionally) some kwargs')
-        kwargs2 = kwargs.copy()
-        if len(args) > 0: kwargs2['f'] = args[0]
-        if len(args) > 1: kwargs2['x0'] = args[1]
-        NonLinProblem.__init__(self)
+        NonLinProblem.__init__(self, *args, **kwargs)
         self.iprint=1
-        nlp_init(self, kwargs2)
 
     def __prepare__(self):
         if hasattr(self, 'prepared') and self.prepared == True:

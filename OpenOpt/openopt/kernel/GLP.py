@@ -1,7 +1,6 @@
 from ooMisc import assignScript
 from baseProblem import NonLinProblem
 from numpy import asarray, ones, inf, array, iterable, asarray
-from NLP import nlp_init
 from setDefaultIterFuncs import MAX_NON_SUCCESS 
 
 class GLP(NonLinProblem):

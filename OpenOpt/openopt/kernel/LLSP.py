@@ -6,19 +6,28 @@ import NLP
 
 class LLSP(MatrixProblem):
     __optionalData__ = ['damp', 'X', 'c']
+    expectedArgs = ['C', 'd']
+    probType = 'LLSP'
+    goal = 'minimum'
+    allowedGoals = ['minimum', 'min']
+    showGoal = False
+    
     def __init__(self, *args, **kwargs):
-        if len(args) > 2: self.err('incorrect args number for LLSP constructor, must be 0..2 + (optionaly) some kwargs')
-        if len(args) > 0: kwargs['C'] = args[0]
-        if len(args) > 1: kwargs['d'] = args[1]
+        MatrixProblem.__init__(self, *args, **kwargs)
+        self.n = self.C.shape[1]
+        #self.lb = -inf * ones(self.n)
+        #self.ub =  inf * ones(self.n)
+        if 'damp' not in kwargs.keys(): self.damp = None
+        if 'f' not in kwargs.keys(): self.f = None
 
-        MatrixProblem.__init__(self)
-        llsp_init(self, kwargs)
+        if self.x0 is nan: self.x0 = zeros(self.n)        
+
 
     def objFunc(self, x):
         r = norm(dot(self.C, x) - self.d) ** 2  /  2.0
-        if not self.damp is None:
+        if self.damp is not None:
             r += self.damp * norm(x-self.X)**2 / 2.0
-        if any(isfinite(self.f)): r += dot(self.f, x)
+        if self.f is not None: r += dot(self.f, x)
         return r
 
     def llsp2nlp(self, solver, **solver_params):
@@ -43,25 +52,13 @@ class LLSP(MatrixProblem):
 
 
 
-def llsp_init(prob, kwargs):
+#def llsp_init(prob, kwargs):
+#    if 'damp' not in kwargs.keys(): kwargs['damp'] = None
+#    if 'X' not in kwargs.keys(): kwargs['X'] = nan*ones(prob.n)
+#    if 'f' not in kwargs.keys(): kwargs['f'] = nan*ones(prob.n)
+#
+#    if prob.x0 is nan: prob.x0 = zeros(prob.n)
 
-    prob.probType = 'LLSP'
-    prob.goal = 'minimum'
-    prob.allowedGoals = ['minimum', 'min']
-    prob.showGoal = False
-
-    kwargs['C'] = asfarray(kwargs['C'])
-
-    prob.n = kwargs['C'].shape[1]
-    prob.lb = -inf * ones(prob.n)
-    prob.ub =  inf * ones(prob.n)
-    if 'damp' not in kwargs.keys(): kwargs['damp'] = None
-    if 'X' not in kwargs.keys(): kwargs['X'] = nan*ones(prob.n)
-    if 'f' not in kwargs.keys(): kwargs['f'] = nan*ones(prob.n)
-
-    if prob.x0 is nan: prob.x0 = zeros(prob.n)
-
-    return assignScript(prob, kwargs)
 
 #def ff(x, LLSPprob):
 #    r = dot(LLSPprob.C, x) - LLSPprob.d
