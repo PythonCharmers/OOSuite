@@ -58,7 +58,7 @@ def CVXOPT_LP_Solver(p, solverName):
         else: p.istop = -100
         if sol['x'] is not None:
             p.xf = asarray(sol['x']).flatten()
-            p.ff = sum(p.dotmult(p.f, p.xf))
+            # ! don't involve p.ff  - it can be different because of goal and additional constant from FuncDesigner
             p.duals = concatenate((asarray(sol['y']).flatten(), asarray(sol['z']).flatten()))
         else:
             p.ff = nan

@@ -33,7 +33,7 @@ class lpSolve(baseSolver):
         [obj, x_opt, duals] = lps(List(f.flatten()), List(p.Awhole), List(p.bwhole.flatten()), List(p.dwhole.flatten()), \
         List(p.lb.flatten()), List(p.ub.flatten()), (1+asarray(p.intVars)).tolist(), scalemode)
         if obj != []:
-            p.ff = - obj # sign '-' because lp_solve by default searches for maximum, not minimum
+            # ! don't involve p.ff  - it can be different because of goal and additional constant from FuncDesigner
             p.xf = ravel(x_opt)
             p.duals = duals
             p.istop = 1

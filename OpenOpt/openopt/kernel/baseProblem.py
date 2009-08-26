@@ -89,7 +89,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
 
     userStop = False # becomes True is stopped by user
 
-    x0 = nan
+    x0 = None
     namedVariablesStyle = False # OO kernel set it to True if oovars/oofuns are used
 
     noise = ProbDefaults['noise'] # TODO: move it to NinLinProblem class?
@@ -141,8 +141,6 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         # persistent warning, is called no more than 1 times per session
         self.pWarn = ooPWarn
         
-        assignScript(self, kwargs)
-        
         if hasattr(self, 'expectedArgs'): 
             if len(self.expectedArgs)<len(args):
                 self.err('Too much arguments for '+self.probType +': '+ str(len(args)) +' are got, at most '+ str(len(self.expectedArgs)) + ' were expected')
@@ -176,6 +174,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         self.intVars = [] # for problems like MILP
         self.binVars = [] # for problems like MILP
         self.optionalData = []#string names of optional data like 'c', 'h', 'Aeq' etc
+        assignScript(self, kwargs)
 
     def __finalize__(self):
         pass
@@ -261,8 +260,11 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             oovD = self._oovarsIndDict
             LB = {}
             UB = {}
+
             for c in self.constraints:
                 f = c.oofun
+                if self.probType in ['LP', 'MILP'] and not f.is_linear:
+                    self.err('for LP/MILP all constraints should be linear, while ' + f.name + ' is not')
                 if not hasattr(c, 'isConstraint'): self.err('The type' + str(type(c)) + 'is inappropriate for problem constraints')
                 #LBallAreZeros = all(c.lb == 0)
                 #UBallAreZeros = all(c.ub == 0)
@@ -323,7 +325,16 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         else: # not namedvariablesStyle
             if self.fixedVars is not None or self.optVars is not None:
                 self.err('fixedVars and optVars are valid for optimization of FuncDesigner models only')
-            
+                
+        if self.x0 is None: 
+            arr = ['lb', 'ub']
+            if self.probType in ['LP', 'MILP', 'QP', 'SOCP', 'SDP']: arr.append('f')
+            if self.probType in ['LLSP', 'LLAVP', 'LUNP']: arr.append('D')
+            for fn in arr:
+                fv = asarray(getattr(self, fn))
+                if any(isfinite(fv)):
+                    self.x0 = zeros(fv.size)
+                    break
         self.x0 = ravel(self.x0)
         if not hasattr(self, 'n'): self.n = self.x0.size
         if not hasattr(self, 'lb'): self.lb = -inf * ones(self.n)
