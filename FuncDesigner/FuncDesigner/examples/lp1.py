@@ -12,7 +12,7 @@ f1 = 4*x+5*y + 3*z + 5
 f2 = f1.sum() + 2*x + 4*y + 15
 f3 = 5*f1 + 4*f2 + 20
 
-# Define objective
+# Define objective; sum(a) and a.sum() are same as well as for numpy arrays
 obj = x.sum() + y - 50*z + sum(f3) + 2*f2.sum() + 4064.6
 
 # Start point - currently matters only size of variables
