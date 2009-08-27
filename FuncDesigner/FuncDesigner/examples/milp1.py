@@ -1,4 +1,4 @@
-# Example of creating LP in FuncDesigner
+# Example of creating MILP in FuncDesigner
 # and solving it via OpenOpt
 
 from FuncDesigner import *
