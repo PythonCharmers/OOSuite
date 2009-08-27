@@ -266,9 +266,6 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 if self.probType in ['LP', 'MILP'] and not f.is_linear:
                     self.err('for LP/MILP all constraints should be linear, while ' + f.name + ' is not')
                 if not hasattr(c, 'isConstraint'): self.err('The type' + str(type(c)) + 'is inappropriate for problem constraints')
-                #LBallAreZeros = all(c.lb == 0)
-                #UBallAreZeros = all(c.ub == 0)
-                #if LBallAreZeros and UBallAreZeros:
                 if c.isBBC: # is BoxBoundConstraint
                     oov = c.oofun
                     Name = oov.name
