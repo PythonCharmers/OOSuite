@@ -11,9 +11,25 @@ class MILP(LP):
     __optionalData__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'intVars', 'boolVars']
     storeIterPoints = False
     probType = 'MILP'
+    expectedArgs = ['f', 'x0']
+    goal = 'minimum'
+    allowedGoals = ['minimum', 'min', 'max', 'maximum']
+    showGoal = True
     
     def __prepare__(self):
         LP.__prepare__(self)
+        r = []
+        if type(self.intVars) not in [list, tuple]:
+            self.intVars = [self.intVars]
+        if self.namedVariablesStyle:
+            for iv in self.intVars:
+                if self.fixedVars is not None and iv in self.fixedVars or\
+                self.optVars is not None and iv not in self.optVars:
+                    continue
+                r1, r2 = self._oovarsIndDict[iv.name]
+                r += range(r1, r2)
+        self.intVars, self._intVars = r, self.intVars
+                
         if SMALL_DELTA_X in self.kernelIterFuncs: self.kernelIterFuncs.pop(SMALL_DELTA_X)
         if SMALL_DELTA_F in self.kernelIterFuncs: self.kernelIterFuncs.pop(SMALL_DELTA_F)
         def getMaxResidualWithIntegerConstraints(x, retAll = False):
@@ -40,7 +56,9 @@ class MILP(LP):
         
 #        if self.goal in ['max', 'maximum']:
 #            self.f = -self.f
-    
+    def __finalize__(self):
+        LP.__finalize__(self)
+        self.intVars = self._intVars
 #    def __finalize__(self):
 #        MatrixProblem.__finalize__(self)
 #        if self.goal in ['max', 'maximum']:
@@ -49,8 +67,8 @@ class MILP(LP):
 #                if hasattr(self, fn):
 #                    setattr(self, fn, -getattr(self, fn))
     
-    def __init__(self, *args, **kwargs):
-        LP.__init__(self, *args, **kwargs)
+#    def __init__(self, *args, **kwargs):
+#        LP.__init__(self, *args, **kwargs)
 
     def objFunc(self, x):
         return dot(self.f, x) + self._c
