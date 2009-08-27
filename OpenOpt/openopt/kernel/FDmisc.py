@@ -40,9 +40,16 @@ def setStartVectorAndTranslators(p):
     else:
         optVars = startPoint.keys()
         
-    #assert 0
     # point should be FuncDesigner point that currently is Python dict        
-    point2vector = lambda point: atleast_1d(hstack([asfarray(point[oov]) for oov in optVars]))
+    #point2vector = lambda point: atleast_1d(hstack([asfarray(point[oov]) for oov in optVars]))
+    def point2vector(point):
+        r = []
+        for oov in optVars:
+            if oov in point.keys():
+                r.append(point[oov])
+            else:
+                r.append(zeros(asarray(startPoint[oov]).shape))
+        return atleast_1d(hstack(r))
 
     vector_x0 = point2vector(startPoint)
     n = vector_x0.size
