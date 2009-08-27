@@ -28,7 +28,7 @@ class MILP(LP):
                     continue
                 r1, r2 = self._oovarsIndDict[iv.name]
                 r += range(r1, r2)
-        self.intVars, self._intVars = r, self.intVars
+            self.intVars, self._intVars = r, self.intVars
                 
         if SMALL_DELTA_X in self.kernelIterFuncs: self.kernelIterFuncs.pop(SMALL_DELTA_X)
         if SMALL_DELTA_F in self.kernelIterFuncs: self.kernelIterFuncs.pop(SMALL_DELTA_F)
@@ -58,7 +58,7 @@ class MILP(LP):
 #            self.f = -self.f
     def __finalize__(self):
         LP.__finalize__(self)
-        self.intVars = self._intVars
+        if self.namedVariablesStyle: self.intVars = self._intVars
 #    def __finalize__(self):
 #        MatrixProblem.__finalize__(self)
 #        if self.goal in ['max', 'maximum']:
