@@ -22,7 +22,7 @@ startPoint = {x:[8, 15], y:25, z:80} # however, using numpy.arrays is more recom
 p = MILP(obj, startPoint, intVars = [y, z])
 
 # Define some constraints
-p.constraints = [x+5*y<15, x[0]<4, f1<[25, 35], f1>-100, 2*f1+4*z<[80, 800], 5*f2+4*z<100, -5<x,  x<1, -20<y,  y<20, -4000<z, z<4]
+p.constraints = [x+5*y<15, x[0]<-5, f1<[25, 35], f1>-100, 2*f1+4*z<[80, 800], 5*f2+4*z<100, [-5.5, -4.5]<x,  x<1, -17<y,  y<20, -4000<z, z<4]
 
 # Solve
 r = p.solve('glpk') # glpk is name of the solver involved, see OOF doc for more arguments
@@ -30,5 +30,5 @@ r = p.solve('glpk') # glpk is name of the solver involved, see OOF doc for more 
 # Decode solution
 s = r.xf
 print('Solution: x = %s   y = %f  z = %f' % (str(s[x]), s[y], s[z]))
-# Solution: x = [-4.25 -4.25]   y = -20.000000  z = 4.000000
+# Solution: x = [-5.5 -4.5]   y = -17.000000  z = 1.000000
 
