@@ -23,7 +23,7 @@ class oovar(oofun):
         if len(args) > 0: raise FuncDesignerException('incorrect args number for oovar constructor')
 
         if not 'skipRecursive' in kwargs.keys() or kwargs['skipRecursive'] == False:
-            self.size = oofun(lambda x: asarray(x).size, input = self, discrete = True, skipRecursive = True)
+            self.size = oofun(lambda x: asarray(x).size, input = self, is_linear = True, discrete = True, skipRecursive = True)
 
         for key in kwargs.keys():
             if key != 'skipRecursive':

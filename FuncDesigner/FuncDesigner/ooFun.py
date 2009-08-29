@@ -47,7 +47,8 @@ class oofun:
         assert len(args) == 0
         self.fun = fun
         if not 'skipRecursive' in kwargs.keys() or kwargs['skipRecursive'] == False:
-            self.size = oofun(lambda x: asarray(x).size, input = self, discrete = True, skipRecursive = True)
+            # TODO: modify is_linear to something better
+            self.size = oofun(lambda x: asarray(x).size, input = self, is_linear=True, discrete = True, skipRecursive = True)
 
         if 'name' not in kwargs.keys():
             self.name = 'unnamed_oofun_' + str(oofun._unnamedFunNumber)

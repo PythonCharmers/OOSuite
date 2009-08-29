@@ -18,8 +18,8 @@ bLBs = [b[i]>-10 for i in xrange(N)]
 aUBs = [a[i]<15 for i in xrange(N)]
 bUBs = [b[i]<15 for i in xrange(N)]
 p.constraints = aLBs + bLBs + aUBs + bUBs
-p.constraints.append(a[4]+b[15]>-9)
-# or p.constraints += [a[4]+b[15]>-9]
+p.constraints.append(a[4] + b[15] + a[20].size - f.size>-9) # array size, here a[20].size = f.size = 1
+# or p.constraints += [a[4] + b[15] + a[20].size - f.size>-9]
 r = p.solve('glpk')
 print('opt a[15]=%f'%r.xf[a[15]]) 
 # opt a[15]=-10.000000
