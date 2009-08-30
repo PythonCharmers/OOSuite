@@ -113,6 +113,11 @@ def check_d1(fun, fun_d, vars, func_name='func', diffInt=1.5e-8, pointVal = None
     stencil = 2: (f(x+diffInt) - f(x-diffInt)) / (2*diffInt)
     maxViolation - threshold for reporting of incorrect derivatives
     varForCheck - the parameter is used from FuncDesigner
+    
+    Note that one of output values RD (relative difference) is defined as
+    int(ceil(log10(abs(Diff) / maxViolation + 1e-150)))
+    where
+    Diff = 1 - (info_user+1e-8)/(info_numerical + 1e-8) 
     """
     info_numerical = get_d1(fun, vars, diffInt=diffInt, pointVal = pointVal, args=args, stencil = stencil, varForDifferentiation = varForCheck)
     
