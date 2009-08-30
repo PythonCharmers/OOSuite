@@ -9,8 +9,16 @@ class DerApproximatorException:
         return self.msg
 
 def get_d1(fun, vars, diffInt=1.5e-8, pointVal = None, args=(), stencil = 2, varForDifferentiation = None):
-    # stencil = 1: (f(x+diffInt) - f(x)) / diffInt
-    # stencil = 2: (f(x+diffInt) - f(x-diffInt)) / (2*diffInt)
+    """
+    Usage: get_d1(fun, x, diffInt=1.5e-8, pointVal = None, args=(), stencil = 2, varForDifferentiation = None)
+    fun: R^n -> R^m, x0 from R^n: function and point where derivatives should be obtained 
+    diffInt - step for stencil
+    pointVal - fun(x) if known (it is used from OpenOpt and FuncDesigner)
+    args - additional args for fun, if not () fun(x, *args) will be involved 
+    stencil = 1: (f(x+diffInt) - f(x)) / diffInt
+    stencil = 2: (f(x+diffInt) - f(x-diffInt)) / (2*diffInt)
+    varForDifferentiation - the parameter is used from FuncDesigner
+    """
     assert type(vars) in [tuple,  list,  ndarray, float, dict]
     
     #assert asarray(diffInt).size == 1,  'vector diffInt are not implemented for oofuns yet'      
@@ -94,6 +102,18 @@ def get_d1(fun, vars, diffInt=1.5e-8, pointVal = None, args=(), stencil = 2, var
     return r
 
 def check_d1(fun, fun_d, vars, func_name='func', diffInt=1.5e-8, pointVal = None, args=(), stencil = 2, maxViolation=0.01, varForCheck = None):
+    """
+    Usage: check_d1(fun, fun_d, x, func_name='func', diffInt=1.5e-8, pointVal = None, args=(), stencil = 2, maxViolation=0.01, varForCheck = None)
+    fun: R^n -> R^m, x0 from R^n: function and point where derivatives should be obtained 
+    fun_d - user-provided routine for derivatives evaluation to be checked 
+    diffInt - step for stencil
+    pointVal - fun(x) if known (it is used from OpenOpt and FuncDesigner)
+    args - additional args for fun, if not () fun(x, *args) will be involved 
+    stencil = 1: (f(x+diffInt) - f(x)) / diffInt
+    stencil = 2: (f(x+diffInt) - f(x-diffInt)) / (2*diffInt)
+    maxViolation - threshold for reporting of incorrect derivatives
+    varForCheck - the parameter is used from FuncDesigner
+    """
     info_numerical = get_d1(fun, vars, diffInt=diffInt, pointVal = pointVal, args=args, stencil = stencil, varForDifferentiation = varForCheck)
     
     if type(vars) not in [list, tuple]:
@@ -108,9 +128,6 @@ def check_d1(fun, fun_d, vars, func_name='func', diffInt=1.5e-8, pointVal = None
         info_user = fun_d
     else:
         info_user = fun_d(*Args)    
-    #info_user = fun_d()
-    
-    # TODO: check for fixed oofuncs
     
     if info_numerical.shape != info_user.shape:
         raise DerApproximatorException('user-supplied gradient for ' + func_name + ' has other size than the one, obtained numerically: '+ \
