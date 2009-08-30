@@ -512,7 +512,7 @@ class oofun:
         r = Derivative()
         ac = -1
         for i, inp in enumerate(self.input):
-            
+            if not isinstance(inp, oofun): continue
             if inp.discrete: continue
             #!!!!!!!!! TODO: handle fixed cases properly!!!!!!!!!!!!
             if hasattr(inp, 'fixed') and inp.fixed: continue
@@ -697,6 +697,7 @@ class oofun:
         print('according to:')
         print('    diffInt = ' + str(self.diffInt)) # TODO: ADD other parameters: allowed epsilon, maxDiffLines etc
         print('    |1 - info_user/info_numerical| < maxViolation = '+ str(self.maxViolation))        
+        j = -1
         for i in xrange(len(self.input)):#var in Vars:
             var = self.input[i]
             if len(self.input) > 1: print('by input variable number ' + str(i) + ':')
@@ -708,7 +709,8 @@ class oofun:
                 print('input number ' + str(i) + ' is not oofun instance, skipping the one;')
                 print(separator)
                 continue
-            check_d1(lambda *args: self.fun(*args), ds[i], input, \
+            j += 1
+            check_d1(lambda *args: self.fun(*args), ds[j], input, \
                  func_name=self.name, diffInt=self.diffInt, pointVal = val, args=self.args, \
                  stencil = max((2, self.stencil)), maxViolation=self.maxViolation, varForCheck = i)
 

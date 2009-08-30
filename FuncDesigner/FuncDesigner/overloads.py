@@ -80,30 +80,47 @@ def log2(inp):
     return oofun(np.log2, input = inp, d = lambda x: 1.4426950408889634/x if x.size == 1 else np.diag(1.4426950408889634/x))# 1 / (x * log_e(2))
 
 def dot(inp1, inp2):
-    #print ('warning - dot() is not properly tested for oofuns yet')
     if not isinstance(inp1, oofun) and not isinstance(inp2, oofun): return np.dot(inp1, inp2)
+    
     if not isinstance(inp1, oofun): 
-        inp1, inp2 = inp2, np.asfarray(inp1)
-        is_linear = inp1.is_linear
+        #inp1, inp2 = inp2, np.asfarray(inp1)
+        is_linear = inp2.is_linear
     else:
-        is_linear = False
+        is_linear = inp1.is_linear and not isinstance(inp2, oofun)
     
     def aux_d(x, y):
-        assert x.ndim <= 1 and y.ndim <= 1
+        #assert x.ndim <= 1 and y.ndim <= 1
         if y.size == 1: 
             r = np.empty(x.size)
             r.fill(y)
             if x.size != 1: r = np.diag(r)
         else:
             r = np.copy(y)
-        
         return r
-    r = oofun(lambda x, y: x * y if x.size != y.size else np.dot(x, y), input = [inp1, inp2], d=(lambda x, y: aux_d(x, y), lambda x, y: aux_d(y, x)))
+        
+    r = oofun(lambda x, y: x * y if x.size == 1 or y.size == 1 else np.dot(x, y), input = [inp1, inp2], d=(lambda x, y: aux_d(x, y), lambda x, y: aux_d(y, x)))
     r.is_linear = is_linear
     return r
 
 def sum(inp, *args, **kwargs):
-    if not isinstance(inp, oofun): return np.sum(inp, *args, **kwargs)
+    if not isinstance(inp, oofun): 
+        return np.sum(inp, *args, **kwargs)
+        
+        # TODO: check for numpy.array of oofuns
+        
+#        if type(inp) in (list, tuple) and any([isinstance(elem, oofun) for elem in inp]):
+#            d, INP = [], set()
+#            for elem in inp: # TODO: mb use reduce() or something like that
+#                if not isinstance(elem, oofun): continue
+#                d.append(elem.d)
+#                INP.add(elem.input)
+#            #print 'INP:', INP
+#            r = oofun(lambda *args: np.sum([(elem(*args) if isinstance(elem, oofun) else elem) for elem in inp]), input = INP)
+#            r.d = d
+#            return r
+#        else:
+#            return np.sum(inp, *args, **kwargs)
+
     if len(args) != 0 or len(kwargs) != 0:
         raise FuncDesignerException('oofun for sum(x, *args,**kwargs) is not implemented yet')
     return inp.sum()
