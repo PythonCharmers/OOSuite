@@ -27,7 +27,7 @@ x1^2+x2^2-8 <= 0
 
 from openopt import NLP
 from numpy import cos, arange, ones, asarray, zeros, mat, array
-N = 1500 
+N = 150
 
 # objective function:
 f = lambda x: ((x-5)**2).sum()
@@ -94,7 +94,7 @@ p = NLP(f, x0, df=df,  c=c,  dc=dc, h=h,  dh=dh,  A=A,  b=b,  Aeq=Aeq,  beq=beq,
         lb=lb, ub=ub, gtol=gtol, contol=contol, iprint = 50, maxIter = 10000, maxFunEvals = 1e7, name = 'NLP_1')
 
 #optional: graphic output, requires pylab (matplotlib)
-p.plot = 0
+p.plot = True
 
 #optional: user-supplied 1st derivatives check
 p.checkdf()
