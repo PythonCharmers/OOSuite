@@ -20,7 +20,7 @@ class QP(MatrixProblem):
     def __prepare__(self):
         # TODO: handle cvxopt sparse matrix case here
         self.n = self.H.shape[0]
-        if not hasattr(self, 'x0') or self.x0 is nan or self.x0[0] == nan:
+        if not hasattr(self, 'x0') or self.x0 is None or self.x0[0] == nan:
             self.x0 = zeros(self.n)
         MatrixProblem.__prepare__(self)
     
