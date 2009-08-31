@@ -14,13 +14,16 @@ class LLSP(MatrixProblem):
     
     def __init__(self, *args, **kwargs):
         MatrixProblem.__init__(self, *args, **kwargs)
-        self.n = self.C.shape[1]
+        if len(args)>1:
+            self.n = args[0].shape[1]
+        else:
+            self.n = kwargs['C'].shape[1]
         #self.lb = -inf * ones(self.n)
         #self.ub =  inf * ones(self.n)
         if 'damp' not in kwargs.keys(): self.damp = None
         if 'f' not in kwargs.keys(): self.f = None
 
-        if self.x0 is nan: self.x0 = zeros(self.n)        
+        if self.x0 is None: self.x0 = zeros(self.n)        
 
 
     def objFunc(self, x):

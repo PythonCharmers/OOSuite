@@ -328,6 +328,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             if self.probType in ['LP', 'MILP', 'QP', 'SOCP', 'SDP']: arr.append('f')
             if self.probType in ['LLSP', 'LLAVP', 'LUNP']: arr.append('D')
             for fn in arr:
+                if not hasattr(self, fn): continue
                 fv = asarray(getattr(self, fn))
                 if any(isfinite(fv)):
                     self.x0 = zeros(fv.size)

@@ -11,7 +11,6 @@ class lapack_dgelss(baseSolver):
     __info__ = 'wrapper to LAPACK dgelss routine (double precision), requires scipy & LAPACK 3.0 or newer installed'
     def __init__(self):pass
     def __solver__(self, p):
-        p.iterfcn(p.x0)
 
         v,x,s,rank,info = dgelss(p.C, p.d)
         xf = x[:p.C.shape[1]]

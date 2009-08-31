@@ -17,7 +17,7 @@ class LUNP(MatrixProblem):
     #    if 'damp' not in kwargs.keys(): kwargs['damp'] = None
     #    if 'X' not in kwargs.keys(): kwargs['X'] = nan*ones(self.n)
 
-        if self.x0 is nan: self.x0 = zeros(self.n)
+        if self.x0 is None: self.x0 = zeros(self.n)
         
         #lunp_init(self, kwargs)
 

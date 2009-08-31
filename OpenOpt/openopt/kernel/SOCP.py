@@ -23,7 +23,7 @@ class SOCP(MatrixProblem):
         MatrixProblem.__init__(self, *args, **kwargs)
         self.f = asfarray(self.f)
         self.n = self.f.size
-        if self.x0 is nan: self.x0 = zeros(self.n)
+        if self.x0 is None: self.x0 = zeros(self.n)
 
 
     def objFunc(self, x):
