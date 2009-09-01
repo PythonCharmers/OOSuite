@@ -108,6 +108,7 @@ def sum(inp, *args, **kwargs):
 #    t = time()
     
     # TODO: check for numpy.array of oofuns
+    #condIterableOfOOFuns = type(inp) in (list, tuple) and any([isinstance(elem, oofun) for elem in inp])
     condIterableOfOOFuns = type(inp) in (list, tuple) and any([isinstance(elem, oofun) for elem in inp])
     
     if not isinstance(inp, oofun) and not condIterableOfOOFuns: 
@@ -127,11 +128,18 @@ def sum(inp, *args, **kwargs):
                 d.append(lambda *args: np.ones(len(args[j])))
                 INP.append(elem)
             else:
+                
+                #!!!!!!!!!!!!!!! TODO: FIX IT!!!!!!!!!!!!
+                return np.sum(inp, *args, **kwargs)
+                
                 d.append(elem.D)
                 INP.append(elem.input)
         
         # TODO:  check for fixed inputs
         f = lambda *args: r0 + np.sum(args)
+#        def f(*args):
+#            print args
+#            return np.sum(args)
         
         #!!!!!!!!!!!!!!!!!! TODO: check INP for complex cases (not list of oovars)
         r = oofun(f, d=tuple(d), input=INP) 
