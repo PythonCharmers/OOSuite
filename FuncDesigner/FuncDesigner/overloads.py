@@ -103,24 +103,42 @@ def dot(inp1, inp2):
     return r
 
 def sum(inp, *args, **kwargs):
-    if not isinstance(inp, oofun): 
+    #return np.sum(inp, *args, **kwargs)
+#    from time import time
+#    t = time()
+    
+    # TODO: check for numpy.array of oofuns
+    condIterableOfOOFuns = type(inp) in (list, tuple) and any([isinstance(elem, oofun) for elem in inp])
+    
+    if not isinstance(inp, oofun) and not condIterableOfOOFuns: 
         return np.sum(inp, *args, **kwargs)
         
-        # TODO: check for numpy.array of oofuns
+    if condIterableOfOOFuns:
+        d, INP, r0 = [], [], 0
+        j = -1
+        for elem in inp: # TODO: mb use reduce() or something like that
+            if not isinstance(elem, oofun): 
+                #r0 = r0 + elem # += is inappropriate because sizes may differ
+                r0 += elem # so it doesn't work for different sizes
+                continue
+            j += 1
+            if elem.is_oovar:
+                # TODO: check it
+                d.append(lambda *args: np.ones(len(args[j])))
+                INP.append(elem)
+            else:
+                d.append(elem.D)
+                INP.append(elem.input)
         
-#        if type(inp) in (list, tuple) and any([isinstance(elem, oofun) for elem in inp]):
-#            d, INP = [], set()
-#            for elem in inp: # TODO: mb use reduce() or something like that
-#                if not isinstance(elem, oofun): continue
-#                d.append(elem.d)
-#                INP.add(elem.input)
-#            #print 'INP:', INP
-#            r = oofun(lambda *args: np.sum([(elem(*args) if isinstance(elem, oofun) else elem) for elem in inp]), input = INP)
-#            r.d = d
-#            return r
-#        else:
-#            return np.sum(inp, *args, **kwargs)
-
+        # TODO:  check for fixed inputs
+        f = lambda *args: r0 + np.sum(args)
+        
+        #!!!!!!!!!!!!!!!!!! TODO: check INP for complex cases (not list of oovars)
+        r = oofun(f, d=tuple(d), input=INP) 
+        return r
+    else:
+        return np.sum(inp, *args, **kwargs)
+    
     if len(args) != 0 or len(kwargs) != 0:
         raise FuncDesignerException('oofun for sum(x, *args,**kwargs) is not implemented yet')
     return inp.sum()

@@ -33,16 +33,25 @@ class oovar(oofun):
         return self.name
 
     def _getFunc(self, x):
-        self_in_keys = self in x.keys()
-        self_name_in_keys = self.name in x.keys()
-        if self_in_keys and self_name_in_keys:
-            raise FuncDesignerException('for oovar '+ self.name + ' the point involved contains both name and the oovar instance, that is forbidden because of ambiguity')
-        elif not self_in_keys and not self_name_in_keys:
-            raise FuncDesignerException('for oovar '+ self.name + " the point involved doesn't contain niether name nor the oovar instance")
-        elif self_in_keys:
-            return atleast_1d(asfarray(x[self]))
-        else: # self_name_in_keys
-            return atleast_1d(asfarray(x[self.name]))
+        try:
+            r = atleast_1d(asfarray(x[self]))
+        except KeyError:
+            try:
+                r = atleast_1d(asfarray(x[self.name]))
+            except KeyError:
+                raise FuncDesignerException('for oovar ' + self.name + " the point involved doesn't contain niether name nor the oovar instance")
+        return r
+        
+#        self_in_keys = self in x.keys()
+#        self_name_in_keys = self.name in x.keys()
+#        if self_in_keys and self_name_in_keys:
+#            raise FuncDesignerException('for oovar ' + self.name + ' the point involved contains both name and the oovar instance, that is forbidden because of ambiguity')
+#        elif not self_in_keys and not self_name_in_keys:
+#            raise FuncDesignerException('for oovar ' + self.name + " the point involved doesn't contain niether name nor the oovar instance")
+#        elif self_in_keys:
+#            return atleast_1d(asfarray(x[self]))
+#        else: # self_name_in_keys
+#            return atleast_1d(asfarray(x[self.name]))
         
             
     def _initialize(self, p):
