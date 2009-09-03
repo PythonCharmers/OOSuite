@@ -140,8 +140,9 @@ def sum(inp, *args, **kwargs):
         #!!!!!!!!!!!!!!!!!! TODO: check INP for complex cases (not list of oovars)
         r = oofun(f, d=tuple(d), input=INP) 
         return r
-    else:
-        return np.sum(inp, *args, **kwargs)
+    else: 
+        assert isinstance(inp, oofun)
+        return inp.sum(*args, **kwargs)#np.sum(inp, *args, **kwargs)
     
     if len(args) != 0 or len(kwargs) != 0:
         raise FuncDesignerException('oofun for sum(x, *args,**kwargs) is not implemented yet')
