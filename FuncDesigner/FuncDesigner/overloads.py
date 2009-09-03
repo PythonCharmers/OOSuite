@@ -123,17 +123,13 @@ def sum(inp, *args, **kwargs):
                 r0 += elem # so it doesn't work for different sizes
                 continue
             j += 1
+            INP.append(elem)
+
+            # TODO: check it
             if elem.is_oovar:
-                # TODO: check it
                 d.append(lambda *args: np.ones(len(args[j])))
-                INP.append(elem)
             else:
-                
-                #!!!!!!!!!!!!!!! TODO: FIX IT!!!!!!!!!!!!
-                return np.sum(inp, *args, **kwargs)
-                
-                d.append(elem.D)
-                INP.append(elem.input)
+                d.append(lambda *args: np.ones(len(args[j])))
         
         # TODO:  check for fixed inputs
         f = lambda *args: r0 + np.sum(args)
