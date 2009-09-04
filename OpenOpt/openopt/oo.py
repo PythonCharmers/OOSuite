@@ -359,7 +359,7 @@ def NSP(*args, **kwargs):
     """
     Non-Smooth Problem constructor
     Same usage as NLP (see help(NLP) and /examples/nsp_*.py), but default values of contol, xtol, ftol, diffInt may differ
-    Also, some solvers (like UkrOpt ralg) will take NS into account and behave differently.
+    Also, default finite-differences derivatives approximation stencil is 2 instead of 1 for NLP
     Solvers available for now:
         ralg - all constraints, medium-scale (nVars = 1...1000), can handle user-provided gradient/subgradient
         ShorEllipsoid (unconstrained for now) - small-scale, nVars=1...10, requires r0: ||x0-x*||<=r0
