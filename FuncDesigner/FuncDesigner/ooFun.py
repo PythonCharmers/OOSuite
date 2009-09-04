@@ -450,7 +450,11 @@ class oofun:
             involvePrevData = False
         else:
             involvePrevData = True
-        r = self._D(x, Vars, fixedVars, involvePrevData = involvePrevData)
+        assert type(Vars) != ndarray
+        assert type(fixedVars) != ndarray
+        _Vars = Vars if type(Vars) not in (list, tuple) else set(Vars)
+        _fixedVars = fixedVars if type(fixedVars) not in (list, tuple) else set(fixedVars)
+        r = self._D(x, _Vars, _fixedVars, involvePrevData = involvePrevData)
         if isinstance(Vars, oofun):
             if Vars.is_oovar:
                 return Vars(r)
