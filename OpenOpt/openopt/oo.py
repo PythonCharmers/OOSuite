@@ -264,6 +264,11 @@ def NLP(*args, **kwargs):
     goal = {'minimum'} | 'min' | 'maximum' | 'max' - minimize or maximize objective function
     diffInt = {1e-7} : finite-difference gradient aproximation step, scalar or vector of length nVars
     scale = {None} : scale factor, see /examples/badlyScaled.py for more details
+    stencil = {1}|2: finite-differences derivatives approximation stencil, 
+    used by most of solvers (except scipy_cobyla) when no user-supplied for 
+    objfun / nonline constraints derivatives are provided
+        1: (f(x+dx)-f(x))/dx (faster but less precize)
+        2: (f(x+dx)-f(x-dx))/(2*dx) (slower but more exact)
     check.df, check.dc, check.dh: if set to True, OpenOpt will check user-supplied gradients.
     args (or args.f, args.c, args.h) - additional arguments to objFunc and non-linear constraints,
         see /examples/userArgs.py for more details.
