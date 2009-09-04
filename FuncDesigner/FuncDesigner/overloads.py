@@ -102,6 +102,7 @@ def dot(inp1, inp2):
     r.is_linear = is_linear
     return r
 
+
 def sum(inp, *args, **kwargs):
     #return np.sum(inp, *args, **kwargs)
 #    from time import time
@@ -120,17 +121,11 @@ def sum(inp, *args, **kwargs):
         for elem in inp: # TODO: mb use reduce() or something like that
             if not isinstance(elem, oofun): 
                 #r0 = r0 + elem # += is inappropriate because sizes may differ
-                r0 += elem # so it doesn't work for different sizes
+                r0 += np.asfarray(elem) # so it doesn't work for different sizes
                 continue
             j += 1
             INP.append(elem)
 
-            # TODO: check it
-            if elem.is_oovar:
-                d.append(lambda *args: np.ones(len(args[j])))
-            else:
-                d.append(lambda *args: np.ones(len(args[j])))
-        
         # TODO:  check for fixed inputs
         f = lambda *args: r0 + np.sum(args)
 #        def f(*args):
@@ -138,7 +133,26 @@ def sum(inp, *args, **kwargs):
 #            return np.sum(args)
         
         #!!!!!!!!!!!!!!!!!! TODO: check INP for complex cases (not list of oovars)
-        r = oofun(f, d=tuple(d), input=INP) 
+        r = oofun(f, input=INP) 
+        def _D(point, *args, **kwargs):
+            r, keys = {}, set()
+            for elem in INP:
+                if elem.is_oovar:
+                    if elem.name in r.keys():
+                        r[elem.name] += 1.0
+                    else:
+                        # TODO: check it for oovars with size > 1
+                        r[elem.name] = np.ones(len(point[elem]))
+                else:
+                    tmp = elem._D(point, *args, **kwargs)
+                    for key, val in tmp.items():
+                        if key in keys:
+                            r[key] += val
+                        else:
+                            r[key] = val
+                            keys.add(key)
+            return r
+        r._D = _D
         return r
     else: 
         assert isinstance(inp, oofun)
