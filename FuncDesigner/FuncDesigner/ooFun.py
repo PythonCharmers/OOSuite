@@ -514,6 +514,7 @@ class oofun:
         derivativeSelf = self._getDerivativeSelf(x, Vars, fixedVars)
         #print 'derivativeSelf:', derivativeSelf
         r = Derivative()
+        Keys = set()
         ac = -1
         for i, inp in enumerate(self.input):
             if not isinstance(inp, oofun): continue
@@ -533,13 +534,14 @@ class oofun:
 
                 #Key = inp
                 Key  = inp.name
-                if Key in r.keys():
+                if Key in Keys:
                     if tmp.size <= r[Key].size: 
                         r[Key] += tmp
                     else:
                         r[Key] = r[Key] + tmp
                 else:
                     r[Key] = tmp
+                    Keys.add(Key)
             else:
                 ac += 1
                 elem_d = inp._D(x, Vars, fixedVars, involvePrevData = involvePrevData)
@@ -557,13 +559,14 @@ class oofun:
                     #print 'rr:', rr
 
                     if min(rr.shape) == 1: rr = rr.flatten()
-                    if key in r.keys():
+                    if key in Keys:
                         if rr.size <= r[key].size: 
                             r[key] += rr
                         else: 
                             r[key] = r[key] + rr
                     else:
                         r[key] = rr
+                        Keys.add(key)
         #self.d_val_prev = deepcopy(r) # TODO: try using copy
         dp = {}
         for key, value in r.items():
