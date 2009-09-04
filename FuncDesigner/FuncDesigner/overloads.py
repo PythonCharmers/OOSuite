@@ -131,18 +131,21 @@ def sum(inp, *args, **kwargs):
 #        def f(*args):
 #            print args
 #            return np.sum(args)
-        
+        _inp = set(INP)
         #!!!!!!!!!!!!!!!!!! TODO: check INP for complex cases (not list of oovars)
         r = oofun(f, input=INP) 
         def _D(point, Vars=None, fixedVars = None, *args, **kwargs):
             r, keys = {}, set()
-            for elem in INP:
+            for elem in _inp:
                 if elem.is_oovar:
-                    if elem.name in r.keys():
-                        r[elem.name] += 1.0
+                    sz = np.asarray(point[elem]).size
+                    tmpres = np.eye(sz) if sz > 1 else 1.0
+                    if elem.name in keys:
+                        r[elem.name] += tmpres
                     else:
                         # TODO: check it for oovars with size > 1
-                        r[elem.name] = np.ones(np.asarray(point[elem]).size)
+                        r[elem.name] = tmpres
+                        keys.add(elem.name)
                 else:
                     tmp = elem._D(point, Vars, fixedVars, *args, **kwargs)
                     for key, val in tmp.items():
