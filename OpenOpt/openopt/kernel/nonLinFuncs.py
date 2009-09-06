@@ -84,7 +84,7 @@ class nonLinFuncs:
 #        if userFunctionType == 'c':
 #            raise 'asdf'
 
-
+        # TODO: mb replace D by _D?
         if getDerivative and p.namedVariablesStyle:
             if p.optVars is None or (p.fixedVars is not None and len(p.optVars) < len(p.fixedVars)):
                 funcs2 = \

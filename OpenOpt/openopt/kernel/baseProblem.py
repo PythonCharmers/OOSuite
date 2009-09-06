@@ -274,7 +274,11 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 if c.isBBC: # is BoxBoundConstraint
                     oov = c.oofun
                     Name = oov.name
-                    if oov in self._fixedVars: continue
+                    if oov in self._fixedVars: 
+                        if self.x0 is None: self.err('your problem has fixed oovar '+ Name + ' but no start point is provided')
+                        if any(asarray(oov(self._x0)) < c.lb-self.contol) or any(asarray(oov(self._x0)) > c.ub+self.contol):
+                            self.err('fixed oovar ' + Name + ' from start point violates its box bound constraints')
+                        continue
                     inds = oovD[oov.name]
                     oov_size = inds[1]-inds[0]
                     _lb, _ub = c.lb, c.ub
