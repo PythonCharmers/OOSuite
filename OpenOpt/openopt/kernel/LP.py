@@ -24,7 +24,6 @@ class LP(MatrixProblem):
             self.f, self._f = _f, self.f
             _c = self._f(self._x0) - dot(self.f, self.x0)
             self._c = _c
-            
         else:
             self._c = 0
         if not hasattr(self, 'n'): self.n = len(self.f)
@@ -60,7 +59,7 @@ class LP(MatrixProblem):
     def lp2nlp(self, solver, **solver_params):
         if self.isConverterInvolved and self.goal in ['max', 'maximum']:
             self.err('maximization problems are not implemented lp2nlp converter')
-        ff = lambda x: dot(x, self.f)
+        ff = lambda x: dot(x, self.f)+self._c
         dff = lambda x: self.f
         if hasattr(self,'x0'): p = NLP.NLP(ff, self.x0, df=dff)
         else: p = NLP.NLP(ff, zeros(self.n), df=dff)
