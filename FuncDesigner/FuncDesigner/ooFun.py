@@ -477,7 +477,8 @@ class oofun:
             
             
     def _D(self, x, Vars=None, fixedVars = None, involvePrevData = True):
-        if self.is_oovar: raise FuncDesignerException('derivatives of oovars are not implemented yet (btw they are trivial - numpy.ones(oovar.size))')
+        if self.is_oovar: 
+            return {} if fixedVars is not None and self in fixedVars else {self.name:eye(self(x).size)}
         if self.discrete: raise FuncDesignerException('The oofun or oovar instance has been declared as discrete, no derivative is available')
         if Vars is not None and fixedVars is not None:
             raise FuncDesignerException('No more than one parameter from Vars and fixedVars is allowed')
