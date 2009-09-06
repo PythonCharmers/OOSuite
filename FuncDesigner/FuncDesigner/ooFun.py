@@ -520,6 +520,7 @@ class oofun:
         for i, inp in enumerate(self.input):
             if not isinstance(inp, oofun): continue
             if inp.discrete: continue
+            if fixedVars is not None and inp.is_oovar and inp in fixedVars: continue
             #!!!!!!!!! TODO: handle fixed cases properly!!!!!!!!!!!!
             if hasattr(inp, 'fixed') and inp.fixed: continue
 
