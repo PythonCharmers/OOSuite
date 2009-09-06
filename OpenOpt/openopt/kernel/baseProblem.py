@@ -266,9 +266,15 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 if self.probType in ['LP', 'MILP'] and not f.is_linear:
                     self.err('for LP/MILP all constraints should be linear, while ' + f.name + ' is not')
                 if not hasattr(c, 'isConstraint'): self.err('The type' + str(type(c)) + 'is inappropriate for problem constraints')
+                if self.fixedVars is None or (self.optVars is not None and len(self.optVars)<len(self.fixedVars)):
+                    D_kwargs = {'Vars':self.optVars}
+                else:
+                    D_kwargs = {'fixedVars':self.fixedVars}
+                    
                 if c.isBBC: # is BoxBoundConstraint
                     oov = c.oofun
                     Name = oov.name
+                    if oov in self._fixedVars: continue
                     inds = oovD[oov.name]
                     oov_size = inds[1]-inds[0]
                     _lb, _ub = c.lb, c.ub
@@ -290,19 +296,19 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                             UB[Name] = min((val, UB[Name]))
                 elif c.lb == 0 and c.ub == 0:
                     if f.is_linear:
-                        Aeq.append(self._pointDerivative2array(f._D(Z)))      
+                        Aeq.append(self._pointDerivative2array(f._D(Z, **D_kwargs)))      
                         beq.append(-f(Z))
                     elif self.h is None: self.h = [c.oofun]
                     else: self.h.append(c.oofun)
                 elif c.ub == 0:
                     if f.is_linear:
-                        A.append(self._pointDerivative2array(f._D(Z)))                       
+                        A.append(self._pointDerivative2array(f._D(Z, **D_kwargs)))                       
                         b.append(-f(Z))
                     elif self.c is None: self.c = [c.oofun]
                     else: self.c.append(c.oofun)
                 elif c.lb == 0:
                     if f.is_linear:
-                        A.append(-self._pointDerivative2array(f._D(Z)))                       
+                        A.append(-self._pointDerivative2array(f._D(Z, **D_kwargs)))                       
                         b.append(f(Z))                        
                     elif self.c is None: self.c = [- c.oofun]
                     else: self.c.append(- c.oofun)

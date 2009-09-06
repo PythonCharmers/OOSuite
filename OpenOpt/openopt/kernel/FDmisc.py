@@ -39,6 +39,9 @@ def setStartVectorAndTranslators(p):
         p.optVars = optVars
     else:
         optVars = startPoint.keys()
+    
+    p._fixedVars = set(fixedVars) if fixedVars is not None else set()
+    p._optVars = set(optVars) if optVars is not None else set()
         
     # point should be FuncDesigner point that currently is Python dict        
     #point2vector = lambda point: atleast_1d(hstack([asfarray(point[oov]) for oov in optVars]))
