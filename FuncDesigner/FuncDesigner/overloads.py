@@ -1,7 +1,6 @@
 from ooFun import oofun
 import numpy as np
 from misc import FuncDesignerException
-import integrate 
 
 #class unary_oofun_overload:
 #    def __init__(self, *args, **kwargs):

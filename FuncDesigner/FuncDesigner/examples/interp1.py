@@ -1,0 +1,32 @@
+"""
+Example of using scipy.interpolate.UnivariateSpline 
+this one has been wrapped by a routine from FuncDesigner
+and yielded the oofun interpolate.scipy_UnivariateSpline with exactly same args/kwargs
+see http://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.UnivariateSpline.html
+for whole list of possible parameters
+"""
+
+from FuncDesigner import *
+a, b, c = oovars('a', 'b', 'c') 
+point1 = {a:1, b: 0, c:[1, 2, 3]}
+
+mySpline = interpolate.scipy_UnivariateSpline([1, 2, 3, 4], [1.001, 4, 9, 16.01])
+
+f = mySpline(a)
+
+print(f(point1))
+print(f.D(point1))
+
+f2 = a + sin(b) + c[0] + arctan(1.5*f)
+F = mySpline(a + f2 + 2*b + (c**2).sum())
+
+print(F(point1))
+print(F.D(point1))
+
+"""
+Expected output:
+ [ 1.001]
+{a: array([ 2.0015])}
+[ 329.61795391]
+{a: array([ 108.51234474]), b: array([ 111.39024934]), c: array([ 111.39024934,  148.52033245,  222.78049868])}
+"""

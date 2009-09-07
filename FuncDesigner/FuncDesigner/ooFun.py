@@ -619,7 +619,7 @@ class oofun:
                         derivativeSelf.append(tmp)
             else:
                 tmp = atleast_2d(self.d(*Input))
-                
+                #print 'name:', self.name,'tmp:', tmp, 'input:', self.input
                 # TODO: check for output shape[1]. For now outputTotalLength sometimes is undefined
 #                assert tmp.shape[1] == self.inputOOVarTotalLength, \
 #                'incorrect user-supplied derivative shape[0] for oofun %s, %d expected, %d obtained' \
@@ -631,8 +631,6 @@ class oofun:
                 ac = 0
                 for i, inp in enumerate(Input):
                     TMP = tmp[ac:ac+inp.size]
-                    #TMP = tmp[:, ac:ac+inp.size]
-                    #print 'TMP:', TMP
                     ac += inp.size
                     if self.input[i].discrete: continue
                     #!!!!!!!!! TODO: handle fixed cases properly!!!!!!!!!!!!
@@ -666,31 +664,6 @@ class oofun:
 
     def D2(self, x):
         raise FuncDesignerException('2nd derivatives for obj-funcs are not implemented yet')
-#        if not self.initialized:
-#            self.nFuncs = r.size
-#            self.initialized = True
-#        return r
-
-#    def _recursivePrepare(self, p):
-#        if self.isAlreadyPrepared: return
-#        self.fixed = True
-#        if self.input is None: p.err('got oofun w/o connection to oovar (empty input instead). Use x0 or connect oovars.')
-#        if not type(self.input) in (list, tuple):
-#            self.input = [self.input]
-#        # p.oovars is set
-#
-#        for inp in self.input:
-#            if inp.is_oovar:
-#                if not inp.initialized: inp.__initialize__(p)
-#                if not inp.fixed: p.oovars.add(inp)
-#            elif isinstance(inp, oofun):
-#                #inp.usedIn.add(self)
-#                inp._recursivePrepare(p) # recursive
-#            else: p.err('incorrect input for oofun instance')
-#            if inp.fixed == False: self.fixed = False
-#            
-#        if not self.fixed: p.oofuns.add(self)
-#        self.isAlreadyPrepared = True
 
     def check_d1(self, point):
         if self.d is None:
@@ -722,92 +695,6 @@ class oofun:
             check_d1(lambda *args: self.fun(*args), ds[j], input, \
                  func_name=self.name, diffInt=self.diffInt, pointVal = val, args=self.args, \
                  stencil = max((2, self.stencil)), maxViolation=self.maxViolation, varForCheck = i)
-
-
-
-
-#def formGeneralLinearConstraints(p):
-#    #return
-#    # TODO: modify it when box-bound constraints for each oofun will be implemented
-#
-#    assert (p.b is None or len(p.b) == 0) and (p.beq is None or len(p.beq) == 0)
-#    
-#    A, Aeq, b, beq = [], [], [], []
-#    
-#    for case in ('c',  'h'):
-#        if getattr(p, case) in (None, [], ()): continue
-#        elif isinstance(getattr(p, case),oofun):
-#            setattr(p, case, [getattr(p, case)])
-#        assert type(getattr(p, case)) in [list, tuple, set]
-#        constraints = set(getattr(p, case))
-#        passToLinear = set()
-#        for elem in constraints:
-#            #TODO: HANDLE oosum and mb other oofuns here
-#            if isinstance(elem, oolin) and not elem.fixed and all([el.is_oovar for el in elem.input]):
-#                passToLinear.add(elem)
-#        
-#        for elem in passToLinear:
-#            constraints.remove(elem)
-#            z = zeros((elem.mult.shape[0], p.n))
-#            oovarInd = vstack([oov.dep for oov in elem.input]).ravel()
-#            z[:, oovarInd] = elem.mult
-#            if case == 'c':
-#                A += [z]
-#                if elem.add.size == elem.mult.shape[0]:
-#                    b += [-elem.add]
-#                else:
-#                    assert len(elem.add) == 1 # single number
-#                    b += [-elem.add] * elem.mult.shape[0]
-#            elif case == 'h':
-#                Aeq += [z]
-#                if elem.add.size == elem.mult.shape[0]:
-#                    beq += [-elem.add]
-#                else:
-#                    assert len(elem.add) == 1 # single number
-#                    beq += [-elem.add] * elem.mult.shape[0]
-#            #pass
-#        setattr(p, case,  list(constraints))
-#            
-#    if len(b) > 0: p.A, p.b = vstack(A), vstack(b)
-#    if len(beq) > 0: p.Aeq, p.beq = vstack(Aeq), vstack(beq)
-
-
-   
-#def construct_x_from_ooVars(p):
-#    p.oovars = set()
-#    p.oofuns = set()
-#    for FuncType in ['f', 'c', 'h']:
-#        Funcs = getattr(p, FuncType)
-#        if Funcs is None: continue
-#        if isinstance(Funcs, oofun):
-#            Funcs._recursivePrepare(p)
-#        else:
-#            if type(Funcs) not in [tuple, list]:
-#                p.err('when x0 is absent, oofuns (with oovars) are expected')
-#            for fun in Funcs:
-#                if not isinstance(fun, oofun):
-#                    p.err('when x0 is absent, oofuns (with oovars) are expected')
-#                fun._recursivePrepare(p)
-#    assert len(p.oovars) > 0
-#    n = 0
-#    for fn in ['x0', 'lb', 'ub', 'A', 'Aeq', 'b', 'beq']:
-#        if not hasattr(p, fn): continue
-#        val = getattr(p, fn)
-#        if val is not None and any(isfinite(val)):
-#            p.err('while using oovars providing x0, lb, ub, A, Aeq for whole prob is forbidden, use for each oovar instead')
-#
-#    x0, lb, ub = [], [], []
-#
-#    for var in p.oovars:
-#        var.dep = range(n, n+var.size)
-#        n += var.size
-#        x0 += list(atleast_1d(asarray(var.v0)))
-#        lb += list(atleast_1d(asarray(var.lb)))
-#        ub += list(atleast_1d(asarray(var.ub)))
-#    p.n = n
-#    p.x0 = x0
-#    p.lb = lb
-#    p.ub = ub
 
 class BaseFDConstraint(oofun):
     isConstraint = True
