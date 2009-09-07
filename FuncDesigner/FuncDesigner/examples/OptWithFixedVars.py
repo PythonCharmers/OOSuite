@@ -13,7 +13,7 @@ fixedVars = b
 # or fixedVars = [b] / c / [b,c] / [a,c] etc
 p = NLP(objective, startPoint, fixedVars = fixedVars, constraints =constraints)
 
-r = p.solve('ralg', storeIterPoints=1)
+r = p.solve('ralg')
 print r.xf
 
 # Alternatively, you can set optVars instead of fixedVars: 
