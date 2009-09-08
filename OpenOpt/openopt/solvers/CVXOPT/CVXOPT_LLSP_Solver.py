@@ -11,7 +11,7 @@ def CVXOPT_LLSP_Solver(p, solverName):
         
         
         #f = copy(p.f).reshape(-1,1)
-        H = 
+        #H = 
         
         sol = cvxopt_solvers.qp(Matrix(p.H), Matrix(p.f), Matrix(p.A), Matrix(p.b), Matrix(p.Aeq), Matrix(p.beq), solverName)
         
