@@ -12,14 +12,24 @@ for i in xrange(N):
 print f(point) # prints 40899980.
 
 from openopt import LP
+# define prob
 p = LP(f, point)
+
+# add some box-bound constraints
 aLBs = [a[i]>-10 for i in xrange(N)]
 bLBs = [b[i]>-10 for i in xrange(N)]
 aUBs = [a[i]<15 for i in xrange(N)]
 bUBs = [b[i]<15 for i in xrange(N)]
 p.constraints = aLBs + bLBs + aUBs + bUBs
+
+# add some general linear constraints
 p.constraints.append(a[4] + b[15] + a[20].size - f.size>-9) # array size, here a[20].size = f.size = 1
 # or p.constraints += [a[4] + b[15] + a[20].size - f.size>-9]
+for i in xrange(N):
+    p.constraints.append(2 * some_lin_funcs[i] + a[i] < i / 2.0 + some_lin_funcs[N-i-1] + 1.5*b[i])
+# or p.constraints += [2 * some_lin_funcs[i] + a[i] < i / 2.0 + some_lin_funcs[N-i-1] + 1.5*b[i] for i in xrange(N]
+
+# solve
 r = p.solve('glpk')
 print('opt a[15]=%f'%r.xf[a[15]]) 
 # opt a[15]=-10.000000
