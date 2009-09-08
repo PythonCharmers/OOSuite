@@ -22,7 +22,7 @@ def test(complexity=0, **kwargs):
     hp = 2
     h1 = lambda x: (x[-1]-13)**hp
     h2 = lambda x: (x[-2]-17)**hp
-    h = [h1, h2]
+    h = lambda x:[h1(x), h2(x)]
 
     # dh(x)/dx: non-lin eq constraints gradients (optional):
     def dh(x):

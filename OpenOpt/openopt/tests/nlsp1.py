@@ -1,9 +1,9 @@
 from openopt import NLSP
-from numpy import asfarray, zeros, cos, sin
+from numpy import asfarray, zeros, cos, sin, inf
 
 def test(complexity=0, **kwargs):
 
-    f = (lambda x: x[0]**3+x[1]**3-9, lambda x: x[0]-0.5*x[1], lambda x: cos(x[2])+x[0]-1.5)
+    f = lambda x: (x[0]**3+x[1]**3-9, x[0]-0.5*x[1], cos(x[2])+x[0]-1.5)
 
     #optional: gradient
     def df(x):
@@ -23,8 +23,8 @@ def test(complexity=0, **kwargs):
 
     p = NLSP(f, x0, df = df, maxFunEvals = 1e5, iprint = -1, ftol = 1e-6, contol=1e-35)
 
-    p.lb[2] = 150
-    p.ub[2] = 158
+    p.lb = [-inf, -inf, 150]
+    p.ub = [inf, inf, 158]
 
     # you could try also comment/uncomment nonlinear constraints:
     p.c = lambda x: (x[2] - 150.8)**2-1.5
@@ -38,4 +38,5 @@ def test(complexity=0, **kwargs):
 
 if __name__ == '__main__':
     isPassed, r, p = test()
+    
     #assert r.istop > 0

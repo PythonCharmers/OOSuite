@@ -1,5 +1,5 @@
 from numpy import log
-from openopt import NLP, oofun
+from openopt import NLP
 x0 = [4, 5, 6]
 #h = lambda x: log(1+abs(4+x[1]))
 #f = lambda x: log(1+abs(x[0]))
