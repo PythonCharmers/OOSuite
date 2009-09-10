@@ -147,50 +147,14 @@ class nonLinFuncs:
                 X = [x[i] for i in xrange(nXvectors)]
             else:
                 X = [((x[i],) + Args) for i in xrange(nXvectors)]
-            r = vstack([map(fun, X) for fun in Funcs])
+            r = hstack([map(fun, X) for fun in Funcs]).reshape(1, -1)
         elif not getDerivative:
             r = hstack([fun(*(X, )+Args) for fun in Funcs])
             if not ignorePrev and ind is None:
                 p.prevVal[userFunctionType]['key'] = copy(x_0)
                 p.prevVal[userFunctionType]['val'] = r.copy()                
-#            if not doInplaceCut:
-#                r = hstack([fun(*(X, )+Args) for fun in Funcs])
-#            else:
-#                assert len(Funcs) == 1
-#                tmp = ravel(Funcs[0](*(X, )+Args))
-#                if not ignorePrev: 
-#                    p.prevVal[userFunctionType]['key'] = copy(x_0)
-#                    p.prevVal[userFunctionType]['val'] = tmp.copy()
-#                r = tmp[ind]
         elif getDerivative and p.namedVariablesStyle:
-#            if userFunctionType == 'h':
-#                raise 0
-            #print '1111111', userFunctionType, ind, len(Funcs)
-            
             r = vstack([fun(X) for fun in Funcs])
-
-#            import traceback
-#            traceback.print_stack()
-
-            #assert r.size < 11
-            #print 'asdf','Funcs:', Funcs
-            #print 'r:', r
-            #r = vstack([p._pointDerivative2array(fun(X)) for fun in Funcs])
-            
-#            if ind is None:
-#                r = vstack([p._pointDerivative2array(fun.D(X)) for fun in Funcs])
-#            elif doInplaceCut:  
-#                assert len(Funcs) == 1
-#                r = p._pointDerivative2array(Funcs[0].D(X))[ind]
-#            elif extractInd is not None:  
-#                #r = vstack([p._pointDerivative2array(FUNC.D(X))  ])
-#                r = p._pointDerivative2array(Funcs[0].D(X))[extractInd]
-#            elif len(Funcs) == 1 and ind is not None:
-#                assert p.functype[userFunctionType] == 'some funcs R^nvars -> R'
-#                r = p._pointDerivative2array(Funcs[0].D(X))
-#            else:
-#                p.err('error in nonlinfuncs.py, inform developers')
-                
         else:
             if getDerivative:
                 r = zeros((nFuncsToObtain, p.n))
@@ -210,35 +174,24 @@ class nonLinFuncs:
                     #TODO: ADD COUNTER OF THE CASE
                     if index == 0: p.prevVal[userFunctionType]['key'] = copy(x_0)
                     p.prevVal[userFunctionType]['val'][agregate_counter:agregate_counter+v.size] = v.copy()                
-                #if extractInd is not None:  v = v[extractInd]
-                #if doInplaceCut: v = v[ind]
                 r[agregate_counter:agregate_counter+v.size,0] = v
-
 
                 """                                                 geting derivatives                                                 """
                 if getDerivative:
-#                    if extractInd is not None: 
-#                        func = lambda x: ravel(fun(*((x,) + Args)))[extractInd]
-#                    elif doInplaceCut:
-#                        func = lambda x: ravel(fun(*((x,) + Args)))[ind]
-#                    else:
-#                        func = lambda x: fun(*((x,) + Args))
-
                     func = lambda x: fun(*((x,) + Args))
-                    
                     d1 = get_d1(func, x, pointVal = None, diffInt = finiteDiffNumbers, stencil=p.JacobianApproximationStencil)
                     r[agregate_counter:agregate_counter+d1.size] = d1
                     
                 agregate_counter += atleast_1d(asarray(v)).shape[0]
 
-        if userFunctionType == 'f' and p.isObjFunValueASingleNumber: r = r.sum(0)
+        if userFunctionType == 'f' and p.isObjFunValueASingleNumber and r.size > 1: 
+            r = r.sum(0)
 
-        if nXvectors == 1  and  not getDerivative: r = r.flatten()
+        if nXvectors == 1 and not getDerivative: r = r.flatten()
 
         if p.invertObjFunc and userFunctionType=='f':
             r = -r
 
-        #if (ind is None or funcs_num==1) and not ignorePrev and nXvectors == 1: p.prevVal[userFunctionType]['key'] = copy(x_0)
         if ind is None:
             p.nEvals[userFunctionType] += nXvectors
         else:

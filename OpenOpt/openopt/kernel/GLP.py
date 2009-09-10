@@ -6,7 +6,7 @@ from setDefaultIterFuncs import MAX_NON_SUCCESS
 class GLP(NonLinProblem):
     probType = 'GLP'
     __optionalData__ = ['lb', 'ub', 'c', 'A', 'b']
-    expectedArgs = ['f']
+    expectedArgs = ['f', 'x0']
     allowedGoals = ['minimum', 'min', 'maximum', 'max']
     goal = 'minimum'
     showGoal = False
@@ -43,9 +43,9 @@ class GLP(NonLinProblem):
             self.n = len(kwargs['ub'])
         elif 'b' in kwargs.keys():
             self.n = asarray(b).size
-        
-        self.lb = -inf * ones(self.n)
-        self.ub =  inf * ones(self.n)
-        
-        assignScript(self, kwargs)
-        if 'x0' not in kwargs.keys(): self.x0 = (self.lb + self.ub) / 2.0
+        if hasattr(self, 'n'):
+            if not hasattr(self, 'lb'):
+                self.lb = -inf * ones(self.n)
+            if not hasattr(self, 'ub'):
+                self.ub =  inf * ones(self.n)
+            if 'x0' not in kwargs.keys(): self.x0 = (self.lb + self.ub) / 2.0

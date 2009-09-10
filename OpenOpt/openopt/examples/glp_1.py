@@ -7,5 +7,5 @@ p = GLP(f, lb = -ones(4),  ub = ones(4),  maxIter = 1e3,  maxFunEvals = 1e5,  ma
 #optional: graphic output
 #p.plot = 1 or p.solve(..., plot=1) or p = GLP(..., plot=1)
 
-r = p.solve('de', plot=1)
+r = p.solve('galileo', plot=1)
 x_opt,  f_opt = r.xf,  r.ff
