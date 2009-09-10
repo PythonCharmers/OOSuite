@@ -1,3 +1,8 @@
+"""
+The test is related to obsolete OpenOpt version and doesn't work for now
+It was used to write an article related to numerical optimization.
+"""
+
 from numpy import *
 from openopt import *
 #from pylab import *
