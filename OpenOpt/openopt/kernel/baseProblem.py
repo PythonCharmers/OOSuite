@@ -258,14 +258,19 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             oovD = self._oovarsIndDict
             LB = {}
             UB = {}
-
+            
+            if len(self._fixedVars) < len(self._optVars):
+                isFixed = lambda dep: dep.issubset(self._fixedVars)
+            else:
+                isFixed = lambda dep: dep.isdisjoint(self._optVars)
+            
             for c in self.constraints:
                 f = c.oofun
                 dep = f._getDep()
                 if dep is None: # hence it's oovar
                     assert f.is_oovar
                     dep = set([f])
-                if dep.issubset(self._fixedVars):
+                if isFixed(dep):
                     # TODO: get rid of self.contol, use separate contols for each constraint
                     if not c(self._x0, self.contol):
                         s = """'constraint "%s" with all-fixed optimization variables it depends on is infeasible in start point, 
