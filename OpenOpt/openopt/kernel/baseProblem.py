@@ -249,8 +249,6 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             self.namedVariablesStyle = True
             setStartVectorAndTranslators(self)
             lb, ub = array([-inf] * self.n), array([inf] * self.n)
-            
-#            formGeneralLinearConstraints(self)            
 
             # TODO: get rid of start c, h = None, use [] instead
             A, b, Aeq, beq = [], [], [], []
@@ -263,6 +261,18 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
 
             for c in self.constraints:
                 f = c.oofun
+                dep = f._getDep()
+                if dep is None: # hence it's oovar
+                    assert f.is_oovar
+                    dep = set([f])
+                if dep.issubset(self._fixedVars):
+                    # TODO: get rid of self.contol, use separate contols for each constraint
+                    if not c(self._x0, self.contol):
+                        s = """'constraint "%s" with all-fixed optimization variables it depends on is infeasible in start point, 
+                        hence the problem is infeasible, maybe you should change start point'""" % c.name
+                        self.err(s)
+                    # TODO: check doesn't constraint value exeed self.contol
+                    continue
                 if self.probType in ['LP', 'MILP'] and not f.is_linear:
                     self.err('for LP/MILP all constraints should be linear, while ' + f.name + ' is not')
                 if not hasattr(c, 'isConstraint'): self.err('The type' + str(type(c)) + 'is inappropriate for problem constraints')
@@ -276,8 +286,6 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     Name = oov.name
                     if oov in self._fixedVars: 
                         if self.x0 is None: self.err('your problem has fixed oovar '+ Name + ' but no start point is provided')
-                        if any(asarray(oov(self._x0)) < c.lb-self.contol) or any(asarray(oov(self._x0)) > c.ub+self.contol):
-                            self.err('fixed oovar ' + Name + ' from start point violates its box bound constraints')
                         continue
                     inds = oovD[oov.name]
                     oov_size = inds[1]-inds[0]
