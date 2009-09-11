@@ -698,16 +698,30 @@ class oofun:
 
 class BaseFDConstraint(oofun):
     isConstraint = True
+    contol = 1e-6
+    _unnamedConstraintNumber = 1
     def __init__(self, oofun_Involved, *args, **kwargs):
         #oofun.__init__(self, lambda x: oofun_Involved(x), input = oofun_Involved)
         if len(args) != 0:
             raise FuncDesignerException('No args are allowed for FuncDesigner constraint constructor, only some kwargs')
         self.oofun = oofun_Involved
+        if 'contol' in kwargs.keys():
+            self.contol = kwargs['contol']
+        self.name = 'unnamed_ooconstraint_' + str(BaseFDConstraint._unnamedConstraintNumber)
+        BaseFDConstraint._unnamedConstraintNumber += 1
 
 class SmoothFDConstraint(BaseFDConstraint):
     isBBC = False
-    def __call__(self, point):
-        raise FuncDesignerException('direct constraints call is not implemented')
+    def __call__(self, point, contol=None):
+        if contol is None: contol = self.contol
+        val = self.oofun(point)
+        if any(atleast_1d(self.lb-val)>contol):
+            return False
+        elif any(atleast_1d(val-self.ub)>contol):
+            return False
+        return True
+        
+        #raise FuncDesignerException('direct constraints call is not implemented')
 #        val = self.oofun(point) 
 #        isFiniteLB = isfinite(self.lb)
 #        isFiniteUB = isfinite(self.ub)
