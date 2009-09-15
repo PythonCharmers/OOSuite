@@ -483,7 +483,9 @@ class oofun:
         if Vars is not None and fixedVars is not None:
             raise FuncDesignerException('No more than one parameter from Vars and fixedVars is allowed')
             
-        #TODO: remove cloned code
+        #TODO: 
+        # 1) remove cloned code
+        # 2) move it to upper level
         if Vars is not None:
             if type(Vars) in [list, tuple]:
                 Vars = set(Vars)
@@ -509,11 +511,10 @@ class oofun:
         
         cond_same_point = involvePrevData and hasattr(self, 'd_key_prev') and all([array_equal(x[elem], self.d_key_prev[elem.name]) for elem in dep])
         
-        if cond_same_point:# hasattr(self, 'd_key_prev') or any(self.d_key_prev != key_to_compare):
+        if cond_same_point:
             return  deepcopy(self.d_val_prev)
         
         derivativeSelf = self._getDerivativeSelf(x, Vars, fixedVars)
-        #print 'derivativeSelf:', derivativeSelf
         r = Derivative()
         Keys = set()
         ac = -1
@@ -522,7 +523,7 @@ class oofun:
             if inp.discrete: continue
             if fixedVars is not None and inp.is_oovar and inp in fixedVars: continue
             #!!!!!!!!! TODO: handle fixed cases properly!!!!!!!!!!!!
-            if hasattr(inp, 'fixed') and inp.fixed: continue
+            #if hasattr(inp, 'fixed') and inp.fixed: continue
 
             # TODO: check for unique oovar names!
             if inp.is_oovar: 
@@ -553,9 +554,13 @@ class oofun:
                         #raise 0
                     else:
                         tmp1, tmp2 = derivativeSelf[ac], elem_d[key]
-                        #print 'tmp1:', tmp1
-                        #print 'tmp2:', tmp2
-                        rr = atleast_1d(dot(tmp1, tmp2))
+#                        print 'tmp1:', tmp1
+#                        print 'tmp2:', tmp2
+                        if tmp1.ndim > 1 or tmp2.ndim > 1:
+                            rr = atleast_1d(dot(tmp1, tmp2))
+                        else:
+                            rr = atleast_1d(dot(tmp1.reshape(-1, 1), tmp2.reshape(1, -1)))
+                        #print 'rr:', rr
                         #raise 0
                         #print 'rr:', rr
                     #print 'rr:', rr
@@ -605,7 +610,10 @@ class oofun:
                     #!!!!!!!!! TODO: handle fixed cases properly!!!!!!!!!!!!
                     #if hasattr(inp, 'fixed') and inp.fixed: continue
                     if inp.is_oovar and ((Vars is not None and inp not in Vars) or (fixedVars is not None and inp in fixedVars)):
-                        continue                
+                        continue
+                        
+                    # TODO: implement it properly + related changes in _D()
+                    #if not inp.is_oovar and self.allAreFixed(set(inp._getDep())): continue
                     
                     if deriv is None:
                         if not DerApproximatorIsInstalled:
