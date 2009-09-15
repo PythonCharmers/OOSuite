@@ -187,7 +187,7 @@ class nonLinFuncs:
         if userFunctionType == 'f' and p.isObjFunValueASingleNumber and r.size > 1: 
             r = r.sum(0)
 
-        if nXvectors == 1 and not getDerivative: r = r.flatten()
+        if nXvectors == 1 and (not getDerivative or r.size == 1): r = r.flatten()
 
         if p.invertObjFunc and userFunctionType=='f':
             r = -r
