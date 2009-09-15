@@ -8,7 +8,7 @@ from numpy import cos, arange, ones, asarray, abs, zeros
 N = 50
 M = 5
 p = NLP(lambda x: ((x-M)**2).sum(), cos(arange(N)))
-p.lb, p.ub = -6*ones(p.n), 6*ones(p.n)
+p.lb, p.ub = -6*ones(N), 6*ones(N)
 p.lb[3] = 5.5
 p.ub[4] = 4.5
 p.c = lambda x: [2* x[0] **4-32, x[1]**2+x[2]**2 - 8]
