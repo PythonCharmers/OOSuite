@@ -1,6 +1,7 @@
 """finite-difference derivatives approximation"""
 
-from numpy import atleast_1d, isfinite, ndarray, nan, empty, where, ndarray, log10, hstack, floor, ceil, argmax, asscalar, abs, isscalar, asfarray, asarray, isnan
+from numpy import atleast_1d, atleast_2d, isfinite, ndarray, nan, empty, where, ndarray, log10, hstack, floor, ceil, \
+argmax, asscalar, abs, isscalar, asfarray, asarray, isnan
 
 class DerApproximatorException:
     def __init__(self,  msg):
@@ -134,7 +135,7 @@ def check_d1(fun, fun_d, vars, func_name='func', diffInt=1.5e-8, pointVal = None
     else:
         info_user = fun_d(*Args)    
     
-    if info_numerical.shape != info_user.shape:
+    if atleast_2d(info_numerical).shape != atleast_2d(info_user).shape:
         raise DerApproximatorException('user-supplied gradient for ' + func_name + ' has other size than the one, obtained numerically: '+ \
         str(info_numerical.shape) + ' expected, ' + str(info_user.shape) + ' obtained')
     
