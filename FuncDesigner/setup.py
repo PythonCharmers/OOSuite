@@ -15,10 +15,9 @@ MAINTAINER_EMAIL    = 'dmitrey-at-openopt-dot-org',
 URL                 = 'http://openopt.org',
 LICENSE             = 'new BSD'
 
-#from openopt.ooVersionNumber import __version__ as ooVer
-Ver = 0.15
+from FuncDesigner import __version__ as Ver
 
-DOWNLOAD_URL        = 'ftp://ftp.linux.kiev.ua/pub/projects/openopt/download/DerApproximator' + str(Ver) + '.zip'
+DOWNLOAD_URL        = 'ftp://ftp.linux.kiev.ua/pub/projects/openopt/download/FuncDesigner' + str(Ver) + '.zip'
 
 import setuptools, string, shutil
 from distutils.errors import DistutilsError
@@ -32,7 +31,7 @@ from shutil import copytree, rmtree
 
 def configuration(parent_package='',top_path=None, package_name=DISTNAME):
     if os.path.exists('MANIFEST'): os.remove('MANIFEST')
-    pkg_prefix_dir = 'oofusc'
+    pkg_prefix_dir = 'FuncDesigner'
 
     # Get the version
 
