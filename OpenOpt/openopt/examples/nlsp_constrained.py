@@ -17,7 +17,7 @@ to some additional f coords
 """
 
 from openopt import NLSP
-from numpy import asfarray, zeros, cos, sin
+from numpy import *
 
 # you can define f in several ways:
 f = lambda x: (x[0]**3+x[1]**3-9, x[0]-0.5*x[1], cos(x[2])+x[0]-1.5)
@@ -51,14 +51,14 @@ p = NLSP(f, x0, df = df, maxFunEvals = 1e5, iprint = 10, plot=1, ftol = 1e-8, co
 #plot doesn't work correctly for constrained NLSP yet
 #p.plot = 1
 
-
-p.lb[2] = 150
-p.ub[2] = 158
+#set some constraints
+p.lb, p.ub = [-inf]*3, [inf]*3
+p.lb[2], p.ub[2] = 145, 150
 
 # you could try also comment/uncomment nonlinear constraints:
-p.c = lambda x: (x[2] - 150.8)**2-1.5
+p.c = lambda x: (x[2] - 146)**2-1.5
 # optional: gradient
-p.dc = lambda x: asfarray((0, 0, 2*(x[2]-150.8)))
+p.dc = lambda x: asfarray((0, 0, 2*(x[2]-146)))
 # also you could set it via p=NLSP(f, x0, ..., c = c, dc = dc)
 
 #optional: user-supplied dc check:

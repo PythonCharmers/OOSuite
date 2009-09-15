@@ -64,7 +64,7 @@ class NLSP(NonLinProblem):
                 return False
 
         self.callback = [nlsp_callback]
-        self.kernelIterFuncs.pop(SMALL_DELTA_F)
+        if SMALL_DELTA_F in self.kernelIterFuncs.keys():self.kernelIterFuncs.pop(SMALL_DELTA_F)
         p.primalIterFcn,  p.iterfcn = self.iterfcn, nlsp_iterfcn
         p.goal = 'min'
         #self.fEnough = self.ftol

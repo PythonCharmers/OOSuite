@@ -241,7 +241,8 @@ class nonLinFuncs:
                 
             funcs = getattr(p.user, derivativesType)
             
-            if ind is None: Funcs = funcs
+            if ind is None or (nFuncs == 1 and p.functype[funcType] == 'single func'): 
+                Funcs = funcs
             elif ind is not None and p.functype[funcType] == 'some funcs R^nvars -> R':
                 Funcs = [funcs[i] for i in ind]
             else:

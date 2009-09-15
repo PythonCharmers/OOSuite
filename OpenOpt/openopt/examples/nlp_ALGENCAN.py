@@ -110,9 +110,9 @@ p.iprint = 0
 p.df_iter = 4
 p.maxTime = 4000
 p.debug=1
-r = p.solve('algencan')
+#r = p.solve('algencan')
 
-#r = p.solve('ralg')
+r = p.solve('ralg')
 #r = p.solve('lincher')
 
 """
