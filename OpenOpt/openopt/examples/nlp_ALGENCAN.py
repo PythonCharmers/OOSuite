@@ -16,8 +16,8 @@ p.df = lambda x: 4*(x-1)**3
 # x4 <= -2.5
 # 3.5 <= x5 <= 4.5
 # all other: lb = -5, ub = +15
-p.lb = -5*ones(p.n)
-p.ub = 15*ones(p.n)
+p.lb = -5*ones(N)
+p.ub = 15*ones(N)
 p.ub[4] = -2.5
 p.lb[5], p.ub[5] = 3.5, 4.5
 
@@ -27,11 +27,11 @@ p.lb[5], p.ub[5] = 3.5, 4.5
 # x0+...+xN>= 1.1*N
 # x9 + x19 <= 1.5
 # x10+x11 >= 1.6
-p.A = zeros((3, p.n))
+p.A = zeros((3, N))
 p.A[0, 9] = 1
 p.A[0, 19] = 1
 p.A[1, 10:12] = -1
-p.A[2] = -ones(p.n)
+p.A[2] = -ones(N)
 p.b = [1.5, -1.6, -1.1*N]
 # you can use any types of A, Aeq, b, beq:
 # Python list, numpy.array, numpy.matrix, even Python touple
@@ -40,7 +40,7 @@ p.b = [1.5, -1.6, -1.1*N]
 
 # Aeq x = beq
 # x20+x21 = 2.5
-p.Aeq = zeros(p.n)
+p.Aeq = zeros(N)
 p.Aeq[20:22] = 1
 p.beq = 2.5
 
@@ -62,7 +62,7 @@ p.c = lambda x: [2* x[0] **4-1./32, x[1]**2+x[2]**2 - 1./8, x[25]**2 + x[35]**2 
 
 # dc(x)/dx: non-lin ineq constraints gradients (optional):
 def DC(x):
-    r = zeros((3, p.n))
+    r = zeros((3, N))
     r[0,0] = 2 * 4 * x[0]**3
     r[1,1] = 2 * x[1]
     r[1,2] = 2 * x[2]
@@ -74,9 +74,8 @@ p.dc = DC
 # non-linear equality constraints h(x) = 0
 # 1e6*(x[last]-1)**4 = 0
 # (x[last-1]-1.5)**4 = 0
-h1 = lambda x: 1e4*(x[-1]-1)**4
-h2 = lambda x: (x[-2]-1.5)**4
-p.h = [h1, h2]
+
+p.h = lambda x: (1e4*(x[-1]-1)**4, (x[-2]-1.5)**4)
 # dh(x)/dx: non-lin eq constraints gradients (optional):
 def DH(x):
     r = zeros((2, p.n))
@@ -110,7 +109,7 @@ p.plot = 0
 p.iprint = 0
 p.df_iter = 4
 p.maxTime = 4000
-
+p.debug=1
 r = p.solve('algencan')
 
 #r = p.solve('ralg')
