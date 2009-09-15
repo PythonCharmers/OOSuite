@@ -131,7 +131,7 @@ p.user.mylist = []
 #p.debug=1
 solver = 'algencan'
 solver = 'ralg'
-solver = 'scipy_cobyla'
+#solver = 'scipy_cobyla'
 #solver = 'ipopt'
 #solver = 'scipy_slsqp'
 
