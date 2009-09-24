@@ -30,5 +30,5 @@ r = p.solve('glpk') # glpk is name of the solver involved, see OOF doc for more 
 # Decode solution
 s = r.xf
 print('Solution: x = %s   y = %f  z = %f' % (str(s[x]), s[y], s[z]))
-# Solution: x = [-5.5 -4.5]   y = -17.000000  z = 1.000000
+# Solution: x = [-5.  -4.5]   y = -17.000000  z = 0.000000
 
