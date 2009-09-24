@@ -20,6 +20,7 @@ class LP(MatrixProblem):
         MatrixProblem.__prepare__(self)
         if self.x0 is None: self.x0 = zeros(self.n)
         if hasattr(self.f, 'is_oovar'): # hence is oofun or oovar
+            #raise 0
             _f = self._point2vector(self.f.D(self._x0))
             self.f, self._f = _f, self.f
             _c = self._f(self._x0) - dot(self.f, self.x0)
@@ -50,7 +51,7 @@ class LP(MatrixProblem):
                     setattr(self, fn, -getattr(self, fn))
         if hasattr(self, '_f'):
             self.f = self._f
-            self.xf = self._vector2point(self.xf)
+            
 
             
     def objFunc(self, x):

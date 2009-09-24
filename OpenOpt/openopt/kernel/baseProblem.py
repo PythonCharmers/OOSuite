@@ -177,7 +177,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         assignScript(self, kwargs)
 
     def __finalize__(self):
-        pass
+        if self.namedVariablesStyle:
+            self.xf = self._vector2point(self.xf)
 
     def objFunc(self, x):
         return self.f(x) # is overdetermined in LP, QP, LLSP etc classes
@@ -242,11 +243,23 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                         setattr(newProb, key, getattr(self.user, key))
                     else:
                         setattr(newProb, key, None)
-
+                        
+    FuncDesignerSign = 'f'
+    isFDmodel = lambda self: hasattr(self, self.FuncDesignerSign) and \
+    ((type(getattr(self, self.FuncDesignerSign)) in [list, tuple] and 'is_oovar' in dir(getattr(self, self.FuncDesignerSign)[0])) \
+                                                                                                or 'is_oovar' in dir(getattr(self, self.FuncDesignerSign) ))
+    
     def _prepare(self):
         if self._baseProblemIsPrepared: return
-        if hasattr(self, 'f') and ((type(self.f) in [list, tuple] and 'is_oovar' in dir(self.f[0])) or 'is_oovar' in dir(self.f)):
+        if self.isFDmodel():
             self.namedVariablesStyle = True
+            
+            if self.fixedVars is None or (self.optVars is not None and len(self.optVars)<len(self.fixedVars)):
+                D_kwargs = {'Vars':self.optVars}
+            else:
+                D_kwargs = {'fixedVars':self.fixedVars}
+            self._D_kwargs = D_kwargs
+            
             setStartVectorAndTranslators(self)
             lb, ub = array([-inf] * self.n), array([inf] * self.n)
 
@@ -263,8 +276,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 areFixed = lambda dep: dep.issubset(self._fixedVars)
             else:
                 areFixed = lambda dep: dep.isdisjoint(self._optVars)
-            self.allAreFixed = areFixed
-            
+            self.theseAreFixed = areFixed
+           
             for c in self.constraints:
                 f = c.oofun
                 dep = f._getDep()
@@ -279,13 +292,9 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                         self.err(s)
                     # TODO: check doesn't constraint value exeed self.contol
                     continue
-                if self.probType in ['LP', 'MILP'] and not f.is_linear:
-                    self.err('for LP/MILP all constraints should be linear, while ' + f.name + ' is not')
+                if self.probType in ['LP', 'MILP', 'LLSP', 'LLAVP'] and not f.is_linear:
+                    self.err('for LP/MILP/LLSP/LLAVP all constraints have to be linear, while ' + f.name + ' is not')
                 if not hasattr(c, 'isConstraint'): self.err('The type' + str(type(c)) + 'is inappropriate for problem constraints')
-                if self.fixedVars is None or (self.optVars is not None and len(self.optVars)<len(self.fixedVars)):
-                    D_kwargs = {'Vars':self.optVars}
-                else:
-                    D_kwargs = {'fixedVars':self.fixedVars}
                     
                 if c.isBBC: # is BoxBoundConstraint
                     oov = c.oofun
@@ -481,6 +490,7 @@ class NonLinProblem(baseProblem, nonLinFuncs, Args):
             if type(v) != type(()): setattr(self.args, j, (v,))
 
     def __finalize__(self):
+        #BaseProblem.__finalize__(self)
         if (self.userProvided.c and any(isnan(self.c(self.xf)))) or (self.userProvided.h and any(isnan(self.h(self.xf)))):
             self.warn('some non-linear constraints are equal to NaN')
         if self.namedVariablesStyle:

@@ -1,29 +1,30 @@
 from ooMisc import assignScript
 from baseProblem import MatrixProblem
-from numpy import asfarray, ones, inf, dot, nan, zeros, any, all, isfinite, eye
+from numpy import asfarray, ones, inf, dot, nan, zeros, any, all, isfinite, eye, vstack
 from numpy.linalg import norm
 import NLP
 
 class LLSP(MatrixProblem):
     __optionalData__ = ['damp', 'X', 'c']
-    expectedArgs = ['C', 'd']
+    expectedArgs = ['C', 'd']# for FD it should be Cd and x0
     probType = 'LLSP'
     goal = 'minimum'
     allowedGoals = ['minimum', 'min']
     showGoal = False
+    FuncDesignerSign = 'C'
     
     def __init__(self, *args, **kwargs):
         MatrixProblem.__init__(self, *args, **kwargs)
-        if len(args)>1:
-            self.n = args[0].shape[1]
-        else:
-            self.n = kwargs['C'].shape[1]
-        #self.lb = -inf * ones(self.n)
-        #self.ub =  inf * ones(self.n)
         if 'damp' not in kwargs.keys(): self.damp = None
         if 'f' not in kwargs.keys(): self.f = None
-
-        if self.x0 is None: self.x0 = zeros(self.n)        
+        
+#        if len(args)>0:
+#            self.n = args[0].shape[1]
+#        else:
+#            self.n = kwargs['C'].shape[1]
+#        #self.lb = -inf * ones(self.n)
+#        #self.ub =  inf * ones(self.n)
+#        if self.x0 is None: self.x0 = zeros(self.n)        
 
 
     def objFunc(self, x):
@@ -48,7 +49,16 @@ class LLSP(MatrixProblem):
         return r
 
     def __prepare__(self):
+        if isinstance(self.d, dict): # FuncDesigner startPoint 
+            self.x0 = self.d
         MatrixProblem.__prepare__(self)
+        if self.namedVariablesStyle:
+            C, d = [], []
+            Z = self._vector2point(zeros(self.n))
+            for lin_oofun in self.C:
+                C.append(self._pointDerivative2array(lin_oofun._D(Z, **self._D_kwargs)))
+                d.append(-lin_oofun(Z))
+            self.C, self.d = vstack(C), vstack(d).flatten()
         if not self.damp is None and not any(isfinite(self.X)):
             self.X = zeros(self.n)
 
