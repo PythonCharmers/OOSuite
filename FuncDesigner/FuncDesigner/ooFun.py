@@ -261,7 +261,7 @@ class oofun:
         r = oofun(sum, input = self)
         def d(x):
             if x.ndim > 1: raise FuncDesignerException('sum(x) is not implemented yet for arrays with ndim > 1')
-            return ones(x.shape) 
+            return ones(x.size) 
         r.d, r.is_linear = d, self.is_linear
         return r
     
@@ -559,7 +559,10 @@ class oofun:
                         if tmp1.ndim > 1 or tmp2.ndim > 1:
                             rr = atleast_1d(dot(tmp1, tmp2))
                         else:
-                            rr = atleast_1d(dot(tmp1.reshape(-1, 1), tmp2.reshape(1, -1)))
+                            if self(x).size > 1:
+                                rr = atleast_1d(dot(tmp1.reshape(-1, 1), tmp2.reshape(1, -1)))
+                            else:
+                                rr = atleast_1d(dot(tmp1.flatten(), tmp2.flatten()))
                         #print 'rr:', rr
                         #raise 0
                         #print 'rr:', rr
@@ -613,7 +616,7 @@ class oofun:
                         continue
                         
                     # TODO: implement it properly + related changes in _D()
-                    #if not inp.is_oovar and self.allAreFixed(set(inp._getDep())): continue
+                    #if not inp.is_oovar and self.theseAreFixed(set(inp._getDep())): continue
                     
                     if deriv is None:
                         if not DerApproximatorIsInstalled:

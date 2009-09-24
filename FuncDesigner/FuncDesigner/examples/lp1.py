@@ -13,7 +13,7 @@ f2 = f1.sum() + 2*x + 4*y + 15
 f3 = 5*f1 + 4*f2 + 20
 
 # Define objective; sum(a) and a.sum() are same as well as for numpy arrays
-obj = x.sum() + y - 50*z + sum(f3) + 2*f2.sum() + 4064.6
+obj = sum(f1)+ x.sum()+ y - 50*z  + 2*f2.sum() + 4064.6
 
 # Start point - currently matters only size of variables
 startPoint = {x:[8, 15], y:25, z:80} # however, using numpy.arrays is more recommended than Python lists
@@ -30,4 +30,4 @@ r = p.solve('glpk') # glpk is name of solver involved, see OOF doc for more argu
 # Decode solution
 s = r.xf
 print('Solution: x = %s   y = %f  z = %f' % (str(s[x]), s[y], s[z]))
-# Solution: x = [-5. -5.]   y = -19.400000  z = 4.000000
+# Solution: x = [-4.25 -4.25]   y = -20.000000  z = 4.000000
