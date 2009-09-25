@@ -80,7 +80,7 @@ ff = lambda x, LLSPprob: LLSPprob.objFunc(x)
 def dff(x, LLSPprob):
     r = dot(LLSPprob.C.T, dot(LLSPprob.C,x)  - LLSPprob.d)
     if not LLSPprob.damp is None: r += LLSPprob.damp*(x - LLSPprob.X)
-    if all(isfinite(LLSPprob.f)) : r += LLSPprob.f
+    if LLSPprob.f is not None and all(isfinite(LLSPprob.f)) : r += LLSPprob.f
     return r
 
 def d2ff(x, LLSPprob):
