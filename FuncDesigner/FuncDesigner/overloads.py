@@ -21,7 +21,7 @@ from misc import FuncDesignerException
 #    return oofun(lambda x: np.sin(x), input = inp, d = d)
 
 def sin(inp):
-    if not isinstance(inp, oofun): return np.cos(inp)
+    if not isinstance(inp, oofun): return np.sin(inp)
     return oofun(np.sin, input = inp, d = lambda x: np.cos(x) if x.size == 1 else np.diag(np.cos(x)))
 
 def cos(inp):
