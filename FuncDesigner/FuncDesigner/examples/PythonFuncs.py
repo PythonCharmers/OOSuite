@@ -1,5 +1,5 @@
-# The example illustrates how oovars can pass through 
-# ordinary Python functions (for simple cases)
+# The example illustrates how oovars can pass through ordinary Python functions 
+# provided FuncDesigner has appropriate overloads for all functions/operators used inside those ones 
 
 from FuncDesigner import *
 a, b, c = oovars('a', 'b', 'c')
@@ -13,6 +13,8 @@ def func3(x, y, z):
     return x+2*y+5*sin(z) +func2(x, z, y) + func1(z, y)
 
 print(func3(2, 3, 4))
+
+# Note that func3, func2, func1 could be imported from another file instead of been defined here
 
 myFunc = func3(a, b, c) # now myFunc is instance of FuncDesigner class oofun
 point = {a:2, b:3, c:4} 
