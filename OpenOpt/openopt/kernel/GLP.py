@@ -1,6 +1,6 @@
 from ooMisc import assignScript
 from baseProblem import NonLinProblem
-from numpy import asarray, ones, inf, array, iterable, asarray
+from numpy import asarray, ones, inf, array, iterable
 from setDefaultIterFuncs import MAX_NON_SUCCESS 
 
 class GLP(NonLinProblem):
@@ -48,4 +48,4 @@ class GLP(NonLinProblem):
                 self.lb = -inf * ones(self.n)
             if not hasattr(self, 'ub'):
                 self.ub =  inf * ones(self.n)
-            if 'x0' not in kwargs.keys(): self.x0 = (self.lb + self.ub) / 2.0
+            if 'x0' not in kwargs.keys(): self.x0 = (asarray(self.lb) + asarray(self.ub)) / 2.0
