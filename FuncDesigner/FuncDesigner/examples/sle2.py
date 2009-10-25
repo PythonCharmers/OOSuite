@@ -21,7 +21,12 @@ f4 = c + range(4, 2*n+4) + f1 + 0.5*f2.sum() + 4*f3
 for i in xrange(4):
     f4 = 0.5*f4 + a + f1 + 1
 
-# Python list of linear equations 
+# Also, we could use matrix multiplication, eg f5 = dot(someMatrix, f4):
+rng = 1.5 + cos(range(2*n)).reshape(-1, 1) # define 2n x 1 vector
+R = dot(rng, rng.T) # create a matrix of shape 2n x 2n
+f4 = dot(R, f4) # involve matrix multiplication
+
+# Create Python list of linear equations 
 f = [a+f4+5, 2*a+b*range(10, n+10)+15, a+4*b.sum()+2*c.sum()-45]
 # alternatively, you could pass equations:
 #f = [(a+f4).eq(-5), (2*a+b).eq(-15), a.eq(-4*b.sum()-2*c.sum()+45)]
@@ -33,3 +38,8 @@ r = linSys.solve()
 A, B, C =  a(r), b(r), c(r)
 # or 
 # A, B, C =  r[a], r[b], r[c]
+# A, B, C will be numpy arrays of sizes 1,  n,  2*n
+# if failed to solve - A, B, C will contain numpy.nan(s)
+
+# you could get residuals, here it will be Python list of length 3 that is number of (vectorized) equations: 
+residuals = [f[i](r) for i in xrange(3)]
