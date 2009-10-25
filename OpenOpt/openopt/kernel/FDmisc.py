@@ -91,18 +91,29 @@ def setStartVectorAndTranslators(p):
         name, val = pointDerivarive.items()[0]
         var_inds = oovarsIndDict[name]
         funcLen = val.size / (var_inds[1] - var_inds[0])
+        
         if funcLen == 1:
             r = zeros(n)
         else:
             d1 = funcLen
             r = zeros((n, d1))
+            #r = zeros((d1, n))
         #from numpy import any, diff
         #assert not any(diff([(pointDerivarive.values()[j]).shape[1] for j in xrange(len(pointDerivarive))]))
         
         for key, val in pointDerivarive.items():
             indexes = oovarsIndDict[key]
-            r[indexes[0]:indexes[1]] = val
+            r[indexes[0]:indexes[1]] = val.T
+            
+#            if r.ndim == 1: r[indexes[0]:indexes[1]] = val
+#            elif val.ndim != 1: r[:, indexes[0]:indexes[1]] = val
+#            else: r[:, indexes[0]:indexes[1]] = val.reshape(val.size, 1)
+            
+        # TODO: remove reshape? Currently it yields a bug (FD/examples/nlp1.py doesn't work)
+
+        #return r #if r.ndim > 1 else r.reshape(1, -1)
         return r.T if r.ndim > 1 else r.reshape(1, -1)
+        
         
         
     

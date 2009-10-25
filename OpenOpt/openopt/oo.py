@@ -12,6 +12,7 @@ from kernel.MINLP import MINLP as CMINLP
 from kernel.NLSP import NLSP as CNLSP
 from kernel.NLLSP import NLLSP as CNLLSP
 from kernel.GLP import GLP as CGLP
+from kernel.SLE import SLE as CSLE
 from kernel.LLSP import LLSP as CLLSP
 from kernel.MMP import MMP as CMMP
 from kernel.LLAVP import LLAVP as CLLAVP
@@ -398,6 +399,18 @@ def NLLSP(*args, **kwargs):
         converter to NLP. Example: r = p.solve('nlp:ralg')
     """
     return CNLLSP(*args, **kwargs)
+
+
+def SLE(*args, **kwargs):
+    """
+    SLE: constructor for system of linear equations C*x = d assignment
+    
+    Examples of valid usage:
+    p = SLE(C, d, <params as kwargs>)
+    p = SLE(C=C, d=d, <params as kwargs>)
+    """
+    return CSLE(*args, **kwargs)
+
 
 def DFP(*args, **kwargs):
     """

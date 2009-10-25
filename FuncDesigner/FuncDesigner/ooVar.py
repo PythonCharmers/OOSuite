@@ -1,6 +1,6 @@
 # created by Dmitrey
 
-from numpy import nan, asarray, isfinite, empty, zeros, inf, any, array, prod, atleast_1d, asfarray
+from numpy import nan, asarray, isfinite, empty, zeros, inf, any, array, prod, atleast_1d, asfarray, isscalar
 from misc import FuncDesignerException, checkSizes
 from ooFun import oofun
 
@@ -12,6 +12,7 @@ class oovar(oofun):
     initialized = False
     is_linear = True
     _unnamedVarNumber = 1#static variable for oovar class
+    #size = None # no requirements for size
 
     def __init__(self, name=None, *args, **kwargs):
         if name is None:
@@ -22,7 +23,9 @@ class oovar(oofun):
         
         if len(args) > 0: raise FuncDesignerException('incorrect args number for oovar constructor')
 
-        if not 'skipRecursive' in kwargs.keys() or kwargs['skipRecursive'] == False:
+        if 'size' in kwargs.keys():
+            self.size = kwargs['size']
+        elif not 'skipRecursive' in kwargs.keys() or kwargs['skipRecursive'] == False:
             self.size = oofun(lambda x: asarray(x).size, input = self, is_linear = True, discrete = True, skipRecursive = True)
 
         for key in kwargs.keys():
@@ -31,6 +34,9 @@ class oovar(oofun):
 
     def __repr__(self):
         return self.name
+    
+    def requireSize(self, size):
+        self.size = size
 
     def _getFunc(self, x):
         try:
@@ -40,6 +46,10 @@ class oovar(oofun):
                 r = atleast_1d(asfarray(x[self.name]))
             except KeyError:
                 raise FuncDesignerException('for oovar ' + self.name + " the point involved doesn't contain niether name nor the oovar instance")
+        Size = asarray(r).size
+        if isscalar(self.size) and Size != self.size:
+            s = 'incorrect size for oovar %s: %d is required, %d is obtained' % (self.name, self.size, Size)
+            raise FuncDesignerException(s)
         return r
         
 #        self_in_keys = self in x.keys()
