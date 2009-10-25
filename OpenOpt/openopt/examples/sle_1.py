@@ -14,6 +14,6 @@ p = SLE(C, d)
 #r = p.solve('defaultSLEsolver'), or just
 r = p.solve()
 
-print 'f_opt:', r.ff 
-#print 'x_opt:', r.xf
+print 'max residual:', r.ff 
+#print 'solution:', r.xf
 
