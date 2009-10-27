@@ -41,5 +41,8 @@ A, B, C =  a(r), b(r), c(r)
 # A, B, C will be numpy arrays of sizes 1,  n,  2*n
 # if failed to solve - A, B, C will contain numpy.nan(s)
 
-# you could get residuals, here it will be Python list of length 3 that is number of (vectorized) equations: 
-residuals = [f[i](r) for i in xrange(3)]
+# you could get residuals
+# here it will be Python list of length 3 
+# that is number of (vectorized) equations
+# with elements of type numpy.array
+residuals = [F(r) for F in f]
