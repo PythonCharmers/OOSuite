@@ -10,7 +10,7 @@ a, b, c = oovar(), oovar(size=n), oovar(size=2*n)
 # let's construct some linear functions R^i -> R^j
 # in Python range(m, k) is [m, m+1, ..., m+k-1]
 f1 = a + sum(b*range(5, n+5)) # R^(n+1) -> R
-f2 = a + 2*b + c.sum() # R^(2n+1) -> R^(n)
+f2 = a + 2*b + c.sum() # R^(2n+1) -> R^n
 
 # you could use size of oovars
 f3 = a + a.size + 2*c.size # R^(2n+1) -> R; a.size and c.size will be resolved into 1 and 2*n
@@ -40,6 +40,9 @@ A, B, C =  a(r), b(r), c(r)
 # A, B, C =  r[a], r[b], r[c]
 # A, B, C will be numpy arrays of sizes 1,  n,  2*n
 # if failed to solve - A, B, C will contain numpy.nan(s)
+
+print('A=%f B[0]=%f C[15]=%f' % (A, B[0], C[15]))
+# for n=100 it prints A=-5.000000 B[0]=-0.500000 C[15]=639704.886148
 
 # you could get residuals
 # here it will be Python list of length 3 
