@@ -4,12 +4,15 @@ from numpy import nan, zeros, isscalar
 
 class sle:
     # System of linear equations
+    
+    _isInitialized = False
+    
     def __init__(self, equations):
         if type(equations) not in [list, tuple]:
             raise FuncDesignerException('argument of sle constructor should be Python tuple or list of equations or oofuns')
         self.equations = equations
         
-    def solve(self, *args, **kwargsForOpenOptSLEconstructor):
+    def _initialize(self, *args, **kwargsForOpenOptSLEconstructor):
         try:
             from openopt import SLE
         except:
@@ -35,8 +38,14 @@ class sle:
                     startPoint[oov] = 0
         if 'iprint' not in kwargsForOpenOptSLEconstructor.keys():
             kwargsForOpenOptSLEconstructor['iprint'] = -1
-        p = SLE(self.equations, startPoint, **kwargsForOpenOptSLEconstructor)
-        r = p.solve()
+        self.p = SLE(self.equations, startPoint, **kwargsForOpenOptSLEconstructor)
+        self.p.__prepare__()
+        self._isInitialized = True
+        
+    def solve(self, *args, **kwargsForOpenOptSLEconstructor):
+        if not self._isInitialized:
+            self._initialize(*args, **kwargsForOpenOptSLEconstructor)
+        r = self.p.solve()
         if r.istop >= 0:
             return r.xf
         else:
@@ -45,6 +54,19 @@ class sle:
                 R[key] = value * nan
             return R
             
+    def render(self):
+        if not self._isInitialized:
+            self._initialize()
+        r = renderedSLE()
+        r.A = self.p.C
+        r.b = self.p.d
+        r.decode = lambda x: self.p._vector2point(x)
+        return r
+
+class renderedSLE:
+    pass
+
+    
 #        Z = self._vector2point(zeros(self.n))
 #        for c in self.constraints:
 #            f = c.oofun
