@@ -34,7 +34,7 @@ one of common sparse matrices formats,
 save it into a file and solve it via C, Fortran etc
 (BTW f2py or Cython could be useful here)
 Current drawback: for huge sparse SLEs you should have enough memory 
-to handle dence A before casting to sparse will be performed.
+to handle dense A before casting to sparse will be performed.
 Maybe I'll fix it in future, currently for my purposes I have no deal with these situations
 """
 from numpy import linalg
