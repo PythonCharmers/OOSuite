@@ -2,6 +2,16 @@ See
 http://openopt.org/Changelog 
 for more convenient rendering
 
+
+0.25 (2009-September-15) 
+    *  Minor changes for NLP/NSP solver ralg
+    * Some bugfixes, lots of code clean up
+    * OpenOpt can optimize FuncDesigner models, for some non-linear classes it provides automatic differentiation 
+Backward incompatibilities:
+    * oovar-oofun have been moved to standalone package (FuncDesigner)
+    * For some problems with nonlinear funcs, where user-supplied derivatives are absent, you should have DerApproximator installed. 
+
+
 0.24 (2009-June-15) 
     * New class: MINLP - mixed-integer nonlinear problems
     * New class: Linear Uniform Norm Problems (LUNP)
