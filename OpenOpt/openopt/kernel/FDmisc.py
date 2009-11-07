@@ -1,6 +1,16 @@
 # Handling of FuncDesigner probs
 
-from numpy import empty, hstack, asfarray, all, atleast_1d, cumsum, asarray, zeros,  atleast_2d
+from numpy import empty, hstack, asfarray, all, atleast_1d, cumsum, asarray, zeros,  atleast_2d, ndarray
+
+try:
+    import scipy
+    scipyInstalled = True
+    SparseMatrixConstructor = lambda *args, **kwargs: scipy.sparse.lil_matrix(*args, **kwargs)
+    Hstack = scipy.sparse.hstack
+except:
+    scipyInstalled = False
+
+DenseMatrixConstructor = lambda *args, **kwargs: zeros(*args, **kwargs)
 
 def setStartVectorAndTranslators(p):
     for fn in ['lb', 'ub', 'A', 'Aeq', 'b', 'beq']:
@@ -83,38 +93,58 @@ def setStartVectorAndTranslators(p):
     oovarsIndDict = {}#dictFixed.copy()
     for i, oov in enumerate(optVars):
         oovarsIndDict[oov.name] = (oovar_indexes[i], oovar_indexes[i+1])
+        
+    def pointDerivative2array(pointDerivarive, asSparse = False): 
 
-    def pointDerivative2array(pointDerivarive): 
+        if asSparse and not scipyInstalled:
+                p.err('to handle sparse matrices you should have module scipy installed') 
+
+        # however, this check is performed in other function (before this one)
+        # and those constraints are excluded automaticvally
         if len(pointDerivarive) == 0: 
             p.err('unclear error, mb you have constraint independend on any optimization variables') 
-            
+
         name, val = pointDerivarive.items()[0]
         var_inds = oovarsIndDict[name]
-        funcLen = val.size / (var_inds[1] - var_inds[0])
+        funcLen = int(round(val.size / (var_inds[1] - var_inds[0]))) # it should be exact integer equal to val.size / (var_inds[1] - var_inds[0]))
         
-        if funcLen == 1:
-            r = zeros(n)
+        newStyle = 1
+        
+        if asSparse and newStyle:
+            derivativeVars = set(pointDerivarive.keys())
+            r2 = []
+            for i, var in enumerate(optVars):
+                if var.name in derivativeVars:
+                    indexes = oovarsIndDict[var.name]
+                    iStart, iEnd = indexes[0], indexes[1]
+                    tmp = pointDerivarive[var.name]
+                    if tmp.ndim < 2:
+                        tmp = tmp.reshape(funcLen, tmp.size / funcLen)
+                    r2.append(tmp)
+                else:
+                    r2.append(SparseMatrixConstructor((funcLen, oovar_sizes[i])))
+            r3 = Hstack(r2)
+            return r3
         else:
-            d1 = funcLen
-            r = zeros((n, d1))
-            #r = zeros((d1, n))
-        #from numpy import any, diff
-        #assert not any(diff([(pointDerivarive.values()[j]).shape[1] for j in xrange(len(pointDerivarive))]))
-        
-        for key, val in pointDerivarive.items():
-            indexes = oovarsIndDict[key]
-            r[indexes[0]:indexes[1]] = val.T
-            
-#            if r.ndim == 1: r[indexes[0]:indexes[1]] = val
-#            elif val.ndim != 1: r[:, indexes[0]:indexes[1]] = val
-#            else: r[:, indexes[0]:indexes[1]] = val.reshape(val.size, 1)
-            
-        # TODO: remove reshape? Currently it yields a bug (FD/examples/nlp1.py doesn't work)
+            if funcLen == 1:
+                r = DenseMatrixConstructor(n)
+            else:
+                if asSparse:
+                    r = SparseMatrixConstructor((n, funcLen))
+                else:
+                    r = DenseMatrixConstructor((n, funcLen))            
+            for key, val in pointDerivarive.items():
+                indexes = oovarsIndDict[key]
+                if funcLen == 1 or not asSparse:
+                    r[indexes[0]:indexes[1]] = val.T
+                else:
+                    r[indexes[0]:indexes[1], :] = val.T
 
-        #return r #if r.ndim > 1 else r.reshape(1, -1)
-        return r.T if r.ndim > 1 else r.reshape(1, -1)
-        
-        
+            if asSparse and funcLen == 1: 
+                return SparseMatrixConstructor(r)
+            else: 
+                return r.T if r.ndim > 1 else r.reshape(1, -1)
+            
         
     
     p.oovars = optVars # Where it is used?

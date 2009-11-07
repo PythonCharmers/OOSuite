@@ -50,7 +50,7 @@ class sle:
             return r.xf
         else:
             R = {}
-            for key, value in startPoint.items(): 
+            for key, value in self.p.x0.items(): 
                 R[key] = value * nan
             return R
             

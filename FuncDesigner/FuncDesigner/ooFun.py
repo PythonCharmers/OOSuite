@@ -551,11 +551,8 @@ class oofun:
                 for key in elem_d.keys():
                     if derivativeSelf[ac].size == 1 or elem_d[key].size == 1:
                         rr = derivativeSelf[ac] * elem_d[key]
-                        #raise 0
                     else:
                         tmp1, tmp2 = derivativeSelf[ac], elem_d[key]
-#                        print 'tmp1:', tmp1
-#                        print 'tmp2:', tmp2
                         if tmp1.ndim > 1 or tmp2.ndim > 1:
                             rr = atleast_1d(dot(tmp1, tmp2))
                         else:
@@ -563,10 +560,6 @@ class oofun:
                                 rr = atleast_1d(dot(tmp1.reshape(-1, 1), tmp2.reshape(1, -1)))
                             else:
                                 rr = atleast_1d(dot(tmp1.flatten(), tmp2.flatten()))
-                        #print 'rr:', rr
-                        #raise 0
-                        #print 'rr:', rr
-                    #print 'rr:', rr
 
                     if min(rr.shape) == 1: rr = rr.flatten()
                     if key in Keys:

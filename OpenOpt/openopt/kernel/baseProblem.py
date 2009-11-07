@@ -137,8 +137,6 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         self.info = ooinfo
         self.hint = oohint
         
-        # TODO: implement it
-        # persistent warning, is called no more than 1 times per session
         self.pWarn = ooPWarn
         
         if hasattr(self, 'expectedArgs'): 

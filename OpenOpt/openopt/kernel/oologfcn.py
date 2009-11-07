@@ -9,20 +9,23 @@ class OpenOptException:
 #    assert cond, msg
 
 def oowarn(msg):
-    print 'OO Warning! ', msg
+    print('OpenOpt Warning: %s' % msg)
 
 def ooerr(msg):
-    print 'OO Error:' + msg
+    print('OpenOpt Error: %s' % msg)
     raise OpenOptException(msg)
 
+pwSet = set()
 def ooPWarn(msg):
-    print 'OO Warning! ', msg
-
+    if msg in pwSet: return
+    pwSet.add(msg)
+    oowarn(msg)
+    
 def ooinfo(msg):
-    print 'OO info: ', msg
+    print('OpenOpt info: %s' % msg)
 
 def oohint(msg):
-    print 'OO hint: ', msg
+    print('OpenOpt hint: %s' % msg)
 
 def oodebugmsg(p,  msg):
-    if p.debug: print 'OpenOpt debug msg: ', msg
+    if p.debug: print('OpenOpt debug msg: %s' % msg)
