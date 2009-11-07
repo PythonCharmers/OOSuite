@@ -5,9 +5,9 @@ Under development yet
 from FuncDesigner import *
 from time import time
 t = time()
-#def test():
+
 n = 1000
-# create some variables
+
 a, b, c = oovar(), oovar(size=n), oovar(size=2*n)
 
 f1 = a + sum(b*range(5, n+5))
