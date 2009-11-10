@@ -13,6 +13,15 @@ except:
     DerApproximatorIsInstalled = False
 
 
+try:
+    import scipy
+    scipyInstalled = True
+except:
+    scipyInstalled = False
+    
+pwSet = set()
+
+
 class oofun:
     #TODO:
     #is_oovarSlice = False
@@ -40,6 +49,11 @@ class oofun:
     maxViolation = 1e-2
     _unnamedFunNumber = 1
 
+
+    def pWarn(msg):
+        if msg in pwSet: return
+        pwSet.add(msg)
+        print('FuncDesigner warning: ' + msg)
 
     """                                         Class constructor                                   """
 
@@ -552,16 +566,35 @@ class oofun:
                     if derivativeSelf[ac].size == 1 or elem_d[key].size == 1:
                         rr = derivativeSelf[ac] * elem_d[key]
                     else:
-                        tmp1, tmp2 = derivativeSelf[ac], elem_d[key]
-                        if tmp1.ndim > 1 or tmp2.ndim > 1:
-                            rr = atleast_1d(dot(tmp1, tmp2))
-                        else:
+                        t1, t2 = derivativeSelf[ac], elem_d[key]
+                        cond_2 = t1.ndim > 1 or t2.ndim > 1
+                        if not cond_2:
                             if self(x).size > 1:
-                                rr = atleast_1d(dot(tmp1.reshape(-1, 1), tmp2.reshape(1, -1)))
+                                t1 = t1.reshape(-1, 1)
+                                t2 = t2.reshape(1, -1)
                             else:
-                                rr = atleast_1d(dot(tmp1.flatten(), tmp2.flatten()))
+                                t1 = t1.flatten()
+                                t2 = t2.flatten()
+                        
+                        # TODO: handle 2**15 & 0.25 as parameters
+                        if t1.size > 2**15 and isinstance(t1, ndarray) and t1.flatten().nonzero()[0].size < 0.25*t1.size:
+                            if not scipyInstalled:
+                                self.pWarn('Probably scipy installation could speed up running the code involved')
+                                rr = atleast_1d(dot(t1, t2))
+                            else:
+                                t1 = scipy.sparse.csr_matrix(t1)
+                                t2 = scipy.sparse.csc_matrix(t2)
+                                if t2.shape[0] != t1.shape[1]:
+                                    if t2.shape[1] == t1.shape[1]:
+                                        t2 = t2.T
+                                    else:
+                                        raise FuncDesignerException('incorrect shape in FuncDesigner function _D(), inform developers about the bug')
+                                rr = t1._mul_sparse_matrix(t2)
+                                rr = rr.todense().A # TODO: remove todense(), use sparse in whole FD engine
+                        else:
+                            rr = atleast_1d(dot(t1, t2))
 
-                    if min(rr.shape) == 1: rr = rr.flatten()
+                    if min(rr.shape) == 1: rr = rr.flatten() # TODO: check it and mb remove
                     if key in Keys:
                         if rr.size <= r[key].size: 
                             r[key] += rr
