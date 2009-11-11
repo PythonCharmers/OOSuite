@@ -6,6 +6,7 @@ class sle:
     # System of linear equations
     
     _isInitialized = False
+    matrixSLEsolver = 'autoselect'
     
     def __init__(self, equations):
         if type(equations) not in [list, tuple]:
@@ -19,10 +20,19 @@ class sle:
             s = "Currently to solve SLEs via FuncDesigner you should have OpenOpt installed; maybe in future the dependence will be ceased"
             raise FuncDesignerException(s)
             
-        assert len(args) <= 1, 'incorrect lse definition, no more than 1 arg expected'
-        if len(args)>0:
-            startPoint = args[0]
-        else:
+        if len(args) > 2:  FuncDesignerException('incorrect lse definition, no more than 2 args are expected')
+        
+        hasStartPoint = False
+        for arg in args:
+            if isinstance(arg, str):
+                self.matrixSLEsolver = arg
+            elif isinstance(arg, dict):
+                startPoint = args[0]
+                hasStartPoint = True
+            else:
+                raise FuncDesignerException('incorrect arg type, should be string (solver name) or dict (start point)')
+            
+        if not hasStartPoint:
             involvedOOVars = set()
             for Elem in self.equations:
                 elem = Elem.oofun if Elem.isConstraint else Elem
@@ -45,7 +55,10 @@ class sle:
     def solve(self, *args, **kwargsForOpenOptSLEconstructor):
         if not self._isInitialized:
             self._initialize(*args, **kwargsForOpenOptSLEconstructor)
-        r = self.p.solve()
+        if len(args) > 2:
+            raise FuncDesignerException('incorrect number of args, should be at most 2 (startPoint and/or solver name, order: any)')
+        
+        r = self.p.solve(matrixSLEsolver=self.matrixSLEsolver)
         if r.istop >= 0:
             return r.xf
         else:

@@ -116,7 +116,6 @@ def setStartVectorAndTranslators(p):
             for i, var in enumerate(optVars):
                 if var.name in derivativeVars:
                     indexes = oovarsIndDict[var.name]
-                    iStart, iEnd = indexes[0], indexes[1]
                     tmp = pointDerivarive[var.name]
                     if tmp.ndim < 2:
                         tmp = tmp.reshape(funcLen, tmp.size / funcLen)
