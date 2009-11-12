@@ -21,8 +21,13 @@ f = [2*a + 3*b - 2*(c+[1, 2]) * [3, 4] + 5, # R^nVars - > R^2
 # Assign SLE
 linSys = sle(f)
 
-r = linSys.render()
-# Rendered matrices for Ax=b are r.A (numpy.array of shape 4 x 4), r.b (numpy.array of length 4)
+# Rendered matrices for Ax=b are linSys.A (numpy.array of shape 4 x 4) and linSys.b (numpy.array of length 4)
+A, b = linSys.A, linSys.b
+# However, for large sparse problems they can have other type than numpy.ndarray, 
+# e.g. scipy.sparse lil_matrix or coo_matrix (provided you have scipy installed);
+# elseware sometimes they can be mere out of your computer RAM.
+# You could cast it to ndarray for example via myArr = myMatrix.todense().A
+# also, you can use parameter asSparse = True/False (default is 'autoselect')
 
 """
 Now let's solve it, for this example I use numpy.linalg.solve 
@@ -38,12 +43,13 @@ to handle dense A before casting to sparse will be performed.
 Maybe I'll fix it in future, currently for my purposes I have no deal with these situations
 """
 from numpy import linalg
-xf = linalg.solve(r.A, r.b)
+xf = linalg.solve(A, b)
 
 # Decode solution
-sol = r.decode(xf)
+sol = linSys.decode(xf)
 print(c(sol)[0])
 print(sol)
 # Expected output:
 # 10.2
 # {b: array([-7.72]), c: array([ 10.2,   6.4]), a: array([ 42.68])}
+

@@ -8,20 +8,42 @@ class sle:
     _isInitialized = False
     matrixSLEsolver = 'autoselect'
     
-    def __init__(self, equations):
+    def __init__(self, equations, *args, **kwargsForOpenOptSLEconstructor):
+        if len(args) > 0:  FuncDesignerException('incorrect lse definition, too many args are obtained')
+        
         if type(equations) not in [list, tuple]:
             raise FuncDesignerException('argument of sle constructor should be Python tuple or list of equations or oofuns')
+            
         self.equations = equations
-        
-    def _initialize(self, *args, **kwargsForOpenOptSLEconstructor):
+
         try:
             from openopt import SLE
         except:
             s = "Currently to solve SLEs via FuncDesigner you should have OpenOpt installed; maybe in future the dependence will be ceased"
             raise FuncDesignerException(s)
-            
-        if len(args) > 2:  FuncDesignerException('incorrect lse definition, no more than 2 args are expected')
         
+        self.decodeArgs(*args)
+        if 'iprint' not in kwargsForOpenOptSLEconstructor.keys():
+            kwargsForOpenOptSLEconstructor['iprint'] = -1
+        self.p = SLE(self.equations, self.startPoint, **kwargsForOpenOptSLEconstructor)
+        self.p.__prepare__()
+        self.A, self.b = self.p.C, self.p.d
+        self.decode = lambda x: self.p._vector2point(x)
+        
+    def solve(self, *args): # mb for future implementation - add  **kwargsForOpenOptSLEconstructor here as well
+        if len(args) > 2:
+            raise FuncDesignerException('incorrect number of args, should be at most 2 (startPoint and/or solver name, order: any)')
+        self.decodeArgs(*args)
+        r = self.p.solve(matrixSLEsolver=self.matrixSLEsolver)
+        if r.istop >= 0:
+            return r.xf
+        else:
+            R = {}
+            for key, value in self.p.x0.items(): 
+                R[key] = value * nan
+            return R
+            
+    def decodeArgs(self, *args):
         hasStartPoint = False
         for arg in args:
             if isinstance(arg, str):
@@ -32,7 +54,8 @@ class sle:
             else:
                 raise FuncDesignerException('incorrect arg type, should be string (solver name) or dict (start point)')
             
-        if not hasStartPoint:
+        if not hasStartPoint:  
+            if hasattr(self, 'startPoint'): return # established from __init__
             involvedOOVars = set()
             for Elem in self.equations:
                 elem = Elem.oofun if Elem.isConstraint else Elem
@@ -46,38 +69,18 @@ class sle:
                     startPoint[oov] = zeros(oov.size)
                 else:
                     startPoint[oov] = 0
-        if 'iprint' not in kwargsForOpenOptSLEconstructor.keys():
-            kwargsForOpenOptSLEconstructor['iprint'] = -1
-        self.p = SLE(self.equations, startPoint, **kwargsForOpenOptSLEconstructor)
-        self.p.__prepare__()
-        self._isInitialized = True
+        self.startPoint = startPoint
         
-    def solve(self, *args, **kwargsForOpenOptSLEconstructor):
-        if not self._isInitialized:
-            self._initialize(*args, **kwargsForOpenOptSLEconstructor)
-        if len(args) > 2:
-            raise FuncDesignerException('incorrect number of args, should be at most 2 (startPoint and/or solver name, order: any)')
-        
-        r = self.p.solve(matrixSLEsolver=self.matrixSLEsolver)
-        if r.istop >= 0:
-            return r.xf
-        else:
-            R = {}
-            for key, value in self.p.x0.items(): 
-                R[key] = value * nan
-            return R
-            
-    def render(self):
-        if not self._isInitialized:
-            self._initialize()
-        r = renderedSLE()
-        r.A = self.p.C
-        r.b = self.p.d
-        r.decode = lambda x: self.p._vector2point(x)
-        return r
+#    def render(self):
+#        if not self._isInitialized:
+#            self._initialize()
+#        r = renderedSLE()
+#        r.A = self.p.C
+#        r.b = self.p.d
+#        r.decode = lambda x: self.p._vector2point(x)
+#        return r
 
-class renderedSLE:
-    pass
+
 
     
 #        Z = self._vector2point(zeros(self.n))
