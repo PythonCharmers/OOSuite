@@ -1,6 +1,5 @@
 """
-Sparse SLE example
-Under development yet
+FuncDesigner sparse SLE example
 """
 from FuncDesigner import *
 from time import time
