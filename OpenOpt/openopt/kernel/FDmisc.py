@@ -118,7 +118,7 @@ def setStartVectorAndTranslators(p):
                     indexes = oovarsIndDict[var.name]
                     tmp = pointDerivarive[var.name]
                     if tmp.ndim < 2:
-                        tmp = tmp.reshape(funcLen, tmp.size / funcLen)
+                        tmp = tmp.reshape(funcLen, tmp.size // funcLen)
                     r2.append(tmp)
                 else:
                     r2.append(SparseMatrixConstructor((funcLen, oovar_sizes[i])))

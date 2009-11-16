@@ -577,7 +577,8 @@ class oofun:
                                 t2 = t2.flatten()
                         
                         # TODO: handle 2**15 & 0.25 as parameters
-                        if t1.size > 2**15 and isinstance(t1, ndarray) and t1.flatten().nonzero()[0].size < 0.25*t1.size:
+                        if (t1.size > 2**15 and isinstance(t1, ndarray) and t1.flatten().nonzero()[0].size < 0.25*t1.size) or \
+                        (t2.size > 2**15 and isinstance(t2, ndarray) and t2.flatten().nonzero()[0].size < 0.25*t2.size):
                             if not scipyInstalled:
                                 self.pWarn('Probably scipy installation could speed up running the code involved')
                                 rr = atleast_1d(dot(t1, t2))

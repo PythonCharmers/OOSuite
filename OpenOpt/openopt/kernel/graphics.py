@@ -3,13 +3,6 @@ from numpy import hstack, ravel, isnan
 from openopt import __version__ as ooversion
 ooversion = str(ooversion)
 
-problemsWithPylab = False
-try:
-    import pylab
-except:
-    problemsWithPylab = True
-
-
 from setDefaultIterFuncs import stopcase
 
 from numpy import asfarray, log10, array,  isfinite, array, asarray
@@ -54,8 +47,10 @@ class Graphics:
 
 
     def oodraw(self, p): #note that self is same as p.graphics
-        if problemsWithPylab:
-            p.warn('to use OpenOpt graphics you need pylab (Python module) installed. Turning graphics off...')
+        try:
+            import pylab
+        except:
+            p.pWarn('to use OpenOpt graphics you need pylab (Python module) installed. Turning graphics off...')
             p.plot = 0
             return
 
