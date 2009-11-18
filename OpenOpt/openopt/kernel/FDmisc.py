@@ -1,6 +1,6 @@
 # Handling of FuncDesigner probs
 
-from numpy import empty, hstack, asfarray, all, atleast_1d, cumsum, asarray, zeros,  atleast_2d, ndarray
+from numpy import empty, hstack, asfarray, all, atleast_1d, cumsum, asarray, zeros,  atleast_2d, ndarray, prod
 
 try:
     import scipy
@@ -102,11 +102,12 @@ def setStartVectorAndTranslators(p):
         # however, this check is performed in other function (before this one)
         # and those constraints are excluded automaticvally
         if len(pointDerivarive) == 0: 
-            p.err('unclear error, mb you have constraint independend on any optimization variables') 
+            p.err('unclear error, maybe you have constraint independend on any optimization variables') 
 
         name, val = pointDerivarive.items()[0]
         var_inds = oovarsIndDict[name]
-        funcLen = int(round(val.size / (var_inds[1] - var_inds[0]))) # it should be exact integer equal to val.size / (var_inds[1] - var_inds[0]))
+        # val.size works in other way (as nnz) for scipy.sparse matrices
+        funcLen = int(round(prod(val.shape) / (var_inds[1] - var_inds[0]))) 
         
         newStyle = 1
         
@@ -118,7 +119,7 @@ def setStartVectorAndTranslators(p):
                     indexes = oovarsIndDict[var.name]
                     tmp = pointDerivarive[var.name]
                     if tmp.ndim < 2:
-                        tmp = tmp.reshape(funcLen, tmp.size // funcLen)
+                        tmp = tmp.reshape(funcLen, prod(tmp.shape) // funcLen)
                     r2.append(tmp)
                 else:
                     r2.append(SparseMatrixConstructor((funcLen, oovar_sizes[i])))

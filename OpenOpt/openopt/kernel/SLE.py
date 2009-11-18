@@ -34,15 +34,21 @@ class SLE(MatrixProblem):
             return norm(dot(self.C, x) - self.d, inf)
         else:
             # TODO: omit code clone in FD ooFun.py, function _D
+            #print '1'
             t1 = self.C_as_csr
+            #print '2'
             t2 = scipy.sparse.csc_matrix(x)
+            #print '3'
             if t2.shape[0] != t1.shape[1]:
                 if t2.shape[1] == t1.shape[1]:
                     t2 = t2.T
                 else:
                     raise FuncDesignerException('incorrect shape in FuncDesigner function _D(), inform developers about the bug')
+            #print '4'
             rr =  t1._mul_sparse_matrix(t2)            
+            #print '5'
             r = norm(rr.todense().A - self.d, inf)
+            #print '6'
             return r
 
     def __prepare__(self):

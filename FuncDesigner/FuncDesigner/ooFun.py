@@ -3,7 +3,7 @@
 from numpy import inf, asfarray, copy, all, any, empty, atleast_2d, zeros, dot, asarray, atleast_1d, empty, ones, ndarray, \
 where, isfinite, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum, prod, nonzero
 from numpy.linalg import norm
-from misc import FuncDesignerException
+from misc import FuncDesignerException, Diag, Eye, scipyInstalled, pWarn, scipyAbsentMsg
 from copy import deepcopy
 
 try:
@@ -12,15 +12,10 @@ try:
 except:
     DerApproximatorIsInstalled = False
 
-
 try:
     import scipy
-    scipyInstalled = True
 except:
-    scipyInstalled = False
-    
-pwSet = set()
-
+    pass
 
 class oofun:
     #TODO:
@@ -50,10 +45,8 @@ class oofun:
     _unnamedFunNumber = 1
 
 
-    def pWarn(msg):
-        if msg in pwSet: return
-        pwSet.add(msg)
-        print('FuncDesigner warning: ' + msg)
+    pWarn = pWarn
+
 
     """                                         Class constructor                                   """
 
@@ -93,13 +86,12 @@ class oofun:
         # TODO: check for correct sizes during f, not only f.d 
     
         def aux_d(x, y):
-            #print 'x, y:', x, y
             if x.size == 1:
                 return ones(y.size)
             elif y.size == 1:
-                return eye(x.size)
+                return Eye(x.size)
             elif x.size == y.size:
-                return eye(y.size)
+                return Eye(y.size)
             else:
                 raise FuncDesignerException('for oofun summation a+b should be size(a)=size(b) or size(a)=1 or size(b)=1')        
 
@@ -123,7 +115,7 @@ class oofun:
     # overload "-a"
     def __neg__(self): 
         return oofun(lambda a: -a, input = self, \
-                     d = lambda a: -1.0 if a.size == 1 else -eye(a.size), \
+                     d = lambda a: -1.0 if a.size == 1 else -Eye(a.size), \
                      is_linear = True if self.is_linear else False)
         
     # overload "a-b"
@@ -148,18 +140,18 @@ class oofun:
                 r = 1.0 / y
                 if x.size != 1:
                     if y.size == 1: r = r.tolist() * x.size
-                    r = diag(r)
+                    r = Diag(r)
                 return r                
             def aux_dy(x, y):
                 r = -x / y**2
                 if y.size != 1:
                     assert x.size == y.size or x.size == 1, 'incorrect size for oofun devision'
-                    r = diag(r)
+                    r = Diag(r)
                 return r
             r.d = (aux_dx, aux_dy)
         else:
             r = oofun(lambda a: a/asarray(other), input = self)# TODO: involve sparsity if possible!
-            r.d = lambda x: 1.0/asarray(other) if x.size == 1 else diag(ones(x.size)/asarray(other))
+            r.d = lambda x: 1.0/asarray(other) if x.size == 1 else Diag(ones(x.size)/asarray(other))
         if self.is_linear and not isinstance(other, oofun):
             r.is_linear = True
         return r
@@ -171,7 +163,7 @@ class oofun:
             other = asarray(other)
             r = oofun(lambda x: other/x, input = self)# TODO: involve sparsity if possible!
             def d(x):
-                if other.size > 1 or x.size > 1: return diag(- other / x**2)
+                if other.size > 1 or x.size > 1: return Diag(- other / x**2)
                 else: return -other / x**2
             r.d = d
         return r
@@ -184,9 +176,9 @@ class oofun:
             elif y.size == 1:
                 r = empty(x.size)
                 r.fill(y)
-                return diag(r)
+                return Diag(r)
             elif x.size == y.size:
-                return diag(y)
+                return Diag(y)
             else:
                 raise FuncDesignerException('for oofun multiplication a*b should be size(a)=size(b) or size(a)=1 or size(b)=1')                    
         
@@ -211,9 +203,9 @@ class oofun:
 
     def __pow__(self, other):
         
-        d_x = lambda x, y: y * x ** (y - 1) if x.size == 1 else diag(y * x ** (y - 1))
+        d_x = lambda x, y: y * x ** (y - 1) if x.size == 1 else Diag(y * x ** (y - 1))
 
-        d_y = lambda x, y: x ** y * log(x) if y.size == 1 else diag(x ** y * log(x))
+        d_y = lambda x, y: x ** y * log(x) if y.size == 1 else Diag(x ** y * log(x))
             
         if not isinstance(other, oofun):
             f = lambda x: x ** asarray(other)
@@ -230,7 +222,7 @@ class oofun:
         assert not isinstance(other, oofun)# if failed - check __pow__implementation
             
         f = lambda x: asarray(other) ** x
-        d = lambda x: asarray(other) **x * log(asarray(other)) if x.size == 1 else diag(asarray(other) **x * log(asarray(other)))
+        d = lambda x: asarray(other) **x * log(asarray(other)) if x.size == 1 else Diag(asarray(other) **x * log(asarray(other)))
         r = oofun(f, d=d, input = self)
         return r
 
@@ -492,7 +484,7 @@ class oofun:
             
     def _D(self, x, Vars=None, fixedVars = None, involvePrevData = True, asSparse = 'autoselect'):
         if self.is_oovar: 
-            return {} if fixedVars is not None and self in fixedVars else {self.name:eye(self(x).size)}
+            return {} if fixedVars is not None and self in fixedVars else {self.name:Eye(self(x).size) if asSparse is not False else eye(self(x).size)}
         if self.discrete: raise FuncDesignerException('The oofun or oovar instance has been declared as discrete, no derivative is available')
         if Vars is not None and fixedVars is not None:
             raise FuncDesignerException('No more than one parameter from Vars and fixedVars is allowed')
@@ -569,7 +561,7 @@ class oofun:
                     if derivativeSelf[ac].size == 1 or elem_d[key].size == 1:
                         rr = derivativeSelf[ac] * elem_d[key]
                     else:
-                        t1, t2 = derivativeSelf[ac], elem_d[key]
+                        t1, t2 = self._considerSparse(derivativeSelf[ac], elem_d[key])
                         cond_2 = t1.ndim > 1 or t2.ndim > 1
                         if not cond_2:
                             if self(x).size > 1:
@@ -579,9 +571,9 @@ class oofun:
                                 t1 = t1.flatten()
                                 t2 = t2.flatten()
                         
-                        if self.involveSparse(t1, t2):
+                        if not (isinstance(t1,  ndarray) and isinstance(t2,  ndarray)):
                             if not scipyInstalled:
-                                self.pWarn('Probably scipy installation could speed up running the code involved')
+                                self.pWarn(scipyAbsentMsg)
                                 rr = atleast_1d(dot(t1, t2))
                             else:
                                 t1 = scipy.sparse.csr_matrix(t1)
@@ -593,9 +585,14 @@ class oofun:
                                         raise FuncDesignerException('incorrect shape in FuncDesigner function _D(), inform developers about the bug')
                                 rr = t1._mul_sparse_matrix(t2)
                                 if asSparse is False:
-                                    rr = rr.todense().A # TODO: remove todense(), use sparse in whole FD engine
+                                    rr = rr.todense().A 
                         else:
                             rr = atleast_1d(dot(t1, t2))
+
+
+#                    if min(rr.shape) == 1 and isinstance(rr, ndarray): 
+#                        rr = rr.flatten() # TODO: check it and mb remove
+# TODO: implement it instead of the code below
 
                     if min(rr.shape) == 1: 
                         if not isinstance(rr, ndarray): 
@@ -604,13 +601,19 @@ class oofun:
                     if key in Keys:
                         if isinstance(r[key], ndarray) and not isinstance(rr, ndarray): # i.e. rr is sparse matrix
                             rr = rr.todense().A # I guess r[key] will hardly be all-zeros
-                        if rr.size <= r[key].size: 
-                            r[key] += rr
+                        elif not isinstance(r[key], ndarray) and isinstance(rr, ndarray): # i.e. r[key] is sparse matrix
+                            r[key] = r[key].todense().A
+                        if rr.size == r[key].size and isinstance(rr, ndarray): 
+                            try:
+                                r[key] += rr
+                            except:
+                                raise 0
                         else: 
                             r[key] = r[key] + rr
                     else:
                         r[key] = rr
                         Keys.add(key)
+                    assert r[key].dtype != object
 
         dp = {}
         for key, value in r.items():
@@ -624,8 +627,12 @@ class oofun:
         return r
 
     # TODO: handle 2**15 & 0.25 as parameters
-    involveSparse = lambda self, t1, t2:  (t1.size > 2**15 and isinstance(t1, ndarray) and t1.flatten().nonzero()[0].size < 0.25*t1.size) or \
-            (t2.size > 2**15 and isinstance(t2, ndarray) and t2.flatten().nonzero()[0].size < 0.25*t2.size)
+    def _considerSparse(self, t1, t2):  
+        if (isinstance(t1, ndarray) and t1.size > 2**15 and t1.nonzero()[0].size < 0.25*t1.size) or \
+        (isinstance(t2, ndarray) and t2.size > 2**15 and t2.nonzero()[0].size < 0.25*t2.size):
+            t1 = scipy.sparse.csr_matrix(t1)
+            t2 = scipy.sparse.csc_matrix(t2)
+        return t1,  t2
 
     def _getDerivativeSelf(self, x, Vars,  fixedVars):
         Input = self._getInput(x)
@@ -658,12 +665,19 @@ class oofun:
                         derivativeSelf.append(get_d1(self.fun, Input, diffInt=self.diffInt, stencil = self.stencil, args=self.args, varForDifferentiation = i, pointVal = self._getFunc(x)))
                     else:
                         # !!!!!!!!!!!!!! TODO: add check for user-supplied derivative shape
-                        tmp = atleast_1d(deriv(*Input))
+                        tmp = deriv(*Input)
+                        if isscalar(tmp) or type(tmp) in (ndarray, tuple, list): # i.e. not a scipy.sparse matrix
+                            tmp = atleast_1d(tmp)
                         if min(tmp.shape) == 1:
                             tmp = atleast_1d(tmp.flatten())
                         derivativeSelf.append(tmp)
             else:
-                tmp = atleast_2d(self.d(*Input))
+                tmp = self.d(*Input)
+                if isscalar(tmp) or type(tmp) in (ndarray, tuple, list): # i.e. not a scipy.sparse matrix
+                    tmp = atleast_2d(tmp)
+                    
+                #tmp = atleast_2d(self.d(*Input))
+                
                 #print 'name:', self.name,'tmp:', tmp, 'input:', self.input
                 # TODO: check for output shape[1]. For now outputTotalLength sometimes is undefined
 #                assert tmp.shape[1] == self.inputOOVarTotalLength, \
@@ -674,8 +688,13 @@ class oofun:
                 #% (self.name,  self.inputTotalLength,  self.outputTotalLength,  tmp.shape[0], tmp.shape[1])
                 
                 ac = 0
+                if not isinstance(tmp, ndarray):
+                    csr_tmp = tmp.tocsr()
                 for i, inp in enumerate(Input):
-                    TMP = tmp[ac:ac+inp.size]
+                    if isinstance(tmp, ndarray):
+                        TMP = tmp[ac:ac+inp.size]
+                    else: # scipy.sparse matrix
+                        TMP = csr_tmp[ac:ac+inp.size]
                     ac += inp.size
                     if self.input[i].discrete: continue
                     #!!!!!!!!! TODO: handle fixed cases properly!!!!!!!!!!!!
@@ -684,7 +703,7 @@ class oofun:
                         continue                                    
                     
                     #if Input[i].size == 1: TMP = TMP.flatten()
-                    if min(TMP.shape) == 1: TMP = TMP.flatten()
+                    if isinstance(TMP, ndarray) and min(TMP.shape) == 1: TMP = TMP.flatten()
                     derivativeSelf.append(TMP)
                     
             # TODO: is it required?
@@ -705,6 +724,7 @@ class oofun:
             assert len(self.input) == 1, 'error in package engine, please inform developers'
             derivativeSelf = [derivativeSelf]
         #print 'derivativeSelf:', derivativeSelf
+        #assert derivativeSelf[0].dtype == float
         return derivativeSelf
 
     def D2(self, x):
