@@ -452,7 +452,7 @@ class oofun:
 
 
     """                                              derivatives                                           """
-    def D(self, x, Vars=None, fixedVars = None, resultKeysType = 'vars'):
+    def D(self, x, Vars=None, fixedVars = None, resultKeysType = 'vars', asSparse = False):
         # resultKeysType doesn't matter for the case isinstance(Vars, oovar)
         if Vars is not None and fixedVars is not None:
             raise FuncDesignerException('No more than one argument from "Vars" and "fixedVars" is allowed for the function')
@@ -468,7 +468,7 @@ class oofun:
         assert type(fixedVars) != ndarray
         _Vars = Vars if type(Vars) not in (list, tuple) else set(Vars)
         _fixedVars = fixedVars if type(fixedVars) not in (list, tuple) else set(fixedVars)
-        r = self._D(x, _Vars, _fixedVars, involvePrevData = involvePrevData)
+        r = self._D(x, _Vars, _fixedVars, involvePrevData = involvePrevData, asSparse = asSparse)
         if isinstance(Vars, oofun):
             if Vars.is_oovar:
                 return Vars(r)
@@ -490,7 +490,7 @@ class oofun:
                 raise FuncDesignerException('Incorrect argument resultKeysType, should be "vars" or "names"')
             
             
-    def _D(self, x, Vars=None, fixedVars = None, involvePrevData = True):
+    def _D(self, x, Vars=None, fixedVars = None, involvePrevData = True, asSparse = 'autoselect'):
         if self.is_oovar: 
             return {} if fixedVars is not None and self in fixedVars else {self.name:eye(self(x).size)}
         if self.discrete: raise FuncDesignerException('The oofun or oovar instance has been declared as discrete, no derivative is available')
@@ -561,7 +561,10 @@ class oofun:
                     Keys.add(Key)
             else:
                 ac += 1
-                elem_d = inp._D(x, Vars, fixedVars, involvePrevData = involvePrevData)
+                
+                # asSparse should be 'autoselect' here, not the value taken from the function arguments!
+                elem_d = inp._D(x, Vars, fixedVars, involvePrevData = involvePrevData, asSparse = 'autoselect') 
+                
                 for key in elem_d.keys():
                     if derivativeSelf[ac].size == 1 or elem_d[key].size == 1:
                         rr = derivativeSelf[ac] * elem_d[key]
@@ -576,9 +579,7 @@ class oofun:
                                 t1 = t1.flatten()
                                 t2 = t2.flatten()
                         
-                        # TODO: handle 2**15 & 0.25 as parameters
-                        if (t1.size > 2**15 and isinstance(t1, ndarray) and t1.flatten().nonzero()[0].size < 0.25*t1.size) or \
-                        (t2.size > 2**15 and isinstance(t2, ndarray) and t2.flatten().nonzero()[0].size < 0.25*t2.size):
+                        if self.involveSparse(t1, t2):
                             if not scipyInstalled:
                                 self.pWarn('Probably scipy installation could speed up running the code involved')
                                 rr = atleast_1d(dot(t1, t2))
@@ -591,12 +592,18 @@ class oofun:
                                     else:
                                         raise FuncDesignerException('incorrect shape in FuncDesigner function _D(), inform developers about the bug')
                                 rr = t1._mul_sparse_matrix(t2)
-                                rr = rr.todense().A # TODO: remove todense(), use sparse in whole FD engine
+                                if asSparse is False:
+                                    rr = rr.todense().A # TODO: remove todense(), use sparse in whole FD engine
                         else:
                             rr = atleast_1d(dot(t1, t2))
 
-                    if min(rr.shape) == 1: rr = rr.flatten() # TODO: check it and mb remove
+                    if min(rr.shape) == 1: 
+                        if not isinstance(rr, ndarray): 
+                            rr = rr.todense().A
+                        rr = rr.flatten() # TODO: check it and mb remove
                     if key in Keys:
+                        if isinstance(r[key], ndarray) and not isinstance(rr, ndarray): # i.e. rr is sparse matrix
+                            rr = rr.todense().A # I guess r[key] will hardly be all-zeros
                         if rr.size <= r[key].size: 
                             r[key] += rr
                         else: 
@@ -604,7 +611,7 @@ class oofun:
                     else:
                         r[key] = rr
                         Keys.add(key)
-        #self.d_val_prev = deepcopy(r) # TODO: try using copy
+
         dp = {}
         for key, value in r.items():
             dp[key] = value.copy()
@@ -613,12 +620,12 @@ class oofun:
         self.d_key_prev = {}
         for elem in dep:
             self.d_key_prev[elem.name] = copy(x[elem])
-        #print '!>r:', r
-#        print 'self.d_val_prev:', self.d_val_prev#, 'r:', r
-        
-#        import traceback
-#        traceback.print_stack()
+            
         return r
+
+    # TODO: handle 2**15 & 0.25 as parameters
+    involveSparse = lambda self, t1, t2:  (t1.size > 2**15 and isinstance(t1, ndarray) and t1.flatten().nonzero()[0].size < 0.25*t1.size) or \
+            (t2.size > 2**15 and isinstance(t2, ndarray) and t2.flatten().nonzero()[0].size < 0.25*t2.size)
 
     def _getDerivativeSelf(self, x, Vars,  fixedVars):
         Input = self._getInput(x)
