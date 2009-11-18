@@ -11,11 +11,6 @@ from setDefaultIterFuncs import BUTTON_ENOUGH_HAS_BEEN_PRESSED, USER_DEMAND_EXIT
 from ooMisc import killThread
 from runProbSolver import finalShow
 
-try:
-    import pylab
-except:
-    pass
-
 def manage(p, *args, **kwargs):
     p.isManagerUsed = True
     if not TkinterIsInstalled: p.err('Tkinter is not installed. If you have Linux you could try using "apt-get install python-tk"')
@@ -117,6 +112,13 @@ def manage(p, *args, **kwargs):
     return r
 
 def invokeRunPause(p, isEnough=False):
+    try:
+        import pylab
+    except:
+        if p.plot: 
+            p.warn('to use graphics you should have matplotlib installed')
+            p.plot = False
+        
     if isEnough:
         p.GUI_buttons['RunPause'].config(state=DISABLED)
 
