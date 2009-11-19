@@ -32,5 +32,3 @@ print('A=%f B[4]=%f B[first]=%f C[last]=%f' % (A, B[4], B[0], C[-1]))
 residuals = [F(r) for F in f]
 
 print('time elapsed: %f' % (time()-t))
-
-r=1
