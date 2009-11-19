@@ -630,6 +630,9 @@ class oofun:
     def _considerSparse(self, t1, t2):  
         if (isinstance(t1, ndarray) and t1.size > 2**15 and t1.nonzero()[0].size < 0.25*t1.size) or \
         (isinstance(t2, ndarray) and t2.size > 2**15 and t2.nonzero()[0].size < 0.25*t2.size):
+            if not scipyInstalled: 
+                self.pWarn(scipyAbsentMsg)
+                return t1,  t2
             t1 = scipy.sparse.csr_matrix(t1)
             t2 = scipy.sparse.csc_matrix(t2)
         return t1,  t2
