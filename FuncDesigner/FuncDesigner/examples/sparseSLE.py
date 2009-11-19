@@ -21,8 +21,8 @@ f = [a+f4+5, 2*a+b*range(10, n+10)+15, a+4*b.sum()+2*c.sum()-45]
 #f = [(a+f4).eq(-5), (2*a+b).eq(-15), a.eq(-4*b.sum()-2*c.sum()+45)]
 linSys = sle(f)
 
-r = linSys.solve()
-# check dense solver: r = linSys.solve('dgesv'), for me it yields 10.4 sec instead of 4.2 for 'spsolve'
+r = linSys.solve() # i.e. using autoselect - solver 'dgesv' for dense and 'spsolve' for sparse SLEs
+# check dense solver: r = linSys.solve('dgesv'), for me it yields 8.4 sec instead of 1.3 for linSys.solve('spsolve')
 # and consumes more peak memory
 
 A, B, C =  a(r), b(r), c(r) # or A, B, C = r[a], r[b], r[c]
