@@ -15,8 +15,14 @@ class DFP(NonLinProblem):
     def __prepare__(self):
         self.X = atleast_2d(self.X)
         self.Y = array(self.Y, float)
-        #if self.Y.ndim
+        if self.X.shape[0] != self.Y.shape[0]:
+            if self.X.shape[1] != self.Y.shape[0]:
+                self.err('incorrect shape of input data')
+            else:
+                self.X = self.X.T
         NonLinProblem.__prepare__(self)
+        #if self.Y.ndim
+        
         if self.userProvided.df:
             assert len(self.user.df) == 1
             self.dfff = self.user.df[0]
