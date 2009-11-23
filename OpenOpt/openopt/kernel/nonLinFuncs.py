@@ -341,35 +341,10 @@ class nonLinFuncs:
                 raise ValueError('%s is an unknown func index type!'%type(ind))
         return result
 
-"""
-if ind is not None and p.functype[userFunctionType] == 'block':
-    Funcs, extractInd = getFuncsAndExtractIndexes(p, funcs, ind, userFunctionType)
-    # TODO: add possibility len(extractInd)>1
-elif ind is not None and len(funcs) > 1:
-    assert p.functype[userFunctionType] == 'some funcs R^nvars -> R'
-    Funcs = [funcs[i] for i in ind]
-else:
-    Funcs = funcs
-
-# TODO: get rid of doInplaceCut variable
-doInplaceCut = ind is not None  and len(funcs) == 1
-assert not (extractInd is not None and doInplaceCut)
-
-if nXvectors > 1: assert extractInd is None and not doInplaceCut
-"""
-
 def getFuncsAndExtractIndexes(p, funcs, ind, userFunctionType):
     if ind is None: return funcs
-    #if len(ind) == 1: return [lambda *args, **kwargs: atleast_1d(func(*args, **kwargs))[ind] for func in funcs]
     if len(funcs) == 1 : return [lambda *args, **kwargs: atleast_1d(funcs[0](*args, **kwargs))[ind]]
     
-    #p.err("for the solver it doesn't work yet")
-    # TODO : assert ind is sorted
-    
-#    if len(ind) > 1:
-#        # TODO! Don't forget to remove ind[0] and use ind instead
-#        p.err("multiple index for block problems isn't implemented yet")
-
     #getting number of block and shift
     arr_of_indexes = getattr(p, 'arr_of_indexes_' + userFunctionType)
     left_arr_indexes = searchsorted(arr_of_indexes, ind) 
@@ -389,63 +364,13 @@ def getFuncsAndExtractIndexes(p, funcs, ind, userFunctionType):
             
         if left_arr_indexes[i] in IndDict.keys():
             IndDict[left_arr_indexes[i]].append(inner_ind)
-            #IndDict[i].append(inner_ind)
         else:
             IndDict[left_arr_indexes[i]] = [inner_ind]
-            #funcLen = arr_of_indexes[left_arr_indexes[i]] - arr_of_indexes[left_arr_indexes[i]-1]
-            #raise 0
             Funcs2.append([funcs[left_arr_indexes[i]], IndDict[left_arr_indexes[i]]])
-            #Funcs2.append([funcs[left_arr_indexes[i]], IndDict[left_arr_indexes[i]], funcLen])
     
     Funcs = []
-    #if userFunctionType == 'c': 
-        #print 'ind',ind,'arr_of_indexes:', arr_of_indexes, 'left_arr_indexes', left_arr_indexes
-        #print IndDict
-        #raise 0
-    #if len(ind)>1: raise 0
-
-        #Funcs.append(lambda x, i=i: (Funcs2[i](x)[IndDict[left_arr_indexes[i]]]))
-#    if p.namedVariablesStyle:
-#        #Funcs.append(lambda x, i=i: p._pointDerivative2array((Funcs2[i][0](x)), Funcs2[i][2])[Funcs2[i][1]])
-#    else:
-
-    #ff = lambda x, i=i: (Funcs2[i][0](x))[Funcs2[i][1]]
-#    def ff(x, i):
-#        print '1: <<< Funcs2[i][0](x) =',  Funcs2[i][0](x),  ' >>>'
-#        print '2: <<< Funcs2[i][1] = ',  Funcs2[i][1],  ' >>>'
-#        print 'result= <<<', Funcs2[i][0](x)[Funcs2[i][1]], '>>>'
-#        return Funcs2[i][0](x)[Funcs2[i][1]]
 
     for i in xrange(len(Funcs2)):
-        #Funcs.append(lambda x, i=i: (Funcs2[i][0](x))[Funcs2[i][1]])
-        #Funcs.append(lambda x, i=i: ff(x, i))
         Funcs.append(lambda x, i=i: Funcs2[i][0](x)[Funcs2[i][1]])
-        
-        #Funcs.append(lambda *args, **kwargs: (Funcs2[i](*args, **kwargs)[IndDict[left_arr_indexes[i]]] if len(IndDict[left_arr_indexes[i]])==1 else Funcs2[i](*args, **kwargs)[IndDict[left_arr_indexes[i]][]]) 
-    
-#    for left_arr_ind in left_arr_indexes:
-#        if left_arr_ind != 0:
-#            num_of_funcs_before_arr_left_border = arr_of_indexes[left_arr_ind-1]
-#            inner_ind = ind[0] - num_of_funcs_before_arr_left_border - 1
-#        else:
-#            inner_ind = ind[0]
-#        Funcs.append(lambda *args, **kwargs: funcs[left_arr_ind](*args, **kwargs)) 
     return Funcs#, inner_ind
-    
-#def getFuncsAndExtractIndexes(p, funcs, ind, userFunctionType):
-#    if len(ind) > 1:
-#        # TODO! Don't forget to remove ind[0] and use ind instead
-#        p.err("multiple index for block problems isn't implemented yet")
-#
-#    #getting number of block and shift
-#    arr_of_indexes = getattr(p, 'arr_of_indexes_' + userFunctionType)
-#    left_arr_ind = searchsorted(arr_of_indexes, ind[0]) # CHECKME! is it index of block?
-#
-#    if left_arr_ind != 0:
-#        num_of_funcs_before_arr_left_border = arr_of_indexes[left_arr_ind-1]
-#        inner_ind = ind[0] - num_of_funcs_before_arr_left_border - 1
-#    else:
-#        inner_ind = ind[0]
-#    Funcs = (funcs[left_arr_ind], )
-#    return Funcs, inner_ind
     

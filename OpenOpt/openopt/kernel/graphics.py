@@ -82,7 +82,7 @@ class Graphics:
             elif p.probType == 'NLLSP':
                 Y_LABELS = ['sum(residuals^2)']
             else:
-                Y_LABELS = ['objFunc(x)']
+                Y_LABELS = ['objective function']
 
             if not (p.__isUnconstrained__() or p.solver.__isIterPointAlwaysFeasible__(p)):
                 self.isMaxConstraintSubplotRequired = True
