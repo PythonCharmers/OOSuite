@@ -343,26 +343,28 @@ class ralg(baseSolver):
         arr=ones(n, dtype=self.T)
         arr[ind_fixed] = 0
         b = diag(arr)
-        
+
         for i in xrange(nLinEq):
             g = Aeq[i]
+            g = p.matmult(b.T, g)
             ind_nnz = nonzero(g)[0]
             ng = norm(g)
             g = (g / ng).reshape(-1,1)
-            vec1 = economyMult(b, g).reshape(-1,1)# TODO: remove economyMult, use dot?
+            
+            vec1 = economyMult(b, g)# TODO: remove economyMult, use dot?
             vec2 = -g.T
             
-            #b += p.matmult(vec1, vec2)
+            b += p.matmult(vec1, vec2)
             
-            if len(ind_nnz) > 0.7 * g.size:
-                b += p.matmult(vec1, vec2)
-            else:
-                ind_nnz1 = nonzero(vec1)[0]
-                ind_nnz2 = nonzero(vec2)[1]
-                r = dot(vec1[ind_nnz1, :], vec2[:, ind_nnz2])
-                if p.debug: 
-                    assert abs(norm(p.matmult(vec1, vec2).flatten()) - norm(r.flatten())) < 1e-5
-                b[ix_(ind_nnz1, ind_nnz2)] += r
+#            if len(ind_nnz) > 0.7 * g.size:
+#                b += p.matmult(vec1, vec2)
+#            else:
+#                ind_nnz1 = nonzero(vec1)[0]
+#                ind_nnz2 = nonzero(vec2)[1]
+#                r = dot(vec1[ind_nnz1, :], vec2[:, ind_nnz2])
+#                if p.debug: 
+#                    assert abs(norm(p.matmult(vec1, vec2).flatten()) - norm(r.flatten())) < 1e-5
+#                b[ix_(ind_nnz1, ind_nnz2)] += r
  
         return b
  
