@@ -8,7 +8,15 @@ p = NLP(f, startPoint)
 p.constraints = [(2*c+a-10)**2 < 1.5 + 0.1*b, (a-10)**2<1.5, a[0]>8.9, a+b > [ 7.97999836, 7.8552538 ], \
 a < 9, (c-2)**2 < 1, b < -1.02, c > 1.01, ((b + c * log10(a).sum() - 1) ** 2).eq(0)]
 r = p.solve('ralg')
-print r.xf
+print(r.xf)
+a_opt,  b_opt, c_opt = r(a, b, c)
+# or any of the following: 
+# a_opt,  b_opt, c_opt = r(a), r(b), r(c)
+# r('a'), r('b'), r('c') (provided you have assing the names to oovars as above)
+# r[a], r[b], r[c]
+# r['a'], r['b'], r['c']
+# a(r), b(r), c(r)
+
 """
 Expected output:
 ...

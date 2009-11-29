@@ -41,7 +41,8 @@ class sle:
             R = {}
             for key, value in self.p.x0.items(): 
                 R[key] = value * nan
-            return R
+            r.xf = R
+        return r
             
     def decodeArgs(self, *args):
         hasStartPoint = False
@@ -71,27 +72,3 @@ class sle:
                     startPoint[oov] = 0
         self.startPoint = startPoint
         
-#    def render(self):
-#        if not self._isInitialized:
-#            self._initialize()
-#        r = renderedSLE()
-#        r.A = self.p.C
-#        r.b = self.p.d
-#        r.decode = lambda x: self.p._vector2point(x)
-#        return r
-
-
-
-    
-#        Z = self._vector2point(zeros(self.n))
-#        for c in self.constraints:
-#            f = c.oofun
-#            dep = f._getDep()
-#            if dep is None: # hence it's oovar
-#                assert f.is_oovar
-#                dep = set([f])
-#
-#            if f.is_linear:
-#                Aeq.append(self._pointDerivative2array(f._D(Z, **D_kwargs)))      
-#                beq.append(-f(Z))
-                

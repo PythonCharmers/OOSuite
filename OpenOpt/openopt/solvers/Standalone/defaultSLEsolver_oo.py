@@ -16,9 +16,9 @@ class defaultSLEsolver(baseSolver):
     __info__ = ''
     matrixSLEsolver = 'autoselect'
     sparseSolvers = ['bicg', 'bicgstab', 'cg', 'cgs', 'gmres', 'minres', 'qmr', 'spsolve']
-    denseSolvers = ['dgesv']
+    denseSolvers = ['numpy_linalg_solve']
     defaultSparseSolver = 'spsolve'
-    defaultDenseSolver = 'dgesv'
+    defaultDenseSolver = 'numpy_linalg_solve'
     #__optionalDataThatCanBeHandled__ = []
 
     def __init__(self): pass
@@ -44,7 +44,7 @@ class defaultSLEsolver(baseSolver):
             p.err('Incorrect SLE solver (%s)' % solver)
                 
         if isinstance(solver, str): 
-            if solver == 'dgesv':
+            if solver == 'numpy_linalg_solve':
                 solver = linalg.solve
             else:
                 solver = getattr(scipy.sparse.linalg, solver)

@@ -1,7 +1,6 @@
 """
 FuncDesigner sparse SLE example
 """
-#import profile
 
 from FuncDesigner import *
 from time import time
@@ -21,8 +20,9 @@ f = [a+f4+5, 2*a+b*range(10, n+10)+15, a+4*b.sum()+2*c.sum()-45]
 #f = [(a+f4).eq(-5), (2*a+b).eq(-15), a.eq(-4*b.sum()-2*c.sum()+45)]
 linSys = sle(f)
 
-r = linSys.solve() # i.e. using autoselect - solver 'dgesv' for dense and 'spsolve' for sparse SLEs
-# check dense solver: r = linSys.solve('dgesv'), for me it yields 8.4 sec instead of 1.3 for linSys.solve('spsolve')
+r = linSys.solve() # i.e. using autoselect - solver numpy.linalg.solve for dense (for current numpy 1.4 it's LAPACK dgesv)
+# and scipy.sparse.linalg.spsolve for sparse SLEs (for current scipy 0.8 it's LAPACK dgessv)
+# check dense solver: r = linSys.solve('numpy_linalg_solve'), for me it yields 8 sec instead of 4 for linSys.solve('spsolve')
 # and consumes more peak memory
 
 A, B, C =  a(r), b(r), c(r) # or A, B, C = r[a], r[b], r[c]
@@ -31,4 +31,9 @@ print('A=%f B[4]=%f B[first]=%f C[last]=%f' % (A, B[4], B[0], C[-1]))
 
 residuals = [F(r) for F in f]
 
+# Note - time may differ due to different matrices obtained from SLE rendering
+# because Python 2.6 doesn't has ordered sets (they are present in Python 3.x)
+# maybe I'll implement fixed rendering in future for 3.x, I don't want to deal 
+# with quite difficult walkaround for 2.6 
 print('time elapsed: %f' % (time()-t))
+

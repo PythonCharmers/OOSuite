@@ -105,6 +105,8 @@ def setStartVectorAndTranslators(p):
             p.err('unclear error, maybe you have constraint independend on any optimization variables') 
 
         name, val = pointDerivarive.items()[0]
+        if isinstance(val, float) or (isinstance(val, ndarray) and val.shape == ()):
+            val = atleast_1d(val)
         var_inds = oovarsIndDict[name]
         # val.size works in other way (as nnz) for scipy.sparse matrices
         funcLen = int(round(prod(val.shape) / (var_inds[1] - var_inds[0]))) 
@@ -118,6 +120,8 @@ def setStartVectorAndTranslators(p):
                 if var.name in derivativeVars:
                     indexes = oovarsIndDict[var.name]
                     tmp = pointDerivarive[var.name]
+                    if isinstance(tmp, float) or (isinstance(tmp, ndarray) and tmp.shape == ()):
+                        tmp = atleast_1d(tmp)
                     if tmp.ndim < 2:
                         tmp = tmp.reshape(funcLen, prod(tmp.shape) // funcLen)
                     r2.append(tmp)

@@ -42,7 +42,7 @@ A, B, C =  a(r), b(r), c(r)
 # if failed to solve - A, B, C will contain numpy.nan(s)
 
 print('A=%f B[0]=%f C[15]=%f' % (A, B[0], C[15]))
-# for n=100 it prints A=-5.000000 B[0]=-0.500000 C[15]=639704.886148
+# for n=100 it prints A=-5.000000 B[0]=-0.500000 C[15]=-1883724.947909
 
 # you could get residuals
 # here it will be Python list of length 3 

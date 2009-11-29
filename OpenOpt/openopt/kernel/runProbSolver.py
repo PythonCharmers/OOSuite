@@ -263,7 +263,7 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     p.__finalize__()
     if not p.storeIterPoints: delattr(p.iterValues, 'x')
 
-    r = OpenOptResult()
+    r = OpenOptResult(p)
     r.elapsed = dict()
     r.elapsed['solver_time'] = round(100.0*(time() - p.timeStart))/100.0
     r.elapsed['solver_cputime'] = clock() - p.cpuTimeStart
@@ -336,5 +336,26 @@ def finalShow(p):
     if p.show:
         pylab.show()
 
+class OpenOptResult: 
+    def __init__(self, p):
+        # TODO: get rid of p for to dealloc memory? (use operations with p in stack level above?)
+        if p.namedVariablesStyle:
+            if not hasattr(self, '_xf'):
+                self._xf = dict([(var.name, value) for var, value in p.xf.iteritems()])
+            def c(*args):
+                r = []
+                for arg in args:
+                    if isinstance(arg,  str):
+                        # TODO: mb provide _optPointByNames (with another name) in output structure r?
+                        r.append(self._xf[arg])
+                    else:
+                        r.append(self.xf[arg])
+                return r[0] if len(r)==1 else r
+            self.__call__ = c
+
+            #self.__call__ = lambda *args: [self.xf[arg] for arg in args]
+            
+            # doesn't work for len(args)>1 for current Python ver  2.6
+            self.__getitem__ = lambda *args: self.__call__(*args)#[self.xf[arg] for arg in args] 
+
 class EmptyClass: pass
-class OpenOptResult: pass
