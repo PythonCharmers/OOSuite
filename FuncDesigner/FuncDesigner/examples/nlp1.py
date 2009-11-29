@@ -12,7 +12,7 @@ print(r.xf)
 a_opt,  b_opt, c_opt = r(a, b, c)
 # or any of the following: 
 # a_opt,  b_opt, c_opt = r(a), r(b), r(c)
-# r('a'), r('b'), r('c') (provided you have assing the names to oovars as above)
+# r('a'), r('b'), r('c') (provided you have assigned the names to oovars as above)
 # r('a', 'b', 'c')
 # r[a], r[b], r[c]
 # r['a'], r['b'], r['c']

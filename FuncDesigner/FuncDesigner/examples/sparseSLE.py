@@ -28,8 +28,7 @@ r = linSys.solve() # i.e. using autoselect - solver numpy.linalg.solve for dense
 A, B, C =  a(r), b(r), c(r) # or A, B, C = r[a], r[b], r[c]
 
 print('A=%f B[4]=%f B[first]=%f C[last]=%f' % (A, B[4], B[0], C[-1]))
-
-residuals = [F(r) for F in f]
+maxResidual = r.ff
 
 # Note - time may differ due to different matrices obtained from SLE rendering
 # because Python 2.6 doesn't has ordered sets (they are present in Python 3.x)
