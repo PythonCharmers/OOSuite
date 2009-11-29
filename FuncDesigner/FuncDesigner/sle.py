@@ -42,7 +42,7 @@ class sle:
             for key, value in self.p.x0.items(): 
                 R[key] = value * nan
             r.xf = R
-            r.mr = inf
+            r.ff = inf
         return r
             
     def decodeArgs(self, *args):
