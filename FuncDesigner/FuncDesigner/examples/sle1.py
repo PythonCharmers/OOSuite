@@ -16,8 +16,7 @@ f = [2*a+3*b-2*c+5, 2*a+13*b+15, a+4*b+2*c-45]
 linSys = sle(f)
 
 r = linSys.solve()
-
-# print result
-print r
-# Expected output:
+A, B, C =  r(a, b, c)
+maxRes = r.ff # max residual
+# Expected result:
 # {b: array([-5.]), a: array([ 25.]), c: array([ 20.])}

@@ -49,3 +49,5 @@ print('A=%f B[0]=%f C[15]=%f' % (A, B[0], C[15]))
 # that is number of (vectorized) equations
 # with elements of type numpy.array
 residuals = [F(r) for F in f]
+maxResidual = r.ff
+

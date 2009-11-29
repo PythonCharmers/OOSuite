@@ -1,6 +1,6 @@
 from misc import FuncDesignerException
 from ooFun import oofun, BaseFDConstraint
-from numpy import nan, zeros, isscalar
+from numpy import nan, zeros, isscalar, inf
 
 class sle:
     # System of linear equations
@@ -36,12 +36,13 @@ class sle:
         self.decodeArgs(*args)
         r = self.p.solve(matrixSLEsolver=self.matrixSLEsolver)
         if r.istop >= 0:
-            return r.xf
+            return r
         else:
             R = {}
             for key, value in self.p.x0.items(): 
                 R[key] = value * nan
             r.xf = R
+            r.mr = inf
         return r
             
     def decodeArgs(self, *args):
