@@ -172,6 +172,13 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         self.intVars = [] # for problems like MILP
         self.binVars = [] # for problems like MILP
         self.optionalData = []#string names of optional data like 'c', 'h', 'Aeq' etc
+        
+        if 'min' in self.allowedGoals:
+            self.minimize = lambda *args, **kwargs: minimize(self, *args, **kwargs)
+
+        if 'max' in self.allowedGoals:
+            self.maximize = lambda *args, **kwargs: maximize(self, *args, **kwargs)
+            
         assignScript(self, kwargs)
 
     def __finalize__(self):
@@ -207,7 +214,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
 
     def solve(self, *args, **kwargs):
         return runProbSolver(self, *args, **kwargs)
-
+    
     def objFuncMultiple2Single(self, f):
         #this function can be overdetermined by child class
         if asfarray(f).size != 1: self.err('unexpected f size. The function should be redefined in OO child class, inform OO developers')
@@ -564,6 +571,20 @@ class NonLinProblem(baseProblem, nonLinFuncs, Args):
             and (self.lb in s or all(isinf(self.lb))) and (self.ub in s or all(isinf(self.ub)))
     
 
+def minimize(p, *args, **kwargs):
+    if 'goal' in kwargs.keys():
+        if kwargs['goal'] in ['min', 'minimum']:
+            p.warn("you shouldn't pass 'goal' to the function 'minimize'")
+        else:
+            p.err('ambiguous goal has been requested: function "minimize", goal: %s' %  kwargs['goal'])
+    p.goal = 'min'
+    return runProbSolver(p, *args, **kwargs)
 
-
-
+def maximize(p, *args, **kwargs):
+    if 'goal' in kwargs.keys():
+        if kwargs['goal'] in ['max', 'maximum']:
+            p.warn("you shouldn't pass 'goal' to the function 'maximize'")
+        else:
+            p.err('ambiguous goal has been requested: function "maximize", goal: %s' %  kwargs['goal'])
+    p.goal = 'max'
+    return runProbSolver(p, *args, **kwargs)            
