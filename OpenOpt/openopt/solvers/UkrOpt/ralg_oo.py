@@ -137,8 +137,6 @@ class ralg(baseSolver):
         for itn in xrange(1500000):
             doDilation = True
 
-            #ls1 = 0
-            # TODO: is (g^T b)^T better?
             g_tmp = economyMult(b.T, moveDirection)
             if any(g_tmp): g_tmp /= p.norm(g_tmp)
             g1 = p.matmult(b, g_tmp)
@@ -157,7 +155,7 @@ class ralg(baseSolver):
                 elif ls > 2:
                     hs *= 1.05
 
-                x -= hs * g1#dotwise
+                x -= hs * g1
                 hs_cumsum += hs
 
                 newPoint = p.point(x)

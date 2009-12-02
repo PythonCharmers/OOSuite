@@ -124,27 +124,6 @@ def getAltitudeDirection(p, pointTop, point2, point3):
     abc = arccos(dot(b, c)/norm(b) /norm(c))
     #ahbc = arccos(dot(h,  b-c)/norm(h) /norm(b-c))
     isInsideTriangle = abh+ach-abc<=1e-8
-
-    #p.info('angle(h,b-c)=%f' % (180/3.14159265358*arccos(dot(h, c-b)/norm(h) /norm(c-b))))
-
-#    cond1 = dot(h, c) >= 0
-#    cond2 = dot(h, b) >= 0
-#    if cond1 and cond2:
-#        #p.info('case 1')
-#        pass
-#    elif not cond1 and not cond2:
-#        #p.info('case 2')
-#        h = -h
-#    else:
-#        p.info('angle(c,b)=%f' % (180/3.14159265358*arccos(dot(c, b)/norm(c) /norm(b)))  )
-#        p.err('incorrect alpha=%f has been encountered while altitude obtaining' % alpha)
-
-
-#    p.info('angle(h,b)=%f' % (180/3.14159265358*abh))
-#    p.info('angle(h,c)=%f' % (180/3.14159265358*ach))
-#    p.info('angle(b,c)=%f' % (180/3.14159265358*abc))
-#    p.info('angle(h,b-c)=%f' % (180/3.14159265358*ahbc))
-
     return h, isInsideTriangle
 
 from openopt.kernel.setDefaultIterFuncs import IS_LINE_SEARCH_FAILED
@@ -161,21 +140,7 @@ def getBestPointAfterTurn(oldPoint, newPoint, altLinInEq=None, maxLS = 3, maxDel
     altPoint = p.point((oldPoint.x + newPoint.x) / 2.0)
     altPoint._lin_eq = (lin_eq1 + lin_eq2) / 2.0
     altPoint._lin_ineq = (lin_ineq1 + lin_ineq2) / 2.0
-    
-#    lin_arr = [0]
-#    if lin_ineq1.size != 0: 
-#        lin_ineq_lower_estimation = max(where(lin_ineq1 < lin_ineq2, lin_ineq1, lin_ineq2))
-#        lin_arr.append(lin_ineq_lower_estimation)
-#    lb_lower_estimation = max(where(lb1 < lb2, lb1, lb2))
-#    lin_arr.append(lb_lower_estimation)
-#    ub_lower_estimation = max(where(ub1 < ub2, ub1, ub2))
-#    lin_arr.append(ub_lower_estimation)
-#    max_lin = max(lin_arr)
-#    ind1 = c1 > max_lin
-#    ind2 = c2 > max_lin
 
-
-# TODO: UNCOMMENT IT WHEN getFuncsAndExtractIndexes() WILL WORK PROPERLY
     ind1 = c1 > 0
     ind2 = c2 > 0
     ind = where(ind1 | ind2)[0]
@@ -193,11 +158,6 @@ def getBestPointAfterTurn(oldPoint, newPoint, altLinInEq=None, maxLS = 3, maxDel
         line_points[pv] = altPoint.f()
 
 
-
-    #print '>>>', altPoint.mr(), newPoint.mr(), altPoint.mr() < newPoint.mr()
-#    if newPoint.betterThan(altPoint, altLinInEq=altLinInEq):
-#        return newPoint, 0
-
     if maxLS is None:
         maxLS = p.maxLineSearch
     elif maxLS == 0: return newPoint, 0
@@ -211,7 +171,6 @@ def getBestPointAfterTurn(oldPoint, newPoint, altLinInEq=None, maxLS = 3, maxDel
     for ls in xrange(maxLS):
         
         altPoint, prevPoint = p.point((oldPoint.x + altPoint.x) / 2.0), altPoint
-        #if prevPoint.p.iter<3: print 'ls:', ls, prevPoint.f(), altPoint.f()
 
         if line_points is not None:
             pv /= 2.0
@@ -229,11 +188,8 @@ def getBestPointAfterTurn(oldPoint, newPoint, altLinInEq=None, maxLS = 3, maxDel
 
 
         #!!! "not betterThan" is used vs "betterThan" because prevPoint can become same to altPoint
-        #if p.iter < 3: print 'iter:',p.iter,'maxLS:', maxLS
         if prevPoint.betterThan(altPoint, altLinInEq=altLinInEq):
-            #if ls <= 1: LS = 0
-            #else: LS = 1-ls
-            return prev_prev_point,  -1-ls#LS
+            return prev_prev_point,  -1-ls
         prev_prev_point = prevPoint
 
         if p.norm(oldPoint.x - altPoint.x) < maxDeltaX: 
@@ -242,29 +198,7 @@ def getBestPointAfterTurn(oldPoint, newPoint, altLinInEq=None, maxLS = 3, maxDel
         #if abs(oldPoint.f() - altPoint.f()) < maxDeltaF: break
 
     return prev_prev_point, -ls
-    #p.istop,  p.msg = -100,  'maxLineSearch (' + str(p.maxLineSearch) + ') has been exceeded (backward)'
-    #raise isSolved
-    #return altPoint, -1-ls
 
-
-
-#    point1 = p.point((3 * oldPoint.x + newPoint.x) / 4.0)
-#    point2 = p.point((oldPoint.x + 3 * newPoint.x) / 4.0)
-#    if point2.betterThan(point1, altLinInEq=altLinInEq):
-#        return newPoint
-#    else:
-#        return point2
-
-#    p = oldPoint.p
-#    contol = p.contol
-#    resultPoint = newPoint
-#    shift = newPoint.x-oldPoint.x
-#    if maxLS is None: maxLS = p.maxLineSearch
-#    for ls in xrange(maxLS):
-#        shift /= 2.0
-#        altPoint = p.point(oldPoint.x+shift)
-#        if altPoint.betterThen()
-#        prevPoint = altPoint = p.point()
 
 
 
