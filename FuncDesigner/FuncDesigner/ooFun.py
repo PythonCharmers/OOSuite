@@ -226,7 +226,11 @@ class oofun:
         assert not isinstance(other, oofun)# if failed - check __pow__implementation
             
         f = lambda x: asarray(other) ** x
-        d = lambda x: asarray(other) **x * log(asarray(other)) if x.size == 1 else Diag(asarray(other) **x * log(asarray(other)))
+        #d = lambda x: Diag(asarray(other) **x * log(asarray(other)))
+        def d(x):
+            r = Diag(asarray(other) **x * log(asarray(other))) if x.size > 1 else asarray(other)**x * log(asarray(other))
+            #raise 0
+            return r
         r = oofun(f, d=d, input = self)
         return r
 
@@ -672,6 +676,7 @@ class oofun:
 
     def _getDerivativeSelf(self, x, Vars,  fixedVars):
         Input = self._getInput(x)
+        nOutput = self(x).size 
         hasUserSuppliedDerivative = hasattr(self, 'd') and self.d is not None
         if hasUserSuppliedDerivative:
             derivativeSelf = []
@@ -703,33 +708,39 @@ class oofun:
                         # !!!!!!!!!!!!!! TODO: add check for user-supplied derivative shape
                         tmp = deriv(*Input)
                         if isscalar(tmp) or type(tmp) in (ndarray, tuple, list): # i.e. not a scipy.sparse matrix
-                            tmp = atleast_1d(tmp)
-                        if min(tmp.shape) == 1:
-                            tmp = atleast_1d(tmp.flatten())
+                            tmp = atleast_2d(tmp)
+                            if tmp.shape[1] != nOutput: tmp = tmp.T
+#                        if min(tmp.shape) == 1:
+#                            tmp = atleast_1d(tmp.flatten())
                         derivativeSelf.append(tmp)
             else:
                 tmp = self.d(*Input)
                 if isscalar(tmp) or type(tmp) in (ndarray, tuple, list): # i.e. not a scipy.sparse matrix
                     tmp = atleast_2d(tmp)
-                    
-                ac = 0
-                if not isinstance(tmp, ndarray):
-                    csr_tmp = tmp.tocsr()
-                for i, inp in enumerate(Input):
-                    if isinstance(tmp, ndarray):
-                        TMP = tmp[:, ac:ac+inp.size]
-                    else: # scipy.sparse matrix
-                        TMP = csr_tmp[:, ac:ac+inp.size]
-                    ac += inp.size
-                    if self.input[i].discrete: continue
-                    #!!!!!!!!! TODO: handle fixed cases properly!!!!!!!!!!!!
-                    #if hasattr(self.input[i], 'fixed') and self.input[i].fixed: continue 
-                    if self.input[i].is_oovar and ((Vars is not None and self.input[i] not in Vars) or (fixedVars is not None and self.input[i] in fixedVars)):
-                        continue                                    
-                    
-                    #if Input[i].size == 1: TMP = TMP.flatten()
-                    if isinstance(TMP, ndarray) and min(TMP.shape) == 1: TMP = TMP.flatten()
-                    derivativeSelf.append(TMP)
+                    if tmp.shape[1] != nOutput: tmp = tmp.T
+                derivativeSelf.append(tmp)
+                   
+#                ac = 0
+#                
+#                if not isinstance(tmp, ndarray):
+#                    csr_tmp = tmp.tocsr()
+#                for i, inp in enumerate(Input):
+#                    if isinstance(tmp, ndarray):
+#                        TMP = tmp[:, ac:ac+inp.size]
+#                        raise 0
+#                    else: # scipy.sparse matrix
+#                        TMP = csr_tmp[:, ac:ac+inp.size]
+#                    ac += inp.size
+#                    #raise 0
+#                    if self.input[i].discrete: continue
+#                    #!!!!!!!!! TODO: handle fixed cases properly!!!!!!!!!!!!
+#                    #if hasattr(self.input[i], 'fixed') and self.input[i].fixed: continue 
+#                    if self.input[i].is_oovar and ((Vars is not None and self.input[i] not in Vars) or (fixedVars is not None and self.input[i] in fixedVars)):
+#                        continue                                    
+#                    
+#                    #if Input[i].size == 1: TMP = TMP.flatten()
+#                    if isinstance(TMP, ndarray) and min(TMP.shape) == 1: TMP = TMP.flatten()
+#                    derivativeSelf.append(TMP)
                     
             # TODO: is it required?
 #                if not hasattr(self, 'outputTotalLength'): self._getFunc(x)
