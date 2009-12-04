@@ -57,7 +57,7 @@ class SLE(MatrixProblem):
         if isinstance(self.d, dict): # FuncDesigner startPoint 
             self.x0 = self.d
         MatrixProblem.__prepare__(self)
-        if self.namedVariablesStyle:
+        if self.isFDmodel:
             equations = self.C
             ConstraintTags = [elem.isConstraint for elem in equations]
             cond_all_oofuns_but_not_cons = not any(ConstraintTags) 

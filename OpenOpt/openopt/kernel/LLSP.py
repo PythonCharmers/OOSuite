@@ -52,7 +52,7 @@ class LLSP(MatrixProblem):
         if isinstance(self.d, dict): # FuncDesigner startPoint 
             self.x0 = self.d
         MatrixProblem.__prepare__(self)
-        if self.namedVariablesStyle:
+        if self.isFDmodel:
             C, d = [], []
             Z = self._vector2point(zeros(self.n))
             for lin_oofun in self.C:

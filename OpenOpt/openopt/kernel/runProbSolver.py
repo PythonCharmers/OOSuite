@@ -304,7 +304,7 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
 
     p.invertObjFunc = False
     
-    if p.namedVariablesStyle:
+    if p.isFDmodel:
         p.x0 = p._x0
 
     finalTextOutput(p, r)
@@ -339,7 +339,7 @@ def finalShow(p):
 class OpenOptResult: 
     def __init__(self, p):
         # TODO: get rid of p for to dealloc memory? (use operations with p in stack level above?)
-        if p.namedVariablesStyle:
+        if p.isFDmodel:
             if not hasattr(self, '_xf'):
                 self._xf = dict([(var.name, value) for var, value in p.xf.iteritems()])
             def c(*args):

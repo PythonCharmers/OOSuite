@@ -19,12 +19,11 @@ class nonLinFuncs:
             else:
                 raise killThread
                 
-        if getDerivative and not p.namedVariablesStyle and not DerApproximatorIsInstalled:
+        if getDerivative and not p.isFDmodel and not DerApproximatorIsInstalled:
             self.err('To perform gradients check you should have DerApproximator installed, see http://openopt.org/DerApproximator')
 
         #userFunctionType should be 'f', 'c', 'h'
         funcs = getattr(p.user, userFunctionType)
-        #print 'funcs', funcs
         funcs_num = getattr(p, 'n'+userFunctionType)
         if IND is not None:
             ind = p.getCorrectInd(IND)
@@ -78,14 +77,9 @@ class nonLinFuncs:
             x_0 = copy(x)
         else:
             nXvectors = x.shape[0]
-            #x_0 = x[0]
-
-        #extractInd = None
-#        if userFunctionType == 'c':
-#            raise 'asdf'
 
         # TODO: mb replace D by _D?
-        if getDerivative and p.namedVariablesStyle:
+        if getDerivative and p.isFDmodel:
             if p.optVars is None or (p.fixedVars is not None and len(p.optVars) < len(p.fixedVars)):
                 funcs2 = \
                 [(lambda x, i=i: p._pointDerivative2array(funcs[i].D(x, Vars = p.optVars, resultKeysType = 'names'))) for i in xrange(len(funcs))]
@@ -97,43 +91,20 @@ class nonLinFuncs:
             
         if ind is None: 
             Funcs = funcs2
-            #print 'case 1'
-#            if userFunctionType == 'c':
-#                for i,  f in enumerate(funcs2):
-#                    print '!', i, getDerivative, f(p._vector2point(x))
         elif ind is not None and p.functype[userFunctionType] == 'some funcs R^nvars -> R':
-            #print 'case 2'
             Funcs = [funcs2[i] for i in ind]
         else:
-            #print 'case 3'
             Funcs = getFuncsAndExtractIndexes(p, funcs2, ind, userFunctionType)
-        
-          #Funcs = getFuncsAndExtractIndexes(p, funcs2, ind, userFunctionType)
-
-#        if ind is not None and p.functype[userFunctionType] == 'block':
-#            Funcs, extractInd = getFuncsAndExtractIndexes(p, funcs, ind, userFunctionType)
-#            # TODO: add possibility len(extractInd)>1
-#        elif ind is not None and len(funcs) > 1:
-#            assert p.functype[userFunctionType] == 'some funcs R^nvars -> R'
-#            Funcs = [funcs[i] for i in ind]
-#        else:
-#            Funcs = funcs
-#
-#        # TODO: get rid of doInplaceCut variable
-#        doInplaceCut = ind is not None  and len(funcs) == 1
-#        assert not (extractInd is not None and doInplaceCut)
-#        
-#        if nXvectors > 1: assert extractInd is None and not doInplaceCut
 
         agregate_counter = 0
         
-        if p.namedVariablesStyle:
+        if p.isFDmodel:
             Args = ()
         else:
             Args = args
             
         if nXvectors == 1:
-            if p.namedVariablesStyle:
+            if p.isFDmodel:
                 X = p._vector2point(x) 
             else:
                 X = x
@@ -141,7 +112,7 @@ class nonLinFuncs:
         if nXvectors > 1: # and hence getDerivative isn't involved
             #temporary, to be fixed
             assert userFunctionType == 'f' and p.isObjFunValueASingleNumber
-            if p.namedVariablesStyle:
+            if p.isFDmodel:
                 X = [p._vector2point(x[i]) for i in xrange(nXvectors)]
             elif len(Args) == 0:
                 X = [x[i] for i in xrange(nXvectors)]
@@ -153,7 +124,7 @@ class nonLinFuncs:
             if not ignorePrev and ind is None:
                 p.prevVal[userFunctionType]['key'] = copy(x_0)
                 p.prevVal[userFunctionType]['val'] = r.copy()                
-        elif getDerivative and p.namedVariablesStyle:
+        elif getDerivative and p.isFDmodel:
             r = vstack([fun(X) for fun in Funcs])
         else:
             if getDerivative:
@@ -248,20 +219,6 @@ class nonLinFuncs:
             else:
                 Funcs = getFuncsAndExtractIndexes(p, funcs, ind, funcType)
             
-#            if ind is not None and p.functype[funcType] == 'block':
-#                #Funcs, extractInd = getFuncsAndExtractIndexes(p, funcs, ind, userFunctionType)
-#                Funcs = getFuncsAndExtractIndexes(p, funcs, ind, userFunctionType)
-#            elif ind is not None and len(funcs) > 1:
-#                assert p.functype[funcType] == 'some funcs R^nvars -> R'
-#                Funcs = [funcs[i] for i in ind]
-#                #extractInd = None
-#            else:
-#                Funcs = funcs
-#                if ind is not None:
-#                    extractInd = ind
-#                else:
-#                    extractInd = None
-                
             if ind is None: derivativesNumber = nFuncs
             else: derivativesNumber = len(ind)
                 

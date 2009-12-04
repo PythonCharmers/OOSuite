@@ -90,7 +90,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
     userStop = False # becomes True is stopped by user
 
     x0 = None
-    namedVariablesStyle = False # OO kernel set it to True if oovars/oofuns are used
+    isFDmodel = False # OO kernel set it to True if oovars/oofuns are used
 
     noise = ProbDefaults['noise'] # TODO: move it to NinLinProblem class?
 
@@ -158,7 +158,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         #user can redirect these ones, as well as debugmsg
         self.debugmsg = lambda msg: oodebugmsg(self,  msg)
         
-        self.constraints = [] # used in namedVariablesStyle
+        self.constraints = [] # used in isFDmodel
 
         
         self.callback = [] # user-defined callback function(s)
@@ -182,7 +182,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         assignScript(self, kwargs)
 
     def __finalize__(self):
-        if self.namedVariablesStyle:
+        if self.isFDmodel:
             self.xf = self._vector2point(self.xf)
 
     def objFunc(self, x):
@@ -250,14 +250,14 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                         setattr(newProb, key, None)
                         
     FuncDesignerSign = 'f'
-    isFDmodel = lambda self: hasattr(self, self.FuncDesignerSign) and \
+    _isFDmodel = lambda self: hasattr(self, self.FuncDesignerSign) and \
     ((type(getattr(self, self.FuncDesignerSign)) in [list, tuple] and 'is_oovar' in dir(getattr(self, self.FuncDesignerSign)[0])) \
                                                                                                 or 'is_oovar' in dir(getattr(self, self.FuncDesignerSign) ))
     
     def _prepare(self):
         if self._baseProblemIsPrepared: return
-        if self.isFDmodel():
-            self.namedVariablesStyle = True
+        if self._isFDmodel():
+            self.isFDmodel = True
             
             if self.fixedVars is None or (self.optVars is not None and len(self.optVars)<len(self.fixedVars)):
                 D_kwargs = {'Vars':self.optVars}
@@ -498,7 +498,7 @@ class NonLinProblem(baseProblem, nonLinFuncs, Args):
         #BaseProblem.__finalize__(self)
         if (self.userProvided.c and any(isnan(self.c(self.xf)))) or (self.userProvided.h and any(isnan(self.h(self.xf)))):
             self.warn('some non-linear constraints are equal to NaN')
-        if self.namedVariablesStyle:
+        if self.isFDmodel:
             self.xf = self._vector2point(self.xf)
 
     def __prepare__(self):

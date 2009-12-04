@@ -21,7 +21,7 @@ class MILP(LP):
         r = []
         if type(self.intVars) not in [list, tuple]:
             self.intVars = [self.intVars]
-        if self.namedVariablesStyle:
+        if self.isFDmodel:
             for iv in self.intVars:
                 if self.fixedVars is not None and iv in self.fixedVars or\
                 self.optVars is not None and iv not in self.optVars:
@@ -58,7 +58,7 @@ class MILP(LP):
 #            self.f = -self.f
     def __finalize__(self):
         LP.__finalize__(self)
-        if self.namedVariablesStyle: self.intVars = self._intVars
+        if self.isFDmodel: self.intVars = self._intVars
 #    def __finalize__(self):
 #        MatrixProblem.__finalize__(self)
 #        if self.goal in ['max', 'maximum']:

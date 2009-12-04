@@ -133,7 +133,7 @@ def setNonLinFuncsNumber(p,  userFunctionType):
     args = getattr(p.args, userFunctionType)
     fv = getattr(p.user, userFunctionType)
     
-    if p.namedVariablesStyle:
+    if p.isFDmodel:
         X = p._x0
     else:
         X = p.x0
