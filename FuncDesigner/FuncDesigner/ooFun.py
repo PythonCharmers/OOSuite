@@ -3,7 +3,7 @@
 from numpy import inf, asfarray, copy, all, any, empty, atleast_2d, zeros, dot, asarray, atleast_1d, empty, ones, ndarray, \
 where, isfinite, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum, prod, nonzero
 from numpy.linalg import norm
-from misc import FuncDesignerException, Diag, Eye, scipyInstalled, pWarn, scipyAbsentMsg
+from misc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg
 from copy import deepcopy
 
 try:
@@ -12,10 +12,14 @@ try:
 except:
     DerApproximatorIsInstalled = False
 
+
 try:
     import scipy
+    SparseMatrixConstructor = lambda *args, **kwargs: scipy.sparse.lil_matrix(*args, **kwargs)
+    from scipy import sparse
+    Hstack = sparse.hstack
 except:
-    pass
+    scipy = None
 
 class oofun:
     #TODO:
@@ -232,7 +236,8 @@ class oofun:
     def __rxor__(self, other):
         raise FuncDesignerException('For power of oofuncs use a**b, not a^b')
         
-    def __getitem__(self, ind): # overload for []
+    def __getitem__(self, ind): # overload for oofun[ind]
+        assert not isinstance(ind, oofun), 'slicing by oofuns is unimplemented yet'
         if not isinstance(ind, oofun):
             f = lambda x: x[ind]
             def d(x):
@@ -258,6 +263,34 @@ class oofun:
 #            r.is_oovarSlice = True
             
         return r
+    
+    def __getslice__(self, ind1, ind2):# overload for oofun[ind1:ind2]
+    
+        #raise FuncDesignerException('oofun slicing is not implemented yet')
+        
+        assert not isinstance(ind1, oofun) and not isinstance(ind2, oofun), 'slicing by oofuns is unimplemented yet'
+        f = lambda x: x[ind1:ind2]
+        def d(x):
+            condBigMatrix = x.size > 100 #and (ind2-ind1) > 0.25*x.size
+            if condBigMatrix and scipy is None:
+                self.pWarn(scipyAbsentMsg)
+            if condBigMatrix and scipy is not None:
+                m1 = SparseMatrixConstructor((ind2-ind1, ind1))
+                m2 = Eye(ind2-ind1)
+                m3 = SparseMatrixConstructor((ind2-ind1, x.size - ind2))
+                r = Hstack((m1, m2, m3))
+            else:
+                m1 = zeros((ind2-ind1, ind1))
+                m2 = eye(ind2-ind1)
+                m3 = zeros((ind2-ind1, x.size - ind2))
+                r = hstack((m1, m2, m3))
+            return r
+        r = oofun(f, input = self, d = d)
+        if self.is_linear:
+            r.is_linear = True
+        return r
+        
+        
     
    
 #    def __len__(self):
@@ -572,7 +605,7 @@ class oofun:
                                 t2 = t2.flatten()
                         
                         if not (isinstance(t1,  ndarray) and isinstance(t2,  ndarray)):
-                            if not scipyInstalled:
+                            if scipy is None:
                                 self.pWarn(scipyAbsentMsg)
                                 rr = atleast_1d(dot(t1, t2))
                             else:
@@ -630,7 +663,7 @@ class oofun:
     def _considerSparse(self, t1, t2):  
         if (isinstance(t1, ndarray) and t1.size > 2**15 and t1.nonzero()[0].size < 0.25*t1.size) or \
         (isinstance(t2, ndarray) and t2.size > 2**15 and t2.nonzero()[0].size < 0.25*t2.size):
-            if not scipyInstalled: 
+            if scipy is None: 
                 self.pWarn(scipyAbsentMsg)
                 return t1,  t2
             t1 = scipy.sparse.csr_matrix(t1)
@@ -679,25 +712,14 @@ class oofun:
                 if isscalar(tmp) or type(tmp) in (ndarray, tuple, list): # i.e. not a scipy.sparse matrix
                     tmp = atleast_2d(tmp)
                     
-                #tmp = atleast_2d(self.d(*Input))
-                
-                #print 'name:', self.name,'tmp:', tmp, 'input:', self.input
-                # TODO: check for output shape[1]. For now outputTotalLength sometimes is undefined
-#                assert tmp.shape[1] == self.inputOOVarTotalLength, \
-#                'incorrect user-supplied derivative shape[0] for oofun %s, %d expected, %d obtained' \
-#                % (self.name,  self.inputOOVarTotalLength,  tmp.shape[1])
-                #assert tmp.shape == (self.inputTotalLength, self.outputTotalLength), \
-                #'incorrect user-supplied derivative shape for oofun %s, (%d,%d) expected, (%d, %d) obtained' \
-                #% (self.name,  self.inputTotalLength,  self.outputTotalLength,  tmp.shape[0], tmp.shape[1])
-                
                 ac = 0
                 if not isinstance(tmp, ndarray):
                     csr_tmp = tmp.tocsr()
                 for i, inp in enumerate(Input):
                     if isinstance(tmp, ndarray):
-                        TMP = tmp[ac:ac+inp.size]
+                        TMP = tmp[:, ac:ac+inp.size]
                     else: # scipy.sparse matrix
-                        TMP = csr_tmp[ac:ac+inp.size]
+                        TMP = csr_tmp[:, ac:ac+inp.size]
                     ac += inp.size
                     if self.input[i].discrete: continue
                     #!!!!!!!!! TODO: handle fixed cases properly!!!!!!!!!!!!
