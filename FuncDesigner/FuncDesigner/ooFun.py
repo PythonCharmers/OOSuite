@@ -600,7 +600,18 @@ class oofun:
                     else:
                         t1, t2 = self._considerSparse(derivativeSelf[ac], elem_d[key])
                         cond_2 = t1.ndim > 1 or t2.ndim > 1
-                        if not cond_2:
+                        if cond_2:
+                            # warning! t1,t2 can be sparse matrices, so I don't use t = atleast_2d(t) directly
+                            #if t1.ndim < 2: t1 = atleast_2d(t1) 
+                            if t2.ndim < 2: 
+                                assert t1.ndim > 1
+                                if t1.shape[1] != t2.size:
+                                    t2 = t2.reshape(1, -1)
+                                #t2 = atleast_2d(t2)
+                            
+                            
+                        else:
+                            # hence these are ndarrays
                             if self(x).size > 1:
                                 t1 = t1.reshape(-1, 1)
                                 t2 = t2.reshape(1, -1)
@@ -709,7 +720,7 @@ class oofun:
                         tmp = deriv(*Input)
                         if isscalar(tmp) or type(tmp) in (ndarray, tuple, list): # i.e. not a scipy.sparse matrix
                             tmp = atleast_2d(tmp)
-                            if tmp.shape[1] != nOutput: tmp = tmp.T
+                            if tmp.shape[0] != nOutput: tmp = tmp.T
 #                        if min(tmp.shape) == 1:
 #                            tmp = atleast_1d(tmp.flatten())
                         derivativeSelf.append(tmp)
@@ -717,7 +728,7 @@ class oofun:
                 tmp = self.d(*Input)
                 if isscalar(tmp) or type(tmp) in (ndarray, tuple, list): # i.e. not a scipy.sparse matrix
                     tmp = atleast_2d(tmp)
-                    if tmp.shape[1] != nOutput: tmp = tmp.T
+                    if tmp.shape[0] != nOutput: tmp = tmp.T
                 derivativeSelf.append(tmp)
                    
 #                ac = 0
