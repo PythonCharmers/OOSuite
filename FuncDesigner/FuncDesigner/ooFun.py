@@ -605,7 +605,7 @@ class oofun:
                             #if t1.ndim < 2: t1 = atleast_2d(t1) 
                             if t2.ndim < 2: 
                                 assert t1.ndim > 1, 'error in FuncDesigner kernel, inform developers'
-                                if t1.shape[1] != t2.size:
+                                if t1.shape[1] != t2.shape[0]:
                                     t2 = t2.reshape(1, -1)
                                 #t2 = atleast_2d(t2)
                             
@@ -720,38 +720,39 @@ class oofun:
                         tmp = deriv(*Input)
                         if isscalar(tmp) or type(tmp) in (ndarray, tuple, list): # i.e. not a scipy.sparse matrix
                             tmp = atleast_2d(tmp)
-                            if tmp.shape[0] != nOutput: tmp = tmp.T
-#                        if min(tmp.shape) == 1:
-#                            tmp = atleast_1d(tmp.flatten())
+                            if tmp.shape[0] != nOutput: 
+                                # TODO: add debug msg
+                                tmp = tmp.T
                         derivativeSelf.append(tmp)
             else:
                 tmp = self.d(*Input)
                 if isscalar(tmp) or type(tmp) in (ndarray, tuple, list): # i.e. not a scipy.sparse matrix
                     tmp = atleast_2d(tmp)
-                    if tmp.shape[0] != nOutput: tmp = tmp.T
-                derivativeSelf.append(tmp)
+                    if tmp.shape[0] != nOutput: 
+                        # TODO: add debug msg
+                        tmp = tmp.T
+                #derivativeSelf.append(tmp)
                    
-#                ac = 0
-#                
-#                if not isinstance(tmp, ndarray):
-#                    csr_tmp = tmp.tocsr()
-#                for i, inp in enumerate(Input):
-#                    if isinstance(tmp, ndarray):
-#                        TMP = tmp[:, ac:ac+inp.size]
-#                        raise 0
-#                    else: # scipy.sparse matrix
-#                        TMP = csr_tmp[:, ac:ac+inp.size]
-#                    ac += inp.size
-#                    #raise 0
-#                    if self.input[i].discrete: continue
-#                    #!!!!!!!!! TODO: handle fixed cases properly!!!!!!!!!!!!
-#                    #if hasattr(self.input[i], 'fixed') and self.input[i].fixed: continue 
-#                    if self.input[i].is_oovar and ((Vars is not None and self.input[i] not in Vars) or (fixedVars is not None and self.input[i] in fixedVars)):
-#                        continue                                    
-#                    
-#                    #if Input[i].size == 1: TMP = TMP.flatten()
-#                    if isinstance(TMP, ndarray) and min(TMP.shape) == 1: TMP = TMP.flatten()
-#                    derivativeSelf.append(TMP)
+                ac = 0
+                
+                if not isinstance(tmp, ndarray):
+                    csr_tmp = tmp.tocsr()
+                for i, inp in enumerate(Input):
+                    if isinstance(tmp, ndarray):
+                        TMP = tmp[:, ac:ac+inp.size]
+                    else: # scipy.sparse matrix
+                        TMP = csr_tmp[:, ac:ac+inp.size]
+                    ac += inp.size
+                    #raise 0
+                    if self.input[i].discrete: continue
+                    #!!!!!!!!! TODO: handle fixed cases properly!!!!!!!!!!!!
+                    #if hasattr(self.input[i], 'fixed') and self.input[i].fixed: continue 
+                    if self.input[i].is_oovar and ((Vars is not None and self.input[i] not in Vars) or (fixedVars is not None and self.input[i] in fixedVars)):
+                        continue                                    
+                    
+                    #if Input[i].size == 1: TMP = TMP.flatten()
+                    if isinstance(TMP, ndarray) and min(TMP.shape) == 1: TMP = TMP.flatten()
+                    derivativeSelf.append(TMP)
                     
             # TODO: is it required?
 #                if not hasattr(self, 'outputTotalLength'): self._getFunc(x)
