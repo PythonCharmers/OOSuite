@@ -604,7 +604,7 @@ class oofun:
                             # warning! t1,t2 can be sparse matrices, so I don't use t = atleast_2d(t) directly
                             #if t1.ndim < 2: t1 = atleast_2d(t1) 
                             if t2.ndim < 2: 
-                                assert t1.ndim > 1
+                                assert t1.ndim > 1, 'error in FuncDesigner kernel, inform developers'
                                 if t1.shape[1] != t2.size:
                                     t2 = t2.reshape(1, -1)
                                 #t2 = atleast_2d(t2)
