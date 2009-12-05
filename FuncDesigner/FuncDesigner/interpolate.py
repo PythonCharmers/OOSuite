@@ -28,6 +28,7 @@ def scipy_UnivariateSpline(*args, **kwargs):
             if x.size != 1:
                 raise FuncDesignerException('for scipy_UnivariateSpline input should be oovar/oofun with output size = 1,other cases not implemented yet')            
             return us.__call__(x)
-        return oofun(f, d = d, input = INP)
+        return oofun(f, d = d, input = INP, isCostly=True)
+        # TODO: check does isCostly = True better than False for small-scale, medium-scale, large-scale
     return makeOutput
 

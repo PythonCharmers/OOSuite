@@ -35,6 +35,7 @@ class oofun:
     isConstraint = False
     #isDifferentiable = True
     discrete = False
+    isCostly = False
     
     stencil = 2 # used for DerApproximator
     
@@ -440,11 +441,8 @@ class oofun:
 #            else:
 #                return deepcopy(self.f_val_prev)
             
-#        if x is None: x = self.x
-#        else: self.x = x
-
         dep = self._getDep()
-        cond_same_point = hasattr(self, 'f_key_prev') and all([array_equal(x[elem], self.f_key_prev[elem.name]) for elem in dep])
+        cond_same_point = self.isCostly and hasattr(self, 'f_key_prev') and all([array_equal(x[elem], self.f_key_prev[elem.name]) for elem in dep])
 
         if cond_same_point:
             self.same += 1
@@ -460,18 +458,22 @@ class oofun:
         tmp = self.fun(*Input)
         if isinstance(tmp, list) or isinstance(tmp, tuple):
             tmp = hstack(tmp)
-        self.f_val_prev = tmp
+        
         #self.outputTotalLength = ([asarray(elem).size for elem in self.fun(*Input)])#self.f_val_prev.size # TODO: omit reassigning
         
         # TODO: simplify it
-        self.f_key_prev = {}
-        for elem in dep:
-            self.f_key_prev[elem.name] = copy(x[elem])
-            
-        if isinstance(self.f_val_prev, ndarray) or isscalar(self.f_val_prev):
-            return atleast_1d(copy(self.f_val_prev))
+        if self.isCostly:
+            self.f_val_prev = tmp
+            self.f_key_prev = {}
+            for elem in dep:
+                self.f_key_prev[elem.name] = copy(x[elem])
+                
+            if isinstance(self.f_val_prev, ndarray) or isscalar(self.f_val_prev):
+                return atleast_1d(copy(self.f_val_prev))
+            else:
+                return deepcopy(self.f_val_prev)
         else:
-            return deepcopy(self.f_val_prev)
+            return tmp
 
 
     """                                                getFunc                                             """

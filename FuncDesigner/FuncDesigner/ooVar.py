@@ -45,7 +45,9 @@ class oovar(oofun):
             try:
                 r = atleast_1d(asfarray(x[self.name]))
             except KeyError:
-                raise FuncDesignerException('for oovar ' + self.name + " the point involved doesn't contain niether name nor the oovar instance")
+                s = 'for oovar ' + self.name + \
+                " the point involved doesn't contain niether name nor the oovar instance. Maybe you try to get function value or derivative in a point where value for an oovar is missing"
+                raise FuncDesignerException(s)
         Size = asarray(r).size
         if isscalar(self.size) and Size != self.size:
             s = 'incorrect size for oovar %s: %d is required, %d is obtained' % (self.name, self.size, Size)
