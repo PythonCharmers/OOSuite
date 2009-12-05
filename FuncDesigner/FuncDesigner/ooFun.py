@@ -877,6 +877,13 @@ class Derivative(dict):
     def __init__(self):
         pass
 
+
+def ooFun(*args, **kwargs):
+    r = oofun(*args, **kwargs)
+    r.isCostly = True
+    return r
+
+
 #
 #class ooconstraint(oofun):
 #    def __init__(self, oofun_instance):
