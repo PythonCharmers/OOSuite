@@ -159,18 +159,17 @@ class oofun:
             r.d = lambda x: 1.0/asarray(other) if x.size == 1 else Diag(ones(x.size)/asarray(other))
         if self.is_linear and not isinstance(other, oofun):
             r.is_linear = True
+        r.isCostly = True
         return r
 
     def __rdiv__(self, other):
-        if isinstance(other, oofun):
-            raise FuncDesignerException('inform developers of the bug')
-        else:
-            other = asarray(other)
-            r = oofun(lambda x: other/x, input = self)# TODO: involve sparsity if possible!
-            def d(x):
-                if other.size > 1 or x.size > 1: return Diag(- other / x**2)
-                else: return -other / x**2
-            r.d = d
+        other = asarray(other) # TODO: sparse matrices handling!
+        r = oofun(lambda x: other/x, input = self)# TODO: involve sparsity if possible!
+        def d(x):
+            if other.size > 1 or x.size > 1: return Diag(- other / x**2)
+            else: return -other / x**2
+        r.d = d
+        r.isCostly = True
         return r
 
     # overload "a*b"
@@ -201,6 +200,7 @@ class oofun:
             r.d = lambda x: aux_d(x, asfarray(other))
         if self.is_linear and not isinstance(other, oofun):
             r.is_linear = True
+        r.isCostly = True
         return r
 
     def __rmul__(self, other):
@@ -220,7 +220,7 @@ class oofun:
             f = lambda x, y: x ** y
             d = (d_x, d_y)
             input = [self, other]
-        r = oofun(f, d = d, input = input)
+        r = oofun(f, d = d, input = input, isCostly = True)
         return r
 
     def __rpow__(self, other):
@@ -232,7 +232,7 @@ class oofun:
             r = Diag(asarray(other) **x * log(asarray(other))) if x.size > 1 else asarray(other)**x * log(asarray(other))
             #raise 0
             return r
-        r = oofun(f, d=d, input = self)
+        r = oofun(f, d=d, input = self, isCostly = True)
         return r
 
     def __xor__(self, other):
@@ -308,6 +308,7 @@ class oofun:
         return r
     
     def prod(self):
+        # TODO: consider using r.isCostly = True
         r = oofun(prod, input = self)
         def d(x):
             if x.ndim > 1: raise FuncDesignerException('prod(x) is not implemented yet for arrays with ndim > 1')

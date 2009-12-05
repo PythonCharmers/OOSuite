@@ -99,6 +99,7 @@ def dot(inp1, inp2):
         
     r = oofun(lambda x, y: x * y if x.size == 1 or y.size == 1 else np.dot(x, y), input = [inp1, inp2], d=(lambda x, y: aux_d(x, y), lambda x, y: aux_d(y, x)))
     r.is_linear = is_linear
+    r.isCostly = True
     return r
 
 
@@ -190,7 +191,7 @@ def norm(inp, *args, **kwargs):
     def d(x):
         s = np.sqrt(np.sum(x**2))
         return x /  s if s != 0 else np.zeros(x.size) # however, dirivative doesn't exist in (0,0,..., 0)
-    return oofun(np.linalg.norm, input = inp, d = lambda x: Diag(d(x)))
+    return oofun(np.linalg.norm, input = inp, d = lambda x: Diag(d(x)), isCostly = True)
 
 def size(inp, *args, **kwargs):
     if not isinstance(inp, oofun): return np.size(inp, *args, **kwargs)
