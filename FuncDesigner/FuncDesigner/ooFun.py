@@ -159,7 +159,7 @@ class oofun:
             r.d = lambda x: 1.0/asarray(other) if x.size == 1 else Diag(ones(x.size)/asarray(other))
         if self.is_linear and not isinstance(other, oofun):
             r.is_linear = True
-        r.isCostly = True
+        #r.isCostly = True
         return r
 
     def __rdiv__(self, other):
@@ -169,7 +169,7 @@ class oofun:
             if other.size > 1 or x.size > 1: return Diag(- other / x**2)
             else: return -other / x**2
         r.d = d
-        r.isCostly = True
+        #r.isCostly = True
         return r
 
     # overload "a*b"
@@ -200,7 +200,7 @@ class oofun:
             r.d = lambda x: aux_d(x, asfarray(other))
         if self.is_linear and not isinstance(other, oofun):
             r.is_linear = True
-        r.isCostly = True
+        #r.isCostly = True
         return r
 
     def __rmul__(self, other):
@@ -220,7 +220,8 @@ class oofun:
             f = lambda x, y: x ** y
             d = (d_x, d_y)
             input = [self, other]
-        r = oofun(f, d = d, input = input, isCostly = True)
+        r = oofun(f, d = d, input = input)
+        #r.isCostly = True
         return r
 
     def __rpow__(self, other):
@@ -232,7 +233,8 @@ class oofun:
             r = Diag(asarray(other) **x * log(asarray(other))) if x.size > 1 else asarray(other)**x * log(asarray(other))
             #raise 0
             return r
-        r = oofun(f, d=d, input = self, isCostly = True)
+        r = oofun(f, d=d, input = self)
+        #r.isCostly = True
         return r
 
     def __xor__(self, other):
