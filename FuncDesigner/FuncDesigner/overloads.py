@@ -143,6 +143,8 @@ def sum(inp, *args, **kwargs):
                     if elem.name in keys:
                         if isinstance(r[elem.name], np.ndarray) and not isinstance(tmpres, np.ndarray): # i.e. tmpres is sparse matrix
                             tmpres = tmpres.toarray()
+                        elif not isinstance(r[elem.name], np.ndarray) and isinstance(tmpres, np.ndarray):
+                            r[elem.name] = r[elem.name].toarray()
                         r[elem.name] += tmpres
                     else:
                         # TODO: check it for oovars with size > 1
@@ -154,6 +156,8 @@ def sum(inp, *args, **kwargs):
                         if key in keys:
                             if isinstance(r[key], np.ndarray) and not isinstance(val, np.ndarray): # i.e. tmpres is sparse matrix
                                 val = val.toarray()
+                            elif not isinstance(r[key], np.ndarray) and isinstance(val, np.ndarray):
+                                r[key] = r[key].toarray()
                             r[key] += val
                         else:
                             r[key] = val
