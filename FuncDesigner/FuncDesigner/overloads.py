@@ -142,7 +142,7 @@ def sum(inp, *args, **kwargs):
                     tmpres = Eye(sz) 
                     if elem.name in keys:
                         if isinstance(r[elem.name], np.ndarray) and not isinstance(tmpres, np.ndarray): # i.e. tmpres is sparse matrix
-                            tmpres = tmpres.todense().A
+                            tmpres = tmpres.toarray()
                         r[elem.name] += tmpres
                     else:
                         # TODO: check it for oovars with size > 1
@@ -153,7 +153,7 @@ def sum(inp, *args, **kwargs):
                     for key, val in tmp.items():
                         if key in keys:
                             if isinstance(r[key], np.ndarray) and not isinstance(val, np.ndarray): # i.e. tmpres is sparse matrix
-                                val = val.todense().A
+                                val = val.toarray()
                             r[key] += val
                         else:
                             r[key] = val

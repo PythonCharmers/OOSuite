@@ -26,7 +26,7 @@ A, B = linSys.A, linSys.b # B instead b for to prevent overriding the oovar b de
 # However, for large sparse problems they can have other type than numpy.ndarray, 
 # e.g. scipy.sparse lil_matrix or coo_matrix (provided you have scipy installed);
 # elseware sometimes they can be mere out of your computer RAM.
-# You could cast it to ndarray for example via myArr = myMatrix.todense().A
+# You could cast it to ndarray for example via myArr = myMatrix.toarray()
 
 """
 Now let's solve it, for this example I use numpy.linalg.solve 

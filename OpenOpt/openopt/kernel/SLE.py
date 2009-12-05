@@ -47,7 +47,7 @@ class SLE(MatrixProblem):
             #print '4'
             rr =  t1._mul_sparse_matrix(t2)            
             #print '5'
-            r = norm(rr.todense().A - self.d, inf)
+            r = norm(rr.toarray() - self.d, inf)
             #print '6'
             return r
 

@@ -293,12 +293,10 @@ class oofun:
         if self.is_linear:
             r.is_linear = True
         return r
-        
-        
-    
    
 #    def __len__(self):
-#        raise FuncDesignerException('using len(obj) (where obj is oovar or oofun) is not possible (at least yet), use obj.size instead')
+        #return self.size
+        #raise FuncDesignerException('using len(obj) (where obj is oovar or oofun) is not possible (at least yet), use obj.size instead')
 
     def sum(self):
         r = oofun(sum, input = self)
@@ -633,7 +631,7 @@ class oofun:
                                         raise FuncDesignerException('incorrect shape in FuncDesigner function _D(), inform developers about the bug')
                                 rr = t1._mul_sparse_matrix(t2)
                                 if asSparse is False:
-                                    rr = rr.todense().A 
+                                    rr = rr.toarray() 
                         else:
                             rr = atleast_1d(dot(t1, t2))
 
@@ -644,18 +642,15 @@ class oofun:
 
                     if min(rr.shape) == 1: 
                         if not isinstance(rr, ndarray): 
-                            rr = rr.todense().A
+                            rr = rr.toarray()
                         rr = rr.flatten() # TODO: check it and mb remove
                     if key in Keys:
                         if isinstance(r[key], ndarray) and not isinstance(rr, ndarray): # i.e. rr is sparse matrix
-                            rr = rr.todense().A # I guess r[key] will hardly be all-zeros
+                            rr = rr.toarray() # I guess r[key] will hardly be all-zeros
                         elif not isinstance(r[key], ndarray) and isinstance(rr, ndarray): # i.e. r[key] is sparse matrix
-                            r[key] = r[key].todense().A
+                            r[key] = r[key].toarray()
                         if rr.size == r[key].size and isinstance(rr, ndarray): 
-                            try:
-                                r[key] += rr
-                            except:
-                                raise 0
+                            r[key] += rr
                         else: 
                             r[key] = r[key] + rr
                     else:
@@ -731,7 +726,6 @@ class oofun:
                     if tmp.shape[0] != nOutput: 
                         # TODO: add debug msg
                         tmp = tmp.T
-                #derivativeSelf.append(tmp)
                    
                 ac = 0
                 

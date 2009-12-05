@@ -52,7 +52,7 @@ class defaultSLEsolver(baseSolver):
         if useDense:
             #p.debugmsg('dense SLE solver')
             try:
-                C = p.C.todense().A if not isinstance(p.C, ndarray) else p.C
+                C = p.C.toarray() if not isinstance(p.C, ndarray) else p.C
                 if self.matrixSLEsolver == 'autoselect': 
                     self.matrixSLEsolver = linalg.solve
                 xf = solver(C, p.d)
@@ -75,7 +75,7 @@ class defaultSLEsolver(baseSolver):
                     if solver_istop < 0: msg += ', matter: illegal input or breakdown'
                     else: msg += ', matter: convergence to tolerance not achieved, number of iterations: %d' % solver_istop
                 p.xf = xf                
-                p.ff = norm(p.C_as_csr._mul_sparse_matrix(scipy.sparse.csr_matrix(xf.reshape(-1, 1))).todense().A.flatten()-p.d, inf)                
+                p.ff = norm(p.C_as_csr._mul_sparse_matrix(scipy.sparse.csr_matrix(xf.reshape(-1, 1))).toarray().flatten()-p.d, inf)                
             except:
                 istop, msg = -100, 'unimplemented exception while solving sparse SLE'
         p.istop, p.msg = istop, msg
