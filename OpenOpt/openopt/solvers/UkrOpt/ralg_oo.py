@@ -256,12 +256,15 @@ class ralg(baseSolver):
             g = economyMult(b.T, g1)
             ng = p.norm(g)
             p._df = g2.copy()
+            if p.iter>500: p.debugmsg(str(g2))
 
             if self.needRej(p, b, g1, g):
                 if self.showRej or p.debug:
                     p.info('debug msg: matrix B restoration in ralg solver')
                 b = B0.copy()
                 hs = 0.5*p.norm(prevIterPoint.x - iterPoint.x)
+            if ng < 1e-50: p.debugmsg('small dilation direction norm, skipping')
+            #p.debugmsg('dilation direction norm:%e' % ng)
             if all(isfinite(g)) and ng > 1e-50 and doDilation:
                 g = (g / ng).reshape(-1,1)
                 vec1 = economyMult(b, g).reshape(-1,1)# TODO: remove economyMult, use dot?
@@ -283,12 +286,13 @@ class ralg(baseSolver):
                 return
 
             s2 = 0
-            if not p.istop and not p.userStop:
+            if p.istop and not p.userStop:
                 if SMALL_DF in p.stopdict.keys():
                     if currIterPointIsFeasible: s2 = p.istop
                     p.stopdict.pop(SMALL_DF)
                 if SMALL_DELTA_F in p.stopdict.keys():
-                    if currIterPointIsFeasible: s2 = p.istop
+                    # TODO: implement it more properly
+                    if currIterPointIsFeasible and prevIterPoint.f() != iterPoint.f(): s2 = p.istop
                     p.stopdict.pop(SMALL_DELTA_F)
                 if SMALL_DELTA_X in p.stopdict.keys():
                     if currIterPointIsFeasible or not prevIterPointIsFeasible or cond_same_point: s2 = p.istop

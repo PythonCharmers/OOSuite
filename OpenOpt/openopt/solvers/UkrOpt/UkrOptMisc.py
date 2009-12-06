@@ -132,6 +132,7 @@ from openopt.kernel.ooMisc import isSolved
 def getBestPointAfterTurn(oldPoint, newPoint, altLinInEq=None, maxLS = 3, maxDeltaX = None, maxDeltaF = None, line_points = None, hs=None):
     assert altLinInEq is not None
     p = oldPoint.p
+    contol = p.contol
 
     c1, lin_eq1, lin_ineq1, lb1, ub1 = oldPoint.c(), oldPoint.lin_eq(), oldPoint.lin_ineq(), oldPoint.lb(), oldPoint.ub()
 
@@ -166,7 +167,7 @@ def getBestPointAfterTurn(oldPoint, newPoint, altLinInEq=None, maxLS = 3, maxDel
             maxDeltaX = 1.5e4*p.xtol
         else:
             maxDeltaX = 1.5e1*p.xtol
-    #if maxDeltaF is None: maxDeltaF = 15*p.ftol
+    if maxDeltaF is None: maxDeltaF = 150*p.ftol
     prev_prev_point = newPoint
     for ls in xrange(maxLS):
         
@@ -195,7 +196,12 @@ def getBestPointAfterTurn(oldPoint, newPoint, altLinInEq=None, maxLS = 3, maxDel
         if p.norm(oldPoint.x - altPoint.x) < maxDeltaX: 
             #print 'insufficient step norm during backward search:', p.norm(oldPoint.x - altPoint.x) , maxDeltaX
             break
-        #if abs(oldPoint.f() - altPoint.f()) < maxDeltaF: break
+            
+        rr = oldPoint.f() - altPoint.f()
+        if (oldPoint.isFeas() or altPoint.isFeas()) and maxDeltaF/2**15 < abs(rr) < maxDeltaF: break
+        
+        # TODO: is it worth to implement?
+        if (oldPoint.mr() > contol and altPoint.mr() > p.contol) and altPoint.mr() > 0.9*oldPoint.mr(): break 
 
     return prev_prev_point, -ls
 
