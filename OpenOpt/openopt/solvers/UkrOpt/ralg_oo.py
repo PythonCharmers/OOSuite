@@ -145,7 +145,6 @@ class ralg(baseSolver):
             """                           Forward line search                          """
 
             x = prevIterPoint.x.copy()
-            prevPrevPoint = prevIterPoint
             hs_cumsum = 0
             for ls in xrange(p.maxLineSearch):
                 if ls > 20:
@@ -174,7 +173,6 @@ class ralg(baseSolver):
 
                 if newPoint.betterThan(oldPoint, altLinInEq=True):
                     if newPoint.betterThan(bestPoint): bestPoint = newPoint
-                    if ls !=0: prevPrevPoint = oldPoint
                     oldPoint, newPoint = newPoint,  None
                 else:
                     break
@@ -191,13 +189,17 @@ class ralg(baseSolver):
             """                          Backward line search                          """
 
 
-            if ls == 0 and self.doBackwardSearch:
-                iterPoint, ls_backward = getBestPointAfterTurn(prevIterPoint, iterPoint, altLinInEq = True)
+            if ls == 0:
+                if self.doBackwardSearch:
+                    iterPoint, ls_backward = getBestPointAfterTurn(prevIterPoint, iterPoint, altLinInEq = True)
 
-                # TODO: extract last point from backward search, that one is better than iterPoint
-                if iterPoint.betterThan(bestPoint): bestPoint = iterPoint
+                    # TODO: extract last point from backward search, that one is better than iterPoint
+                    if iterPoint.betterThan(bestPoint): bestPoint = iterPoint
 
-                hs *= 2 ** ls_backward
+                    hs *= 2 ** ls_backward
+                else:
+                    pass
+                    #hs *= 0.95
 
             """                      iterPoint has been obtained                     """
 
@@ -243,8 +245,6 @@ class ralg(baseSolver):
                 g1 = G2 - G
             elif prevIterPointIsFeasible == currIterPointIsFeasible == False:
                 g1 = G2 - G
-#                if self.altLinEq and :
-#                    w = W * 16
             elif prevIterPointIsFeasible:
                 g1 = G2.copy()
             else:
@@ -253,23 +253,53 @@ class ralg(baseSolver):
 
             """                             Perform dilation                               """
 
+            # DEBUG!
+#            W = w
+#            W = T(1.0/alp-1.0) if prevIterPointIsFeasible == currIterPointIsFeasible else T(1.0/(16*alp)-1.0)
+#            W = T(1.0/(2*alp)-1.0)
+            # DEBUG END
+
             g = economyMult(b.T, g1)
             ng = p.norm(g)
             p._df = g2.copy()
-            if p.iter>500: p.debugmsg(str(g2))
+            #if p.iter>500: p.debugmsg(str(g2))
 
             if self.needRej(p, b, g1, g):
                 if self.showRej or p.debug:
                     p.info('debug msg: matrix B restoration in ralg solver')
                 b = B0.copy()
                 hs = 0.5*p.norm(prevIterPoint.x - iterPoint.x)
-            if ng < 1e-50: p.debugmsg('small dilation direction norm, skipping')
+            #p.debugmsg('ng:%e  ng1:%e' % (ng, p.norm(g1)))
+            if ng < 1e-50: 
+                hs *= 0.9
+                p.debugmsg('small dilation direction norm, skipping')
             #p.debugmsg('dilation direction norm:%e' % ng)
             if all(isfinite(g)) and ng > 1e-50 and doDilation:
                 g = (g / ng).reshape(-1,1)
                 vec1 = economyMult(b, g).reshape(-1,1)# TODO: remove economyMult, use dot?
                 vec2 = w * g.T
                 b += p.matmult(vec1, vec2)
+            
+            # DEBUG!!
+            #print '>!', p.matmult(iterPoint.x, g1)
+            
+#            if itn == 0: COS = []
+#            from numpy import arange, diff
+#            P = arange(n) # point
+#            direction = -arange(n)
+#            subgrad = -arange(n)* (1+arange(n)/(n+0.1))
+#            direction, subgrad = direction/norm(direction), subgrad/norm(subgrad)
+#            
+#            subgrad_dilated = economyMult(b.T, subgrad)
+#            if any(subgrad_dilated): subgrad_dilated /= p.norm(subgrad_dilated)
+#            subgrad_dilated = p.matmult(b, subgrad_dilated)
+#            cos_a = p.matmult(subgrad_dilated, direction)
+#            COS.append(cos_a)
+#            if itn == 90: print '>>', COS, diff(COS)
+            #stat_vec = range(n)
+            
+            
+            # DEBUG END
 
             """                               Call OO iterfcn                                """
             p.iterfcn(iterPoint)
