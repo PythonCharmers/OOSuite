@@ -328,19 +328,19 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                             UB[Name] = min((val, UB[Name]))
                 elif c.lb == 0 and c.ub == 0:
                     if f.is_linear:
-                        Aeq.append(self._pointDerivative2array(f._D(Z, **D_kwargs)))      
+                        Aeq.append(self._pointDerivative2array(f.D(Z, **D_kwargs)))      
                         beq.append(-f(Z))
                     elif self.h is None: self.h = [c.oofun]
                     else: self.h.append(c.oofun)
                 elif c.ub == 0:
                     if f.is_linear:
-                        A.append(self._pointDerivative2array(f._D(Z, **D_kwargs)))                       
+                        A.append(self._pointDerivative2array(f.D(Z, **D_kwargs)))                       
                         b.append(-f(Z))
                     elif self.c is None: self.c = [c.oofun]
                     else: self.c.append(c.oofun)
                 elif c.lb == 0:
                     if f.is_linear:
-                        A.append(-self._pointDerivative2array(f._D(Z, **D_kwargs)))                       
+                        A.append(-self._pointDerivative2array(f.D(Z, **D_kwargs)))                       
                         b.append(f(Z))                        
                     elif self.c is None: self.c = [- c.oofun]
                     else: self.c.append(- c.oofun)

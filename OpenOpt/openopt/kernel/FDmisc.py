@@ -104,7 +104,11 @@ def setStartVectorAndTranslators(p):
         if len(pointDerivarive) == 0: 
             p.err('unclear error, maybe you have constraint independend on any optimization variables') 
 
-        name, val = pointDerivarive.items()[0]
+        key, val = pointDerivarive.items()[0]
+        
+        indexingByNames = True if isinstance(key, str) else False
+        name = key if indexingByNames else key.name
+        
         if isinstance(val, float) or (isinstance(val, ndarray) and val.shape == ()):
             val = atleast_1d(val)
         var_inds = oovarsIndDict[name]
@@ -119,7 +123,7 @@ def setStartVectorAndTranslators(p):
             for i, var in enumerate(optVars):
                 if var.name in derivativeVars:
                     indexes = oovarsIndDict[var.name]
-                    tmp = pointDerivarive[var.name]
+                    tmp = pointDerivarive[var.name] if indexingByNames else pointDerivarive[var]
                     if isinstance(tmp, float) or (isinstance(tmp, ndarray) and tmp.shape == ()):
                         tmp = atleast_1d(tmp)
                     if tmp.ndim < 2:
@@ -138,7 +142,7 @@ def setStartVectorAndTranslators(p):
                 else:
                     r = DenseMatrixConstructor((n, funcLen))            
             for key, val in pointDerivarive.items():
-                indexes = oovarsIndDict[key]
+                indexes = oovarsIndDict[key] if indexingByNames else oovarsIndDict[key.name]
                 if funcLen == 1 or not asSparse:
                     r[indexes[0]:indexes[1]] = val.T
                 else:

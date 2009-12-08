@@ -42,13 +42,16 @@ class oofun:
     #TODO: modify for cases where output can be partial
     evals = 0
     same = 0
-
+    same_d = 0
+    evals_d  = 0
 
     # finite-difference aproximation step
     diffInt = 1.5e-8
     maxViolation = 1e-2
     _unnamedFunNumber = 1
 
+    _usedIn = 0
+    _directlyDwasInwolved = False
 
     pWarn = pWarn
 
@@ -72,8 +75,11 @@ class oofun:
         if hasattr(self, 'input'):
             if type(self.input) not in [list, tuple]:
                 self.input = [self.input]
-            #for elem in self.input:
-                #if not isinstance(elem, oofun):
+            for elem in self.input:
+                if isinstance(elem, oofun):
+                    elem._usedIn += 1
+                else:
+                    pass
                     #raise FuncDesignerException('All input(s) of the oofun ' + self.name + ' have to be oofun/oovar instance(s)')
     
     def named(self, name):
@@ -488,19 +494,30 @@ class oofun:
         # resultKeysType doesn't matter for the case isinstance(Vars, oovar)
         if Vars is not None and fixedVars is not None:
             raise FuncDesignerException('No more than one argument from "Vars" and "fixedVars" is allowed for the function')
+        assert type(Vars) != ndarray and type(fixedVars) != ndarray
+        self._directlyDwasInwolved = True
         if not hasattr(self, '_prev_D_Vars_key'):
             self._prev_D_Vars_key = Vars if (Vars is None or (isinstance(Vars, oofun) and Vars.is_oovar) ) else set([v.name for v in Vars])
             self._prev_D_fixedVars_key = fixedVars if (fixedVars is None or (isinstance(fixedVars, oofun) and fixedVars.is_oovar) ) \
             else set([v.name for v in fixedVars])
-        if not(self._prev_D_Vars_key == Vars and self._prev_D_fixedVars_key == fixedVars):
-            involvePrevData = False
-        else:
-            involvePrevData = True
-        assert type(Vars) != ndarray
-        assert type(fixedVars) != ndarray
-        _Vars = Vars if type(Vars) not in (list, tuple) else set(Vars)
-        _fixedVars = fixedVars if type(fixedVars) not in (list, tuple) else set(fixedVars)
-        r = self._D(x, _Vars, _fixedVars, involvePrevData = involvePrevData, asSparse = asSparse)
+        sameDerivativeVariables = True if (self._prev_D_Vars_key == Vars and self._prev_D_fixedVars_key == fixedVars) else False
+        
+        #TODO: remove cloned code
+        if Vars is not None:
+            if type(Vars) in [list, tuple]:
+                Vars = set(Vars)
+            elif isinstance(Vars, oofun):
+                if not Vars.is_oovar:
+                    raise FuncDesignerException('argument Vars is expected as oovar or python list/tuple of oovar instances')
+                Vars = set([Vars])
+        if fixedVars is not None:
+            if type(fixedVars) in [list, tuple]:
+                fixedVars = set(fixedVars)
+            elif isinstance(fixedVars, oofun):
+                if not fixedVars.is_oovar:
+                    raise FuncDesignerException('argument fixedVars is expected as oovar or python list/tuple of oovar instances')
+                fixedVars = set([fixedVars])
+        r = self._D(x, Vars, fixedVars, sameDerivativeVariables = sameDerivativeVariables, asSparse = asSparse)
         if isinstance(Vars, oofun):
             if Vars.is_oovar:
                 return Vars(r)
@@ -522,43 +539,28 @@ class oofun:
                 raise FuncDesignerException('Incorrect argument resultKeysType, should be "vars" or "names"')
             
             
-    def _D(self, x, Vars=None, fixedVars = None, involvePrevData = True, asSparse = 'autoselect'):
+    def _D(self, x, Vars=None, fixedVars = None, sameDerivativeVariables=True, asSparse = 'autoselect'):
         if self.is_oovar: 
             return {} if fixedVars is not None and self in fixedVars else {self.name:Eye(self(x).size) if asSparse is not False else eye(self(x).size)}
         if self.discrete: raise FuncDesignerException('The oofun or oovar instance has been declared as discrete, no derivative is available')
         if Vars is not None and fixedVars is not None:
             raise FuncDesignerException('No more than one parameter from Vars and fixedVars is allowed')
-            
-        #TODO: 
-        # 1) remove cloned code
-        # 2) move it to upper level
-        if Vars is not None:
-            if type(Vars) in [list, tuple]:
-                Vars = set(Vars)
-            elif isinstance(Vars, oofun):
-                if not Vars.is_oovar:
-                    raise FuncDesignerException('argument Vars is expected as oovar or python list/tuple of oovar instances')
-                Vars = set([Vars])
-        if fixedVars is not None:
-            if type(fixedVars) in [list, tuple]:
-                fixedVars = set(fixedVars)
-            elif isinstance(fixedVars, oofun):
-                if not fixedVars.is_oovar:
-                    raise FuncDesignerException('argument fixedVars is expected as oovar or python list/tuple of oovar instances')
-                fixedVars = set([fixedVars])
-        
-        #!!!!!!!!!!!!! TODO: handle fixed cases
-#            # 1) handle sparsity if possible
-#            # 2) try to handle the situation in the level above
-#            return zeros((self.outputTotalLength, self.inputTotalLength))
-
+      
         dep = self._getDep()
         ##########################
         
-        cond_same_point = involvePrevData and hasattr(self, 'd_key_prev') and all([array_equal(x[elem], self.d_key_prev[elem.name]) for elem in dep])
+        # TODO: optimize it. Omit it for simple cases.
+        isTransmit = self._usedIn == 1 # Exactly 1! not 0, 2, ,3, 4, etc
+        involveStore = (not isTransmit) or self._directlyDwasInwolved
+        #cond_same_point = False
+        cond_same_point = involveStore and sameDerivativeVariables and \
+        hasattr(self, 'd_key_prev') and all([array_equal(x[elem], self.d_key_prev[elem.name]) for elem in dep])
         
         if cond_same_point:
-            return  deepcopy(self.d_val_prev)
+            self.same_d += 1
+            return deepcopy(self.d_val_prev)
+        else:
+            self.evals_d += 1
         
         derivativeSelf = self._getDerivativeSelf(x, Vars, fixedVars)
         r = Derivative()
@@ -595,7 +597,7 @@ class oofun:
                 ac += 1
                 
                 # asSparse should be 'autoselect' here, not the value taken from the function arguments!
-                elem_d = inp._D(x, Vars, fixedVars, involvePrevData = involvePrevData, asSparse = 'autoselect') 
+                elem_d = inp._D(x, Vars, fixedVars, sameDerivativeVariables, asSparse = 'autoselect') 
                 
                 for key in elem_d.keys():
                     if derivativeSelf[ac].size == 1 or elem_d[key].size == 1:
