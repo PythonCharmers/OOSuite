@@ -140,6 +140,7 @@ def sum(inp, *args, **kwargs):
             r, keys = {}, set()
             for elem in _inp:
                 if elem.is_oovar:
+                    if (fixedVars is not None and elem in fixedVars) or (Vars is not None and elem not in Vars): continue
                     sz = np.asarray(point[elem]).size
                     tmpres = Eye(sz) 
                     if elem.name in keys:
