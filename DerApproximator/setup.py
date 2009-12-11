@@ -19,7 +19,11 @@ from __init__ import __version__ as Ver
 
 DOWNLOAD_URL        = 'ftp://ftp.linux.kiev.ua/pub/projects/openopt/download/DerApproximator' + str(Ver) + '.zip'
 
-import setuptools, string, shutil
+try:
+    import setuptools
+except:
+    print('you should have setuptools installed (http://pypi.python.org/pypi/setuptools), for some Linux distribs you can get it via [sudo] apt-get python-setuptools')
+import string, shutil
 from distutils.errors import DistutilsError
 #from numpy.distutils.system_info import system_info, NotFoundError, dict_append, so_ext
 from numpy.distutils.core import setup, Extension

@@ -18,8 +18,12 @@ LICENSE             = 'new BSD'
 from FuncDesigner import __version__ as Ver
 
 DOWNLOAD_URL        = 'ftp://ftp.linux.kiev.ua/pub/projects/openopt/download/FuncDesigner' + str(Ver) + '.zip'
+try:
+    import setuptools
+except:
+    print('you should have setuptools installed (http://pypi.python.org/pypi/setuptools), for some Linux distribs you can get it via [sudo] apt-get python-setuptools')
 
-import setuptools, string, shutil
+import string, shutil
 from distutils.errors import DistutilsError
 #from numpy.distutils.system_info import system_info, NotFoundError, dict_append, so_ext
 from numpy.distutils.core import setup, Extension
