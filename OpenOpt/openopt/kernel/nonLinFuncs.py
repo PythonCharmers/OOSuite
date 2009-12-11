@@ -16,6 +16,7 @@ try:
     #Vstack, isspmatrix = scipy.sparse.vstack, scipy.sparse.isspmatrix
 except:
     scipyInstalled = False
+    isspmatrix = lambda *args,  **kwargs:  False
 
 class nonLinFuncs:
     def __init__(self): pass

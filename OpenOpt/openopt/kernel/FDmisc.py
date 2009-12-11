@@ -9,6 +9,7 @@ try:
     from scipy.sparse import hstack as Hstack, isspmatrix
 except:
     scipyInstalled = False
+    isspmatrix = lambda *args,  **kwargs:  False
 
 DenseMatrixConstructor = lambda *args, **kwargs: zeros(*args, **kwargs)
 
