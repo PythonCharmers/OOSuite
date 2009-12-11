@@ -1,17 +1,7 @@
 # Handling of FuncDesigner probs
 
 from numpy import empty, hstack, asfarray, all, atleast_1d, cumsum, asarray, zeros,  atleast_2d, ndarray, prod
-
-try:
-    import scipy
-    scipyInstalled = True
-    SparseMatrixConstructor = lambda *args, **kwargs: scipy.sparse.lil_matrix(*args, **kwargs)
-    from scipy.sparse import hstack as Hstack, isspmatrix
-except:
-    scipyInstalled = False
-    isspmatrix = lambda *args,  **kwargs:  False
-
-DenseMatrixConstructor = lambda *args, **kwargs: zeros(*args, **kwargs)
+from nonOptMisc import scipyInstalled, Hstack, Vstack, Find, isspmatrix, SparseMatrixConstructor, DenseMatrixConstructor
 
 def setStartVectorAndTranslators(p):
     for fn in ['lb', 'ub', 'A', 'Aeq', 'b', 'beq']:

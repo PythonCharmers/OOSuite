@@ -4,6 +4,13 @@ from numpy.linalg import norm
 from pointProjection import pointProjection
 __docformat__ = "restructuredtext en"
 empty_arr = array(())
+try:
+    import scipy
+    scipyInstalled = True
+    from scipy.sparse import isspmatrix
+except:
+    scipyInstalled = False
+    isspmatrix = lambda *args,  **kwargs:  False
 
 class Point:
     """
@@ -423,12 +430,12 @@ class Point:
                     d = self.__all_lin_ineq_gradient()
                     self.dType = 'all_lin_ineq'
                 elif fname == 'lin_eq':
-                    raise "OpenOpt kernel error"
+                    self.p.err("kernel error, inform openopt developers")
                     #d = self.dmr()
                     #self.dType = 'lin_eq'
                 elif fname == 'c':
                     d = self.dmr()
-                    if p.debug: assert array_equal(self.dc(ind).flatten(), self.dmr())
+                    #if p.debug: assert array_equal(self.dc(ind).flatten(), self.dmr())
                     self.dType = 'c'
                 elif fname == 'h':
                     d = self.dmr()#sign(self.h(ind))*self.dh(ind)
@@ -437,6 +444,7 @@ class Point:
                 else:
                     p.err('error in getRalgDirection (unknown residual type ' + fname + ' ), you should report the bug')
                 self.direction = d.flatten()
+            if isspmatrix(self.direction): self.direction = self.direction.A
             return self.direction
 
 #    def __getDirection__(self, useCurrentBestFeasiblePoint = False):

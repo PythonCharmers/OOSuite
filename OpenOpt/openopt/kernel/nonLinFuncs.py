@@ -2,21 +2,13 @@ __docformat__ = "restructuredtext en"
 from numpy import *
 from setDefaultIterFuncs import USER_DEMAND_EXIT
 from ooMisc import killThread, setNonLinFuncsNumber
+from nonOptMisc import scipyInstalled, Vstack, isspmatrix
 try:
     from DerApproximator import get_d1
     DerApproximatorIsInstalled = True
 except:
     DerApproximatorIsInstalled = False
-    
-try:
-    import scipy
-    scipyInstalled = True
-    from scipy.sparse import vstack as Vstack, isspmatrix
-    #SparseMatrixConstructor = lambda *args, **kwargs: scipy.sparse.lil_matrix(*args, **kwargs)
-    #Vstack, isspmatrix = scipy.sparse.vstack, scipy.sparse.isspmatrix
-except:
-    scipyInstalled = False
-    isspmatrix = lambda *args,  **kwargs:  False
+
 
 class nonLinFuncs:
     def __init__(self): pass
@@ -284,7 +276,9 @@ class nonLinFuncs:
             if not isinstance(derivatives, ndarray): 
                 derivatives = derivatives.toarray()
                 
-        if min(derivatives.shape) == 1: derivatives = derivatives.flatten()
+        if min(derivatives.shape) == 1: 
+            if isspmatrix(derivatives): derivatives = derivatives.A
+            derivatives = derivatives.flatten()
 
         if ind is None and not ignorePrev: p.prevVal[derivativesType]['val'] = derivatives
 
@@ -361,6 +355,12 @@ def getFuncsAndExtractIndexes(p, funcs, ind, userFunctionType):
     Funcs = []
 
     for i in xrange(len(Funcs2)):
-        Funcs.append(lambda x, i=i: Funcs2[i][0](x)[Funcs2[i][1]])
+        def f_aux(x, i=i): 
+            r = Funcs2[i][0](x)
+            # TODO: are other formats better?
+            r = r.tocsc()[Funcs2[i][1]] if isspmatrix(r) else r[Funcs2[i][1]]
+            return r
+        Funcs.append(f_aux)
+        #Funcs.append(lambda x, i=i: Funcs2[i][0](x)[Funcs2[i][1]])
     return Funcs#, inner_ind
     
