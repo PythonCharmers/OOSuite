@@ -452,7 +452,7 @@ class oofun:
             
         dep = self._getDep()
         cond_same_point = self.isCostly and hasattr(self, 'f_key_prev') and all([array_equal(x[elem], self.f_key_prev[elem.name]) for elem in dep])
-
+        #cond_same_point = hasattr(self, 'f_key_prev') and all([array_equal(x[elem], self.f_key_prev[elem.name]) for elem in dep])
         if cond_same_point:
             self.same += 1
             return deepcopy(self.f_val_prev)
@@ -539,7 +539,7 @@ class oofun:
                 raise FuncDesignerException('Incorrect argument resultKeysType, should be "vars" or "names"')
             
             
-    def _D(self, x, Vars=None, fixedVars = None, sameDerivativeVariables=True, asSparse = 'autoselect'):
+    def _D(self, x, Vars=None, fixedVars = None, sameDerivativeVariables=True, asSparse = 'auto'):
         if self.is_oovar: 
             return {} if fixedVars is not None and self in fixedVars else {self.name:Eye(self(x).size) if asSparse is not False else eye(self(x).size)}
         if self.discrete: raise FuncDesignerException('The oofun or oovar instance has been declared as discrete, no derivative is available')
@@ -597,7 +597,7 @@ class oofun:
                 ac += 1
                 
                 # asSparse should be 'autoselect' here, not the value taken from the function arguments!
-                elem_d = inp._D(x, Vars, fixedVars, sameDerivativeVariables, asSparse = 'autoselect') 
+                elem_d = inp._D(x, Vars, fixedVars, sameDerivativeVariables, asSparse = 'auto') 
                 
                 for key in elem_d.keys():
                     if derivativeSelf[ac].size == 1 or elem_d[key].size == 1:

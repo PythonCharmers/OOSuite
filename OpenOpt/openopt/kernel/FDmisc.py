@@ -6,7 +6,7 @@ try:
     import scipy
     scipyInstalled = True
     SparseMatrixConstructor = lambda *args, **kwargs: scipy.sparse.lil_matrix(*args, **kwargs)
-    Hstack = scipy.sparse.hstack
+    from scipy.sparse import hstack as Hstack, isspmatrix
 except:
     scipyInstalled = False
 
@@ -95,9 +95,11 @@ def setStartVectorAndTranslators(p):
         oovarsIndDict[oov.name] = (oovar_indexes[i], oovar_indexes[i+1])
         
     def pointDerivative2array(pointDerivarive, asSparse = False): 
-
-        if asSparse and not scipyInstalled:
-                p.err('to handle sparse matrices you should have module scipy installed') 
+        
+        # asSparse can be True, False, 'auto'
+        # !!!!!!!!!!! TODO: implement asSparse = 'auto' properly
+        if asSparse is not False and not scipyInstalled:
+            p.err('to handle sparse matrices you should have module scipy installed') 
 
         # however, this check is performed in other function (before this one)
         # and those constraints are excluded automaticvally
@@ -117,13 +119,15 @@ def setStartVectorAndTranslators(p):
         
         newStyle = 1
         
-        if asSparse and newStyle:
+        if asSparse is not False and newStyle:
             derivativeVars = set(pointDerivarive.keys())
             r2 = []
+            hasSparse = False
             for i, var in enumerate(optVars):
                 if var.name in derivativeVars:
                     indexes = oovarsIndDict[var.name]
                     tmp = pointDerivarive[var.name] if indexingByNames else pointDerivarive[var]
+                    if isspmatrix(tmp): hasSparse = True
                     if isinstance(tmp, float) or (isinstance(tmp, ndarray) and tmp.shape == ()):
                         tmp = atleast_1d(tmp)
                     if tmp.ndim < 2:
@@ -131,8 +135,10 @@ def setStartVectorAndTranslators(p):
                     r2.append(tmp)
                 else:
                     r2.append(SparseMatrixConstructor((funcLen, oovar_sizes[i])))
-            r3 = Hstack(r2)
-            return r3
+                    hasSparse = True
+            r3 = Hstack(r2) if hasSparse else hstack(r2)
+            if isspmatrix(r3) and r3.nnz > 0.25 * prod(r3.shape): r3 = r3.A
+            return r3 
         else:
             if funcLen == 1:
                 r = DenseMatrixConstructor(n)

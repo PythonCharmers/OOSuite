@@ -270,9 +270,9 @@ class ralg(baseSolver):
                 b = B0.copy()
                 hs = 0.5*p.norm(prevIterPoint.x - iterPoint.x)
             #p.debugmsg('ng:%e  ng1:%e' % (ng, p.norm(g1)))
-            if ng < 1e-50: 
+            if ng < 1e-40: 
                 hs *= 0.9
-                p.debugmsg('small dilation direction norm, skipping')
+                p.debugmsg('small dilation direction norm (%e), skipping' % ng)
             #p.debugmsg('dilation direction norm:%e' % ng)
             if all(isfinite(g)) and ng > 1e-50 and doDilation:
                 g = (g / ng).reshape(-1,1)
@@ -379,24 +379,24 @@ class ralg(baseSolver):
         for i in xrange(nLinEq):
             g = Aeq[i]
             g = p.matmult(b.T, g)
-            ind_nnz = nonzero(g)[0]
+            #ind_nnz = nonzero(g)[0]
             ng = norm(g)
             g = (g / ng).reshape(-1,1)
             
             vec1 = economyMult(b, g)# TODO: remove economyMult, use dot?
             vec2 = -g.T
             
-            #b += p.matmult(vec1, vec2)
+            b += p.matmult(vec1, vec2)
             
-            if len(ind_nnz) > 0.7 * g.size:
-                b += p.matmult(vec1, vec2)
-            else:
-                ind_nnz1 = nonzero(vec1)[0]
-                ind_nnz2 = nonzero(vec2)[1]
-                r = dot(vec1[ind_nnz1, :], vec2[:, ind_nnz2])
-                if p.debug: 
-                    assert abs(norm(p.matmult(vec1, vec2).flatten()) - norm(r.flatten())) < 1e-5
-                b[ix_(ind_nnz1, ind_nnz2)] += r
+#            if len(ind_nnz) > 0.7 * g.size:
+#                b += p.matmult(vec1, vec2)
+#            else:
+#                ind_nnz1 = nonzero(vec1)[0]
+#                ind_nnz2 = nonzero(vec2)[1]
+#                r = dot(vec1[ind_nnz1, :], vec2[:, ind_nnz2])
+#                if p.debug: 
+#                    assert abs(norm(p.matmult(vec1, vec2).flatten()) - norm(r.flatten())) < 1e-5
+#                b[ix_(ind_nnz1, ind_nnz2)] += r
  
         return b
  

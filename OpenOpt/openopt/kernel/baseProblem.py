@@ -536,8 +536,8 @@ class NonLinProblem(baseProblem, nonLinFuncs, Args):
                 setattr(self, s, lambda x, IND=None, userFunctionType= s, ignorePrev=False, getDerivative=False: \
                         self.wrapped_func(x, IND, userFunctionType, ignorePrev, getDerivative))
             elif derivativeOrder == 1:
-                setattr(self, s, lambda x, ind=None, funcType=s[-1], ignorePrev = False:
-                        self.wrapped_1st_derivatives(x, ind, funcType, ignorePrev))
+                setattr(self, s, lambda x, ind=None, funcType=s[-1], ignorePrev = False, asSparse='auto':
+                        self.wrapped_1st_derivatives(x, ind, funcType, ignorePrev, asSparse))
             elif derivativeOrder == 2:
                 setattr(self, s, getattr(self, 'user_'+s))
             else:

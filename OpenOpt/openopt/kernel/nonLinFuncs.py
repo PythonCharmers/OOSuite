@@ -7,6 +7,15 @@ try:
     DerApproximatorIsInstalled = True
 except:
     DerApproximatorIsInstalled = False
+    
+try:
+    import scipy
+    scipyInstalled = True
+    from scipy.sparse import vstack as Vstack, isspmatrix
+    #SparseMatrixConstructor = lambda *args, **kwargs: scipy.sparse.lil_matrix(*args, **kwargs)
+    #Vstack, isspmatrix = scipy.sparse.vstack, scipy.sparse.isspmatrix
+except:
+    scipyInstalled = False
 
 class nonLinFuncs:
     def __init__(self): pass
@@ -31,7 +40,7 @@ class nonLinFuncs:
 
         # this line had been added because some solvers pass tuple instead of
         # x being vector p.n x 1 or matrix X=[x1 x2 x3...xk], size(X)=[p.n, k]
-        x = asfarray(x)
+        if not isspmatrix(x): x = asfarray(x)
         
         if not ignorePrev: 
             prevKey = p.prevVal[userFunctionType]['key']
@@ -81,11 +90,13 @@ class nonLinFuncs:
         # TODO: mb replace D by _D?
         if getDerivative and p.isFDmodel:
             if p.optVars is None or (p.fixedVars is not None and len(p.optVars) < len(p.fixedVars)):
-                funcs2 = \
-                [(lambda x, i=i: p._pointDerivative2array(funcs[i].D(x, Vars = p.optVars, resultKeysType = 'names'))) for i in xrange(len(funcs))]
+                funcs2 = [(lambda x, i=i: \
+                  p._pointDerivative2array(funcs[i].D(x, Vars = p.optVars, resultKeysType = 'names', asSparse='auto'), asSparse='auto')) \
+                  for i in xrange(len(funcs))]
             else:
-                funcs2 = \
-                [(lambda x, i=i: p._pointDerivative2array(funcs[i].D(x, fixedVars = p.fixedVars, resultKeysType = 'names'))) for i in xrange(len(funcs))]
+                funcs2 = [(lambda x, i=i: \
+                  p._pointDerivative2array(funcs[i].D(x, fixedVars = p.fixedVars, resultKeysType = 'names', asSparse='auto'), asSparse='auto')) \
+                  for i in xrange(len(funcs))]
         else:
             funcs2 = funcs
             
@@ -125,7 +136,9 @@ class nonLinFuncs:
                 p.prevVal[userFunctionType]['key'] = copy(x_0)
                 p.prevVal[userFunctionType]['val'] = r.copy()                
         elif getDerivative and p.isFDmodel:
-            r = vstack([fun(X) for fun in Funcs])
+            #raise 0
+            rr = [fun(X) for fun in Funcs]
+            r = Vstack(rr) if scipyInstalled and any([isspmatrix(elem) for elem in rr]) else vstack(rr)
         else:
             if getDerivative:
                 r = zeros((nFuncsToObtain, p.n))
@@ -155,10 +168,16 @@ class nonLinFuncs:
                     
                 agregate_counter += atleast_1d(asarray(v)).shape[0]
 
-        if userFunctionType == 'f' and p.isObjFunValueASingleNumber and r.size > 1: 
+        #assert p.iter != 176 or userFunctionType != 'f' or not getDerivative
+        if userFunctionType == 'f' and p.isObjFunValueASingleNumber and r.size > 1 and (type(r) == ndarray or min(r.shape) > 1): 
             r = r.sum(0)
 
-        if nXvectors == 1 and (not getDerivative or r.size == 1): r = r.flatten()
+#        if type(r) == matrix: 
+#            raise 0
+#            r = r.A # if _dense_numpy_matrix !
+        #assert p.iter != 176 or userFunctionType != 'f' or not getDerivative
+        if nXvectors == 1 and (not getDerivative or r.size == 1): #if min(r.shape) == 1:
+            r = r.flatten() if type(r) == ndarray else r.toarray().flatten()
 
         if p.invertObjFunc and userFunctionType=='f':
             r = -r
@@ -180,7 +199,7 @@ class nonLinFuncs:
 
 
 
-    def wrapped_1st_derivatives(p, x, ind_, funcType, ignorePrev):
+    def wrapped_1st_derivatives(p, x, ind_, funcType, ignorePrev, asSparse):
         if ind_ is not None:
             ind = p.getCorrectInd(ind_)
         else: ind = None
@@ -222,10 +241,12 @@ class nonLinFuncs:
             if ind is None: derivativesNumber = nFuncs
             else: derivativesNumber = len(ind)
                 
-            derivatives = empty((derivativesNumber, p.n))
-            agregate_counter = 0
+            #derivatives = empty((derivativesNumber, p.n))
+            derivatives = []
+            #agregate_counter = 0
             for fun in Funcs:#getattr(p.user, derivativesType):
                 tmp = atleast_1d(fun(*(x,)+getattr(p.args, funcType)))
+                # TODO: replace tmp.size here for sparse matrices
                 if mod(tmp.size, p.n) != 0:
                     if funcType=='f':
                         p.err('incorrect user-supplied (sub)gradient size of objective function')
@@ -233,15 +254,18 @@ class nonLinFuncs:
                         p.err('incorrect user-supplied (sub)gradient size of non-lin inequality constraints')
                     elif funcType=='h':
                         p.err('incorrect user-supplied (sub)gradient size of non-lin equality constraints')
-                #if extractInd is not None: tmp = atleast_2d(tmp)[extractInd]
+                
                 if tmp.ndim == 1: m= 1
                 else: m = tmp.shape[0]
                 if p.functype[funcType] == 'some funcs R^nvars -> R' and m != 1:
                     # TODO: more exact check according to stored p.arr_of_indexes_* arrays
                     p.err('incorrect shape of user-supplied derivative, it should be in accordance with user-provided func size')
-                derivatives[agregate_counter : agregate_counter + m] =  tmp#.reshape(tmp.size/p.n,p.n)
-                agregate_counter += m
+                derivatives.append(tmp)
+                #derivatives[agregate_counter : agregate_counter + m] =  tmp#.reshape(tmp.size/p.n,p.n)
+                #agregate_counter += m
             #TODO: inline ind modification!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            
+            derivatives = Vstack(derivatives) if any(isspmatrix(derivatives)) else vstack(derivatives)
 
             if ind is None:
                 p.nEvals[derivativesType] += 1
@@ -251,7 +275,15 @@ class nonLinFuncs:
 
             if funcType=='f':
                 if p.invertObjFunc: derivatives = -derivatives
-                if p.isObjFunValueASingleNumber: derivatives = derivatives.flatten()
+                if p.isObjFunValueASingleNumber: 
+                    if not isinstance(derivatives, ndarray): derivatives = derivatives.toarray()
+                    derivatives = derivatives.flatten()
+                    
+        if asSparse is False or not scipyInstalled or not p.solver._canHandleScipySparse: 
+            if not isinstance(derivatives, ndarray): 
+                derivatives = derivatives.toarray()
+                
+        if min(derivatives.shape) == 1: derivatives = derivatives.flatten()
 
         if ind is None and not ignorePrev: p.prevVal[derivativesType]['val'] = derivatives
 
