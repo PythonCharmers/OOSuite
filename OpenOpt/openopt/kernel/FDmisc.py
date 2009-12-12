@@ -111,11 +111,10 @@ def setStartVectorAndTranslators(p):
         newStyle = 1
         
         if asSparse is not False and newStyle:
-            derivativeVars = set(pointDerivarive.keys())
             r2 = []
             hasSparse = False
             for i, var in enumerate(optVars):
-                if var.name in derivativeVars:
+                if var.name in pointDerivarive:#i.e. one of its keys
                     indexes = oovarsIndDict[var.name]
                     tmp = pointDerivarive[var.name] if indexingByNames else pointDerivarive[var]
                     if isspmatrix(tmp): hasSparse = True
