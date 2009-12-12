@@ -272,7 +272,8 @@ class nonLinFuncs:
                     if not isinstance(derivatives, ndarray): derivatives = derivatives.toarray()
                     derivatives = derivatives.flatten()
                     
-        if asSparse is False or not scipyInstalled or not p.solver._canHandleScipySparse: 
+        if asSparse is False or not scipyInstalled or not hasattr(p, 'solver') or p.solver._canHandleScipySparse: 
+            # p can has no attr 'solver' if it is called from checkdf, checkdc, checkdh
             if not isinstance(derivatives, ndarray): 
                 derivatives = derivatives.toarray()
                 
