@@ -18,8 +18,10 @@ try:
     SparseMatrixConstructor = lambda *args, **kwargs: scipy.sparse.lil_matrix(*args, **kwargs)
     from scipy import sparse
     Hstack = sparse.hstack
+    from scipy.sparse import isspmatrix
 except:
     scipy = None
+    isspmatrix = lambda *args,  **kwargs:  False
 
 class oofun:
     #TODO:
@@ -181,6 +183,7 @@ class oofun:
     # overload "a*b"
     def __mul__(self, other):
         def aux_d(x, y):
+            #assert y.size <100000
             if x.size == 1:
                 return y.copy()
             elif y.size == 1:
@@ -563,6 +566,7 @@ class oofun:
             self.evals_d += 1
         
         derivativeSelf = self._getDerivativeSelf(x, Vars, fixedVars)
+        
         r = Derivative()
         Keys = set()
         ac = -1
@@ -580,13 +584,13 @@ class oofun:
                 ac += 1
                 tmp = derivativeSelf[ac]
                 
-                if tmp.ndim <= 1 or min(tmp.shape) == 1:
+                if (tmp.ndim <= 1 or min(tmp.shape) == 1) and not isspmatrix(tmp):
                     tmp = tmp.flatten()
 
                 #Key = inp
                 Key  = inp.name
                 if Key in Keys:
-                    if tmp.size <= r[Key].size: 
+                    if prod(tmp.shape) <= prod(r[Key].shape): 
                         r[Key] += tmp
                     else:
                         r[Key] = r[Key] + tmp
@@ -600,7 +604,7 @@ class oofun:
                 elem_d = inp._D(x, Vars, fixedVars, sameDerivativeVariables, asSparse = 'auto') 
                 
                 for key in elem_d.keys():
-                    if derivativeSelf[ac].size == 1 or elem_d[key].size == 1:
+                    if prod(derivativeSelf[ac].shape) == 1 or prod(elem_d[key].shape) == 1:
                         rr = derivativeSelf[ac] * elem_d[key]
                     else:
                         t1, t2 = self._considerSparse(derivativeSelf[ac], elem_d[key])
@@ -613,8 +617,6 @@ class oofun:
                                 if t1.shape[1] != t2.shape[0]:
                                     t2 = t2.reshape(1, -1)
                                 #t2 = atleast_2d(t2)
-                            
-                            
                         else:
                             # hence these are ndarrays
                             if self(x).size > 1:
@@ -641,25 +643,32 @@ class oofun:
                                     rr = rr.toarray() 
                         else:
                             rr = atleast_1d(dot(t1, t2))
+                            #assert rr.size < 15000000
 
 
 #                    if min(rr.shape) == 1 and isinstance(rr, ndarray): 
 #                        rr = rr.flatten() # TODO: check it and mb remove
 # TODO: implement it instead of the code below
-
+                    
+                    
                     if min(rr.shape) == 1: 
                         if not isinstance(rr, ndarray): 
                             rr = rr.toarray()
                         rr = rr.flatten() # TODO: check it and mb remove
+                        #assert derivativeSelf[0].size < 100000
                     if key in Keys:
                         if isinstance(r[key], ndarray) and not isinstance(rr, ndarray): # i.e. rr is sparse matrix
                             rr = rr.toarray() # I guess r[key] will hardly be all-zeros
+                            #assert derivativeSelf[0].size < 100000
                         elif not isinstance(r[key], ndarray) and isinstance(rr, ndarray): # i.e. r[key] is sparse matrix
                             r[key] = r[key].toarray()
+                            #assert derivativeSelf[0].size < 100000
                         if rr.size == r[key].size and isinstance(rr, ndarray): 
                             r[key] += rr
+                            #assert derivativeSelf[0].size < 100000
                         else: 
                             r[key] = r[key] + rr
+                            #assert derivativeSelf[0].size < 100000
                     else:
                         r[key] = rr
                         Keys.add(key)
@@ -673,17 +682,19 @@ class oofun:
         self.d_key_prev = {}
         for elem in dep:
             self.d_key_prev[elem.name] = copy(x[elem])
-            
+        
         return r
 
     # TODO: handle 2**15 & 0.25 as parameters
     def _considerSparse(self, t1, t2):  
-        if (isinstance(t1, ndarray) and t1.size > 2**15 and t1.nonzero()[0].size < 0.25*t1.size) or \
-        (isinstance(t2, ndarray) and t2.size > 2**15 and t2.nonzero()[0].size < 0.25*t2.size):
+        #assert self.name != 'unnamed_oofun_81'
+        if prod(t1.shape) * prod(t2.shape) > 2**15 and   (isinstance(t1, ndarray) and t1.nonzero()[0].size < 0.25*t1.size) or \
+        (isinstance(t2, ndarray) and t2.nonzero()[0].size < 0.25*t2.size):
             if scipy is None: 
                 self.pWarn(scipyAbsentMsg)
                 return t1,  t2
             t1 = scipy.sparse.csr_matrix(t1)
+            if t1.shape[0] == 1: t1 = t1.T
             t2 = scipy.sparse.csc_matrix(t2)
         return t1,  t2
 
@@ -744,7 +755,6 @@ class oofun:
                     else: # scipy.sparse matrix
                         TMP = csr_tmp[:, ac:ac+inp.size]
                     ac += inp.size
-                    #raise 0
                     if self.input[i].discrete: continue
                     #!!!!!!!!! TODO: handle fixed cases properly!!!!!!!!!!!!
                     #if hasattr(self.input[i], 'fixed') and self.input[i].fixed: continue 

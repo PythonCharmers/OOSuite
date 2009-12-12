@@ -19,6 +19,7 @@ class ralg(baseSolver):
     __alg__ = "Naum Z. Shor R-algorithm with adaptive space dilation & some modifications"
     __optionalDataThatCanBeHandled__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'c', 'h']
     __iterfcnConnected__ = True
+    _canHandleScipySparse = True
 
     #ralg default parameters
     alp, h0, nh, q1, q2  = 2.0, 1.0, 3, 'default:0.9 for NLP, 1.0 for NSP', 1.1
@@ -191,7 +192,7 @@ class ralg(baseSolver):
 
             if ls == 0:
                 if self.doBackwardSearch:
-                    iterPoint, ls_backward = getBestPointAfterTurn(prevIterPoint, iterPoint, altLinInEq = True)
+                    iterPoint, ls_backward = getBestPointAfterTurn(prevIterPoint, iterPoint, maxLS = 3, altLinInEq = True)
 
                     # TODO: extract last point from backward search, that one is better than iterPoint
                     if iterPoint.betterThan(bestPoint): bestPoint = iterPoint
@@ -204,6 +205,9 @@ class ralg(baseSolver):
             """                      iterPoint has been obtained                     """
 
             moveDirection = iterPoint.__getDirection__(self.approach)
+            # DEBUG!
+            #g2 = moveDirection#newPoint.__getDirection__(self.approach)
+            # DEBUG end!
 
 #            ls_arr.append(ls)
 #            if ls >= 2 and len(ls_arr) >= len(self.j_multiplier):
@@ -271,6 +275,7 @@ class ralg(baseSolver):
                 hs = 0.5*p.norm(prevIterPoint.x - iterPoint.x)
             #p.debugmsg('ng:%e  ng1:%e' % (ng, p.norm(g1)))
             if ng < 1e-40: 
+                #raise 0
                 hs *= 0.9
                 p.debugmsg('small dilation direction norm (%e), skipping' % ng)
             #p.debugmsg('dilation direction norm:%e' % ng)
