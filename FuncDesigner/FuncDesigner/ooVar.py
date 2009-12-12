@@ -40,15 +40,12 @@ class oovar(oofun):
 
     def _getFunc(self, x):
         try:
-            r = atleast_1d(asfarray(x[self]))
+            r = atleast_1d(asfarray(x[self])) if self in x else atleast_1d(asfarray(x[self.name]))
         except KeyError:
-            try:
-                r = atleast_1d(asfarray(x[self.name]))
-            except KeyError:
-                s = 'for oovar ' + self.name + \
-                " the point involved doesn't contain niether name nor the oovar instance. Maybe you try to get function value or derivative in a point where value for an oovar is missing"
-                raise FuncDesignerException(s)
-        Size = asarray(r).size
+            s = 'for oovar ' + self.name + \
+            " the point involved doesn't contain niether name nor the oovar instance. Maybe you try to get function value or derivative in a point where value for an oovar is missing"
+            raise FuncDesignerException(s)
+        Size = r.size
         if isscalar(self.size) and Size != self.size:
             s = 'incorrect size for oovar %s: %d is required, %d is obtained' % (self.name, self.size, Size)
             raise FuncDesignerException(s)
