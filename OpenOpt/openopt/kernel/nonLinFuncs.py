@@ -132,6 +132,7 @@ class nonLinFuncs:
             #raise 0
             rr = [fun(X) for fun in Funcs]
             r = Vstack(rr) if scipyInstalled and any([isspmatrix(elem) for elem in rr]) else vstack(rr)
+            #assert prod(r.shape) != 177878
         else:
             if getDerivative:
                 r = zeros((nFuncsToObtain, p.n))
@@ -271,16 +272,13 @@ class nonLinFuncs:
                 if p.isObjFunValueASingleNumber: 
                     if not isinstance(derivatives, ndarray): derivatives = derivatives.toarray()
                     derivatives = derivatives.flatten()
-                    
-        if asSparse is False or not scipyInstalled or not hasattr(p, 'solver') or p.solver._canHandleScipySparse: 
+        if asSparse is False or not scipyInstalled or not hasattr(p, 'solver') or not p.solver._canHandleScipySparse: 
             # p can has no attr 'solver' if it is called from checkdf, checkdc, checkdh
             if not isinstance(derivatives, ndarray): 
                 derivatives = derivatives.toarray()
-                
         if min(derivatives.shape) == 1: 
             if isspmatrix(derivatives): derivatives = derivatives.A
             derivatives = derivatives.flatten()
-
         if ind is None and not ignorePrev: p.prevVal[derivativesType]['val'] = derivatives
 
         if funcType=='f':

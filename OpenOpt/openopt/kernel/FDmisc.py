@@ -1,7 +1,7 @@
 # Handling of FuncDesigner probs
 
-from numpy import empty, hstack, asfarray, all, atleast_1d, cumsum, asarray, zeros,  atleast_2d, ndarray, prod
-from nonOptMisc import scipyInstalled, Hstack, Vstack, Find, isspmatrix, SparseMatrixConstructor, DenseMatrixConstructor
+from numpy import empty, hstack, asfarray, all, atleast_1d, cumsum, asarray, zeros,  atleast_2d, ndarray, prod, ones
+from nonOptMisc import scipyInstalled, Hstack, Vstack, Find, isspmatrix, SparseMatrixConstructor, DenseMatrixConstructor, Bmat
 
 def setStartVectorAndTranslators(p):
     for fn in ['lb', 'ub', 'A', 'Aeq', 'b', 'beq']:
@@ -50,9 +50,8 @@ def setStartVectorAndTranslators(p):
 
     def point2vector(point):
         r = []
-        pkeys = set(point.keys()) # elseware it's too slow
         for oov in optVars:
-            if oov in pkeys:
+            if oov in point:# i.e. in dict keys
                 r.append(point[oov])
             else:
                 r.append(zeros(asarray(startPoint[oov]).shape))
@@ -128,7 +127,7 @@ def setStartVectorAndTranslators(p):
                     hasSparse = True
             r3 = Hstack(r2) if hasSparse else hstack(r2)
             if isspmatrix(r3) and r3.nnz > 0.25 * prod(r3.shape): r3 = r3.A
-            return r3 
+            return r3
         else:
             if funcLen == 1:
                 r = DenseMatrixConstructor(n)
@@ -148,9 +147,23 @@ def setStartVectorAndTranslators(p):
                 return SparseMatrixConstructor(r)
             else: 
                 return r.T if r.ndim > 1 else r.reshape(1, -1)
-            
+                
+    def getPattern(oofuns):
+        # oofuns is Python list of oofuns
+        # result is 1d-array, so we can omit using sparsity here and involve it in an upper stack level func
+        assert isinstance(oofuns, list), 'oofuns should be Python list, inform developers of the bug'
+        R = []
+        for oof in oofuns:
+            r = []
+            dep = oof._getDep()
+            for oov in optVars:
+                constructor = ones if oov in dep else SparseMatrixConstructor
+                r.append(constructor((1, asarray(startPoint[oov]).size)))
+            R.append(Bmat([[Hstack(r)]]*asarray(oof(startPoint)).size))
+        R = Vstack(R)
+        return R
         
-    
+    p._getPattern = getPattern
     p.oovars = optVars # Where it is used?
     p.optVars, p.fixedVars = optVars, fixedVars
     p._point2vector, p._vector2point = point2vector, vector2point

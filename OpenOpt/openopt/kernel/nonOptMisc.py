@@ -4,17 +4,19 @@ except:
     pass
 from baseSolver import baseSolver
 from oologfcn import OpenOptException
-from numpy import zeros
+from numpy import zeros, bmat
 try:
     import scipy
     scipyInstalled = True
     from scipy.sparse import isspmatrix
+    from scipy.sparse import bmat as Bmat
     from scipy.sparse import hstack as Hstack, vstack as Vstack, find as Find
     SparseMatrixConstructor = lambda *args, **kwargs: scipy.sparse.lil_matrix(*args, **kwargs)
 except:
     scipyInstalled = False
     isspmatrix = lambda *args,  **kwargs:  False
     Hstack = hstack
+    Bmat = bmat
     def Find(*args, **kwargs): 
         raise OpenOptException('error in OpenOpt kernel, inform developers')
 DenseMatrixConstructor = lambda *args, **kwargs: zeros(*args, **kwargs)

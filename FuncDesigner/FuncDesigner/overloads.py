@@ -134,7 +134,7 @@ def sum(inp, *args, **kwargs):
         _inp = set(INP)
         #!!!!!!!!!!!!!!!!!! TODO: check INP for complex cases (not list of oovars)
         r = oofun(f, input=INP) 
-        def _D(point, Vars=None, fixedVars = None, involvePrevData = True, asSparse = 'autoselect'):
+        def _D(point, Vars=None, fixedVars = None, involvePrevData = True, asSparse = 'auto'):
             # TODO: handle involvePrevData
             # TODO: handle fixed vars
             r, keys = {}, set()

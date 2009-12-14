@@ -24,7 +24,7 @@ class baseSolver:
     __isIterPointAlwaysFeasible__ = lambda self, p: p.isUC#TODO: provide possibility of simple True, False
     __iterfcnConnected__ = False
     __funcForIterFcnConnection__ = 'df' # the field is used for non-linear solvers with not-connected iter function
-    _canHandleScipySparse = False
+    _canHandleScipySparse = False # True if can handle linear constraints Ax<=b, Aeq x = beq and nonlin cons derivs
     properTextOutput = False
 
     # these ones below are used in iterfcn (ooIter.py)

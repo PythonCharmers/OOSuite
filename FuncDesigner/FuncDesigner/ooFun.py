@@ -643,8 +643,7 @@ class oofun:
                                     rr = rr.toarray() 
                         else:
                             rr = atleast_1d(dot(t1, t2))
-                            #assert rr.size < 15000000
-
+                        #assert rr.size != 178784
 
 #                    if min(rr.shape) == 1 and isinstance(rr, ndarray): 
 #                        rr = rr.flatten() # TODO: check it and mb remove
@@ -655,20 +654,15 @@ class oofun:
                         if not isinstance(rr, ndarray): 
                             rr = rr.toarray()
                         rr = rr.flatten() # TODO: check it and mb remove
-                        #assert derivativeSelf[0].size < 100000
                     if key in Keys:
                         if isinstance(r[key], ndarray) and not isinstance(rr, ndarray): # i.e. rr is sparse matrix
                             rr = rr.toarray() # I guess r[key] will hardly be all-zeros
-                            #assert derivativeSelf[0].size < 100000
                         elif not isinstance(r[key], ndarray) and isinstance(rr, ndarray): # i.e. r[key] is sparse matrix
                             r[key] = r[key].toarray()
-                            #assert derivativeSelf[0].size < 100000
                         if rr.size == r[key].size and isinstance(rr, ndarray): 
                             r[key] += rr
-                            #assert derivativeSelf[0].size < 100000
                         else: 
                             r[key] = r[key] + rr
-                            #assert derivativeSelf[0].size < 100000
                     else:
                         r[key] = rr
                         Keys.add(key)
