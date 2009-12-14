@@ -1,11 +1,17 @@
 __docformat__ = "restructuredtext en"
 from numpy import *
+import re
 from string import lower
 from openopt.kernel.baseSolver import baseSolver
-#from openopt.kernel.setDefaultIterFuncs import SMALL_DF
-import pyipopt, re
 from openopt.kernel.ooMisc import isSolved
-
+from openopt.kernel.nonOptMisc import scipyInstalled, Hstack, Vstack, Find, isspmatrix
+#from openopt.kernel.setDefaultIterFuncs import SMALL_DF
+try:
+    import pyipopt
+    pyipoptInstalled = True
+except:
+    pyipoptInstalled = False
+    
 class ipopt(baseSolver):
     __name__ = 'ipopt'
     __license__ = "CPL"
@@ -15,7 +21,7 @@ class ipopt(baseSolver):
     __info__ = "requires pyipopt made by Eric Xu You"
     __cannotHandleExceptions__ = True
     __optionalDataThatCanBeHandled__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'c', 'h']
-
+    _canHandleScipySparse = True
 
     # CHECK ME!
     __isIterPointAlwaysFeasible__ = lambda self, p: False
@@ -26,6 +32,8 @@ class ipopt(baseSolver):
 
     def __init__(self): pass
     def __solver__(self, p):
+        if not pyipoptInstalled:
+            p.err('you should have pyipopt installed')
         nvar = p.n
         x_L = p.lb
         x_U = p.ub
@@ -36,9 +44,32 @@ class ipopt(baseSolver):
         g_L[:p.nc] = -inf
         g_L[p.nc+p.nh:p.nc+p.nh+p.b.size] = -inf
 
-
+        
         # IPOPT non-linear constraints, both eq and ineq
-        nnzj = ncon * p.n #TODO: is reduction possible?
+        if p.isFDmodel:
+            r = []
+            if p.nc != 0: r.append(p._getPattern(p.user.c))
+            if p.nh != 0: r.append(p._getPattern(p.user.h))
+            if p.nb != 0: r.append(p.A)
+            if p.nbeq != 0: r.append(p.Aeq)
+            r = Vstack(r)
+            if isspmatrix(r):
+                I, J, _ = Find(r)
+                
+                # DON'T remove it!
+                I, J = array(I, int64), array(J, int64)
+                
+            elif isinstance(r, ndarray):
+                I, J = where(r)
+            else:
+                print('unimplemented type:%s' % str(type(r))) # dense matrix? 
+                
+            
+            nnzj = len(I)
+        else:
+            I, J = None, None
+            nnzj = ncon * p.n #TODO: reduce it
+        
 
         def eval_g(x):
             r = array(())
@@ -47,15 +78,51 @@ class ipopt(baseSolver):
             r = hstack((r, p.__get_AX_Less_B_residuals__(x), p.__get_AeqX_eq_Beq_residuals__ (x)))
             return r
 
-        def eval_jac_g(x, flag, userdata = None):
-            r = array(()).reshape(0, p.n)
-            if p.userProvided.c: r = p.dc(x)
-            if p.userProvided.h: r = vstack((r, p.dh(x)))
-            r = vstack((r, p.A, p.Aeq))
+#        def eval_jac_g(x, flag, userdata = None):
+#            r = []
+#            if p.userProvided.c: r.append(p.dc(x))
+#            if p.userProvided.h: r.append(p.dh(x))
+#            if p.nb > 0: p.append(p.A)
+#            if p.nbeq > 0: p.append(p.Aeq)
+#            
+#            if flag:
+#                return where(ones(r.shape))
+#            else:
+#                return r.flatten()
+
+        #def eval_jac_g(x, flag, userdata = None):
+        def eval_jac_g(x, flag, userdata = (I, J)):
+            (I, J) = userdata
+            if  flag and p.isFDmodel: 
+                return (I, J) 
+            r = []
+            if p.userProvided.c: r.append(p.dc(x))
+            if p.userProvided.h: r.append(p.dh(x))
+            if p.nb != 0: r.append(p.A)
+            if p.nbeq != 0: r.append(p.Aeq)
+            r = Vstack(r)
+            
+            if p.isFDmodel: 
+                # TODO: make it more properly
+                if isspmatrix(r):
+                    R = r.tolil()
+                        
+                    # works very slow, at least for current scipy version 0.8.0.dev6096 :
+                    R = R[I, J]
+                else: 
+                    R = r[I, J]
+                if isspmatrix(R): 
+                    return R.A
+                elif isinstance(R, ndarray): 
+                    return R
+                else: p.err('bug in OpenOpt-ipopt connection, inform OpenOpt developers, type(R) = %s' % type(R))
             if flag:
-                return where(ones(r.shape))
+                I, J = where(ones(r.shape))  
+                return (I, J)
             else:
+                if isspmatrix(r): r = r.A
                 return r.flatten()
+
 
         """ This function might be buggy, """ # // comment by Eric
         nnzh = 0
