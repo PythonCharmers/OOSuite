@@ -105,9 +105,9 @@ class ipopt(baseSolver):
             if p.isFDmodel: 
                 # TODO: make it more properly
                 if isspmatrix(r):
-                    R = r.tolil()
+                    R = r.A#.tolil()
                         
-                    # works very slow, at least for current scipy version 0.8.0.dev6096 :
+                    # works very slow even for lil, at least for current scipy version 0.8.0.dev6096 :
                     R = R[I, J]
                 else: 
                     R = r[I, J]
