@@ -58,19 +58,20 @@ class ipopt(baseSolver):
             # isspmatrix(r) turned off till more proper sparse matrices fancy indexation
             if isspmatrix(r):
                 I, J, _ = Find(r)
-                
                 # DON'T remove it!
                 I, J = array(I, int64), array(J, int64)
-                
+            
             elif isinstance(r, ndarray):
                 I, J = where(r)
+            
             else:
                 print('unimplemented type:%s' % str(type(r))) # dense matrix? 
                 
             
             nnzj = len(I)
         else:
-            I, J = None, None
+            I, J = where(ones((ncon, p.n)))
+            #I, J = None, None
             nnzj = ncon * p.n #TODO: reduce it
         
 
@@ -103,8 +104,11 @@ class ipopt(baseSolver):
             if p.userProvided.h: r.append(p.dh(x))
             if p.nb != 0: r.append(p.A)
             if p.nbeq != 0: r.append(p.Aeq)
-            r = Vstack(r)
-            
+            # TODO: fix it!
+            if any([isspmatrix(elem) for elem in r]):
+                r = Vstack([(atleast_2d(elem) if elem.ndim < 2 else elem) for elem in r])
+            else:
+                r = vstack(r)
             if p.isFDmodel: 
                 # TODO: make it more properly
                 if isspmatrix(r):
@@ -118,10 +122,13 @@ class ipopt(baseSolver):
                 elif isinstance(R, ndarray): 
                     return R
                 else: p.err('bug in OpenOpt-ipopt connection, inform OpenOpt developers, type(R) = %s' % type(R))
+            print '11'
             if flag:
-                I, J = where(ones(r.shape))  
+                #I, J = where(ones(r.shape))  
                 return (I, J)
+                print '22'
             else:
+                print '44'
                 if isspmatrix(r): r = r.A
                 return r.flatten()
 
