@@ -43,7 +43,7 @@ dc = lambda x: diag(-3 * x**2)
 #    dc += [lambda x, i=i: hstack((zeros(i), -3*x[i]**2, zeros(n-i-1)))]
 
 lb = arange(n)
-solvers = ['ralg', 'scipy_slsqp', 'scipy_cobyla', 'ipopt',  'algencan']
+solvers = ['ipopt']
 for solver in solvers:
     p = NLP(f, x0, df=df, lb=lb, c=c, dc=dc, iprint = 100, maxIter = 10000, maxFunEvals = 1e8)
     #p.checkdf()
