@@ -6,6 +6,7 @@ import NSP
 
 class LLAVP(MatrixProblem):
     __optionalData__ = ['damp', 'X', 'c']
+    allowedGoals = ['minimum', 'min']
     def __init__(self, *args, **kwargs):
         if len(args) > 2: self.err('incorrect args number for LLAVP constructor, must be 0..2 + (optionaly) some kwargs')
         if len(args) > 0: kwargs['C'] = args[0]
