@@ -107,8 +107,9 @@ class ipopt(baseSolver):
             # TODO: fix it!
             if any([isspmatrix(elem) for elem in r]):
                 r = Vstack([(atleast_2d(elem) if elem.ndim < 2 else elem) for elem in r])
-            else:
+            elif len(r)!=0:
                 r = vstack(r)
+            
             if p.isFDmodel: 
                 # TODO: make it more properly
                 if isspmatrix(r):
