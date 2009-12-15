@@ -22,9 +22,7 @@ def dc(x):
     return r
 p.dc = dc
 
-h1 = lambda x: 1e1*(x[-1]-1)**4
-h2 = lambda x: (x[-2]-1.5)**4
-p.h = (h1, h2)
+p.h = lambda x: (1e1*(x[-1]-1)**4, (x[-2]-1.5)**4)
 
 def dh(x):
     r = zeros((2, p.n))
