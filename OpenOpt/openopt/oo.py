@@ -48,7 +48,8 @@ def MILP(*args, **kwargs):
     Notes
     -----
     Solving of MILPs is performed via
-    r = p.solve(string_name_of_solver)
+    r = p.solve(string_name_of_solver) 
+    or  p.maximize, p.minimize
     r.xf - desired solution (NaNs if a problem occured)
     r.ff - objFun value (<f,x_opt>) (NaN if a problem occured)
     (see also other r fields)
@@ -87,6 +88,7 @@ def LP(*args, **kwargs):
     -----
     Solving of LPs is performed via
     r = p.solve(string_name_of_solver)
+    or  p.maximize, p.minimize
     r.xf - desired solution (NaNs if a problem occured)
     r.ff - objFun value (<f,x_opt>) (NaN if a problem occured)
     (see also other r fields)
@@ -319,6 +321,7 @@ def NLP(*args, **kwargs):
 
     Solving of NLPs is performed via
     r = p.solve(string_name_of_solver)
+    or  p.maximize, p.minimize
     r.xf - desired solution (NaNs if a problem occured)
     r.ff - objFun value (NaN if a problem occured)
     (see also other fields, such as CPUTimeElapsed, TimeElapsed, isFeasible, iter etc, via dir(r))
@@ -448,6 +451,10 @@ def GLP(*args, **kwargs):
     
     usage:
     p = GLP(f, <params as kwargs>)
+    
+    Solving of NLPs is performed via
+    r = p.solve(string_name_of_solver)
+    or  p.maximize, p.minimize
     
     Parameters and usage: same as NLP  (see help(NLP) and /examples/glp_*.py)
     One more stop criterion is maxNonSuccess (default: 15)
