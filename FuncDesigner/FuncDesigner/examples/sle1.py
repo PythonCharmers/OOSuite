@@ -18,5 +18,6 @@ linSys = sle(f)
 r = linSys.solve()
 A, B, C =  r(a, b, c)
 maxRes = r.ff # max residual
+print(A, B, C, maxRes)
 # Expected result:
-# {b: array([-5.]), a: array([ 25.]), c: array([ 20.])}
+#  (array([ 25.]), array([-5.]), array([ 20.]), 7.1054273576010019e-15)
