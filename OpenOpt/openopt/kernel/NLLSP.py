@@ -21,7 +21,7 @@ class NLLSP(NonLinProblem):
 
         ff = lambda x: sum(asfarray(self.f(x))**2)
         if self.userProvided.df:
-            dff = lambda x: dot(2*asfarray(self.f(x)), asfarray(self.df(x)))
+            dff = lambda x: dot(2*asfarray(self.f(x)), asfarray(self.df(x,asSparse=False)))
             p = NLP.NLP(ff, self.x0, df=dff)
         else:
             p = NLP.NLP(ff, self.x0)
@@ -29,16 +29,18 @@ class NLLSP(NonLinProblem):
         self.inspire(p, sameConstraints=True)
 
 
-        def lsp_iterfcn(*args,  **kwargs):
+        def nllsp_iterfcn(*args,  **kwargs):
             p.primalIterFcn(*args,  **kwargs)
             p.xk = self.xk
             p.fk = p.f(p.xk)
             p.rk = self.rk
             # TODO: add nNaNs
+            if self.istop != 0:
+                p.istop = self.istop
+            elif p.istop != 0:
+                self.istop = p.istop
 
-            p.istop = self.istop
-
-        p.primalIterFcn,  p.iterfcn = self.iterfcn, lsp_iterfcn
+        p.primalIterFcn,  p.iterfcn = self.iterfcn, nllsp_iterfcn
 
         self.iprint = -1
         p.show = False

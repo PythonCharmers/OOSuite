@@ -1,6 +1,6 @@
 from baseProblem import NonLinProblem
 from NLP import NLP
-from numpy import max, array, hstack, vstack, zeros, ones, inf, asfarray
+from numpy import max, array, hstack, vstack, zeros, ones, inf, asfarray, atleast_2d
 from numpy.linalg import norm
 
 class MMP(NonLinProblem):
@@ -51,11 +51,11 @@ class MMP(NonLinProblem):
         else:
             p2.c = lambda x: self.f(x[:-1])-x[-1]
             arr_dc = -ones((self.nf, 1))
-            p2.dc = lambda x: hstack((self.df(x[:-1]),  arr_dc))
+            p2.dc = lambda x: hstack((atleast_2d(self.df(x[:-1]),  arr_dc)))
         if self.userProvided.h:
             arr_dh = array([0]*self.nh).reshape(-1, 1)
             p2.h = lambda x: self.h(x[:-1])
-            p2.dh = lambda x: hstack((self.dh(x[:-1]), arr_dh))
+            p2.dh = lambda x: hstack((atleast_2d(self.dh(x[:-1])), arr_dh))
 
 
         p2.primalIterFcn,  p2.iterfcn = p2.iterfcn, iterfcn

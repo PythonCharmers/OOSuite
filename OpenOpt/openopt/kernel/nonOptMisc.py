@@ -23,8 +23,8 @@ DenseMatrixConstructor = lambda *args, **kwargs: zeros(*args, **kwargs)
 
 ##################################################################
 def getSolverFromStringName(p, solver_str):
-    if solver_str not in solverPaths.keys():
-        p.err('incorrect solver is called, maybe the solver "' + solver_str +'" is not installed. Maybe setting p.debug=1 could specify the matter more precisely. Also, maybe you have forgot to use "python setup.py install(/develop)" after updating OpenOpt from subversion repository')
+    if solver_str not in solverPaths:
+        p.err('incorrect solver is called, maybe the solver "' + solver_str +'" is not installed. Also, maybe you have forgot to use "python setup.py install(/develop)" after updating OpenOpt from subversion repository')
     if p.debug:
         solverClass =  getattr(my_import('openopt.solvers.'+solverPaths[solver_str]), solver_str)
     else:
