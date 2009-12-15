@@ -35,8 +35,8 @@ colors = ['b', 'k', 'y', 'g', 'r', 'm', 'c']
 solvers = ['ralg', 'scipy_cobyla', 'lincher', 'scipy_slsqp', 'ipopt','algencan']
 #solvers = ['ralg', 'ipopt']
 #solvers = ['ralg', 'scipy_cobyla', 'lincher', 'scipy_slsqp', 'ipopt']
-solvers = ['ralg', 'ralg3']
-#solvers = ['ralg']
+#solvers = ['ralg', 'ralg3']
+solvers = ['ralg']
 ###############################################################
 
 lines, results = [], {}
