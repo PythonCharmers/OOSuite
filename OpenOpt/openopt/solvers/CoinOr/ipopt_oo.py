@@ -53,6 +53,9 @@ class ipopt(baseSolver):
             if p.nb != 0: r.append(p.A)
             if p.nbeq != 0: r.append(p.Aeq)
             r = Vstack(r)
+            
+            if isspmatrix(r): r = r.A
+            # isspmatrix(r) turned off till more proper sparse matrices fancy indexation
             if isspmatrix(r):
                 I, J, _ = Find(r)
                 
@@ -105,9 +108,8 @@ class ipopt(baseSolver):
             if p.isFDmodel: 
                 # TODO: make it more properly
                 if isspmatrix(r):
-                    R = r.A#.tolil()
-                        
-                    # works very slow even for lil, at least for current scipy version 0.8.0.dev6096 :
+                    R = r.A#tolil()
+                    # sometimes works very slow even for lil, at least for current scipy version 0.8.0.dev6096 :
                     R = R[I, J]
                 else: 
                     R = r[I, J]

@@ -33,7 +33,8 @@ class nonLinFuncs:
 
         # this line had been added because some solvers pass tuple instead of
         # x being vector p.n x 1 or matrix X=[x1 x2 x3...xk], size(X)=[p.n, k]
-        if not isspmatrix(x): x = asfarray(x)
+        if not isspmatrix(x): 
+            x = asfarray(x)
         
         if not ignorePrev: 
             prevKey = p.prevVal[userFunctionType]['key']
