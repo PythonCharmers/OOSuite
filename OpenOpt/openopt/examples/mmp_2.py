@@ -45,7 +45,7 @@ p = MMP(f,  x0,  lb = lb,  ub = ub,   A=A,  b=b,   Aeq = Aeq,  beq = beq,  c=c, 
 #p = MMP(f,  x0, ftol=1e-8)
 # optional, matplotlib is required:
 #p.plot=1
-r = p.solve('nsmm2', iprint=1, NLPsolver = 'ralg', maxIter=1e3, minIter=1e2)
+r = p.solve('nsmm', iprint=1, NLPsolver = 'ralg', maxIter=1e3, minIter=1e2)
 print 'MMP result:',  r.ff
 
 #
