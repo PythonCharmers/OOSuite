@@ -171,7 +171,6 @@ class ralg(baseSolver):
 
 
                 #if not self.checkTurnByGradient:
-
                 if newPoint.betterThan(oldPoint, altLinInEq=True):
                     if newPoint.betterThan(bestPoint): bestPoint = newPoint
                     oldPoint, newPoint = newPoint,  None
@@ -319,23 +318,25 @@ class ralg(baseSolver):
                 p.stopdict[SMALL_DELTA_X] = True
                 restoreProb()
                 return
-
+            
             s2 = 0
             if p.istop and not p.userStop:
-                if SMALL_DF in p.stopdict.keys():
+                if p.istop not in p.stopdict: p.stopdict[p.istop] = True # it's actual for converters, TODO: fix it
+                if SMALL_DF in p.stopdict:
                     if currIterPointIsFeasible: s2 = p.istop
                     p.stopdict.pop(SMALL_DF)
-                if SMALL_DELTA_F in p.stopdict.keys():
+                if SMALL_DELTA_F in p.stopdict:
                     # TODO: implement it more properly
                     if currIterPointIsFeasible and prevIterPoint.f() != iterPoint.f(): s2 = p.istop
                     p.stopdict.pop(SMALL_DELTA_F)
-                if SMALL_DELTA_X in p.stopdict.keys():
+                if SMALL_DELTA_X in p.stopdict:
                     if currIterPointIsFeasible or not prevIterPointIsFeasible or cond_same_point: s2 = p.istop
                     p.stopdict.pop(SMALL_DELTA_X)
                 if s2 and (any(isnan(iterPoint.c())) or any(isnan(iterPoint.h()))) \
                 and not p.isNaNInConstraintsAllowed\
                 and not cond_same_point:
                     s2 = 0
+                    
                 if not s2 and any(p.stopdict.values()):
                     for key,  val in p.stopdict.iteritems():
                         if val == True:
@@ -345,7 +346,7 @@ class ralg(baseSolver):
 
 
             """                                If stop required                                """
-
+            
             if p.istop:
                 if self.needRej(p, b, g1, g):
                     b = B0.copy()
