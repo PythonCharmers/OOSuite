@@ -2,7 +2,7 @@
 from openopt import NLP 
 # or other constructor names: LP, MILP, QP etc, 
 # for full list see http://openopt.org/Problems
-p = NLP(*args, **kwargs)
+# p = NLP(*args, **kwargs)
 
 """
 you should read help(NLP) for more details, 
