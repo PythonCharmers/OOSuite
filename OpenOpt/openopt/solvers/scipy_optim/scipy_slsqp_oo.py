@@ -19,6 +19,10 @@ class scipy_slsqp(baseSolver):
     def __solver__(self, p):
         bounds = []
         if any(isfinite(p.lb)) or any(isfinite(p.ub)):
+            ind_inf = where(p.lb==-inf)[0]
+            p.lb[ind_inf] = -1e50
+            ind_inf = where(p.ub==inf)[0]
+            p.ub[ind_inf] = 1e50
             for i in xrange(p.n):
                 bounds.append((p.lb[i], p.ub[i]))
         empty_arr = array(())
