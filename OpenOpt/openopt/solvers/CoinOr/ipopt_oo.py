@@ -122,13 +122,10 @@ class ipopt(baseSolver):
                 elif isinstance(R, ndarray): 
                     return R
                 else: p.err('bug in OpenOpt-ipopt connection, inform OpenOpt developers, type(R) = %s' % type(R))
-            print '11'
             if flag:
                 #I, J = where(ones(r.shape))  
                 return (I, J)
-                print '22'
             else:
-                print '44'
                 if isspmatrix(r): r = r.A
                 return r.flatten()
 
