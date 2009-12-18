@@ -56,6 +56,8 @@ class oofun:
     _directlyDwasInwolved = False
 
     pWarn = pWarn
+    
+    __array_priority__ = 15# set it greater than 1 to prevent invoking numpy array __mul__ etc
 
 
     """                                         Class constructor                                   """
