@@ -89,7 +89,10 @@ class oofun:
     def named(self, name):
         self.name = name
         return self
-
+        
+    def __repr__(self):
+        return self.name
+        
     # overload "a+b"
     # @checkSizes
     def __add__(self, other):

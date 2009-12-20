@@ -1,5 +1,6 @@
 from ooVar import oovar, oovars
 from ooFun import NonLinearConstraint, ooFun as oofun
+from ooSystem import ooSystem as oosystem
 from sle import sle
 from overloads import *
 from misc import FuncDesignerException

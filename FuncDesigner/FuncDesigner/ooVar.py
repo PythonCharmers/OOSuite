@@ -32,9 +32,6 @@ class oovar(oofun):
             if key != 'skipRecursive':
                 setattr(self, key, kwargs[key])
 
-    def __repr__(self):
-        return self.name
-    
     def requireSize(self, size):
         self.size = size
 
