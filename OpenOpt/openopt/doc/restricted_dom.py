@@ -37,7 +37,7 @@ df = lambda x: 2*x + 0.5*3*x**2/sqrt(x**3-arange(n)**3)
 lb = arange(n)
 solvers = ['ralg']
 for solver in solvers:
-    p = NLP(f, x0, df=df, lb=lb, iprint = 1, maxIter = 10000, maxFunEvals = 1e8)
+    p = NLP(f, x0, df=df, lb=lb, xtol = 1e-7, iprint = 100, maxIter = 10000, maxFunEvals = 1e8)
     #p.checkdf()
     r = p.solve(solver)
 # expected r.xf = [0, 1, 2, ..., n-1]
