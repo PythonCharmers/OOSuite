@@ -33,20 +33,11 @@ x0 = n+15*(1+cos(an))
 
 f = lambda x: (x**2).sum() + sqrt(x**3-arange(n)**3).sum()
 df = lambda x: 2*x + 0.5*3*x**2/sqrt(x**3-arange(n)**3)
-c = lambda x: an**3 - x**3
-dc = lambda x: diag(-3 * x**2)
-
-# you can use splitting of constraints, for some solvers it yields speedup:
-#c, dc = [], []
-#for i in xrange(n):
-#    c += [lambda x, i=i: i**3-x[i]**3]
-#    dc += [lambda x, i=i: hstack((zeros(i), -3*x[i]**2, zeros(n-i-1)))]
 
 lb = arange(n)
-solvers = ['ipopt']
+solvers = ['ralg']
 for solver in solvers:
-    p = NLP(f, x0, df=df, lb=lb, c=c, dc=dc, iprint = 100, maxIter = 10000, maxFunEvals = 1e8)
+    p = NLP(f, x0, df=df, lb=lb, iprint = 1, maxIter = 10000, maxFunEvals = 1e8)
     #p.checkdf()
-    #p.checkdc()
     r = p.solve(solver)
 # expected r.xf = [0, 1, 2, ..., n-1]
