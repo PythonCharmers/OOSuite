@@ -259,6 +259,7 @@ class oofun:
         
     def __getitem__(self, ind): # overload for oofun[ind]
         assert not isinstance(ind, oofun), 'slicing by oofuns is unimplemented yet'
+        if isinstance(ind, dict): return self.__call__(ind)
         if not isinstance(ind, oofun):
             f = lambda x: x[ind]
             def d(x):
@@ -835,14 +836,17 @@ class BaseFDConstraint(oofun):
 
 class SmoothFDConstraint(BaseFDConstraint):
     isBBC = False
-    def __call__(self, point, contol=None):
-        if contol is None: contol = self.contol
+    
+    def __call__(self, point, contol=0):
+        #if contol is None: contol = 0#self.contol
         val = self.oofun(point)
         if any(atleast_1d(self.lb-val)>contol):
             return False
         elif any(atleast_1d(val-self.ub)>contol):
             return False
         return True
+        
+    __getitem__ = lambda self, point: self.__call__(point, self.contol)
         
         #raise FuncDesignerException('direct constraints call is not implemented')
 #        val = self.oofun(point) 

@@ -16,7 +16,7 @@ class ooSystem(set):
                 raise FuncDesignerException('Incorrect type %s in ooSystem constructor' % type(arg))
     
     # [] yields result wrt allowed contol:
-    __getitem__ = lambda self, point: ooSystemState([(elem, elem(point)) for elem in self])
+    __getitem__ = lambda self, point: ooSystemState([(elem, elem[point]) for elem in self])
     
     # () yields exact result (ignoring contol):
     def __call__(self, point):
@@ -31,11 +31,25 @@ class ooSystem(set):
         
 ####################### ooSystemState #########################
 class ooSystemState(dict):
-    __repr__ = lambda self: ''.join(['\n'+str(key)+'='+str(val) for key, val in self.items()])[1:]
+    _byNames = None
+    def __init__(self, *args, **kwargs):
+        dict.__init__(self, *args, **kwargs)
+        if self._byNames is None:
+            self._byNames = dict([(key.name, val) for key, val in self.items()])
+        #self.update(self._byNames)
+    
+    __repr__ = lambda self: ''.join(['\n'+key+'='+str(val) for key, val in self._byNames.items()])[1:]
+    
     def __call__(self, *args,  **kwargs):
         assert len(kwargs) == 0, "ooSystemState method '__call__' has no implemented kwargs yet"
+        r = [(self._byNames[arg] if isinstance(arg,  str) else self[arg]) for arg in args]
+        return r[0] if len(r)==1 else r
+    
+    #__call__ = _call
+    #__getitem__ = _call
         # TODO: implement it
-        # access by elements and thier names
+        # access by elements and their names
+
 
 
 
