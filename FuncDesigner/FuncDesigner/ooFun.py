@@ -55,7 +55,7 @@ class oofun:
     _usedIn = 0
     _directlyDwasInwolved = False
 
-    pWarn = pWarn
+    pWarn = lambda self, msg: pWarn(msg)
     
     __array_priority__ = 15# set it greater than 1 to prevent invoking numpy array __mul__ etc
 
