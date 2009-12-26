@@ -4,7 +4,7 @@ except:
     pass
 from baseSolver import baseSolver
 from oologfcn import OpenOptException
-from numpy import zeros, bmat, hstack
+from numpy import zeros, bmat, hstack, vstack
 try:
     import scipy
     scipyInstalled = True
@@ -16,7 +16,10 @@ except:
     scipyInstalled = False
     isspmatrix = lambda *args,  **kwargs:  False
     Hstack = hstack
+    Vstack = vstack
     Bmat = bmat
+    def SparseMatrixConstructor(*args, **kwargs): 
+        raise OpenOptException('error in OpenOpt kernel, inform developers')
     def Find(*args, **kwargs): 
         raise OpenOptException('error in OpenOpt kernel, inform developers')
 DenseMatrixConstructor = lambda *args, **kwargs: zeros(*args, **kwargs)

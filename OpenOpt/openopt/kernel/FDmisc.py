@@ -88,6 +88,8 @@ def setStartVectorAndTranslators(p):
         
         # asSparse can be True, False, 'auto'
         # !!!!!!!!!!! TODO: implement asSparse = 'auto' properly
+        if not scipyInstalled and asSparse == 'auto':
+            asSparse = False
         if asSparse is not False and not scipyInstalled:
             p.err('to handle sparse matrices you should have module scipy installed') 
 
