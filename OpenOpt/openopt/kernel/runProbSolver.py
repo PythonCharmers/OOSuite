@@ -142,7 +142,6 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
             afv = asfarray(fv)
             if ndim(afv) > 1:
                 if afv.shape[1] != p.n:
-                    raise 0
                     p.err('incorrect ' + fn + ' size')
             else:
                 if afv.shape != () and afv.shape[0] == p.n: afv = afv.reshape(1,-1)
@@ -337,25 +336,18 @@ def finalShow(p):
         pylab.show()
 
 class OpenOptResult: 
+    # TODO: implement it
+    #extras = EmptyClass() # used for some optional output
     def __init__(self, p):
-        # TODO: get rid of p for to dealloc memory? (use operations with p in stack level above?)
         if p.isFDmodel:
             if not hasattr(self, '_xf'):
-                self._xf = dict([(var.name, value) for var, value in p.xf.iteritems()])
+                self._xf = dict([(var.name, value) for var, value in p.xf.items()])
             def c(*args):
-                r = []
-                for arg in args:
-                    if isinstance(arg,  str):
-                        # TODO: mb provide _optPointByNames (with another name) in output structure r?
-                        r.append(self._xf[arg])
-                    else:
-                        r.append(self.xf[arg])
-                return r[0] if len(r)==1 else r
+                r = [(self._xf[arg] if isinstance(arg,  str) else self.xf[arg]) for arg in args]
+                return r[0] if len(args)==1 else r
             self.__call__ = c
 
-            #self.__call__ = lambda *args: [self.xf[arg] for arg in args]
-            
-            # doesn't work for len(args)>1 for current Python ver  2.6
-            self.__getitem__ = lambda *args: self.__call__(*args)#[self.xf[arg] for arg in args] 
+            # note - it doesn't work for len(args)>1 for current Python ver  2.6
+            self.__getitem__ = c # = self.__call__
 
 class EmptyClass: pass
