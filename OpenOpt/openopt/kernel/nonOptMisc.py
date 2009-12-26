@@ -4,7 +4,7 @@ except:
     pass
 from baseSolver import baseSolver
 from oologfcn import OpenOptException
-from numpy import zeros, bmat
+from numpy import zeros, bmat, hstack
 try:
     import scipy
     scipyInstalled = True
