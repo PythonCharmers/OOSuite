@@ -4,6 +4,7 @@ from numpy import asfarray, ones, inf, dot, nan, zeros, any, all, isfinite, eye,
 from numpy.linalg import norm
 from oologfcn import OpenOptException
 import NLP
+from nonOptMisc import scipyInstalled
 
 try:
     import scipy
@@ -27,7 +28,7 @@ class SLE(MatrixProblem):
         MatrixProblem.__init__(self, *args, **kwargs)
     
     def asSparse(self):
-        return True if self.n > 100 else False
+        return True if (scipyInstalled and self.n > 100) else False
 
     def objFunc(self, x):
         if isinstance(self.C, ndarray):
