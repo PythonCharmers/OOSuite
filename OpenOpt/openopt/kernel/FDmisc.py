@@ -1,6 +1,6 @@
 # Handling of FuncDesigner probs
 
-from numpy import empty, hstack, asfarray, all, atleast_1d, cumsum, asarray, zeros,  atleast_2d, ndarray, prod, ones
+from numpy import empty, hstack, vstack, asfarray, all, atleast_1d, cumsum, asarray, zeros,  atleast_2d, ndarray, prod, ones
 from nonOptMisc import scipyInstalled, Hstack, Vstack, Find, isspmatrix, SparseMatrixConstructor, DenseMatrixConstructor, Bmat
 
 def setStartVectorAndTranslators(p):
@@ -161,9 +161,11 @@ def setStartVectorAndTranslators(p):
             for oov in optVars:
                 constructor = ones if oov in dep else SparseMatrixConstructor
                 r.append(constructor((1, asarray(startPoint[oov]).size)))
-            R.append(Bmat([[Hstack(r)]]*asarray(oof(startPoint)).size))
-        R = Vstack(R)
-        return R
+            rr = Hstack(r) if len(r) > 1 else r[0]
+            SIZE = asarray(oof(startPoint)).size
+            if SIZE > 1: rr = Bmat([rr]*SIZE)  
+            R.append(rr)
+        return Vstack(R) if any([isspmatrix(_r) for _r in R]) else vstack(R)
         
     p._getPattern = getPattern
     p.oovars = optVars # Where it is used?
