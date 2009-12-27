@@ -22,7 +22,7 @@ class nonLinFuncs:
                 raise killThread
                 
         if getDerivative and not p.isFDmodel and not DerApproximatorIsInstalled:
-            self.err('To perform gradients check you should have DerApproximator installed, see http://openopt.org/DerApproximator')
+            p.err('To perform gradients check you should have DerApproximator installed, see http://openopt.org/DerApproximator')
 
         #userFunctionType should be 'f', 'c', 'h'
         funcs = getattr(p.user, userFunctionType)
