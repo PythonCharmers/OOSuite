@@ -24,7 +24,9 @@ def manage(p, *args, **kwargs):
         elif arg in (0, 1, True, False): start = arg
         else: p.err('Incorrect argument for manage()')
 
-    if 'start' in kwargs.keys(): start = kwargs['start']
+    if 'start' in kwargs.keys(): 
+        start = kwargs['start']
+        kwargs.pop('start')
 
     if 'solver' in kwargs.keys(): p.solver = kwargs['solver']
 
