@@ -17,16 +17,13 @@ def manage(p, *args, **kwargs):
     # expected args are (solver, start) or (start, solver) or one of them
     p._args = args
     p._kwargs = kwargs
-    start = True
 
     for arg in args:
         if type(arg) == str: p.solver = arg
         elif arg in (0, 1, True, False): start = arg
         else: p.err('Incorrect argument for manage()')
 
-    if 'start' in kwargs.keys(): 
-        start = kwargs['start']
-        kwargs.pop('start')
+    start = kwargs.pop('start', True)
 
     if 'solver' in kwargs.keys(): p.solver = kwargs['solver']
 
