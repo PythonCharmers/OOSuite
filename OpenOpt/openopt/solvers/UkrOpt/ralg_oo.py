@@ -159,6 +159,7 @@ class ralg(baseSolver):
                 hs_cumsum += hs
 
                 newPoint = p.point(x)
+              
                 if self.show_nnan: p.info('ls: %d nnan: %d' % (ls, newPoint.__nnan__()))
 
                 if ls == 0:
@@ -188,15 +189,16 @@ class ralg(baseSolver):
 
             """                          Backward line search                          """
 
-
+            ls_backward = 0
             if ls == 0:
                 if self.doBackwardSearch:
                     iterPoint, ls_backward = getBestPointAfterTurn(prevIterPoint, iterPoint, maxLS = 3, altLinInEq = True)
 
                     # TODO: extract last point from backward search, that one is better than iterPoint
                     if iterPoint.betterThan(bestPoint): bestPoint = iterPoint
-
+                    #p.debugmsg('ls_backward:%d' % ls_backward)
                     hs *= 2 ** ls_backward
+                    #hs *= 2 ** min((ls_backward+1, 0))
                 else:
                     pass
                     #hs *= 0.95
@@ -281,6 +283,7 @@ class ralg(baseSolver):
             if all(isfinite(g)) and ng > 1e-50 and doDilation:
                 g = (g / ng).reshape(-1,1)
                 vec1 = economyMult(b, g).reshape(-1,1)# TODO: remove economyMult, use dot?
+                w = T(1.0/alp-1.0) if ls_backward >= -1 else T(1.0/(alp - 0.5*ls_backward)-1.0)
                 vec2 = w * g.T
                 b += p.matmult(vec1, vec2)
             
