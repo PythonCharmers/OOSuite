@@ -1,4 +1,5 @@
-from numpy import diag, array, sqrt,  eye, ones, inf, any, copy, zeros, dot, where, all, tile, sum, nan, isfinite, float64, isnan, log10, max, sign, array_equal, nonzero, ix_
+from numpy import diag, array, sqrt,  eye, ones, inf, any, copy, zeros, dot, where, all, tile, sum, nan, isfinite, float64, isnan, log10, \
+max, sign, array_equal, nonzero, ix_, arctan, pi
 from numpy.linalg import norm, solve, LinAlgError
 #try:
 #    from numpy.linalg import cond
@@ -128,7 +129,9 @@ class ralg(baseSolver):
             p.msg = 'move direction has all-zero coords'
             return
 
-        p.hs = [hs]
+        #p.hs = [hs]
+        
+        directionVectorsList = []
 #        #pass-by-ref! not copy!
 #        if p.isFeas(p.x0): b = B_f
 #        else: b = B_constr
@@ -137,6 +140,7 @@ class ralg(baseSolver):
 
         for itn in xrange(1500000):
             doDilation = True
+            alp_addition = 0.0
 
             g_tmp = economyMult(b.T, moveDirection)
             if any(g_tmp): g_tmp /= p.norm(g_tmp)
@@ -198,6 +202,11 @@ class ralg(baseSolver):
                     if iterPoint.betterThan(bestPoint): bestPoint = iterPoint
                     #p.debugmsg('ls_backward:%d' % ls_backward)
                     hs *= 2 ** ls_backward
+                    
+                    if ls_backward <= -2:  # TODO: mb use -1 or 0 instead?
+                        #pass
+                        alp_addition -= 0.5*ls_backward # ls_backward less than zero
+                    
                     #hs *= 2 ** min((ls_backward+1, 0))
                 else:
                     pass
@@ -246,6 +255,36 @@ class ralg(baseSolver):
             else:
                 G2,  G = g2, g
 
+            # CHANGES
+            if len(directionVectorsList) == 0 or n < 3: pass
+            else:
+                gn2 = g2/norm(g2)
+                if len(directionVectorsList) == 1 or abs(dot(directionVectorsList[-1], directionVectorsList[-2]))>0.999:
+                    projectionComponentLenght = abs(dot(directionVectorsList[-1], gn2))
+                    restLength = sqrt(1 - min((1, projectionComponentLenght))**2)
+                else: 
+                    e1 = directionVectorsList[-1]
+                    e2 = directionVectorsList[-2] - dot(directionVectorsList[-1], directionVectorsList[-2]) * directionVectorsList[-1]
+                    e2 /= norm(e2)
+                    proj1, proj2 = dot(directionVectorsList[-1], gn2), dot(directionVectorsList[-2], gn2)
+                    rest = gn2 - proj1 * directionVectorsList[-1] - proj2 * directionVectorsList[-2]
+                    restLength = norm(rest)
+                assert 0 <= restLength < 1+1e-5, 'error in ralg solver: incorrect restLength'
+                
+                # TODO: make it parameters of ralg
+                commonCoeff, alp_add_coeff = 0.5, 1.0
+                
+                if restLength < commonCoeff * (n - 2.0) / n:
+                    #pass
+                    alpAddition = (arctan((n - 2.0) / (n * restLength)) - pi / 4.0) / (pi / 4.0) * alp_add_coeff
+                    #p.debugmsg('alpAddition:' + str(alpAddition))
+                    assert alpAddition > 0 # if someone incorrectly modifies commonCoeff it can be less than zero
+                    alp_addition += alpAddition
+                    
+            directionVectorsList.append(g2/norm(g2))
+            if len(directionVectorsList) > 2: directionVectorsList = directionVectorsList[:-2]
+            # CHANGES END
+
             if prevIterPointIsFeasible == currIterPointIsFeasible == True:
                 g1 = G2 - G
             elif prevIterPointIsFeasible == currIterPointIsFeasible == False:
@@ -283,7 +322,7 @@ class ralg(baseSolver):
             if all(isfinite(g)) and ng > 1e-50 and doDilation:
                 g = (g / ng).reshape(-1,1)
                 vec1 = economyMult(b, g).reshape(-1,1)# TODO: remove economyMult, use dot?
-                w = T(1.0/alp-1.0) if ls_backward >= -1 else T(1.0/(alp - 0.5*ls_backward)-1.0)
+                w = T(1.0/(alp+alp_addition)-1.0) 
                 vec2 = w * g.T
                 b += p.matmult(vec1, vec2)
             
@@ -370,7 +409,7 @@ class ralg(baseSolver):
 #                p.debugmsg('norm(delta):' + str(norm(iterPoint.x-x2))) 
 #                iterPoint = p.point(x2)
 #                p.debugmsg('2: new point Aeq residual:'+str(norm(dot(Aeq, iterPoint.x)-beq)))
-            p.hs.append(hs)
+            #p.hs.append(hs)
             #g = moveDirection.copy()
             g = g2.copy()
 
