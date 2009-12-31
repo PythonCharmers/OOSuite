@@ -255,7 +255,37 @@ class ralg(baseSolver):
             else:
                 G2,  G = g2, g
 
-            # CHANGES
+#            # CHANGES
+#            gn = g/norm(g)
+#            if len(directionVectorsList) == 0 or n < 3 or norm(g1) < 1e-20: pass
+#            else:
+#                if len(directionVectorsList) == 1 or abs(dot(directionVectorsList[-1], directionVectorsList[-2]))>0.999:
+#                    projectionComponentLenght = abs(dot(directionVectorsList[-1], gn))
+#                    restLength = sqrt(1 - min((1, projectionComponentLenght))**2)
+#                else: 
+#                    e1 = directionVectorsList[-1]
+#                    e2 = directionVectorsList[-2] - dot(directionVectorsList[-1], directionVectorsList[-2]) * directionVectorsList[-1]
+#                    #print dot(directionVectorsList[-1], directionVectorsList[-2])
+#                    e2 /= norm(e2)
+#                    proj1, proj2 = dot(e1, gn), dot(e2, gn)
+#                    rest = gn - proj1 * e1 - proj2 * e2
+#                    restLength = norm(rest)
+#                assert restLength < 1+1e-5, 'error in ralg solver: incorrect restLength'
+#                
+#                # TODO: make it parameters of ralg
+#                commonCoeff, alp_add_coeff = 0.5, 1.0
+#                
+#                if restLength < commonCoeff * (n - 2.0) / n:
+#                    #pass
+#                    alpAddition = 0.5+(arctan((n - 2.0) / (n * restLength)) - pi / 4.0) / (pi / 2.0) * alp_add_coeff
+#                    #p.debugmsg('alpAddition:' + str(alpAddition))
+#                    assert alpAddition > 0 # if someone incorrectly modifies commonCoeff it can be less than zero
+#                    alp_addition += alpAddition
+#                    #p.debugmsg('alp_addition:' + str(alp_addition))
+#                    
+#            directionVectorsList.append(gn)
+#            if len(directionVectorsList) > 2: directionVectorsList = directionVectorsList[:-2]
+            
             gn = g2/norm(g2)
             if len(directionVectorsList) == 0 or n < 3: pass
             else:
@@ -266,10 +296,11 @@ class ralg(baseSolver):
                     e1 = directionVectorsList[-1]
                     e2 = directionVectorsList[-2] - dot(directionVectorsList[-1], directionVectorsList[-2]) * directionVectorsList[-1]
                     e2 /= norm(e2)
-                    proj1, proj2 = dot(directionVectorsList[-1], gn), dot(directionVectorsList[-2], gn)
-                    rest = gn - proj1 * directionVectorsList[-1] - proj2 * directionVectorsList[-2]
+                   
+                    proj1, proj2 = dot(e1, gn), dot(e2, gn)
+                    rest = gn - proj1 * e1 - proj2 * e2
                     restLength = norm(rest)
-                assert restLength < 1+1e-5, 'error in ralg solver: incorrect restLength'
+                if restLength > 1+1e-5: p.pWarn('possible error in ralg solver: incorrect restLength, exceeds 1.0')
                 
                 # TODO: make it parameters of ralg
                 commonCoeff, alp_add_coeff = 0.5, 1.0
@@ -306,6 +337,42 @@ class ralg(baseSolver):
             # DEBUG END
 
             g = economyMult(b.T, g1)
+            
+            
+            # CHANGES
+#            gn = g/norm(g)
+#            if len(directionVectorsList) == 0 or n < 3 or norm(g1) < 1e-20: pass
+#            else:
+#                if len(directionVectorsList) == 1 or abs(dot(directionVectorsList[-1], directionVectorsList[-2]))>0.999:
+#                    projectionComponentLenght = abs(dot(directionVectorsList[-1], gn))
+#                    restLength = sqrt(1 - min((1, projectionComponentLenght))**2)
+#                else: 
+#                    e1 = directionVectorsList[-1]
+#                    e2 = directionVectorsList[-2] - dot(directionVectorsList[-1], directionVectorsList[-2]) * directionVectorsList[-1]
+#                    print dot(directionVectorsList[-1], directionVectorsList[-2])
+#                    e2 /= norm(e2)
+#                    proj1, proj2 = dot(e1, gn), dot(e2, gn)
+#                    rest = gn - proj1 * e1 - proj2 * e2
+#                    restLength = norm(rest)
+#                assert restLength < 1+1e-5, 'error in ralg solver: incorrect restLength'
+#                
+#                # TODO: make it parameters of ralg
+#                commonCoeff, alp_add_coeff = 0.5, 1.0
+#                
+#                if restLength < commonCoeff * (n - 2.0) / n:
+#                    #pass
+#                    alpAddition = 0.5+(arctan((n - 2.0) / (n * restLength)) - pi / 4.0) / (pi / 2.0) * alp_add_coeff
+#                    #p.debugmsg('alpAddition:' + str(alpAddition))
+#                    assert alpAddition > 0 # if someone incorrectly modifies commonCoeff it can be less than zero
+#                    alp_addition += alpAddition
+#                    #p.debugmsg('alp_addition:' + str(alp_addition))
+#                    
+#            directionVectorsList.append(gn)
+#            if len(directionVectorsList) > 2: directionVectorsList = directionVectorsList[:-2]
+            # CHANGES END
+
+            
+            
             ng = p.norm(g)
             p._df = g2.copy()
             #if p.iter>500: p.debugmsg(str(g2))
