@@ -32,13 +32,11 @@ p.lb[3] = 5.5
 p.ub[4] = 4.5
 
 #r = p.solve('ipopt', showLS=0, xtol=1e-7, maxIter = 1504)
-solver = 'ipopt'
+#solver = 'ipopt'
 solver = 'ralg'
 #solver = 'scipy_slsqp'
 #solver = 'algencan'
 r = p.solve(solver, maxIter = 1504, plot=1)
 #!! fmin_cobyla can't use user-supplied gradient
 #r = p.solve('scipy_cobyla')
-
-print 'objfunc val:', r.ff
 
