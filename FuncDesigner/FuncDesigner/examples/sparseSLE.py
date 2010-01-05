@@ -22,8 +22,6 @@ linSys = sle(f)
 
 r = linSys.solve() # i.e. using autoselect - solver numpy.linalg.solve for dense (for current numpy 1.4 it's LAPACK dgesv)
 # and scipy.sparse.linalg.spsolve for sparse SLEs (for current scipy 0.8 it's LAPACK dgessv)
-# check dense solver: r = linSys.solve('numpy_linalg_solve'), for me it yields 8 sec instead of 4 for linSys.solve('spsolve')
-# and consumes more peak memory
 
 A, B, C =  a(r), b(r), c(r) # or A, B, C = r[a], r[b], r[c]
 
