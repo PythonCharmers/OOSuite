@@ -25,8 +25,6 @@ class oovar(oofun):
 
         if 'size' in kwargs.keys():
             self.size = kwargs['size']
-        elif not 'skipRecursive' in kwargs.keys() or kwargs['skipRecursive'] == False:
-            self.size = oofun(lambda x: asarray(x).size, input = self, is_linear = True, discrete = True, skipRecursive = True)
 
         for key in kwargs.keys():
             if key != 'skipRecursive':

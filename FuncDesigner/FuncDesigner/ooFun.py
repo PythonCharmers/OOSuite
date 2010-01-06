@@ -59,16 +59,17 @@ class oofun:
     
     __array_priority__ = 15# set it greater than 1 to prevent invoking numpy array __mul__ etc
 
+    
+    def __getattr__(self, attr):
+        if attr != 'size': raise AttributeError
+        return oofun(lambda x: asarray(x).size, input = self, is_linear=True, discrete = True)
 
     """                                         Class constructor                                   """
 
     def __init__(self, fun, *args, **kwargs):
         assert len(args) == 0
         self.fun = fun
-        if not 'skipRecursive' in kwargs.keys() or kwargs['skipRecursive'] == False:
-            # TODO: modify is_linear to something better
-            self.size = oofun(lambda x: asarray(x).size, input = self, is_linear=True, discrete = True, skipRecursive = True)
-
+        
         if 'name' not in kwargs.keys():
             self.name = 'unnamed_oofun_' + str(oofun._unnamedFunNumber)
             oofun._unnamedFunNumber += 1
@@ -820,19 +821,29 @@ class oofun:
                  func_name=self.name, diffInt=self.diffInt, pointVal = val, args=self.args, \
                  stencil = max((2, self.stencil)), maxViolation=self.maxViolation, varForCheck = i)
 
-class BaseFDConstraint(oofun):
+
+class BooleanOOFun(oofun):
+    _unnamedBooleanOOFunNumber = 1
+    discrete = True
+    # an oofun that returns True/False
+    def __init__(self, *args, **kwargs):
+        self.name = 'unnamed_boolean_oofun_' + str(BooleanOOFun._unnamedBooleanOOFunNumber)
+        BooleanOOFun._unnamedBooleanOOFunNumber += 1
+
+class BaseFDConstraint(BooleanOOFun):
     isConstraint = True
     contol = 1e-6
-    _unnamedConstraintNumber = 1
     def __init__(self, oofun_Involved, *args, **kwargs):
+        BooleanOOFun.__init__(self, *args, **kwargs)
         #oofun.__init__(self, lambda x: oofun_Involved(x), input = oofun_Involved)
         if len(args) != 0:
             raise FuncDesignerException('No args are allowed for FuncDesigner constraint constructor, only some kwargs')
+            
+        # TODO: replace self.oofun by self.engine
         self.oofun = oofun_Involved
-        if 'contol' in kwargs.keys():
+        
+        if 'contol' in kwargs:
             self.contol = kwargs['contol']
-        self.name = 'unnamed_ooconstraint_' + str(BaseFDConstraint._unnamedConstraintNumber)
-        BaseFDConstraint._unnamedConstraintNumber += 1
 
 class SmoothFDConstraint(BaseFDConstraint):
     isBBC = False
@@ -848,19 +859,6 @@ class SmoothFDConstraint(BaseFDConstraint):
         
     __getitem__ = lambda self, point: self.__call__(point, self.contol)
         
-        #raise FuncDesignerException('direct constraints call is not implemented')
-#        val = self.oofun(point) 
-#        isFiniteLB = isfinite(self.lb)
-#        isFiniteUB = isfinite(self.ub)
-#        if isFiniteLB and isFiniteUB:
-#            assert self.lb == self.ub, 'not implemented yet'
-#            return val
-#        elif isFiniteLB:
-#            return val - self.lb
-#        elif isFiniteLB:
-#            return val - self.ub
-#        else:
-#            raise FuncDesignerException('FuncDesigner kernel error, inform developers')
     def __init__(self, *args, **kwargs):
         BaseFDConstraint.__init__(self, *args, **kwargs)
         self.lb, self.ub = -inf, inf
@@ -881,9 +879,6 @@ class BoxBoundConstraint(SmoothFDConstraint):
     def __init__(self, *args, **kwargs):
         SmoothFDConstraint.__init__(self, *args, **kwargs)
         
-
-        
-# TODO: implement it
 class LinearConstraint(SmoothFDConstraint):
     def __init__(self, *args, **kwargs):
         SmoothFDConstraint.__init__(self, *args, **kwargs)
