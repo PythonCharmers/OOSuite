@@ -5,14 +5,12 @@ from misc import FuncDesignerException, checkSizes
 from ooFun import oofun
 
 class oovar(oofun):
-    #size = nan # number of variables
     is_oovar = True
     shape = nan
     fixed = False
     initialized = False
     is_linear = True
     _unnamedVarNumber = 1#static variable for oovar class
-    #size = None # no requirements for size
 
     def __init__(self, name=None, *args, **kwargs):
         if name is None:
@@ -49,18 +47,6 @@ class oovar(oofun):
             raise FuncDesignerException(s)
         return r
         
-#        self_in_keys = self in x.keys()
-#        self_name_in_keys = self.name in x.keys()
-#        if self_in_keys and self_name_in_keys:
-#            raise FuncDesignerException('for oovar ' + self.name + ' the point involved contains both name and the oovar instance, that is forbidden because of ambiguity')
-#        elif not self_in_keys and not self_name_in_keys:
-#            raise FuncDesignerException('for oovar ' + self.name + " the point involved doesn't contain niether name nor the oovar instance")
-#        elif self_in_keys:
-#            return atleast_1d(asfarray(x[self]))
-#        else: # self_name_in_keys
-#            return atleast_1d(asfarray(x[self.name]))
-        
-            
     def _initialize(self, p):
 
         """                                               Handling size and shape                                               """
