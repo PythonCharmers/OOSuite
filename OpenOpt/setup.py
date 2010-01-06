@@ -24,6 +24,10 @@ try:
     import setuptools
 except:
     print('you should have setuptools installed (http://pypi.python.org/pypi/setuptools), for some Linux distribs you can get it via [sudo] apt-get python-setuptools')
+    print('press Enter for exit...')
+    raw_input()
+    exit()
+    
 import string, shutil
 from distutils.errors import DistutilsError
 #from numpy.distutils.system_info import system_info, NotFoundError, dict_append, so_ext
