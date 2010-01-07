@@ -265,7 +265,13 @@ class oofun:
         
     def __getitem__(self, ind): # overload for oofun[ind]
         assert not isinstance(ind, oofun), 'slicing by oofuns is unimplemented yet'
-        if isinstance(ind, dict): return self.__call__(ind)
+        if isinstance(ind, dict): return self.__call__(ind) # value in a point
+
+        if  not hasattr(self, '_slicesIndexDict'):
+            self._slicesIndexDict = {}
+        if ind in self._slicesIndexDict:
+            return self._slicesIndexDict[ind]
+
         if not isinstance(ind, oofun):
             f = lambda x: x[ind]
             def d(x):
@@ -278,8 +284,8 @@ class oofun:
                 r = zeros(x.shape)
                 r[_ind] = 1
                 return r
-            
-        r = oofun(f, input = self, d = d)
+                
+        r = oofun(f, input = self, d = d, size = 1)
         # TODO: check me!
         # what about a[a.size/2:]?
         if self.is_linear and not isinstance(ind,  oofun):
@@ -289,7 +295,7 @@ class oofun:
         # TODO: edit me!
 #        if self.is_oovar:
 #            r.is_oovarSlice = True
-            
+        self._slicesIndexDict[ind] = r
         return r
     
     def __getslice__(self, ind1, ind2):# overload for oofun[ind1:ind2]
@@ -706,7 +712,8 @@ class oofun:
 
     def _getDerivativeSelf(self, x, Vars,  fixedVars):
         Input = self._getInput(x)
-        nOutput = self(x).size 
+        if hasattr(self, 'size') and isscalar(self.size): nOutput = self.size
+        else: nOutput = self(x).size 
         hasUserSuppliedDerivative = hasattr(self, 'd') and self.d is not None
         if hasUserSuppliedDerivative:
             derivativeSelf = []
@@ -741,6 +748,7 @@ class oofun:
                             tmp = atleast_2d(tmp)
                             if tmp.shape[0] != nOutput: 
                                 # TODO: add debug msg
+                                if tmp.shape[1] != nOutput: raise FuncDesignerException('error in getDerivativeSelf()')
                                 tmp = tmp.T
                         derivativeSelf.append(tmp)
             else:
@@ -749,7 +757,9 @@ class oofun:
                     tmp = atleast_2d(tmp)
                     if tmp.shape[0] != nOutput: 
                         # TODO: add debug msg
+                        if tmp.shape[1] != nOutput: raise FuncDesignerException('error in getDerivativeSelf()')
                         tmp = tmp.T
+                        
                    
                 ac = 0
                 
