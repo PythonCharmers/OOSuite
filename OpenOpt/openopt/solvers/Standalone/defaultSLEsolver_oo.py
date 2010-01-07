@@ -64,10 +64,9 @@ class defaultSLEsolver(baseSolver):
         else: # is sparse
             #p.debugmsg('sparse SLE solver')
             try:
-                if not hasattr(p, 'C_as_csr'):p.C_as_csr = scipy.sparse.csr_matrix(p.C)
-                xf = solver(p.C_as_csr, p.d)#, maxiter=10000)
+                if not hasattr(p, 'C_as_csc'):p.C_as_csc = scipy.sparse.csc_matrix(p.C)
+                xf = solver(p.C_as_csc, p.d)#, maxiter=10000)
                 solver_istop = 0
-                #xf, solver_istop = solver(p.C_as_csr, p.d)#, maxiter=10000)
                 if solver_istop == 0:
                     istop, msg = 10, 'solved'
                 else:
@@ -75,7 +74,7 @@ class defaultSLEsolver(baseSolver):
                     if solver_istop < 0: msg += ', matter: illegal input or breakdown'
                     else: msg += ', matter: convergence to tolerance not achieved, number of iterations: %d' % solver_istop
                 p.xf = xf                
-                p.ff = norm(p.C_as_csr._mul_sparse_matrix(scipy.sparse.csr_matrix(xf.reshape(-1, 1))).toarray().flatten()-p.d, inf)                
+                p.ff = norm(p.C_as_csc._mul_sparse_matrix(scipy.sparse.csr_matrix(xf.reshape(-1, 1))).toarray().flatten()-p.d, inf)                
             except:
                 istop, msg = -100, 'unimplemented exception while solving sparse SLE'
         p.istop, p.msg = istop, msg

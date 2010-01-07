@@ -8,12 +8,14 @@ from numpy import zeros, bmat, hstack, vstack
 try:
     import scipy
     scipyInstalled = True
+    scipyAbsentMsg = ''
     from scipy.sparse import isspmatrix
     from scipy.sparse import bmat as Bmat
     from scipy.sparse import hstack as Hstack, vstack as Vstack, find as Find
     SparseMatrixConstructor = lambda *args, **kwargs: scipy.sparse.lil_matrix(*args, **kwargs)
 except:
     scipyInstalled = False
+    scipyAbsentMsg = 'Probably scipy installation could speed up running the code involved'
     isspmatrix = lambda *args,  **kwargs:  False
     Hstack = hstack
     Vstack = vstack

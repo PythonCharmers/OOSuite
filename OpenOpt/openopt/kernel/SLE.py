@@ -35,21 +35,15 @@ class SLE(MatrixProblem):
             return norm(dot(self.C, x) - self.d, inf)
         else:
             # TODO: omit code clone in FD ooFun.py, function _D
-            #print '1'
-            t1 = self.C_as_csr
-            #print '2'
-            t2 = scipy.sparse.csc_matrix(x)
-            #print '3'
+            t1 = self.C_as_csc
+            t2 = scipy.sparse.csr_matrix(x)
             if t2.shape[0] != t1.shape[1]:
                 if t2.shape[1] == t1.shape[1]:
                     t2 = t2.T
                 else:
                     raise FuncDesignerException('incorrect shape in FuncDesigner function _D(), inform developers about the bug')
-            #print '4'
             rr =  t1._mul_sparse_matrix(t2)            
-            #print '5'
             r = norm(rr.toarray() - self.d, inf)
-            #print '6'
             return r
 
     def __prepare__(self):
@@ -88,7 +82,7 @@ class SLE(MatrixProblem):
                 Vstack = vstack # i.e. numpy.vstack
             #raise 0
             self.C, self.d = Vstack(C), hstack(d).flatten()
-            if AsSparse: self.C_as_csr = self.C.tocsr()
+            if AsSparse: self.C_as_csc = self.C.tocsc()
             
             if isinstance(self.C,ndarray) and self.n > 100 and len(flatnonzero(self.C))/self.C.size < 0.3:
                 s = "Probably you'd better solve this SLE as sparse"

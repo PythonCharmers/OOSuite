@@ -22,7 +22,7 @@ class SOCP(MatrixProblem):
     def __init__(self, *args, **kwargs):
         MatrixProblem.__init__(self, *args, **kwargs)
         self.f = asfarray(self.f)
-        self.n = self.f.size
+        self.n = self.f.size # for p.n to be available immediately after assigning prob
         if self.x0 is None: self.x0 = zeros(self.n)
 
 

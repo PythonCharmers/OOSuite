@@ -3,27 +3,42 @@ from numpy import concatenate, asfarray, array, where, argmax, zeros, isfinite, 
 from copy import deepcopy
 empty_arr = asfarray([])
 
+try:
+    from scipy.sparse import csr_matrix
+except:
+    csr_matrix = None
+    
+#def MULT(A, x):
+#    if isinstance(A, ndarray):
+#        return dot(A, x)
+#    else:
+#        t2 = csc_matrix(x)
+#        if t2.shape[0] != A.shape[1]:
+#            if t2.shape[1] == A.shape[1]:
+#                t2 = t2.T
+#        return A._mul_sparse_matrix(t2).toarray()         
+
 
 class residuals:
     def __init__(self):
         pass
     def __get_nonLinInEq_residuals__(self, x):
         if hasattr(self.userProvided, 'c') and self.userProvided.c: return self.c(x)
-        else: return empty_arr
+        else: return empty_arr.copy()
 
     def __get_nonLinEq_residuals__(self, x):
         if hasattr(self.userProvided, 'h') and self.userProvided.h: return self.h(x)
-        else: return empty_arr
+        else: return empty_arr.copy()
 
     def __get_AX_Less_B_residuals__(self, x):
-        #TODO: CHECK FUTURE VERSIONS OF NUMPY IS flatten() required
-        if self.A != None and self.A.size > 0  : return self.matmult(self.A, x) - self.b
-        else: return empty_arr
+        if self.A != None and self.A.size > 0: 
+            return self.matmult(self.A, x).flatten() - self.b if not hasattr(self, '_A') else self._A._mul_sparse_matrix(csr_matrix(x.reshape(self.n, 1))).toarray().flatten() - self.b
+        else: return empty_arr.copy()
 
     def __get_AeqX_eq_Beq_residuals__(self, x):
-        #TODO: CHECK FUTURE VERSIONS OF NUMPY IS flatten() required
-        if self.Aeq != None and self.Aeq.size>0 : return self.matmult(self.Aeq, x).flatten() - self.beq
-        else: return empty_arr
+        if self.Aeq != None and self.Aeq.size>0 : 
+            return self.matmult(self.Aeq, x).flatten() - self.beq if not hasattr(self, '_Aeq') else self._Aeq._mul_sparse_matrix(csr_matrix(x.reshape(self.n, 1))).toarray().flatten() - self.beq
+        else: return empty_arr.copy()
 
     def __getLbresiduals__(self, x):
         return self.lb - x
@@ -162,5 +177,4 @@ class residuals:
         
 class EmptyClass:
     pass
-
 

@@ -9,6 +9,7 @@ from ooIter import ooIter
 from Point import Point
 from iterPrint import ooTextOutput
 from ooMisc import setNonLinFuncsNumber, assignScript
+from nonOptMisc import isspmatrix, scipyInstalled, scipyAbsentMsg
 from copy import copy as Copy
 try:
     from DerApproximator import check_d1
@@ -372,9 +373,37 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     self.x0 = zeros(fv.size)
                     break
         self.x0 = ravel(self.x0)
+        
         if not hasattr(self, 'n'): self.n = self.x0.size
         if not hasattr(self, 'lb'): self.lb = -inf * ones(self.n)
         if not hasattr(self, 'ub'): self.ub =  inf * ones(self.n)        
+        
+        for fn in ('A', 'Aeq'):
+            fv = getattr(self, fn)
+            if fv is not None:# and fv != []:
+                afv = asfarray(fv) if not isspmatrix(fv) else fv.toarray() # TODO: omit casting to dense matrix
+                if ndim(afv) > 1:
+                    if afv.shape[1] != self.n:
+                        self.err('incorrect ' + fn + ' size')
+                else:
+                    if afv.shape != () and afv.shape[0] == self.n: afv = afv.reshape(1, self.n)
+                setattr(self, fn, afv)
+            else:
+                setattr(self, fn, asfarray([]).reshape(0, self.n))
+
+        nA, nAeq = prod(self.A.shape), prod(self.Aeq.shape) 
+        SizeThreshold = 2 ** 15
+        if scipyInstalled:
+            from scipy.sparse import csc_matrix
+            print flatnonzero(self.A).size, 0.25*nA, not isspmatrix(self.A), flatnonzero(self.A).size < 0.25*nA
+            print flatnonzero(self.Aeq).size, 0.25*nAeq, not isspmatrix(self.Aeq), flatnonzero(self.Aeq).size < 0.25*nA
+            if nA > SizeThreshold and not isspmatrix(self.A) and flatnonzero(self.A).size < 0.25*nA:
+                self._A = csc_matrix(self.A)
+            if nAeq > SizeThreshold and not isspmatrix(self.Aeq) and flatnonzero(self.Aeq).size < 0.25*nAeq:
+                self._Aeq = csc_matrix(self.Aeq)
+        elif nA > SizeThreshold or nAeq > SizeThreshold:
+            self.pWarn(scipyAbsentMsg)
+            
         self._baseProblemIsPrepared = True
 
 

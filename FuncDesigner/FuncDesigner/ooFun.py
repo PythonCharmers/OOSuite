@@ -649,8 +649,8 @@ class oofun:
                                 self.pWarn(scipyAbsentMsg)
                                 rr = atleast_1d(dot(t1, t2))
                             else:
-                                t1 = scipy.sparse.csr_matrix(t1)
-                                t2 = scipy.sparse.csc_matrix(t2)
+                                t1 = scipy.sparse.csc_matrix(t1)
+                                t2 = scipy.sparse.csr_matrix(t2)
                                 if t2.shape[0] != t1.shape[1]:
                                     if t2.shape[1] == t1.shape[1]:
                                         t2 = t2.T
@@ -705,9 +705,9 @@ class oofun:
             if scipy is None: 
                 self.pWarn(scipyAbsentMsg)
                 return t1,  t2
-            t1 = scipy.sparse.csr_matrix(t1)
+            t1 = scipy.sparse.csc_matrix(t1)
             if t1.shape[0] == 1: t1 = t1.T
-            t2 = scipy.sparse.csc_matrix(t2)
+            t2 = scipy.sparse.csr_matrix(t2)
         return t1,  t2
 
     def _getDerivativeSelf(self, x, Vars,  fixedVars):
@@ -764,12 +764,12 @@ class oofun:
                 ac = 0
                 
                 if not isinstance(tmp, ndarray):
-                    csr_tmp = tmp.tocsr()
+                    csc_tmp = tmp.tocsc()
                 for i, inp in enumerate(Input):
                     if isinstance(tmp, ndarray):
                         TMP = tmp[:, ac:ac+inp.size]
                     else: # scipy.sparse matrix
-                        TMP = csr_tmp[:, ac:ac+inp.size]
+                        TMP = csc_tmp[:, ac:ac+inp.size]
                     ac += inp.size
                     if self.input[i].discrete: continue
                     #!!!!!!!!! TODO: handle fixed cases properly!!!!!!!!!!!!

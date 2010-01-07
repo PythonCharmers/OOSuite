@@ -132,23 +132,10 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
                 setattr(p, fn, asfarray([]))
 
 
-    if p.lb.size == 0:
-        p.lb = -inf * ones(p.n)
-    if p.ub.size == 0:
-        p.ub = inf * ones(p.n)
-    for fn in ('A', 'Aeq'):
-        fv = getattr(p, fn)
-        if fv != None:# and fv != []:
-            afv = asfarray(fv)
-            if ndim(afv) > 1:
-                if afv.shape[1] != p.n:
-                    p.err('incorrect ' + fn + ' size')
-            else:
-                if afv.shape != () and afv.shape[0] == p.n: afv = afv.reshape(1,-1)
-            setattr(p, fn, afv)
-        else:
-            setattr(p, fn, asfarray([]).reshape(0, p.n))
-
+#    if p.lb.size == 0:
+#        p.lb = -inf * ones(p.n)
+#    if p.ub.size == 0:
+#        p.ub = inf * ones(p.n)
 
     p.stopdict = {}
 
@@ -197,7 +184,6 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
         else:
             nErr = check(p)
             if nErr: p.err("prob check results: " +str(nErr) + "ERRORS!")#however, I guess this line will be never reached.
-
             p.iterfcn(p.x0)
             solver(p)
 #    except killThread:
