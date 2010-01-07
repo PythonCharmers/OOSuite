@@ -62,7 +62,12 @@ class oofun:
     
     def __getattr__(self, attr):
         if attr != 'size': raise AttributeError
-        return oofun(lambda x: asarray(x).size, input = self, is_linear=True, discrete = True)
+        
+        # to prevent creating of several oofuns binded to same oofun.size
+        r = oofun(lambda x: asarray(x).size, input = self, is_linear=True, discrete = True)
+        self.size = r 
+        
+        return r
 
     """                                         Class constructor                                   """
 
