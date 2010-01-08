@@ -52,7 +52,10 @@ class ipopt(baseSolver):
             if p.nh != 0: r.append(p._getPattern(p.user.h))
             if p.nb != 0: r.append(p.A)
             if p.nbeq != 0: r.append(p.Aeq)
-            r = Vstack(r)
+            if all([isinstance(elem, ndarray) for elem in r]):
+                r = vstack(r)
+            else:
+                r = Vstack(r)
             
             if isspmatrix(r): r = r.A
             # isspmatrix(r) turned off till more proper sparse matrices fancy indexation
