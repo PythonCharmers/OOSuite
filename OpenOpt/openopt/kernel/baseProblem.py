@@ -395,8 +395,6 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         SizeThreshold = 2 ** 15
         if scipyInstalled:
             from scipy.sparse import csc_matrix
-            print flatnonzero(self.A).size, 0.25*nA, not isspmatrix(self.A), flatnonzero(self.A).size < 0.25*nA
-            print flatnonzero(self.Aeq).size, 0.25*nAeq, not isspmatrix(self.Aeq), flatnonzero(self.Aeq).size < 0.25*nA
             if nA > SizeThreshold and not isspmatrix(self.A) and flatnonzero(self.A).size < 0.25*nA:
                 self._A = csc_matrix(self.A)
             if nAeq > SizeThreshold and not isspmatrix(self.Aeq) and flatnonzero(self.Aeq).size < 0.25*nAeq:
