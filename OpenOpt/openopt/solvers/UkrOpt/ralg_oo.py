@@ -34,7 +34,7 @@ class ralg(baseSolver):
     showRej = False
     showRes = False
     show_nnan = False
-    doBackwardSearch = 1
+    doBackwardSearch = True
     approach = 'nqp'
     newLinEq = True
 
@@ -382,6 +382,8 @@ class ralg(baseSolver):
                     p.info('debug msg: matrix B restoration in ralg solver')
                 b = B0.copy()
                 hs = 0.5*p.norm(prevIterPoint.x - iterPoint.x)
+                # TODO: iterPoint = projection(iterPoint,Aeq) if res_Aeq > 0.75*contol
+                
             #p.debugmsg('ng:%e  ng1:%e' % (ng, p.norm(g1)))
             if ng < 1e-40: 
                 #raise 0
@@ -495,13 +497,12 @@ class ralg(baseSolver):
         b = diag(arr)
 
         for i in xrange(nLinEq):
-            g = Aeq[i]
-            g = p.matmult(b.T, g)
+            g = economyMult(b.T, Aeq[i])
             #ind_nnz = nonzero(g)[0]
             ng = norm(g)
             g = (g / ng).reshape(-1,1)
             
-            vec1 = economyMult(b, g)# TODO: remove economyMult, use dot?
+            vec1 = p.matmult(b, g)# TODO: remove economyMult, use dot?
             vec2 = -g.T
             
             b += p.matmult(vec1, vec2)
@@ -525,7 +526,7 @@ class ralg(baseSolver):
         Aeqx = dot(Aeq, x)
         AeqT_AeqAeqT_inv_Aeqx = dot(AeqT, ravel(solve(AeqAeqT, Aeqx)))
         AeqT_AeqAeqT_inv_beq = dot(AeqT, ravel(solve(AeqAeqT, beq)))
-        xf= x - AeqT_AeqAeqT_inv_Aeqx + AeqT_AeqAeqT_inv_beq
+        xf = x - AeqT_AeqAeqT_inv_Aeqx + AeqT_AeqAeqT_inv_beq
         return xf
         
         
