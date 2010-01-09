@@ -398,26 +398,6 @@ class ralg(baseSolver):
                 vec2 = w * g.T
                 b += p.matmult(vec1, vec2)
             
-            # DEBUG!!
-            #print '>!', p.matmult(iterPoint.x, g1)
-            
-#            if itn == 0: COS = []
-#            from numpy import arange, diff
-#            P = arange(n) # point
-#            direction = -arange(n)
-#            subgrad = -arange(n)* (1+arange(n)/(n+0.1))
-#            direction, subgrad = direction/norm(direction), subgrad/norm(subgrad)
-#            
-#            subgrad_dilated = economyMult(b.T, subgrad)
-#            if any(subgrad_dilated): subgrad_dilated /= p.norm(subgrad_dilated)
-#            subgrad_dilated = p.matmult(b, subgrad_dilated)
-#            cos_a = p.matmult(subgrad_dilated, direction)
-#            COS.append(cos_a)
-#            if itn == 90: print '>>', COS, diff(COS)
-            #stat_vec = range(n)
-            
-            
-            # DEBUG END
 
             """                               Call OO iterfcn                                """
             p.iterfcn(iterPoint)

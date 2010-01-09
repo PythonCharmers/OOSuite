@@ -189,7 +189,7 @@ def getBestPointAfterTurn(oldPoint, newPoint, altLinInEq=None, maxLS = 3, maxDel
 
 
         #!!! "not betterThan" is used vs "betterThan" because prevPoint can become same to altPoint
-        if prevPoint.betterThan(altPoint, altLinInEq=altLinInEq):
+        if not altPoint.betterThan(prevPoint, altLinInEq=altLinInEq):
             return prev_prev_point,  -1-ls
         prev_prev_point = prevPoint
 
