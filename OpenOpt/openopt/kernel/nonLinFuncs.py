@@ -14,6 +14,9 @@ class nonLinFuncs:
     def __init__(self): pass
 
     def wrapped_func(p, x, IND, userFunctionType, ignorePrev, getDerivative):
+        if isinstance(x, dict):
+            if not p.isFDmodel: p.err('calling the function with argument of type dict is allowed for FuncDesigner models only')
+            x = p._point2vector(x)
         if not getattr(p.userProvided, userFunctionType): return array([])
         if p.istop == USER_DEMAND_EXIT:
             if p.solver.__cannotHandleExceptions__:
@@ -195,6 +198,10 @@ class nonLinFuncs:
 
 
     def wrapped_1st_derivatives(p, x, ind_, funcType, ignorePrev, asSparse):
+        if isinstance(x, dict):
+            if not p.isFDmodel: p.err('calling the function with argument of type dict is allowed for FuncDesigner models only')
+            if ind_ is not None:p.err('the operation is turned off for argument of type dict when ind!=None')
+            x = p._point2vector(x)
         if ind_ is not None:
             ind = p.getCorrectInd(ind_)
         else: ind = None
