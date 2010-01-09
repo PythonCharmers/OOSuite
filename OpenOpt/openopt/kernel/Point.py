@@ -284,7 +284,7 @@ class Point:
         else:
             return copy(self._dmr)
 
-    def betterThan(self, *args, **kwargs):
+    def betterThan(self, point2compare, altLinInEq = False):
         """
         usage: result = involvedPoint.better(pointToCompare)
 
@@ -292,46 +292,30 @@ class Point:
         and False otherwise
         (if NOT better, mb same fval and same residuals or residuals less than desired contol)
         """
-        return self.__betterThan__(*args, **kwargs)
-
-    def __betterThan__(self, point2compare, altLinInEq = False):
         if self.p.isUC:
             return self.f() < point2compare.f()
+            
+        contol = self.p.contol
 
         if altLinInEq:
             mr_field = 'mr_alt'
         else:
             mr_field = 'mr'
-        point2compareResidual = getattr(point2compare, mr_field)()
-
+        mr, point2compareResidual = getattr(self, mr_field)(), getattr(point2compare, mr_field)()
         criticalResidualValue = max((self.p.contol, point2compareResidual))
+        self_nNaNs, point2compare_nNaNs = self.__nNaNs__(), point2compare.__nNaNs__()
 
-        if hasattr(self, '_'+mr_field):
-            if getattr(self, '_'+mr_field) > criticalResidualValue: return False
-        else:
-            #TODO: simplify it!
-            #for fn in residuals: (...)
-            if altLinInEq:
-                if self.__all_lin_ineq() > criticalResidualValue: return False
-            else:
-                if any(self.lb() > criticalResidualValue): return False
-                if any(self.ub() > criticalResidualValue): return False
-                #if involveIntConstraints and any(self.intConstraints() > criticalResidualValue): return False
-                if any(self.lin_ineq() > criticalResidualValue): return False
-                if any(abs(self.lin_eq()) > criticalResidualValue): return False
-            if self.p.__baseClassName__ == 'NonLin':
-                if any(abs(self.h()) > criticalResidualValue): return False
-                if any(self.c() > criticalResidualValue): return False
-
-        mr = getattr(self, mr_field)()
-
-        if self.p.__baseClassName__ == 'NonLin' and not self.p.isNaNInConstraintsAllowed:
-            if point2compare.__nNaNs__()  > self.__nNaNs__(): return True
-            elif point2compare.__nNaNs__()  < self.__nNaNs__(): return False
-            # TODO: check me
-            if mr <= self.p.contol and point2compareResidual <= self.p.contol and self.__nNaNs__() != 0: return mr < point2compareResidual
-
-        if mr < point2compareResidual and self.p.contol < point2compareResidual: return True
+        if point2compare_nNaNs  > self_nNaNs: return True
+        elif point2compare_nNaNs  < self_nNaNs: return False
+        
+        # TODO: check me
+        if self_nNaNs == 0:
+            if mr > self.p.contol and mr > point2compareResidual: return False
+            elif point2compareResidual > self.p.contol and point2compareResidual > mr: return True
+        else: # got here means self_nNaNs = point2compare_nNaNs but not equal to 0
+            if mr == 0 and point2compareResidual == 0: 
+                self.p.err('you should provide at least one active constraint in each point from R^n where some constraints are undefined')
+            return mr < point2compareResidual
 
         point2compareF_is_NaN = isnan(point2compare.f())
         selfF_is_NaN = isnan(self.f())
@@ -376,6 +360,7 @@ class Point:
 
     def __nNaNs__(self):
         # returns number of nans in constraints
+        if self.p.__baseClassName__ != 'NonLin': return 0
         r = 0
         c, h = self.c(), self.h()
         r += len(where(isnan(c))[0])
