@@ -77,6 +77,8 @@ class oofun:
         
         if 'name' not in kwargs.keys():
             self.name = 'unnamed_oofun_' + str(oofun._unnamedFunNumber)
+            #if oofun._unnamedFunNumber == 44437: raise 0
+            #if oofun._unnamedFunNumber == 322: raise 0
             oofun._unnamedFunNumber += 1
 
         for key, item in kwargs.iteritems():

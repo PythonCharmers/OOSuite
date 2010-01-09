@@ -161,11 +161,22 @@ def setStartVectorAndTranslators(p):
             for oov in optVars:
                 constructor = ones if oov in dep else SparseMatrixConstructor
                 r.append(constructor((1, asarray(startPoint[oov]).size)))
-            rr = Hstack(r) if len(r) > 1 else r[0]
+            if any([isspmatrix(elem) for elem in r]):
+                rr = Hstack(r) if len(r) > 1 else r[0]
+            elif len(r)>1:
+                rr = hstack(r)
+            else:
+                rr = r[0]
+            #rr = Hstack(r) if (len(r) > 1 and ) else r[0]
             SIZE = asarray(oof(startPoint)).size
-            if SIZE > 1: rr = Bmat([rr]*SIZE)  
+            if SIZE > 1:  rr = Vstack([rr]*SIZE)  if isspmatrix(rr) else vstack([rr]*SIZE)
             R.append(rr)
-        return Vstack(R) if any([isspmatrix(_r) for _r in R]) else vstack(R)
+        #try:
+        result = Vstack(R) if any([isspmatrix(_r) for _r in R]) else vstack(R)
+        #except:
+        #    raise 0
+        
+        return result
         
     p._getPattern = getPattern
     p.oovars = optVars # Where it is used?
