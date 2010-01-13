@@ -1,7 +1,7 @@
 # created by Dmitrey
 
 from numpy import inf, asfarray, copy, all, any, empty, atleast_2d, zeros, dot, asarray, atleast_1d, empty, ones, ndarray, \
-where, isfinite, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum, prod, nonzero
+where, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum, prod, nonzero
 from numpy.linalg import norm
 from misc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg
 from copy import deepcopy
@@ -53,6 +53,7 @@ class oofun:
     _unnamedFunNumber = 1
 
     _usedIn = 0
+    _level = 0
     _directlyDwasInwolved = False
 
     pWarn = lambda self, msg: pWarn(msg)
@@ -88,10 +89,13 @@ class oofun:
             if type(self.input) not in [list, tuple]:
                 self.input = [self.input]
             for elem in self.input:
+                levels = [0]
                 if isinstance(elem, oofun):
                     elem._usedIn += 1
+                    levels.append(elem._level)
                 else:
                     pass
+            self._level = max(levels)+1
                     #raise FuncDesignerException('All input(s) of the oofun ' + self.name + ' have to be oofun/oovar instance(s)')
     
     def named(self, name):
@@ -418,14 +422,14 @@ class oofun:
         if not type(self.input) in (list, tuple):
             self.input = [self.input]
         r = []
-        self.inputOOVarTotalLength = 0
+        #self.inputOOVarTotalLength = 0
         for item in self.input:
             if isinstance(item, oofun): 
                 rr = atleast_1d(item(x))
             else:
                 rr = atleast_1d(item)
             r.append(rr)
-            self.inputOOVarTotalLength += rr.size
+            #self.inputOOVarTotalLength += rr.size
         return tuple(r)
 
     """                                                getDep                                             """
@@ -461,6 +465,7 @@ class oofun:
 
     """                                                getFunc                                             """
     def _getFunc(self, x):
+        assert not isinstance(x, oofun), "you can't invoke oofun on another one oofun"
         # TODO: get rid of hasattr(self, 'fixed')
         #if self.isAlreadyPrepared:
         
@@ -474,7 +479,8 @@ class oofun:
 #                return deepcopy(self.f_val_prev)
             
         dep = self._getDep()
-        cond_same_point = self.isCostly and hasattr(self, 'f_key_prev') and all([array_equal(x[elem], self.f_key_prev[elem.name]) for elem in dep])
+        stCond = self.isCostly or (self._level-1)%4 == 0
+        cond_same_point = stCond and hasattr(self, 'f_key_prev') and all([array_equal(x[elem], self.f_key_prev[elem.name]) for elem in dep])
         #cond_same_point = hasattr(self, 'f_key_prev') and all([array_equal(x[elem], self.f_key_prev[elem.name]) for elem in dep])
         if cond_same_point:
             self.same += 1
@@ -494,7 +500,7 @@ class oofun:
         #self.outputTotalLength = ([asarray(elem).size for elem in self.fun(*Input)])#self.f_val_prev.size # TODO: omit reassigning
         
         # TODO: simplify it
-        if self.isCostly:
+        if stCond:
             self.f_val_prev = tmp
             self.f_key_prev = {}
             for elem in dep:
@@ -846,6 +852,9 @@ class BooleanOOFun(oofun):
     def __init__(self, *args, **kwargs):
         self.name = 'unnamed_boolean_oofun_' + str(BooleanOOFun._unnamedBooleanOOFunNumber)
         BooleanOOFun._unnamedBooleanOOFunNumber += 1
+    def size(self, *args, **kwargs): raise FuncDesignerException('currently BooleanOOFun.size() is disabled')
+    def D(self, *args, **kwargs): raise FuncDesignerException('currently BooleanOOFun.D() is disabled')
+    def _D(self, *args, **kwargs): raise FuncDesignerException('currently BooleanOOFun._D() is disabled')
 
 class BaseFDConstraint(BooleanOOFun):
     isConstraint = True
