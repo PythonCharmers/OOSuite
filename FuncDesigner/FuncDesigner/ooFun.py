@@ -479,7 +479,7 @@ class oofun:
 #                return deepcopy(self.f_val_prev)
             
         dep = self._getDep()
-        stCond = self.isCostly or (self._level-1)%4 == 0
+        stCond = self.isCostly or (self._level-2)%4 == 0
         cond_same_point = stCond and hasattr(self, 'f_key_prev') and all([array_equal(x[elem], self.f_key_prev[elem.name]) for elem in dep])
         #cond_same_point = hasattr(self, 'f_key_prev') and all([array_equal(x[elem], self.f_key_prev[elem.name]) for elem in dep])
         if cond_same_point:
