@@ -129,7 +129,8 @@ def getAltitudeDirection(p, pointTop, point2, point3):
 from openopt.kernel.setDefaultIterFuncs import IS_LINE_SEARCH_FAILED
 from openopt.kernel.ooMisc import isSolved
 
-def getBestPointAfterTurn(oldPoint, newPoint, altLinInEq=None, maxLS = 3, maxDeltaX = None, maxDeltaF = None, line_points = None, hs=None):
+def getBestPointAfterTurn(oldPoint, newPoint, altLinInEq=None, maxLS = 3, maxDeltaX = None, maxDeltaF = None, \
+                          line_points = None, hs=None, new_bs = True):
     assert altLinInEq is not None
     p = oldPoint.p
     contol = p.contol
@@ -158,10 +159,12 @@ def getBestPointAfterTurn(oldPoint, newPoint, altLinInEq=None, maxLS = 3, maxDel
         pv = 0.5*hs
         line_points[pv] = altPoint.f()
 
-
+    
     if maxLS is None:
         maxLS = p.maxLineSearch
-    elif maxLS == 0: return newPoint, 0
+        
+    assert maxLS != 0
+    
     if maxDeltaX is None: 
         if p.iter != 0:
             maxDeltaX = 1.5e4*p.xtol
@@ -190,7 +193,11 @@ def getBestPointAfterTurn(oldPoint, newPoint, altLinInEq=None, maxLS = 3, maxDel
 
         #!!! "not betterThan" is used vs "betterThan" because prevPoint can become same to altPoint
         if not altPoint.betterThan(prevPoint, altLinInEq=altLinInEq):
-            return prev_prev_point,  -1-ls
+            if new_bs:
+                bestPoint, pointForDilation = prevPoint, prev_prev_point
+                return bestPoint, pointForDilation, -1-ls
+            else:
+                return prev_prev_point, -1-ls
         prev_prev_point = prevPoint
 
         if p.norm(oldPoint.x - altPoint.x) < maxDeltaX: 
@@ -203,7 +210,13 @@ def getBestPointAfterTurn(oldPoint, newPoint, altLinInEq=None, maxLS = 3, maxDel
         # TODO: is it worth to implement?
         if (oldPoint.mr() > contol and altPoint.mr() > p.contol) and altPoint.mr() > 0.9*oldPoint.mr(): break 
 
-    return prev_prev_point, -ls
+    # got here if maxLS is exeeded; altPoint is better than prevPoint
+    if new_bs:
+        bestPoint, pointForDilation = altPoint, prevPoint
+        return bestPoint, pointForDilation, -1-ls
+    else:
+        return prev_prev_point, -1-ls
+    #return prev_prev_point, -ls
 
 
 

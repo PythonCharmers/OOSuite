@@ -37,6 +37,7 @@ class ralg(baseSolver):
     doBackwardSearch = True
     approach = 'nqp'
     newLinEq = True
+    new_bs = True
 
     def needRej(self, p, b, g, g_dilated):
         return 1e15 * p.norm(g_dilated) < p.norm(g)
@@ -196,7 +197,13 @@ class ralg(baseSolver):
             ls_backward = 0
             if ls == 0:
                 if self.doBackwardSearch:
-                    iterPoint, ls_backward = getBestPointAfterTurn(prevIterPoint, iterPoint, maxLS = 3, altLinInEq = True)
+                    if self.new_bs:
+                        best_ls_point,  pointForDilation, ls_backward = \
+                        getBestPointAfterTurn(prevIterPoint, iterPoint, maxLS = 3, altLinInEq = True, new_bs = True)
+                        iterPoint = best_ls_point
+                    else:
+                        iterPoint, ls_backward = \
+                        getBestPointAfterTurn(prevIterPoint, iterPoint, maxLS = 3, altLinInEq = True, new_bs = False)
 
                     # TODO: extract last point from backward search, that one is better than iterPoint
                     if iterPoint.betterThan(bestPoint): bestPoint = iterPoint
@@ -212,9 +219,21 @@ class ralg(baseSolver):
                     pass
                     #hs *= 0.95
 
-            """                      iterPoint has been obtained                     """
 
-            moveDirection = iterPoint.__getDirection__(self.approach)
+            """                      iterPoint has been obtained                     """
+            
+            if not self.new_bs or ls != 0:
+                moveDirection = iterPoint.__getDirection__(self.approach)
+            else:
+                moveDirection = best_ls_point.__getDirection__(self.approach)
+                g2 = pointForDilation.__getDirection__(self.approach) 
+#                cos_phi = -p.matmult(moveDirection, prevIterPoint.__getDirection__(self.approach))
+#                assert cos_phi.size == 1
+#                if cos_phi> 0:
+#                    g2 = moveDirection#pointForDilation.__getDirection__(self.approach) 
+#                else:
+#                    g2 = pointForDilation.__getDirection__(self.approach) 
+                
             # DEBUG!
             #g2 = moveDirection#newPoint.__getDirection__(self.approach)
             # DEBUG end!
