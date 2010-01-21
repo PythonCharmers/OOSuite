@@ -331,7 +331,8 @@ def NLP(*args, **kwargs):
         goldenSection, scipy_fminbound (latter is not recommended)
         (both these solvers require finite lb-ub and ignore user-supplied gradient)
     unconstrained:
-        scipy_bfgs, scipy_cg, scipy_ncg, scipy_powell (latter cannot handle user-provided gradient)
+        scipy_bfgs, scipy_cg, scipy_ncg, 
+        (these ones cannot handle user-provided gradient) scipy_powell and scipy_fmin 
     box-bounded:
         scipy_lbfgsb, scipy_tnc
     all constraints:
@@ -366,6 +367,7 @@ def NSP(*args, **kwargs):
     Also, default finite-differences derivatives approximation stencil is 2 instead of 1 for NLP
     Solvers available for now:
         ralg - all constraints, medium-scale (nVars = 1...1000), can handle user-provided gradient/subgradient
+        scipy_fmin - a Nelder-Mead simplex algorithm implementation, cannot handle constraints and derivatives
         ShorEllipsoid (unconstrained for now) - small-scale, nVars=1...10, requires r0: ||x0-x*||<=r0
     """
     return CNSP(*args, **kwargs)
