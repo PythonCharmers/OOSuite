@@ -32,9 +32,12 @@ class oovar(oofun):
         self.size = size
 
     def _getFunc(self, x):
-        try:
-            r = atleast_1d(asfarray(x[self])) if self in x else atleast_1d(asfarray(x[self.name]))
-        except KeyError:
+        if isinstance(x, dict):
+            if self in x:
+                r = atleast_1d(asfarray(x[self]))
+            elif self.name in x:
+                r = atleast_1d(asfarray(x[self.name]))
+        else:
             try:
                 r = atleast_1d(asfarray(x.xf[self]))
             except:

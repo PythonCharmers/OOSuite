@@ -88,8 +88,8 @@ class oofun:
         if hasattr(self, 'input'):
             if type(self.input) not in [list, tuple]:
                 self.input = [self.input]
-            for elem in self.input:
-                levels = [0]
+            levels = [0]
+            for elem in self.input: # if a
                 if isinstance(elem, oofun):
                     elem._usedIn += 1
                     levels.append(elem._level)
@@ -447,9 +447,6 @@ class oofun:
                 if not isinstance(oofunInstance, oofun): continue
                 # TODO: checkme!
                 
-                #!!!!!!!!!!!!!!!!!!! TODO: HANDLE FIXED OOFUNCS
-                #if oofunInstance.fixed: continue
-                
                 if oofunInstance.is_oovar:
                     r.add(oofunInstance)
                     continue
@@ -627,7 +624,7 @@ class oofun:
                 ac += 1
                 
                 # asSparse should be 'autoselect' here, not the value taken from the function arguments!
-                elem_d = inp._D(x, Vars, fixedVars, sameDerivativeVariables, asSparse = 'auto') 
+                elem_d = inp._D(x, Vars=Vars, fixedVars=fixedVars, sameDerivativeVariables=sameDerivativeVariables, asSparse = 'auto') 
                 
                 for key in elem_d.keys():
                     if prod(derivativeSelf[ac].shape) == 1 or prod(elem_d[key].shape) == 1:
@@ -800,7 +797,11 @@ class oofun:
             if Vars is not None or fixedVars is not None: raise ("sorry, custom oofun derivatives don't work with Vars/fixedVars arguments yet")
             if not DerApproximatorIsInstalled:
                 raise FuncDesignerException('To perform gradients check you should have DerApproximator installed, see http://openopt.org/DerApproximator')
-            derivativeSelf = get_d1(self.fun, Input, diffInt=self.diffInt, stencil = self.stencil, args=self.args, pointVal = self._getFunc(x))
+                
+            try:
+                derivativeSelf = get_d1(self.fun, Input, diffInt=self.diffInt, stencil = self.stencil, args=self.args, pointVal = self._getFunc(x))
+            except:
+                raise 0
         
         # TODO: it should be handled in a better way, with personal derivatives for named inputs
         if isinstance(derivativeSelf, ndarray):
@@ -849,7 +850,8 @@ class BooleanOOFun(oofun):
     _unnamedBooleanOOFunNumber = 1
     discrete = True
     # an oofun that returns True/False
-    def __init__(self, *args, **kwargs):
+    def __init__(self, oofun_Involved, *args, **kwargs):
+        oofun.__init__(self, oofun_Involved, *args, **kwargs)
         self.name = 'unnamed_boolean_oofun_' + str(BooleanOOFun._unnamedBooleanOOFunNumber)
         BooleanOOFun._unnamedBooleanOOFunNumber += 1
     def size(self, *args, **kwargs): raise FuncDesignerException('currently BooleanOOFun.size() is disabled')
@@ -860,7 +862,7 @@ class BaseFDConstraint(BooleanOOFun):
     isConstraint = True
     contol = 1e-6
     def __init__(self, oofun_Involved, *args, **kwargs):
-        BooleanOOFun.__init__(self, *args, **kwargs)
+        BooleanOOFun.__init__(self, oofun_Involved, *args, **kwargs)
         #oofun.__init__(self, lambda x: oofun_Involved(x), input = oofun_Involved)
         if len(args) != 0:
             raise FuncDesignerException('No args are allowed for FuncDesigner constraint constructor, only some kwargs')

@@ -199,3 +199,44 @@ def size(inp, *args, **kwargs):
     if not isinstance(inp, oofun): return np.size(inp, *args, **kwargs)
     return inp.size()
     
+def ifThenElse(condition, val1, val2, *args, **kwargs):
+    
+    # for future implementation
+    assert len(args) == 0  
+    assert len(kwargs) == 0 
+    Val1 = fixed_oofun(val1) if not isinstance(val1, oofun) else val1
+    Val2 = fixed_oofun(val2) if not isinstance(val2, oofun) else val2
+    if isinstance(condition, bool): 
+        return Val1 if condition else Val2
+    elif isinstance(condition, oofun):
+            
+        #def f(conditionResult, value1Result, value2Result): 
+            #return value1Result if conditionResult else value2Result
+        f = lambda point: (Val1(point) if isinstance(Val1, oofun) else Val1) if condition(point) else (Val2(point) if isinstance(Val2, oofun) else Val2)
+        
+        
+        # !!! Don't modify it elseware function will evaluate both expressions despite of condition value 
+        r = oofun(errFunc, input = [condition, val1, val2])
+        r._getFunc = f
+        r.D = lambda point, *args, **kwargs: (Val1.D(point, *args, **kwargs) if isinstance(Val1, oofun) else {}) if condition(point) else \
+        (Val2.D(point, *args, **kwargs) if isinstance(Val2, oofun) else {})
+        r._D = lambda point, *args, **kwargs: (Val1._D(point, *args, **kwargs) if isinstance(Val1, oofun) else {}) if condition(point) else \
+        (Val2._D(point, *args, **kwargs) if isinstance(Val2, oofun) else {})
+        r.d = errFunc
+        return r
+    else:
+        raise FuncDesignerException('ifThenElse requires 1st argument (condition) to be either boolean or oofun, got %s instead' % type(condition))
+        
+def fixed_oofun(Val):
+    val = np.asfarray(Val)
+    f = lambda: Val
+    r = oofun(f, input=[])
+    r._D = lambda *args,  **kwargs: {}
+    r.D = lambda *args,  **kwargs: {}
+    return r
+
+# TODO: move the func into fdmisc.py
+def errFunc(*args,  **kwargs): 
+    # this function shouldn't be ever called, an FD kernel hack has been involved
+    raise FuncDesignerException('error in FuncDesigner kernel, inform developers')
+
