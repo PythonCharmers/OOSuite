@@ -233,6 +233,7 @@ def fixed_oofun(Val):
     r = oofun(f, input=[])
     r._D = lambda *args,  **kwargs: {}
     r.D = lambda *args,  **kwargs: {}
+    r.discrete = True
     return r
 
 # TODO: move the func into fdmisc.py
