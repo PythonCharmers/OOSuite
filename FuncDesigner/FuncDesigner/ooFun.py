@@ -745,7 +745,7 @@ class oofun:
                     if deriv is None:
                         if not DerApproximatorIsInstalled:
                             raise FuncDesignerException('To perform gradients check you should have DerApproximator installed, see http://openopt.org/DerApproximator')
-                        derivativeSelf.append(get_d1(self.fun, Input, diffInt=self.diffInt, stencil = self.stencil, args=self.args, varForDifferentiation = i, pointVal = self._getFunc(x)))
+                        derivativeSelf.append(get_d1(self.fun, Input, diffInt=self.diffInt, stencil = self.stencil, args=self.args, varForDifferentiation = i, pointVal = self(x)))
                     else:
                         # !!!!!!!!!!!!!! TODO: add check for user-supplied derivative shape
                         tmp = deriv(*Input)
@@ -787,7 +787,7 @@ class oofun:
                     derivativeSelf.append(TMP)
                     
             # TODO: is it required?
-#                if not hasattr(self, 'outputTotalLength'): self._getFunc(x)
+#                if not hasattr(self, 'outputTotalLength'): self(x)
 #                
 #                if derivativeSelf.shape != (self.outputTotalLength, self.inputTotalLength):
 #                    s = 'incorrect shape for user-supplied derivative of oofun '+self.name+': '
@@ -799,7 +799,7 @@ class oofun:
                 raise FuncDesignerException('To perform gradients check you should have DerApproximator installed, see http://openopt.org/DerApproximator')
                 
             try:
-                derivativeSelf = get_d1(self.fun, Input, diffInt=self.diffInt, stencil = self.stencil, args=self.args, pointVal = self._getFunc(x))
+                derivativeSelf = get_d1(self.fun, Input, diffInt=self.diffInt, stencil = self.stencil, args=self.args, pointVal = self(x))
             except:
                 raise 0
         
@@ -821,7 +821,7 @@ class oofun:
         separator = 75 * '*'
         print(separator)
         assert type(self.d) != list
-        val = self._getFunc(point)
+        val = self(point)
         input = self._getInput(point)
         ds= self._getDerivativeSelf(point, Vars=None,  fixedVars=None)
         print(self.name + ': checking user-supplied gradient')
