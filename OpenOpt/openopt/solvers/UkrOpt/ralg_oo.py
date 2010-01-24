@@ -56,8 +56,10 @@ class ralg(baseSolver):
 
         n = p.n
         x0 = p.x0
-        x0[x0<p.lb] = p.lb[x0<p.lb]
-        x0[x0>p.ub] = p.ub[x0>p.ub]
+        
+        if p.nbeq == 0: # TODO: add "or Aeqconstraints(x0) out of contol"
+            x0[x0<p.lb] = p.lb[x0<p.lb]
+            x0[x0>p.ub] = p.ub[x0>p.ub]
         
         ind_box_eq = where(p.lb==p.ub)[0]
         nEQ = ind_box_eq.size
