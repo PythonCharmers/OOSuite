@@ -130,34 +130,36 @@ from openopt.kernel.setDefaultIterFuncs import IS_LINE_SEARCH_FAILED
 from openopt.kernel.ooMisc import isSolved
 
 def getBestPointAfterTurn(oldPoint, newPoint, altLinInEq=None, maxLS = 3, maxDeltaX = None, maxDeltaF = None, \
-                          line_points = None, hs=None, new_bs = True):
+                          hs=None, new_bs = True):
     assert altLinInEq is not None
     p = oldPoint.p
     contol = p.contol
-
-    c1, lin_eq1, lin_ineq1, lb1, ub1 = oldPoint.c(), oldPoint.lin_eq(), oldPoint.lin_ineq(), oldPoint.lb(), oldPoint.ub()
-
-    c2, lin_eq2, lin_ineq2, lb2, ub2 = newPoint.c(), newPoint.lin_eq(), newPoint.lin_ineq(), newPoint.lb(), newPoint.ub()
     
-    altPoint = p.point((oldPoint.x + newPoint.x) / 2.0)
-    altPoint._lin_eq = (lin_eq1 + lin_eq2) / 2.0
-    altPoint._lin_ineq = (lin_ineq1 + lin_ineq2) / 2.0
+    altPoint = oldPoint.linePoint(0.5, newPoint)
 
-    ind1 = c1 > 0
-    ind2 = c2 > 0
-    ind = where(ind1 | ind2)[0]
-    
-    _c = zeros(p.nc)
-    if ind.size != 0:
-        _c[ind] = p.c((oldPoint.x + newPoint.x) / 2.0, ind)
+#    c1, lin_eq1, lin_ineq1, lb1, ub1 = oldPoint.c(), oldPoint.lin_eq(), oldPoint.lin_ineq(), oldPoint.lb(), oldPoint.ub()
+#
+#    c2, lin_eq2, lin_ineq2, lb2, ub2 = newPoint.c(), newPoint.lin_eq(), newPoint.lin_ineq(), newPoint.lb(), newPoint.ub()
+#    
+#    altPoint = p.point((oldPoint.x + newPoint.x) / 2.0)
+#    altPoint._lin_eq = (lin_eq1 + lin_eq2) / 2.0
+#    altPoint._lin_ineq = (lin_ineq1 + lin_ineq2) / 2.0
+#
+#    ind1 = c1 > 0
+#    ind2 = c2 > 0
+#    ind = where(ind1 | ind2)[0]
+#    
+#    _c = zeros(p.nc)
+#    if ind.size != 0:
+#        _c[ind] = p.c((oldPoint.x + newPoint.x) / 2.0, ind)
+#
+#    altPoint._c = _c
 
-    altPoint._c = _c
 
 
-
-    if line_points is not None:
-        pv = 0.5*hs
-        line_points[pv] = altPoint.f()
+#    if line_points is not None:
+#        pv = 0.5*hs
+#        line_points[pv] = altPoint.f()
 
     
     if maxLS is None:
@@ -174,21 +176,21 @@ def getBestPointAfterTurn(oldPoint, newPoint, altLinInEq=None, maxLS = 3, maxDel
     prev_prev_point = newPoint
     for ls in xrange(maxLS):
         
-        altPoint, prevPoint = p.point((oldPoint.x + altPoint.x) / 2.0), altPoint
+        altPoint, prevPoint = oldPoint.linePoint(0.5, altPoint), altPoint
 
-        if line_points is not None:
-            pv /= 2.0
-            line_points[pv] = altPoint.f()
+#        if line_points is not None:
+#            pv /= 2.0
+#            line_points[pv] = altPoint.f()
 
-        c2, lin_eq2, lin_ineq2 = prevPoint._c, prevPoint._lin_eq, prevPoint._lin_ineq
-        lin_eq2, lin_ineq2 = prevPoint._lin_eq, prevPoint._lin_ineq
-        ind2 = c2 > 0
-        ind = where(ind1 | ind2)[0]
-        _c = zeros(p.nc)
-        if ind.size != 0: _c[ind] = p.c((oldPoint.x + prevPoint.x) / 2.0, ind)
-        altPoint._c = _c
-        altPoint._lin_eq = (lin_eq1 + lin_eq2) / 2.0
-        altPoint._lin_ineq = (lin_ineq1 + lin_ineq2) / 2.0
+#        c2, lin_eq2, lin_ineq2 = prevPoint._c, prevPoint._lin_eq, prevPoint._lin_ineq
+#        lin_eq2, lin_ineq2 = prevPoint._lin_eq, prevPoint._lin_ineq
+#        ind2 = c2 > 0
+#        ind = where(ind1 | ind2)[0]
+#        _c = zeros(p.nc)
+#        if ind.size != 0: _c[ind] = p.c((oldPoint.x + prevPoint.x) / 2.0, ind)
+#        altPoint._c = _c
+#        altPoint._lin_eq = (lin_eq1 + lin_eq2) / 2.0
+#        altPoint._lin_ineq = (lin_ineq1 + lin_ineq2) / 2.0
 
 
         #!!! "not betterThan" is used vs "betterThan" because prevPoint can become same to altPoint

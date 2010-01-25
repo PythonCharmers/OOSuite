@@ -1,5 +1,5 @@
 from numpy import diag, array, sqrt,  eye, ones, inf, any, copy, zeros, dot, where, all, tile, sum, nan, isfinite, float64, isnan, log10, \
-max, sign, array_equal, nonzero, ix_, arctan, pi
+max, sign, array_equal, nonzero, ix_, arctan, pi, logical_not, logical_and, atleast_2d
 from numpy.linalg import norm, solve, LinAlgError
 #try:
 #    from numpy.linalg import cond
@@ -277,8 +277,8 @@ class ralg(baseSolver):
                 G2,  G = g2, g
 
 #            # CHANGES
-#            gn = g/norm(g)
-#            if len(directionVectorsList) == 0 or n < 3 or norm(g1) < 1e-20: pass
+#            gn = g2/norm(g2)
+#            if len(directionVectorsList) == 0 or n < 3: pass
 #            else:
 #                if len(directionVectorsList) == 1 or abs(dot(directionVectorsList[-1], directionVectorsList[-2]))>0.999:
 #                    projectionComponentLenght = abs(dot(directionVectorsList[-1], gn))
@@ -286,12 +286,12 @@ class ralg(baseSolver):
 #                else: 
 #                    e1 = directionVectorsList[-1]
 #                    e2 = directionVectorsList[-2] - dot(directionVectorsList[-1], directionVectorsList[-2]) * directionVectorsList[-1]
-#                    #print dot(directionVectorsList[-1], directionVectorsList[-2])
 #                    e2 /= norm(e2)
+#                   
 #                    proj1, proj2 = dot(e1, gn), dot(e2, gn)
 #                    rest = gn - proj1 * e1 - proj2 * e2
 #                    restLength = norm(rest)
-#                assert restLength < 1+1e-5, 'error in ralg solver: incorrect restLength'
+#                if restLength > 1+1e-5: p.pWarn('possible error in ralg solver: incorrect restLength, exceeds 1.0')
 #                
 #                # TODO: make it parameters of ralg
 #                commonCoeff, alp_add_coeff = 0.5, 1.0
@@ -306,37 +306,7 @@ class ralg(baseSolver):
 #                    
 #            directionVectorsList.append(gn)
 #            if len(directionVectorsList) > 2: directionVectorsList = directionVectorsList[:-2]
-            
-            gn = g2/norm(g2)
-            if len(directionVectorsList) == 0 or n < 3: pass
-            else:
-                if len(directionVectorsList) == 1 or abs(dot(directionVectorsList[-1], directionVectorsList[-2]))>0.999:
-                    projectionComponentLenght = abs(dot(directionVectorsList[-1], gn))
-                    restLength = sqrt(1 - min((1, projectionComponentLenght))**2)
-                else: 
-                    e1 = directionVectorsList[-1]
-                    e2 = directionVectorsList[-2] - dot(directionVectorsList[-1], directionVectorsList[-2]) * directionVectorsList[-1]
-                    e2 /= norm(e2)
-                   
-                    proj1, proj2 = dot(e1, gn), dot(e2, gn)
-                    rest = gn - proj1 * e1 - proj2 * e2
-                    restLength = norm(rest)
-                if restLength > 1+1e-5: p.pWarn('possible error in ralg solver: incorrect restLength, exceeds 1.0')
-                
-                # TODO: make it parameters of ralg
-                commonCoeff, alp_add_coeff = 0.5, 1.0
-                
-                if restLength < commonCoeff * (n - 2.0) / n:
-                    #pass
-                    alpAddition = 0.5+(arctan((n - 2.0) / (n * restLength)) - pi / 4.0) / (pi / 2.0) * alp_add_coeff
-                    #p.debugmsg('alpAddition:' + str(alpAddition))
-                    assert alpAddition > 0 # if someone incorrectly modifies commonCoeff it can be less than zero
-                    alp_addition += alpAddition
-                    #p.debugmsg('alp_addition:' + str(alp_addition))
-                    
-            directionVectorsList.append(gn)
-            if len(directionVectorsList) > 2: directionVectorsList = directionVectorsList[:-2]
-            # CHANGES END
+#            # CHANGES END
 
             if prevIterPointIsFeasible == currIterPointIsFeasible == True:
                 g1 = G2 - G
@@ -347,6 +317,30 @@ class ralg(baseSolver):
             else:
                 g1 = G.copy()
                 #g1 = -G.copy() # signum doesn't matter here
+
+
+            # changes wrt infeas constraints
+            if prevIterPoint.__nNaNs__() != 0:
+                cp, hp = prevIterPoint.c(), prevIterPoint.h()
+                ind_infeas_cp, ind_infeas_hp = isnan(cp), isnan(hp)
+                
+                c, h = iterPoint.c(), iterPoint.h()
+                ind_infeas_c, ind_infeas_h = isnan(c), isnan(h)
+                
+                ind_goodChange_c = logical_and(ind_infeas_cp,  logical_not(ind_infeas_c))
+                ind_goodChange_h = logical_and(ind_infeas_hp,  logical_not(ind_infeas_h))
+                
+                any_c, any_h = any(ind_goodChange_c), any(ind_goodChange_h)
+                altDilation = zeros(n)
+                if any_c:
+                    altDilation += sum(atleast_2d(iterPoint.dc(where(ind_goodChange_c)[0])), 0)
+                    assert not any(isnan(altDilation))
+                if any_h:
+                    altDilation += sum(atleast_2d(iterPoint.dh(where(ind_goodChange_h)[0])), 0)
+                if any_c or any_h:
+                    print '!>', altDilation
+                    g1 = altDilation
+            # changes end
 
 
             """                             Perform dilation                               """
