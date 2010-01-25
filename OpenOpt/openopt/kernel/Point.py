@@ -1,5 +1,6 @@
 # created by DmitreyPoint.py
-from numpy import copy, isnan, array, argmax, abs, vstack, zeros, any, isfinite, all, where, asscalar, sign, dot, sqrt, array_equal, nanmax, inf, hstack
+from numpy import copy, isnan, array, argmax, abs, vstack, zeros, any, isfinite, all, where, asscalar, \
+sign, dot, sqrt, array_equal, nanmax, inf, hstack, isscalar, logical_or
 from numpy.linalg import norm
 from pointProjection import pointProjection
 __docformat__ = "restructuredtext en"
@@ -366,6 +367,42 @@ class Point:
         r += len(where(isnan(c))[0])
         r += len(where(isnan(h))[0])
         return r
+    
+    def linePoint(self, alp, point2, ls=None):
+        # returns alp * point1 + (1-alp) * point2
+        # where point1 is self, alp is real number
+        assert isscalar(alp)
+        p = self.p
+        r = p.point(self.x * alp + point2.x * (1-alp))
+        
+        #lin_eqs = self.lin_eq()*alp +  point2.lin_eq() * (1-alp)
+        #print '!>>, ',  p.norm(lin_eqs), p.norm(lin_eqs - r.lin_eq())
+        
+        # TODO: optimize it, take ls into account!
+        #if ls is not None and 
+        if not (p.iter % 16):
+            lin_ineq_predict = self.lin_ineq()*alp +  point2.lin_ineq() * (1-alp)
+            #if 1 or p.debug: print('!>>', p.norm(lin_ineq_predict-r.lin_ineq()))
+            r._lin_ineq = lin_ineq_predict
+            r._lin_eq = self.lin_eq()*alp +  point2.lin_eq() * (1-alp)
+        
+        # don't calculate c for inside points
+        if 0<alp<1:
+            c1, c2 = self.c(), point2.c()
+            ind1 = logical_or(c1 > 0,  isnan(c1))
+            ind2 = logical_or(c2 > 0,  isnan(c2))
+            ind = where(ind1 | ind2)[0]
+            
+            _c = zeros(p.nc)
+            if ind.size != 0:
+                _c[ind] = p.c(r.x, ind)
+            r._c = _c
+        
+        # TODO: mb same for h?
+
+        
+        return r
+        
 
 #    def directionType(self, *args, **kwargs):
 #        if not hasattr(self, 'dType'):
