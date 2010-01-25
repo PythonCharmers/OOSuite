@@ -65,27 +65,27 @@ class oofun:
         if attr != 'size': raise AttributeError
         
         # to prevent creating of several oofuns binded to same oofun.size
-        r = oofun(lambda x: asarray(x).size, input = self, is_linear=True, discrete = True)
+        r = oofun(lambda x: asarray(x).size, self, is_linear=True, discrete = True)
         self.size = r 
         
         return r
 
     """                                         Class constructor                                   """
 
-    def __init__(self, fun, *args, **kwargs):
-        assert len(args) == 0
-        self.fun = fun
+    def __init__(self, fun, input=None, *args, **kwargs):
+        assert len(args) == 0 #and input is not None
+        self.fun, self.input = fun, input
         
         if 'name' not in kwargs.keys():
             self.name = 'unnamed_oofun_' + str(oofun._unnamedFunNumber)
             #if oofun._unnamedFunNumber == 44437: raise 0
-            #if oofun._unnamedFunNumber == 322: raise 0
             oofun._unnamedFunNumber += 1
 
         for key, item in kwargs.iteritems():
             #assert key in self.__allowedFields__ # TODO: make set comparison
             setattr(self, key, item)
-        if hasattr(self, 'input'):
+            
+        if input is not None:
             if type(self.input) not in [list, tuple]:
                 self.input = [self.input]
             levels = [0]
@@ -93,10 +93,8 @@ class oofun:
                 if isinstance(elem, oofun):
                     elem._usedIn += 1
                     levels.append(elem._level)
-                else:
-                    pass
             self._level = max(levels)+1
-                    #raise FuncDesignerException('All input(s) of the oofun ' + self.name + ' have to be oofun/oovar instance(s)')
+
     
     def named(self, name):
         self.name = name
@@ -127,10 +125,10 @@ class oofun:
 
         
         if isinstance(other, oofun):
-            r = oofun(lambda x, y: x+y, input = [self, other], d = (lambda x, y: aux_d(x, y), lambda x, y: aux_d(y, x)))
+            r = oofun(lambda x, y: x+y, [self, other], d = (lambda x, y: aux_d(x, y), lambda x, y: aux_d(y, x)))
         else:
             other = asarray(other)
-            r = oofun(lambda a: a+other, input = self)# TODO: involve sparsity if possible!
+            r = oofun(lambda a: a+other, self)# TODO: involve sparsity if possible!
             r.d = lambda x: aux_d(x, other)
                 
 # TODO: create linear field with operators +, -, *(non-oofunc), /(non-oofunc)
@@ -144,7 +142,7 @@ class oofun:
     
     # overload "-a"
     def __neg__(self): 
-        return oofun(lambda a: -a, input = self, \
+        return oofun(lambda a: -a, self, \
                      d = lambda a: -1.0 if a.size == 1 else -Eye(a.size), \
                      is_linear = True if self.is_linear else False)
         
@@ -162,7 +160,7 @@ class oofun:
     # overload "a/b"
     def __div__(self, other):
         if isinstance(other, oofun):
-            r = oofun(lambda x, y: x/y, input = [self, other])
+            r = oofun(lambda x, y: x/y, [self, other])
             def aux_dx(x, y):
                 x, y, = asarray(x), asarray(y)
                 if x.size != 1:
@@ -180,7 +178,7 @@ class oofun:
                 return r
             r.d = (aux_dx, aux_dy)
         else:
-            r = oofun(lambda a: a/asarray(other), input = self)# TODO: involve sparsity if possible!
+            r = oofun(lambda a: a/asarray(other), self)# TODO: involve sparsity if possible!
             r.d = lambda x: 1.0/asarray(other) if x.size == 1 else Diag(ones(x.size)/asarray(other))
         if self.is_linear and not isinstance(other, oofun):
             r.is_linear = True
@@ -189,7 +187,7 @@ class oofun:
 
     def __rdiv__(self, other):
         other = asarray(other) # TODO: sparse matrices handling!
-        r = oofun(lambda x: other/x, input = self)# TODO: involve sparsity if possible!
+        r = oofun(lambda x: other/x, self)# TODO: involve sparsity if possible!
         def d(x):
             if other.size > 1 or x.size > 1: return Diag(- other / x**2)
             else: return -other / x**2
@@ -218,11 +216,11 @@ class oofun:
                     raise FuncDesignerException('for oofun multiplications a*b should be size(a)=size(b) or size(a)=1 or size(b)=1')
                 return x*y
                 
-            r = oofun(f, input = [self, other])
+            r = oofun(f, [self, other])
             
             r.d = (lambda x, y: aux_d(x, y), lambda x, y: aux_d(y, x))
         else:
-            r = oofun(lambda x: x*other, input = self)# TODO: involve sparsity if possible!
+            r = oofun(lambda x: x*other, self)# TODO: involve sparsity if possible!
             r.d = lambda x: aux_d(x, asfarray(other))
         if self.is_linear and not isinstance(other, oofun):
             r.is_linear = True
@@ -246,7 +244,7 @@ class oofun:
             f = lambda x, y: x ** y
             d = (d_x, d_y)
             input = [self, other]
-        r = oofun(f, d = d, input = input)
+        r = oofun(f, input, d = d)
         #r.isCostly = True
         return r
 
@@ -259,7 +257,7 @@ class oofun:
             r = Diag(asarray(other) **x * log(asarray(other))) if x.size > 1 else asarray(other)**x * log(asarray(other))
             #raise 0
             return r
-        r = oofun(f, d=d, input = self)
+        r = oofun(f, self, d=d)
         #r.isCostly = True
         return r
 
@@ -291,7 +289,7 @@ class oofun:
                 r[_ind] = 1
                 return r
                 
-        r = oofun(f, input = self, d = d, size = 1)
+        r = oofun(f, self, d = d, size = 1)
         # TODO: check me!
         # what about a[a.size/2:]?
         if self.is_linear and not isinstance(ind,  oofun):
@@ -325,7 +323,7 @@ class oofun:
                 m3 = zeros((ind2-ind1, x.size - ind2))
                 r = hstack((m1, m2, m3))
             return r
-        r = oofun(f, input = self, d = d)
+        r = oofun(f, self, d = d)
         if self.is_linear:
             r.is_linear = True
         return r
@@ -335,7 +333,7 @@ class oofun:
         #raise FuncDesignerException('using len(obj) (where obj is oovar or oofun) is not possible (at least yet), use obj.size instead')
 
     def sum(self):
-        r = oofun(sum, input = self)
+        r = oofun(sum, self)
         def d(x):
             if x.ndim > 1: raise FuncDesignerException('sum(x) is not implemented yet for arrays with ndim > 1')
             return ones(x.size) 
@@ -344,7 +342,7 @@ class oofun:
     
     def prod(self):
         # TODO: consider using r.isCostly = True
-        r = oofun(prod, input = self)
+        r = oofun(prod, self)
         def d(x):
             if x.ndim > 1: raise FuncDesignerException('prod(x) is not implemented yet for arrays with ndim > 1')
             ind_zero = where(x==0)[0].tolist()
@@ -452,6 +450,8 @@ class oofun:
                     continue
                 
                 tmp = oofunInstance._getDep()
+                
+                if tmp is None: continue
                 
                 if type(tmp) != set:
                     raise FuncDesignerException('unknown type of oofun or oovar dependence')

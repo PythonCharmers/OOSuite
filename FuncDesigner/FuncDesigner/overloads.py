@@ -18,65 +18,65 @@ from misc import FuncDesignerException, Diag, Eye
 #    #if not isinstance(inp, oofun): return np.sin(inp)
 #    def d(x):
 #        return np.cos(x)
-#    return oofun(lambda x: np.sin(x), input = inp, d = d)
+#    return oofun(lambda x: np.sin(x), inp, d = d)
 
 def sin(inp):
     if not isinstance(inp, oofun): return np.sin(inp)
-    return oofun(np.sin, input = inp, d = lambda x: Diag(np.cos(x)))
+    return oofun(np.sin, inp, d = lambda x: Diag(np.cos(x)))
 
 def cos(inp):
     if not isinstance(inp, oofun): return np.cos(inp)
-    return oofun(np.cos, input = inp, d = lambda x: Diag(-np.sin(x)))
+    return oofun(np.cos, inp, d = lambda x: Diag(-np.sin(x)))
 
 def tan(inp):
     if not isinstance(inp, oofun): return np.tan(inp)
-    return oofun(np.tan, input = inp, d = lambda x: Diag(1.0 / np.cos(x) ** 2))
+    return oofun(np.tan, inp, d = lambda x: Diag(1.0 / np.cos(x) ** 2))
 
 # TODO: cotan?
 
 def arcsin(inp):
     if not isinstance(inp, oofun): return np.arcsin(inp)
-    return oofun(np.arcsin, input = inp, d = lambda x: Diag(1.0 / np.sqrt(1.0 - x**2)))
+    return oofun(np.arcsin, inp, d = lambda x: Diag(1.0 / np.sqrt(1.0 - x**2)))
 
 def arccos(inp):
     if not isinstance(inp, oofun): return np.arccos(inp)
-    return oofun(np.arccos, input = inp, d = lambda x: Diag(-1.0 / np.sqrt(1.0 - x**2)))
+    return oofun(np.arccos, inp, d = lambda x: Diag(-1.0 / np.sqrt(1.0 - x**2)))
 
 def arctan(inp):
     if not isinstance(inp, oofun): return np.arctan(inp)
-    return oofun(np.arctan, input = inp, d = lambda x: Diag(1.0 / (1.0 + x**2)))
+    return oofun(np.arctan, inp, d = lambda x: Diag(1.0 / (1.0 + x**2)))
 
 def sinh(inp):
     if not isinstance(inp, oofun): return np.sinh(inp)
-    return oofun(np.sinh, input = inp, d = lambda x: Diag(np.cosh(x)))
+    return oofun(np.sinh, inp, d = lambda x: Diag(np.cosh(x)))
 
 def cosh(inp):
     if not isinstance(inp, oofun): return np.cosh(inp)
-    return oofun(np.cosh, input = inp, d = lambda x: Diag(np.sinh(x)))
+    return oofun(np.cosh, inp, d = lambda x: Diag(np.sinh(x)))
 
 def exp(inp):
     if not isinstance(inp, oofun): return np.exp(inp)
-    return oofun(np.exp, input = inp, d = lambda x: Diag(np.exp(x)))
+    return oofun(np.exp, inp, d = lambda x: Diag(np.exp(x)))
 
 def sqrt(inp):
     if not isinstance(inp, oofun): return np.sqrt(inp)
-    return oofun(np.sqrt, input = inp, d = lambda x: Diag(0.5 / np.sqrt(x)))
+    return oofun(np.sqrt, inp, d = lambda x: Diag(0.5 / np.sqrt(x)))
 
 def abs(inp):
     if not isinstance(inp, oofun): return np.abs(inp)
-    return oofun(np.abs, input = inp, d = lambda x: Diag(np.sign(x)))    
+    return oofun(np.abs, inp, d = lambda x: Diag(np.sign(x)))    
 
 def log(inp):
     if not isinstance(inp, oofun): return np.log(inp)
-    return oofun(np.log, input = inp, d = lambda x: Diag(1.0/x))
+    return oofun(np.log, inp, d = lambda x: Diag(1.0/x))
     
 def log10(inp):
     if not isinstance(inp, oofun): return np.log10(inp)
-    return oofun(np.log10, input = inp, d = lambda x: Diag(0.43429448190325176/x))# 1 / (x * log_e(10))
+    return oofun(np.log10, inp, d = lambda x: Diag(0.43429448190325176/x))# 1 / (x * log_e(10))
 
 def log2(inp):
     if not isinstance(inp, oofun): return np.log2(inp)
-    return oofun(np.log2, input = inp, d = lambda x: Diag(1.4426950408889634/x))# 1 / (x * log_e(2))
+    return oofun(np.log2, inp, d = lambda x: Diag(1.4426950408889634/x))# 1 / (x * log_e(2))
 
 def dot(inp1, inp2):
     if not isinstance(inp1, oofun) and not isinstance(inp2, oofun): return np.dot(inp1, inp2)
@@ -97,7 +97,7 @@ def dot(inp1, inp2):
             r = np.copy(y)
         return r
         
-    r = oofun(lambda x, y: x * y if x.size == 1 or y.size == 1 else np.dot(x, y), input = [inp1, inp2], d=(lambda x, y: aux_d(x, y), lambda x, y: aux_d(y, x)))
+    r = oofun(lambda x, y: x * y if x.size == 1 or y.size == 1 else np.dot(x, y), [inp1, inp2], d=(lambda x, y: aux_d(x, y), lambda x, y: aux_d(y, x)))
     r.is_linear = is_linear
     r.isCostly = True
     return r
@@ -193,7 +193,7 @@ def norm(inp, *args, **kwargs):
     def d(x):
         s = np.sqrt(np.sum(x**2))
         return x /  s if s != 0 else np.zeros(x.size) # however, dirivative doesn't exist in (0,0,..., 0)
-    return oofun(np.linalg.norm, input = inp, d = lambda x: Diag(d(x)), isCostly = True)
+    return oofun(np.linalg.norm, inp, d = lambda x: Diag(d(x)), isCostly = True)
 
 def size(inp, *args, **kwargs):
     if not isinstance(inp, oofun): return np.size(inp, *args, **kwargs)
@@ -216,7 +216,7 @@ def ifThenElse(condition, val1, val2, *args, **kwargs):
         
         
         # !!! Don't modify it elseware function will evaluate both expressions despite of condition value 
-        r = oofun(errFunc, input = [condition, val1, val2])
+        r = oofun(errFunc, [condition, val1, val2])
         r._getFunc = f
         r.D = lambda point, *args, **kwargs: (Val1.D(point, *args, **kwargs) if isinstance(Val1, oofun) else {}) if condition(point) else \
         (Val2.D(point, *args, **kwargs) if isinstance(Val2, oofun) else {})
