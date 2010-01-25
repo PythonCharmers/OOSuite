@@ -338,7 +338,7 @@ class ralg(baseSolver):
                 if any_h:
                     altDilation += sum(atleast_2d(iterPoint.dh(where(ind_goodChange_h)[0])), 0)
                 if any_c or any_h:
-                    print '!>', altDilation
+                    #print '!>', altDilation
                     g1 = altDilation
             # changes end
 
