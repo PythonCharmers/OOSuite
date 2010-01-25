@@ -320,26 +320,27 @@ class ralg(baseSolver):
 
 
             # changes wrt infeas constraints
-            if prevIterPoint.__nNaNs__() != 0:
-                cp, hp = prevIterPoint.c(), prevIterPoint.h()
-                ind_infeas_cp, ind_infeas_hp = isnan(cp), isnan(hp)
-                
-                c, h = iterPoint.c(), iterPoint.h()
-                ind_infeas_c, ind_infeas_h = isnan(c), isnan(h)
-                
-                ind_goodChange_c = logical_and(ind_infeas_cp,  logical_not(ind_infeas_c))
-                ind_goodChange_h = logical_and(ind_infeas_hp,  logical_not(ind_infeas_h))
-                
-                any_c, any_h = any(ind_goodChange_c), any(ind_goodChange_h)
-                altDilation = zeros(n)
-                if any_c:
-                    altDilation += sum(atleast_2d(iterPoint.dc(where(ind_goodChange_c)[0])), 0)
-                    assert not any(isnan(altDilation))
-                if any_h:
-                    altDilation += sum(atleast_2d(iterPoint.dh(where(ind_goodChange_h)[0])), 0)
-                if any_c or any_h:
-                    #print '!>', altDilation
-                    g1 = altDilation
+#            if prevIterPoint.__nNaNs__() != 0:
+#                cp, hp = prevIterPoint.c(), prevIterPoint.h()
+#                ind_infeas_cp, ind_infeas_hp = isnan(cp), isnan(hp)
+#                
+#                c, h = iterPoint.c(), iterPoint.h()
+#                ind_infeas_c, ind_infeas_h = isnan(c), isnan(h)
+#                
+#                ind_goodChange_c = logical_and(ind_infeas_cp,  logical_not(ind_infeas_c))
+#                ind_goodChange_h = logical_and(ind_infeas_hp,  logical_not(ind_infeas_h))
+#                
+#                any_c, any_h = any(ind_goodChange_c), any(ind_goodChange_h)
+#                altDilation = zeros(n)
+#                if any_c:
+#                    altDilation += sum(atleast_2d(iterPoint.dc(where(ind_goodChange_c)[0])), 0)
+#                    assert not any(isnan(altDilation))
+#                if any_h:
+#                    altDilation += sum(atleast_2d(iterPoint.dh(where(ind_goodChange_h)[0])), 0)
+#                if any_c or any_h:
+#                    #print '!>', altDilation
+#                    #g1 = altDilation
+#                    pass
             # changes end
 
 
