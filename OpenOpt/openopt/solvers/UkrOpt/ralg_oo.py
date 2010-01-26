@@ -40,6 +40,9 @@ class ralg(baseSolver):
     new_bs = True
 
     def needRej(self, p, b, g, g_dilated):
+#        r = log10(1e15 * p.norm(g_dilated) / p.norm(g))
+#        if isfinite(r):
+#            p.debugmsg('%d' % int(r))
         return 1e15 * p.norm(g_dilated) < p.norm(g)
     #checkTurnByGradient = True
 
@@ -57,7 +60,7 @@ class ralg(baseSolver):
         n = p.n
         x0 = p.x0
         
-        if p.nbeq == 0: # TODO: add "or Aeqconstraints(x0) out of contol"
+        if p.nbeq == 0 or any(abs(p.__get_AeqX_eq_Beq_residuals__(x0))>p.contol): # TODO: add "or Aeqconstraints(x0) out of contol"
             x0[x0<p.lb] = p.lb[x0<p.lb]
             x0[x0>p.ub] = p.ub[x0>p.ub]
         
