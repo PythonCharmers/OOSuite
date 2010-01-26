@@ -794,7 +794,7 @@ class oofun:
 #                    s += '(%d, %d) expected, (%d, %d) obtained' % (self.outputTotalLength, self.inputTotalLength,  derivativeSelf.shape[0], derivativeSelf.shape[1])
 #                    raise FuncDesignerException(s)
         else:
-            if Vars is not None or fixedVars is not None: raise ("sorry, custom oofun derivatives don't work with Vars/fixedVars arguments yet")
+            if Vars is not None or fixedVars is not None: raise FuncDesignerException("sorry, custom oofun derivatives don't work with Vars/fixedVars arguments yet")
             if not DerApproximatorIsInstalled:
                 raise FuncDesignerException('To perform gradients check you should have DerApproximator installed, see http://openopt.org/DerApproximator')
                 
