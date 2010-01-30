@@ -7,7 +7,7 @@ class MMP(NonLinProblem):
     """
     Mini-Max Problem
     """
-    __optionalData__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'c', 'h']
+    _optionalData = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'c', 'h']
     expectedArgs = ['f', 'x0']
     allowedGoals = ['minimax']
     probType = 'MMP'

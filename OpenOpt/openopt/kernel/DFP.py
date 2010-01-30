@@ -4,7 +4,7 @@ from numpy import sum, dot, asfarray, atleast_2d, array, zeros
 import NLP
 
 class DFP(NonLinProblem):
-    __optionalData__ = ['lb', 'ub', 'A', 'Aeq', 'b', 'beq', 'c', 'h']
+    _optionalData = ['lb', 'ub', 'A', 'Aeq', 'b', 'beq', 'c', 'h']
     probType = 'DFP'
     expectedArgs = ['f', 'x0', 'X', 'Y']
     allowedGoals = ['minimum', 'min']

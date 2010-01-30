@@ -3,7 +3,7 @@ from baseProblem import NonLinProblem
 from numpy import asarray, ones, inf
 
 class NSP(NonLinProblem):
-    __optionalData__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'c', 'h']
+    _optionalData = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'c', 'h']
     expectedArgs = ['f', 'x0']
     goal = 'minimum'
     probType = 'NSP'

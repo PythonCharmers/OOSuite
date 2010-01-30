@@ -8,15 +8,18 @@ from LP import LP
 
 
 class MILP(LP):
-    __optionalData__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'intVars', 'boolVars']
+    _optionalData = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'intVars', 'boolVars']
     storeIterPoints = False
     probType = 'MILP'
     expectedArgs = ['f', 'x0']
     goal = 'minimum'
     allowedGoals = ['minimum', 'min', 'max', 'maximum']
     showGoal = True
+    _milp_prepared = False
     
     def __prepare__(self):
+        if self._milp_prepared: return
+        self._milp_prepared = True
         LP.__prepare__(self)
         r = []
         if type(self.intVars) not in [list, tuple]:

@@ -104,7 +104,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
     # Aeq * x = b equalities
     Aeq = None
     beq = None
-
+    
     scale = None
 
     goal = None# should be redefined by child class
@@ -161,7 +161,6 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         
         self.constraints = [] # used in isFDmodel
 
-        
         self.callback = [] # user-defined callback function(s)
         
         self.solverParams = autocreate()
@@ -267,11 +266,14 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             self._D_kwargs = D_kwargs
             
             setStartVectorAndTranslators(self)
-            lb, ub = array([-inf] * self.n), array([inf] * self.n)
+            
+            lb, ub = -inf*ones(self.n), inf*ones(self.n)
 
             # TODO: get rid of start c, h = None, use [] instead
             A, b, Aeq, beq = [], [], [], []
+            
             Z = self._vector2point(zeros(self.n))
+            
             if hasattr(self.constraints, 'isConstraint'):
                 self.constraints = [self.constraints]
             oovD = self._oovarsIndDict
@@ -390,7 +392,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 setattr(self, fn, afv)
             else:
                 setattr(self, fn, asfarray([]).reshape(0, self.n))
-
+        
         nA, nAeq = prod(self.A.shape), prod(self.Aeq.shape) 
         SizeThreshold = 2 ** 15
         if scipyInstalled:
@@ -403,6 +405,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             self.pWarn(scipyAbsentMsg)
             
         self._baseProblemIsPrepared = True
+        
 
 
 class MatrixProblem(baseProblem):

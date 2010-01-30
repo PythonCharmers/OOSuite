@@ -21,7 +21,7 @@ class SLE(MatrixProblem):
     showGoal = False
     FuncDesignerSign = 'C'
     solver = 'defaultSLEsolver'
-    __optionalData__ = []
+    _optionalData = []
     _isPrepared = False
     
     def __init__(self, *args, **kwargs):

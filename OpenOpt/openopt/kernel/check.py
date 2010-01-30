@@ -13,7 +13,7 @@ def check(p):
 #        if not fn in p.solver.__optionalDataThatCanBeHandled__:
 #            p.err('the solver ' + p.solverName + ' cannot handle ' + "'" + fn + "' data")
 
-    for fn in p.__optionalData__:
+    for fn in p._optionalData:
         if hasattr(p, fn):
             attr = getattr(p, fn)
             if not fn in p.solver.__optionalDataThatCanBeHandled__ \

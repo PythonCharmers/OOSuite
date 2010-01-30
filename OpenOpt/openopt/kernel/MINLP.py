@@ -3,7 +3,7 @@ from baseProblem import NonLinProblem
 from numpy import asarray, ones, inf, array, iterable, sort
 
 class MINLP(NonLinProblem):
-    __optionalData__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'c', 'h', 'discreteVars']
+    _optionalData = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'c', 'h', 'discreteVars']
     goal = 'minimum'
     probType = 'MINLP'
     allowedGoals = ['minimum', 'min', 'maximum', 'max']

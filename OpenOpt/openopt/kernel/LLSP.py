@@ -5,7 +5,7 @@ from numpy.linalg import norm
 import NLP
 
 class LLSP(MatrixProblem):
-    __optionalData__ = ['damp', 'X', 'c']
+    _optionalData = ['damp', 'X', 'c']
     expectedArgs = ['C', 'd']# for FD it should be Cd and x0
     probType = 'LLSP'
     goal = 'minimum'

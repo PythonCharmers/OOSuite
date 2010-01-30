@@ -3,7 +3,7 @@ from numpy import sum, dot, asfarray
 import NLP
 
 class NLLSP(NonLinProblem):
-    __optionalData__ = ['lb', 'ub', 'A', 'Aeq', 'b', 'beq', 'c', 'h']
+    _optionalData = ['lb', 'ub', 'A', 'Aeq', 'b', 'beq', 'c', 'h']
     showGoal = False
     goal = 'minimum'
     probType = 'NLLSP'

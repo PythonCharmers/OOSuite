@@ -5,7 +5,7 @@ from setDefaultIterFuncs import MAX_NON_SUCCESS
 
 class GLP(NonLinProblem):
     probType = 'GLP'
-    __optionalData__ = ['lb', 'ub', 'c', 'A', 'b']
+    _optionalData = ['lb', 'ub', 'c', 'A', 'b']
     expectedArgs = ['f', 'x0']
     allowedGoals = ['minimum', 'min', 'maximum', 'max']
     goal = 'minimum'

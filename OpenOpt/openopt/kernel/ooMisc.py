@@ -1,8 +1,8 @@
 __docformat__ = "restructuredtext en"
-from numpy import zeros, ones, copy, isfinite, where, asarray, inf, array, asfarray, dot
+from numpy import zeros, ones, copy, isfinite, where, asarray, inf, array, asfarray, dot, ndarray
 
 def Len(arg):
-    if arg == None or arg == [] or (arg.size==1 and arg == array(None, dtype=object)):
+    if arg == None or arg == [] or (isinstance(arg, ndarray) and arg.size==1 and arg == array(None, dtype=object)):
         return 0
     elif type(arg) in [int, float]:
         return 1

@@ -10,7 +10,7 @@ from numpy import asfarray, ones, inf, dot, asfarray, nan, zeros, isfinite, all
 
 
 class SDP(MatrixProblem):
-    __optionalData__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'S', 'd']
+    _optionalData = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'S', 'd']
     expectedArgs = ['f']
     goal = 'minimum'
     #TODO: impolement goal = max, maximum for SDP

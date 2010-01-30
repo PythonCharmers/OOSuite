@@ -11,7 +11,7 @@ from numpy import asfarray, ones, inf, dot, asfarray, nan, zeros, isfinite, all
 
 class SOCP(MatrixProblem):
     probType = 'SOCP'
-    __optionalData__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub']
+    _optionalData = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub']
     goal = 'minimum'
     allowedGoals = ['minimum', 'min']
     #TODO: add goal=max, maximum

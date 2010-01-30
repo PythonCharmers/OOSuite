@@ -1,15 +1,17 @@
 from ooMisc import assignScript
+from nonOptMisc import isspmatrix
 from baseProblem import MatrixProblem
-from numpy import asarray, ones, inf, dot, nan, zeros, isnan, any
+from numpy import asarray, ones, inf, dot, nan, zeros, isnan, any, vstack, array, asfarray
 import NLP
 
 class LP(MatrixProblem):
-    __optionalData__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub']
+    _optionalData = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub']
     expectedArgs = ['f', 'x0']
     goal = 'minimum'
     probType = 'LP'
     allowedGoals = ['minimum', 'min', 'max', 'maximum']
     showGoal = True
+    _lp_prepared = False
 
     def __init__(self, *args, **kwargs):
         MatrixProblem.__init__(self, *args, **kwargs)
@@ -17,6 +19,8 @@ class LP(MatrixProblem):
             self.err('No more than 1 argument is allowed for classic style LP constructor')
 
     def __prepare__(self):
+        if self._lp_prepared: return
+        self._lp_prepared = True
         MatrixProblem.__prepare__(self)
         if self.x0 is None: self.x0 = zeros(self.n)
         if hasattr(self.f, 'is_oovar'): # hence is oofun or oovar
@@ -76,7 +80,84 @@ class LP(MatrixProblem):
 
         return r
 
+    def exportToMPS(self, filename):
+        try: from lp_solve import lpsolve
+        except ImportError: self.err('To export LP/MILP in files you should have lpsolve and its Python binding properly installed')
+        handler = self.get_lpsolve_handler()
+        
+        # TODO: uncomment it
+        ext = 'mps' if not filename.endswith('MPS') and not filename.endswith('mps') else ''
+        if ext != '': filename += '.' + ext
+        
+        r = lpsolve('write_mps', handler, filename) 
+        if r != True: 
+            self.warn('Failed to write MPS file, maybe read-only filesystem, incorrect path or write access is absent')
+            
+        lpsolve('delete_lp', handler) 
+        return r
 
-
-
+    def get_lpsolve_handler(self):
+        try: from lp_maker import lp_maker, lpsolve
+        except ImportError: self.err('To export LP/MILP in files you should have lpsolve and its Python binding properly installed')
+        self.__prepare__()
+        from ooMisc import LinConst2WholeRepr
+        LinConst2WholeRepr(self)
+        
+        # set goal to  min/max
+        f, minim = (-asfarray(self.f), 0) if self.goal in ['max', 'maximum'] else (asfarray(self.f), 1)
+        
+        lp_handle = lp_maker(List(f.flatten()), List(self.Awhole), List(self.bwhole.flatten()), List(self.dwhole.flatten()), \
+        List(self.lb), List(self.ub), (1+asarray(self.intVars)).tolist(), 0,minim)
+       
+        #lp_handle = lpsolve('make_lp', len(self.beq)+len(self.b), self.n) 
+        L = lambda action, *args: lpsolve(action, lp_handle, *args)
+        
+        #L(goal) 
+        # set objective
+        #L('set_obj', List(f))
+        # set name
+        L('set_lp_name', self.name)
+        
+        # set integer values if present
+        if len(self.intVars)>0:
+            intVars = [False]*self.n
+            for iv in self.intVars:
+                intVars[iv] = True
+            L('set_int', intVars)
+        
+        # set boolean values if present
+        #if len(self.boolVars)>0:
+            #assert self.boolVars[0] in [True, False]
+            #L('set_binary', self.boolVars)
+        
+        # set variables names
+        if self.isFDmodel:
+            assert not isinstance(self.optVars, set), 'error in openopt kernel, inform developers'
+            assert len(self.optVars) == self.n, 'not implemented yet for oovars of size > 1'
+            names = [oov.name for oov in self.optVars]
+            r = lpsolve('set_col_name', names) 
+        
+        # lb, ub
+        #L('set_bounds', List(self.lb), List(self.lb))
+        #L('', List(self.lb), List(self.lb))
+        
+#        if isspmatrix(self.A) or isspmatrix(self.Aeq): 
+#            s = 'export LP/MILP to file: sparse matrices will be temporary cast to dense, direct operation is not implemented yet'
+#            self.pWarn(s)
+#        M = vstack((self.A.A if isspmatrix(self.A) else self.A, self.Aeq.A if isspmatrix(self.Aeq) else self.Aeq))
+        
+        # set constraints matrix
+        # L('set_mat', List(M))
+        # set lower bounds for constraints matrix
+        #L('set_lowbo', [-1e100]*len(self.b)+[0.0]*len(self.beq))
+        # set upper bounds for constraints matrix
+        #L('set_upbo', ([0.0]*(len(self.b)+len(self.beq))))
+        
+        
+        return lp_handle
+        
+def List(x):
+    if isinstance(x, list): return x
+    elif x == None or x.size == 0: return None
+    else: return x.tolist()        
 

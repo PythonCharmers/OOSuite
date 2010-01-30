@@ -7,7 +7,7 @@ from nonOptMisc import getSolverFromStringName
 import NLP
 
 class NLSP(NonLinProblem):
-    __optionalData__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'c', 'h']
+    _optionalData = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'c', 'h']
     probType = 'NLSP'
     goal = 'minimize residual'
     allowedGoals = ['minimize residual']
