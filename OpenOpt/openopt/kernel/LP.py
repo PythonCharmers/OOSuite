@@ -27,9 +27,11 @@ class LP(MatrixProblem):
             #raise 0
             _f = self._point2vector(self.f.D(self._x0))
             self.f, self._f = _f, self.f
+            self._init_f_vector = _f # we don't take p.goal into account here
             _c = self._f(self._x0) - dot(self.f, self.x0)
             self._c = _c
         else:
+            self._init_f_vector = self.f # we don't take p.goal into account here
             self._c = 0
         if not hasattr(self, 'n'): self.n = len(self.f)
         #print 'lb:', self.lb, 'ub:', self.ub
@@ -104,26 +106,19 @@ class LP(MatrixProblem):
         LinConst2WholeRepr(self)
         
         # set goal to  min/max
-        f, minim = (-asfarray(self.f), 0) if self.goal in ['max', 'maximum'] else (asfarray(self.f), 1)
+        minim = 0 if self.goal in ['max', 'maximum'] else 1
+        
+        # objective
+        f = self._init_f_vector
         
         lp_handle = lp_maker(List(f.flatten()), List(self.Awhole), List(self.bwhole.flatten()), List(self.dwhole.flatten()), \
-        List(self.lb), List(self.ub), (1+asarray(self.intVars)).tolist(), 0,minim)
+        List(self.lb), List(self.ub), (1+asarray(self._intVars_vector)).tolist(), 0,minim)
        
         #lp_handle = lpsolve('make_lp', len(self.beq)+len(self.b), self.n) 
         L = lambda action, *args: lpsolve(action, lp_handle, *args)
         
-        #L(goal) 
-        # set objective
-        #L('set_obj', List(f))
         # set name
         L('set_lp_name', self.name)
-        
-        # set integer values if present
-        if len(self.intVars)>0:
-            intVars = [False]*self.n
-            for iv in self.intVars:
-                intVars[iv] = True
-            L('set_int', intVars)
         
         # set boolean values if present
         #if len(self.boolVars)>0:
@@ -133,9 +128,27 @@ class LP(MatrixProblem):
         # set variables names
         if self.isFDmodel:
             assert not isinstance(self.optVars, set), 'error in openopt kernel, inform developers'
-            assert len(self.optVars) == self.n, 'not implemented yet for oovars of size > 1'
-            names = [oov.name for oov in self.optVars]
-            r = lpsolve('set_col_name', names) 
+            #assert len(self.optVars) == self.n, 'not implemented yet for oovars of size > 1'
+            #names = [oov.name for oov in self.optVars]
+            x0 = self._x0
+            names = []
+            assert not isinstance(self.optVars,  set), 'error in openopt kernel, inform developers'
+            for oov in self.optVars:
+                if oov.name.startswith('unnamed'):
+                    self.err('For exporting FuncDesigner models into MPS files you cannot have variables with names starting with "unnamed"')
+                Size = asarray(x0[oov]).size
+                if Size == 1:
+                    Name = oov.name
+                    names.append(Name)
+                else:
+                    tmp = [(oov.name + ('_%d' % j)) for j in xrange(Size)]
+                    names += tmp
+                    Name = tmp[-1]
+                if len(Name) > 8:
+                    self.err('incorrect name "%s" - for exporting FuncDesigner models into MPS files you cannot have variables with names of length > 8'% Name)
+                    
+            # TODO: check are names unique
+            L('set_col_name', names) 
         
         # lb, ub
         #L('set_bounds', List(self.lb), List(self.lb))

@@ -32,6 +32,7 @@ class MILP(LP):
                 r1, r2 = self._oovarsIndDict[iv.name]
                 r += range(r1, r2)
             self.intVars, self._intVars = r, self.intVars
+        self._intVars_vector = self.intVars
                 
         if SMALL_DELTA_X in self.kernelIterFuncs: self.kernelIterFuncs.pop(SMALL_DELTA_X)
         if SMALL_DELTA_F in self.kernelIterFuncs: self.kernelIterFuncs.pop(SMALL_DELTA_F)
