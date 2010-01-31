@@ -23,7 +23,7 @@ p = LP(f, A=A, Aeq=Aeq, b=b, beq=beq, lb=lb, ub=ub, name = 'lp_1')
 # if file name not ends with '.MPS' or '.mps'
 # then '.mps' will be appended
 success = p.exportToMPS('asdf') 
-# success is False if a error occured (read-only file syste, no write access, etc)
+# success is False if a error occurred (read-only file system, no write access, etc)
 # elseware success is True
 
 # objFunValue should be 204.48841578

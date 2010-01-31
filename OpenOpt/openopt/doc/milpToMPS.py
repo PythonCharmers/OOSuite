@@ -34,7 +34,7 @@ p = MILP(f=f, lb=lb, ub=ub, A=A, b=b, intVars=intVars)
 success = p.exportToMPS('/home/dmitrey/PyTest/milp_1')
 # or write into current dir: 
 # success = p.exportToMPS('milp')
-# success is False if a error occured (read-only file syste, no write access, etc)
+# success is False if a error occurred (read-only file system, no write access, etc)
 # elseware success is True
 
 # f_opt is 25.801450769161505
