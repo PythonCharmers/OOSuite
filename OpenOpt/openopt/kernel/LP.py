@@ -94,9 +94,9 @@ class LP(MatrixProblem):
         if ext != '': filename += '.' + ext
         
         if format=='fixed':
-            r = lpsolve('write_mps', handler, filename) 
+            r = bool(lpsolve('write_mps', handler, filename) )
         elif format=='free':
-            r = lpsolve('write_freemps', handler, filename) 
+            r = bool(lpsolve('write_freemps', handler, filename) )
         else:
             self.err('incorrect MPS format, should be "fixed" or "free"')
         if r != True: 
@@ -144,6 +144,9 @@ class LP(MatrixProblem):
                 if oov.name.startswith('unnamed'):
                     L('delete_lp')
                     self.err('For exporting FuncDesigner models into MPS files you cannot have variables with names starting with "unnamed"')
+                if ' ' in oov.name:
+                    L('delete_lp')
+                    self.err('For exporting FuncDesigner models into MPS files you cannot have variables with spaces in names')
                 Size = asarray(x0[oov]).size
                 if Size == 1:
                     Name = oov.name
