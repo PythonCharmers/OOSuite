@@ -132,9 +132,10 @@ class LP(MatrixProblem):
             #names = [oov.name for oov in self.optVars]
             x0 = self._x0
             names = []
-            assert not isinstance(self.optVars,  set), 'error in openopt kernel, inform developers'
+            #assert not isinstance(self.optVars,  set), 'error in openopt kernel, inform developers'
             for oov in self.optVars:
                 if oov.name.startswith('unnamed'):
+                    L('delete_lp')
                     self.err('For exporting FuncDesigner models into MPS files you cannot have variables with names starting with "unnamed"')
                 Size = asarray(x0[oov]).size
                 if Size == 1:
@@ -145,28 +146,11 @@ class LP(MatrixProblem):
                     names += tmp
                     Name = tmp[-1]
                 if len(Name) > 8:
+                    L('delete_lp')
                     self.err('incorrect name "%s" - for exporting FuncDesigner models into MPS files you cannot have variables with names of length > 8'% Name)
                     
             # TODO: check are names unique
             L('set_col_name', names) 
-        
-        # lb, ub
-        #L('set_bounds', List(self.lb), List(self.lb))
-        #L('', List(self.lb), List(self.lb))
-        
-#        if isspmatrix(self.A) or isspmatrix(self.Aeq): 
-#            s = 'export LP/MILP to file: sparse matrices will be temporary cast to dense, direct operation is not implemented yet'
-#            self.pWarn(s)
-#        M = vstack((self.A.A if isspmatrix(self.A) else self.A, self.Aeq.A if isspmatrix(self.Aeq) else self.Aeq))
-        
-        # set constraints matrix
-        # L('set_mat', List(M))
-        # set lower bounds for constraints matrix
-        #L('set_lowbo', [-1e100]*len(self.b)+[0.0]*len(self.beq))
-        # set upper bounds for constraints matrix
-        #L('set_upbo', ([0.0]*(len(self.b)+len(self.beq))))
-        
-        
         return lp_handle
         
 def List(x):
