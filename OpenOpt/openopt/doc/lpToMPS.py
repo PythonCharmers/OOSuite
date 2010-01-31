@@ -2,6 +2,11 @@
 # you should have lpsolve and its Python binding properly installed
 # (you may take a look at the instructions from openopt.org/LP)
 
+# You can solve problems defined in MPS files 
+# with a variety of solvers at NEOS server for free
+# http://neos.mcs.anl.gov/
+# BTW they have Python API along with web API and other
+
 from numpy import *
 from openopt import LP
 f = array([15,8,80])
@@ -18,11 +23,6 @@ p = LP(f, A=A, Aeq=Aeq, b=b, beq=beq, lb=lb, ub=ub, name = 'lp_1')
 # if file name not ends with '.MPS' or '.mps'
 # then '.mps' will be appended
 r = p.exportToMPS('asdf') 
-
-# You can solve problems defined in MPS files 
-# with a variety of solvers at NEOS server for free
-# http://neos.mcs.anl.gov/
-# BTW their soft has a Python API as well
 
 # objFunValue should be 204.48841578
 # x_opt should be [ 9.89355041 -8.          1.5010645 ]

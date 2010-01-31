@@ -2,6 +2,11 @@
 # you should have lpsolve and its Python binding properly installed
 # (you may take a look at the instructions from openopt.org/LP)
 
+# You can solve problems defined in MPS files 
+# with a variety of solvers at NEOS server for free
+# http://neos.mcs.anl.gov/
+# BTW they have Python API along with web API and other
+
 from numpy import *
 from openopt import MILP
 
