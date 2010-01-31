@@ -82,23 +82,30 @@ class LP(MatrixProblem):
 
         return r
 
-    def exportToMPS(self, filename):
+    def exportToMPS(self, filename, format='fixed', startIndex=0):
         try: from lp_solve import lpsolve
         except ImportError: self.err('To export LP/MILP in files you should have lpsolve and its Python binding properly installed')
-        handler = self.get_lpsolve_handler()
+        
+        maxNameLength = 8 if format != 'free' else 255
+        handler = self.get_lpsolve_handler(maxNameLength, startIndex)
         
         # TODO: uncomment it
         ext = 'mps' if not filename.endswith('MPS') and not filename.endswith('mps') else ''
         if ext != '': filename += '.' + ext
         
-        r = lpsolve('write_mps', handler, filename) 
+        if format=='fixed':
+            r = lpsolve('write_mps', handler, filename) 
+        elif format=='free':
+            r = lpsolve('write_freemps', handler, filename) 
+        else:
+            self.err('incorrect MPS format, should be "fixed" or "free"')
         if r != True: 
             self.warn('Failed to write MPS file, maybe read-only filesystem, incorrect path or write access is absent')
             
         lpsolve('delete_lp', handler) 
         return r
 
-    def get_lpsolve_handler(self):
+    def get_lpsolve_handler(self, maxNameLength=255, startIndex=0):
         try: from lp_maker import lp_maker, lpsolve
         except ImportError: self.err('To export LP/MILP in files you should have lpsolve and its Python binding properly installed')
         self.__prepare__()
@@ -142,12 +149,12 @@ class LP(MatrixProblem):
                     Name = oov.name
                     names.append(Name)
                 else:
-                    tmp = [(oov.name + ('_%d' % j)) for j in xrange(Size)]
+                    tmp = [(oov.name + ('_%d' % (startIndex+j))) for j in xrange(Size)]
                     names += tmp
                     Name = tmp[-1]
-                if len(Name) > 8:
+                if maxNameLength < len(Name):
                     L('delete_lp')
-                    self.err('incorrect name "%s" - for exporting FuncDesigner models into MPS files you cannot have variables with names of length > 8'% Name)
+                    self.err('incorrect name "%s" - for exporting FuncDesigner models into MPS files you cannot have variables with names of length > maxNameLength=%d'% maxNameLength)
                     
             # TODO: check are names unique
             L('set_col_name', names) 
