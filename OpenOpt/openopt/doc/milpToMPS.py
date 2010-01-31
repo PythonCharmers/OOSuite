@@ -31,9 +31,11 @@ p = MILP(f=f, lb=lb, ub=ub, A=A, b=b, intVars=intVars)
 
 # if file name not ends with '.MPS' or '.mps'
 # then '.mps' will be appended
-r = p.exportToMPS('/home/dmitrey/PyTest/milp')
+success = p.exportToMPS('/home/dmitrey/PyTest/milp_1')
 # or write into current dir: 
-# r = p.exportToMPS('milp')
+# success = p.exportToMPS('milp')
+# success is False if a error occured (read-only file syste, no write access, etc)
+# elseware success is True
 
 # f_opt is 25.801450769161505
 # x_opt is [ 15. 10.15072538 -1.5 -1.5 -1.  -1.5 -1.5 15.]
