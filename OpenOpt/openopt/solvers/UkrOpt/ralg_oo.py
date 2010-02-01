@@ -43,7 +43,7 @@ class ralg(baseSolver):
 #        r = log10(1e15 * p.norm(g_dilated) / p.norm(g))
 #        if isfinite(r):
 #            p.debugmsg('%d' % int(r))
-        return 1e15 * p.norm(g_dilated) < p.norm(g)
+        return 1e10 * p.norm(g_dilated) < p.norm(g)
     #checkTurnByGradient = True
 
     def __init__(self): pass
@@ -124,6 +124,7 @@ class ralg(baseSolver):
         bestPoint = prevIterPoint
 
         g = prevIterPoint.__getDirection__(self.approach)
+        prevDirectionForDilation = g
         moveDirection = g
         if not any(g) and all(isfinite(g)):
             # TODO: create ENUMs
@@ -175,7 +176,7 @@ class ralg(baseSolver):
                 if ls == 0:
                     oldPoint = prevIterPoint
                 elif ls >= 2:
-                    # TODO: handle it outside of the file
+                    # TODO: replace it by linePoint
                     newPoint._lin_ineq = prevIterPoint.lin_ineq() + hs_cumsum / (hs_cumsum - hs) * (oldPoint.lin_ineq() - prevIterPoint.lin_ineq())
                     # the _lin_eq is obsolete and may be ignored, provided newLinEq = True
                     newPoint._lin_eq = prevIterPoint.lin_eq() + hs_cumsum / (hs_cumsum - hs) * (oldPoint.lin_eq() - prevIterPoint.lin_eq())
@@ -186,14 +187,16 @@ class ralg(baseSolver):
                     if newPoint.betterThan(bestPoint): bestPoint = newPoint
                     oldPoint, newPoint = newPoint,  None
                 else:
+                    if not itn % 4: 
+                        #pass
+                        delattr(newPoint, '_lin_ineq')
+                        delattr(newPoint, '_lin_eq')
                     break
 
             if ls == p.maxLineSearch-1:
                 p.istop,  p.msg = IS_LINE_SEARCH_FAILED,  'maxLineSearch (' + str(p.maxLineSearch) + ') has been exceeded'
                 restoreProb()
                 return
-
-            g2 = newPoint.__getDirection__(self.approach) # used for dilation direction obtaining
 
             iterPoint  = newPoint
 
@@ -226,12 +229,14 @@ class ralg(baseSolver):
 
 
             """                      iterPoint has been obtained                     """
-            
+            directionForDilation = newPoint.__getDirection__(self.approach) # used for dilation direction obtaining
             if not self.new_bs or ls != 0:
                 moveDirection = iterPoint.__getDirection__(self.approach)
             else:
                 moveDirection = best_ls_point.__getDirection__(self.approach)
-                g2 = pointForDilation.__getDirection__(self.approach) 
+                #directionForDilation = pointForDilation.__getDirection__(self.approach) 
+                
+                
 #                cos_phi = -p.matmult(moveDirection, prevIterPoint.__getDirection__(self.approach))
 #                assert cos_phi.size == 1
 #                if cos_phi> 0:
@@ -275,9 +280,9 @@ class ralg(baseSolver):
             r_, ind_, fname_ = iterPoint.mr(1)
 
             if self.dilationType == 'normalized' and (not fname_p in ('lb', 'ub', 'lin_eq', 'lin_ineq') or not fname_ in ('lb', 'ub', 'lin_eq', 'lin_ineq')) and (fname_p != fname_  or ind_p != ind_):
-                G2,  G = g2/norm(g2), g/norm(g)
+                G2,  G = directionForDilation/norm(directionForDilation), prevDirectionForDilation/norm(prevDirectionForDilation)
             else:
-                G2,  G = g2, g
+                G2,  G = directionForDilation, prevDirectionForDilation
 
 #            # CHANGES
 #            gn = g2/norm(g2)
@@ -393,7 +398,7 @@ class ralg(baseSolver):
             
             
             ng = p.norm(g)
-            p._df = g2.copy()
+            if iterPoint.isFeas(altLinInEq=True) : p._df = iterPoint.df().copy()
             #if p.iter>500: p.debugmsg(str(g2))
 
             if self.needRej(p, b, g1, g):
@@ -482,7 +487,7 @@ class ralg(baseSolver):
 #                p.debugmsg('2: new point Aeq residual:'+str(norm(dot(Aeq, iterPoint.x)-beq)))
             #p.hs.append(hs)
             #g = moveDirection.copy()
-            g = g2.copy()
+            prevDirectionForDilation = directionForDilation
 
             prevIterPoint, iterPoint = iterPoint, None
 
