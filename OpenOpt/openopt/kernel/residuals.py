@@ -6,7 +6,7 @@ empty_arr = asfarray([])
 try:
     from scipy.sparse import csr_matrix
 except:
-    csr_matrix = None
+    pass
     
 #def MULT(A, x):
 #    if isinstance(A, ndarray):

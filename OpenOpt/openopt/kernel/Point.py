@@ -123,28 +123,36 @@ class Point:
             ind_lb, ind_ub = where(lb>threshold)[0], where(ub>threshold)[0]
             ind_lin_ineq = where(lin_ineq>threshold)[0]
             ind_lin_eq = where(abs(lin_eq)>threshold)[0]
-
-            if ind_lb.size != 0:
-                r += sum(lb[ind_lb] ** 2)
-            if ind_ub.size != 0:
-                r += sum(ub[ind_ub] ** 2)
-            if ind_lin_ineq.size != 0:
-                r += sum(lin_ineq[ind_lin_ineq] ** 2)
-            if ind_lin_eq.size != 0:
-                r += sum(lin_eq[ind_lin_eq] ** 2)
-            self._all_lin_ineq = sqrt(r)
+            USE_SQUARES = 0
+            if USE_SQUARES:
+                if ind_lb.size != 0:
+                    r += sum(lb[ind_lb] ** 2)
+                if ind_ub.size != 0:
+                    r += sum(ub[ind_ub] ** 2)
+                if ind_lin_ineq.size != 0:
+                    r += sum(lin_ineq[ind_lin_ineq] ** 2)
+                if ind_lin_eq.size != 0:
+                    r += sum(lin_eq[ind_lin_eq] ** 2)
+                self._all_lin_ineq = sqrt(r)
+            else:
+                if ind_lb.size != 0:
+                    r += sum(lb[ind_lb])
+                if ind_ub.size != 0:
+                    r += sum(ub[ind_ub])
+                if ind_lin_ineq.size != 0:
+                    r += sum(lin_ineq[ind_lin_ineq])
+                if ind_lin_eq.size != 0:
+                    r += sum(abs(lin_eq[ind_lin_eq]))
+                self._all_lin_ineq = r
+                    
         return copy(self._all_lin_ineq)
 
     def __all_lin_ineq_gradient(self):
         if not hasattr(self, '_all_lin_ineq_gradient'):
             p = self.p
-            d = zeros(p.n)
-            contol = p.contol
-
-            # TODO: CHECK IT - when 0 (if some nans), when contol
-#            if all(isfinite(self.f())): threshold = contol
-#            else: threshold = 0
-            threshold = 0
+            n = p.n
+            d = zeros(n)
+            threshold = 0.0
 
             lb, ub = self.lb(), self.ub()
             lin_ineq = self.lin_ineq()
@@ -153,29 +161,59 @@ class Point:
             ind_lin_ineq = where(lin_ineq>threshold)[0]
             ind_lin_eq = where(abs(lin_eq)>threshold)[0]
 
-            if ind_lb.size != 0:
-                d[ind_lb] -= lb[ind_lb]# d/dx((x-lb)^2) for violated constraints
-            if ind_ub.size != 0:
-                d[ind_ub] += ub[ind_ub]# d/dx((x-ub)^2) for violated constraints
-            if ind_lin_ineq.size != 0:
-                # d/dx((Ax-b)^2)
-                b = p.b[ind_lin_ineq]
-                if hasattr(p, '_A'):
-                    a = p._A[ind_lin_ineq] 
-                    tmp = a._mul_sparse_matrix(csr_matrix(self.x.reshape(p.n, 1))).toarray().flatten() - b
-                    d += a.T._mul_sparse_matrix(tmp.reshape(tmp.size, 1)).A.flatten()
-                    #d += dot(a.T, dot(a, self.x)  - b) 
+            USE_SQUARES = 0
+            if USE_SQUARES:
+                if ind_lb.size != 0:
+                    d[ind_lb] -= lb[ind_lb]# d/dx((x-lb)^2) for violated constraints
+                if ind_ub.size != 0:
+                    d[ind_ub] += ub[ind_ub]# d/dx((x-ub)^2) for violated constraints
+                if ind_lin_ineq.size != 0:
+                    # d/dx((Ax-b)^2)
+                    b = p.b[ind_lin_ineq]
+                    if hasattr(p, '_A'):
+                        a = p._A[ind_lin_ineq] 
+                        tmp = a._mul_sparse_matrix(csr_matrix(self.x.reshape(p.n, 1))).toarray().flatten() - b
+                        d += a.T._mul_sparse_matrix(tmp.reshape(tmp.size, 1)).A.flatten()
+                        #d += dot(a.T, dot(a, self.x)  - b) 
+                    else:
+                        a = p.A[ind_lin_ineq] 
+                        d += dot(a.T, dot(a, self.x)  - b) # d/dx((Ax-b)^2)
+                if ind_lin_eq.size != 0:
+                    aeq = p.Aeq[ind_lin_eq]
+                    beq = p.beq[ind_lin_eq]
+                    d += dot(aeq.T, dot(aeq, self.x)  - beq) # 0.5*d/dx((Aeq x - beq)^2)
+                devider = self.__all_lin_ineq()
+                if devider != 0:
+                    self._all_lin_ineq_gradient = d / devider
                 else:
-                    a = p.A[ind_lin_ineq] 
-                    d += dot(a.T, dot(a, self.x)  - b) # d/dx((Ax-b)^2)
-            if ind_lin_eq.size != 0:
-                aeq = p.Aeq[ind_lin_eq]
-                beq = p.beq[ind_lin_eq]
-                d += dot(aeq.T, dot(aeq, self.x)  - beq) # 0.5*d/dx((Aeq x - beq)^2)
-            devider = self.__all_lin_ineq()
-            if devider != 0:
-                self._all_lin_ineq_gradient = d / devider
+                    self._all_lin_ineq_gradient = d
             else:
+                if ind_lb.size != 0:
+                    d[ind_lb] -= 1# d/dx(lb-x) for violated constraints
+                if ind_ub.size != 0:
+                    d[ind_ub] += 1# d/dx(x-ub) for violated constraints
+                if ind_lin_ineq.size != 0:
+                    # d/dx(Ax-b)
+                    b = p.b[ind_lin_ineq]
+                    if hasattr(p, '_A'):
+                        d += (p._A[ind_lin_ineq]).sum(0).A.flatten()
+                    else:
+                        d += (p.A[ind_lin_ineq]).sum(0).flatten()
+                if ind_lin_eq.size != 0:
+                    # currently for ralg it should be handled in dilation matrix
+                    p.err('not implemented yet, if you see it inform OpenOpt developers')
+#                    beq = p.beq[ind_lin_eq]
+#                    if hasattr(p, '_Aeq'):
+#                        tmp = p._Aeq[ind_lin_eq]
+#                        ind_change = where()
+#                        tmp
+#                        d += ().sum(0).A.flatten()
+#                    else:
+#                        #d += (p.Aeq[ind_lin_eq]).sum(0).flatten()
+
+#                    aeq = p.Aeq[ind_lin_eq]
+#                    beq = p.beq[ind_lin_eq]
+#                    d += dot(aeq.T, dot(aeq, self.x)  - beq) # 0.5*d/dx((Aeq x - beq)^2)
                 self._all_lin_ineq_gradient = d
         return copy(self._all_lin_ineq_gradient)
 
