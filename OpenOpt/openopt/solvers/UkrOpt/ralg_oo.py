@@ -199,6 +199,7 @@ class ralg(baseSolver):
                 return
 
             iterPoint  = newPoint
+            best_ls_point = newPoint if ls == 0 else oldPoint
 
             """                          Backward line search                          """
 
@@ -230,10 +231,12 @@ class ralg(baseSolver):
 
             """                      iterPoint has been obtained                     """
             directionForDilation = newPoint.__getDirection__(self.approach) # used for dilation direction obtaining
-            if not self.new_bs or ls != 0:
-                moveDirection = iterPoint.__getDirection__(self.approach)
-            else:
-                moveDirection = best_ls_point.__getDirection__(self.approach)
+            moveDirection = best_ls_point.__getDirection__(self.approach)
+#            if not self.new_bs or ls != 0:
+#                moveDirection = iterPoint.__getDirection__(self.approach)
+#            else:
+#                moveDirection = best_ls_point.__getDirection__(self.approach)
+                
                 #directionForDilation = pointForDilation.__getDirection__(self.approach) 
                 
                 
