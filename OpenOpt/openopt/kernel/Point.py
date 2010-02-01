@@ -3,6 +3,11 @@ from numpy import copy, isnan, array, argmax, abs, vstack, zeros, any, isfinite,
 sign, dot, sqrt, array_equal, nanmax, inf, hstack, isscalar, logical_or
 from numpy.linalg import norm
 from pointProjection import pointProjection
+try:
+    from scipy.sparse import csr_matrix
+except:
+    pass
+
 __docformat__ = "restructuredtext en"
 empty_arr = array(())
 try:
@@ -153,9 +158,16 @@ class Point:
             if ind_ub.size != 0:
                 d[ind_ub] += ub[ind_ub]# d/dx((x-ub)^2) for violated constraints
             if ind_lin_ineq.size != 0:
-                a = p.A[ind_lin_ineq]
+                # d/dx((Ax-b)^2)
                 b = p.b[ind_lin_ineq]
-                d += dot(a.T, dot(a, self.x)  - b) # d/dx((Ax-b)^2)
+                if hasattr(p, '_A'):
+                    a = p._A[ind_lin_ineq] 
+                    tmp = a._mul_sparse_matrix(csr_matrix(self.x.reshape(p.n, 1))).toarray().flatten() - b
+                    d += a.T._mul_sparse_matrix(tmp.reshape(tmp.size, 1)).A.flatten()
+                    #d += dot(a.T, dot(a, self.x)  - b) 
+                else:
+                    a = p.A[ind_lin_ineq] 
+                    d += dot(a.T, dot(a, self.x)  - b) # d/dx((Ax-b)^2)
             if ind_lin_eq.size != 0:
                 aeq = p.Aeq[ind_lin_eq]
                 beq = p.beq[ind_lin_eq]
