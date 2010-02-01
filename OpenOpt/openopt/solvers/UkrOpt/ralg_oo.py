@@ -122,6 +122,8 @@ class ralg(baseSolver):
         """                            Shor r-alg engine                           """
         prevIterPoint = p.point(atleast_1d(T(copy(x0))))
         bestPoint = prevIterPoint
+        prevIter_best_ls_point = prevIterPoint
+        previter_pointForDilation = prevIterPoint
 
         g = prevIterPoint.__getDirection__(self.approach)
         prevDirectionForDilation = g
@@ -156,7 +158,9 @@ class ralg(baseSolver):
 
             """                           Forward line search                          """
 
-            x = prevIterPoint.x.copy()
+            #x = prevIterPoint.x.copy()
+            x = prevIter_best_ls_point.x.copy()
+            
             hs_cumsum = 0
             for ls in xrange(p.maxLineSearch):
                 if ls > 20:
@@ -174,12 +178,13 @@ class ralg(baseSolver):
                 if self.show_nnan: p.info('ls: %d nnan: %d' % (ls, newPoint.__nnan__()))
 
                 if ls == 0:
-                    oldPoint = prevIterPoint
+                    oldPoint = prevIter_best_ls_point#prevIterPoint
                 elif ls >= 2:
                     # TODO: replace it by linePoint
-                    newPoint._lin_ineq = prevIterPoint.lin_ineq() + hs_cumsum / (hs_cumsum - hs) * (oldPoint.lin_ineq() - prevIterPoint.lin_ineq())
+                    newPoint._lin_ineq = \
+                    prevIter_best_ls_point.lin_ineq() + hs_cumsum / (hs_cumsum - hs) * (oldPoint.lin_ineq() - prevIter_best_ls_point.lin_ineq())
                     # the _lin_eq is obsolete and may be ignored, provided newLinEq = True
-                    newPoint._lin_eq = prevIterPoint.lin_eq() + hs_cumsum / (hs_cumsum - hs) * (oldPoint.lin_eq() - prevIterPoint.lin_eq())
+                    newPoint._lin_eq = prevIter_best_ls_point.lin_eq() + hs_cumsum / (hs_cumsum - hs) * (oldPoint.lin_eq() - prevIter_best_ls_point.lin_eq())
 
 
                 #if not self.checkTurnByGradient:
@@ -198,8 +203,10 @@ class ralg(baseSolver):
                 restoreProb()
                 return
 
-            iterPoint  = newPoint
+            #iterPoint  = newPoint
+            PointForDilation = newPoint
             best_ls_point = newPoint if ls == 0 else oldPoint
+            if p.debug and ls != 0: assert not oldPoint.betterThan(best_ls_point)
 
             """                          Backward line search                          """
 
@@ -207,15 +214,15 @@ class ralg(baseSolver):
             if ls == 0:
                 if self.doBackwardSearch:
                     if self.new_bs:
-                        best_ls_point,  pointForDilation, ls_backward = \
-                        getBestPointAfterTurn(prevIterPoint, iterPoint, maxLS = 3, altLinInEq = True, new_bs = True)
-                        iterPoint = best_ls_point
+                        best_ls_point,  PointForDilation, ls_backward = \
+                        getBestPointAfterTurn(prevIter_best_ls_point, newPoint, maxLS = 3, altLinInEq = True, new_bs = True)
                     else:
-                        iterPoint, ls_backward = \
-                        getBestPointAfterTurn(prevIterPoint, iterPoint, maxLS = 3, altLinInEq = True, new_bs = False)
+                        best_ls_point, ls_backward = \
+                        getBestPointAfterTurn(prevIter_best_ls_point, newPoint, maxLS = 3, altLinInEq = True, new_bs = False)
+                        PointForDilation = best_ls_point
 
                     # TODO: extract last point from backward search, that one is better than iterPoint
-                    if iterPoint.betterThan(bestPoint): bestPoint = iterPoint
+                    if best_ls_point.betterThan(bestPoint): bestPoint = best_ls_point
                     #p.debugmsg('ls_backward:%d' % ls_backward)
                     hs *= 2 ** ls_backward
                     
@@ -229,8 +236,13 @@ class ralg(baseSolver):
                     #hs *= 0.95
 
 
-            """                      iterPoint has been obtained                     """
-            directionForDilation = newPoint.__getDirection__(self.approach) # used for dilation direction obtaining
+            """                      iterPoints have been obtained                     """
+            
+            best_ls_point = PointForDilation
+            
+
+            directionForDilation = PointForDilation.__getDirection__(self.approach) 
+            #directionForDilation = newPoint.__getDirection__(self.approach) # used for dilation direction obtaining
             moveDirection = best_ls_point.__getDirection__(self.approach)
 #            if not self.new_bs or ls != 0:
 #                moveDirection = iterPoint.__getDirection__(self.approach)
@@ -247,28 +259,14 @@ class ralg(baseSolver):
 #                else:
 #                    g2 = pointForDilation.__getDirection__(self.approach) 
                 
-            # DEBUG!
-            #g2 = moveDirection#newPoint.__getDirection__(self.approach)
-            # DEBUG end!
-
-#            ls_arr.append(ls)
-#            if ls >= 2 and len(ls_arr) >= len(self.j_multiplier):
-#                j_arr = array(ls_arr[-3:]) * self.j_multiplier#array((ls_arr[-3], 2.0*ls_arr[-2],  3.0*ls_arr[-1]))
-#                j_arr[j_arr<0] = 0 # for more safety
-#                j_mean = j_arr.sum() / sum(self.j_multiplier)
-#                if j_mean > self.ls_0:
-#                    hs *= sqrt(j_mean - self.ls_0 + 1.0)
-#                else:
-#                    hs *= sqrt(j_mean / self.ls_0)
-
             if itn == 0:
                 p.debugmsg('hs: ' + str(hs))
                 p.debugmsg('ls: ' + str(ls))
             if self.showLS: p.info('ls: ' + str(ls))
             if self.show_hs: p.info('hs: ' + str(hs))
-            if self.show_nnan: p.info('nnan: ' + str(iterPoint.__nnan__()))
+            if self.show_nnan: p.info('nnan: ' + str(best_ls_point.__nnan__()))
             if self.showRes:
-                r, fname, ind = iterPoint.mr(True)
+                r, fname, ind = best_ls_point.mr(True)
                 p.info(fname+str(ind))
 
             """                         Set dilation direction                            """
@@ -277,10 +275,10 @@ class ralg(baseSolver):
                 #p.debugmsg('ralg warning: slope angle less than pi/2. Mb dilation for the iter will be omitted.')
                 #doDilation = False
 
-            prevIterPointIsFeasible = prevIterPoint.isFeas(altLinInEq=True)
-            currIterPointIsFeasible = iterPoint.isFeas(altLinInEq=True)
-            r_p, ind_p, fname_p = prevIterPoint.mr(1)
-            r_, ind_, fname_ = iterPoint.mr(1)
+            prevIterPointIsFeasible = previter_pointForDilation.isFeas(altLinInEq=True)
+            currIterPointIsFeasible = PointForDilation.isFeas(altLinInEq=True)
+            r_p, ind_p, fname_p = prevIter_best_ls_point.mr(1)
+            r_, ind_, fname_ = PointForDilation.mr(1)
 
             if self.dilationType == 'normalized' and (not fname_p in ('lb', 'ub', 'lin_eq', 'lin_ineq') or not fname_ in ('lb', 'ub', 'lin_eq', 'lin_ineq')) and (fname_p != fname_  or ind_p != ind_):
                 G2,  G = directionForDilation/norm(directionForDilation), prevDirectionForDilation/norm(prevDirectionForDilation)
@@ -401,14 +399,17 @@ class ralg(baseSolver):
             
             
             ng = p.norm(g)
-            if iterPoint.isFeas(altLinInEq=True) : p._df = iterPoint.df().copy()
+            if hasattr(p, '_df'): delattr(p, '_df')
+            if best_ls_point.isFeas(altLinInEq=True) and hasattr(best_ls_point, '_df'): 
+                p._df = best_ls_point.df().copy()
+                
             #if p.iter>500: p.debugmsg(str(g2))
 
             if self.needRej(p, b, g1, g):
                 if self.showRej or p.debug:
                     p.info('debug msg: matrix B restoration in ralg solver')
                 b = B0.copy()
-                hs = 0.5*p.norm(prevIterPoint.x - iterPoint.x)
+                hs = 0.5*p.norm(prevIter_best_ls_point.x - best_ls_point.x)
                 # TODO: iterPoint = projection(iterPoint,Aeq) if res_Aeq > 0.75*contol
                 
             #p.debugmsg('ng:%e  ng1:%e' % (ng, p.norm(g1)))
@@ -427,12 +428,12 @@ class ralg(baseSolver):
             
 
             """                               Call OO iterfcn                                """
-            p.iterfcn(iterPoint)
+            p.iterfcn(best_ls_point)
 
 
             """                             Check stop criteria                           """
 
-            cond_same_point = array_equal(iterPoint.x, prevIterPoint.x)
+            cond_same_point = array_equal(best_ls_point.x, prevIter_best_ls_point.x)
             if cond_same_point and not p.istop:
                 p.istop = 14
                 p.msg = 'X[k-1] and X[k] are same'
@@ -444,16 +445,16 @@ class ralg(baseSolver):
             if p.istop and not p.userStop:
                 if p.istop not in p.stopdict: p.stopdict[p.istop] = True # it's actual for converters, TODO: fix it
                 if SMALL_DF in p.stopdict:
-                    if currIterPointIsFeasible: s2 = p.istop
+                    if best_ls_point.isFeas(): s2 = p.istop
                     p.stopdict.pop(SMALL_DF)
                 if SMALL_DELTA_F in p.stopdict:
                     # TODO: implement it more properly
-                    if currIterPointIsFeasible and prevIterPoint.f() != iterPoint.f(): s2 = p.istop
+                    if best_ls_point.isFeas() and prevIter_best_ls_point.f() != best_ls_point.f(): s2 = p.istop
                     p.stopdict.pop(SMALL_DELTA_F)
                 if SMALL_DELTA_X in p.stopdict:
-                    if currIterPointIsFeasible or not prevIterPointIsFeasible or cond_same_point: s2 = p.istop
+                    if best_ls_point.isFeas() or not prevIter_best_ls_point.isFeas() or cond_same_point: s2 = p.istop
                     p.stopdict.pop(SMALL_DELTA_X)
-                if s2 and (any(isnan(iterPoint.c())) or any(isnan(iterPoint.h()))) \
+                if s2 and (any(isnan(best_ls_point.c())) or any(isnan(best_ls_point.h()))) \
                 and not p.isNaNInConstraintsAllowed\
                 and not cond_same_point:
                     s2 = 0
@@ -471,7 +472,7 @@ class ralg(baseSolver):
             if p.istop:
                 if self.needRej(p, b, g1, g):
                     b = B0.copy()
-                    hs = 0.5*p.norm(prevIterPoint.x - iterPoint.x)
+                    hs = 0.5*p.norm(prevIter_best_ls_point.x - best_ls_point.x)
                     p.istop = 0
                 else:
                     restoreProb()
@@ -490,9 +491,13 @@ class ralg(baseSolver):
 #                p.debugmsg('2: new point Aeq residual:'+str(norm(dot(Aeq, iterPoint.x)-beq)))
             #p.hs.append(hs)
             #g = moveDirection.copy()
-            prevDirectionForDilation = directionForDilation
+            
+            #prevDirectionForDilation = directionForDilation
 
-            prevIterPoint, iterPoint = iterPoint, None
+            #iterPoint = None
+            prevIter_best_ls_point = best_ls_point
+            previter_pointForDilation = best_ls_point
+            prevDirectionForDilation = best_ls_point.__getDirection__(self.approach)
 
 
     def getPrimevalDilationMatrixWRTlinEqConstraints(self, p):
