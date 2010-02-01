@@ -120,17 +120,16 @@ class ralg(baseSolver):
         w = T(1.0/alp-1.0)
 
         """                            Shor r-alg engine                           """
-        prevIterPoint = p.point(atleast_1d(T(copy(x0))))
-        bestPoint = prevIterPoint
-        prevIter_best_ls_point = prevIterPoint
-        previter_pointForDilation = prevIterPoint
+        bestPoint = p.point(atleast_1d(T(copy(x0))))
+        prevIter_best_ls_point = bestPoint
+        previter_pointForDilation = bestPoint
 
-        g = prevIterPoint.__getDirection__(self.approach)
+        g = bestPoint.__getDirection__(self.approach)
         prevDirectionForDilation = g
         moveDirection = g
         if not any(g) and all(isfinite(g)):
             # TODO: create ENUMs
-            if prevIterPoint.isFeas():
+            if bestPoint.isFeas():
                 p.istop = 14
             else:
                 p.istop = -14
@@ -140,7 +139,7 @@ class ralg(baseSolver):
 
         #p.hs = [hs]
         
-        directionVectorsList = []
+        #directionVectorsList = []
 #        #pass-by-ref! not copy!
 #        if p.isFeas(p.x0): b = B_f
 #        else: b = B_constr
@@ -193,9 +192,8 @@ class ralg(baseSolver):
                     oldPoint, newPoint = newPoint,  None
                 else:
                     if not itn % 4: 
-                        #pass
-                        delattr(newPoint, '_lin_ineq')
-                        delattr(newPoint, '_lin_eq')
+                        for fn in ['_lin_ineq', '_lin_eq']:
+                            if hasattr(newPoint, fn): delattr(newPoint, fn)
                     break
 
             if ls == p.maxLineSearch-1:
