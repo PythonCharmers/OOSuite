@@ -18,15 +18,16 @@ class LLSP(MatrixProblem):
         if 'damp' not in kwargs.keys(): self.damp = None
         if 'f' not in kwargs.keys(): self.f = None
         
-        if len(args)>0:
-            self.n = args[0].shape[1]
-        else:
-            self.n = kwargs['C'].shape[1]
-        #self.lb = -inf * ones(self.n)
-        #self.ub =  inf * ones(self.n)
-        if not hasattr(self, 'lb'): self.lb = -inf * ones(self.n)
-        if not hasattr(self, 'ub'): self.ub = inf * ones(self.n)
-        if self.x0 is None: self.x0 = zeros(self.n)        
+        if not self.isFDmodel:
+            if len(args)>0:
+                self.n = args[0].shape[1]
+            else:
+                self.n = kwargs['C'].shape[1]
+            #self.lb = -inf * ones(self.n)
+            #self.ub =  inf * ones(self.n)
+            if not hasattr(self, 'lb'): self.lb = -inf * ones(self.n)
+            if not hasattr(self, 'ub'): self.ub = inf * ones(self.n)
+            if self.x0 is None: self.x0 = zeros(self.n)        
 
 
     def objFunc(self, x):
