@@ -62,7 +62,7 @@ class LLSP(MatrixProblem):
                 C.append(self._pointDerivative2array(lin_oofun._D(Z, **self._D_kwargs)))
                 d.append(-lin_oofun(Z))
             self.C, self.d = vstack(C), vstack(d).flatten()
-        if not self.damp is None and not any(isfinite(self.X)):
+        if not self.damp is None and (not hasattr(self, 'X') or not any(isfinite(self.X))):
             self.X = zeros(self.n)
 
 
