@@ -18,7 +18,7 @@ class LLSP(MatrixProblem):
         if 'damp' not in kwargs.keys(): self.damp = None
         if 'f' not in kwargs.keys(): self.f = None
         
-        if not self.isFDmodel:
+        if not self._isFDmodel():
             if len(args)>0:
                 self.n = args[0].shape[1]
             else:
