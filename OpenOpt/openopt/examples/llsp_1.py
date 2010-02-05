@@ -11,7 +11,10 @@ for j in xrange(M):
     d[j] = 1.5*N+80*sin(j)
     C[j] = 8*sin(4.0+arange(N)) + 15*cos(j)
     
-""" alternatvely, try the sparse problem - lsqr solver can take benefits of it:
+""" alternatively, try the sparse problem - lsqr solver can take benefits of it.
+Also, if your C is too large for your RAM 
+you can pass C of any scipy.sparse matrix format
+
 for j in xrange(M):
     d[j] = 1.5*N+80*sin(j)
     C[j, j%N] = 15*cos(j) #+ 8*sin(4.0+arange(N))
