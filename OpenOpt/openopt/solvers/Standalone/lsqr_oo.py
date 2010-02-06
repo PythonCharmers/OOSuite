@@ -64,8 +64,9 @@ class lsqr(baseSolver):
 #                f = p.norm(r-d)
 #                assert damp == 0
 #                if damp != 0: 
-#                assert not condX
-#                p.iterfcn(x,f)
+#                    assert not condX
+#                p.iterfcn(x)
+#                if p.istop: raise isSolved
                 return r
             elif mode == 2:
                 return dot(CT, x).flatten() if not isspmatrix(C) else CT._mul_sparse_matrix(csr_matrix(x.reshape(x.size, 1))).A.flatten()
@@ -77,12 +78,13 @@ class lsqr(baseSolver):
         show = False
         
         [ x, istop, itn, r1norm, r2norm, anorm, acond, arnorm, xnorm, var ] = \
-        LSQR(m, n, aprod, d, damp, 1e-9, 1e-9, conlim, p.maxIter, show, wantvar = False)
+        LSQR(m, n, aprod, d, damp, 1e-9, 1e-9, conlim, p.maxIter, show, wantvar = False, callback = p.iterfcn)
         # ( m, n, aprod, b, damp, atol, btol, conlim, itnlim, show, wantvar = False )
 
         #p.istop, p.msg, p.iter = istop, msg.rstrip(), iter
         p.istop = 1000
-        p.iter = 1 # itn
+        p.debugmsg('lsqr iterations elapsed: %d' % itn)
+        #p.iter = 1 # itn
         p.xf = x
         #p.ff = p.fk = w[0]
 

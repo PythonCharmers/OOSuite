@@ -19,7 +19,7 @@ from math import sqrt
 def normof2(x,y): return sqrt(x**2 + y**2)
 def normof4(x1,x2,x3,x4): return sqrt(x1**2 + x2**2 + x3**2 + x4**2)
 
-def lsqr( m, n, aprod, b, damp, atol, btol, conlim, itnlim, show, wantvar = False ):
+def lsqr( m, n, aprod, b, damp, atol, btol, conlim, itnlim, show, wantvar = False, callback = lambda x: None):
     """
     [ x, istop, itn, r1norm, r2norm, anorm, acond, arnorm, xnorm, var ]...
     = lsqr( m, n, @aprod, b, damp, atol, btol, conlim, itnlim, show );
@@ -289,6 +289,7 @@ def lsqr( m, n, aprod, b, damp, atol, btol, conlim, itnlim, show, wantvar = Fals
             print str1+str2+str3+str4
                 
         if istop > 0: break
+        callback(x) # added for OpenOpt kernel
 
     # End of iteration loop.
     # Print the stopping condition.
