@@ -81,13 +81,14 @@ class LLSP(MatrixProblem):
 #    r = dot(LLSPprob.C, x) - LLSPprob.d
 #    return dot(r, r)
 ff = lambda x, LLSPprob: LLSPprob.objFunc(x)
-def dff(x, LLSPprob):
-    r = dot(LLSPprob.C.T, dot(LLSPprob.C,x)  - LLSPprob.d)
-    if not LLSPprob.damp is None: r += LLSPprob.damp*(x - LLSPprob.X)
-    if LLSPprob.f is not None and all(isfinite(LLSPprob.f)) : r += LLSPprob.f
+def dff(x, p):
+    r = p.matMultVec(p.C.T, p.matMultVec(p.C,x)  - p.d)
+    if p.damp is not None and p.damp != 0: r += p.damp*(x - LLSPprob.X)
+    if p.f is not None and all(isfinite(p.f)) : r += p.f
     return r
 
-def d2ff(x, LLSPprob):
-    r = dot(LLSPprob.C.T, LLSPprob.C)
-    if not LLSPprob.damp is None: r += LLSPprob.damp*eye(x.size)
+def d2ff(x, p):
+    # TODO: handle sparse!
+    r = dot(p.C.T, p.C)
+    if not p.damp is None: r += p.damp*eye(x.size)
     return r
