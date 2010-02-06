@@ -31,7 +31,7 @@ class LLSP(MatrixProblem):
 
 
     def objFunc(self, x):
-        r = norm(dot(self.C, x) - self.d) ** 2  /  2.0
+        r = norm(self.matMultVec(self.C, x) - self.d) ** 2  /  2.0
         if self.damp is not None:
             r += self.damp * norm(x-self.X)**2 / 2.0
         if self.f is not None: r += dot(self.f, x)
@@ -56,12 +56,13 @@ class LLSP(MatrixProblem):
             self.x0 = self.d
         MatrixProblem.__prepare__(self)
         if self.isFDmodel:
-            C, d = [], []
-            Z = self._vector2point(zeros(self.n))
-            for lin_oofun in self.C:
-                C.append(self._pointDerivative2array(lin_oofun._D(Z, **self._D_kwargs)))
-                d.append(-lin_oofun(Z))
-            self.C, self.d = vstack(C), vstack(d).flatten()
+            self.C, self.d = p._linearOOFunsToMatrices(self.C)
+#            C, d = [], []
+#            Z = self._vector2point(zeros(self.n))
+#            for lin_oofun in self.C:
+#                C.append(self._pointDerivative2array(lin_oofun._D(Z, **self._D_kwargs)))
+#                d.append(-lin_oofun(Z))
+#            self.C, self.d = vstack(C), vstack(d).flatten()
         if not self.damp is None and (not hasattr(self, 'X') or not any(isfinite(self.X))):
             self.X = zeros(self.n)
 

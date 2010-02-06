@@ -9,7 +9,7 @@ from ooIter import ooIter
 from Point import Point
 from iterPrint import ooTextOutput
 from ooMisc import setNonLinFuncsNumber, assignScript
-from nonOptMisc import isspmatrix, scipyInstalled, scipyAbsentMsg
+from nonOptMisc import isspmatrix, scipyInstalled, scipyAbsentMsg, csr_matrix
 from copy import copy as Copy
 try:
     from DerApproximator import check_d1
@@ -30,6 +30,8 @@ class user:
 class oomatrix:
     def __init__(self):
         pass
+    def matMultVec(self, x, y):
+        return dot(x, y) if not isspmatrix(x) else x._mul_sparse_matrix(csr_matrix(y.reshape((y.size, 1)))).A.flatten() 
     def matmult(self, x, y):
         return dot(x, y)
         #return asarray(x) ** asarray(y)

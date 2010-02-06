@@ -9,12 +9,13 @@ try:
     import scipy
     scipyInstalled = True
     scipyAbsentMsg = ''
-    from scipy.sparse import isspmatrix
+    from scipy.sparse import isspmatrix, csr_matrix
     from scipy.sparse import bmat as Bmat
     from scipy.sparse import hstack as Hstack, vstack as Vstack, find as Find
     SparseMatrixConstructor = lambda *args, **kwargs: scipy.sparse.lil_matrix(*args, **kwargs)
 except:
     scipyInstalled = False
+    csr_matrix = None
     scipyAbsentMsg = 'Probably scipy installation could speed up running the code involved'
     isspmatrix = lambda *args,  **kwargs:  False
     Hstack = hstack

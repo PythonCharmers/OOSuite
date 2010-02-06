@@ -188,6 +188,30 @@ def setStartVectorAndTranslators(p):
     # TODO: replave p.x0 in RunProbSolver finish  
     p._x0, p.x0 = p.x0, vector_x0 
     
+    def linearOOFunsToMatrices(oofuns):
+        # oofuns should be linear
+        C, d = [], []
+        Z = self._vector2point(zeros(p.n))
+        for elem in oofuns:
+            if elem.isConstraint:
+                lin_oofun = elem.oofun
+            else:
+                lin_oofun = elem
+            if not lin_oofun.is_linear:
+                raise OpenOptException("this function hasn't been intended to work with nonlinear FuncDesigner oofuns")
+            C.append(self._pointDerivative2array(lin_oofun._D(Z, **self._D_kwargs), asSparse = 'auto'))
+            d.append(-lin_oofun(Z))
+            
+        if any(isspmatrix([elem for elem in C])):
+            Vstack = scipy.sparse.vstack
+        else:
+            Vstack = vstack # i.e. numpy.vstack
+        #raise 0
+        C, d = Vstack(C), hstack(d).flatten()
+        raise 0
+        return C, d    
+    p._linearOOFunsToMatrices = linearOOFunsToMatrices
+    
     
     
     #############################################
