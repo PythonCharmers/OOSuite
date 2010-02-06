@@ -56,7 +56,7 @@ class LLSP(MatrixProblem):
             self.x0 = self.d
         MatrixProblem.__prepare__(self)
         if self.isFDmodel:
-            self.C, self.d = p._linearOOFunsToMatrices(self.C)
+            self.C, self.d = self._linearOOFunsToMatrices(self.C)
 #            C, d = [], []
 #            Z = self._vector2point(zeros(self.n))
 #            for lin_oofun in self.C:
