@@ -704,14 +704,15 @@ class oofun:
 
     # TODO: handle 2**15 & 0.25 as parameters
     def _considerSparse(self, t1, t2):  
-        #assert self.name != 'unnamed_oofun_81'
         if prod(t1.shape) * prod(t2.shape) > 2**15 and   (isinstance(t1, ndarray) and t1.nonzero()[0].size < 0.25*t1.size) or \
         (isinstance(t2, ndarray) and t2.nonzero()[0].size < 0.25*t2.size):
             if scipy is None: 
                 self.pWarn(scipyAbsentMsg)
                 return t1,  t2
             t1 = scipy.sparse.csc_matrix(t1)
-            if t1.shape[0] == 1: t1 = t1.T
+            if t1.shape[1] != t2.shape[0]: # can be from flattered t1
+                assert t1.shape[0] == t2.shape[0], 'bug in FuncDesigner Kernel, inform developers'
+                t1 = t1.T
             t2 = scipy.sparse.csr_matrix(t2)
         return t1,  t2
 
