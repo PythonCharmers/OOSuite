@@ -36,7 +36,7 @@ class baseSolver:
         decode and assign x, f, maxConstr
         (and/or other fields) to p.iterValues
         """
-        fArg,  rArg = True,  True
+        fArg  = True
 
         if len(args)>0 and isinstance(args[0], Point):
             if len(args) != 1: p.err('incorrect iterfcn args, if you see this contact OO developers')
@@ -52,12 +52,18 @@ class baseSolver:
             elif 'fk' in kwargs.keys(): p.fk = kwargs['fk']
             else: fArg = False
 
-            if len(args)>2: p.rk = args[2]
-            elif 'rk' in kwargs.keys(): p.rk = kwargs['rk']
-            else: rArg = False
+            if len(args)>2: 
+                p.pWarn('executing deprecated code, inform developers')
+                p.rk = args[2]
+            elif 'rk' in kwargs.keys(): 
+                p.pWarn('executing deprecated code, inform developers')
+                p.rk = kwargs['rk']
 
             # TODO: MODIFY IT SOMEHOW to prevent possible recalculations
-            p.rk, p.rtk, p.rik = p.getMaxResidual(p.xk, True)
+        p.rk, p.rtk, p.rik = p.getMaxResidual(p.xk, True)
+        p.iterValues.r.append(ravel(p.rk)[0])
+        p.iterValues.rt.append(p.rtk)
+        p.iterValues.ri.append(p.rik)
 
         #TODO: handle kwargs correctly! (decodeIterFcnArgs)
 
@@ -69,10 +75,6 @@ class baseSolver:
         if not p.storeIterPoints and len(p.iterValues.x) > 2:
             p.iterValues.x.pop(0)
         
-
-        p.iterValues.rt.append(p.rtk)
-        p.iterValues.ri.append(p.rik)
-
         if not fArg:
             p.Fk = p.F(p.xk)
             p.fk = copy(p.Fk)
@@ -91,7 +93,5 @@ class baseSolver:
 
         p.iterValues.f.append(v)
 
-        if not rArg:
-            p.rk = ravel(p.getMaxResidual(p.xk))[0]
-        p.iterValues.r.append(p.rk)
+        
 
