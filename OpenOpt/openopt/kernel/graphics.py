@@ -86,7 +86,10 @@ class Graphics:
 
             if not (p.__isUnconstrained__() or p.solver.__isIterPointAlwaysFeasible__(p)):
                 self.isMaxConstraintSubplotRequired = True
-                Y_LABELS.append('log10(maxConstraint)')
+                if p.useScaledResidualOutput:
+                    Y_LABELS.append('log10(MaxConstraint/ConTol)')
+                else:
+                    Y_LABELS.append('log10(maxConstraint)')
             else: self.isMaxConstraintSubplotRequired = False
 
             if self.isMaxConstraintSubplotRequired: self.nSubPlots = 2
@@ -199,9 +202,12 @@ class Graphics:
 
         if self.isMaxConstraintSubplotRequired:
             yy22 = log10(p.contol/self.REDUCE+asfarray(p.iterValues.r[IND_start:IND_end]))
+            if p.useScaledResidualOutput: yy22 -= log10(p.contol)
             YY.append(yy22)
             if IND_start<=IND_end:
-                if len(p.iterValues.r) >= 1: yySave.append(log10(p.contol/self.REDUCE+asfarray(p.iterValues.r[-1])))
+                rr = p.iterValues.r[-1] 
+                if p.useScaledResidualOutput: rr -= log10(p.contol)
+                if len(p.iterValues.r) >= 1: yySave.append(log10(p.contol/self.REDUCE+asfarray(rr)))
                 else:
                     yySave.append(log10(p.contol/self.REDUCE+asfarray(p.getMaxResidual(p.x0))))
 
@@ -256,7 +262,8 @@ class Graphics:
                     if isfinite(p.ylim[1]): pylab.plot([xx[0]],  [p.ylim[1]],  color='w')
                     if p.probType == 'NLSP': pylab.plot([xx[0]], [log10(p.ftol / self.REDUCE)],  color='w')
             if ind == 1:
-                pylab.plot([xx[0], xx[-1]], [log10(p.primalConTol), log10(p.primalConTol)], ls = self.axLineStyle, linewidth = self.axLineWidth, color='g',\
+                horz_line_value = 0 if p.useScaledResidualOutput else log10(p.primalConTol)
+                pylab.plot([xx[0], xx[-1]], [horz_line_value, horz_line_value], ls = self.axLineStyle, linewidth = self.axLineWidth, color='g',\
                 marker = self.axMarker, ms = self.axMarkerSize, mew = self.markerEdgeWidth, mec = self.axMarkerEdgeColor, mfc = self.axFaceColor)
             elif p.probType == 'NLSP':
                 pylab.plot([xx[0], xx[-1]], [log10(p.ftol), log10(p.ftol)], ls = self.axLineStyle, linewidth = self.axLineWidth, color='g',\
@@ -306,7 +313,8 @@ class Graphics:
                         marker = self.axMarker, ms = self.axMarkerSize, \
                         mew = self.markerEdgeWidth, mec = self.axMarkerEdgeColor, mfc = self.axFaceColor)
                 if  ind == 1:
-                    pylab.plot([xmin, xmax], [log10(p.primalConTol), log10(p.primalConTol)],\
+                    horz_line_value = 0 if p.useScaledResidualOutput else log10(p.primalConTol)
+                    pylab.plot([xmin, xmax], [horz_line_value, horz_line_value],\
                         linewidth = self.axLineWidth, ls = self.axLineStyle, color='g',\
                         marker = self.axMarker, ms = self.axMarkerSize, \
                         mew = self.markerEdgeWidth, mec = self.axMarkerEdgeColor, mfc = self.axFaceColor)

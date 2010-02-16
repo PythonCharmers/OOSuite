@@ -98,6 +98,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
     noise = ProbDefaults['noise'] # TODO: move it to NinLinProblem class?
 
     showFeas = False
+    useScaledResidualOutput = False
 
     # A * x <= b inequalities
     A = None
@@ -287,16 +288,42 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             else:
                 areFixed = lambda dep: dep.isdisjoint(self._optVars)
             self.theseAreFixed = areFixed
+            
+            probtol = self.contol
            
             for c in self.constraints:
-                f = c.oofun
+                if not hasattr(c, 'isConstraint'): self.err('The type' + str(type(c)) + 'is inappropriate for problem constraints')
+                
+                f, tol = c.oofun, c.tol
+                Name = f.name
                 dep = f._getDep()
                 if dep is None: # hence it's oovar
                     assert f.is_oovar
                     dep = set([f])
+
+                _lb, _ub = c.lb, c.ub
+                if tol < 0:
+                    if any(_lb  == _ub):
+                        self.err("You can't use negative tolerance for the equality constraint " + c.name)
+                    elif any(_lb - tol >= _ub + tol):
+                        self.err("You can't use negative tolerance for so small gap in constraint" + c.name)
+
+                    Shift = (1.0+1e-13)*probtol 
+                    #######################
+                    # not inplace modification!!!!!!!!!!!!!
+                    _lb = _lb + Shift
+                    _ub = _ub - Shift
+                    #######################
+                
+                if tol != 0: self.useScaledResidualOutput = True
+                
+                if tol not in (0, probtol, -probtol):
+                    f = f * abs(probtol / tol)
+                    
                 if areFixed(dep):
                     # TODO: get rid of self.contol, use separate contols for each constraint
-                    if not c(self._x0, self.contol):
+                    Contol = c.contol if c.contol != 0 else self.contol
+                    if not c(self._x0, Contol):
                         s = """'constraint "%s" with all-fixed optimization variables it depends on is infeasible in start point, 
                         hence the problem is infeasible, maybe you should change start point'""" % c.name
                         self.err(s)
@@ -304,51 +331,51 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     continue
                 if self.probType in ['LP', 'MILP', 'LLSP', 'LLAVP'] and not f.is_linear:
                     self.err('for LP/MILP/LLSP/LLAVP all constraints have to be linear, while ' + f.name + ' is not')
-                if not hasattr(c, 'isConstraint'): self.err('The type' + str(type(c)) + 'is inappropriate for problem constraints')
+                
                     
-                if c.isBBC: # is BoxBoundConstraint
-                    oov = c.oofun
-                    Name = oov.name
-                    if oov in self._fixedVars: 
-                        if self.x0 is None: self.err('your problem has fixed oovar '+ Name + ' but no start point is provided')
+                # TODO: simplify condition of box-bounded oovar detection
+                if f.is_oovar:# and not hasattr(c.lb, 'is_oovar') and not hasattr(c.ub, 'is_oovar'): # is BoxBoundConstraint
+                    
+                    if f in self._fixedVars: 
+                        if self.x0 is None: self.err('your problem has fixed oovar '+ Name + ' but no value for the one in start point is provided')
                         continue
-                    inds = oovD[oov.name]
-                    oov_size = inds[1]-inds[0]
-                    _lb, _ub = c.lb, c.ub
+                    inds = oovD[Name]
+                    f_size = inds[1] - inds[0]
+
                     if any(isfinite(_lb)):
-                        if _lb.size not in (oov_size, 1): 
-                            self.err('incorrect size of lower box-bound constraint for %s: 1 or %d expected, %d obtained' % (Name, oov_size, _lb.size))
-                        val = array(oov_size*[_lb] if _lb.size < oov_size else _lb)
+                        if _lb.size not in (f_size, 1): 
+                            self.err('incorrect size of lower box-bound constraint for %s: 1 or %d expected, %d obtained' % (Name, f_size, _lb.size))
+                        val = array(f_size*[_lb] if _lb.size < f_size else _lb)
                         if Name not in LB.keys():
                             LB[Name] = val
                         else:
                             LB[Name] = max((val, LB[Name]))
                     if any(isfinite(_ub)):
-                        if _ub.size not in (oov_size, 1): 
-                            self.err('incorrect size of upper box-bound constraint for %s: 1 or %d expected, %d obtained' % (Name, oov_size, _ub.size))
-                        val = array(oov_size*[_ub] if _ub.size < oov_size else _ub)
+                        if _ub.size not in (f_size, 1): 
+                            self.err('incorrect size of upper box-bound constraint for %s: 1 or %d expected, %d obtained' % (Name, f_size, _ub.size))
+                        val = array(f_size*[_ub] if _ub.size < f_size else _ub)
                         if Name not in UB.keys():
                             UB[Name] = val
                         else:
                             UB[Name] = min((val, UB[Name]))
-                elif c.lb == 0 and c.ub == 0:
+                elif _lb == _ub:
                     if f.is_linear:
                         Aeq.append(self._pointDerivative2array(f.D(Z, **D_kwargs)))      
-                        beq.append(-f(Z))
-                    elif self.h is None: self.h = [c.oofun]
-                    else: self.h.append(c.oofun)
-                elif c.ub == 0:
+                        beq.append(-f(Z)+_lb)
+                    elif self.h is None: self.h = [f+_lb]
+                    else: self.h.append(f+_lb)
+                elif isfinite(_ub):
                     if f.is_linear:
                         A.append(self._pointDerivative2array(f.D(Z, **D_kwargs)))                       
-                        b.append(-f(Z))
-                    elif self.c is None: self.c = [c.oofun]
-                    else: self.c.append(c.oofun)
-                elif c.lb == 0:
+                        b.append(-f(Z)+_ub)
+                    elif self.c is None: self.c = [f - _ub]
+                    else: self.c.append(f - _ub)
+                elif isfinite(_lb):
                     if f.is_linear:
                         A.append(-self._pointDerivative2array(f.D(Z, **D_kwargs)))                       
-                        b.append(f(Z))                        
-                    elif self.c is None: self.c = [- c.oofun]
-                    else: self.c.append(- c.oofun)
+                        b.append(f(Z) - _lb)                        
+                    elif self.c is None: self.c = [- f - _lb]
+                    else: self.c.append(- f - _lb)
                 else:
                     self.err('inform OpenOpt developers of the bug')
             if len(b) != 0:
@@ -609,7 +636,7 @@ def minimize(p, *args, **kwargs):
             p.warn("you shouldn't pass 'goal' to the function 'minimize'")
         else:
             p.err('ambiguous goal has been requested: function "minimize", goal: %s' %  kwargs['goal'])
-    p.goal = 'min'
+    p.goal = 'minimum'
     return runProbSolver(p, *args, **kwargs)
 
 def maximize(p, *args, **kwargs):
@@ -618,5 +645,5 @@ def maximize(p, *args, **kwargs):
             p.warn("you shouldn't pass 'goal' to the function 'maximize'")
         else:
             p.err('ambiguous goal has been requested: function "maximize", goal: %s' %  kwargs['goal'])
-    p.goal = 'max'
+    p.goal = 'maximum'
     return runProbSolver(p, *args, **kwargs)            

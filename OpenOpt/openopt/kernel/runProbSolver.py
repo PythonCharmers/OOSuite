@@ -149,6 +149,8 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     (not p.solver.__isIterPointAlwaysFeasible__ is False and p.solver.__isIterPointAlwaysFeasible__(p)):
         assert p.data4TextOutput[-1] == 'log10(maxResidual)'
         p.data4TextOutput = p.data4TextOutput[:-1]
+    elif p.useScaledResidualOutput:
+        p.data4TextOutput[-1] = 'log10(MaxResidual/ConTol)'
 
     if p.showFeas and p.data4TextOutput[-1] != 'isFeasible': p.data4TextOutput.append('isFeasible')
 
