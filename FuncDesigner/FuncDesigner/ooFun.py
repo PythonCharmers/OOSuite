@@ -848,20 +848,52 @@ class oofun:
 
 
 class BooleanOOFun(oofun):
-    _unnamedBooleanOOFunNumber = 1
+    _unnamedBooleanOOFunNumber = 0
     discrete = True
     # an oofun that returns True/False
     def __init__(self, oofun_Involved, *args, **kwargs):
         oofun.__init__(self, oofun_Involved, *args, **kwargs)
-        self.name = 'unnamed_boolean_oofun_' + str(BooleanOOFun._unnamedBooleanOOFunNumber)
         BooleanOOFun._unnamedBooleanOOFunNumber += 1
+        self.name = 'unnamed_boolean_oofun_' + str(BooleanOOFun._unnamedBooleanOOFunNumber)
+        
     def size(self, *args, **kwargs): raise FuncDesignerException('currently BooleanOOFun.size() is disabled')
     def D(self, *args, **kwargs): raise FuncDesignerException('currently BooleanOOFun.D() is disabled')
     def _D(self, *args, **kwargs): raise FuncDesignerException('currently BooleanOOFun._D() is disabled')
 
 class BaseFDConstraint(BooleanOOFun):
     isConstraint = True
-    contol = 1e-6
+    tol = 0.0 
+
+    def __call__(self, *args,  **kwargs):
+        expected_kwargs = set(['tol', 'name'])
+        if not set(kwargs.keys()).issubset(expected_kwargs):
+            raise FuncDesignerException('Unexpected kwargs: should be in '+str(expected_kwargs)+' got: '+str(kwargs.keys()))
+            
+        for elem in expected_kwargs:
+            if elem in kwargs:
+                setattr(self, elem, kwargs[elem])
+        
+        
+        if len(args) > 1: raise FuncDesignerException('No more than single argument is expected')
+        
+        if len(args) == 0:
+           if len(kwargs) == 0: raise FuncDesignerException('You should provide at least one argument')
+           return self
+           
+        
+        if isinstance(args[0], dict): # is FD Point
+            val = self.oofun(args[0])
+            if any(atleast_1d(self.lb-val)>self.tol):
+                return False
+            elif any(atleast_1d(val-self.ub)>self.tol):
+                return False
+            return True
+        elif isinstance(args[0], str):
+            self.name = args[0]
+            return self
+        else:
+            raise FuncDesignerException('unexpected type:'+type(args[0]))
+
     def __init__(self, oofun_Involved, *args, **kwargs):
         BooleanOOFun.__init__(self, oofun_Involved, *args, **kwargs)
         #oofun.__init__(self, lambda x: oofun_Involved(x), input = oofun_Involved)
@@ -871,22 +903,10 @@ class BaseFDConstraint(BooleanOOFun):
         # TODO: replace self.oofun by self.engine
         self.oofun = oofun_Involved
         
-        if 'contol' in kwargs:
-            self.contol = kwargs['contol']
 
 class SmoothFDConstraint(BaseFDConstraint):
-    isBBC = False
-    
-    def __call__(self, point, contol=0):
-        #if contol is None: contol = 0#self.contol
-        val = self.oofun(point)
-        if any(atleast_1d(self.lb-val)>contol):
-            return False
-        elif any(atleast_1d(val-self.ub)>contol):
-            return False
-        return True
         
-    __getitem__ = lambda self, point: self.__call__(point, self.contol)
+    __getitem__ = lambda self, point: self.__call__(point)
         
     def __init__(self, *args, **kwargs):
         BaseFDConstraint.__init__(self, *args, **kwargs)
@@ -904,7 +924,6 @@ class NonLinearConstraint(SmoothFDConstraint):
         
         
 class BoxBoundConstraint(SmoothFDConstraint):
-    isBBC = True
     def __init__(self, *args, **kwargs):
         SmoothFDConstraint.__init__(self, *args, **kwargs)
         
