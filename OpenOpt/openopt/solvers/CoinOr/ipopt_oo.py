@@ -52,10 +52,13 @@ class ipopt(baseSolver):
             if p.nh != 0: r.append(p._getPattern(p.user.h))
             if p.nb != 0: r.append(p.A)
             if p.nbeq != 0: r.append(p.Aeq)
-            if all([isinstance(elem, ndarray) for elem in r]):
-                r = vstack(r)
+            if len(r)>0:
+                if all([isinstance(elem, ndarray) for elem in r]):
+                    r = vstack(r)
+                else:
+                    r = Vstack(r)
             else:
-                r = Vstack(r)
+                r = array([])
             
             if isspmatrix(r): r = r.A
             # isspmatrix(r) turned off till more proper sparse matrices fancy indexation
@@ -65,7 +68,10 @@ class ipopt(baseSolver):
                 I, J = array(I, int64), array(J, int64)
             
             elif isinstance(r, ndarray):
-                I, J = where(r)
+                if r.size == 0:
+                    I, J= array([], dtype=int64),array([], dtype=int64)
+                else:
+                    I, J = where(r)
             
             else:
                 print('unimplemented type:%s' % str(type(r))) # dense matrix? 
