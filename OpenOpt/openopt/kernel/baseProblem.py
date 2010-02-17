@@ -217,6 +217,10 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
 
     def solve(self, *args, **kwargs):
         return runProbSolver(self, *args, **kwargs)
+        
+    def _solve(self, *args, **kwargs):
+        self.debug = True
+        return runProbSolver(self, *args, **kwargs)
     
     def objFuncMultiple2Single(self, f):
         #this function can be overdetermined by child class
