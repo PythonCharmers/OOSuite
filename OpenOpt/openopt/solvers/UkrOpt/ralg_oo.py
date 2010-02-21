@@ -123,6 +123,7 @@ class ralg(baseSolver):
         bestPoint = p.point(atleast_1d(T(copy(x0))))
         prevIter_best_ls_point = bestPoint
         previter_pointForDilation = bestPoint
+        prevIter_bestPointBeforeTurn = bestPoint
 
         g = bestPoint.__getDirection__(self.approach)
         prevDirectionForDilation = g
@@ -144,6 +145,12 @@ class ralg(baseSolver):
 #        if p.isFeas(p.x0): b = B_f
 #        else: b = B_constr
 
+#        if p.debug and hasattr(p, 'x_opt'):
+#            import scipy
+#            exactDirection = x0-p.x_opt
+#            asdf_0 = exactDirection * (0.2+scipy.rand(n))
+#            #asdf = asdf_0.copy()
+
         """                           Ralg main cycle                                    """
 
         for itn in xrange(1500000):
@@ -154,10 +161,26 @@ class ralg(baseSolver):
             if any(g_tmp): g_tmp /= p.norm(g_tmp)
             g1 = p.matmult(b, g_tmp)
 
+#            if p.debug and hasattr(p, 'x_opt'):
+#                cos_phi_0 = p.matmult(moveDirection,  prevIter_best_ls_point.x - p.x_opt)/p.norm(moveDirection)/p.norm(prevIter_best_ls_point.x - p.x_opt)
+#                cos_phi_1 = p.matmult(g1,  prevIter_best_ls_point.x - p.x_opt)/p.norm(g1)/p.norm(prevIter_best_ls_point.x - p.x_opt)
+#                print('beforeDilation: %f  afterDilation: %f' % (cos_phi_0, cos_phi_1) )
+#                asdf = asdf_0.copy()
+#                g_tmp = economyMult(b.T, asdf)
+#                
+#                #g_tmp = p.matmult(b.T, asdf)
+#                
+#                if any(g_tmp): g_tmp /= p.norm(g_tmp)
+#                asdf = p.matmult(b, g_tmp)
+#                cos_phi = dot(asdf, exactDirection) / p.norm(asdf) / p.norm(exactDirection)
+#                p.debugmsg('cos_phi:%f' % cos_phi)
+#                assert cos_phi >0
+
 
             """                           Forward line search                          """
 
             #x = prevIterPoint.x.copy()
+            bestPointBeforeTurn = prevIter_best_ls_point
             x = prevIter_best_ls_point.x.copy()
             
             hs_cumsum = 0
@@ -191,6 +214,7 @@ class ralg(baseSolver):
                     if newPoint.betterThan(bestPoint): bestPoint = newPoint
                     oldPoint, newPoint = newPoint,  None
                 else:
+                    if not oldPoint.isFeas(): bestPointBeforeTurn = oldPoint
                     if not itn % 4: 
                         for fn in ['_lin_ineq', '_lin_eq']:
                             if hasattr(newPoint, fn): delattr(newPoint, fn)
@@ -237,7 +261,9 @@ class ralg(baseSolver):
             """                      iterPoints have been obtained                     """
             
             best_ls_point = PointForDilation
-            
+            if hasattr(p, '_df'): delattr(p, '_df')
+            if best_ls_point.isFeas(altLinInEq=False) and hasattr(best_ls_point, '_df'): 
+                p._df = best_ls_point.df().copy()            
 
             directionForDilation = PointForDilation.__getDirection__(self.approach) 
             #directionForDilation = newPoint.__getDirection__(self.approach) # used for dilation direction obtaining
@@ -275,6 +301,19 @@ class ralg(baseSolver):
 
             prevIterPointIsFeasible = previter_pointForDilation.isFeas(altLinInEq=True)
             currIterPointIsFeasible = PointForDilation.isFeas(altLinInEq=True)
+
+                    
+            # CHANGES
+            #use_dilated = True
+            if prevIterPointIsFeasible and not currIterPointIsFeasible:
+                #doDilation = False
+                alp_addition -= 0.5
+            elif currIterPointIsFeasible and not prevIterPointIsFeasible:
+                alp_addition += 0.5
+                #alp_addition += 1.0
+                #use_dilated = False
+            # CHANGES END
+            
             r_p, ind_p, fname_p = prevIter_best_ls_point.mr(1)
             r_, ind_, fname_ = PointForDilation.mr(1)
 
@@ -323,6 +362,7 @@ class ralg(baseSolver):
                 g1 = G2.copy()
             else:
                 g1 = G.copy()
+                
                 #g1 = -G.copy() # signum doesn't matter here
 
 
@@ -359,10 +399,20 @@ class ralg(baseSolver):
 #            W = T(1.0/(2*alp)-1.0)
             # DEBUG END
 
-            g = economyMult(b.T, g1)
+
+            # DEBUG!
+#            if hasattr(p, 'x_opt'):
+#                dx = PointForDilation.x - p.x_opt
+#                rr = p.matmult(dx, moveDirection) / p.norm(moveDirection) / p.norm(dx)
+#                print('cos_phi_delta:%f'%rr)
+            # DEBUG END
+
+
+            
             
             
             # CHANGES
+#            g = economyMult(b.T, g1)
 #            gn = g/norm(g)
 #            if len(directionVectorsList) == 0 or n < 3 or norm(g1) < 1e-20: pass
 #            else:
@@ -394,35 +444,37 @@ class ralg(baseSolver):
 #            if len(directionVectorsList) > 2: directionVectorsList = directionVectorsList[:-2]
             # CHANGES END
 
-            
-            
-            ng = p.norm(g)
-            if hasattr(p, '_df'): delattr(p, '_df')
-            if best_ls_point.isFeas(altLinInEq=True) and hasattr(best_ls_point, '_df'): 
-                p._df = best_ls_point.df().copy()
-                
-            #if p.iter>500: p.debugmsg(str(g2))
+            #doDilation = 1
+            if doDilation:
+#                if use_dilated:
+                g = economyMult(b.T, g1)
+                ng = p.norm(g)
+                #if p.iter>500: p.debugmsg(str(g2))
 
-            if self.needRej(p, b, g1, g):
-                if self.showRej or p.debug:
-                    p.info('debug msg: matrix B restoration in ralg solver')
-                b = B0.copy()
-                hs = 0.5*p.norm(prevIter_best_ls_point.x - best_ls_point.x)
-                # TODO: iterPoint = projection(iterPoint,Aeq) if res_Aeq > 0.75*contol
-                
-            #p.debugmsg('ng:%e  ng1:%e' % (ng, p.norm(g1)))
-            if ng < 1e-40: 
-                #raise 0
-                hs *= 0.9
-                p.debugmsg('small dilation direction norm (%e), skipping' % ng)
-            #p.debugmsg('dilation direction norm:%e' % ng)
-            if all(isfinite(g)) and ng > 1e-50 and doDilation:
-                g = (g / ng).reshape(-1,1)
-                vec1 = economyMult(b, g).reshape(-1,1)# TODO: remove economyMult, use dot?
-                #if alp_addition != 0: p.debugmsg('alp_addition:' + str(alp_addition))
-                w = T(1.0/(alp+alp_addition)-1.0) 
-                vec2 = w * g.T
-                b += p.matmult(vec1, vec2)
+                if self.needRej(p, b, g1, g):
+                    if self.showRej or p.debug:
+                        p.info('debug msg: matrix B restoration in ralg solver')
+                    b = B0.copy()
+                    hs = 0.5*p.norm(prevIter_best_ls_point.x - best_ls_point.x)
+                    # TODO: iterPoint = projection(iterPoint,Aeq) if res_Aeq > 0.75*contol
+#                else:
+#                    g = g1
+#                    ng = p.norm(g)
+
+
+                #p.debugmsg('ng:%e  ng1:%e' % (ng, p.norm(g1)))
+                if ng < 1e-40: 
+                    #raise 0
+                    hs *= 0.9
+                    p.debugmsg('small dilation direction norm (%e), skipping' % ng)
+                #p.debugmsg('dilation direction norm:%e' % ng)
+                if all(isfinite(g)) and ng > 1e-50 and doDilation:
+                    g = (g / ng).reshape(-1,1)
+                    vec1 = economyMult(b, g).reshape(-1,1)# TODO: remove economyMult, use dot?
+                    #if alp_addition != 0: p.debugmsg('alp_addition:' + str(alp_addition))
+                    w = T(1.0/(alp+alp_addition)-1.0) 
+                    vec2 = w * g.T
+                    b += p.matmult(vec1, vec2)
             
 
             """                               Call OO iterfcn                                """
@@ -496,6 +548,7 @@ class ralg(baseSolver):
             prevIter_best_ls_point = best_ls_point
             previter_pointForDilation = best_ls_point
             prevDirectionForDilation = best_ls_point.__getDirection__(self.approach)
+            prevIter_bestPointBeforeTurn = bestPointBeforeTurn
 
 
     def getPrimevalDilationMatrixWRTlinEqConstraints(self, p):
