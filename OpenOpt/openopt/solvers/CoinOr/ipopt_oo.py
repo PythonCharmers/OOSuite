@@ -153,7 +153,7 @@ class ipopt(baseSolver):
         nlp = pyipopt.create(nvar, x_L, x_U, ncon, g_L, g_U, nnzj, nnzh, p.f, p.df, eval_g, eval_jac_g)
 
         if self.optFile == 'auto':
-            lines = ['# generated automatically by OpenOpt\n','print_level 0\n']
+            lines = ['# generated automatically by OpenOpt\n','print_level -1\n']
             lines.append('tol ' + str(p.ftol)+ '\n')
             lines.append('constr_viol_tol ' + str(p.contol)+ '\n')
             lines.append('max_iter ' + str(min(15000, p.maxIter))+ '\n')
