@@ -886,9 +886,9 @@ class BaseFDConstraint(BooleanOOFun):
             val = self.oofun(args[0])
             if any(isnan(val)):
                 return False
-            if any(atleast_1d(self.lb-val)>self.tol):
+            if any(atleast_1d(self.lb-val)>max((0.0, self.tol))):
                 return False
-            elif any(atleast_1d(val-self.ub)>self.tol):
+            elif any(atleast_1d(val-self.ub)>max((0.0, self.tol))):
                 return False
             return True
         elif isinstance(args[0], str):
