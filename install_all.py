@@ -1,6 +1,6 @@
-import os
+import os, sys
 for moduleName in ['DerApproximator', 'FuncDesigner', 'OpenOpt']:
     print(moduleName + ' installation:')
     os.chdir(moduleName) 
-    os.system('python setup.py install')
+    os.system('%s setup.py develop' % sys.executable)
     os.chdir('..')
