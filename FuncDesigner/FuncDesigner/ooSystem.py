@@ -16,16 +16,18 @@ class ooSystem(set):
                 raise FuncDesignerException('Incorrect type %s in ooSystem constructor' % type(arg))
     
     # [] yields result wrt allowed contol:
-    __getitem__ = lambda self, point: ooSystemState([(elem, elem[point]) for elem in self])
+    #__getitem__ = lambda self, point: ooSystemState([(elem, elem[point]) for elem in self])
+    def __getitem__(self, item):
+        raise FuncDesignerException('ooSystem __getitem__ is reserved for future purposes')
     
     # () yields exact result (ignoring contol):
     def __call__(self, point):
         assert isinstance(point,  dict), 'argument should be Python dictionary'
-        tmp = self.__getitem__(point)
-        r = []
-        for key, val in tmp.items():
-            r.append((key, key(point, contol=0.0))) if key.isConstraint else r.append((key, val))
-        return ooSystemState(r)
+        return ooSystemState([(elem, elem[point]) for elem in self])
+#        r = []
+#        for key, val in tmp.items():
+#            r.append((key, key(point, contol=0.0))) if key.isConstraint else r.append((key, val))
+#        return ooSystemState(r)
         
         
         

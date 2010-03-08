@@ -97,6 +97,9 @@ class oofun:
 
     
     def named(self, name):
+        s = """The function "named" is deprecated and will be removed in future FuncDesigner versions, 
+        instead of my_oofun.named('my name')  you should use  my_oofun('my name') or my_oofun(name='my name')"""
+        self.pWarn(s)
         self.name = name
         return self
         
@@ -461,7 +464,21 @@ class oofun:
 
 
     """                                                getFunc                                             """
-    def _getFunc(self, x):
+    def _getFunc(self, *args, **kwargs):
+        if len(args) == 0 and len(kwargs) == 0:
+            raise FuncDesignerException('at least one argument is required')
+        if (len(kwargs) == 1 and 'name' not in kwargs) or len(kwargs) > 1:
+            raise FuncDesignerException('only "name" is allowed for oofun keyword arguments')
+        if len(args) != 0:
+            if not isinstance(args[0], str):
+                x = args[0]
+            else:
+                self.name = args[0]
+                return self
+        else:
+                self.name = kwargs['name']
+                return self
+                
         assert not isinstance(x, oofun), "you can't invoke oofun on another one oofun"
         # TODO: get rid of hasattr(self, 'fixed')
         #if self.isAlreadyPrepared:
@@ -512,7 +529,7 @@ class oofun:
 
 
     """                                                getFunc                                             """
-    __call__ = lambda self, *args: self._getFunc(*args)
+    __call__ = lambda self, *args, **kwargs: self._getFunc(*args, **kwargs)
 
 
     """                                              derivatives                                           """
@@ -863,18 +880,17 @@ class BooleanOOFun(oofun):
 class BaseFDConstraint(BooleanOOFun):
     isConstraint = True
     tol = 0.0 
-    
+    expected_kwargs = set(['tol', 'name'])
     #def __getitem__(self, point):
 
     def __call__(self, *args,  **kwargs):
-        expected_kwargs = set(['tol', 'name'])
+        expected_kwargs = self.expected_kwargs
         if not set(kwargs.keys()).issubset(expected_kwargs):
             raise FuncDesignerException('Unexpected kwargs: should be in '+str(expected_kwargs)+' got: '+str(kwargs.keys()))
             
         for elem in expected_kwargs:
             if elem in kwargs:
                 setattr(self, elem, kwargs[elem])
-        
         
         if len(args) > 1: raise FuncDesignerException('No more than single argument is expected')
         
@@ -886,9 +902,10 @@ class BaseFDConstraint(BooleanOOFun):
             val = self.oofun(args[0])
             if any(isnan(val)):
                 return False
-            if any(atleast_1d(self.lb-val)>max((0.0, self.tol))):
+            Tol = max((0.0, self.tol))
+            if any(atleast_1d(self.lb-val)>Tol):
                 return False
-            elif any(atleast_1d(val-self.ub)>max((0.0, self.tol))):
+            elif any(atleast_1d(val-self.ub)>Tol):
                 return False
             return True
         elif isinstance(args[0], str):
