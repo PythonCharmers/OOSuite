@@ -1,9 +1,3 @@
-##these 2 lines are for openopt developers ONLY!
-import sys, os.path as pth
-sys.path.insert(0,pth.split(pth.split(pth.split(pth.split(pth.realpath(pth.dirname(__file__)))[0])[0])[0])[0])
-###############################
-#import NLP
-
 from ooMisc import assignScript
 from baseProblem import MatrixProblem
 from numpy import asfarray, ones, inf, dot, asfarray, nan, zeros, isfinite, all

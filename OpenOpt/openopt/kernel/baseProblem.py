@@ -281,7 +281,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             
             Z = self._vector2point(zeros(self.n))
             
-            if hasattr(self.constraints, 'isConstraint'):
+            if type(self.constraints) not in (list, tuple, set):
                 self.constraints = [self.constraints]
             oovD = self._oovarsIndDict
             LB = {}
