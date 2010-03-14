@@ -27,7 +27,7 @@ class ralg(baseSolver):
     hmult = 0.5
     S = 0
     T = float64
-    dilationType = 'auto'
+    dilationType = 'plain difference'
 
     showLS = False
     show_hs = False
@@ -155,7 +155,11 @@ class ralg(baseSolver):
 
         for itn in xrange(1500000):
             doDilation = True
+            lastPointOfSameType = None # to prevent possible bugs
             alp_addition = 0.0
+            
+            iterStartPoint = prevIter_best_ls_point
+            x = iterStartPoint.x.copy()
 
             g_tmp = economyMult(b.T, moveDirection)
             if any(g_tmp): g_tmp /= p.norm(g_tmp)
@@ -179,23 +183,27 @@ class ralg(baseSolver):
 
             """                           Forward line search                          """
 
-            #x = prevIterPoint.x.copy()
-            bestPointBeforeTurn = prevIter_best_ls_point
-            x = prevIter_best_ls_point.x.copy()
+            bestPointBeforeTurn = iterStartPoint
             
             hs_cumsum = 0
             for ls in xrange(p.maxLineSearch):
+                hs_mult = 1.0
                 if ls > 20:
-                    hs *= 2.0
+                    hs_mult = 2.0
                 elif ls > 10:
-                    hs *= 1.5
+                    hs_mult = 1.5
                 elif ls > 2:
-                    hs *= 1.05
+                    hs_mult = 1.05
+                hs *= hs_mult
 
                 x -= hs * g1
                 hs_cumsum += hs
 
                 newPoint = p.point(x)
+                
+                if not p.isUC:
+                    if newPoint.isFeas(altLinInEq=True) == iterStartPoint.isFeas(altLinInEq=True):
+                        lastPointOfSameType = newPoint
               
                 if self.show_nnan: p.info('ls: %d nnan: %d' % (ls, newPoint.__nnan__()))
 
@@ -219,7 +227,9 @@ class ralg(baseSolver):
                         for fn in ['_lin_ineq', '_lin_eq']:
                             if hasattr(newPoint, fn): delattr(newPoint, fn)
                     break
-
+                    
+            hs /= hs_mult
+            
             if ls == p.maxLineSearch-1:
                 p.istop,  p.msg = IS_LINE_SEARCH_FAILED,  'maxLineSearch (' + str(p.maxLineSearch) + ') has been exceeded'
                 restoreProb()
@@ -231,13 +241,20 @@ class ralg(baseSolver):
             if p.debug and ls != 0: assert not oldPoint.betterThan(best_ls_point)
 
             """                          Backward line search                          """
-
+            mdx = max((150, 1.5*p.n))*p.xtol
+            if itn == 0:  mdx = hs / 10 # TODO: set it after B rej as well
             ls_backward = 0
             if ls == 0:
+                maxLS = 3
                 if self.doBackwardSearch:
                     if self.new_bs:
                         best_ls_point,  PointForDilation, ls_backward = \
-                        getBestPointAfterTurn(prevIter_best_ls_point, newPoint, maxLS = 3, altLinInEq = True, new_bs = True)
+                        getBestPointAfterTurn(prevIter_best_ls_point, newPoint, maxLS = maxLS, maxDeltaF = 150*p.ftol, \
+                                              maxDeltaX = mdx, altLinInEq = True, new_bs = True)
+                        if PointForDilation.isFeas(altLinInEq=True) == iterStartPoint.isFeas(altLinInEq=True):
+                            lastPointOfSameType = PointForDilation
+#                        elif best_ls_point.isFeas(altLinInEq=True) == iterStartPoint.isFeas(altLinInEq=True):
+#                            lastPointOfSameType = best_ls_point
                     else:
                         best_ls_point, ls_backward = \
                         getBestPointAfterTurn(prevIter_best_ls_point, newPoint, maxLS = 3, altLinInEq = True, new_bs = False)
@@ -246,11 +263,13 @@ class ralg(baseSolver):
                     # TODO: extract last point from backward search, that one is better than iterPoint
                     if best_ls_point.betterThan(bestPoint): bestPoint = best_ls_point
                     #p.debugmsg('ls_backward:%d' % ls_backward)
-                    hs *= 2 ** ls_backward
+                    if ls_backward == -maxLS:
+                        alp_addition += 0.25
+                        hs *= 0.9
                     
-                    if ls_backward <= -2 and itn != 0:  # TODO: mb use -1 or 0 instead?
-                        #pass
-                        alp_addition -= 0.5*ls_backward # ls_backward less than zero
+                    if ls_backward <= -1 and itn != 0:  # TODO: mb use -1 or 0 instead?
+                        pass
+                        #alp_addition -= 0.25*ls_backward # ls_backward less than zero
                     
                     #hs *= 2 ** min((ls_backward+1, 0))
                 else:
@@ -304,14 +323,12 @@ class ralg(baseSolver):
 
                     
             # CHANGES
-            #use_dilated = True
-            if prevIterPointIsFeasible and not currIterPointIsFeasible:
-                #doDilation = False
-                alp_addition -= 0.5
-            elif currIterPointIsFeasible and not prevIterPointIsFeasible:
-                alp_addition += 0.5
-                #alp_addition += 1.0
-                #use_dilated = False
+#            if lastPointOfSameType is None:
+#                if currIterPointIsFeasible and not prevIterPointIsFeasible:
+#                    alp_addition += 0.1
+#                elif prevIterPointIsFeasible and not currIterPointIsFeasible:
+#                    alp_addition -= 0.0
+                
             # CHANGES END
             
             r_p, ind_p, fname_p = prevIter_best_ls_point.mr(1)
@@ -358,10 +375,22 @@ class ralg(baseSolver):
                 g1 = G2 - G
             elif prevIterPointIsFeasible == currIterPointIsFeasible == False:
                 g1 = G2 - G
+            # TODO: add middle point for the case ls = 0
+            elif lastPointOfSameType is not None:
+                assert self.dilationType == 'plain difference'
+                G2 = lastPointOfSameType.__getDirection__(self.approach) 
+                g1 = G2 - G
+                if norm(g1) < 1e-7 * (norm(G2)+norm(G)):
+                    p.debugmsg('ralg same grad')
+                    g1 = G2
+                if currIterPointIsFeasible: 
+                    pass
+                    #alp_addition += 0.5
             elif prevIterPointIsFeasible:
                 g1 = G2.copy()
             else:
                 g1 = G.copy()
+                alp_addition += 0.5
                 
                 #g1 = -G.copy() # signum doesn't matter here
 
