@@ -140,6 +140,7 @@ def setStartVectorAndTranslators(p):
                     r = DenseMatrixConstructor((n, funcLen))            
             for key, val in pointDerivarive.items():
                 indexes = oovarsIndDict[key] if indexingByNames else oovarsIndDict[key.name]
+                if not asSparse and isspmatrix(val): val = val.A
                 if funcLen == 1 or not asSparse:
                     r[indexes[0]:indexes[1]] = val.T
                 else:

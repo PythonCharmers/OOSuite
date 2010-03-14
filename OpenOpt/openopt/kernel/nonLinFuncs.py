@@ -334,7 +334,15 @@ class nonLinFuncs:
 
 def getFuncsAndExtractIndexes(p, funcs, ind, userFunctionType):
     if ind is None: return funcs
-    if len(funcs) == 1 : return [lambda *args, **kwargs: atleast_1d(funcs[0](*args, **kwargs))[ind]]
+    if len(funcs) == 1 : 
+        def f (*args, **kwargs): 
+            tmp = funcs[0](*args, **kwargs)
+            if isspmatrix(tmp):
+                tmp = tmp.tocsc()
+            elif not isinstance(tmp,  ndarray):
+                tmp = atleast_1d(tmp)
+            return tmp[ind]
+        return [f]
     
     #getting number of block and shift
     arr_of_indexes = getattr(p, 'arr_of_indexes_' + userFunctionType)
