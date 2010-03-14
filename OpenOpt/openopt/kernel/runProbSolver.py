@@ -302,18 +302,26 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
 ##################################################################
 def finalTextOutput(p, r):
     if p.iprint >= 0:
-        if p.msg is not '':  print "istop: ", r.istop , '(' + p.msg +')'
-        else: print "istop: ", r.istop
+        if p.msg is not '':  
+            print("istop: " + str(r.istop) + '(' + p.msg +')')
+        else: 
+            print("istop: " + str(r.istop))
 
-        print 'Solver:   Time Elapsed = ' + str(r.elapsed['solver_time']) + ' \tCPU Time Elapsed = ' + str(r.elapsed['solver_cputime'])
+        print('Solver:   Time Elapsed = ' + str(r.elapsed['solver_time']) + ' \tCPU Time Elapsed = ' + str(r.elapsed['solver_cputime']))
         if p.plot:
-            print 'Plotting: Time Elapsed = '+ str(r.elapsed['plot_time'])+ ' \tCPU Time Elapsed = ' + str(r.elapsed['plot_cputime'])
+            print('Plotting: Time Elapsed = '+ str(r.elapsed['plot_time'])+ ' \tCPU Time Elapsed = ' + str(r.elapsed['plot_cputime']))
+        
+        # TODO: add output of NaNs number in constraints (if presernt)
+        if p.useScaledResidualOutput: 
+            rMsg = 'max(residuals/requiredTolerances) = %g' % (r.rf / p.contol)
+        else:
+            rMsg = 'MaxResidual = %g' % r.rf
         if not p.isFeasible:
-            print 'NO FEASIBLE SOLUTION is obtained (max residual = %0.2g, objFunc = %0.8g)' % (r.rf, r.ff)
+            print('NO FEASIBLE SOLUTION is obtained (%s, objFunc = %0.8g)' % (rMsg, r.ff))
         else:
             msg = "objFunValue: " + (p.finalObjFunTextFormat % r.ff)
-            if not p.isUC: msg += ' (feasible, max constraint =  %g)' % r.rf
-            print msg
+            if not p.isUC: msg += ' (feasible, %s)' % rMsg
+            print(msg)
 
 ##################################################################
 def finalShow(p):
