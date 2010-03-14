@@ -26,10 +26,10 @@ class lpSolve(baseSolver):
         f = - asarray(p.f) # sign '-' because lp_solve by default searches for maximum, not minimum
         scalemode = False
         if p.scale in [1, True]:
-            scalemode = True
+            scalemode = 1
         elif not (p.scale in [None, 0, False]):
-            p.warn(self.__name__ + ' requires p.scale from [None, 0, False, 1, True], other value obtained, so scale = True will be used')
-            scalemode = True
+            p.warn(self.__name__ + ' requires p.scale from [None, 0, False, 1, True], other value obtained, so scale = 1 will be used')
+            scalemode = 1
         [obj, x_opt, duals] = lps(List(f.flatten()), List(p.Awhole), List(p.bwhole.flatten()), List(p.dwhole.flatten()), \
         List(p.lb.flatten()), List(p.ub.flatten()), (1+asarray(p.intVars)).tolist(), scalemode)
         if obj != []:
