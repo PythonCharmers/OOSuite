@@ -5,5 +5,5 @@ from sle import sle
 from overloads import *
 from misc import FuncDesignerException
 import integrate, interpolate
-__version__ = '0.17'
+__version__ = '0.18'
 
