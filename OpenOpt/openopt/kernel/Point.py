@@ -266,7 +266,7 @@ class Point:
             self._mr_alt, self._mrName_alt,  self._mrInd_alt= mr, fname, ind
             c, h= self.c(), self.h()
             all_lin_ineq = self.__all_lin_ineq()
-            r = 0
+            r = 0.0
             Type = 'all_lin_ineq'
             if c.size != 0:
                 ind_max = argmax(c)
@@ -295,10 +295,10 @@ class Point:
             p = self.p
             tol = p.contol
             if p.solver.approach == 'all active':
-                val = c[c>0].sum() + h[h>0].sum() - h[h < 0].sum() + all_lin_ineq
+                val = c[c>0].sum() + abs(h).sum() + all_lin_ineq
                 self._mr_alt, self._mrName_alt,  self._mrInd_alt = val, 'all active', 0
             else:
-                val =r
+                val = r
                 self._mr_alt, self._mrName_alt,  self._mrInd_alt = val, Type, 0
             assert p.nbeq == 0
         if retAll:
