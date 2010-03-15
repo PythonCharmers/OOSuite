@@ -55,6 +55,7 @@ class oofun:
     _usedIn = 0
     _level = 0
     _directlyDwasInwolved = False
+    _id = 0
 
     pWarn = lambda self, msg: pWarn(msg)
     
@@ -76,12 +77,16 @@ class oofun:
         assert len(args) == 0 #and input is not None
         self.fun, self.input = fun, input
         
+        self._id = oofun._id
+        oofun._id += 1 # CHECK: it should be int32! Other types cannot be has keys!
+        
         if 'name' not in kwargs.keys():
             self.name = 'unnamed_oofun_' + str(oofun._unnamedFunNumber)
             #if oofun._unnamedFunNumber == 44437: raise 0
             oofun._unnamedFunNumber += 1
 
         for key, item in kwargs.iteritems():
+            #print key
             #assert key in self.__allowedFields__ # TODO: make set comparison
             setattr(self, key, item)
             
@@ -95,10 +100,12 @@ class oofun:
                     levels.append(elem._level)
             self._level = max(levels)+1
 
+    def __hash__(self):
+        return self._id
     
     def named(self, name):
         s = """The function "named" is deprecated and will be removed in future FuncDesigner versions, 
-        instead of my_oofun.named('my name')  you should use  my_oofun('my name') or my_oofun(name='my name')"""
+        instead of my_oofun.named('my name')  you should use my_oofun('my name') or my_oofun(name='my name')"""
         self.pWarn(s)
         self.name = name
         return self
@@ -372,9 +379,9 @@ class oofun:
         if self.is_oovar and not isinstance(other, oofun):
             r = BoxBoundConstraint(self, lb = other)
         elif self.is_linear and (not isinstance(other, oofun) or other.is_linear):
-            r = LinearConstraint(self-other, lb = 0)
+            r = LinearConstraint(self-other, lb = 0.0)
         else:
-            r = NonLinearConstraint(self - other, lb=0) # do not perform check for other == 0, copy should be returned, not self!
+            r = NonLinearConstraint(self - other, lb=0.0) # do not perform check for other == 0, copy should be returned, not self!
         #r.type = 'ineq'
         return r
 
@@ -388,9 +395,9 @@ class oofun:
         if self.is_oovar and not isinstance(other, oofun):
             r = BoxBoundConstraint(self, ub = other)
         elif self.is_linear and (not isinstance(other, oofun) or other.is_linear):
-            r = LinearConstraint(self-other, ub = 0)
+            r = LinearConstraint(self-other, ub = 0.0)
         else:
-            r = NonLinearConstraint(self - other, ub = 0) # do not perform check for other == 0, copy should be returned, not self!
+            r = NonLinearConstraint(self - other, ub = 0.0) # do not perform check for other == 0, copy should be returned, not self!
         #r.type = 'ineq'
         return r            
 
@@ -398,13 +405,17 @@ class oofun:
     def __le__(self, other): # overload for <=
         return self.__lt__(other)
     
+    def __eq__(self, other):
+        return self.eq(other)
+    
     def eq(self, other):
+        if other in (None, (), []): return False
         if self.is_oovar and not isinstance(other, oofun):
             raise FuncDesignerException('Constraints like this: "myOOVar = <some value>" are not implemented yet and are not recommended; for openopt use optVars / fixedVars instead')
         if self.is_linear and (not isinstance(other, oofun) or other.is_linear):
-            r = LinearConstraint(self-other, ub = 0, lb = 0)
+            r = LinearConstraint(self-other, ub = 0.0, lb = 0.0)
         else:
-            r = NonLinearConstraint(self - other, ub = 0, lb = 0) # do not perform check for other == 0, copy should be returned, not self!
+            r = NonLinearConstraint(self - other, ub = 0.0, lb = 0.0) # do not perform check for other == 0, copy should be returned, not self!
         #r.type = 'ineq'
         return r  
             

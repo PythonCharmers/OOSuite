@@ -13,21 +13,15 @@ class oovar(oofun):
     _unnamedVarNumber = 1#static variable for oovar class
 
     def __init__(self, name=None, *args, **kwargs):
+        if len(args) > 0: raise FuncDesignerException('incorrect args number for oovar constructor')
         if name is None:
             self.name = 'unnamed_' + str(oovar._unnamedVarNumber)
             oovar._unnamedVarNumber += 1
         else:
-            self.name = name
+            kwargs['name'] = name
+        oofun.__init__(self, lambda *ARGS: None, *args, **kwargs)
         
-        if len(args) > 0: raise FuncDesignerException('incorrect args number for oovar constructor')
-
-        if 'size' in kwargs.keys():
-            self.size = kwargs['size']
-
-        for key in kwargs.keys():
-            if key != 'skipRecursive':
-                setattr(self, key, kwargs[key])
-
+        
     def requireSize(self, size):
         self.size = size
 
