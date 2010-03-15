@@ -293,9 +293,9 @@ class Point:
 #                    Type = 'lin_eq'
 #                    ind = ind_max
             p = self.p
-            tol = p.contol
+            tol = 0.0
             if p.solver.approach == 'all active':
-                val = c[c>0].sum() + abs(h).sum() + all_lin_ineq
+                val = (c[c>tol] - tol).sum() + (h[h>tol] - tol).sum() - (h[h<-tol] + tol).sum() + all_lin_ineq
                 self._mr_alt, self._mrName_alt,  self._mrInd_alt = val, 'all active', 0
             else:
                 val = r
