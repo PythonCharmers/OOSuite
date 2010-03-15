@@ -293,17 +293,14 @@ class Point:
 #                    Type = 'lin_eq'
 #                    ind = ind_max
             p = self.p
-            if p.solver.approach == 'all':
-                tol = p.contol
-                val = c[c>tol].sum() + h[h>tol].sum() - h[h < -tol].sum() + all_lin_ineq
-                self._mr_alt, self._mrName_alt,  self._mrInd_alt = val, 'all_active', 0
-                assert p.nbeq == 0
+            tol = p.contol
+            if p.solver.approach == 'all active':
+                val = c[c>0].sum() + h[h>0].sum() - h[h < 0].sum() + all_lin_ineq
+                self._mr_alt, self._mrName_alt,  self._mrInd_alt = val, 'all active', 0
             else:
-                assert p.solver.approach == 'nqp'
-                if  r <= all_lin_ineq:
-                    self._mr_alt, self._mrName_alt,  self._mrInd_alt = all_lin_ineq, 'all_lin_ineq', 0
-                else:
-                    self._mr_alt, self._mrName_alt,  self._mrInd_alt = r, Type, ind
+                val =r
+                self._mr_alt, self._mrName_alt,  self._mrInd_alt = val, Type, 0
+            assert p.nbeq == 0
         if retAll:
             return asscalar(copy(self._mr_alt)), self._mrName_alt, asscalar(copy(self._mrInd_alt))
         else: return asscalar(copy(self._mr_alt))
@@ -389,10 +386,11 @@ class Point:
             else: # f(newPoint) is not NaN
                 return True
 
-    def isFeas(self, **kwargs):
-        return self.__isFeas__(**kwargs)
+    def isFeas(self, *args, **kwargs):
+        return self.__isFeas__(*args, **kwargs)
 
-    def __isFeas__(self, altLinInEq = False):
+    #def __isFeas__(self, altLinInEq = False):
+    def __isFeas__(self, altLinInEq):
         if not all(isfinite(self.f())): return False
         contol = self.p.contol
         if altLinInEq:
@@ -475,50 +473,34 @@ class Point:
         contol = p.contol
         maxRes, fname, ind = self.mr_alt(1)
         x = self.x
-        if self.isFeas():
+        if self.isFeas(altLinInEq=True):
         #or (useCurrentBestFeasiblePoint and hasattr(p, 'currentBestFeasiblePoint') and self.f() - p.currentBestFeasiblePoint.f() > self.mr()):
         #if (maxRes <= p.contol and all(isfinite(self.df())) and (p.isNaNInConstraintsAllowed or self.__nNaNs__() == 0)) :
             self.direction, self.dType = self.df(),'f'
             return self.direction
         else:
-            if approach == 'qp':
-                if not p.userProvided.c:
-                    p.c = lambda x : array([])
-                    p.dc = lambda x : array([]).reshape(0, p.n)
-                if not p.userProvided.h:
-                    p.h = lambda x : array([])
-                    p.dh = lambda x : array([]).reshape(0, p.n)
-                lb = p.lb  
-                ub = p.ub  
-                c, dc, h, dh = p.c(x), p.dc(x), p.h(x), p.dh(x)
-                A, Aeq = vstack((dc, p.A)), vstack((dh, p.Aeq))
-                b = hstack((-c + dot(dc, x), p.b)) 
-                beq = hstack((-h + dot(dh, x), p.beq))
-                projection = pointProjection(x, lb, ub, A, b, Aeq, beq)
-#                print 'Aeq:', Aeq
-#                print 'beq:', beq
-#                print 'proj:', projection
-#                print 'init val:',p.h(x),'proj val:', p.h(projection)
-                
-                self.direction = -(projection - x)
-                #print '%0.3f  %0.3f  %0.3f  %0.3f' % (self.direction[-1], self.dmr().flatten()[-1], x[-1], h[-1])
-                #print p.h(x-0.05), p.h(x), p.h(x+0.05)
-                self.dType  = 'cumulative'
-            elif approach == 'all':
+            if approach == 'all active':
+                th = 0.0
                 direction = self.__all_lin_ineq_gradient()
                 if p.userProvided.c:
-                    ind = where(p.c(x)>0)[0]
+                    ind = where(p.c(x)>th)[0]
                     if len(ind) > 0:
-                        tmp = p.dc(x, ind).sum(0)
+                        tmp = p.dc(x, ind)
+                        if tmp.ndim > 1: 
+                            tmp = tmp.sum(0)
                         direction += (tmp.A if isspmatrix(tmp) or isinstance(tmp, matrix) else tmp).flatten()
                 if p.userProvided.h:
-                    ind1 = where(p.h(x)>p.contol)[0]
+                    ind1 = where(p.h(x)>th)[0]
                     if len(ind1) > 0:
-                        tmp = p.dh(x, ind1).sum(0)
+                        tmp = p.dh(x, ind1)
+                        if tmp.ndim > 1: 
+                            tmp = tmp.sum(0)
                         direction += (tmp.A if isspmatrix(tmp) or isinstance(tmp, matrix) else tmp).flatten()
-                    ind2 = where(p.h(x)<-p.contol)[0]
+                    ind2 = where(p.h(x)<-th)[0]
                     if len(ind2) > 0:
-                        tmp = p.dh(x, ind2).sum(0)
+                        tmp = p.dh(x, ind2)
+                        if tmp.ndim > 1: 
+                            tmp = tmp.sum(0)
                         direction -= (tmp.A if isspmatrix(tmp) or isinstance(tmp, matrix) else tmp).flatten()
                 self.dType  = 'all active'
                 self.direction = direction
