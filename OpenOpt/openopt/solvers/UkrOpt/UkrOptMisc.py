@@ -207,10 +207,10 @@ def getBestPointAfterTurn(oldPoint, newPoint, altLinInEq=None, maxLS = 3, maxDel
             break
             
         rr = oldPoint.f() - altPoint.f()
-        if (oldPoint.isFeas() or altPoint.isFeas()) and maxDeltaF/2**15 < abs(rr) < maxDeltaF: break
+        if (oldPoint.isFeas(True) or altPoint.isFeas(True)) and maxDeltaF/2**15 < abs(rr) < maxDeltaF: break
         
         # TODO: is it worth to implement?
-        if (oldPoint.mr() > contol and altPoint.mr() > p.contol) and altPoint.mr() > 0.9*oldPoint.mr(): break 
+        if (oldPoint.mr_alt() > contol and altPoint.mr_alt() > p.contol) and altPoint.mr_alt() > 0.9*oldPoint.mr(): break 
 
     # got here if maxLS is exeeded; altPoint is better than prevPoint
     if new_bs:
