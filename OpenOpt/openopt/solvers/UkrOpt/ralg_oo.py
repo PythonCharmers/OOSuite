@@ -300,7 +300,7 @@ class ralg(baseSolver):
                         RD = log10(shift_x+1e-100)
                         if PointForDilation.isFeas(True) or previter_pointForDilation.isFeas(True):
                             RD = min((RD, log10(step_f / p.ftol + 1e-100)))
-                        if RD > 1.5:
+                        if RD > 1.0:
                             mp = (0.5, (ls/j0) ** 0.5, 1 - 0.2*RD)
                             hs *= max(mp)
                             #from numpy import argmax
