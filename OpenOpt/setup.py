@@ -18,7 +18,7 @@ LICENSE             = 'new BSD'
 from openopt.ooVersionNumber import __version__ as ooVer
 openopt_version = ooVer
 
-DOWNLOAD_URL        = 'http://openopt.org/images/6/68/OpenOpt0.27.zip'
+DOWNLOAD_URL        = 'http://openopt.org/images/3/33/OpenOpt.zip'
 
 try:
     import setuptools
