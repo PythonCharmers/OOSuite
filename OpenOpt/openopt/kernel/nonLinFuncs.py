@@ -92,7 +92,7 @@ class nonLinFuncs:
                   for i in xrange(len(funcs))]
             else:
                 funcs2 = [(lambda x, i=i: \
-                  p._pointDerivative2array(funcs[i].D(x, fixedVars = p.fixedVars, resultKeysType = 'names', asSparse='auto'), asSparse='auto')) \
+                  p._pointDerivative2array(funcs[i].D(x, fixedVars = p.fixedVars, resultKeysType = 'names', asSparse='auto'), asSparse='auto', func=funcs[i], point=x)) \
                   for i in xrange(len(funcs))]
         else:
             funcs2 = funcs

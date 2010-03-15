@@ -1,6 +1,6 @@
 # created by DmitreyPoint.py
 from numpy import copy, isnan, array, argmax, abs, vstack, zeros, any, isfinite, all, where, asscalar, \
-sign, dot, sqrt, array_equal, nanmax, inf, hstack, isscalar, logical_or
+sign, dot, sqrt, array_equal, nanmax, inf, hstack, isscalar, logical_or, matrix
 from numpy.linalg import norm
 from pointProjection import pointProjection
 try:
@@ -292,11 +292,18 @@ class Point:
 #                    r = val_max
 #                    Type = 'lin_eq'
 #                    ind = ind_max
-
-            if  r <= all_lin_ineq:
-                self._mr_alt, self._mrName_alt,  self._mrInd_alt = all_lin_ineq, 'all_lin_ineq', 0
+            p = self.p
+            if p.solver.approach == 'all':
+                tol = p.contol
+                val = c[c>tol].sum() + h[h>tol].sum() - h[h < -tol].sum() + all_lin_ineq
+                self._mr_alt, self._mrName_alt,  self._mrInd_alt = val, 'all_active', 0
+                assert p.nbeq == 0
             else:
-                self._mr_alt, self._mrName_alt,  self._mrInd_alt = r, Type, ind
+                assert p.solver.approach == 'nqp'
+                if  r <= all_lin_ineq:
+                    self._mr_alt, self._mrName_alt,  self._mrInd_alt = all_lin_ineq, 'all_lin_ineq', 0
+                else:
+                    self._mr_alt, self._mrName_alt,  self._mrInd_alt = r, Type, ind
         if retAll:
             return asscalar(copy(self._mr_alt)), self._mrName_alt, asscalar(copy(self._mrInd_alt))
         else: return asscalar(copy(self._mr_alt))
@@ -497,6 +504,24 @@ class Point:
                 #print '%0.3f  %0.3f  %0.3f  %0.3f' % (self.direction[-1], self.dmr().flatten()[-1], x[-1], h[-1])
                 #print p.h(x-0.05), p.h(x), p.h(x+0.05)
                 self.dType  = 'cumulative'
+            elif approach == 'all':
+                direction = self.__all_lin_ineq_gradient()
+                if p.userProvided.c:
+                    ind = where(p.c(x)>0)[0]
+                    if len(ind) > 0:
+                        tmp = p.dc(x, ind).sum(0)
+                        direction += (tmp.A if isspmatrix(tmp) or isinstance(tmp, matrix) else tmp).flatten()
+                if p.userProvided.h:
+                    ind1 = where(p.h(x)>p.contol)[0]
+                    if len(ind1) > 0:
+                        tmp = p.dh(x, ind1).sum(0)
+                        direction += (tmp.A if isspmatrix(tmp) or isinstance(tmp, matrix) else tmp).flatten()
+                    ind2 = where(p.h(x)<-p.contol)[0]
+                    if len(ind2) > 0:
+                        tmp = p.dh(x, ind2).sum(0)
+                        direction -= (tmp.A if isspmatrix(tmp) or isinstance(tmp, matrix) else tmp).flatten()
+                self.dType  = 'all active'
+                self.direction = direction
             else:
                 if fname == 'all_lin_ineq':
                     d = self.__all_lin_ineq_gradient()

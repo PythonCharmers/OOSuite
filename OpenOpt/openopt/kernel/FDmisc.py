@@ -84,7 +84,7 @@ def setStartVectorAndTranslators(p):
     for i, oov in enumerate(optVars):
         oovarsIndDict[oov.name] = (oovar_indexes[i], oovar_indexes[i+1])
         
-    def pointDerivative2array(pointDerivarive, asSparse = False): 
+    def pointDerivative2array(pointDerivarive, asSparse = False,  func=None, point=None): 
         
         # asSparse can be True, False, 'auto'
         # !!!!!!!!!!! TODO: implement asSparse = 'auto' properly
@@ -96,7 +96,15 @@ def setStartVectorAndTranslators(p):
         # however, this check is performed in other function (before this one)
         # and those constraints are excluded automaticvally
         if len(pointDerivarive) == 0: 
-            p.err('unclear error, maybe you have constraint independend on any optimization variables') 
+            if func is not None:
+                assert point is not None
+                funcLen = func(point).size
+                if asSparse:
+                    return SparseMatrixConstructor((funcLen, n))
+                else:
+                    return DenseMatrixConstructor((funcLen, n))
+            else:
+                p.err('unclear error, maybe you have constraint independend on any optimization variables') 
 
         key, val = pointDerivarive.items()[0]
         
