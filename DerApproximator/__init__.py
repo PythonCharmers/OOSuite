@@ -1,3 +1,3 @@
-__version__ = '0.17'
+__version__ = '0.18'
 
 from DerApproximator import DerApproximatorException, get_d1, check_d1
