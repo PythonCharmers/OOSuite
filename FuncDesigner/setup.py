@@ -17,7 +17,7 @@ LICENSE             = 'new BSD'
 
 from FuncDesigner import __version__ as Ver
 
-DOWNLOAD_URL        = 'http://openopt.org/images/5/5c/FuncDesigner0.17.zip'
+DOWNLOAD_URL        = 'http://openopt.org/images/a/a6/FuncDesigner.zip'
 try:
     import setuptools
 except:
