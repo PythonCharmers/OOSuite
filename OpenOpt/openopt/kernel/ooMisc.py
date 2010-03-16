@@ -1,5 +1,6 @@
 __docformat__ = "restructuredtext en"
-from numpy import zeros, ones, copy, isfinite, where, asarray, inf, array, asfarray, dot, ndarray
+from numpy import zeros, ones, copy, isfinite, where, asarray, inf, array, asfarray, dot, ndarray, prod
+from nonOptMisc import scipyAbsentMsg, scipyInstalled
 
 def Len(arg):
     if arg == None or arg == [] or (isinstance(arg, ndarray) and arg.size==1 and arg == array(None, dtype=object)):
@@ -50,6 +51,19 @@ def xBounds2Matrix(p):
 
     p.lb = -inf*ones(p.n)
     p.ub = inf*ones(p.n)
+
+    # TODO: prevent code clone with baseProblem.py
+    nA, nAeq = prod(p.A.shape), prod(p.Aeq.shape) 
+    SizeThreshold = 2 ** 15
+    if scipyInstalled:
+        from scipy.sparse import csc_matrix
+        if nA > SizeThreshold and not isspmatrix(p.A) and flatnonzero(p.A).size < 0.25*nA:
+            p._A = csc_matrix(p.A)
+        if nAeq > SizeThreshold and not isspmatrix(p.Aeq) and flatnonzero(p.Aeq).size < 0.25*nAeq:
+            p._Aeq = csc_matrix(p.Aeq)
+    elif nA > SizeThreshold or nAeq > SizeThreshold:
+        p.pWarn(scipyAbsentMsg)
+
 
 
 def LinConst2WholeRepr(p):
