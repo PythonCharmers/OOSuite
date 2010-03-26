@@ -82,10 +82,10 @@ def setStartVectorAndTranslators(p):
 
     oovarsIndDict = {}#dictFixed.copy()
     for i, oov in enumerate(optVars):
-        oovarsIndDict[oov.name] = (oovar_indexes[i], oovar_indexes[i+1])
+        #oovarsIndDict[oov.name] = (oovar_indexes[i], oovar_indexes[i+1])
+        oovarsIndDict[oov] = (oovar_indexes[i], oovar_indexes[i+1])
         
     def pointDerivative2array(pointDerivarive, asSparse = False,  func=None, point=None): 
-        
         # asSparse can be True, False, 'auto'
         # !!!!!!!!!!! TODO: implement asSparse = 'auto' properly
         if not scipyInstalled and asSparse == 'auto':
@@ -95,6 +95,7 @@ def setStartVectorAndTranslators(p):
 
         # however, this check is performed in other function (before this one)
         # and those constraints are excluded automaticvally
+
         if len(pointDerivarive) == 0: 
             if func is not None:
                 assert point is not None
@@ -108,12 +109,9 @@ def setStartVectorAndTranslators(p):
 
         key, val = pointDerivarive.items()[0]
         
-        indexingByNames = True if isinstance(key, str) else False
-        name = key if indexingByNames else key.name
-        
         if isinstance(val, float) or (isinstance(val, ndarray) and val.shape == ()):
             val = atleast_1d(val)
-        var_inds = oovarsIndDict[name]
+        var_inds = oovarsIndDict[key]
         # val.size works in other way (as nnz) for scipy.sparse matrices
         funcLen = int(round(prod(val.shape) / (var_inds[1] - var_inds[0]))) 
         
@@ -123,9 +121,9 @@ def setStartVectorAndTranslators(p):
             r2 = []
             hasSparse = False
             for i, var in enumerate(optVars):
-                if var.name in pointDerivarive:#i.e. one of its keys
-                    indexes = oovarsIndDict[var.name]
-                    tmp = pointDerivarive[var.name] if indexingByNames else pointDerivarive[var]
+                if var in pointDerivarive:#i.e. one of its keys
+                    #indexes = oovarsIndDict[var]
+                    tmp = pointDerivarive[var]
                     if isspmatrix(tmp): hasSparse = True
                     if isinstance(tmp, float) or (isinstance(tmp, ndarray) and tmp.shape == ()):
                         tmp = atleast_1d(tmp)
@@ -147,13 +145,14 @@ def setStartVectorAndTranslators(p):
                 else:
                     r = DenseMatrixConstructor((n, funcLen))            
             for key, val in pointDerivarive.items():
-                indexes = oovarsIndDict[key] if indexingByNames else oovarsIndDict[key.name]
+                # TODO: remove indexes, do as above for sparse 
+                indexes = oovarsIndDict[key]
                 if not asSparse and isspmatrix(val): val = val.A
                 if funcLen == 1 or not asSparse:
                     r[indexes[0]:indexes[1]] = val.T
                 else:
                     r[indexes[0]:indexes[1], :] = val.T
-
+                    
             if asSparse and funcLen == 1: 
                 return SparseMatrixConstructor(r)
             else: 
@@ -176,14 +175,10 @@ def setStartVectorAndTranslators(p):
                 rr = hstack(r)
             else:
                 rr = r[0]
-            #rr = Hstack(r) if (len(r) > 1 and ) else r[0]
             SIZE = asarray(oof(startPoint)).size
             if SIZE > 1:  rr = Vstack([rr]*SIZE)  if isspmatrix(rr) else vstack([rr]*SIZE)
             R.append(rr)
-        #try:
         result = Vstack(R) if any([isspmatrix(_r) for _r in R]) else vstack(R)
-        #except:
-        #    raise 0
         
         return result
         
@@ -215,46 +210,9 @@ def setStartVectorAndTranslators(p):
             Vstack = scipy.sparse.vstack
         else:
             Vstack = vstack # i.e. numpy.vstack
-        #raise 0
+
         C, d = Vstack(C), hstack(d).flatten()
 
         return C, d    
     p._linearOOFunsToMatrices = linearOOFunsToMatrices
     
-    
-    
-    #############################################
-#    p.oovars = set()
-#    p.oofuns = set()
-#    for FuncType in ['f', 'c', 'h']:
-#        Funcs = getattr(p, FuncType)
-#        if Funcs is None: continue
-#        if isinstance(Funcs, oofun):
-#            Funcs._recursivePrepare(p)
-#        else:
-#            if type(Funcs) not in [tuple, list]:
-#                p.err('when x0 is absent, oofuns (with oovars) are expected')
-#            for fun in Funcs:
-#                if not isinstance(fun, oofun):
-#                    p.err('when x0 is absent, oofuns (with oovars) are expected')
-#                fun._recursivePrepare(p)
-#    assert len(p.oovars) > 0
-#    n = 0
-#    for fn in ['x0', 'lb', 'ub', 'A', 'Aeq', 'b', 'beq']:
-#        if not hasattr(p, fn): continue
-#        val = getattr(p, fn)
-#        if val is not None and any(isfinite(val)):
-#            p.err('while using oovars providing x0, lb, ub, A, Aeq for whole prob is forbidden, use for each oovar instead')
-#
-#    x0, lb, ub = [], [], []
-#
-#    for var in p.oovars:
-#        var.dep = range(n, n+var.size)
-#        n += var.size
-#        x0 += list(atleast_1d(asarray(var.v0)))
-#        lb += list(atleast_1d(asarray(var.lb)))
-#        ub += list(atleast_1d(asarray(var.ub)))
-#    p.n = n
-#    p.x0 = x0
-#    p.lb = lb
-#    p.ub = ub

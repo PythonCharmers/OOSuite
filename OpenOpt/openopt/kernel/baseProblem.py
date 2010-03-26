@@ -345,25 +345,25 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     if f in self._fixedVars: 
                         if self.x0 is None: self.err('your problem has fixed oovar '+ Name + ' but no value for the one in start point is provided')
                         continue
-                    inds = oovD[Name]
+                    inds = oovD[f]
                     f_size = inds[1] - inds[0]
 
                     if any(isfinite(_lb)):
                         if _lb.size not in (f_size, 1): 
                             self.err('incorrect size of lower box-bound constraint for %s: 1 or %d expected, %d obtained' % (Name, f_size, _lb.size))
                         val = array(f_size*[_lb] if _lb.size < f_size else _lb)
-                        if Name not in LB.keys():
-                            LB[Name] = val
+                        if f not in LB:
+                            LB[f] = val
                         else:
-                            LB[Name] = max((val, LB[Name]))
+                            LB[f] = max((val, LB[f]))
                     if any(isfinite(_ub)):
                         if _ub.size not in (f_size, 1): 
                             self.err('incorrect size of upper box-bound constraint for %s: 1 or %d expected, %d obtained' % (Name, f_size, _ub.size))
                         val = array(f_size*[_ub] if _ub.size < f_size else _ub)
-                        if Name not in UB.keys():
-                            UB[Name] = val
+                        if f not in UB:
+                            UB[f] = val
                         else:
-                            UB[Name] = min((val, UB[Name]))
+                            UB[f] = min((val, UB[f]))
                 elif _lb == _ub:
                     if f.is_linear:
                         Aeq.append(self._pointDerivative2array(f.D(Z, **D_kwargs)))      
@@ -527,16 +527,16 @@ class NonLinProblem(baseProblem, nonLinFuncs, Args):
             self.warn("you haven't analitical gradient provided for " + funcType[1:] + ', turning derivatives check for it off...')
             return
         if len(args)>0:
-            if len(args)>1 or 'x' in kwargs.keys():
+            if len(args)>1 or 'x' in kwargs:
                 self.err('checkd<func> funcs can have single argument x only (then x should be absent in kwargs )')
             xCheck = asfarray(args[0])
-        elif 'x' in kwargs.keys():
+        elif 'x' in kwargs:
             xCheck = asfarray(kwargs['x'])
         else:
             xCheck = asfarray(self.x0)
         
         maxViolation = 0.01
-        if 'maxViolation' in kwargs.keys():
+        if 'maxViolation' in kwargs:
             maxViolation = kwargs['maxViolation']
             
         print(funcType + (': checking user-supplied gradient of shape (%d, %d)' % (getattr(self, funcType[1:])(xCheck).size, xCheck.size)))
@@ -637,7 +637,7 @@ class NonLinProblem(baseProblem, nonLinFuncs, Args):
     
 
 def minimize(p, *args, **kwargs):
-    if 'goal' in kwargs.keys():
+    if 'goal' in kwargs:
         if kwargs['goal'] in ['min', 'minimum']:
             p.warn("you shouldn't pass 'goal' to the function 'minimize'")
         else:
@@ -646,7 +646,7 @@ def minimize(p, *args, **kwargs):
     return runProbSolver(p, *args, **kwargs)
 
 def maximize(p, *args, **kwargs):
-    if 'goal' in kwargs.keys():
+    if 'goal' in kwargs:
         if kwargs['goal'] in ['max', 'maximum']:
             p.warn("you shouldn't pass 'goal' to the function 'maximize'")
         else:

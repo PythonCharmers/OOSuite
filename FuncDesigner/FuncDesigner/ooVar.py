@@ -44,58 +44,58 @@ class oovar(oofun):
             raise FuncDesignerException(s)
         return r
         
-    def _initialize(self, p):
-
-        """                                               Handling size and shape                                               """
-        sizes = set([])
-        shapes = set([])
-        for fn in ['v0', 'lb', 'ub']:
-            if hasattr(self, fn):
-                setattr(self, fn, asarray(getattr(self, fn)))
-                shapes.add(getattr(self, fn).shape)
-                sizes.add(getattr(self, fn).size)
-        if self.shape is not nan: 
-            shapes.add(self.shape)
-            sizes.add(prod(self.shape))
-        if self.size is not nan: sizes.add(self.size)
-        #if len(shapes) > 1: p.err('for oovar fields (if present) lb, ub, v0 should have same shape')
-        #elif len(shapes) == 1: self.shape = shapes.pop()
-        if len(shapes) >= 1: self.shape = prod(shapes.pop())
-        
-        if len(sizes) > 1: p.err('for oovar fields (if present) lb, ub, v0 should have same size')
-        elif len(sizes)==1 : self.size = sizes.pop()
-
-        if self.size is nan: self.size = asarray(self.shape).prod()
-        if self.shape is nan:
-            assert isfinite(self.size)
-            self.shape = (self.size, )
-        
-
-        """                                                     Handling init value                                                   """
-#        if not hasattr(self, 'lb'):
-#            self.lb = empty(self.shape)
-#            self.lb.fill(-inf)
-#        if not hasattr(self, 'ub'):
-#            self.ub = empty(self.shape)
-#            self.ub.fill(inf)
-#        if any(self.lb > self.ub):
-#            p.err('lower bound exceeds upper bound, solving impossible')
-        if not hasattr(self, 'v0'):
-            #p.warn('got oovar w/o init value')
-            v0 = zeros(self.shape)
-
-            ind = isfinite(self.lb) & isfinite(self.ub)
-            v0[ind] = 0.5*(self.lb[ind] + self.ub[ind])
-
-            ind = isfinite(self.lb) & ~isfinite(self.ub)
-            v0[ind] = self.lb[ind]
-
-            ind = ~isfinite(self.lb) & isfinite(self.ub)
-            v0[ind] = self.ub[ind]
-
-            self.v0 = v0
-            
-        self.initialized = True
+#    def _initialize(self, p):
+#
+#        """                                               Handling size and shape                                               """
+#        sizes = set()
+#        shapes = set()
+#        for fn in ['v0', 'lb', 'ub']:
+#            if hasattr(self, fn):
+#                setattr(self, fn, asarray(getattr(self, fn)))
+#                shapes.add(getattr(self, fn).shape)
+#                sizes.add(getattr(self, fn).size)
+#        if self.shape is not nan: 
+#            shapes.add(self.shape)
+#            sizes.add(prod(self.shape))
+#        if self.size is not nan: sizes.add(self.size)
+#        #if len(shapes) > 1: p.err('for oovar fields (if present) lb, ub, v0 should have same shape')
+#        #elif len(shapes) == 1: self.shape = shapes.pop()
+#        if len(shapes) >= 1: self.shape = prod(shapes.pop())
+#        
+#        if len(sizes) > 1: p.err('for oovar fields (if present) lb, ub, v0 should have same size')
+#        elif len(sizes)==1 : self.size = sizes.pop()
+#
+#        if self.size is nan: self.size = asarray(self.shape).prod()
+#        if self.shape is nan:
+#            assert isfinite(self.size)
+#            self.shape = (self.size, )
+#        
+#
+#        """                                                     Handling init value                                                   """
+##        if not hasattr(self, 'lb'):
+##            self.lb = empty(self.shape)
+##            self.lb.fill(-inf)
+##        if not hasattr(self, 'ub'):
+##            self.ub = empty(self.shape)
+##            self.ub.fill(inf)
+##        if any(self.lb > self.ub):
+##            p.err('lower bound exceeds upper bound, solving impossible')
+#        if not hasattr(self, 'v0'):
+#            #p.warn('got oovar w/o init value')
+#            v0 = zeros(self.shape)
+#
+#            ind = isfinite(self.lb) & isfinite(self.ub)
+#            v0[ind] = 0.5*(self.lb[ind] + self.ub[ind])
+#
+#            ind = isfinite(self.lb) & ~isfinite(self.ub)
+#            v0[ind] = self.lb[ind]
+#
+#            ind = ~isfinite(self.lb) & isfinite(self.ub)
+#            v0[ind] = self.ub[ind]
+#
+#            self.v0 = v0
+#            
+#        self.initialized = True
         
         
 def oovars(*args, **kwargs):

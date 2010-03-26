@@ -338,7 +338,7 @@ class oofun:
             r.is_linear = True
         return r
    
-#    def __len__(self):
+    #def __len__(self):
         #return self.size
         #raise FuncDesignerException('using len(obj) (where obj is oovar or oofun) is not possible (at least yet), use obj.size instead')
 
@@ -419,14 +419,6 @@ class oofun:
         #r.type = 'ineq'
         return r  
             
-#    def __eq__(self, other):
-#        raise FuncDesignerException('Operator == is unavailable, at least yet')
-
-#    def __eq__(self, other):
-#        r = self - other
-#        r.isConstraint = True
-#        r.type = 'eq'
-#        return r
 
 
     """                                             getInput                                              """
@@ -451,7 +443,7 @@ class oofun:
         elif self.input is None:
             self.dep = None
         else:
-            r = set([])
+            r = set()
             #r.fill(False)
             if not type(self.input) in (list, tuple):
                 self.input = [self.input]
@@ -580,14 +572,18 @@ class oofun:
                 raise FuncDesignerException('Cannot perform differentiation by non-oovar input')
         else:
             if resultKeysType == 'names':
+                raise FuncDesignerException("""This possibility is out of date, 
+                if it is still present somewhere in FuncDesigner doc inform developers""")
                 return r
             elif resultKeysType == 'vars':
                 rr = {}
                 tmpDict = Vars if Vars is not None else x
+                #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! TODO: remove the cycle!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 for oov, val in x.items():
-                    if oov.name not in r.keys() or (fixedVars is not None and oov in fixedVars):
+                    if not isinstance(oov not in r, bool): print oov not in r
+                    if oov not in r or (fixedVars is not None and oov in fixedVars):
                         continue
-                    rr[oov] = r[oov.name]
+                    rr[oov] = r[oov]
                 return rr
             else:
                 raise FuncDesignerException('Incorrect argument resultKeysType, should be "vars" or "names"')
@@ -608,7 +604,7 @@ class oofun:
         involveStore = (not isTransmit) or self._directlyDwasInwolved
         #cond_same_point = False
         cond_same_point = involveStore and sameDerivativeVariables and \
-        hasattr(self, 'd_key_prev') and all([array_equal(x[elem], self.d_key_prev[elem.name]) for elem in dep])
+        hasattr(self, 'd_key_prev') and all([array_equal(x[elem], self.d_key_prev[elem]) for elem in dep])
         
         if cond_same_point:
             self.same_d += 1
@@ -638,8 +634,7 @@ class oofun:
                 if (tmp.ndim <= 1 or min(tmp.shape) == 1) and not isspmatrix(tmp):
                     tmp = tmp.flatten()
 
-                #Key = inp
-                Key  = inp.name
+                Key  = inp
                 if Key in Keys:
                     if prod(tmp.shape) <= prod(r[Key].shape): 
                         r[Key] += tmp
@@ -726,7 +721,7 @@ class oofun:
         
         self.d_key_prev = {}
         for elem in dep:
-            self.d_key_prev[elem.name] = copy(x[elem])
+            self.d_key_prev[elem] = copy(x[elem])
         
         return r
 
