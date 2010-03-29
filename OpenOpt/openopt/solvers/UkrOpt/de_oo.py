@@ -237,11 +237,11 @@ def _eval_pop(pop, p):
     else:
         for i in xrange(NP):
             newPoint = p.point(pop[i])
-            constr_vals[i] = newPoint.mr() + nanPenalty * newPoint.__nNaNs__()
+            constr_vals[i] = newPoint.mr() + nanPenalty * newPoint.nNaNs()
             if i == 0 or newPoint.betterThan(bestPoint):
                 bestPoint = newPoint
                 bestPoint.i = i
-        best = (bestPoint.i, bestPoint.f(), bestPoint.mr() + nanPenalty * bestPoint.__nNaNs__(), bestPoint.x)
+        best = (bestPoint.i, bestPoint.f(), bestPoint.mr() + nanPenalty * bestPoint.nNaNs(), bestPoint.x)
 
     return best, vals, constr_vals
    

@@ -412,8 +412,10 @@ class ralg(baseSolver):
                 assert self.dilationType == 'plain difference'
                 G2 = lastPointOfSameType.__getDirection__(self.approach) 
                 g1 = G2 - G
-                if norm(g1) < 1e-7 * (norm(G2)+norm(G)):
-                    p.debugmsg('same gradient in ralg')
+                #if norm(g1) < 1e-7 * ((norm(G2) + norm(G))):
+                # TODO: add check of norm(g1)<some_epsilon
+                if norm(g1) < 1e-4 * min((norm(G2), norm(G))):
+                    p.debugmsg("ralg: 'last point of same type gradient' is used")
                     g1 = G2
                 if currIterPointIsFeasible: 
                     pass
@@ -428,7 +430,7 @@ class ralg(baseSolver):
 
 
             # changes wrt infeas constraints
-#            if prevIterPoint.__nNaNs__() != 0:
+#            if prevIterPoint.nNaNs() != 0:
 #                cp, hp = prevIterPoint.c(), prevIterPoint.h()
 #                ind_infeas_cp, ind_infeas_hp = isnan(cp), isnan(hp)
 #                
