@@ -358,7 +358,7 @@ class Point:
             mr_field = 'mr'
         mr, point2compareResidual = getattr(self, mr_field)(), getattr(point2compare, mr_field)()
         criticalResidualValue = max((self.p.contol, point2compareResidual))
-        self_nNaNs, point2compare_nNaNs = self.__nNaNs__(), point2compare.__nNaNs__()
+        self_nNaNs, point2compare_nNaNs = self.nNaNs(), point2compare.nNaNs()
 
         if point2compare_nNaNs  > self_nNaNs: return True
         elif point2compare_nNaNs  < self_nNaNs: return False
@@ -395,14 +395,14 @@ class Point:
         contol = self.p.contol
         if altLinInEq:
             if hasattr(self, '_mr_alt'):
-                if self._mr_alt > contol or (not self.p.isNaNInConstraintsAllowed and self.__nNaNs__() != 0): return False
+                if self._mr_alt > contol or (not self.p.isNaNInConstraintsAllowed and self.nNaNs() != 0): return False
             else:
                 #TODO: simplify it!
                 #for fn in residuals: (...)
                 if self.__all_lin_ineq() > contol: return False
         else:
             if hasattr(self, '_mr'):
-                if self._mr > contol or (not self.p.isNaNInConstraintsAllowed and self.__nNaNs__() != 0): return False
+                if self._mr > contol or (not self.p.isNaNInConstraintsAllowed and self.nNaNs() != 0): return False
             else:
                 #TODO: simplify it!
                 #for fn in residuals: (...)
@@ -414,7 +414,7 @@ class Point:
         if any(self.c() > contol): return False
         return True
 
-    def __nNaNs__(self):
+    def nNaNs(self):
         # returns number of nans in constraints
         if self.p.__baseClassName__ != 'NonLin': return 0
         r = 0
@@ -475,7 +475,7 @@ class Point:
         x = self.x
         if self.isFeas(altLinInEq=True):
         #or (useCurrentBestFeasiblePoint and hasattr(p, 'currentBestFeasiblePoint') and self.f() - p.currentBestFeasiblePoint.f() > self.mr()):
-        #if (maxRes <= p.contol and all(isfinite(self.df())) and (p.isNaNInConstraintsAllowed or self.__nNaNs__() == 0)) :
+        #if (maxRes <= p.contol and all(isfinite(self.df())) and (p.isNaNInConstraintsAllowed or self.nNaNs() == 0)) :
             self.direction, self.dType = self.df(),'f'
             return self.direction
         else:
@@ -532,9 +532,9 @@ class Point:
 #        p = self.p
 #        contol = p.contol
 #        maxRes, fname, ind = self.mr(retAll=True)
-#        if (maxRes <= p.contol and all(isfinite(self.df())) and (p.isNaNInConstraintsAllowed or self.__nNaNs__() == 0)) \
+#        if (maxRes <= p.contol and all(isfinite(self.df())) and (p.isNaNInConstraintsAllowed or self.nNaNs() == 0)) \
 #        or (useCurrentBestFeasiblePoint and hasattr(p, 'currentBestFeasiblePoint') and self.f() - p.currentBestFeasiblePoint.f() > self.mr()):
-#        #if (maxRes <= p.contol and all(isfinite(self.df())) and (p.isNaNInConstraintsAllowed or self.__nNaNs__() == 0)) :
+#        #if (maxRes <= p.contol and all(isfinite(self.df())) and (p.isNaNInConstraintsAllowed or self.nNaNs() == 0)) :
 #            self.direction, self.dType = self.df(),'f'
 #            return self.direction
 #        else:
