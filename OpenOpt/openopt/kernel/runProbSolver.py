@@ -92,6 +92,7 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     p.iterValues.r = [] # iter MaxResidual
     p.iterValues.rt = [] # iter MaxResidual Type: 'c', 'h', 'lb' etc
     p.iterValues.ri = [] # iter MaxResidual Index
+    p.iterValues.nNaNs = [] # number of constraints equal to numpy.nan
 
 
 
@@ -317,7 +318,14 @@ def finalTextOutput(p, r):
         else:
             rMsg = 'MaxResidual = %g' % r.rf
         if not p.isFeasible:
-            print('NO FEASIBLE SOLUTION is obtained (%s, objFunc = %0.8g)' % (rMsg, r.ff))
+            nNaNs = len(isnan(p.c(p.xf))) + len(isnan(p.h(p.xf)))
+            if nNaNs == 0:
+                nNaNsMsg = ''
+            elif nNaNs == 1:
+                nNaNsMsg = '1 constraint is equal to NaN, '
+            else:
+                nNaNsMsg = ('%d constraints are equal to NaN, ' % nNaNs)
+            print('NO FEASIBLE SOLUTION is obtained (%s%s, objFunc = %0.8g)' % (nNaNsMsg,  rMsg, r.ff))
         else:
             msg = "objFunValue: " + (p.finalObjFunTextFormat % r.ff)
             if not p.isUC: msg += ' (feasible, %s)' % rMsg

@@ -1,5 +1,5 @@
 __docformat__ = "restructuredtext en"
-from numpy import atleast_1d,  all, asarray, ndarray, copy, ravel
+from numpy import atleast_1d,  all, asarray, ndarray, copy, ravel, isnan
 from Point import Point
 
 class baseSolver:
@@ -43,10 +43,12 @@ class baseSolver:
             point = args[0]
             p.xk, p.fk = point.x, point.f()
             p.rk, p.rtk, p.rik = point.mr(True)
+            p.nNaNs = point.nNaNs()
         else:
             if len(args)>0: p.xk = args[0]
             elif 'xk' in kwargs.keys(): p.xk = kwargs['xk']
             elif not hasattr(p, 'xk'): p.err('iterfcn must get x value, if you see it inform oo developers')
+            p.nNaNs = len(isnan(p.c(p.xk))) + len(isnan(p.h(p.xk)))
 
             if len(args)>1: p.fk = args[1]
             elif 'fk' in kwargs.keys(): p.fk = kwargs['fk']
@@ -64,6 +66,7 @@ class baseSolver:
         p.iterValues.r.append(ravel(p.rk)[0])
         p.iterValues.rt.append(p.rtk)
         p.iterValues.ri.append(p.rik)
+        p.iterValues.nNaNs.append(p.nNaNs)
 
         #TODO: handle kwargs correctly! (decodeIterFcnArgs)
 
