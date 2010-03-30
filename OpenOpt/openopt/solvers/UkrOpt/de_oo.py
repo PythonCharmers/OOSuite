@@ -146,15 +146,15 @@ class de(baseSolver):
                 barycenter2 = ((old_pop[r2_ints]).sum(0))/num_ind
             else: #directed search
                 r_ints = np.random.randint(NP, size=(2*num_ind))
-                list = [ (i,constr_vals[i],vals[i]) for i in r_ints]
+                list = [ (j,constr_vals[j],vals[j]) for j in r_ints]
                 list_arr = np.array(list, dtype=[('i', int),
                                                   ('constr_val', float),
                                                   ('val', float)])
                 list_arr.sort(order=['constr_val','val'])
                 best_list = list_arr[0:num_ind]
-                best_arr = np.array([i for (i,c,f) in best_list], 'i')
+                best_arr = np.array([j for (j,c,f) in best_list], 'i')
                 worst_list = list_arr[num_ind:2*num_ind]
-                worst_arr = np.array([i for (i,c,f) in worst_list], 'i')
+                worst_arr = np.array([j for (j,c,f) in worst_list], 'i')
                 barycenter1 = ((old_pop[worst_arr]).sum(0))/num_ind
                 barycenter2 = ((old_pop[best_arr]).sum(0))/num_ind
             
