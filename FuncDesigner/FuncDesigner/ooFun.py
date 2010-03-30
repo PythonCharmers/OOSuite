@@ -636,7 +636,7 @@ class oofun:
 
                 Key  = inp
                 if Key in Keys:
-                    if prod(tmp.shape) <= prod(r[Key].shape) and type(r[Key]) == type(tmp): 
+                    if prod(tmp.shape) <= prod(r[Key].shape) and type(r[Key]) == type(tmp) == ndarray: # some sparse matrices has no += implemented 
                         r[Key] += tmp
                     else:
                         r[Key] = r[Key] + tmp
@@ -710,7 +710,7 @@ class oofun:
                             rr = rr.toarray() # I guess r[key] will hardly be all-zeros
                         elif not isinstance(r[key], ndarray) and isinstance(rr, ndarray): # i.e. r[key] is sparse matrix
                             r[key] = r[key].toarray()
-                        if rr.size == r[key].size and type(rr) == type(r[key]): 
+                        if rr.size == r[key].size and type(rr) == type(r[key]) == ndarray: 
                             r[key] += rr
                         else: 
                             r[key] = r[key] + rr
