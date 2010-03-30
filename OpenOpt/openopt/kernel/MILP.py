@@ -29,7 +29,7 @@ class MILP(LP):
                 if self.fixedVars is not None and iv in self.fixedVars or\
                 self.optVars is not None and iv not in self.optVars:
                     continue
-                r1, r2 = self._oovarsIndDict[iv.name]
+                r1, r2 = self._oovarsIndDict[iv]
                 r += range(r1, r2)
             self.intVars, self._intVars = r, self.intVars
         self._intVars_vector = self.intVars

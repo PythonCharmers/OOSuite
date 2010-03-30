@@ -148,8 +148,10 @@ def setStartVectorAndTranslators(p):
                 # TODO: remove indexes, do as above for sparse 
                 indexes = oovarsIndDict[key]
                 if not asSparse and isspmatrix(val): val = val.A
-                if funcLen == 1 or not asSparse:
-                    r[indexes[0]:indexes[1]] = val.T
+                #if funcLen == 1 or not asSparse:
+                    #r[indexes[0]:indexes[1]] = val.T
+                if r.ndim == 1:
+                    r[indexes[0]:indexes[1]] = val.flatten()
                 else:
                     r[indexes[0]:indexes[1], :] = val.T
                     
