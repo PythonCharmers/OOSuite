@@ -630,13 +630,13 @@ class oofun:
                     continue                
                 ac += 1
                 tmp = derivativeSelf[ac]
-                
-                if (tmp.ndim <= 1 or min(tmp.shape) == 1) and not isspmatrix(tmp):
-                    tmp = tmp.flatten()
+                assert tmp.ndim > 1 
+#                if (tmp.ndim <= 1 or min(tmp.shape) == 1) and not isspmatrix(tmp):
+#                    tmp = tmp.flatten()
 
                 Key  = inp
                 if Key in Keys:
-                    if prod(tmp.shape) <= prod(r[Key].shape): 
+                    if prod(tmp.shape) <= prod(r[Key].shape) and type(r[Key]) == type(tmp): 
                         r[Key] += tmp
                     else:
                         r[Key] = r[Key] + tmp
@@ -650,46 +650,50 @@ class oofun:
                 elem_d = inp._D(x, Vars=Vars, fixedVars=fixedVars, sameDerivativeVariables=sameDerivativeVariables, asSparse = 'auto') 
                 
                 for key in elem_d.keys():
-                    if prod(derivativeSelf[ac].shape) == 1 or prod(elem_d[key].shape) == 1:
-                        rr = derivativeSelf[ac] * elem_d[key]
-                    else:
-                        t1, t2 = self._considerSparse(derivativeSelf[ac], elem_d[key])
-                        cond_2 = t1.ndim > 1 or t2.ndim > 1
-                        if cond_2:
-                            # warning! t1,t2 can be sparse matrices, so I don't use t = atleast_2d(t) directly
-                            #if t1.ndim < 2: t1 = atleast_2d(t1) 
-                            if t2.ndim < 2: 
-                                assert t1.ndim > 1, 'error in FuncDesigner kernel, inform developers'
-                                if t1.shape[1] != t2.shape[0]:
-                                    t2 = t2.reshape(1, -1)
-                                #t2 = atleast_2d(t2)
-                        else:
-                            # hence these are ndarrays
-                            if self(x).size > 1:
-                                t1 = t1.reshape(-1, 1)
+                    assert derivativeSelf[ac].ndim > 1 
+                    assert elem_d[key].ndim > 1
+                    
+#                    if prod(derivativeSelf[ac].shape) == 1 or prod(elem_d[key].shape) == 1:
+#                        rr = derivativeSelf[ac] * elem_d[key]
+#                    else:
+                    t1, t2 = self._considerSparse(derivativeSelf[ac], elem_d[key])
+                    cond_2 = t1.ndim > 1 or t2.ndim > 1
+                    if cond_2:
+                        # warning! t1,t2 can be sparse matrices, so I don't use t = atleast_2d(t) directly
+                        #if t1.ndim < 2: t1 = atleast_2d(t1) 
+                        if t2.ndim < 2: 
+                            assert t1.ndim > 1, 'error in FuncDesigner kernel, inform developers'
+                            if t1.shape[1] != t2.shape[0]:
                                 t2 = t2.reshape(1, -1)
-                            else:
-                                t1 = t1.flatten()
-                                t2 = t2.flatten()
-                        
-                        if not (isinstance(t1,  ndarray) and isinstance(t2,  ndarray)):
-                            if scipy is None:
-                                self.pWarn(scipyAbsentMsg)
-                                rr = atleast_1d(dot(t1, t2))
-                            else:
-                                t1 = scipy.sparse.csc_matrix(t1)
-                                t2 = scipy.sparse.csr_matrix(t2)
-                                if t2.shape[0] != t1.shape[1]:
-                                    if t2.shape[1] == t1.shape[1]:
-                                        t2 = t2.T
-                                    else:
-                                        raise FuncDesignerException('incorrect shape in FuncDesigner function _D(), inform developers about the bug')
-                                rr = t1._mul_sparse_matrix(t2)
-                                if asSparse is False:
-                                    rr = rr.toarray() 
+                            #t2 = atleast_2d(t2)
+                    else:
+                        # hence these are ndarrays
+                        if self(x).size > 1:
+                            t1 = t1.reshape(-1, 1)
+                            t2 = t2.reshape(1, -1)
                         else:
+                            t1 = t1.reshape(1, -1)
+                            t2 = t2.reshape(-1, 1)
+                            #t1 = t1.flatten()
+                            #t2 = t2.flatten()
+                    
+                    if not (isinstance(t1,  ndarray) and isinstance(t2,  ndarray)):
+                        if scipy is None:
+                            self.pWarn(scipyAbsentMsg)
                             rr = atleast_1d(dot(t1, t2))
-                        #assert rr.size != 178784
+                        else:
+                            t1 = scipy.sparse.csc_matrix(t1)
+                            t2 = scipy.sparse.csr_matrix(t2)
+                            if t2.shape[0] != t1.shape[1]:
+                                if t2.shape[1] == t1.shape[1]:
+                                    t2 = t2.T
+                                else:
+                                    raise FuncDesignerException('incorrect shape in FuncDesigner function _D(), inform developers about the bug')
+                            rr = t1._mul_sparse_matrix(t2)
+                            if asSparse is False:
+                                rr = rr.toarray() 
+                    else:
+                        rr = atleast_1d(dot(t1, t2))
 
 #                    if min(rr.shape) == 1 and isinstance(rr, ndarray): 
 #                        rr = rr.flatten() # TODO: check it and mb remove
@@ -697,9 +701,10 @@ class oofun:
                     
                     
                     if min(rr.shape) == 1: 
-                        if not isinstance(rr, ndarray): 
-                            rr = rr.toarray()
-                        rr = rr.flatten() # TODO: check it and mb remove
+                        assert isinstance(rr, ndarray) or isspmatrix(rr), 'Error in FuncDesigner AD, inform developers'
+#                        if not isinstance(rr, ndarray): 
+#                            rr = rr.toarray()
+#                        rr = rr.flatten() # TODO: check it and mb remove
                     if key in Keys:
                         if isinstance(r[key], ndarray) and not isinstance(rr, ndarray): # i.e. rr is sparse matrix
                             rr = rr.toarray() # I guess r[key] will hardly be all-zeros
@@ -741,8 +746,8 @@ class oofun:
 
     def _getDerivativeSelf(self, x, Vars,  fixedVars):
         Input = self._getInput(x)
-        if hasattr(self, 'size') and isscalar(self.size): nOutput = self.size
-        else: nOutput = self(x).size 
+#        if hasattr(self, 'size') and isscalar(self.size): nOutput = self.size
+#        else: nOutput = self(x).size 
         hasUserSuppliedDerivative = hasattr(self, 'd') and self.d is not None
         if hasUserSuppliedDerivative:
             derivativeSelf = []
@@ -769,24 +774,50 @@ class oofun:
                     if deriv is None:
                         if not DerApproximatorIsInstalled:
                             raise FuncDesignerException('To perform gradients check you should have DerApproximator installed, see http://openopt.org/DerApproximator')
-                        derivativeSelf.append(get_d1(self.fun, Input, diffInt=self.diffInt, stencil = self.stencil, args=self.args, varForDifferentiation = i, pointVal = self(x)))
+                        derivativeSelf.append(get_d1(self.fun, Input, diffInt=self.diffInt, stencil = self.stencil, \
+                                                     args=self.args, varForDifferentiation = i, pointVal = self(x), exactShape = True))
                     else:
                         # !!!!!!!!!!!!!! TODO: add check for user-supplied derivative shape
                         tmp = deriv(*Input)
                         if isscalar(tmp) or type(tmp) in (ndarray, tuple, list): # i.e. not a scipy.sparse matrix
                             tmp = atleast_2d(tmp)
-                            if tmp.shape[0] != nOutput: 
+                            
+                            ########################################
+                            # PREV
+#                            if tmp.shape[0] != nOutput: 
+#                                # TODO: add debug msg
+##                                print('incorrect shape in FD AD _getDerivativeSelf')
+##                                print tmp.shape[0], nOutput, tmp
+#                                if tmp.shape[1] != nOutput: raise FuncDesignerException('error in getDerivativeSelf()')
+#                                tmp = tmp.T
+                            
+                            # NEW
+                            Tmp = len(Input[i])
+                            if tmp.shape[1] != Tmp: 
                                 # TODO: add debug msg
-                                if tmp.shape[1] != nOutput: raise FuncDesignerException('error in getDerivativeSelf()')
+#                                print('incorrect shape in FD AD _getDerivativeSelf')
+#                                print tmp.shape[0], nOutput, tmp
+                                if tmp.shape[0] != Tmp: raise FuncDesignerException('error in getDerivativeSelf()')
                                 tmp = tmp.T
+                                    
+                            # END
+                            ########################################
+                            
                         derivativeSelf.append(tmp)
             else:
                 tmp = self.d(*Input)
                 if isscalar(tmp) or type(tmp) in (ndarray, tuple, list): # i.e. not a scipy.sparse matrix
                     tmp = atleast_2d(tmp)
-                    if tmp.shape[0] != nOutput: 
+                    # PREV
+#                    if tmp.shape[0] != nOutput: 
+#                        # TODO: add debug msg
+#                        if tmp.shape[1] != nOutput: raise FuncDesignerException('error in getDerivativeSelf()')
+#                        tmp = tmp.T
+                    # NEW
+                    expectedTotalInputLength = sum([len(elem) for elem in Input])
+                    if tmp.shape[1] != expectedTotalInputLength: 
                         # TODO: add debug msg
-                        if tmp.shape[1] != nOutput: raise FuncDesignerException('error in getDerivativeSelf()')
+                        if tmp.shape[0] != expectedTotalInputLength: raise FuncDesignerException('error in getDerivativeSelf()')
                         tmp = tmp.T
                         
                    
@@ -807,7 +838,7 @@ class oofun:
                         continue                                    
                     
                     #if Input[i].size == 1: TMP = TMP.flatten()
-                    if isinstance(TMP, ndarray) and min(TMP.shape) == 1: TMP = TMP.flatten()
+                    #if isinstance(TMP, ndarray) and min(TMP.shape) == 1: TMP = TMP.flatten()
                     derivativeSelf.append(TMP)
                     
             # TODO: is it required?
@@ -822,10 +853,8 @@ class oofun:
             if not DerApproximatorIsInstalled:
                 raise FuncDesignerException('To perform gradients check you should have DerApproximator installed, see http://openopt.org/DerApproximator')
                 
-            try:
-                derivativeSelf = get_d1(self.fun, Input, diffInt=self.diffInt, stencil = self.stencil, args=self.args, pointVal = self(x))
-            except:
-                raise 0
+            derivativeSelf = get_d1(self.fun, Input, diffInt=self.diffInt, stencil = self.stencil, args=self.args, pointVal = self(x), exactShape = True)
+
         
         # TODO: it should be handled in a better way, with personal derivatives for named inputs
         if isinstance(derivativeSelf, ndarray):
@@ -833,6 +862,7 @@ class oofun:
             derivativeSelf = [derivativeSelf]
         #print 'derivativeSelf:', derivativeSelf
         #assert derivativeSelf[0].dtype == float
+        assert all([derivativeSelf[i].ndim > 1 for i in xrange(len(derivativeSelf))])
         return derivativeSelf
 
     def D2(self, x):
