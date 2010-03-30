@@ -9,7 +9,7 @@ class DerApproximatorException:
     def __str__(self):
         return self.msg
 
-def get_d1(fun, vars, diffInt=1.5e-8, pointVal = None, args=(), stencil = 2, varForDifferentiation = None):
+def get_d1(fun, vars, diffInt=1.5e-8, pointVal = None, args=(), stencil = 2, varForDifferentiation = None, exactShape = False):
     """
     Usage: get_d1(fun, x, diffInt=1.5e-8, pointVal = None, args=(), stencil = 2, varForDifferentiation = None)
     fun: R^n -> R^m, x0 from R^n: function and point where derivatives should be obtained 
@@ -19,6 +19,7 @@ def get_d1(fun, vars, diffInt=1.5e-8, pointVal = None, args=(), stencil = 2, var
     stencil = 1: (f(x+diffInt) - f(x)) / diffInt
     stencil = 2: (f(x+diffInt) - f(x-diffInt)) / (2*diffInt)
     varForDifferentiation - the parameter is used from FuncDesigner
+    exactShape - set True to forbid possible flattering for 1D arrays
     """
     assert type(vars) in [tuple,  list,  ndarray, float, dict]
     
@@ -95,7 +96,7 @@ def get_d1(fun, vars, diffInt=1.5e-8, pointVal = None, args=(), stencil = 2, var
             agregate_counter += 1 # TODO: probably other values for n-dim arrays
             
         # TODO: fix it for arrays with ndim > 2
-        if min(d1.shape)==1: d1 = d1.flatten()
+        if not exactShape and min(d1.shape)==1: d1 = d1.flatten()
         
         r.append(asfarray(d1))
     if varForDifferentiation is not None or isscalar(vars) or (type(vars) in [list, tuple, ndarray] and isscalar(vars[0])): r = d1
