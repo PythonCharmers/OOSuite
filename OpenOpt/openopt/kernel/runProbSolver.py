@@ -92,7 +92,7 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     p.iterValues.r = [] # iter MaxResidual
     p.iterValues.rt = [] # iter MaxResidual Type: 'c', 'h', 'lb' etc
     p.iterValues.ri = [] # iter MaxResidual Index
-    p.iterValues.nNaNs = [] # number of constraints equal to numpy.nan
+    if p.__baseClassName__ == 'NonLin':p.iterValues.nNaNs = [] # number of constraints equal to numpy.nan
 
 
 
