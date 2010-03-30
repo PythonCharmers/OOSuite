@@ -495,7 +495,7 @@ class NonLinProblem(baseProblem, nonLinFuncs, Args):
     JacobianApproximationStencil = 1
     def __init__(self, *args, **kwargs):
         baseProblem.__init__(self, *args, **kwargs)
-        self.args = Args()
+        if not hasattr(self, 'args'): self.args = Args()
         self.prevVal = {}
         for fn in ['f', 'c', 'h', 'df', 'dc', 'dh', 'd2f', 'd2c', 'd2h']:
             self.prevVal[fn] = {'key':None, 'val':None}
@@ -550,7 +550,7 @@ class NonLinProblem(baseProblem, nonLinFuncs, Args):
         self.nEvals[funcType[1:]] = 0
         self.nEvals[funcType] = 0
         
-    def __makeCorrectArgs__(self):
+    def _makeCorrectArgs(self):
         argslist = dir(self.args)
         if not ('f' in argslist and 'c' in argslist and 'h' in argslist):
             tmp, self.args = self.args, autocreate()
@@ -583,7 +583,7 @@ class NonLinProblem(baseProblem, nonLinFuncs, Args):
         
         
         # TODO: simplify it
-        self.__makeCorrectArgs__()
+        self._makeCorrectArgs()
         for s in ('f', 'df', 'd2f', 'c', 'dc', 'd2c', 'h', 'dh', 'd2h'):
             derivativeOrder = len(s)-1
             self.nEvals[Copy(s)] = 0
