@@ -710,7 +710,7 @@ class oofun:
                             rr = rr.toarray() # I guess r[key] will hardly be all-zeros
                         elif not isinstance(r[key], ndarray) and isinstance(rr, ndarray): # i.e. r[key] is sparse matrix
                             r[key] = r[key].toarray()
-                        if rr.size == r[key].size and isinstance(rr, ndarray): 
+                        if rr.size == r[key].size and type(rr) == type(r[key]): 
                             r[key] += rr
                         else: 
                             r[key] = r[key] + rr
