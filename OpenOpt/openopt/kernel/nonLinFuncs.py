@@ -133,7 +133,6 @@ class nonLinFuncs:
                 p.prevVal[userFunctionType]['key'] = copy(x_0)
                 p.prevVal[userFunctionType]['val'] = r.copy()                
         elif getDerivative and p.isFDmodel:
-            #raise 0
             rr = [fun(X) for fun in Funcs]
             r = Vstack(rr) if scipyInstalled and any([isspmatrix(elem) for elem in rr]) else vstack(rr)
             #assert prod(r.shape) != 177878
@@ -169,12 +168,12 @@ class nonLinFuncs:
         #assert p.iter != 176 or userFunctionType != 'f' or not getDerivative
         if userFunctionType == 'f' and p.isObjFunValueASingleNumber and r.size > 1 and (type(r) == ndarray or min(r.shape) > 1): 
             r = r.sum(0)
-
 #        if type(r) == matrix: 
 #            raise 0
 #            r = r.A # if _dense_numpy_matrix !
         #assert p.iter != 176 or userFunctionType != 'f' or not getDerivative
-        if nXvectors == 1 and (not getDerivative or r.size == 1): #if min(r.shape) == 1:
+
+        if nXvectors == 1 and (not getDerivative or prod(r.shape) == 1): # DO NOT REPLACE BY r.size - r may be sparse!
             r = r.flatten() if type(r) == ndarray else r.toarray().flatten()
 
         if p.invertObjFunc and userFunctionType=='f':
@@ -192,6 +191,7 @@ class nonLinFuncs:
         if userFunctionType == 'f' and hasattr(p, 'solver') and p.solver.__funcForIterFcnConnection__=='f' and hasattr(p, 'f_iter'):
             if p.nEvals['f']%p.f_iter == 0:
                 p.iterfcn(x, r)
+
         return r
 
 
@@ -268,6 +268,7 @@ class nonLinFuncs:
             #TODO: inline ind modification!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             
             derivatives = Vstack(derivatives) if any(isspmatrix(derivatives)) else vstack(derivatives)
+            
 
             if ind is None:
                 p.nEvals[derivativesType] += 1
@@ -280,6 +281,7 @@ class nonLinFuncs:
                 if p.isObjFunValueASingleNumber: 
                     if not isinstance(derivatives, ndarray): derivatives = derivatives.toarray()
                     derivatives = derivatives.flatten()
+        
         if asSparse is False or not scipyInstalled or not hasattr(p, 'solver') or not p.solver._canHandleScipySparse: 
             # p can has no attr 'solver' if it is called from checkdf, checkdc, checkdh
             if not isinstance(derivatives, ndarray): 
