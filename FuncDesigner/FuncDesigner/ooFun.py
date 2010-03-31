@@ -579,6 +579,7 @@ class oofun:
                 rr = {}
                 tmpDict = Vars if Vars is not None else x
                 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! TODO: remove the cycle!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                
                 for oov, val in x.items():
                     #if not isinstance(oov not in r, bool): print oov not in r
                     if oov not in r or (fixedVars is not None and oov in fixedVars):
@@ -652,14 +653,14 @@ class oofun:
                 # asSparse should be 'autoselect' here, not the value taken from the function arguments!
                 elem_d = inp._D(x, Vars=Vars, fixedVars=fixedVars, sameDerivativeVariables=sameDerivativeVariables, asSparse = 'auto') 
                 
-                for key in elem_d.keys():
-                    assert derivativeSelf[ac].ndim > 1 
-                    assert elem_d[key].ndim > 1
+                for key, val in elem_d.items():
                     
-#                    if prod(derivativeSelf[ac].shape) == 1 or prod(elem_d[key].shape) == 1:
-#                        rr = derivativeSelf[ac] * elem_d[key]
+#                    if prod(derivativeSelf[ac].shape) == 1 or prod(val.shape) == 1:
+#                        rr = derivativeSelf[ac] * val
 #                    else:
-                    t1, t2 = self._considerSparse(derivativeSelf[ac], elem_d[key])
+
+                    if isscalar(val) or val.ndim < 2: val = atleast_2d(val)
+                    t1, t2 = self._considerSparse(derivativeSelf[ac], val)
                     cond_2 = t1.ndim > 1 or t2.ndim > 1
                     if cond_2:
                         # warning! t1,t2 can be sparse matrices, so I don't use t = atleast_2d(t) directly
@@ -697,6 +698,7 @@ class oofun:
                                 rr = rr.toarray() 
                     else:
                         rr = atleast_1d(dot(t1, t2))
+                    assert rr.ndim>1
 
 #                    if min(rr.shape) == 1 and isinstance(rr, ndarray): 
 #                        rr = rr.flatten() # TODO: check it and mb remove

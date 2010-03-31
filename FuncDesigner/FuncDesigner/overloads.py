@@ -114,8 +114,9 @@ def sum(inp, *args, **kwargs):
     
     if not isinstance(inp, oofun) and not condIterableOfOOFuns: 
         return np.sum(inp, *args, **kwargs)
-        
+
     if condIterableOfOOFuns:
+        is_linear = True
         d, INP, r0 = [], [], 0
         j = -1
         for elem in inp: # TODO: mb use reduce() or something like that
@@ -125,6 +126,7 @@ def sum(inp, *args, **kwargs):
                 continue
             j += 1
             INP.append(elem)
+            if not elem.is_linear: is_linear = False
 
         # TODO:  check for fixed inputs
         f = lambda *args: r0 + np.sum(args)
@@ -133,7 +135,7 @@ def sum(inp, *args, **kwargs):
 #            return np.sum(args)
         _inp = set(INP)
         #!!!!!!!!!!!!!!!!!! TODO: check INP for complex cases (not list of oovars)
-        r = oofun(f, input=INP) 
+        r = oofun(f, input=INP, is_linear=is_linear) 
         def _D(point, Vars=None, fixedVars = None, sameDerivativeVariables=True, asSparse = 'auto'):
             # TODO: handle involvePrevData
             # TODO: handle fixed vars
@@ -143,16 +145,16 @@ def sum(inp, *args, **kwargs):
                     if (fixedVars is not None and elem in fixedVars) or (Vars is not None and elem not in Vars): continue
                     sz = np.asarray(point[elem]).size
                     tmpres = Eye(sz) 
-                    if elem.name in keys:
-                        if isinstance(r[elem.name], np.ndarray) and not isinstance(tmpres, np.ndarray): # i.e. tmpres is sparse matrix
+                    if elem in keys:
+                        if isinstance(r[elem], np.ndarray) and not isinstance(tmpres, np.ndarray): # i.e. tmpres is sparse matrix
                             tmpres = tmpres.toarray()
-                        elif not isinstance(r[elem.name], np.ndarray) and isinstance(tmpres, np.ndarray):
-                            r[elem.name] = r[elem.name].toarray()
-                        r[elem.name] += tmpres
+                        elif not isinstance(r[elem], np.ndarray) and isinstance(tmpres, np.ndarray):
+                            r[elem] = r[elem].toarray()
+                        r[elem] += tmpres
                     else:
                         # TODO: check it for oovars with size > 1
-                        r[elem.name] = tmpres
-                        keys.add(elem.name)
+                        r[elem] = tmpres
+                        keys.add(elem)
                 else:
                     tmp = elem._D(point, Vars, fixedVars, *args, **kwargs)
                     for key, val in tmp.items():
@@ -174,7 +176,6 @@ def sum(inp, *args, **kwargs):
         r._D = _D
         return r
     else: 
-        assert isinstance(inp, oofun)
         return inp.sum(*args, **kwargs)#np.sum(inp, *args, **kwargs)
     
     if len(args) != 0 or len(kwargs) != 0:
