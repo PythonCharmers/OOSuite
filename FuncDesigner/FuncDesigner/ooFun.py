@@ -536,7 +536,7 @@ class oofun:
 
 
     """                                              derivatives                                           """
-    def D(self, x, Vars=None, fixedVars = None, resultKeysType = 'vars', asSparse = False):
+    def D(self, x, Vars=None, fixedVars = None, resultKeysType = 'vars', asSparse = False, exactShape = False):
         # resultKeysType doesn't matter for the case isinstance(Vars, oovar)
         if Vars is not None and fixedVars is not None:
             raise FuncDesignerException('No more than one argument from "Vars" and "fixedVars" is allowed for the function')
@@ -580,10 +580,13 @@ class oofun:
                 tmpDict = Vars if Vars is not None else x
                 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! TODO: remove the cycle!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 for oov, val in x.items():
-                    if not isinstance(oov not in r, bool): print oov not in r
+                    #if not isinstance(oov not in r, bool): print oov not in r
                     if oov not in r or (fixedVars is not None and oov in fixedVars):
                         continue
-                    rr[oov] = r[oov]
+                    tmp = r[oov]
+                    if not exactShape and min(tmp.shape) == 1 and not isspmatrix(tmp):
+                        tmp = tmp.flatten()
+                    rr[oov] = tmp
                 return rr
             else:
                 raise FuncDesignerException('Incorrect argument resultKeysType, should be "vars" or "names"')
