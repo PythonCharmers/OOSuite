@@ -1,6 +1,6 @@
 __docformat__ = "restructuredtext en"
 from time import time, clock
-from numpy import asfarray, copy, inf, nan, isfinite, ones, ndim, all, atleast_1d, any, isnan, array_equiv, asscalar, asarray
+from numpy import asfarray, copy, inf, nan, isfinite, ones, ndim, all, atleast_1d, any, isnan, array_equiv, asscalar, asarray, where
 from setDefaultIterFuncs import stopcase,  SMALL_DELTA_X,  SMALL_DELTA_F
 from check import check
 import copy
@@ -318,7 +318,7 @@ def finalTextOutput(p, r):
         else:
             rMsg = 'MaxResidual = %g' % r.rf
         if not p.isFeasible:
-            nNaNs = len(isnan(p.c(p.xf))) + len(isnan(p.h(p.xf)))
+            nNaNs = len(where(isnan(p.c(p.xf)))[0]) + len(where(isnan(p.h(p.xf)))[0])
             if nNaNs == 0:
                 nNaNsMsg = ''
             elif nNaNs == 1:
