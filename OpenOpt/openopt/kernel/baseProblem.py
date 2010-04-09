@@ -561,8 +561,6 @@ class NonLinProblem(baseProblem, nonLinFuncs, Args):
 
     def __finalize__(self):
         #BaseProblem.__finalize__(self)
-        if (self.userProvided.c and any(isnan(self.c(self.xf)))) or (self.userProvided.h and any(isnan(self.h(self.xf)))):
-            self.warn('some non-linear constraints are equal to NaN')
         if self.isFDmodel:
             self.xf = self._vector2point(self.xf)
 
