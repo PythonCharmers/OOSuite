@@ -1,5 +1,5 @@
 __docformat__ = "restructuredtext en"
-from numpy import atleast_1d,  all, asarray, ndarray, copy, ravel, isnan
+from numpy import atleast_1d,  all, asarray, ndarray, copy, ravel, isnan, where
 from Point import Point
 
 class baseSolver:
@@ -48,7 +48,8 @@ class baseSolver:
             if len(args)>0: p.xk = args[0]
             elif 'xk' in kwargs.keys(): p.xk = kwargs['xk']
             elif not hasattr(p, 'xk'): p.err('iterfcn must get x value, if you see it inform oo developers')
-            if p.__baseClassName__ == 'NonLin': p.nNaNs = len(isnan(p.c(p.xk))) + len(isnan(p.h(p.xk)))
+            if p.__baseClassName__ == 'NonLin': 
+                p.nNaNs = len(where(isnan(p.c(p.xk)))[0]) + len(where(isnan(p.h(p.xk)))[0])
 
             if len(args)>1: p.fk = args[1]
             elif 'fk' in kwargs.keys(): p.fk = kwargs['fk']
