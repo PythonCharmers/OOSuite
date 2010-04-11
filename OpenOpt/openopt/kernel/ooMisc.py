@@ -1,6 +1,6 @@
 __docformat__ = "restructuredtext en"
-from numpy import zeros, ones, copy, isfinite, where, asarray, inf, array, asfarray, dot, ndarray, prod
-from nonOptMisc import scipyAbsentMsg, scipyInstalled
+from numpy import zeros, ones, copy, isfinite, where, asarray, inf, array, asfarray, dot, ndarray, prod, flatnonzero
+from nonOptMisc import scipyAbsentMsg, scipyInstalled, isspmatrix
 
 def Len(arg):
     if arg == None or arg == [] or (isinstance(arg, ndarray) and arg.size==1 and arg == array(None, dtype=object)):
