@@ -377,32 +377,29 @@ class ralg(baseSolver):
                 #print 'c_curr:', PointForDilation.c(), 'c_prev:', previter_pointForDilation.c(), 'x_curr:', PointForDilation.x
                 #print 'dilation_direction_before:', prevDirectionForDilation-directionForDilation
                 assert self.approach == 'all active'
-                c_prev = previter_pointForDilation.c()
-                c_current = PointForDilation.c()
                 
-                case1 = logical_and(isnan(c_prev), logical_not(isnan(c_current)))
-                ind_switch_from_nan = where(case1)[0]
-                
-                case2 = logical_and(isnan(c_current), logical_not(isnan(c_prev)))
-                ind_switch_to_nan = where(case2)[0]                
-                
-                if len(ind_switch_to_nan) != 0:
-                    tmp = previter_pointForDilation.dc(ind_switch_to_nan)
-#                    print 'tmp>>1', tmp
-#                    print '1>', c_current, c_prev, previter_pointForDilation.dc()
-                    if tmp.ndim>1: tmp = tmp.sum(0)
-                    if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
-                    prevDirectionForDilation -= tmp
-                    #prevDirectionForDilation = prevDirectionForDilation-tmp
+                for ct in ['c', 'h']:
+                    val_prev = getattr(previter_pointForDilation, ct)()
+                    val_current = getattr(PointForDilation, ct)()
+                    
+                    case1 = logical_and(isnan(val_prev), logical_not(isnan(val_current)))
+                    ind_switch_from_nan = where(case1)[0]
+                    
+                    case2 = logical_and(isnan(val_current), logical_not(isnan(val_prev)))
+                    ind_switch_to_nan = where(case2)[0]                
+                    
+                    if len(ind_switch_to_nan) != 0:
+                        tmp = getattr(previter_pointForDilation, 'd'+ct)(ind_switch_to_nan)
+                        if tmp.ndim>1: tmp = tmp.sum(0)
+                        if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
+                        prevDirectionForDilation -= tmp
 
-                if len(ind_switch_from_nan) != 0:
-                    tmp = PointForDilation.dc(ind_switch_from_nan)
-#                    print 'tmp>>2', tmp
-#                    print '2>', c_current, c_prev, PointForDilation.dc()
-                    if tmp.ndim>1: tmp = tmp.sum(0)
-                    if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
-                    directionForDilation -= tmp
-                    #directionForDilation = directionForDilation-tmp
+                    if len(ind_switch_from_nan) != 0:
+                        tmp = getattr(PointForDilation, 'd'+ct)(ind_switch_from_nan)
+                        if tmp.ndim>1: tmp = tmp.sum(0)
+                        if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
+                        directionForDilation -= tmp
+
                     
                 #print 'end'
                 #print 'dilation_direction_after:', prevDirectionForDilation-directionForDilation
