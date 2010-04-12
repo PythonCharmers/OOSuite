@@ -466,9 +466,9 @@ class Point:
 
     #def __getDirection__(self, useCurrentBestFeasiblePoint = False):
     #def __getDirection__(self, altLinInEq = False):
-    def __getDirection__(self, approach):
+    def _getDirection(self, approach):
         if hasattr(self, 'direction'):
-            return self.direction
+            return self.direction.copy()
         p = self.p
         contol = p.contol
         maxRes, fname, ind = self.mr_alt(1)
@@ -477,7 +477,7 @@ class Point:
         #or (useCurrentBestFeasiblePoint and hasattr(p, 'currentBestFeasiblePoint') and self.f() - p.currentBestFeasiblePoint.f() > self.mr()):
         #if (maxRes <= p.contol and all(isfinite(self.df())) and (p.isNaNInConstraintsAllowed or self.nNaNs() == 0)) :
             self.direction, self.dType = self.df(),'f'
-            return self.direction
+            return self.direction.copy()
         else:
             if approach == 'all active':
                 th = 0.0
@@ -489,6 +489,7 @@ class Point:
                         if tmp.ndim > 1: 
                             tmp = tmp.sum(0)
                         direction += (tmp.A if isspmatrix(tmp) or isinstance(tmp, matrix) else tmp).flatten()
+
                 if p.userProvided.h:
                     ind1 = where(p.h(x)>th)[0]
                     if len(ind1) > 0:
@@ -524,7 +525,7 @@ class Point:
                     p.err('error in getRalgDirection (unknown residual type ' + fname + ' ), you should report the bug')
                 self.direction = d.flatten()
             if isspmatrix(self.direction): self.direction = self.direction.A
-            return self.direction
+            return self.direction.copy() # it may be modified in ralg when some constraints coords are NaN
 
 #    def __getDirection__(self, useCurrentBestFeasiblePoint = False):
 #        if hasattr(self, 'direction'):

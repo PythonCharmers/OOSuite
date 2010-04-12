@@ -38,6 +38,7 @@ class ralg(baseSolver):
     approach = 'all active'
     newLinEq = True
     new_bs = True
+    skipPrevIterNaNsInDilation = True
 
     def needRej(self, p, b, g, g_dilated):
 #        r = log10(1e15 * p.norm(g_dilated) / p.norm(g))
@@ -125,7 +126,7 @@ class ralg(baseSolver):
         previter_pointForDilation = bestPoint
         prevIter_bestPointBeforeTurn = bestPoint
 
-        g = bestPoint.__getDirection__(self.approach)
+        g = bestPoint._getDirection(self.approach)
         prevDirectionForDilation = g
         moveDirection = g
         if not any(g) and all(isfinite(g)):
@@ -316,9 +317,9 @@ class ralg(baseSolver):
             if best_ls_point.isFeas(False) and hasattr(best_ls_point, '_df'): 
                 p._df = best_ls_point.df().copy()            
 
-            directionForDilation = PointForDilation.__getDirection__(self.approach) 
+            directionForDilation = PointForDilation._getDirection(self.approach) 
             #directionForDilation = newPoint.__getDirection__(self.approach) # used for dilation direction obtaining
-            moveDirection = best_ls_point.__getDirection__(self.approach)
+            moveDirection = best_ls_point._getDirection(self.approach)
 #            if not self.new_bs or ls != 0:
 #                moveDirection = iterPoint.__getDirection__(self.approach)
 #            else:
@@ -366,6 +367,51 @@ class ralg(baseSolver):
 #            r_p, ind_p, fname_p = prevIter_best_ls_point.mr(1)
 #            r_, ind_, fname_ = PointForDilation.mr(1)
 
+
+            # CHANGES
+            # !!!!!!!!!!!!!!!!!!!!!!!!  TODO: same for h        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            
+            #print 'x:', PointForDilation.x
+            if self.skipPrevIterNaNsInDilation:
+                #print 'start'
+                #print 'c_curr:', PointForDilation.c(), 'c_prev:', previter_pointForDilation.c(), 'x_curr:', PointForDilation.x
+                #print 'dilation_direction_before:', prevDirectionForDilation-directionForDilation
+                assert self.approach == 'all active'
+                c_prev = previter_pointForDilation.c()
+                c_current = PointForDilation.c()
+                
+                case1 = logical_and(isnan(c_prev), logical_not(isnan(c_current)))
+                ind_switch_from_nan = where(case1)[0]
+                
+                case2 = logical_and(isnan(c_current), logical_not(isnan(c_prev)))
+                ind_switch_to_nan = where(case2)[0]                
+                
+                if len(ind_switch_to_nan) != 0:
+                    tmp = previter_pointForDilation.dc(ind_switch_to_nan)
+#                    print 'tmp>>1', tmp
+#                    print '1>', c_current, c_prev, previter_pointForDilation.dc()
+                    if tmp.ndim>1: tmp = tmp.sum(0)
+                    if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
+                    prevDirectionForDilation -= tmp
+                    #prevDirectionForDilation = prevDirectionForDilation-tmp
+
+                if len(ind_switch_from_nan) != 0:
+                    tmp = PointForDilation.dc(ind_switch_from_nan)
+#                    print 'tmp>>2', tmp
+#                    print '2>', c_current, c_prev, PointForDilation.dc()
+                    if tmp.ndim>1: tmp = tmp.sum(0)
+                    if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
+                    directionForDilation -= tmp
+                    #directionForDilation = directionForDilation-tmp
+                    
+                #print 'end'
+                #print 'dilation_direction_after:', prevDirectionForDilation-directionForDilation
+            # !!!!!!!!!!!!!!!!!!!!!!!!  TODO: same for h        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            # CHANGES END
+
+
+
+
             if self.dilationType == 'normalized' and (not fname_p in ('lb', 'ub', 'lin_eq', 'lin_ineq') or not fname_ in ('lb', 'ub', 'lin_eq', 'lin_ineq')) and (fname_p != fname_  or ind_p != ind_):
                 G2,  G = directionForDilation/norm(directionForDilation), prevDirectionForDilation/norm(prevDirectionForDilation)
             else:
@@ -410,7 +456,7 @@ class ralg(baseSolver):
             # TODO: add middle point for the case ls = 0
             elif lastPointOfSameType is not None:
                 assert self.dilationType == 'plain difference'
-                G2 = lastPointOfSameType.__getDirection__(self.approach) 
+                G2 = lastPointOfSameType._getDirection(self.approach) 
                 g1 = G2 - G
                 #if norm(g1) < 1e-7 * ((norm(G2) + norm(G))):
                 # TODO: add check of norm(g1)<some_epsilon
@@ -543,7 +589,7 @@ class ralg(baseSolver):
 
             """                               Call OO iterfcn                                """
             p.iterfcn(best_ls_point)
-
+            #print directionForDilation
 
             """                             Check stop criteria                           """
 
@@ -611,7 +657,7 @@ class ralg(baseSolver):
             #iterPoint = None
             prevIter_best_ls_point = best_ls_point
             previter_pointForDilation = best_ls_point
-            prevDirectionForDilation = best_ls_point.__getDirection__(self.approach)
+            prevDirectionForDilation = best_ls_point._getDirection(self.approach)
             prevIter_bestPointBeforeTurn = bestPointBeforeTurn
 
 
