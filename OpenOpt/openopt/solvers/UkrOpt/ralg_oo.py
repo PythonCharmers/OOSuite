@@ -377,28 +377,110 @@ class ralg(baseSolver):
                 #print 'c_curr:', PointForDilation.c(), 'c_prev:', previter_pointForDilation.c(), 'x_curr:', PointForDilation.x
                 #print 'dilation_direction_before:', prevDirectionForDilation-directionForDilation
                 assert self.approach == 'all active'
-                
-                for ct in ['c', 'h']:
-                    val_prev = getattr(previter_pointForDilation, ct)()
-                    val_current = getattr(PointForDilation, ct)()
-                    
+                #print '------------------'
+                """                               ineq                                     """
+                val_prev = previter_pointForDilation.c()
+                val_current = PointForDilation.c()
+                if not currIterPointIsFeasible:
                     case1 = logical_and(isnan(val_prev), logical_not(isnan(val_current)))
+                    #case1 = logical_and(isnan(val_prev), val_current>0)
                     ind_switch_from_nan = where(case1)[0]
-                    
-                    case2 = logical_and(isnan(val_current), logical_not(isnan(val_prev)))
-                    ind_switch_to_nan = where(case2)[0]                
-                    
-                    if len(ind_switch_to_nan) != 0:
-                        tmp = getattr(previter_pointForDilation, 'd'+ct)(ind_switch_to_nan)
-                        if tmp.ndim>1: tmp = tmp.sum(0)
-                        if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
-                        prevDirectionForDilation -= tmp
+                    #print 'ind_switch_from_nan', ind_switch_from_nan
 
                     if len(ind_switch_from_nan) != 0:
-                        tmp = getattr(PointForDilation, 'd'+ct)(ind_switch_from_nan)
+                        tmp = PointForDilation.dc(ind_switch_from_nan)
                         if tmp.ndim>1: tmp = tmp.sum(0)
                         if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
                         directionForDilation -= tmp
+                        #print 'new directionForDilation', directionForDilation
+                        
+
+                if not prevIterPointIsFeasible:
+                    case2 = logical_and(isnan(val_current), logical_not(isnan(val_prev)))
+                    #case2 = logical_and(isnan(val_current), val_prev>0)
+                    ind_switch_to_nan = where(case2)[0]              
+                    #print 'ind_switch_to_nan', ind_switch_to_nan
+                    
+                    if len(ind_switch_to_nan) != 0:
+                        tmp = previter_pointForDilation.dc(ind_switch_to_nan)
+                        if tmp.ndim>1: tmp = tmp.sum(0)
+                        if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
+                        prevDirectionForDilation -= tmp
+                        #print 'new prevDirectionForDilation', prevDirectionForDilation
+                #print 'diff:', directionForDilation-prevDirectionForDilation
+                #if norm(directionForDilation-prevDirectionForDilation)<1e-10:
+                    #raise 0
+                    #print 'directionForDilation', directionForDilation
+                    #print 'prevDirectionForDilation', prevDirectionForDilation
+
+                    
+                """                                 eq                                     """
+#                val_prev = previter_pointForDilation.h()
+#                val_current = PointForDilation.h()
+#                
+#                if not currIterPointIsFeasible:
+#                    #case1 = logical_and(isnan(val_prev), logical_not(isnan(val_current)))
+#                    case1 = logical_and(isnan(val_prev), val_current>0)
+#                    ind_switch_from_nan = where(case1)[0]
+#
+#                    if len(ind_switch_from_nan) != 0:
+#                        tmp = PointForDilation.dh(ind_switch_from_nan)
+#                        if tmp.ndim>1: tmp = tmp.sum(0)
+#                        if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
+#                        directionForDilation -= tmp
+#
+#                    case11 = logical_and(isnan(val_prev), val_current<0)
+#                    ind_switch_from_nan = where(case11)[0]
+#
+#                    if len(ind_switch_from_nan) != 0:
+#                        tmp = PointForDilation.dh(ind_switch_from_nan)
+#                        if tmp.ndim>1: tmp = tmp.sum(0)
+#                        if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
+#                        directionForDilation += tmp
+#
+#                if not prevIterPointIsFeasible:
+#                    #case2 = logical_and(isnan(val_current), logical_not(isnan(val_prev)))
+#                    case2 = logical_and(isnan(val_current), val_prev>0)
+#                    ind_switch_to_nan = where(case2)[0]                
+#                    
+#                    if len(ind_switch_to_nan) != 0:
+#                        tmp = previter_pointForDilation.dc(ind_switch_to_nan)
+#                        if tmp.ndim>1: tmp = tmp.sum(0)
+#                        if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
+#                        prevDirectionForDilation -= tmp
+#
+#                    case22 = logical_and(isnan(val_current), val_prev<0)
+#                    ind_switch_to_nan = where(case22)[0]                
+#                    
+#                    if len(ind_switch_to_nan) != 0:
+#                        tmp = previter_pointForDilation.dc(ind_switch_to_nan)
+#                        if tmp.ndim>1: tmp = tmp.sum(0)
+#                        if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
+#                        prevDirectionForDilation += tmp
+
+
+
+#                for ct in ['c', 'h']:
+#                    val_prev = getattr(previter_pointForDilation, ct)()
+#                    val_current = getattr(PointForDilation, ct)()
+#                    
+#                    case1 = logical_and(isnan(val_prev), logical_not(isnan(val_current)))
+#                    ind_switch_from_nan = where(case1)[0]
+#                    
+#                    case2 = logical_and(isnan(val_current), logical_not(isnan(val_prev)))
+#                    ind_switch_to_nan = where(case2)[0]                
+#                    
+#                    if len(ind_switch_to_nan) != 0:
+#                        tmp = getattr(previter_pointForDilation, 'd'+ct)(ind_switch_to_nan)
+#                        if tmp.ndim>1: tmp = tmp.sum(0)
+#                        if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
+#                        prevDirectionForDilation -= tmp
+#
+#                    if len(ind_switch_from_nan) != 0:
+#                        tmp = getattr(PointForDilation, 'd'+ct)(ind_switch_from_nan)
+#                        if tmp.ndim>1: tmp = tmp.sum(0)
+#                        if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
+#                        directionForDilation -= tmp
 
                     
                 #print 'end'
@@ -446,7 +528,12 @@ class ralg(baseSolver):
 #            if len(directionVectorsList) > 2: directionVectorsList = directionVectorsList[:-2]
 #            # CHANGES END
 
-            if prevIterPointIsFeasible == currIterPointIsFeasible == True:
+
+            if norm(G2 - G) < 1e-4 * min((norm(G2), norm(G))):
+                p.debugmsg("ralg: 'last point of same type gradient' is used")
+                g1 = G2
+            
+            elif prevIterPointIsFeasible == currIterPointIsFeasible == True:
                 g1 = G2 - G
             elif prevIterPointIsFeasible == currIterPointIsFeasible == False:
                 g1 = G2 - G
@@ -455,11 +542,12 @@ class ralg(baseSolver):
                 assert self.dilationType == 'plain difference'
                 G2 = lastPointOfSameType._getDirection(self.approach) 
                 g1 = G2 - G
-                #if norm(g1) < 1e-7 * ((norm(G2) + norm(G))):
-                # TODO: add check of norm(g1)<some_epsilon
-                if norm(g1) < 1e-4 * min((norm(G2), norm(G))):
+                if norm(G2 - G) < 1e-4 * min((norm(G2), norm(G))):
                     p.debugmsg("ralg: 'last point of same type gradient' is used")
                     g1 = G2
+                
+                #if norm(g1) < 1e-7 * ((norm(G2) + norm(G))):
+                # TODO: add check of norm(g1)<some_epsilon
                 if currIterPointIsFeasible: 
                     pass
                     #alp_addition += 0.5
@@ -555,6 +643,7 @@ class ralg(baseSolver):
 #                if use_dilated:
                 g = economyMult(b.T, g1)
                 ng = p.norm(g)
+                #print ng
                 #if p.iter>500: p.debugmsg(str(g2))
 
                 if self.needRej(p, b, g1, g) or selfNeedRej:
