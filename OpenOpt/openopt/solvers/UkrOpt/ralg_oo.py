@@ -415,48 +415,48 @@ class ralg(baseSolver):
 
                     
                 """                                 eq                                     """
-#                val_prev = previter_pointForDilation.h()
-#                val_current = PointForDilation.h()
-#                
-#                if not currIterPointIsFeasible:
-#                    #case1 = logical_and(isnan(val_prev), logical_not(isnan(val_current)))
-#                    case1 = logical_and(isnan(val_prev), val_current>0)
-#                    ind_switch_from_nan = where(case1)[0]
-#
-#                    if len(ind_switch_from_nan) != 0:
-#                        tmp = PointForDilation.dh(ind_switch_from_nan)
-#                        if tmp.ndim>1: tmp = tmp.sum(0)
-#                        if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
-#                        directionForDilation -= tmp
-#
-#                    case11 = logical_and(isnan(val_prev), val_current<0)
-#                    ind_switch_from_nan = where(case11)[0]
-#
-#                    if len(ind_switch_from_nan) != 0:
-#                        tmp = PointForDilation.dh(ind_switch_from_nan)
-#                        if tmp.ndim>1: tmp = tmp.sum(0)
-#                        if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
-#                        directionForDilation += tmp
-#
-#                if not prevIterPointIsFeasible:
-#                    #case2 = logical_and(isnan(val_current), logical_not(isnan(val_prev)))
-#                    case2 = logical_and(isnan(val_current), val_prev>0)
-#                    ind_switch_to_nan = where(case2)[0]                
-#                    
-#                    if len(ind_switch_to_nan) != 0:
-#                        tmp = previter_pointForDilation.dc(ind_switch_to_nan)
-#                        if tmp.ndim>1: tmp = tmp.sum(0)
-#                        if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
-#                        prevDirectionForDilation -= tmp
-#
-#                    case22 = logical_and(isnan(val_current), val_prev<0)
-#                    ind_switch_to_nan = where(case22)[0]                
-#                    
-#                    if len(ind_switch_to_nan) != 0:
-#                        tmp = previter_pointForDilation.dc(ind_switch_to_nan)
-#                        if tmp.ndim>1: tmp = tmp.sum(0)
-#                        if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
-#                        prevDirectionForDilation += tmp
+                val_prev = previter_pointForDilation.h()
+                val_current = PointForDilation.h()
+                
+                if not currIterPointIsFeasible:
+                    #case1 = logical_and(isnan(val_prev), logical_not(isnan(val_current)))
+                    case1 = logical_and(isnan(val_prev), val_current>0)
+                    ind_switch_from_nan = where(case1)[0]
+
+                    if len(ind_switch_from_nan) != 0:
+                        tmp = PointForDilation.dh(ind_switch_from_nan)
+                        if tmp.ndim>1: tmp = tmp.sum(0)
+                        if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
+                        directionForDilation -= tmp
+
+                    case11 = logical_and(isnan(val_prev), val_current<0)
+                    ind_switch_from_nan = where(case11)[0]
+
+                    if len(ind_switch_from_nan) != 0:
+                        tmp = PointForDilation.dh(ind_switch_from_nan)
+                        if tmp.ndim>1: tmp = tmp.sum(0)
+                        if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
+                        directionForDilation += tmp
+
+                if not prevIterPointIsFeasible:
+                    #case2 = logical_and(isnan(val_current), logical_not(isnan(val_prev)))
+                    case2 = logical_and(isnan(val_current), val_prev>0)
+                    ind_switch_to_nan = where(case2)[0]                
+                    
+                    if len(ind_switch_to_nan) != 0:
+                        tmp = previter_pointForDilation.dc(ind_switch_to_nan)
+                        if tmp.ndim>1: tmp = tmp.sum(0)
+                        if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
+                        prevDirectionForDilation -= tmp
+
+                    case22 = logical_and(isnan(val_current), val_prev<0)
+                    ind_switch_to_nan = where(case22)[0]                
+                    
+                    if len(ind_switch_to_nan) != 0:
+                        tmp = previter_pointForDilation.dc(ind_switch_to_nan)
+                        if tmp.ndim>1: tmp = tmp.sum(0)
+                        if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
+                        prevDirectionForDilation += tmp
 
 
 
