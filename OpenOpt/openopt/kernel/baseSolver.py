@@ -56,10 +56,10 @@ class baseSolver:
             else: fArg = False
 
             if len(args)>2: 
-                p.pWarn('executing deprecated code, inform developers')
+                #p.pWarn('executing deprecated code, inform developers')
                 p.rk = args[2]
             elif 'rk' in kwargs.keys(): 
-                p.pWarn('executing deprecated code, inform developers')
+                #p.pWarn('executing deprecated code, inform developers')
                 p.rk = kwargs['rk']
 
             # TODO: MODIFY IT SOMEHOW to prevent possible recalculations
