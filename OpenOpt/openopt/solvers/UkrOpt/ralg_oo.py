@@ -367,23 +367,15 @@ class ralg(baseSolver):
 #            r_p, ind_p, fname_p = prevIter_best_ls_point.mr(1)
 #            r_, ind_, fname_ = PointForDilation.mr(1)
 
-
-            # CHANGES
-            # !!!!!!!!!!!!!!!!!!!!!!!!  TODO: same for h        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            
-            #print 'x:', PointForDilation.x
             if self.skipPrevIterNaNsInDilation:
-                #print 'start'
-                #print 'c_curr:', PointForDilation.c(), 'c_prev:', previter_pointForDilation.c(), 'x_curr:', PointForDilation.x
-                #print 'dilation_direction_before:', prevDirectionForDilation-directionForDilation
                 assert self.approach == 'all active'
-                #print '------------------'
-                """                               ineq                                     """
+                
+                """                          processing NaNs in nonlin inequality constraints                          """
                 val_prev = previter_pointForDilation.c()
                 val_current = PointForDilation.c()
                 if not currIterPointIsFeasible:
-                    case1 = logical_and(isnan(val_prev), logical_not(isnan(val_current)))
-                    #case1 = logical_and(isnan(val_prev), val_current>0)
+                    #case1 = logical_and(isnan(val_prev), logical_not(isnan(val_current)))
+                    case1 = logical_and(isnan(val_prev), val_current>0)
                     ind_switch_from_nan = where(case1)[0]
                     #print 'ind_switch_from_nan', ind_switch_from_nan
 
@@ -396,8 +388,8 @@ class ralg(baseSolver):
                         
 
                 if not prevIterPointIsFeasible:
-                    case2 = logical_and(isnan(val_current), logical_not(isnan(val_prev)))
-                    #case2 = logical_and(isnan(val_current), val_prev>0)
+                    #case2 = logical_and(isnan(val_current), logical_not(isnan(val_prev)))
+                    case2 = logical_and(isnan(val_current), val_prev>0)
                     ind_switch_to_nan = where(case2)[0]              
                     #print 'ind_switch_to_nan', ind_switch_to_nan
                     
@@ -406,15 +398,8 @@ class ralg(baseSolver):
                         if tmp.ndim>1: tmp = tmp.sum(0)
                         if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
                         prevDirectionForDilation -= tmp
-                        #print 'new prevDirectionForDilation', prevDirectionForDilation
-                #print 'diff:', directionForDilation-prevDirectionForDilation
-                #if norm(directionForDilation-prevDirectionForDilation)<1e-10:
-                    #raise 0
-                    #print 'directionForDilation', directionForDilation
-                    #print 'prevDirectionForDilation', prevDirectionForDilation
-
                     
-                """                                 eq                                     """
+                """                           processing NaNs in nonlin equality constraints                           """
                 val_prev = previter_pointForDilation.h()
                 val_current = PointForDilation.h()
                 
@@ -558,24 +543,6 @@ class ralg(baseSolver):
 
             """                             Perform dilation                               """
 
-            # DEBUG!
-#            W = w
-#            W = T(1.0/alp-1.0) if prevIterPointIsFeasible == currIterPointIsFeasible else T(1.0/(16*alp)-1.0)
-#            W = T(1.0/(2*alp)-1.0)
-            # DEBUG END
-
-
-            # DEBUG!
-#            if hasattr(p, 'x_opt'):
-#                dx = PointForDilation.x - p.x_opt
-#                rr = p.matmult(dx, moveDirection) / p.norm(moveDirection) / p.norm(dx)
-#                print('cos_phi_delta:%f'%rr)
-            # DEBUG END
-
-
-            
-            
-            
             # CHANGES
 #            g = economyMult(b.T, g1)
 #            gn = g/norm(g)
@@ -609,13 +576,9 @@ class ralg(baseSolver):
 #            if len(directionVectorsList) > 2: directionVectorsList = directionVectorsList[:-2]
             # CHANGES END
 
-            #doDilation = 1
             if doDilation:
-#                if use_dilated:
                 g = economyMult(b.T, g1)
                 ng = p.norm(g)
-                #print ng
-                #if p.iter>500: p.debugmsg(str(g2))
 
                 if self.needRej(p, b, g1, g) or selfNeedRej:
                     selfNeedRej = False
@@ -624,17 +587,10 @@ class ralg(baseSolver):
                     b = B0.copy()
                     hs = 0.5*p.norm(prevIter_best_ls_point.x - best_ls_point.x)
                     # TODO: iterPoint = projection(iterPoint,Aeq) if res_Aeq > 0.75*contol
-#                else:
-#                    g = g1
-#                    ng = p.norm(g)
 
-
-                #p.debugmsg('ng:%e  ng1:%e' % (ng, p.norm(g1)))
                 if ng < 1e-40: 
-                    #raise 0
                     hs *= 0.9
                     p.debugmsg('small dilation direction norm (%e), skipping' % ng)
-                #p.debugmsg('dilation direction norm:%e' % ng)
                 if all(isfinite(g)) and ng > 1e-50 and doDilation:
                     g = (g / ng).reshape(-1,1)
                     vec1 = economyMult(b, g).reshape(-1,1)# TODO: remove economyMult, use dot?
@@ -646,7 +602,7 @@ class ralg(baseSolver):
 
             """                               Call OO iterfcn                                """
             p.iterfcn(best_ls_point)
-            #print directionForDilation
+            
 
             """                             Check stop criteria                           """
 
