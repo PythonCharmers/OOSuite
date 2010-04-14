@@ -367,15 +367,15 @@ class ralg(baseSolver):
 #            r_p, ind_p, fname_p = prevIter_best_ls_point.mr(1)
 #            r_, ind_, fname_ = PointForDilation.mr(1)
 
-
             if lastPointOfSameType is not None and prevIterPointIsFeasible != currIterPointIsFeasible:
                 # TODO: add middle point for the case ls = 0
                 assert self.dilationType == 'plain difference'
-                directionForDilation = lastPointOfSameType._getDirection(self.approach) 
-            else:
-                directionForDilation = PointForDilation._getDirection(self.approach) 
+                #directionForDilation = lastPointOfSameType._getDirection(self.approach) 
+                PointForDilation = lastPointOfSameType
+            #else:
+            directionForDilation = PointForDilation._getDirection(self.approach) 
 
-
+            
             if self.skipPrevIterNaNsInDilation:
                 assert self.approach == 'all active'
                 
@@ -393,14 +393,12 @@ class ralg(baseSolver):
                         if tmp.ndim>1: tmp = tmp.sum(0)
                         if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
                         directionForDilation -= tmp
-                        #print 'new directionForDilation', directionForDilation
                         
 
                 if not prevIterPointIsFeasible:
                     #case2 = logical_and(isnan(val_current), logical_not(isnan(val_prev)))
                     case2 = logical_and(isnan(val_current), val_prev>0)
                     ind_switch_to_nan = where(case2)[0]              
-                    #print 'ind_switch_to_nan', ind_switch_to_nan
                     
                     if len(ind_switch_to_nan) != 0:
                         tmp = previter_pointForDilation.dc(ind_switch_to_nan)
@@ -451,11 +449,6 @@ class ralg(baseSolver):
                         if tmp.ndim>1: tmp = tmp.sum(0)
                         if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
                         prevDirectionForDilation += tmp
-                        
-                #print 'dilation_direction_after:', prevDirectionForDilation-directionForDilation
-            # CHANGES END
-
-
 
 
 #            # CHANGES
