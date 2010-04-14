@@ -44,7 +44,7 @@ class ralg(baseSolver):
 #        r = log10(1e15 * p.norm(g_dilated) / p.norm(g))
 #        if isfinite(r):
 #            p.debugmsg('%d' % int(r))
-        return 1e15 * p.norm(g_dilated) < p.norm(g)
+        return 1e12 * p.norm(g_dilated) < p.norm(g)
     #checkTurnByGradient = True
 
     def __init__(self): pass
@@ -123,7 +123,7 @@ class ralg(baseSolver):
         """                            Shor r-alg engine                           """
         bestPoint = p.point(atleast_1d(T(copy(x0))))
         prevIter_best_ls_point = bestPoint
-        previter_pointForDilation = bestPoint
+        prevIter_PointForDilation = bestPoint
         prevIter_bestPointBeforeTurn = bestPoint
 
         g = bestPoint._getDirection(self.approach)
@@ -270,6 +270,7 @@ class ralg(baseSolver):
                     if best_ls_point.betterThan(bestPoint): bestPoint = best_ls_point
                     #p.debugmsg('ls_backward:%d' % ls_backward)
                     if ls_backward == -maxLS:
+                        #pass
                         alp_addition += 0.25
                         #hs *= 0.9
                     
@@ -283,8 +284,8 @@ class ralg(baseSolver):
                     #hs *= 0.95
 
             """                                 Updating hs                                 """
-            step_x = p.norm(PointForDilation.x - previter_pointForDilation.x)
-            step_f = abs(PointForDilation.f() - previter_pointForDilation.f())
+            step_x = p.norm(PointForDilation.x - prevIter_PointForDilation.x)
+            step_f = abs(PointForDilation.f() - prevIter_PointForDilation.f())
             HS.append(hs_start)
             assert ls >= 0
             LS.append(ls)
@@ -299,7 +300,7 @@ class ralg(baseSolver):
                     if ls_backward == -maxLS:
                         shift_x = step_x / p.xtol
                         RD = log10(shift_x+1e-100)
-                        if PointForDilation.isFeas(True) or previter_pointForDilation.isFeas(True):
+                        if PointForDilation.isFeas(True) or prevIter_PointForDilation.isFeas(True):
                             RD = min((RD, log10(step_f / p.ftol + 1e-100)))
                         if RD > 1.0:
                             mp = (0.5, (ls/j0) ** 0.5, 1 - 0.2*RD)
@@ -308,11 +309,22 @@ class ralg(baseSolver):
                             #print argmax(mp), mp
 
             """                            Handling iterPoints                            """
-#            if not SwitchEncountered and best_ls_point.isFeas(altLinInEq=False) != previter_pointForDilation.isFeas():
+#            if not SwitchEncountered and best_ls_point.isFeas(altLinInEq=False) != prevIter_PointForDilation.isFeas():
 #                SwitchEncountered = True
 #                selfNeedRej = True
                 
             best_ls_point = PointForDilation
+            
+            
+
+            if lastPointOfSameType is not None and PointForDilation.isFeas(True) != prevIter_PointForDilation.isFeas(True):
+                # TODO: add middle point for the case ls = 0
+                assert self.dilationType == 'plain difference'
+                #directionForDilation = lastPointOfSameType._getDirection(self.approach) 
+                PointForDilation = lastPointOfSameType
+                
+            
+            
             if hasattr(p, '_df'): delattr(p, '_df')
             if best_ls_point.isFeas(False) and hasattr(best_ls_point, '_df'): 
                 p._df = best_ls_point.df().copy()            
@@ -351,8 +363,7 @@ class ralg(baseSolver):
                 #p.debugmsg('ralg warning: slope angle less than pi/2. Mb dilation for the iter will be omitted.')
                 #doDilation = False
 
-            prevIterPointIsFeasible = previter_pointForDilation.isFeas(True)
-            currIterPointIsFeasible = PointForDilation.isFeas(True)
+
 
                     
             # CHANGES
@@ -367,50 +378,44 @@ class ralg(baseSolver):
 #            r_p, ind_p, fname_p = prevIter_best_ls_point.mr(1)
 #            r_, ind_, fname_ = PointForDilation.mr(1)
 
-            if lastPointOfSameType is not None and prevIterPointIsFeasible != currIterPointIsFeasible:
-                # TODO: add middle point for the case ls = 0
-                assert self.dilationType == 'plain difference'
-                #directionForDilation = lastPointOfSameType._getDirection(self.approach) 
-                PointForDilation = lastPointOfSameType
+
             #else:
             directionForDilation = PointForDilation._getDirection(self.approach) 
 
-            
+            #print itn,'>>>>>>>>>', currIterPointIsFeasible
             if self.skipPrevIterNaNsInDilation:
                 assert self.approach == 'all active'
-                c_prev, c_current = previter_pointForDilation.c(), PointForDilation.c()
-                h_prev, h_current = previter_pointForDilation.h(), PointForDilation.h()
+                c_prev, c_current = prevIter_PointForDilation.c(), PointForDilation.c()
+                h_prev, h_current = prevIter_PointForDilation.h(), PointForDilation.h()
                 
                 """                                             Handling switch to NaN                                            """
-                if not prevIterPointIsFeasible:
+                if not prevIter_PointForDilation.isFeas(True):
                     
                     """                          processing NaNs in nonlin inequality constraints                          """
                     ind_switch_ineq_to_nan = where(logical_and(isnan(c_current), c_prev>0))[0]              
-                    
                     if len(ind_switch_ineq_to_nan) != 0:
-                        tmp = previter_pointForDilation.dc(ind_switch_ineq_to_nan)
+                        tmp = prevIter_PointForDilation.dc(ind_switch_ineq_to_nan)
                         if tmp.ndim>1: tmp = tmp.sum(0)
                         if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
                         prevDirectionForDilation -= tmp
                         
                     """                           processing NaNs in nonlin equality constraints                           """
                     ind_switch_eq_to_nan = where(logical_and(isnan(h_current), h_prev>0))[0]       
-                    
                     if len(ind_switch_eq_to_nan) != 0:
-                        tmp = previter_pointForDilation.dh(ind_switch_eq_to_nan)
+                        tmp = prevIter_PointForDilation.dh(ind_switch_eq_to_nan)
                         if tmp.ndim>1: tmp = tmp.sum(0)
                         if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
                         prevDirectionForDilation -= tmp
 
                     ind_switch_eq_to_nan = where(logical_and(isnan(h_current), h_prev<0))[0]                
                     if len(ind_switch_eq_to_nan) != 0:
-                        tmp = previter_pointForDilation.dh(ind_switch_eq_to_nan)
+                        tmp = prevIter_PointForDilation.dh(ind_switch_eq_to_nan)
                         if tmp.ndim>1: tmp = tmp.sum(0)
                         if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
                         prevDirectionForDilation += tmp
                 
                 """                                            Handling switch from NaN                                           """
-                if not currIterPointIsFeasible:
+                if not PointForDilation.isFeas(True):
                     
                     """                          processing NaNs in nonlin inequality constraints                          """
                     ind_switch_ineq_from_nan = where(logical_and(isnan(c_prev), c_current>0))[0]
@@ -474,23 +479,22 @@ class ralg(baseSolver):
             else:
                 G2,  G = directionForDilation, prevDirectionForDilation            
            
-            if prevIterPointIsFeasible == currIterPointIsFeasible == True:
+            if prevIter_PointForDilation.isFeas(True) == PointForDilation.isFeas(True):
                 g1 = G2 - G
-            elif prevIterPointIsFeasible == currIterPointIsFeasible == False:
-                g1 = G2 - G
-            elif prevIterPointIsFeasible:
+            elif prevIter_PointForDilation.isFeas(True):
                 g1 = G2.copy()
             else:
                 g1 = G.copy()
-                alp_addition += 0.5
-            
+                alp_addition += 0.25
+                
+            #print p.getMaxResidual(PointForDilation.x, 1)
             ##############################################
             # the case may be occured when 
             #  1) lastPointOfSameType is used 
             # or
             #  2) some NaN from constraints have been excluded
             if norm(G2 - G) < 1e-4 * min((norm(G2), norm(G))):
-                #p.debugmsg("ralg: 'last point of same type gradient' is used")
+                p.debugmsg("ralg: 'last point of same type gradient' is used")
                 g1 = G2
             ##############################################
 
@@ -651,7 +655,7 @@ class ralg(baseSolver):
 
             #iterPoint = None
             prevIter_best_ls_point = best_ls_point
-            previter_pointForDilation = best_ls_point
+            prevIter_PointForDilation = best_ls_point
             prevDirectionForDilation = best_ls_point._getDirection(self.approach)
             moveDirection = best_ls_point._getDirection(self.approach)
             prevIter_bestPointBeforeTurn = bestPointBeforeTurn
