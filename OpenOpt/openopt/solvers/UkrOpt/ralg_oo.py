@@ -44,7 +44,7 @@ class ralg(baseSolver):
 #        r = log10(1e15 * p.norm(g_dilated) / p.norm(g))
 #        if isfinite(r):
 #            p.debugmsg('%d' % int(r))
-        return 1e12 * p.norm(g_dilated) < p.norm(g)
+        return 1e14 * p.norm(g_dilated) < p.norm(g)
     #checkTurnByGradient = True
 
     def __init__(self): pass
@@ -380,17 +380,21 @@ class ralg(baseSolver):
 
 
             #else:
-            directionForDilation = PointForDilation._getDirection(self.approach) 
+            
 
             #print itn,'>>>>>>>>>', currIterPointIsFeasible
+            
+            """                                    Excluding derivatives switched to/from NaN                                    """
+            
             if self.skipPrevIterNaNsInDilation:
-                assert self.approach == 'all active'
                 c_prev, c_current = prevIter_PointForDilation.c(), PointForDilation.c()
                 h_prev, h_current = prevIter_PointForDilation.h(), PointForDilation.h()
                 
-                """                                             Handling switch to NaN                                            """
+            """                                             Handling switch to NaN                                            """
+            if self.skipPrevIterNaNsInDilation:
+                assert self.approach == 'all active'
+                
                 if not prevIter_PointForDilation.isFeas(True):
-                    
                     """                          processing NaNs in nonlin inequality constraints                          """
                     ind_switch_ineq_to_nan = where(logical_and(isnan(c_current), c_prev>0))[0]              
                     if len(ind_switch_ineq_to_nan) != 0:
@@ -414,7 +418,11 @@ class ralg(baseSolver):
                         if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
                         prevDirectionForDilation += tmp
                 
-                """                                            Handling switch from NaN                                           """
+            directionForDilation = PointForDilation._getDirection(self.approach) 
+            
+            """                                            Handling switch from NaN                                           """
+            if self.skipPrevIterNaNsInDilation:
+                
                 if not PointForDilation.isFeas(True):
                     
                     """                          processing NaNs in nonlin inequality constraints                          """
