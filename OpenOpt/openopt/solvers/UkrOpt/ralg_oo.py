@@ -44,7 +44,7 @@ class ralg(baseSolver):
 #        r = log10(1e15 * p.norm(g_dilated) / p.norm(g))
 #        if isfinite(r):
 #            p.debugmsg('%d' % int(r))
-        return 1e10 * p.norm(g_dilated) < p.norm(g)
+        return 1e13 * p.norm(g_dilated) < p.norm(g)
     #checkTurnByGradient = True
 
     def __init__(self): pass
@@ -457,44 +457,12 @@ class ralg(baseSolver):
                         if tmp.ndim>1: tmp = tmp.sum(0)
                         if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
                         prevDirectionForDilation += tmp
-
-
-
-#                for ct in ['c', 'h']:
-#                    val_prev = getattr(previter_pointForDilation, ct)()
-#                    val_current = getattr(PointForDilation, ct)()
-#                    
-#                    case1 = logical_and(isnan(val_prev), logical_not(isnan(val_current)))
-#                    ind_switch_from_nan = where(case1)[0]
-#                    
-#                    case2 = logical_and(isnan(val_current), logical_not(isnan(val_prev)))
-#                    ind_switch_to_nan = where(case2)[0]                
-#                    
-#                    if len(ind_switch_to_nan) != 0:
-#                        tmp = getattr(previter_pointForDilation, 'd'+ct)(ind_switch_to_nan)
-#                        if tmp.ndim>1: tmp = tmp.sum(0)
-#                        if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
-#                        prevDirectionForDilation -= tmp
-#
-#                    if len(ind_switch_from_nan) != 0:
-#                        tmp = getattr(PointForDilation, 'd'+ct)(ind_switch_from_nan)
-#                        if tmp.ndim>1: tmp = tmp.sum(0)
-#                        if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
-#                        directionForDilation -= tmp
-
-                    
-                #print 'end'
+                        
                 #print 'dilation_direction_after:', prevDirectionForDilation-directionForDilation
-            # !!!!!!!!!!!!!!!!!!!!!!!!  TODO: same for h        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             # CHANGES END
 
 
 
-
-            if self.dilationType == 'normalized' and (not fname_p in ('lb', 'ub', 'lin_eq', 'lin_ineq') or not fname_ in ('lb', 'ub', 'lin_eq', 'lin_ineq')) and (fname_p != fname_  or ind_p != ind_):
-                G2,  G = directionForDilation/norm(directionForDilation), prevDirectionForDilation/norm(prevDirectionForDilation)
-            else:
-                G2,  G = directionForDilation, prevDirectionForDilation
 
 #            # CHANGES
 #            gn = g2/norm(g2)
@@ -528,35 +496,38 @@ class ralg(baseSolver):
 #            if len(directionVectorsList) > 2: directionVectorsList = directionVectorsList[:-2]
 #            # CHANGES END
 
-
-            if norm(G2 - G) < 1e-4 * min((norm(G2), norm(G))):
-                p.debugmsg("ralg: 'last point of same type gradient' is used")
-                g1 = G2
-            
-            elif prevIterPointIsFeasible == currIterPointIsFeasible == True:
+            if lastPointOfSameType is not None and prevIterPointIsFeasible != currIterPointIsFeasible:
+                # TODO: add middle point for the case ls = 0
+                assert self.dilationType == 'plain difference'
+                directionForDilation = lastPointOfSameType._getDirection(self.approach) 
+                
+            if self.dilationType == 'normalized' and (not fname_p in ('lb', 'ub', 'lin_eq', 'lin_ineq') \
+                                                      or not fname_ in ('lb', 'ub', 'lin_eq', 'lin_ineq')) and (fname_p != fname_  or ind_p != ind_):
+                G2,  G = directionForDilation/norm(directionForDilation), prevDirectionForDilation/norm(prevDirectionForDilation)
+            else:
+                G2,  G = directionForDilation, prevDirectionForDilation            
+           
+            if prevIterPointIsFeasible == currIterPointIsFeasible == True:
                 g1 = G2 - G
             elif prevIterPointIsFeasible == currIterPointIsFeasible == False:
                 g1 = G2 - G
-            # TODO: add middle point for the case ls = 0
-            elif lastPointOfSameType is not None:
-                assert self.dilationType == 'plain difference'
-                G2 = lastPointOfSameType._getDirection(self.approach) 
-                g1 = G2 - G
-                if norm(G2 - G) < 1e-4 * min((norm(G2), norm(G))):
-                    p.debugmsg("ralg: 'last point of same type gradient' is used")
-                    g1 = G2
-                
-                #if norm(g1) < 1e-7 * ((norm(G2) + norm(G))):
-                # TODO: add check of norm(g1)<some_epsilon
-                if currIterPointIsFeasible: 
-                    pass
-                    #alp_addition += 0.5
             elif prevIterPointIsFeasible:
                 g1 = G2.copy()
             else:
                 g1 = G.copy()
                 alp_addition += 0.5
-                
+            
+            ##############################################
+            # the case may be occured when 
+            #  1) lastPointOfSameType is used 
+            # or
+            #  2) some NaN from constraints have been excluded
+            if norm(G2 - G) < 1e-4 * min((norm(G2), norm(G))):
+                #p.debugmsg("ralg: 'last point of same type gradient' is used")
+                g1 = G2
+            ##############################################
+
+
                 #g1 = -G.copy() # signum doesn't matter here
 
 
