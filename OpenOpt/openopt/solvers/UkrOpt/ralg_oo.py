@@ -44,7 +44,7 @@ class ralg(baseSolver):
 #        r = log10(1e15 * p.norm(g_dilated) / p.norm(g))
 #        if isfinite(r):
 #            p.debugmsg('%d' % int(r))
-        return 1e13 * p.norm(g_dilated) < p.norm(g)
+        return 1e15 * p.norm(g_dilated) < p.norm(g)
     #checkTurnByGradient = True
 
     def __init__(self): pass
@@ -317,9 +317,9 @@ class ralg(baseSolver):
             if best_ls_point.isFeas(False) and hasattr(best_ls_point, '_df'): 
                 p._df = best_ls_point.df().copy()            
 
-            directionForDilation = PointForDilation._getDirection(self.approach) 
+            
             #directionForDilation = newPoint.__getDirection__(self.approach) # used for dilation direction obtaining
-            moveDirection = best_ls_point._getDirection(self.approach)
+            
 #            if not self.new_bs or ls != 0:
 #                moveDirection = iterPoint.__getDirection__(self.approach)
 #            else:
@@ -366,6 +366,15 @@ class ralg(baseSolver):
             
 #            r_p, ind_p, fname_p = prevIter_best_ls_point.mr(1)
 #            r_, ind_, fname_ = PointForDilation.mr(1)
+
+
+            if lastPointOfSameType is not None and prevIterPointIsFeasible != currIterPointIsFeasible:
+                # TODO: add middle point for the case ls = 0
+                assert self.dilationType == 'plain difference'
+                directionForDilation = lastPointOfSameType._getDirection(self.approach) 
+            else:
+                directionForDilation = PointForDilation._getDirection(self.approach) 
+
 
             if self.skipPrevIterNaNsInDilation:
                 assert self.approach == 'all active'
@@ -481,10 +490,6 @@ class ralg(baseSolver):
 #            if len(directionVectorsList) > 2: directionVectorsList = directionVectorsList[:-2]
 #            # CHANGES END
 
-            if lastPointOfSameType is not None and prevIterPointIsFeasible != currIterPointIsFeasible:
-                # TODO: add middle point for the case ls = 0
-                assert self.dilationType == 'plain difference'
-                directionForDilation = lastPointOfSameType._getDirection(self.approach) 
                 
             if self.dilationType == 'normalized' and (not fname_p in ('lb', 'ub', 'lin_eq', 'lin_ineq') \
                                                       or not fname_ in ('lb', 'ub', 'lin_eq', 'lin_ineq')) and (fname_p != fname_  or ind_p != ind_):
@@ -671,6 +676,7 @@ class ralg(baseSolver):
             prevIter_best_ls_point = best_ls_point
             previter_pointForDilation = best_ls_point
             prevDirectionForDilation = best_ls_point._getDirection(self.approach)
+            moveDirection = best_ls_point._getDirection(self.approach)
             prevIter_bestPointBeforeTurn = bestPointBeforeTurn
 
 
