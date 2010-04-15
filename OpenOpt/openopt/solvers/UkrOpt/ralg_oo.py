@@ -309,27 +309,24 @@ class ralg(baseSolver):
                             #print argmax(mp), mp
 
             """                            Handling iterPoints                            """
-#            if not SwitchEncountered and best_ls_point.isFeas(altLinInEq=False) != prevIter_PointForDilation.isFeas():
-#                SwitchEncountered = True
-#                selfNeedRej = True
-                
+               
             best_ls_point = PointForDilation
             
+            #if not SwitchEncountered and p.nh != 0 and PointForDilation.isFeas(altLinInEq=False) != prevIter_PointForDilation.isFeas(altLinInEq=False):
+                #SwitchEncountered = True
+                #selfNeedRej = True
             
-
+            involve_lastPointOfSameType = False
             if lastPointOfSameType is not None and PointForDilation.isFeas(True) != prevIter_PointForDilation.isFeas(True):
                 # TODO: add middle point for the case ls = 0
                 assert self.dilationType == 'plain difference'
                 #directionForDilation = lastPointOfSameType._getDirection(self.approach) 
                 PointForDilation = lastPointOfSameType
+                involve_lastPointOfSameType = True
                 
             
-            
-            if hasattr(p, '_df'): delattr(p, '_df')
-            if best_ls_point.isFeas(False) and hasattr(best_ls_point, '_df'): 
-                p._df = best_ls_point.df().copy()            
-
-            
+           
+           
             #directionForDilation = newPoint.__getDirection__(self.approach) # used for dilation direction obtaining
             
 #            if not self.new_bs or ls != 0:
@@ -391,6 +388,7 @@ class ralg(baseSolver):
                 h_prev, h_current = prevIter_PointForDilation.h(), PointForDilation.h()
                 
             """                                             Handling switch to NaN                                            """
+            NaN_derivatives_excluded = False
             if self.skipPrevIterNaNsInDilation:
                 assert self.approach == 'all active'
                 
@@ -398,6 +396,7 @@ class ralg(baseSolver):
                     """                          processing NaNs in nonlin inequality constraints                          """
                     ind_switch_ineq_to_nan = where(logical_and(isnan(c_current), c_prev>0))[0]              
                     if len(ind_switch_ineq_to_nan) != 0:
+                        NaN_derivatives_excluded = True
                         tmp = prevIter_PointForDilation.dc(ind_switch_ineq_to_nan)
                         if tmp.ndim>1: tmp = tmp.sum(0)
                         if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
@@ -406,6 +405,7 @@ class ralg(baseSolver):
                     """                           processing NaNs in nonlin equality constraints                           """
                     ind_switch_eq_to_nan = where(logical_and(isnan(h_current), h_prev>0))[0]       
                     if len(ind_switch_eq_to_nan) != 0:
+                        NaN_derivatives_excluded = True
                         tmp = prevIter_PointForDilation.dh(ind_switch_eq_to_nan)
                         if tmp.ndim>1: tmp = tmp.sum(0)
                         if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
@@ -413,6 +413,7 @@ class ralg(baseSolver):
 
                     ind_switch_eq_to_nan = where(logical_and(isnan(h_current), h_prev<0))[0]                
                     if len(ind_switch_eq_to_nan) != 0:
+                        NaN_derivatives_excluded = True
                         tmp = prevIter_PointForDilation.dh(ind_switch_eq_to_nan)
                         if tmp.ndim>1: tmp = tmp.sum(0)
                         if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
@@ -428,6 +429,7 @@ class ralg(baseSolver):
                     """                          processing NaNs in nonlin inequality constraints                          """
                     ind_switch_ineq_from_nan = where(logical_and(isnan(c_prev), c_current>0))[0]
                     if len(ind_switch_ineq_from_nan) != 0:
+                        NaN_derivatives_excluded = True
                         tmp = PointForDilation.dc(ind_switch_ineq_from_nan)
                         if tmp.ndim>1: tmp = tmp.sum(0)
                         if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
@@ -436,6 +438,7 @@ class ralg(baseSolver):
                     """                           processing NaNs in nonlin equality constraints                           """
                     ind_switch_eq_from_nan = where(logical_and(isnan(h_prev), h_current>0))[0]
                     if len(ind_switch_eq_from_nan) != 0:
+                        NaN_derivatives_excluded = True
                         tmp = PointForDilation.dh(ind_switch_eq_from_nan)
                         if tmp.ndim>1: tmp = tmp.sum(0)
                         if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
@@ -443,6 +446,7 @@ class ralg(baseSolver):
 
                     ind_switch_eq_from_nan = where(logical_and(isnan(h_prev), h_current<0))[0]
                     if len(ind_switch_eq_from_nan) != 0:
+                        NaN_derivatives_excluded = True
                         tmp = PointForDilation.dh(ind_switch_eq_from_nan)
                         if tmp.ndim>1: tmp = tmp.sum(0)
                         if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
@@ -501,7 +505,7 @@ class ralg(baseSolver):
             #  1) lastPointOfSameType is used 
             # or
             #  2) some NaN from constraints have been excluded
-            if norm(G2 - G) < 1e-4 * min((norm(G2), norm(G))):
+            if norm(G2 - G) < 1e-7 * min((norm(G2), norm(G))) and (involve_lastPointOfSameType or NaN_derivatives_excluded):
                 p.debugmsg("ralg: 'last point of same type gradient' is used")
                 g1 = G2
             ##############################################
@@ -579,7 +583,7 @@ class ralg(baseSolver):
                     if self.showRej or p.debug:
                         p.info('debug msg: matrix B restoration in ralg solver')
                     b = B0.copy()
-                    hs = 0.5*p.norm(prevIter_best_ls_point.x - best_ls_point.x)
+                    hs = p.norm(prevIter_best_ls_point.x - best_ls_point.x)
                     # TODO: iterPoint = projection(iterPoint,Aeq) if res_Aeq > 0.75*contol
 
                 if ng < 1e-40: 
@@ -595,6 +599,10 @@ class ralg(baseSolver):
             
 
             """                               Call OO iterfcn                                """
+            if hasattr(p, '_df'): delattr(p, '_df')
+            if best_ls_point.isFeas(False) and hasattr(best_ls_point, '_df'): 
+                p._df = best_ls_point.df().copy()           
+                
             p.iterfcn(best_ls_point)
             
 
