@@ -505,7 +505,7 @@ class ralg(baseSolver):
             #  1) lastPointOfSameType is used 
             # or
             #  2) some NaN from constraints have been excluded
-            if norm(G2 - G) < 1e-7 * min((norm(G2), norm(G))) and (involve_lastPointOfSameType or NaN_derivatives_excluded):
+            if norm(G2 - G) < 1e-12 * min((norm(G2), norm(G))) and (involve_lastPointOfSameType or NaN_derivatives_excluded):
                 p.debugmsg("ralg: 'last point of same type gradient' is used")
                 g1 = G2
             ##############################################
