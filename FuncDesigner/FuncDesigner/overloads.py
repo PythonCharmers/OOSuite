@@ -163,7 +163,10 @@ def sum(inp, *args, **kwargs):
                                 val = val.toarray()
                             elif not isinstance(r[key], np.ndarray) and isinstance(val, np.ndarray):
                                 r[key] = r[key].toarray()
-                            r[key] += val
+                            try:
+                                r[key] += val
+                            except:
+                                r[key] = r[key] + val
                         else:
                             r[key] = val
                             keys.add(key)
