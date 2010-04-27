@@ -254,8 +254,8 @@ class ralg(baseSolver):
 
             #iterPoint  = newPoint
             PointForDilation = newPoint
-            best_ls_point = newPoint if ls == 0 else oldPoint
-            if p.debug and ls != 0: assert not oldPoint.betterThan(best_ls_point)
+            #best_ls_point = newPoint if ls == 0 else oldPoint
+            #if p.debug and ls != 0: assert not oldPoint.betterThan(best_ls_point)
 
             """                          Backward line search                          """
             mdx = max((150, 1.5*p.n))*p.xtol
@@ -282,7 +282,7 @@ class ralg(baseSolver):
                 #p.debugmsg('ls_backward:%d' % ls_backward)
                 if ls == 0 and ls_backward == -maxLS:
                     #pass
-                    alp_addition += 0.5
+                    alp_addition += 0.25
                     #hs *= 0.9
                 
                 if ls_backward <= -1 and itn != 0:  # TODO: mb use -1 or 0 instead?
@@ -293,7 +293,9 @@ class ralg(baseSolver):
             else:
                 pass
                 #hs *= 0.95
-
+            
+            best_ls_point = PointForDilation # elseware lots of difficulties
+            
             """                                 Updating hs                                 """
             step_x = p.norm(PointForDilation.x - prevIter_PointForDilation.x)
             step_f = abs(PointForDilation.f() - prevIter_PointForDilation.f())
@@ -508,7 +510,7 @@ class ralg(baseSolver):
                 g1 = G2.copy()
             else:
                 g1 = G.copy()
-                alp_addition += 0.5
+                alp_addition += 0.05
                 
             #print p.getMaxResidual(PointForDilation.x, 1)
             ##############################################
