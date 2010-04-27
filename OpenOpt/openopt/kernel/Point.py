@@ -293,7 +293,8 @@ class Point:
 #                    Type = 'lin_eq'
 #                    ind = ind_max
             p = self.p
-            tol = 0.0
+            #tol = 0.0
+            tol = p.contol / 2.0
             if p.solver.approach == 'all active':
                 val = (c[c>tol] - tol).sum() + (h[h>tol] - tol).sum() - (h[h<-tol] + tol).sum() + all_lin_ineq
                 self._mr_alt, self._mrName_alt,  self._mrInd_alt = val, 'all active', 0
@@ -480,7 +481,8 @@ class Point:
             return self.direction.copy()
         else:
             if approach == 'all active':
-                th = 0.0
+                #th = 0.0
+                th = contol / 2.0
                 direction = self.__all_lin_ineq_gradient()
                 if p.userProvided.c:
                     ind = where(p.c(x)>th)[0]
