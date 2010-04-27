@@ -125,6 +125,7 @@ class ralg(baseSolver):
         prevIter_best_ls_point = bestPoint
         prevIter_PointForDilation = bestPoint
         prevIter_bestPointBeforeTurn = bestPoint
+        feasiblePointWasEncountered = bestPoint.isFeas(True)
 
         g = bestPoint._getDirection(self.approach)
         prevDirectionForDilation = g
@@ -200,6 +201,10 @@ class ralg(baseSolver):
                     hs_mult = 1.5
                 elif ls > 2:
                     hs_mult = 1.05
+#                elif ls == 2: 
+#                    hs_mult = 2.0
+#                elif ls == 1:
+#                    hs_mult = 0.5
                 hs *= hs_mult
 
                 x -= hs * g1
@@ -213,9 +218,14 @@ class ralg(baseSolver):
               
                 if self.show_nnan: p.info('ls: %d nnan: %d' % (ls, newPoint.__nnan__()))
 
+                
                 if ls == 0:
                     oldPoint = prevIter_best_ls_point#prevIterPoint
-                elif ls >= 2:
+                    oldoldPoint = oldPoint
+                    
+                
+                
+                if ls >= 2:
                     # TODO: replace it by linePoint
                     newPoint._lin_ineq = \
                     prevIter_best_ls_point.lin_ineq() + hs_cumsum / (hs_cumsum - hs) * (oldPoint.lin_ineq() - prevIter_best_ls_point.lin_ineq())
@@ -225,7 +235,8 @@ class ralg(baseSolver):
 
                 #if not self.checkTurnByGradient:
                 if newPoint.betterThan(oldPoint, altLinInEq=True):
-                    if newPoint.betterThan(bestPoint): bestPoint = newPoint
+                    if newPoint.betterThan(bestPoint, altLinInEq=False): bestPoint = newPoint
+                    oldoldPoint = oldPoint
                     oldPoint, newPoint = newPoint,  None
                 else:
                     if not oldPoint.isFeas(True): bestPointBeforeTurn = oldPoint
@@ -250,38 +261,38 @@ class ralg(baseSolver):
             mdx = max((150, 1.5*p.n))*p.xtol
             if itn == 0:  mdx = max((hs / 128.0, 128*p.xtol )) # TODO: set it after B rej as well
             ls_backward = 0
-            maxLS = 3
-            if ls == 0:
-                if self.doBackwardSearch:
-                    if self.new_bs:
-                        best_ls_point,  PointForDilation, ls_backward = \
-                        getBestPointAfterTurn(prevIter_best_ls_point, newPoint, maxLS = maxLS, maxDeltaF = 150*p.ftol, \
-                                              maxDeltaX = mdx, altLinInEq = True, new_bs = True)
-                        if PointForDilation.isFeas(True) == iterStartPoint.isFeas(True):
-                            lastPointOfSameType = PointForDilation
+            maxLS = 3 if ls == 0 else 1
+#            if ls <=3 or ls > 20:
+            if self.doBackwardSearch:
+                if self.new_bs:
+                    best_ls_point,  PointForDilation, ls_backward = \
+                    getBestPointAfterTurn(oldoldPoint, newPoint, maxLS = maxLS, maxDeltaF = 150*p.ftol, \
+                                          maxDeltaX = mdx, altLinInEq = True, new_bs = True)
+                    if PointForDilation.isFeas(True) == iterStartPoint.isFeas(True):
+                        lastPointOfSameType = PointForDilation
 #                        elif best_ls_point.isFeas(altLinInEq=True) == iterStartPoint.isFeas(altLinInEq=True):
 #                            lastPointOfSameType = best_ls_point
-                    else:
-                        best_ls_point, ls_backward = \
-                        getBestPointAfterTurn(prevIter_best_ls_point, newPoint, maxLS = 3, altLinInEq = True, new_bs = False)
-                        PointForDilation = best_ls_point
-
-                    # TODO: extract last point from backward search, that one is better than iterPoint
-                    if best_ls_point.betterThan(bestPoint): bestPoint = best_ls_point
-                    #p.debugmsg('ls_backward:%d' % ls_backward)
-                    if ls_backward == -maxLS:
-                        #pass
-                        alp_addition += 0.25
-                        #hs *= 0.9
-                    
-                    if ls_backward <= -1 and itn != 0:  # TODO: mb use -1 or 0 instead?
-                        pass
-                        #alp_addition -= 0.25*ls_backward # ls_backward less than zero
-                    
-                    #hs *= 2 ** min((ls_backward+1, 0))
                 else:
+                    best_ls_point, ls_backward = \
+                    getBestPointAfterTurn(oldoldPoint, newPoint, maxLS = maxLS, altLinInEq = True, new_bs = False)
+                    PointForDilation = best_ls_point
+
+                # TODO: extract last point from backward search, that one is better than iterPoint
+                if best_ls_point.betterThan(bestPoint): bestPoint = best_ls_point
+                #p.debugmsg('ls_backward:%d' % ls_backward)
+                if ls == 0 and ls_backward == -maxLS:
+                    #pass
+                    alp_addition += 0.5
+                    #hs *= 0.9
+                
+                if ls_backward <= -1 and itn != 0:  # TODO: mb use -1 or 0 instead?
                     pass
-                    #hs *= 0.95
+                    #alp_addition -= 0.25*ls_backward # ls_backward less than zero
+                
+                #hs *= 2 ** min((ls_backward+1, 0))
+            else:
+                pass
+                #hs *= 0.95
 
             """                                 Updating hs                                 """
             step_x = p.norm(PointForDilation.x - prevIter_PointForDilation.x)
@@ -297,7 +308,7 @@ class ralg(baseSolver):
                 else:
                     #hs = (ls/j0) ** 0.5 * hs_start
                     hs = hs_start
-                    if ls_backward == -maxLS:
+                    if ls == 0 and ls_backward == -maxLS:
                         shift_x = step_x / p.xtol
                         RD = log10(shift_x+1e-100)
                         if PointForDilation.isFeas(True) or prevIter_PointForDilation.isFeas(True):
@@ -497,7 +508,7 @@ class ralg(baseSolver):
                 g1 = G2.copy()
             else:
                 g1 = G.copy()
-                alp_addition += 0.25
+                alp_addition += 0.5
                 
             #print p.getMaxResidual(PointForDilation.x, 1)
             ##############################################
@@ -645,9 +656,9 @@ class ralg(baseSolver):
             """                                If stop required                                """
             
             if p.istop:
-                if self.needRej(p, b, g1, g):
+                if self.needRej(p, b, g1, g) or not feasiblePointWasEncountered:
                     b = B0.copy()
-                    hs = 0.5*p.norm(prevIter_best_ls_point.x - best_ls_point.x)
+                    hs = max((p.norm(prevIter_best_ls_point.x - best_ls_point.x) , 128*p.xtol))
                     p.istop = 0
                 else:
                     restoreProb()
@@ -675,6 +686,9 @@ class ralg(baseSolver):
             prevDirectionForDilation = best_ls_point._getDirection(self.approach)
             moveDirection = best_ls_point._getDirection(self.approach)
             prevIter_bestPointBeforeTurn = bestPointBeforeTurn
+
+            # it should be point passed to iterfcn! PointForDilation should be equal to best_ls_point
+            if best_ls_point.isFeas(True): feasiblePointWasEncountered = True 
 
 
     def getPrimevalDilationMatrixWRTlinEqConstraints(self, p):
