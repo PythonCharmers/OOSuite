@@ -429,7 +429,7 @@ class Point:
         # where point1 is self, alp is real number
         assert isscalar(alp)
         p = self.p
-        r = p.point(self.x * alp + point2.x * (1-alp))
+        r = p.point(self.x * (1-alp) + point2.x * alp)
         
         #lin_eqs = self.lin_eq()*alp +  point2.lin_eq() * (1-alp)
         #print '!>>, ',  p.norm(lin_eqs), p.norm(lin_eqs - r.lin_eq())
@@ -437,10 +437,10 @@ class Point:
         # TODO: optimize it, take ls into account!
         #if ls is not None and 
         if not (p.iter % 16):
-            lin_ineq_predict = self.lin_ineq()*alp +  point2.lin_ineq() * (1-alp)
+            lin_ineq_predict = self.lin_ineq()*(1-alp) +  point2.lin_ineq() * alp
             #if 1 or p.debug: print('!>>', p.norm(lin_ineq_predict-r.lin_ineq()))
             r._lin_ineq = lin_ineq_predict
-            r._lin_eq = self.lin_eq()*alp +  point2.lin_eq() * (1-alp)
+            r._lin_eq = self.lin_eq()*(1-alp) +  point2.lin_eq() * alp
         
         # don't calculate c for inside points
         if 0<alp<1:
