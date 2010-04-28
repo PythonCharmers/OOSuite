@@ -210,7 +210,7 @@ class ralg(baseSolver):
                 x -= hs * g1
                 hs_cumsum += hs
 
-                newPoint = p.point(x)
+                newPoint = p.point(x) if ls == 0 else iterStartPoint.linePoint(hs_cumsum/(hs_cumsum-hs), oldPoint) #  TODO: take ls into account?
                 
                 if not p.isUC:
                     if newPoint.isFeas(True) == iterStartPoint.isFeas(True):
@@ -223,16 +223,6 @@ class ralg(baseSolver):
                     oldPoint = prevIter_best_ls_point#prevIterPoint
                     oldoldPoint = oldPoint
                     
-                
-                
-                if ls >= 2:
-                    # TODO: replace it by linePoint
-                    newPoint._lin_ineq = \
-                    prevIter_best_ls_point.lin_ineq() + hs_cumsum / (hs_cumsum - hs) * (oldPoint.lin_ineq() - prevIter_best_ls_point.lin_ineq())
-                    # the _lin_eq is obsolete and may be ignored, provided newLinEq = True
-                    newPoint._lin_eq = prevIter_best_ls_point.lin_eq() + hs_cumsum / (hs_cumsum - hs) * (oldPoint.lin_eq() - prevIter_best_ls_point.lin_eq())
-
-
                 #if not self.checkTurnByGradient:
                 if newPoint.betterThan(oldPoint, altLinInEq=True):
                     if newPoint.betterThan(bestPoint, altLinInEq=False): bestPoint = newPoint
