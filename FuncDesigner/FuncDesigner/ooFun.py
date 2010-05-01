@@ -29,7 +29,6 @@ class oofun:
     
     d = None # derivative
     input = None 
-    args = ()
     #usedIn =  set()
     isAlreadyPrepared = False
     is_oovar = False
@@ -56,6 +55,7 @@ class oofun:
     _level = 0
     _directlyDwasInwolved = False
     _id = 0
+    _broadcast_id = 0
 
     pWarn = lambda self, msg: pWarn(msg)
     
@@ -68,7 +68,7 @@ class oofun:
         # to prevent creating of several oofuns binded to same oofun.size
         r = oofun(lambda x: asarray(x).size, self, is_linear=True, discrete = True)
         self.size = r 
-        
+
         return r
 
     """                                         Class constructor                                   """
@@ -77,7 +77,10 @@ class oofun:
         assert len(args) == 0 #and input is not None
         self.fun, self.input = fun, input
         
+        self._broadcast_id = 0
         self._id = oofun._id
+        self.attachedConstraints = set()
+        self.args = ()
         oofun._id += 1 # CHECK: it should be int32! Other types cannot be has keys!
         
         if 'name' not in kwargs.keys():
@@ -109,6 +112,25 @@ class oofun:
         self.pWarn(s)
         self.name = name
         return self
+        
+    def attach(self, *args,  **kwargs):
+        if len(kwargs) != 0:
+            raise FuncDesignerException('keyword arguments are not implemented for FuncDesigner function "attach"')
+        for arg in args:
+            if not isinstance(arg, BaseFDConstraint):
+                raise FuncDesignerException('the FD function "attach" currently expects only constraints')
+            self.attachedConstraints.add(arg)
+        return self
+    
+#    def _get_attached_constraints(self):
+#        return self.attachedConstraints
+        
+        # recursively!
+#        r = self.attachedConstraints
+#        for inp in self.input:
+#            if not isinstance(inp, oofun): continue
+#            r.update(inp.attachedConstraints)
+#        return r
         
     def __repr__(self):
         return self.name
@@ -903,7 +925,40 @@ class oofun:
             check_d1(lambda *args: self.fun(*args), ds[j], input, \
                  func_name=self.name, diffInt=self.diffInt, pointVal = val, args=self.args, \
                  stencil = max((2, self.stencil)), maxViolation=self.maxViolation, varForCheck = i)
+    
+    
+    # TODO: should broadcast return non-void result?
 
+    def broadcast(self, func, *args, **kwargs):
+        oofun._broadcast_id += 1
+        self._broadcast(func, *args, **kwargs)
+
+    def _broadcast(self, func, *args, **kwargs):
+        if self._broadcast_id == oofun._broadcast_id: 
+            return # already done for this one
+            
+        self._broadcast_id = oofun._broadcast_id
+        
+        if self.input is not None:
+            for inp in self.input: 
+                inp._broadcast(func, *args, **kwargs)
+        func(self)
+
+#    def broadcast(self, func, *args, **kwargs):
+#        oofun._broadcast_id += 1
+#        self._broadcast(oofun._broadcast_id, func, *args, **kwargs)
+#
+#    def _broadcast(self, id, func, *args, **kwargs):
+#        print '>1', self.name
+#        if self._broadcast_id == id: 
+#            return # already done for this one
+#            
+#        self._broadcast_id = id
+#        
+#        if self.input is not None:
+#            for inp in self.input: 
+#                inp._broadcast(id, func, *args, **kwargs)
+#        func(self)
 
 class BooleanOOFun(oofun):
     _unnamedBooleanOOFunNumber = 0
