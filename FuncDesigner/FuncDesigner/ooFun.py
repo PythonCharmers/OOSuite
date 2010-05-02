@@ -5,6 +5,7 @@ where, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, s
 from numpy.linalg import norm
 from misc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg
 from copy import deepcopy
+from ooPoint import ooPoint
 
 try:
     from DerApproximator import get_d1, check_d1
@@ -56,6 +57,7 @@ class oofun:
     _directlyDwasInwolved = False
     _id = 0
     _broadcast_id = 0
+    _point_id = 0
 
     pWarn = lambda self, msg: pWarn(msg)
     
@@ -121,6 +123,13 @@ class oofun:
                 raise FuncDesignerException('the FD function "attach" currently expects only constraints')
             self.attachedConstraints.add(arg)
         return self
+    
+    def _getAllAttachedConstraints(self):
+        r = set()
+        def F(oof):
+            r.update(oof.attachedConstraints)
+        self.broadcast(F)
+        return r
     
 #    def _get_attached_constraints(self):
 #        return self.attachedConstraints
@@ -518,13 +527,16 @@ class oofun:
 #                return deepcopy(self.f_val_prev)
             
         dep = self._getDep()
-        stCond = self.isCostly or (self._level-2)%4 == 0
-        cond_same_point = stCond and hasattr(self, 'f_key_prev') and all([array_equal(x[elem], self.f_key_prev[elem.name]) for elem in dep])
-        #cond_same_point = hasattr(self, 'f_key_prev') and all([array_equal(x[elem], self.f_key_prev[elem.name]) for elem in dep])
+        
+        CondSamePointByID = True if isinstance(x, ooPoint) and self._point_id == x._id else False
+        
+        #stCond = self.isCostly# or (self._level-2)%4 == 0
+        cond_same_point = hasattr(self, 'f_key_prev') and \
+        (CondSamePointByID or (self.isCostly and all([array_equal(x[elem], self.f_key_prev[elem.name]) for elem in dep])))
         if cond_same_point:
             self.same += 1
             return deepcopy(self.f_val_prev)
-            
+
         self.evals += 1
         
         if type(self.args) != tuple:
@@ -538,15 +550,16 @@ class oofun:
         
         #self.outputTotalLength = ([asarray(elem).size for elem in self.fun(*Input)])#self.f_val_prev.size # TODO: omit reassigning
         
-        # TODO: simplify it
-        if stCond:
+        if isinstance(x, ooPoint): 
+            self._point_id = x._id
+        
+        if self.isCostly or isinstance(x, ooPoint):
+            # TODO: simplify it
             self.f_val_prev = tmp
-            self.f_key_prev = {}
-            for elem in dep:
-                self.f_key_prev[elem.name] = copy(x[elem])
+            self.f_key_prev = dict([(elem.name, copy(x[elem])) for elem in dep])
                 
             if isinstance(self.f_val_prev, ndarray) or isscalar(self.f_val_prev):
-                return atleast_1d(copy(self.f_val_prev))
+                return copy(self.f_val_prev)
             else:
                 return deepcopy(self.f_val_prev)
         else:
@@ -939,26 +952,16 @@ class oofun:
             
         self._broadcast_id = oofun._broadcast_id
         
+        # TODO: possibility of reverse order?
         if self.input is not None:
             for inp in self.input: 
                 inp._broadcast(func, *args, **kwargs)
         func(self)
+        
+        
+        """                                             End of class oofun                                             """
 
-#    def broadcast(self, func, *args, **kwargs):
-#        oofun._broadcast_id += 1
-#        self._broadcast(oofun._broadcast_id, func, *args, **kwargs)
-#
-#    def _broadcast(self, id, func, *args, **kwargs):
-#        print '>1', self.name
-#        if self._broadcast_id == id: 
-#            return # already done for this one
-#            
-#        self._broadcast_id = id
-#        
-#        if self.input is not None:
-#            for inp in self.input: 
-#                inp._broadcast(id, func, *args, **kwargs)
-#        func(self)
+
 
 class BooleanOOFun(oofun):
     _unnamedBooleanOOFunNumber = 0
