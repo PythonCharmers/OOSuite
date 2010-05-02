@@ -36,11 +36,15 @@ def tan(inp):
 
 def arcsin(inp):
     if not isinstance(inp, oofun): return np.arcsin(inp)
-    return oofun(np.arcsin, inp, d = lambda x: Diag(1.0 / np.sqrt(1.0 - x**2)))
+    r = oofun(np.arcsin, inp, d = lambda x: Diag(1.0 / np.sqrt(1.0 - x**2)))
+    r.attach((inp>-1)('arcsin_domain_lower_bound_%d' % r._id, tol=-1e-13), (inp<1)('arcsin_domain_upper_bound_%d' % r._id, tol=-1e-13))
+    return r
 
 def arccos(inp):
     if not isinstance(inp, oofun): return np.arccos(inp)
-    return oofun(np.arccos, inp, d = lambda x: Diag(-1.0 / np.sqrt(1.0 - x**2)))
+    r = oofun(np.arccos, inp, d = lambda x: Diag(-1.0 / np.sqrt(1.0 - x**2)))
+    r.attach((inp>-1)('arccos_domain_lower_bound_%d' % r._id, tol=-1e-13), (inp<1)('arccos_domain_upper_bound_%d' % r._id, tol=-1e-13))
+    return r
 
 def arctan(inp):
     if not isinstance(inp, oofun): return np.arctan(inp)
@@ -60,7 +64,9 @@ def exp(inp):
 
 def sqrt(inp):
     if not isinstance(inp, oofun): return np.sqrt(inp)
-    return oofun(np.sqrt, inp, d = lambda x: Diag(0.5 / np.sqrt(x)))
+    r = oofun(np.sqrt, inp, d = lambda x: Diag(0.5 / np.sqrt(x)))
+    r.attach((inp>0)('sqrt_domain_zero_bound_%d' % r._id, tol=-1e-13))
+    return r
 
 def abs(inp):
     if not isinstance(inp, oofun): return np.abs(inp)
@@ -68,15 +74,21 @@ def abs(inp):
 
 def log(inp):
     if not isinstance(inp, oofun): return np.log(inp)
-    return oofun(np.log, inp, d = lambda x: Diag(1.0/x))
+    r = oofun(np.log, inp, d = lambda x: Diag(1.0/x))
+    r.attach((inp>1e-300)('log_domain_zero_bound_%d' % r._id, tol=-1e-13))
+    return r
     
 def log10(inp):
     if not isinstance(inp, oofun): return np.log10(inp)
-    return oofun(np.log10, inp, d = lambda x: Diag(0.43429448190325176/x))# 1 / (x * log_e(10))
+    r = oofun(np.log10, inp, d = lambda x: Diag(0.43429448190325176/x))# 1 / (x * log_e(10))
+    r.attach((inp>1e-300)('log10_domain_zero_bound_%d' % r._id, tol=-1e-13))
+    return r
 
 def log2(inp):
     if not isinstance(inp, oofun): return np.log2(inp)
-    return oofun(np.log2, inp, d = lambda x: Diag(1.4426950408889634/x))# 1 / (x * log_e(2))
+    r = oofun(np.log2, inp, d = lambda x: Diag(1.4426950408889634/x))# 1 / (x * log_e(2))
+    r.attach((inp>1e-300)('log2_domain_zero_bound_%d' % r._id, tol=-1e-13))
+    return r
 
 def dot(inp1, inp2):
     if not isinstance(inp1, oofun) and not isinstance(inp2, oofun): return np.dot(inp1, inp2)

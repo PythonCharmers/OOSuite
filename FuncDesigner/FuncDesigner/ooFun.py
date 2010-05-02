@@ -3,7 +3,7 @@
 from numpy import inf, asfarray, copy, all, any, empty, atleast_2d, zeros, dot, asarray, atleast_1d, empty, ones, ndarray, \
 where, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum, prod, nonzero, isnan
 from numpy.linalg import norm
-from misc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg
+from misc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg#, _broadcast_id
 from copy import deepcopy
 from ooPoint import ooPoint
 
@@ -56,6 +56,7 @@ class oofun:
     _level = 0
     #_directlyDwasInwolved = False
     _id = 0
+    _BroadCastID = 0
     _broadcast_id = 0
     _point_id = 0
     _point_id1 = 0
@@ -80,7 +81,7 @@ class oofun:
         assert len(args) == 0 #and input is not None
         self.fun, self.input = fun, input
         
-        self._broadcast_id = 0
+        #self._broadcast_id = 0
         self._id = oofun._id
         self.attachedConstraints = set()
         self.args = ()
@@ -125,13 +126,7 @@ class oofun:
             self.attachedConstraints.add(arg)
         return self
     
-    def _getAllAttachedConstraints(self):
-        r = set()
-        def F(oof):
-            r.update(oof.attachedConstraints)
-        self.broadcast(F)
-        return r
-    
+   
 #    def _get_attached_constraints(self):
 #        return self.attachedConstraints
         
@@ -949,15 +944,11 @@ class oofun:
     
     # TODO: should broadcast return non-void result?
 
-    def broadcast(self, func, *args, **kwargs):
-        oofun._broadcast_id += 1
-        self._broadcast(func, *args, **kwargs)
-
     def _broadcast(self, func, *args, **kwargs):
-        if self._broadcast_id == oofun._broadcast_id: 
+        if self._broadcast_id == oofun._BroadCastID: 
             return # already done for this one
             
-        self._broadcast_id = oofun._broadcast_id
+        self._broadcast_id = oofun._BroadCastID
         
         # TODO: possibility of reverse order?
         if self.input is not None:
@@ -968,7 +959,11 @@ class oofun:
         
         """                                             End of class oofun                                             """
 
-
+# TODO: make it work for ooSystem as well
+def broadcast(func, oofuncs, *args, **kwargs):
+    oofun._BroadCastID += 1
+    for oof in oofuncs:
+        oof._broadcast(func, *args, **kwargs)
 
 class BooleanOOFun(oofun):
     _unnamedBooleanOOFunNumber = 0
@@ -976,6 +971,7 @@ class BooleanOOFun(oofun):
     # an oofun that returns True/False
     def __init__(self, oofun_Involved, *args, **kwargs):
         oofun.__init__(self, oofun_Involved, *args, **kwargs)
+        self.input = oofun_Involved.input
         BooleanOOFun._unnamedBooleanOOFunNumber += 1
         self.name = 'unnamed_boolean_oofun_' + str(BooleanOOFun._unnamedBooleanOOFunNumber)
         
