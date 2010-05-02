@@ -54,7 +54,7 @@ class oofun:
 
     _usedIn = 0
     _level = 0
-    _directlyDwasInwolved = False
+    #_directlyDwasInwolved = False
     _id = 0
     _broadcast_id = 0
     _point_id = 0
@@ -579,7 +579,7 @@ class oofun:
         if Vars is not None and fixedVars is not None:
             raise FuncDesignerException('No more than one argument from "Vars" and "fixedVars" is allowed for the function')
         assert type(Vars) != ndarray and type(fixedVars) != ndarray
-        self._directlyDwasInwolved = True
+        #self._directlyDwasInwolved = True
         if not hasattr(self, '_prev_D_Vars_key'):
             self._prev_D_Vars_key = Vars if (Vars is None or (isinstance(Vars, oofun) and Vars.is_oovar) ) else set([v.name for v in Vars])
             self._prev_D_fixedVars_key = fixedVars if (fixedVars is None or (isinstance(fixedVars, oofun) and fixedVars.is_oovar) ) \
@@ -645,11 +645,12 @@ class oofun:
         ##########################
         
         # TODO: optimize it. Omit it for simple cases.
-        isTransmit = self._usedIn == 1 # Exactly 1! not 0, 2, ,3, 4, etc
-        involveStore = (not isTransmit) or self._directlyDwasInwolved
+        #isTransmit = self._usedIn == 1 # Exactly 1! not 0, 2, ,3, 4, etc
+        #involveStore = not isTransmit or self._directlyDwasInwolved
+        involveStore = self.isCostly
 
-        cond_same_point = hasattr(self, 'd_key_prev') and (CondSamePointByID or (involveStore and sameDerivativeVariables and \
-        all([array_equal(x[elem], self.d_key_prev[elem]) for elem in dep])))
+        #cond_same_point = hasattr(self, 'd_key_prev') and sameDerivativeVariables and (CondSamePointByID or (involveStore and         all([array_equal(x[elem], self.d_key_prev[elem]) for elem in dep])))
+        cond_same_point = hasattr(self, 'd_key_prev') and sameDerivativeVariables and (CondSamePointByID or (involveStore and all([array_equal(x[elem], self.d_key_prev[elem]) for elem in dep])))
         
         if cond_same_point:
             self.same_d += 1
@@ -772,9 +773,7 @@ class oofun:
 
         self.d_val_prev = dp
         
-        self.d_key_prev = {}
-        for elem in dep:
-            self.d_key_prev[elem] = copy(x[elem])
+        self.d_key_prev = dict([(elem, copy(x[elem])) for elem in dep])
         
         return r
 
