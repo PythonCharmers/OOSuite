@@ -58,6 +58,7 @@ class oofun:
     _id = 0
     _broadcast_id = 0
     _point_id = 0
+    _point_id1 = 0
 
     pWarn = lambda self, msg: pWarn(msg)
     
@@ -296,10 +297,9 @@ class oofun:
         #d = lambda x: Diag(asarray(other) **x * log(asarray(other)))
         def d(x):
             r = Diag(asarray(other) **x * log(asarray(other))) if x.size > 1 else asarray(other)**x * log(asarray(other))
-            #raise 0
             return r
         r = oofun(f, self, d=d)
-        #r.isCostly = True
+        r.isCostly = True
         return r
 
     def __xor__(self, other):
@@ -529,14 +529,17 @@ class oofun:
         dep = self._getDep()
         
         CondSamePointByID = True if isinstance(x, ooPoint) and self._point_id == x._id else False
+        #print isinstance(x, ooPoint), 
+        #if  isinstance(x, ooPoint): print self._point_id == x._id
         
         #stCond = self.isCostly# or (self._level-2)%4 == 0
         cond_same_point = hasattr(self, 'f_key_prev') and \
         (CondSamePointByID or (self.isCostly and all([array_equal(x[elem], self.f_key_prev[elem.name]) for elem in dep])))
         if cond_same_point:
+            #print 'same'
             self.same += 1
             return deepcopy(self.f_val_prev)
-
+        #print 'other'
         self.evals += 1
         
         if type(self.args) != tuple:
@@ -632,22 +635,26 @@ class oofun:
         if self.is_oovar: 
             return {} if fixedVars is not None and self in fixedVars else {self.name:Eye(self(x).size) if asSparse is not False else eye(self(x).size)}
         if self.discrete: raise FuncDesignerException('The oofun or oovar instance has been declared as discrete, no derivative is available')
-        if Vars is not None and fixedVars is not None:
-            raise FuncDesignerException('No more than one parameter from Vars and fixedVars is allowed')
-      
+#        if Vars is not None and fixedVars is not None:
+#            raise FuncDesignerException('No more than one parameter from Vars and fixedVars is allowed')
+        
+        
+        CondSamePointByID = True if isinstance(x, ooPoint) and self._point_id1 == x._id else False
+        
         dep = self._getDep()
         ##########################
         
         # TODO: optimize it. Omit it for simple cases.
         isTransmit = self._usedIn == 1 # Exactly 1! not 0, 2, ,3, 4, etc
         involveStore = (not isTransmit) or self._directlyDwasInwolved
-        #cond_same_point = False
-        cond_same_point = involveStore and sameDerivativeVariables and \
-        hasattr(self, 'd_key_prev') and all([array_equal(x[elem], self.d_key_prev[elem]) for elem in dep])
+
+        cond_same_point = hasattr(self, 'd_key_prev') and (CondSamePointByID or (involveStore and sameDerivativeVariables and \
+        all([array_equal(x[elem], self.d_key_prev[elem]) for elem in dep])))
         
         if cond_same_point:
             self.same_d += 1
-            return deepcopy(self.d_val_prev)
+            #return deepcopy(self.d_val_prev)
+            return dict([(key, copy(val)) for key, val in self.d_val_prev.items()])
         else:
             self.evals_d += 1
         
@@ -759,9 +766,10 @@ class oofun:
                         Keys.add(key)
                     assert r[key].dtype != object
 
-        dp = {}
-        for key, value in r.items():
-            dp[key] = value.copy()
+
+        if isinstance(x, ooPoint): self._point_id1 = x._id
+        dp = dict([(key, value.copy()) for key, value in r.items()])
+
         self.d_val_prev = dp
         
         self.d_key_prev = {}
