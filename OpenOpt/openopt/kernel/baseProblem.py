@@ -294,7 +294,15 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             self.theseAreFixed = areFixed
             
             probtol = self.contol
-           
+            
+            """                                    gather attached constraints                                    """
+            #raise 0
+            C = self.f._getAllAttachedConstraints()
+            C.update(*[c._getAllAttachedConstraints() for c in self.constraints])
+            self.constraints+=list(C)
+            
+                
+            """                                         handling constraints                                         """
             for c in self.constraints:
                 if not hasattr(c, 'isConstraint'): self.err('The type' + str(type(c)) + 'is inappropriate for problem constraints')
                 
