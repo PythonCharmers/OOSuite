@@ -304,7 +304,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     C = self.f._getAllAttachedConstraints()
             else:
                 C = set()
-            if C is None: C = set()
+            if C is None: C = set() # bug in current Python 2.6.5 r265:79063
             C.update(*[c._getAllAttachedConstraints() for c in self.constraints])
             self.constraints+=list(C)
             

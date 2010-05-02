@@ -70,19 +70,14 @@ def setStartVectorAndTranslators(p):
     #p.oocons = set() # constraints
     
     # TODO: mb use oovarsIndDict here as well (as for derivatives?)
-    from FuncDesigner import ooPoint
-    dictFixed = ooPoint()  if fixedVars is None else ooPoint([(v, startPoint[v]) for v in fixedVars])
+    from FuncDesigner import oopoint
+    startDictData = [] if fixedVars is None else [(v, startPoint[v]) for v in fixedVars]
 
     def vector2point(x):
-        r = dictFixed.copy()
-        for i, oov in enumerate(optVars):
-            r[oov] = x[oovar_indexes[i]:oovar_indexes[i+1]]
+        r = oopoint(startDictData + [(oov, x[oovar_indexes[i]:oovar_indexes[i+1]]) for i, oov in enumerate(optVars)])
         return r
 
-    oovarsIndDict = {}#dictFixed.copy()
-    for i, oov in enumerate(optVars):
-        #oovarsIndDict[oov.name] = (oovar_indexes[i], oovar_indexes[i+1])
-        oovarsIndDict[oov] = (oovar_indexes[i], oovar_indexes[i+1])
+    oovarsIndDict = dict([(oov, (oovar_indexes[i], oovar_indexes[i+1])) for i, oov in enumerate(optVars)])
         
     def pointDerivative2array(pointDerivarive, asSparse = False,  func=None, point=None): 
         # asSparse can be True, False, 'auto'
