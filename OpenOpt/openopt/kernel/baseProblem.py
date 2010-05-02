@@ -297,7 +297,14 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             
             """                                    gather attached constraints                                    """
             #raise 0
-            C = self.f._getAllAttachedConstraints()
+            if hasattr(self, 'f'):
+                if type(self.f) in [list, tuple, set]:
+                    C = set().update(*[F._getAllAttachedConstraints() for F in self.f])
+                else: # self.f is oofun
+                    C = self.f._getAllAttachedConstraints()
+            else:
+                C = set()
+            if C is None: C = set()
             C.update(*[c._getAllAttachedConstraints() for c in self.constraints])
             self.constraints+=list(C)
             

@@ -71,10 +71,8 @@ def setStartVectorAndTranslators(p):
     
     # TODO: mb use oovarsIndDict here as well (as for derivatives?)
     from FuncDesigner import ooPoint
-    dictFixed = ooPoint()
-    if fixedVars is not None:
-        for v in fixedVars:
-            dictFixed[v] = startPoint[v]
+    dictFixed = ooPoint()  if fixedVars is None else ooPoint([(v, startPoint[v]) for v in fixedVars])
+
     def vector2point(x):
         r = dictFixed.copy()
         for i, oov in enumerate(optVars):
