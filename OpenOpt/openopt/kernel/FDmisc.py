@@ -70,7 +70,8 @@ def setStartVectorAndTranslators(p):
     #p.oocons = set() # constraints
     
     # TODO: mb use oovarsIndDict here as well (as for derivatives?)
-    dictFixed = {}
+    from FuncDesigner import ooPoint
+    dictFixed = ooPoint()
     if fixedVars is not None:
         for v in fixedVars:
             dictFixed[v] = startPoint[v]

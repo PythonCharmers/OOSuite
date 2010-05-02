@@ -157,7 +157,7 @@ class nonLinFuncs:
                     p.prevVal[userFunctionType]['val'][agregate_counter:agregate_counter+v.size] = v.copy()                
                 r[agregate_counter:agregate_counter+v.size,0] = v
 
-                """                                                 geting derivatives                                                 """
+                """                                                 getting derivatives                                                 """
                 if getDerivative:
                     func = lambda x: fun(*((x,) + Args))
                     d1 = get_d1(func, x, pointVal = None, diffInt = finiteDiffNumbers, stencil=p.JacobianApproximationStencil)
