@@ -6,10 +6,15 @@
 #from misc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg
 #from copy import deepcopy
 
+from misc import FuncDesignerException
+
 class ooPoint(dict):
     _id = 0
     def __init__(self, *args, **kwargs):
         dict.__init__(self, *args, **kwargs)
         ooPoint._id += 1
         self._id = ooPoint._id
+    
+    def __setitem__(self, *args, **kwargs):
+        raise FuncDesignerException('ooPoint must be immutable')
         
