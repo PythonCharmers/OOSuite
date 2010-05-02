@@ -1,5 +1,5 @@
 from ooVar import oovar, oovars
-from ooFun import NonLinearConstraint, ooFun as oofun
+from ooFun import NonLinearConstraint, broadcast, ooFun as oofun
 from ooSystem import ooSystem as oosystem
 from ooPoint import ooPoint as oopoint
 from sle import sle
