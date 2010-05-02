@@ -296,18 +296,23 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             probtol = self.contol
             
             """                                    gather attached constraints                                    """
-            #raise 0
+            from FuncDesigner import broadcast
+            def _getAllAttachedConstraints(oofuns):
+                r = set()
+                def F(oof):
+                    #print len(oof.attachedConstraints)
+                    r.update(oof.attachedConstraints)
+                broadcast(F, oofuns)
+                return r
+                
+            C = list(self.constraints)
             if hasattr(self, 'f'):
                 if type(self.f) in [list, tuple, set]:
-                    C = set().update(*[F._getAllAttachedConstraints() for F in self.f])
+                    C += list(self.f)
                 else: # self.f is oofun
-                    C = self.f._getAllAttachedConstraints()
-            else:
-                C = set()
-            if C is None: C = set() # bug in current Python 2.6.5 r265:79063
-            C.update(*[c._getAllAttachedConstraints() for c in self.constraints])
-            self.constraints+=list(C)
-            
+                    C.append(self.f)
+            #C.update(*[c._getAllAttachedConstraints() for c in self.constraints])
+            self.constraints += list(_getAllAttachedConstraints(C))
                 
             """                                         handling constraints                                         """
             for c in self.constraints:
