@@ -20,6 +20,6 @@ p = NLSP(f, startPoint)
 p.constraints = [z<70,  z>50,  z + sin(x) < 60]
 
 r = p.solve('nssolve') # nssolve is name of solver involved, see OOF doc for more arguments
-s = r.xf
-print('Solution: x = %f   y = %f  z = %f' % (s[x], s[y], s[z]))
+xs, ys, zs = r(x, y, z)
+print('Solution: x = %f   y = %f  z = %f' % (xs, ys, zs))
 
