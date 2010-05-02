@@ -31,5 +31,5 @@ for i in xrange(N):
 
 # solve
 r = p.solve('glpk')
-print('opt a[15]=%f'%r.xf[a[15]]) 
+print('opt a[15]=%f'%a[15](r)) 
 # opt a[15]=-10.000000

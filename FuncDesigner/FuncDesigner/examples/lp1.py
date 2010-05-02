@@ -25,9 +25,8 @@ p = LP(obj, startPoint)
 p.constraints = [x+5*y<15, x[0]<4, f1<[25, 35], f1>-100, 2*f1+4*z<[80, 800], 5*f2+4*z<100, -5<x,  x<1, -20<y,  y<20, -4000<z, z<4]
 
 # Solve
-r = p.solve('glpk') # glpk is name of solver involved, see OOF doc for more arguments
+r = p.solve('cvxopt_lp') # glpk is name of solver involved, see OOF doc for more arguments
 
 # Decode solution
-s = r.xf
-print('Solution: x = %s   y = %f  z = %f' % (str(s[x]), s[y], s[z]))
+print('Solution: x = %s   y = %f  z = %f' % (str(r[x]), r[y], r[z]))
 # Solution: x = [-4.25 -4.25]   y = -20.000000  z = 4.000000
