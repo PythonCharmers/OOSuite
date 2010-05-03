@@ -282,7 +282,7 @@ class oofun:
             d = (d_x, d_y)
             input = [self, other]
         r = oofun(f, input, d = d)
-        if isinstance(other, oofun): r.attach((self>0)('pow_domain_%d'%r._id, tol=1e-13)) # TODO: if "other" is fixed oofun with integer value - omit this
+        if isinstance(other, oofun) or not isinstance(other, int): r.attach((self>0)('pow_domain_%d'%r._id, tol=1e-13)) # TODO: if "other" is fixed oofun with integer value - omit this
         r.isCostly = True
         return r
 
