@@ -282,7 +282,8 @@ class oofun:
             d = (d_x, d_y)
             input = [self, other]
         r = oofun(f, input, d = d)
-        #r.isCostly = True
+        if isinstance(other, oofun): r.attach((self>0)('pow_domain_%d'%r._id, tol=1e-13)) # TODO: if "other" is fixed oofun with integer value - omit this
+        r.isCostly = True
         return r
 
     def __rpow__(self, other):
@@ -295,6 +296,7 @@ class oofun:
             return r
         r = oofun(f, self, d=d)
         r.isCostly = True
+        if isinstance(other, oofun): r.attach((other>0)('rpow_domain_%d'%r._id,  tol=1e-13)) # TODO: if "other" is fixed oofun with integer value - omit this
         return r
 
     def __xor__(self, other):
@@ -954,8 +956,9 @@ class oofun:
         if self.input is not None:
             for inp in self.input: 
                 inp._broadcast(func, *args, **kwargs)
+        for c in self.attachedConstraints:
+            c._broadcast(func, *args, **kwargs)
         func(self)
-        
         
         """                                             End of class oofun                                             """
 
