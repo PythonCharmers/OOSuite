@@ -1,5 +1,5 @@
 from numpy import diag, array, sqrt,  eye, ones, inf, any, copy, zeros, dot, where, all, tile, sum, nan, isfinite, float64, isnan, log10, \
-max, sign, array_equal, nonzero, ix_, arctan, pi, logical_not, logical_and, atleast_2d
+max, sign, array_equal, nonzero, ix_, arctan, pi, logical_not, logical_and, atleast_2d, matrix
 from numpy.linalg import norm, solve, LinAlgError
 #try:
 #    from numpy.linalg import cond
@@ -402,7 +402,7 @@ class ralg(baseSolver):
                         NaN_derivatives_excluded = True
                         tmp = prevIter_PointForDilation.dc(ind_switch_ineq_to_nan)
                         if tmp.ndim>1: tmp = tmp.sum(0)
-                        if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
+                        if not isinstance(tmp, ndarray) or isinstance(tmp, matrix): tmp = tmp.A.flatten() # dense or sparse matrix
                         prevDirectionForDilation -= tmp
                         
                     """                           processing NaNs in nonlin equality constraints                           """
@@ -411,7 +411,7 @@ class ralg(baseSolver):
                         NaN_derivatives_excluded = True
                         tmp = prevIter_PointForDilation.dh(ind_switch_eq_to_nan)
                         if tmp.ndim>1: tmp = tmp.sum(0)
-                        if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
+                        if not isinstance(tmp, ndarray) or isinstance(tmp, matrix): tmp = tmp.A.flatten() # dense or sparse matrix
                         prevDirectionForDilation -= tmp
 
                     ind_switch_eq_to_nan = where(logical_and(isnan(h_current), h_prev<0))[0]                
@@ -419,7 +419,7 @@ class ralg(baseSolver):
                         NaN_derivatives_excluded = True
                         tmp = prevIter_PointForDilation.dh(ind_switch_eq_to_nan)
                         if tmp.ndim>1: tmp = tmp.sum(0)
-                        if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
+                        if not isinstance(tmp, ndarray) or isinstance(tmp, matrix): tmp = tmp.A.flatten() # dense or sparse matrix
                         prevDirectionForDilation += tmp
                 
             directionForDilation = PointForDilation._getDirection(self.approach) 
@@ -435,7 +435,7 @@ class ralg(baseSolver):
                         NaN_derivatives_excluded = True
                         tmp = PointForDilation.dc(ind_switch_ineq_from_nan)
                         if tmp.ndim>1: tmp = tmp.sum(0)
-                        if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
+                        if not isinstance(tmp, ndarray) or isinstance(tmp, matrix): tmp = tmp.A.flatten() # dense or sparse matrix
                         directionForDilation -= tmp
                         
                     """                           processing NaNs in nonlin equality constraints                           """
@@ -444,7 +444,7 @@ class ralg(baseSolver):
                         NaN_derivatives_excluded = True
                         tmp = PointForDilation.dh(ind_switch_eq_from_nan)
                         if tmp.ndim>1: tmp = tmp.sum(0)
-                        if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
+                        if not isinstance(tmp, ndarray) or isinstance(tmp, matrix): tmp = tmp.A.flatten() # dense or sparse matrix
                         directionForDilation -= tmp
 
                     ind_switch_eq_from_nan = where(logical_and(isnan(h_prev), h_current<0))[0]
@@ -452,7 +452,7 @@ class ralg(baseSolver):
                         NaN_derivatives_excluded = True
                         tmp = PointForDilation.dh(ind_switch_eq_from_nan)
                         if tmp.ndim>1: tmp = tmp.sum(0)
-                        if not isinstance(tmp, ndarray): tmp = tmp.A # dense or sparse matrix
+                        if not isinstance(tmp, ndarray) or isinstance(tmp, matrix): tmp = tmp.A.flatten() # dense or sparse matrix
                         directionForDilation += tmp
 
 #            # CHANGES
