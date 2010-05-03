@@ -261,7 +261,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
     ((type(getattr(self, self.FuncDesignerSign)) in [list, tuple] and 'is_oovar' in dir(getattr(self, self.FuncDesignerSign)[0])) \
                                                                                                 or 'is_oovar' in dir(getattr(self, self.FuncDesignerSign) ))
     
-    def _prepare(self):
+    # Base class method
+    def _prepare(self): 
         if self._baseProblemIsPrepared: return
         if self._isFDmodel():
             self.isFDmodel = True
@@ -313,6 +314,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     C.append(self.f)
             #C.update(*[c._getAllAttachedConstraints() for c in self.constraints])
             self.constraints += list(_getAllAttachedConstraints(C))
+
                 
             """                                         handling constraints                                         """
             for c in self.constraints:

@@ -2,9 +2,9 @@ try:
     from solverPaths import solverPaths
 except:
     pass
-from baseSolver import baseSolver
+
 from oologfcn import OpenOptException
-from numpy import zeros, bmat, hstack, vstack
+from numpy import zeros, bmat, hstack, vstack, ndarray, copy
 try:
     import scipy
     scipyInstalled = True
@@ -62,7 +62,11 @@ def oosolver(solverName, *args,  **kwargs):
                 solverClassInstance.fieldsForProbInstance[key] = value
         solverClassInstance.isInstalled = True
     except:
+        from baseSolver import baseSolver
         solverClassInstance = baseSolver()
         solverClassInstance.__name__ = solverName
         solverClassInstance.isInstalled = False
     return solverClassInstance
+
+def Copy(arg): 
+    return arg.copy() if isinstance(arg, ndarray) or isspmatrix(arg) else copy(arg)

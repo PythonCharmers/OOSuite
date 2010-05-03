@@ -286,6 +286,7 @@ class nonLinFuncs:
             # p can has no attr 'solver' if it is called from checkdf, checkdc, checkdh
             if not isinstance(derivatives, ndarray): 
                 derivatives = derivatives.toarray()
+
         if min(derivatives.shape) == 1: 
             if isspmatrix(derivatives): derivatives = derivatives.A
             derivatives = derivatives.flatten()

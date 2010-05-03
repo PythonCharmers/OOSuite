@@ -1,8 +1,13 @@
-# created by DmitreyPoint.py
+# created by Dmitrey
 from numpy import copy, isnan, array, argmax, abs, vstack, zeros, any, isfinite, all, where, asscalar, \
 sign, dot, sqrt, array_equal, nanmax, inf, hstack, isscalar, logical_or, matrix
 from numpy.linalg import norm
+from nonOptMisc import Copy
+
 from pointProjection import pointProjection
+
+
+
 try:
     from scipy.sparse import csr_matrix
 except:
@@ -45,7 +50,7 @@ class Point:
 
     def df(self):
         if not hasattr(self, '_df'): self._df = self.p.df(self.x)
-        return copy(self._df)
+        return Copy(self._df)
 
     def c(self, ind=None):
         if not self.p.userProvided.c: return empty_arr.copy()
@@ -61,10 +66,11 @@ class Point:
         if not self.p.userProvided.c: return empty_arr.copy().reshape(0, self.p.n)
         if ind is None:
             if not hasattr(self, '_dc'): self._dc = self.p.dc(self.x)
-            return copy(self._dc)
+            return Copy(self._dc)
         else:
-            if hasattr(self, '_dc'): return copy(self._dc[ind])
-            else: return copy(self.p.dc(self.x, ind))
+            
+            if hasattr(self, '_dc'): return Copy(self._dc[ind])
+            else: return Copy(self.p.dc(self.x, ind))
 
 
     def h(self, ind=None):
@@ -81,12 +87,12 @@ class Point:
         #raise 0
         if ind is None:
             if not hasattr(self, '_dh'): self._dh = self.p.dh(self.x)
-            return copy(self._dh)
+            return Copy(self._dh)
         else:
             if hasattr(self, '_dh'): 
-                return copy(self._dh[ind])
+                return Copy(self._dh[ind])
             else: 
-                return copy(self.p.dh(self.x, ind))
+                return Copy(self.p.dh(self.x, ind))
 
     def d2f(self):
         if not hasattr(self, '_d2f'): self._d2f = self.p.d2f(self.x)
