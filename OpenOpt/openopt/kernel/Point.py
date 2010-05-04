@@ -558,7 +558,7 @@ class Point:
                                 if hasattr(tmp, 'toarray'):
                                     tmp = tmp.A
                                 #tmp *= ((H2+th)/asfarray([norm(tmp[i]) for i in xrange(tmp.shape[0])])).reshape(-1, 1)
-                                tmp *= ((H2 + th)/sqrt((tmp**2).sum(1))).reshape(-1, 1)
+                                tmp *= ((-H2 - th)/sqrt((tmp**2).sum(1))).reshape(-1, 1)
                         
                         if tmp.ndim > 1: 
                             tmp = tmp.sum(0)
