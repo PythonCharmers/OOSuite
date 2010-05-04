@@ -365,7 +365,7 @@ class Point:
     #def __getDirection__(self, useCurrentBestFeasiblePoint = False):
     #def __getDirection__(self, altLinInEq = False):
 
-    def __all_lin_ineq(self):
+    def __all_lin_ineq(self): # TODO: rename it wrt lin_eq that are present here
         if not hasattr(self, '_all_lin_ineq'):
             lb, ub, lin_ineq = self.lb(), self.ub(), self.lin_ineq()
             r = 0.0
@@ -432,17 +432,18 @@ class Point:
                     b = p.b[ind_lin_ineq]
                     if hasattr(p, '_A'):
                         a = p._A[ind_lin_ineq] 
-                        tmp = a._mul_sparse_matrix(csr_matrix(self.x.reshape(p.n, 1))).toarray().flatten() - b
+                        tmp = a._mul_sparse_matrix(csr_matrix(self.x.reshape(p.n, 1))).toarray().flatten() - b - threshold
                         d += a.T._mul_sparse_matrix(tmp.reshape(tmp.size, 1)).A.flatten()
                         #d += dot(a.T, dot(a, self.x)  - b) 
                     else:
                         a = p.A[ind_lin_ineq] 
-                        d += dot(a.T, dot(a, self.x)  - b)-threshold # d/dx((Ax-b)^2)
+                        d += dot(a.T, dot(a, self.x)  - b-threshold) # d/dx((Ax-b)^2)
                 if ind_lin_eq.size != 0:
+                    raise ('nonzero threshold is not ajusted with lin eq yet')
                     aeq = p.Aeq[ind_lin_eq]
                     beq = p.beq[ind_lin_eq]
                     d += dot(aeq.T, dot(aeq, self.x)  - beq) # 0.5*d/dx((Aeq x - beq)^2)
-                    raise ('nonzero threshold is not ajusted with lin eq yet')
+                    
                 #devider = self.__all_lin_ineq()
                 devider = 0.5*self.p.contol
                 if devider != 0:
