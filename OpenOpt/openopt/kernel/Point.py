@@ -1,6 +1,6 @@
 # created by Dmitrey
 from numpy import copy, isnan, array, argmax, abs, vstack, zeros, any, isfinite, all, where, asscalar, \
-sign, dot, sqrt, array_equal, nanmax, inf, hstack, isscalar, logical_or, matrix
+sign, dot, sqrt, array_equal, nanmax, inf, hstack, isscalar, logical_or, matrix, asfarray
 from numpy.linalg import norm
 from nonOptMisc import Copy
 
@@ -114,115 +114,6 @@ class Point:
         if not hasattr(self, '_lin_eq'): self._lin_eq = self.p.__get_AeqX_eq_Beq_residuals__(self.x)
         return copy(self._lin_eq)
 
-    def __all_lin_ineq(self):
-        if not hasattr(self, '_all_lin_ineq'):
-            lb, ub, lin_ineq = self.lb(), self.ub(), self.lin_ineq()
-            r = 0
-            # TODO: CHECK IT - when 0 (if some nans), when contol
-            threshold = 0
-#            if all(isfinite(self.f())): threshold = self.p.contol
-#            else: threshold = 0
-
-            lb, ub = self.lb(), self.ub()
-            lin_ineq = self.lin_ineq()
-            lin_eq = self.lin_eq()
-            ind_lb, ind_ub = where(lb>threshold)[0], where(ub>threshold)[0]
-            ind_lin_ineq = where(lin_ineq>threshold)[0]
-            ind_lin_eq = where(abs(lin_eq)>threshold)[0]
-            USE_SQUARES = 0
-            if USE_SQUARES:
-                if ind_lb.size != 0:
-                    r += sum(lb[ind_lb] ** 2)
-                if ind_ub.size != 0:
-                    r += sum(ub[ind_ub] ** 2)
-                if ind_lin_ineq.size != 0:
-                    r += sum(lin_ineq[ind_lin_ineq] ** 2)
-                if ind_lin_eq.size != 0:
-                    r += sum(lin_eq[ind_lin_eq] ** 2)
-                self._all_lin_ineq = sqrt(r)
-            else:
-                if ind_lb.size != 0:
-                    r += sum(lb[ind_lb])
-                if ind_ub.size != 0:
-                    r += sum(ub[ind_ub])
-                if ind_lin_ineq.size != 0:
-                    r += sum(lin_ineq[ind_lin_ineq])
-                if ind_lin_eq.size != 0:
-                    r += sum(abs(lin_eq[ind_lin_eq]))
-                self._all_lin_ineq = r
-                    
-        return copy(self._all_lin_ineq)
-
-    def __all_lin_ineq_gradient(self):
-        if not hasattr(self, '_all_lin_ineq_gradient'):
-            p = self.p
-            n = p.n
-            d = zeros(n)
-            threshold = 0.0
-
-            lb, ub = self.lb(), self.ub()
-            lin_ineq = self.lin_ineq()
-            lin_eq = self.lin_eq()
-            ind_lb, ind_ub = where(lb>threshold)[0], where(ub>threshold)[0]
-            ind_lin_ineq = where(lin_ineq>threshold)[0]
-            ind_lin_eq = where(abs(lin_eq)>threshold)[0]
-
-            USE_SQUARES = 0
-            if USE_SQUARES:
-                if ind_lb.size != 0:
-                    d[ind_lb] -= lb[ind_lb]# d/dx((x-lb)^2) for violated constraints
-                if ind_ub.size != 0:
-                    d[ind_ub] += ub[ind_ub]# d/dx((x-ub)^2) for violated constraints
-                if ind_lin_ineq.size != 0:
-                    # d/dx((Ax-b)^2)
-                    b = p.b[ind_lin_ineq]
-                    if hasattr(p, '_A'):
-                        a = p._A[ind_lin_ineq] 
-                        tmp = a._mul_sparse_matrix(csr_matrix(self.x.reshape(p.n, 1))).toarray().flatten() - b
-                        d += a.T._mul_sparse_matrix(tmp.reshape(tmp.size, 1)).A.flatten()
-                        #d += dot(a.T, dot(a, self.x)  - b) 
-                    else:
-                        a = p.A[ind_lin_ineq] 
-                        d += dot(a.T, dot(a, self.x)  - b) # d/dx((Ax-b)^2)
-                if ind_lin_eq.size != 0:
-                    aeq = p.Aeq[ind_lin_eq]
-                    beq = p.beq[ind_lin_eq]
-                    d += dot(aeq.T, dot(aeq, self.x)  - beq) # 0.5*d/dx((Aeq x - beq)^2)
-                devider = self.__all_lin_ineq()
-                if devider != 0:
-                    self._all_lin_ineq_gradient = d / devider
-                else:
-                    self._all_lin_ineq_gradient = d
-            else:
-                if ind_lb.size != 0:
-                    d[ind_lb] -= 1# d/dx(lb-x) for violated constraints
-                if ind_ub.size != 0:
-                    d[ind_ub] += 1# d/dx(x-ub) for violated constraints
-                if ind_lin_ineq.size != 0:
-                    # d/dx(Ax-b)
-                    b = p.b[ind_lin_ineq]
-                    if hasattr(p, '_A'):
-                        d += (p._A[ind_lin_ineq]).sum(0).A.flatten()
-                    else:
-                        d += (p.A[ind_lin_ineq]).sum(0).flatten()
-                if ind_lin_eq.size != 0:
-                    # currently for ralg it should be handled in dilation matrix
-                    p.err('not implemented yet, if you see it inform OpenOpt developers')
-#                    beq = p.beq[ind_lin_eq]
-#                    if hasattr(p, '_Aeq'):
-#                        tmp = p._Aeq[ind_lin_eq]
-#                        ind_change = where()
-#                        tmp
-#                        d += ().sum(0).A.flatten()
-#                    else:
-#                        #d += (p.Aeq[ind_lin_eq]).sum(0).flatten()
-
-#                    aeq = p.Aeq[ind_lin_eq]
-#                    beq = p.beq[ind_lin_eq]
-#                    d += dot(aeq.T, dot(aeq, self.x)  - beq) # 0.5*d/dx((Aeq x - beq)^2)
-                self._all_lin_ineq_gradient = d
-        return copy(self._all_lin_ineq_gradient)
-
     def lb(self):
         if not hasattr(self, '_lb'): self._lb = self.p.lb - self.x
         return copy(self._lb)
@@ -302,7 +193,7 @@ class Point:
             #tol = 0.0
             tol = p.contol / 2.0
             if p.solver.approach == 'all active':
-                val = (c[c>tol] - tol).sum() + (h[h>tol] - tol).sum() - (h[h<-tol] + tol).sum() + all_lin_ineq
+                val = (c[c>tol] - 0).sum() + (h[h>tol] - tol).sum() - (h[h<-tol] + tol).sum() + all_lin_ineq
                 self._mr_alt, self._mrName_alt,  self._mrInd_alt = val, 'all active', 0
             else:
                 val = r
@@ -473,6 +364,121 @@ class Point:
 
     #def __getDirection__(self, useCurrentBestFeasiblePoint = False):
     #def __getDirection__(self, altLinInEq = False):
+
+    def __all_lin_ineq(self):
+        if not hasattr(self, '_all_lin_ineq'):
+            lb, ub, lin_ineq = self.lb(), self.ub(), self.lin_ineq()
+            r = 0.0
+            # TODO: CHECK IT - when 0 (if some nans), when contol
+            #threshold = self.p.contol/2.0
+            threshold = 0.0
+#            if all(isfinite(self.f())): threshold = self.p.contol
+#            else: threshold = 0
+
+            lb, ub = self.lb(), self.ub()
+            lin_ineq = self.lin_ineq()
+            lin_eq = self.lin_eq()
+            ind_lb, ind_ub = where(lb>threshold)[0], where(ub>threshold)[0]
+            ind_lin_ineq = where(lin_ineq>threshold)[0]
+            ind_lin_eq = where(abs(lin_eq)>threshold)[0]
+            USE_SQUARES = 1
+            if USE_SQUARES:
+                if ind_lb.size != 0:
+                    r += sum((lb[ind_lb]-threshold) ** 2)
+                if ind_ub.size != 0:
+                    r += sum((ub[ind_ub]-threshold) ** 2)
+                if ind_lin_ineq.size != 0:
+                    r += sum((lin_ineq[ind_lin_ineq]-threshold) ** 2)
+                if ind_lin_eq.size != 0:
+                    r += sum((lin_eq[ind_lin_eq]-threshold) ** 2)
+                #self._all_lin_ineq = sqrt(r)
+                self._all_lin_ineq = r / self.p.contol
+            else:
+                if ind_lb.size != 0:
+                    r += sum(lb[ind_lb])
+                if ind_ub.size != 0:
+                    r += sum(ub[ind_ub])
+                if ind_lin_ineq.size != 0:
+                    r += sum(lin_ineq[ind_lin_ineq])
+                if ind_lin_eq.size != 0:
+                    r += sum(abs(lin_eq[ind_lin_eq]))
+                self._all_lin_ineq = r
+                    
+        return copy(self._all_lin_ineq)
+
+    def __all_lin_ineq_gradient(self):
+        if not hasattr(self, '_all_lin_ineq_gradient'):
+            p = self.p
+            n = p.n
+            d = zeros(n)
+            threshold = 0.0
+            #threshold = self.p.contol/2.0
+
+            lb, ub = self.lb(), self.ub()
+            lin_ineq = self.lin_ineq()
+            lin_eq = self.lin_eq()
+            ind_lb, ind_ub = where(lb>threshold)[0], where(ub>threshold)[0]
+            ind_lin_ineq = where(lin_ineq>threshold)[0]
+            ind_lin_eq = where(abs(lin_eq)>threshold)[0]
+
+            USE_SQUARES = 1
+            if USE_SQUARES:
+                if ind_lb.size != 0:
+                    d[ind_lb] -= lb[ind_lb]-threshold# d/dx((x-lb)^2) for violated constraints
+                if ind_ub.size != 0:
+                    d[ind_ub] += ub[ind_ub]-threshold# d/dx((x-ub)^2) for violated constraints
+                if ind_lin_ineq.size != 0:
+                    # d/dx((Ax-b)^2)
+                    b = p.b[ind_lin_ineq]
+                    if hasattr(p, '_A'):
+                        a = p._A[ind_lin_ineq] 
+                        tmp = a._mul_sparse_matrix(csr_matrix(self.x.reshape(p.n, 1))).toarray().flatten() - b
+                        d += a.T._mul_sparse_matrix(tmp.reshape(tmp.size, 1)).A.flatten()
+                        #d += dot(a.T, dot(a, self.x)  - b) 
+                    else:
+                        a = p.A[ind_lin_ineq] 
+                        d += dot(a.T, dot(a, self.x)  - b)-threshold # d/dx((Ax-b)^2)
+                if ind_lin_eq.size != 0:
+                    aeq = p.Aeq[ind_lin_eq]
+                    beq = p.beq[ind_lin_eq]
+                    d += dot(aeq.T, dot(aeq, self.x)  - beq) # 0.5*d/dx((Aeq x - beq)^2)
+                    raise ('nonzero threshold is not ajusted with lin eq yet')
+                #devider = self.__all_lin_ineq()
+                devider = 0.5*self.p.contol
+                if devider != 0:
+                    self._all_lin_ineq_gradient = d / devider
+                else:
+                    self._all_lin_ineq_gradient = d
+            else:
+                if ind_lb.size != 0:
+                    d[ind_lb] -= 1# d/dx(lb-x) for violated constraints
+                if ind_ub.size != 0:
+                    d[ind_ub] += 1# d/dx(x-ub) for violated constraints
+                if ind_lin_ineq.size != 0:
+                    # d/dx(Ax-b)
+                    b = p.b[ind_lin_ineq]
+                    if hasattr(p, '_A'):
+                        d += (p._A[ind_lin_ineq]).sum(0).A.flatten()
+                    else:
+                        d += (p.A[ind_lin_ineq]).sum(0).flatten()
+                if ind_lin_eq.size != 0:
+                    # currently for ralg it should be handled in dilation matrix
+                    p.err('not implemented yet, if you see it inform OpenOpt developers')
+#                    beq = p.beq[ind_lin_eq]
+#                    if hasattr(p, '_Aeq'):
+#                        tmp = p._Aeq[ind_lin_eq]
+#                        ind_change = where()
+#                        tmp
+#                        d += ().sum(0).A.flatten()
+#                    else:
+#                        #d += (p.Aeq[ind_lin_eq]).sum(0).flatten()
+
+#                    aeq = p.Aeq[ind_lin_eq]
+#                    beq = p.beq[ind_lin_eq]
+#                    d += dot(aeq.T, dot(aeq, self.x)  - beq) # 0.5*d/dx((Aeq x - beq)^2)
+                self._all_lin_ineq_gradient = d
+        return copy(self._all_lin_ineq_gradient)
+
     def _getDirection(self, approach):
         if hasattr(self, 'direction'):
             return self.direction.copy()
@@ -487,27 +493,65 @@ class Point:
             return self.direction.copy()
         else:
             if approach == 'all active':
-                #th = 0.0
-                th = contol / 2.0
+
                 direction = self.__all_lin_ineq_gradient()
+                new = 1
                 if p.userProvided.c:
-                    ind = where(p.c(x)>th)[0]
+                    #th = 0.0
+                    th = contol / 2.0
+                    C = p.c(x)
+                    ind = where(C>th)[0]
+                    activeC = C[ind]
                     if len(ind) > 0:
                         tmp = p.dc(x, ind)
+                        if new:
+                            if len(ind)==1:
+                                tmp *= activeC/norm(tmp)
+                            else:
+                                if hasattr(tmp, 'toarray'):
+                                    tmp = tmp.A
+                                #tmp *= ((activeC - th)/asfarray([norm(tmp[i]) for i in xrange(tmp.shape[0])])).reshape(-1, 1)
+                                tmp *= ((activeC - th)/sqrt((tmp**2).sum(1))).reshape(-1, 1)
+                            
                         if tmp.ndim > 1: 
                             tmp = tmp.sum(0)
                         direction += (tmp.A if isspmatrix(tmp) or isinstance(tmp, matrix) else tmp).flatten()
+                
 
                 if p.userProvided.h:
-                    ind1 = where(p.h(x)>th)[0]
+                    th = contol / 2.0
+                    H = p.h(x)
+                    ind1 = where(H>th)[0]
+                    H1 = H[ind1]
                     if len(ind1) > 0:
                         tmp = p.dh(x, ind1)
+                        
+                        if new:
+                            if len(ind1)==1:
+                                tmp *= H1/norm(tmp)
+                            else:
+                                if hasattr(tmp, 'toarray'):
+                                    tmp = tmp.A
+                                #tmp *= ((H1-th)/asfarray([norm(tmp[i]) for i in xrange(tmp.shape[0])])).reshape(-1, 1)
+                                tmp *= ((H1 - th)/sqrt((tmp**2).sum(1))).reshape(-1, 1)
+                        
                         if tmp.ndim > 1: 
                             tmp = tmp.sum(0)
                         direction += (tmp.A if isspmatrix(tmp) or isinstance(tmp, matrix) else tmp).flatten()
-                    ind2 = where(p.h(x)<-th)[0]
+                    ind2 = where(H<-th)[0]
+                    H2 = H[ind2]
                     if len(ind2) > 0:
                         tmp = p.dh(x, ind2)
+                        
+                        if new:
+                            if len(ind2)==1:
+                                tmp *= H2/norm(tmp)
+                            else:
+                                if hasattr(tmp, 'toarray'):
+                                    tmp = tmp.A
+                                #tmp *= ((H2+th)/asfarray([norm(tmp[i]) for i in xrange(tmp.shape[0])])).reshape(-1, 1)
+                                tmp *= ((H2 + th)/sqrt((tmp**2).sum(1))).reshape(-1, 1)
+                        
                         if tmp.ndim > 1: 
                             tmp = tmp.sum(0)
                         direction -= (tmp.A if isspmatrix(tmp) or isinstance(tmp, matrix) else tmp).flatten()
