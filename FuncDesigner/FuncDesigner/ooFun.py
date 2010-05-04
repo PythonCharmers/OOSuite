@@ -6,6 +6,7 @@ from numpy.linalg import norm
 from misc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg#, _broadcast_id
 from copy import deepcopy
 from ooPoint import ooPoint
+Copy = lambda arg: arg.copy() if hasattr(arg, 'copy') else copy(arg)
 
 try:
     from DerApproximator import get_d1, check_d1
@@ -535,7 +536,11 @@ class oofun:
         if cond_same_point:
             #print 'same'
             self.same += 1
-            return deepcopy(self.f_val_prev)
+            if isinstance(self.f_val_prev, ndarray) or isspmatrix(self.f_val_prev):
+                return self.f_val_prev.copy()
+            elif isscalar(self.f_val_prev):
+                return copy(self.f_val_prev)
+            else: return deepcopy(self.f_val_prev) # Is it used somewhere?
         #print 'other'
         self.evals += 1
         
@@ -560,8 +565,10 @@ class oofun:
                 
             if isinstance(self.f_val_prev, ndarray) or isscalar(self.f_val_prev):
                 return copy(self.f_val_prev)
+            elif isspmatrix(self.f_val_prev):
+                return self.f_val_prev.copy()
             else:
-                return deepcopy(self.f_val_prev)
+                return deepcopy(self.f_val_prev) # Is it used somewhere?
         else:
             return tmp
 
@@ -652,7 +659,7 @@ class oofun:
         if cond_same_point:
             self.same_d += 1
             #return deepcopy(self.d_val_prev)
-            return dict([(key, copy(val)) for key, val in self.d_val_prev.items()])
+            return dict([(key, Copy(val)) for key, val in self.d_val_prev.items()])
         else:
             self.evals_d += 1
         
@@ -698,7 +705,7 @@ class oofun:
 #                    if prod(derivativeSelf[ac].shape) == 1 or prod(val.shape) == 1:
 #                        rr = derivativeSelf[ac] * val
 #                    else:
-
+                    
                     if isscalar(val) or val.ndim < 2: val = atleast_2d(val)
                     t1, t2 = self._considerSparse(derivativeSelf[ac], val)
                     cond_2 = t1.ndim > 1 or t2.ndim > 1
@@ -751,9 +758,9 @@ class oofun:
 #                            rr = rr.toarray()
 #                        rr = rr.flatten() # TODO: check it and mb remove
                     if key in Keys:
-                        if isinstance(r[key], ndarray) and not isinstance(rr, ndarray): # i.e. rr is sparse matrix
+                        if isinstance(r[key], ndarray) and hasattr(rr, 'toarray'): # i.e. rr is sparse matrix
                             rr = rr.toarray() # I guess r[key] will hardly be all-zeros
-                        elif not isinstance(r[key], ndarray) and isinstance(rr, ndarray): # i.e. r[key] is sparse matrix
+                        elif hasattr(r[key], 'toarray') and isinstance(rr, ndarray): # i.e. r[key] is sparse matrix
                             r[key] = r[key].toarray()
                         if rr.size == r[key].size and type(rr) == type(r[key]) == ndarray: 
                             r[key] += rr
@@ -762,15 +769,14 @@ class oofun:
                     else:
                         r[key] = rr
                         Keys.add(key)
-                    assert r[key].dtype != object
 
 
         if isinstance(x, ooPoint): self._point_id1 = x._id
-        dp = dict([(key, value.copy()) for key, value in r.items()])
+        dp = dict([(key, Copy(value)) for key, value in r.items()])
 
         self.d_val_prev = dp
         
-        self.d_key_prev = dict([(elem, copy(x[elem])) for elem in dep])
+        self.d_key_prev = dict([(elem, Copy(x[elem])) for elem in dep])
         
         return r
 
@@ -866,7 +872,7 @@ class oofun:
                         
                    
                 ac = 0
-                
+                if isinstance(tmp, ndarray) and hasattr(tmp, 'toarray'): tmp = tmp.A # is dense matrix
                 if not isinstance(tmp, ndarray):
                     csc_tmp = tmp.tocsc()
                 for i, inp in enumerate(Input):
