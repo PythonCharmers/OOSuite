@@ -497,8 +497,8 @@ class Point:
                 direction = self.__all_lin_ineq_gradient()
                 new = 1
                 if p.userProvided.c:
-                    #th = 0.0
-                    th = contol / 2.0
+                    th = 0.0
+                    #th = contol / 2.0
                     C = p.c(x)
                     ind = where(C>th)[0]
                     activeC = C[ind]
@@ -506,6 +506,7 @@ class Point:
                         tmp = p.dc(x, ind)
                         if new:
                             if len(ind)==1:
+                                #pass
                                 tmp *= activeC/norm(tmp)
                             else:
                                 if hasattr(tmp, 'toarray'):
@@ -519,6 +520,7 @@ class Point:
                 
 
                 if p.userProvided.h:
+                    #th = 0.0
                     th = contol / 2.0
                     H = p.h(x)
                     ind1 = where(H>th)[0]
@@ -528,6 +530,7 @@ class Point:
                         
                         if new:
                             if len(ind1)==1:
+                                #pass
                                 tmp *= H1/norm(tmp)
                             else:
                                 if hasattr(tmp, 'toarray'):
@@ -545,7 +548,12 @@ class Point:
                         
                         if new:
                             if len(ind2)==1:
-                                tmp *= H2/norm(tmp)
+                                #pass
+#                                print '--------------'
+#                                print (H2/norm(tmp)).flatten()
+#                                print tmp.shape
+                                tmp *= -H2/norm(tmp)
+#                                print tmp.shape
                             else:
                                 if hasattr(tmp, 'toarray'):
                                     tmp = tmp.A
