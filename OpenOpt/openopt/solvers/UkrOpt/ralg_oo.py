@@ -10,7 +10,7 @@ from numpy.linalg import norm, solve, LinAlgError
 from openopt.kernel.baseSolver import *
 from openopt.kernel.Point import Point
 from openopt.kernel.ooMisc import economyMult, Len
-from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X,  SMALL_DELTA_F,  SMALL_DF,  IS_LINE_SEARCH_FAILED
+from openopt.kernel.setDefaultIterFuncs import *
 from UkrOptMisc import getBestPointAfterTurn
 
 class ralg(baseSolver):
@@ -632,10 +632,10 @@ class ralg(baseSolver):
                 if SMALL_DELTA_X in p.stopdict:
                     if best_ls_point.isFeas(False) or not prevIter_best_ls_point.isFeas(False) or cond_same_point: s2 = p.istop
                     p.stopdict.pop(SMALL_DELTA_X)
-                if s2 and (any(isnan(best_ls_point.c())) or any(isnan(best_ls_point.h()))) \
-                and not p.isNaNInConstraintsAllowed\
-                and not cond_same_point:
-                    s2 = 0
+#                if s2 and (any(isnan(best_ls_point.c())) or any(isnan(best_ls_point.h()))) \
+#                and not p.isNaNInConstraintsAllowed\
+#                and not cond_same_point:
+#                    s2 = 0
                     
                 if not s2 and any(p.stopdict.values()):
                     for key,  val in p.stopdict.iteritems():
@@ -643,8 +643,11 @@ class ralg(baseSolver):
                             s2 = key
                             break
                 p.istop = s2
-
-
+                
+                for key,  val in p.stopdict.iteritems():
+                    if key < 0 or key in set([FVAL_IS_ENOUGH, USER_DEMAND_STOP, BUTTON_ENOUGH_HAS_BEEN_PRESSED]):
+                        p.iterfcn(bestPoint)
+                        return
             """                                If stop required                                """
             
             if p.istop:
