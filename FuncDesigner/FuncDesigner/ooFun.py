@@ -283,7 +283,7 @@ class oofun:
             d = (d_x, d_y)
             input = [self, other]
         r = oofun(f, input, d = d)
-        if isinstance(other, oofun) or not isinstance(other, int): r.attach((self>0)('pow_domain_%d'%r._id, tol=1e-13)) # TODO: if "other" is fixed oofun with integer value - omit this
+        if isinstance(other, oofun) or not isinstance(other, int): r.attach((self>0)('pow_domain_%d'%r._id, tol=-1e-13)) # TODO: if "other" is fixed oofun with integer value - omit this
         r.isCostly = True
         return r
 
@@ -583,6 +583,7 @@ class oofun:
         if Vars is not None and fixedVars is not None:
             raise FuncDesignerException('No more than one argument from "Vars" and "fixedVars" is allowed for the function')
         assert type(Vars) != ndarray and type(fixedVars) != ndarray
+        if not isinstance(x, ooPoint): x = ooPoint(x)
         #self._directlyDwasInwolved = True
         if not hasattr(self, '_prev_D_Vars_key'):
             self._prev_D_Vars_key = Vars if (Vars is None or (isinstance(Vars, oofun) and Vars.is_oovar) ) else set([v.name for v in Vars])
