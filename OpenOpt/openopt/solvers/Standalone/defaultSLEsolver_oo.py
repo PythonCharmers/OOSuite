@@ -32,7 +32,7 @@ class defaultSLEsolver(baseSolver):
         elif solver in self.sparseSolvers:
             useDense = False
         elif solver == 'autoselect':
-            if (isinstance(p.C, ndarray) and len(p.C.nonzero()[0]) > 0.25 * p.C.size) or not scipyInstalled:
+            if not hasattr(scipy.sparse, 'linalg') or (isinstance(p.C, ndarray) and len(p.C.nonzero()[0]) > 0.25 * p.C.size) or not scipyInstalled:
                 solver = self.defaultDenseSolver
                 self.matrixSLEsolver = solver
                 useDense = True
