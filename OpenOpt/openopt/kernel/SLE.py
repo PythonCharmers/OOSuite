@@ -63,6 +63,15 @@ class SLE(MatrixProblem):
                 raise OpenOptException('for FuncDesigner sle constructor args must be either all-equalities or all-oofuns')            
             
             AsSparse = self.asSparse if isscalar(self.asSparse) else self.asSparse()
+            if AsSparse:
+                from scipy import sparse
+                if not hasattr(sparse, 'linalg'):
+                    s = """you use new version of scipy where scipy.sparse.linalg was moved to scikits.umfpack. 
+                    It is not ajusted with the version of our soft you are using yet. 
+                    Thus SLE will be solved as dense. 
+                    If sparsity is strongly required, you could use rendering (see FuncDesigner doc)"""
+                    self.pWarn(s)
+                    AsSparse = False
             
             C, d = [], []
             Z = self._vector2point(zeros(self.n))
@@ -79,9 +88,11 @@ class SLE(MatrixProblem):
             if AsSparse:
                 Vstack = scipy.sparse.vstack
             else:
-                Vstack = vstack # i.e. numpy.vstack
+                Vstack = lambda C: vstack([(c if type(c)==ndarray else c.A) for c in C]) # i.e. numpy.vstack
             #raise 0
-            self.C, self.d = Vstack(C), hstack(d).flatten()
+            self.d = hstack(d).flatten()
+            self.C  = Vstack(C)
+
             if AsSparse: self.C_as_csc = self.C.tocsc()
             
             if isinstance(self.C,ndarray) and self.n > 100 and len(flatnonzero(self.C))/self.C.size < 0.3:
