@@ -21,6 +21,8 @@ timeArray = arange(0, 1, 0.01) # 0, 0.01, 0.02, 0.03, ..., 1
 # assign ODE. 3rd argument (here "t") is time variable that is involved in differentiation.
 myODE = ode(equations, startPoint, t, timeArray)
 
+# Probably output will be changed till next release to more OpenOpt-like.
+# Currently it's exact scipy.integrate.odeint output
 r, infodict = myODE.solve()
 print(r)
 print(infodict['message'])
