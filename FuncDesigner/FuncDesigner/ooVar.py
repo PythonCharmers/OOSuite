@@ -26,17 +26,19 @@ class oovar(oofun):
         self.size = size
 
     def _getFunc(self, x):
+        s = 'for oovar ' + self.name + \
+                " the point involved doesn't contain niether name nor the oovar instance. Maybe you try to get function value or derivative in a point where value for an oovar is missing"
         if isinstance(x, dict):
             if self in x:
                 r = atleast_1d(asfarray(x[self]))
             elif self.name in x:
                 r = atleast_1d(asfarray(x[self.name]))
+            else:
+                raise FuncDesignerException(s)
         else:
             try:
                 r = atleast_1d(asfarray(x.xf[self]))
             except:
-                s = 'for oovar ' + self.name + \
-                " the point involved doesn't contain niether name nor the oovar instance. Maybe you try to get function value or derivative in a point where value for an oovar is missing"
                 raise FuncDesignerException(s)
         Size = r.size
         if isscalar(self.size) and Size != self.size:

@@ -9,9 +9,9 @@ class sle:
     matrixSLEsolver = 'autoselect'
     
     def __init__(self, equations, *args, **kwargsForOpenOptSLEconstructor):
-        if len(args) > 0:  FuncDesignerException('incorrect lse definition, too many args are obtained')
+        if len(args) > 0:  FuncDesignerException('incorrect sle definition, too many args are obtained')
         
-        if type(equations) not in [list, tuple]:
+        if type(equations) not in [list, tuple, set]:
             raise FuncDesignerException('argument of sle constructor should be Python tuple or list of equations or oofuns')
             
         self.equations = equations
