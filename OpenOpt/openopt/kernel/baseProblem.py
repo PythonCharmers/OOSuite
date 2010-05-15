@@ -267,6 +267,15 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         if self._isFDmodel():
             self.isFDmodel = True
             
+            for fn in ['lb', 'ub', 'A', 'Aeq', 'b', 'beq']:
+                if not hasattr(self, fn): continue
+                val = getattr(self, fn)
+                if val is not None and any(isfinite(val)):
+                    self.err('while using oovars providing lb, ub, A, Aeq for whole prob is forbidden, use for each oovar instead')
+                    
+            if not isinstance(self.x0, dict):
+                self.err('Unexpected start point type: Python dict expected, '+ str(type(p.x0)) + ' obtained')
+            
             if self.fixedVars is None or (self.optVars is not None and len(self.optVars)<len(self.fixedVars)):
                 D_kwargs = {'Vars':self.optVars}
             else:

@@ -174,7 +174,7 @@ class nonLinFuncs:
         #assert p.iter != 176 or userFunctionType != 'f' or not getDerivative
 
         if nXvectors == 1 and (not getDerivative or prod(r.shape) == 1): # DO NOT REPLACE BY r.size - r may be sparse!
-            r = r.flatten() if type(r) == ndarray else r.toarray().flatten()
+            r = r.flatten() if type(r) == ndarray else r.toarray().flatten() if not isscalar(r) else atleast_1d(r)
 
         if p.invertObjFunc and userFunctionType=='f':
             r = -r
