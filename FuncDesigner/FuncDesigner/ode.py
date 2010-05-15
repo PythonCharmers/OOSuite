@@ -1,5 +1,5 @@
 from translator import FuncDesignerTranslator
-from misc import FuncDesignerException
+from misc import FuncDesignerException, Extras
 from numpy import ndarray, hstack, vstack, isscalar, asarray
 from ooVar import oovar
 
@@ -76,9 +76,9 @@ class ode:
             if min(value.shape) == 1:
                 resultDict[key] = value.flatten()
         r = FuncDesigner_ODE_Result(resultDict)
-        
-        
         r.msg = infodict['message']
+        r.extras = Extras()
+        r.extras.infodict = infodict
         return r
         #return y, infodict
 
@@ -94,6 +94,7 @@ class FuncDesigner_ODE_Result:
             return r[0] if len(args)==1 else r
         self.__call__ = c
     pass
+
 
         #self.decodeArgs(*args)
         #r = self.p.solve(matrixSLEsolver=self.matrixSLEsolver)

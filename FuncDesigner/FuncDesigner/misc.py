@@ -42,3 +42,6 @@ def Diag(x):
     elif len(x) == 1: return asfarray(x)
     elif len(x) < 16 or not scipyInstalled: return diag(x)
     else: return scipy.sparse.spdiags(x, [0], len(x), len(x)) 
+
+class Extras:
+    pass
