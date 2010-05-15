@@ -1,6 +1,6 @@
 from translator import FuncDesignerTranslator
 from misc import FuncDesignerException
-from numpy import ndarray, hstack, vstack, isscalar
+from numpy import ndarray, hstack, vstack, isscalar, asarray
 from ooVar import oovar
 
 class ode:
@@ -20,6 +20,7 @@ class ode:
       
         if not isinstance(timeVariable, oovar):
             raise FuncDesignerException('3rd argument of ode constructor should be Python list or numpy array of time values')
+        self.timeVariable = timeVariable
 
         if timeVariable in equations:
             raise FuncDesignerException("ode: differentiation of a variable by itself (time by time) is treated as a potential bug and thus is forbidden")
@@ -39,16 +40,17 @@ class ode:
         for v, func in equations.items():
             if not isinstance(v, oovar):
                 raise FuncDesignerException('ode: dict keys must be FuncDesigner oovars, got "%s" instead' % type(v))
-            startFVal = func(startPoint)
+            startFVal = asarray(func(startPoint))
             y0.append(startPoint[v])
             Funcs.append(func)
             Point4TranslatorAssignment[v] = startFVal
             
-            if hasattr(v, 'size') and isscalar(v.size) and startFVal.size != v.size:
+            if startFVal.size != asarray(startPoint[v]).size or (hasattr(v, 'size') and isscalar(v.size) and startFVal.size != v.size):
                 raise FuncDesignerException('error in user-defined data: oovar "%s" size is not equal to related function value in start point' % v.name)
         
         self.y0 = hstack(y0)
         ooT = FuncDesignerTranslator(Point4TranslatorAssignment)
+        self.ooT = ooT
         self.func = lambda y, t: hstack([func(ooT.vector2point(hstack((y, t)))) for func in Funcs])
 #        def f(y, t):
 #            
@@ -67,7 +69,31 @@ class ode:
         except:
             raise FuncDesignerException('to solve ode you mush have scipy installed, see scipy.org')
         y, infodict = integrate.odeint(self.func, self.y0, self.timeArray, Dfun = self.derivative, full_output=True)
-        return y, infodict
+        
+        resultDict = dict(self.ooT.vector2point(y.T))
+        resultDict.pop(self.timeVariable)
+        for key, value in resultDict.items():
+            if min(value.shape) == 1:
+                resultDict[key] = value.flatten()
+        r = FuncDesigner_ODE_Result(resultDict)
+        
+        
+        r.msg = infodict['message']
+        return r
+        #return y, infodict
+
+
+class FuncDesigner_ODE_Result:
+    # TODO: prevent code clone with runprobsolver.py
+    def __init__(self, resultDict):
+        self.xf = resultDict
+        if not hasattr(self, '_xf'):
+            self._xf = dict([(var.name, value) for var, value in resultDict.items()])
+        def c(*args):
+            r = [(self._xf[arg] if isinstance(arg,  str) else self.xf[arg]) for arg in args]
+            return r[0] if len(args)==1 else r
+        self.__call__ = c
+    pass
 
         #self.decodeArgs(*args)
         #r = self.p.solve(matrixSLEsolver=self.matrixSLEsolver)
