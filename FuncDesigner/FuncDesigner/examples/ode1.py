@@ -4,7 +4,7 @@ from FuncDesigner import *
 from numpy import arange
 
 # create some variables
-x, y, z, t = oovars('a', 'b', 'c', 't')
+x, y, z, t = oovars('x', 'y', 'z', 't')
 # or just x, y, z, t = oovars(4)
 
 # Python dict of ODEs: da/dt, db/dt, dc/dt
