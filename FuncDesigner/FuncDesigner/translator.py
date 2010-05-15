@@ -1,10 +1,12 @@
 # Handling of FuncDesigner probs
 
-from numpy import empty, hstack, vstack, asfarray, all, atleast_1d, cumsum, asarray, zeros,  ndarray, prod, ones
+from numpy import empty, hstack, vstack, asfarray, all, atleast_1d, cumsum, asarray, zeros,  ndarray, prod, ones, isscalar
 #from nonOptMisc import scipyInstalled, Hstack, Vstack, Find, isspmatrix, SparseMatrixConstructor, DenseMatrixConstructor, Bmat
 
 from misc import FuncDesignerException
 from ooPoint import ooPoint
+DenseMatrixConstructor = lambda shape: zeros(shape)
+isspmatrix = lambda *args: False
 
 class FuncDesignerTranslator:
 #    freeVars = []
@@ -30,7 +32,7 @@ class FuncDesignerTranslator:
         
         oovar_sizes = self._sizeDict.values() # FD: for opt oovars only
         oovar_indexes = cumsum([0] + oovar_sizes)
-        
+
         self.oovarsIndDict = dict([(v, (oovar_indexes[i], oovar_indexes[i+1])) for i, v in enumerate(Variables)])
         
         # TODO: mb use oovarsIndDict here as well (as for derivatives?)

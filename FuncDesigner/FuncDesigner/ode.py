@@ -1,7 +1,9 @@
 from translator import FuncDesignerTranslator
 from misc import FuncDesignerException, Extras
-from numpy import ndarray, hstack, vstack, isscalar, asarray
+from numpy import ndarray, hstack, vstack, isscalar, asarray, zeros
 from ooVar import oovar
+from ooFun import oofun 
+from overloads import fixed_oofun
 
 class ode:
     # Ordinary differential equations
@@ -32,16 +34,20 @@ class ode:
         startPoint[timeVariable] = timeArray[0]
         y0 = []
         Funcs = []
+        Variables = []
         
         # setting oovar.size is risky - it can affect code written after the ode is solved
         # thus Point4TranslatorAssignment is used instead
         Point4TranslatorAssignment = {timeVariable: timeArray[0]}
         
         for v, func in equations.items():
+            Variables.append(v)
+            if not isinstance(func,  oofun):
+                func = fixed_oofun(func)
             if not isinstance(v, oovar):
                 raise FuncDesignerException('ode: dict keys must be FuncDesigner oovars, got "%s" instead' % type(v))
             startFVal = asarray(func(startPoint))
-            y0.append(startPoint[v])
+            y0.append(asarray(startPoint[v]))
             Funcs.append(func)
             Point4TranslatorAssignment[v] = startFVal
             
@@ -49,14 +55,13 @@ class ode:
                 raise FuncDesignerException('error in user-defined data: oovar "%s" size is not equal to related function value in start point' % v.name)
         
         self.y0 = hstack(y0)
+        self.varSizes = [y.size for y in y0]
+        self.Variables = Variables
         ooT = FuncDesignerTranslator(Point4TranslatorAssignment)
         self.ooT = ooT
         self.func = lambda y, t: hstack([func(ooT.vector2point(hstack((y, t)))) for func in Funcs])
-#        def f(y, t):
-#            
-#            return hstack([func(ooT.vector2point(y)) for func in Funcs])
-#        self.func = f    
-        self.derivative = lambda y, t: vstack([ooT.pointDerivative2array(func.D(ooT.vector2point(hstack(y, t)))) for func in Funcs])
+        self.derivative = lambda y, t: vstack([ooT.pointDerivative2array(func.D(ooT.vector2point(hstack((y, t))))) for func in Funcs])
+        self.Point4TranslatorAssignment = Point4TranslatorAssignment
         #self.decode = ooT.vector2point
         
         
@@ -69,9 +74,20 @@ class ode:
         except:
             raise FuncDesignerException('to solve ode you mush have scipy installed, see scipy.org')
         y, infodict = integrate.odeint(self.func, self.y0, self.timeArray, Dfun = self.derivative, full_output=True)
+        y = y.T
+        resultDict = {}
+        ac = 0
+        for i, v in enumerate(self.Variables):
+            resultDict[v] = y[ac:ac+self.varSizes[i]]
+            ac += self.varSizes[i]
+        #y = hstack((y, zeros((len(self.timeArray), 1))))
         
-        resultDict = dict(self.ooT.vector2point(y.T))
-        resultDict.pop(self.timeVariable)
+        #resultDict = dict(self.ooT.vector2point(y.T))
+        
+#        for key in self.equations.keys():
+#            size = self.Point4TranslatorAssignment
+#        resultDict = dict([key,])
+        
         for key, value in resultDict.items():
             if min(value.shape) == 1:
                 resultDict[key] = value.flatten()
