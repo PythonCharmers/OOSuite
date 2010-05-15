@@ -4,17 +4,17 @@ from FuncDesigner import *
 from numpy import arange
 
 # create some variables
-a, b, c, t = oovars('a', 'b', 'c', 't')
-# or just a, b, c, t = oovars(4)
+x, y, z, t = oovars('a', 'b', 'c', 't')
+# or just x, y, z, t = oovars(4)
 
 # Python dict of ODEs: da/dt, db/dt, dc/dt
 equations = {
-             a: 2*a + cos(3*b-2*c) + exp(5-2*t), 
-             b: arcsin(t/5) + 2*a + sinh(2**(-4*t)) + (2+t+sin(c))**(1e-1*(t-sin(a)+cos(b))), 
-             c: a + 4*b - 45 - sin(100*t)
+             x: 2*x + cos(3*y-2*z) + exp(5-2*t), 
+             y: arcsin(t/5) + 2*x + sinh(2**(-4*t)) + (2+t+sin(z))**(1e-1*(t-sin(x)+cos(y))), 
+             z: x + 4*y - 45 - sin(100*t)
              }
 
-startPoint = {a: 3, b: 4, c: 5}
+startPoint = {x: 3, y: 4, z: 5}
 
 timeArray = arange(0, 1, 0.01) # 0, 0.01, 0.02, 0.03, ..., 0.99
 
@@ -23,12 +23,13 @@ myODE = ode(equations, startPoint, t, timeArray)
 
 # Probably output will be changed till next release to more OpenOpt-like.
 # Currently it's exact scipy.integrate.odeint output
-r, infodict = myODE.solve()
-print(r)
-print(infodict['message'])
+r = myODE.solve()
+X,  Y,  Z = r(x, y, z)
+print(X[50:55], Y[50:55], Z[50:55])
+print(r.msg) # r.extras.infodict contains whole scipy.integrate.odeint infodict
 """
-...
- [ 279.24451223  218.05786991  336.11743436]
- [ 285.09427445  223.71515456  347.33272733]]
+(array([  95.32215541,   97.80251715,  100.32319065,  102.88116657, 105.47545552]), 
+array([ 50.26075725,  52.20594513,  54.2008745 ,  56.24637088,  58.34441539]), 
+array([ 44.40064889,  46.96317981,  49.62269611,  52.38990533,  55.2741921 ]))
 Integration successful.
 """
