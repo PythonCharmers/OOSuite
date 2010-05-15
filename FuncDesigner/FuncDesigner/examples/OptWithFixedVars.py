@@ -15,17 +15,17 @@ fixedVars = b # or fixedVars = [b] / c / [b,c] / [a,c] etc
 p = NLP(objective, startPoint, fixedVars = fixedVars, constraints = constraints)
 
 r = p.solve('ralg')
-print r.xf
+print('opt_a: ', a(r), '   opt_c: ', c(r))
 
 # Alternatively, you can set optVars instead of fixedVars: 
 optVars = [a, c] # or optVars = [a] / c / [b,c] / [a,c] etc
 p = NLP(objective, startPoint, optVars = optVars, constraints = constraints)
 r = p.solve('ralg')
-print r.xf
+print('opt_a: ', a(r), '   opt_c: ', c(r))
 
 """
 Expected output:
 ...
-objFunValue: 5.809995 (feasible, max constraint =  7.62729e-07)
-{b: -0.90000000000000002, a: array([ 1.00000032,  0.99999924]), c: array([ 0.00068568])}
+objFunValue: 5.8140327 (feasible, MaxResidual = 5.79053e-07)
+('opt_a: ', array([ 1.00000026,  0.99999942]), '   opt_c: ', array([ 0.06353573]))
 """
