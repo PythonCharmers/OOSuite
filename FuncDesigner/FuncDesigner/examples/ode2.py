@@ -10,11 +10,11 @@ x, t = oovars('x', 't')
 y = oovar('y', size = N)
 z = oovar('z', size = 2*N)
 
-# Python dict of ODEs: da/dt, db/dt, dc/dt
+# Python dict of ODEs
 equations = {
-             x: 2*x + exp(5-2*t), 
-             y: arcsin(t/5) + 2*cos(y) + cos(sum(z)), # sum(z) and z.sum() are same, as well as for numpy arrays
-             z: cos(z/10) + sin(x) + 4*cos(y.sum()) - 0.001*sinh(2*t) 
+             x: 2*x + exp(5-2*t), # 1 equation dx/dt
+             y: arcsin(t/5) + 2*cos(y) + cos(sum(z)), # N equations dy/dt
+             z: cos(z/10) + sin(x) + 4*cos(y.sum()) - 0.001*sinh(2*t) # 2N equations dz/dt
              }
 
 startPoint = {x: 3, y: 4*ones(N), z: 5*zeros(2*N)}

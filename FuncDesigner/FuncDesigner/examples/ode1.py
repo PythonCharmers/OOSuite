@@ -7,11 +7,11 @@ from numpy import arange
 x, y, z, t = oovars('x', 'y', 'z', 't')
 # or just x, y, z, t = oovars(4)
 
-# Python dict of ODEs: da/dt, db/dt, dc/dt
+# Python dict of ODEs
 equations = {
-             x: 2*x + cos(3*y-2*z) + exp(5-2*t), 
-             y: arcsin(t/5) + 2*x + sinh(2**(-4*t)) + (2+t+sin(z))**(1e-1*(t-sin(x)+cos(y))), 
-             z: x + 4*y - 45 - sin(100*t)
+             x: 2*x + cos(3*y-2*z) + exp(5-2*t), # dx/dt
+             y: arcsin(t/5) + 2*x + sinh(2**(-4*t)) + (2+t+sin(z))**(1e-1*(t-sin(x)+cos(y))), # dy/dt
+             z: x + 4*y - 45 - sin(100*t) # dz/dt
              }
 
 startPoint = {x: 3, y: 4, z: 5}
