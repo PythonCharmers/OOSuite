@@ -24,8 +24,6 @@ timeArray = arange(0, 1, 0.01) # 0, 0.01, 0.02, 0.03, ..., 0.99
 # assign ODE. 3rd argument (here "t") is time variable that is involved in differentiation.
 myODE = ode(equations, startPoint, t, timeArray)
 
-# Probably output will be changed till next release to more OpenOpt-like.
-# Currently it's exact scipy.integrate.odeint output
 r = myODE.solve()
 X,  Y,  Z = r(x, y, z) # X.size = 100, Y.shape = (50, 100), Z.shape = (100, 100)
 print(r.msg) # r.extras.infodict contains whole scipy.integrate.odeint infodict
