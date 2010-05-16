@@ -38,7 +38,6 @@ class ode:
         
         # setting oovar.size is risky - it can affect code written after the ode is solved
         # thus Point4TranslatorAssignment is used instead
-        #Point4TranslatorAssignment = {timeVariable: timeArray[0]}
         Point4TranslatorAssignment = {}
         
         for v, func in equations.items():
@@ -74,12 +73,9 @@ class ode:
                 tt = func.D(tmp)
                 tt.pop(timeVariable)
                 r.append(ooT.pointDerivative2array(tt))
-            return vstack(r)#([ooT.pointDerivative2array(func.D(tmp).pop(timeVariable)) for func in Funcs])
+            return vstack(r)
         self.derivative = derivative
         self.Point4TranslatorAssignment = Point4TranslatorAssignment
-        #self.decode = ooT.vector2point
-        
-        
         
     def solve(self, *args): # mb for future implementation - add  some **kwargs here as well
         if len(args) > 0:
@@ -99,8 +95,7 @@ class ode:
         r.extras = Extras()
         r.extras.infodict = infodict
         return r
-        #return y, infodict
-
+        
 
 class FuncDesigner_ODE_Result:
     # TODO: prevent code clone with runprobsolver.py
@@ -113,44 +108,3 @@ class FuncDesigner_ODE_Result:
             return r[0] if len(args)==1 else r
         self.__call__ = c
     pass
-
-
-        #self.decodeArgs(*args)
-        #r = self.p.solve(matrixSLEsolver=self.matrixSLEsolver)
-#        if r.istop >= 0:
-#            return r
-#        else:
-#            R = {}
-#            for key, value in self.p.x0.items(): 
-#                R[key] = value * nan
-#            r.xf = R
-#            r.ff = inf
-#        return r
-            
-#    def decodeArgs(self, *args):
-#        hasStartPoint = False
-#        for arg in args:
-#            if isinstance(arg, str):
-#                self.matrixSLEsolver = arg
-#            elif isinstance(arg, dict):
-#                startPoint = args[0]
-#                hasStartPoint = True
-#            else:
-#                raise FuncDesignerException('incorrect arg type, should be string (solver name) or dict (start point)')
-#            
-#        if not hasStartPoint:  
-#            if hasattr(self, 'startPoint'): return # established from __init__
-#            involvedOOVars = set()
-#            for Elem in self.equations:
-#                elem = Elem.oofun if Elem.isConstraint else Elem
-#                if elem.is_oovar:
-#                    involvedOOVars.add(elem)
-#                else:
-#                    involvedOOVars.update(elem._getDep())
-#            startPoint = {}
-#            for oov in involvedOOVars:
-#                if isscalar(oov.size):
-#                    startPoint[oov] = zeros(oov.size)
-#                else:
-#                    startPoint[oov] = 0
-#        self.startPoint = startPoint
