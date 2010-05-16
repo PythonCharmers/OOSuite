@@ -34,14 +34,12 @@ class ode:
         startPoint[timeVariable] = timeArray[0]
         y0 = []
         Funcs = []
-        Variables = []
         
         # setting oovar.size is risky - it can affect code written after the ode is solved
         # thus Point4TranslatorAssignment is used instead
         Point4TranslatorAssignment = {}
         
         for v, func in equations.items():
-            Variables.append(v)
             if not isinstance(func,  oofun):
                 func = fixed_oofun(func)
             if not isinstance(v, oovar):
@@ -56,7 +54,6 @@ class ode:
         
         self.y0 = hstack(y0)
         self.varSizes = [y.size for y in y0]
-        self.Variables = Variables
         ooT = FuncDesignerTranslator(Point4TranslatorAssignment)
         self.ooT = ooT
         def func (y, t): 
