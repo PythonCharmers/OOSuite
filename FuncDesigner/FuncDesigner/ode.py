@@ -38,7 +38,8 @@ class ode:
         
         # setting oovar.size is risky - it can affect code written after the ode is solved
         # thus Point4TranslatorAssignment is used instead
-        Point4TranslatorAssignment = {timeVariable: timeArray[0]}
+        #Point4TranslatorAssignment = {timeVariable: timeArray[0]}
+        Point4TranslatorAssignment = {}
         
         for v, func in equations.items():
             Variables.append(v)
@@ -59,8 +60,17 @@ class ode:
         self.Variables = Variables
         ooT = FuncDesignerTranslator(Point4TranslatorAssignment)
         self.ooT = ooT
-        self.func = lambda y, t: hstack([func(ooT.vector2point(hstack((y, t)))) for func in Funcs])
-        self.derivative = lambda y, t: vstack([ooT.pointDerivative2array(func.D(ooT.vector2point(hstack((y, t))))) for func in Funcs])
+        def func (y, t): 
+            tmp = dict(ooT.vector2point(y))
+            tmp[timeVariable] = t
+            return hstack([func(tmp) for func in Funcs])
+        self.func = func
+        
+        def derivative(y, t):
+            tmp = dict(ooT.vector2point(y))
+            tmp[timeVariable] = t
+            return vstack([ooT.pointDerivative2array(func.D(tmp)) for func in Funcs])
+        self.derivative = derivative
         self.Point4TranslatorAssignment = Point4TranslatorAssignment
         #self.decode = ooT.vector2point
         
@@ -74,19 +84,7 @@ class ode:
         except:
             raise FuncDesignerException('to solve ode you mush have scipy installed, see scipy.org')
         y, infodict = integrate.odeint(self.func, self.y0, self.timeArray, Dfun = self.derivative, full_output=True)
-        y = y.T
-        resultDict = {}
-        ac = 0
-        for i, v in enumerate(self.Variables):
-            resultDict[v] = y[ac:ac+self.varSizes[i]]
-            ac += self.varSizes[i]
-        #y = hstack((y, zeros((len(self.timeArray), 1))))
-        
-        #resultDict = dict(self.ooT.vector2point(y.T))
-        
-#        for key in self.equations.keys():
-#            size = self.Point4TranslatorAssignment
-#        resultDict = dict([key,])
+        resultDict = dict(self.ooT.vector2point(y.T))
         
         for key, value in resultDict.items():
             if min(value.shape) == 1:
