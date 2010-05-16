@@ -69,7 +69,12 @@ class ode:
         def derivative(y, t):
             tmp = dict(ooT.vector2point(y))
             tmp[timeVariable] = t
-            return vstack([ooT.pointDerivative2array(func.D(tmp)) for func in Funcs])
+            r = []
+            for func in Funcs:
+                tt = func.D(tmp)
+                tt.pop(timeVariable)
+                r.append(ooT.pointDerivative2array(tt))
+            return vstack(r)#([ooT.pointDerivative2array(func.D(tmp).pop(timeVariable)) for func in Funcs])
         self.derivative = derivative
         self.Point4TranslatorAssignment = Point4TranslatorAssignment
         #self.decode = ooT.vector2point
@@ -83,7 +88,7 @@ class ode:
             from scipy import integrate
         except:
             raise FuncDesignerException('to solve ode you mush have scipy installed, see scipy.org')
-        y, infodict = integrate.odeint(self.func, self.y0, self.timeArray, Dfun = self.derivative, full_output=True)
+        y, infodict = integrate.odeint(self.func, self.y0, self.timeArray, Dfun = self.derivative, full_output=True)#, col_deriv=True)
         resultDict = dict(self.ooT.vector2point(y.T))
         
         for key, value in resultDict.items():
