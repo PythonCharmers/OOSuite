@@ -4,16 +4,8 @@ from numpy import empty, hstack, vstack, asfarray, all, atleast_1d, cumsum, asar
 from nonOptMisc import scipyInstalled, Hstack, Vstack, Find, isspmatrix, SparseMatrixConstructor, DenseMatrixConstructor, Bmat
 
 def setStartVectorAndTranslators(p):
-    for fn in ['lb', 'ub', 'A', 'Aeq', 'b', 'beq']:
-        if not hasattr(p, fn): continue
-        val = getattr(p, fn)
-        if val is not None and any(isfinite(val)):
-            p.err('while using oovars providing lb, ub, A, Aeq for whole prob is forbidden, use for each oovar instead')
-            
-    if not isinstance(p.x0, dict):
-        p.err('Unexpected start point type: Python dict expected, '+ str(type(p.x0)) + ' obtained')
     startPoint = p.x0
-    assert all(asarray([atleast_1d(val).ndim for val in startPoint.values()]) == 1)
+    #assert all(asarray([atleast_1d(val).ndim for val in startPoint.values()]) == 1)
     
     # !!!! TODO: handle fixed oovars
     #oovars = list(startPoint.keys())
@@ -45,37 +37,24 @@ def setStartVectorAndTranslators(p):
     p._optVars = set(optVars) if optVars is not None else set()
         
     # point should be FuncDesigner point that currently is Python dict        
-    #point2vector = lambda point: atleast_1d(hstack([asfarray(point[oov]) for oov in optVars]))
+    # point2vector = lambda point: atleast_1d(hstack([asfarray(point[oov]) for oov in optVars]))
     
 
-    def point2vector(point):
-        r = []
-        for oov in optVars:
-            if oov in point:# i.e. in dict keys
-                r.append(point[oov])
-            else:
-                r.append(zeros(asarray(startPoint[oov]).shape))
-        return atleast_1d(hstack(r))
-
+    point2vector = lambda point: atleast_1d(hstack([(point[oov] if oov in point else zeros(asarray(startPoint[oov]).shape)) for oov in optVars]))
+    # 2nd case can trigger from objective/constraints defined over some of opt oovars only
+        
     vector_x0 = point2vector(startPoint)
     n = vector_x0.size
     p.n = n
     
-    
     oovar_sizes = [asarray(startPoint[elem]).size for elem in optVars]
     oovar_indexes = cumsum([0] + oovar_sizes)
-    
-    assert len(oovar_indexes) == len(optVars) + 1
-    
-    #p.oocons = set() # constraints
     
     # TODO: mb use oovarsIndDict here as well (as for derivatives?)
     from FuncDesigner import oopoint
     startDictData = [] if fixedVars is None else [(v, startPoint[v]) for v in fixedVars]
 
-    def vector2point(x):
-        r = oopoint(startDictData + [(oov, x[oovar_indexes[i]:oovar_indexes[i+1]]) for i, oov in enumerate(optVars)])
-        return r
+    vector2point = lambda x: oopoint(startDictData + [(oov, x[oovar_indexes[i]:oovar_indexes[i+1]]) for i, oov in enumerate(optVars)])
 
     oovarsIndDict = dict([(oov, (oovar_indexes[i], oovar_indexes[i+1])) for i, oov in enumerate(optVars)])
         
