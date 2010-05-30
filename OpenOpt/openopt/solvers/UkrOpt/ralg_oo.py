@@ -44,6 +44,7 @@ class ralg(baseSolver):
 #        r = log10(1e15 * p.norm(g_dilated) / p.norm(g))
 #        if isfinite(r):
 #            p.debugmsg('%d' % int(r))
+        #p.debugmsg('%0.2g'%(p.norm(g_dilated) / p.norm(g)))
         return 1e14 * p.norm(g_dilated) < p.norm(g)
     #checkTurnByGradient = True
 
@@ -401,6 +402,10 @@ class ralg(baseSolver):
                     if len(ind_switch_ineq_to_nan) != 0:
                         NaN_derivatives_excluded = True
                         tmp = prevIter_PointForDilation.dc(ind_switch_ineq_to_nan)
+                        if len(ind_switch_ineq_to_nan)>1:
+                            tmp *= (c_prev[ind_switch_ineq_to_nan] /sqrt((tmp**2).sum(1))).reshape(-1, 1)
+                        else:
+                            tmp *= c_prev[ind_switch_ineq_to_nan] / norm(tmp)
                         if tmp.ndim>1: tmp = tmp.sum(0)
                         if not isinstance(tmp, ndarray) or isinstance(tmp, matrix): tmp = tmp.A.flatten() # dense or sparse matrix
                         prevDirectionForDilation -= tmp
@@ -409,7 +414,7 @@ class ralg(baseSolver):
                     ind_switch_eq_to_nan = where(logical_and(isnan(h_current), h_prev>0))[0]       
                     if len(ind_switch_eq_to_nan) != 0:
                         NaN_derivatives_excluded = True
-                        tmp = prevIter_PointForDilation.dh(ind_switch_eq_to_nan)
+                        tmp = prevIter_PointForDilation.dh(ind_switch_eq_to_nan)                        
                         if tmp.ndim>1: tmp = tmp.sum(0)
                         if not isinstance(tmp, ndarray) or isinstance(tmp, matrix): tmp = tmp.A.flatten() # dense or sparse matrix
                         prevDirectionForDilation -= tmp
@@ -434,6 +439,10 @@ class ralg(baseSolver):
                     if len(ind_switch_ineq_from_nan) != 0:
                         NaN_derivatives_excluded = True
                         tmp = PointForDilation.dc(ind_switch_ineq_from_nan)
+                        if len(ind_switch_ineq_from_nan)>1:
+                            tmp *= (c_current[ind_switch_ineq_from_nan] /sqrt((tmp**2).sum(1))).reshape(-1, 1)
+                        else:
+                            tmp *= c_current[ind_switch_ineq_from_nan] / norm(tmp)                        
                         if tmp.ndim>1: tmp = tmp.sum(0)
                         if not isinstance(tmp, ndarray) or isinstance(tmp, matrix): tmp = tmp.A.flatten() # dense or sparse matrix
                         directionForDilation -= tmp
