@@ -962,6 +962,7 @@ class oofun:
         # TODO: possibility of reverse order?
         if self.input is not None:
             for inp in self.input: 
+                if not isinstance(inp, oofun): continue
                 inp._broadcast(func, *args, **kwargs)
         for c in self.attachedConstraints:
             c._broadcast(func, *args, **kwargs)
