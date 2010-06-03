@@ -402,13 +402,17 @@ class ralg(baseSolver):
                     if len(ind_switch_ineq_to_nan) != 0:
                         NaN_derivatives_excluded = True
                         tmp = prevIter_PointForDilation.dc(ind_switch_ineq_to_nan)
+                        if hasattr(tmp, 'toarray'):
+                            tmp = tmp.A
                         if len(ind_switch_ineq_to_nan)>1:
                             tmp *= (c_prev[ind_switch_ineq_to_nan] /sqrt((tmp**2).sum(1))).reshape(-1, 1)
                         else:
                             tmp *= c_prev[ind_switch_ineq_to_nan] / norm(tmp)
                         if tmp.ndim>1: tmp = tmp.sum(0)
                         if not isinstance(tmp, ndarray) or isinstance(tmp, matrix): tmp = tmp.A.flatten() # dense or sparse matrix
+                        #print '1: excluded:', norm(tmp), norm(prevDirectionForDilation)
                         prevDirectionForDilation -= tmp
+                        #print '1: result=', norm(prevDirectionForDilation)
                         
                     """                           processing NaNs in nonlin equality constraints                           """
                     ind_switch_eq_to_nan = where(logical_and(isnan(h_current), h_prev>0))[0]       
@@ -439,13 +443,18 @@ class ralg(baseSolver):
                     if len(ind_switch_ineq_from_nan) != 0:
                         NaN_derivatives_excluded = True
                         tmp = PointForDilation.dc(ind_switch_ineq_from_nan)
+                        if hasattr(tmp, 'toarray'):
+                            tmp = tmp.A                        
                         if len(ind_switch_ineq_from_nan)>1:
                             tmp *= (c_current[ind_switch_ineq_from_nan] /sqrt((tmp**2).sum(1))).reshape(-1, 1)
                         else:
                             tmp *= c_current[ind_switch_ineq_from_nan] / norm(tmp)                        
                         if tmp.ndim>1: tmp = tmp.sum(0)
                         if not isinstance(tmp, ndarray) or isinstance(tmp, matrix): tmp = tmp.A.flatten() # dense or sparse matrix
+                        #print '2: excluded:', norm(tmp), norm(directionForDilation)
                         directionForDilation -= tmp
+                        #print '2: result=', norm(directionForDilation)
+                        
                         
                     """                           processing NaNs in nonlin equality constraints                           """
                     ind_switch_eq_from_nan = where(logical_and(isnan(h_prev), h_current>0))[0]
