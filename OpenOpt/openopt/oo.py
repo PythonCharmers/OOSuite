@@ -267,11 +267,12 @@ def NLP(*args, **kwargs):
     goal = {'minimum'} | 'min' | 'maximum' | 'max' - minimize or maximize objective function
     diffInt = {1e-7} : finite-difference gradient aproximation step, scalar or vector of length nVars
     scale = {None} : scale factor, see /examples/badlyScaled.py for more details
-    stencil = {1}|2: finite-differences derivatives approximation stencil, 
+    stencil = {1}|2|3: finite-differences derivatives approximation stencil, 
     used by most of solvers (except scipy_cobyla) when no user-supplied for 
     objfun / nonline constraints derivatives are provided
         1: (f(x+dx)-f(x))/dx (faster but less precize)
         2: (f(x+dx)-f(x-dx))/(2*dx) (slower but more exact)
+        3: (-f(x+2*dx)+8*f(x+dx)-8*f(x-dx)+f(x-2*dx))/(12*dx) (even more slower, but even more exact)
     check.df, check.dc, check.dh: if set to True, OpenOpt will check user-supplied gradients.
     args (or args.f, args.c, args.h) - additional arguments to objFunc and non-linear constraints,
         see /examples/userArgs.py for more details.
@@ -364,7 +365,7 @@ def NSP(*args, **kwargs):
     """
     Non-Smooth Problem constructor
     Same usage as NLP (see help(NLP) and /examples/nsp_*.py), but default values of contol, xtol, ftol, diffInt may differ
-    Also, default finite-differences derivatives approximation stencil is 2 instead of 1 for NLP
+    Also, default finite-differences derivatives approximation stencil is 3 instead of 1 for NLP
     Solvers available for now:
         ralg - all constraints, medium-scale (nVars = 1...1000), can handle user-provided gradient/subgradient
         scipy_fmin - a Nelder-Mead simplex algorithm implementation, cannot handle constraints and derivatives
