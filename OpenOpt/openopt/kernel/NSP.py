@@ -7,7 +7,7 @@ class NSP(NonLinProblem):
     expectedArgs = ['f', 'x0']
     goal = 'minimum'
     probType = 'NSP'
-    JacobianApproximationStencil = 2
+    JacobianApproximationStencil = 3
     allowedGoals = ['minimum', 'min', 'maximum', 'max']
     showGoal = True    
     def __init__(self, *args, **kwargs):
