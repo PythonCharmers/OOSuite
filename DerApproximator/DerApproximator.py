@@ -9,15 +9,16 @@ class DerApproximatorException:
     def __str__(self):
         return self.msg
 
-def get_d1(fun, vars, diffInt=1.5e-8, pointVal = None, args=(), stencil = 2, varForDifferentiation = None, exactShape = False):
+def get_d1(fun, vars, diffInt=1.5e-8, pointVal = None, args=(), stencil = 3, varForDifferentiation = None, exactShape = False):
     """
-    Usage: get_d1(fun, x, diffInt=1.5e-8, pointVal = None, args=(), stencil = 2, varForDifferentiation = None, exactShape = False)
+    Usage: get_d1(fun, x, diffInt=1.5e-8, pointVal = None, args=(), stencil = 3, varForDifferentiation = None, exactShape = False)
     fun: R^n -> R^m, x0 from R^n: function and point where derivatives should be obtained 
     diffInt - step for stencil
     pointVal - fun(x) if known (it is used from OpenOpt and FuncDesigner)
     args - additional args for fun, if not equalk to () then fun(x, *args) will be involved 
     stencil = 1: (f(x+diffInt) - f(x)) / diffInt
     stencil = 2: (f(x+diffInt) - f(x-diffInt)) / (2*diffInt)
+    stencil = 3: (-f(x+2*diffInt) + 8*f(x+diffInt) - 8*f(x-diffInt) + f(x-2*diffInt)) / (12*diffInt)
     varForDifferentiation - the parameter is used from FuncDesigner
     exactShape - set True to forbid possible flattering for 1D arrays
     """
@@ -115,9 +116,9 @@ def get_d1(fun, vars, diffInt=1.5e-8, pointVal = None, args=(), stencil = 2, var
     else: r = tuple(r)
     return r
 
-def check_d1(fun, fun_d, vars, func_name='func', diffInt=1.5e-8, pointVal = None, args=(), stencil = 2, maxViolation=0.01, varForCheck = None):
+def check_d1(fun, fun_d, vars, func_name='func', diffInt=1.5e-8, pointVal = None, args=(), stencil = 3, maxViolation=0.01, varForCheck = None):
     """
-    Usage: check_d1(fun, fun_d, x, func_name='func', diffInt=1.5e-8, pointVal = None, args=(), stencil = 2, maxViolation=0.01, varForCheck = None)
+    Usage: check_d1(fun, fun_d, x, func_name='func', diffInt=1.5e-8, pointVal = None, args=(), stencil = 3, maxViolation=0.01, varForCheck = None)
     fun: R^n -> R^m, x0 from R^n: function and point where derivatives should be obtained 
     fun_d - user-provided routine for derivatives evaluation to be checked 
     diffInt - step for stencil
@@ -125,6 +126,7 @@ def check_d1(fun, fun_d, vars, func_name='func', diffInt=1.5e-8, pointVal = None
     args - additional args for fun, if not equalk to () then fun(x, *args) will be involved 
     stencil = 1: (f(x+diffInt) - f(x)) / diffInt
     stencil = 2: (f(x+diffInt) - f(x-diffInt)) / (2*diffInt)
+    stencil = 3: (-f(x+2*diffInt) + 8*f(x+diffInt) - 8*f(x-diffInt) + f(x-2*diffInt)) / (12*diffInt)
     maxViolation - threshold for reporting of incorrect derivatives
     varForCheck - the parameter is used from FuncDesigner
     
@@ -207,9 +209,9 @@ def check_d1(fun, fun_d, vars, func_name='func', diffInt=1.5e-8, pointVal = None
     print(75 * '*')
     
     
-def get_d2(fun, vars, fun_d = None, diffInt = 1.5e-8, pointVal = None, args=(), stencil = 3, varForDifferentiation = None, exactShape = True, pointD1 = None):
+def get_d2(fun, vars, fun_d = None, diffInt = 1.5e-4, pointVal = None, args=(), stencil = 3, varForDifferentiation = None, exactShape = True, pointD1 = None):
     """
-    Usage: get_d2(fun, x, fun_d = None, diffInt = 1.5e-8, pointVal = None, args=(), stencil = 3, varForDifferentiation = None, exactShape = True)
+    Usage: get_d2(fun, x, fun_d = None, diffInt = 1.5e-4, pointVal = None, args=(), stencil = 3, varForDifferentiation = None, exactShape = True)
     
     fun: R^n -> R^m, x0 from R^n: function and point where derivatives should be obtained 
     currently implemented for m=1 only!
@@ -217,7 +219,12 @@ def get_d2(fun, vars, fun_d = None, diffInt = 1.5e-8, pointVal = None, args=(), 
     diffInt - step for stencil
     pointVal - fun(x) if known (it is used from OpenOpt and FuncDesigner)
     args - additional args for fun, if not equalk to () then fun(x, *args) will be involved 
-    stencil - parameter for lower-level get_d1, default 2 (see get_d1 documentation)
+    
+    stencil - parameter for lower-level routine get_d1 used in get_d2, default 3
+    stencil = 1: (f(x+diffInt) - f(x)) / diffInt
+    stencil = 2: (f(x+diffInt) - f(x-diffInt)) / (2*diffInt)
+    stencil = 3: (-f(x+2*diffInt) + 8*f(x+diffInt) - 8*f(x-diffInt) + f(x-2*diffInt)) / (12*diffInt)
+    
     varForDifferentiation - the parameter is used from FuncDesigner
     exactShape - set True to forbid possible flattering for 1D arrays
     """
