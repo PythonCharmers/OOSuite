@@ -40,7 +40,7 @@ class oofun:
     discrete = False
     isCostly = False
     
-    stencil = 2 # used for DerApproximator
+    stencil = 3 # used for DerApproximator
     
     #TODO: modify for cases where output can be partial
     evals = 0
@@ -283,7 +283,7 @@ class oofun:
             d = (d_x, d_y)
             input = [self, other]
         r = oofun(f, input, d = d)
-        if isinstance(other, oofun) or not isinstance(other, int): r.attach((self>0)('pow_domain_%d'%r._id, tol=-1e-13)) # TODO: if "other" is fixed oofun with integer value - omit this
+        if isinstance(other, oofun) or not isinstance(other, int): r.attach((self>0)('pow_domain_%d'%r._id, tol=-1e-7)) # TODO: if "other" is fixed oofun with integer value - omit this
         r.isCostly = True
         return r
 
@@ -948,7 +948,7 @@ class oofun:
             j += 1
             check_d1(lambda *args: self.fun(*args), ds[j], input, \
                  func_name=self.name, diffInt=self.diffInt, pointVal = val, args=self.args, \
-                 stencil = max((2, self.stencil)), maxViolation=self.maxViolation, varForCheck = i)
+                 stencil = max((3, self.stencil)), maxViolation=self.maxViolation, varForCheck = i)
     
     
     # TODO: should broadcast return non-void result?
