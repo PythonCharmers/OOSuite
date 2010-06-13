@@ -10,7 +10,7 @@ S = oosystem(f, another_func)
 S &= [(2*c+a-10)**2 < 1.5 + 0.1*b, (a-10)**2<1.5, c**c<3, a[0]>8.9, 
       (a+b > [ 7.97999836, 7.8552538 ])('sum_a_b', tol=1.00000e-12), a < 9, b < -1.02]
 
-r = S.minimize(f, startPoint) # default NLP solver is ralg
+r = S.minimize(f, startPoint) 
 # you could use S.maximize as well
 
 # default NLP solver is ralg;
@@ -33,5 +33,3 @@ Expected output:
 objFunValue: 717.78622 (feasible, max(residuals/requiredTolerances) = 0.786102)
 {a: array([ 8.99999758,  8.87525302]), b: array([-1.01999921]), c: array([ 1.07534812])}
 """
-#def F(oof): print oof.name
-#f.broadcast(F)
