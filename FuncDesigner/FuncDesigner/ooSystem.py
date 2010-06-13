@@ -1,4 +1,4 @@
-from misc import FuncDesignerException
+from misc import FuncDesignerException, pWarn
 from ooFun import oofun, BaseFDConstraint, _getAllAttachedConstraints
 from ooPoint import ooPoint
 from numpy import isnan, ndarray, isfinite
@@ -8,6 +8,8 @@ class ooSystem:
         assert len(kwargs) == 0, 'ooSystem constructor has no implemented kwargs yet'
         self.items = set()
         self.constraints = set()
+        self.nlpSolvers = ['ralg']
+        self.lpSolvers = ['lpSolve', 'glpk', 'cvxopt_lp', 'lp:ipopt', 'lp:algencan', 'lp:scipy_slsqp', 'lp:ralg', 'lp:scipy_cobyla']
         for arg in args:
             if isinstance(arg, set):
                self.items.update(arg)
@@ -17,6 +19,8 @@ class ooSystem:
                 self.items.add(arg)
             else:
                 raise FuncDesignerException('Incorrect type %s in ooSystem constructor' % type(arg))
+        self._changed = True
+        
     
     # [] yields result wrt allowed contol:
     #__getitem__ = lambda self, point: ooSystemState([(elem, elem[point]) for elem in self])
@@ -25,32 +29,34 @@ class ooSystem:
     
     def __iadd__(self, *args, **kwargs):
         assert len(kwargs) == 0, 'not implemented yet'
+        self._changed = True
         if type(args[0]) in [list, tuple, set]:
             assert len(args) == 1
             Args = args[0]
         else:
             Args = args
         for elem in Args:
-            assert isinstance(elem, oofun), 'ooSystem operation += expects only oofuns'
+            if not isinstance(elem, oofun): raise FuncDesignerException('ooSystem operation += expects only oofuns')
         self.items.update(set(Args))
         return self
         
     def __iand__(self, *args, **kwargs):
         assert len(kwargs) == 0, 'not implemented yet'
+        self._changed = True
         if type(args[0]) in [list, tuple, set]:
             assert len(args) == 1
             Args = args[0]
         else:
             Args = args
         for elem in Args:
-            assert isinstance(elem, BaseFDConstraint), 'ooSystem operation &= expects only FuncDesigner constraints'
+            if not isinstance(elem, BaseFDConstraint): raise('ooSystem operation &= expects only FuncDesigner constraints')
         self.constraints.update(set(Args))
         return self
     
         
     # TODO: provide a possibility to yield exact result (ignoring contol)    
     def __call__(self, point):
-        assert isinstance(point,  dict), 'argument should be Python dictionary'
+        if not isinstance(point,  dict): raise FuncDesignerException('argument should be Python dictionary')
         if not isinstance(point, ooPoint):
             point = ooPoint(point)
         r = ooSystemState([(elem, simplify(elem(point))) for elem in self.items])
@@ -58,8 +64,8 @@ class ooSystem:
         # handling constraints
         #!!!!!!!!!!!!!!!!!!! TODO: perform attached constraints lookup only once if ooSystem wasn't modified by += or &= etc
         
-        cons = self.constraints
-        cons.update(_getAllAttachedConstraints(self.items | self.constraints))
+        cons = self._getAllConstraints()
+        
         
         activeConstraints = []
         allAreFinite = all([isfinite(elem(point)) for elem in self.items])
@@ -75,13 +81,67 @@ class ooSystem:
         r.activeConstraints = activeConstraints
         return r
         
+    def minimize(self, *args, **kwargs):
+        kwargs['goal'] = 'minimum'
+        return self._optimize(*args, **kwargs)
         
-#        r = []
-#        for key, val in tmp.items():
-#            r.append((key, key(point, contol=0.0))) if key.isConstraint else r.append((key, val))
-#        return ooSystemState(r)
+    def maximize(self, *args, **kwargs):
+        kwargs['goal'] = 'maximum'
+        return self._optimize(*args, **kwargs)
+
+    def _optimize(self, objective, *args, **kwargs):
+        if isinstance(objective, BaseFDConstraint):
+            raise FuncDesignerException("1st argument can't be of type 'FuncDesigner constraint', it should be 'FuncDesigner oofun'")
+        elif not isinstance(objective, oofun):
+            raise FuncDesignerException('1st argument should be objective function of type "FuncDesigner oofun"')
         
+        constraints = self._getAllConstraints()
         
+        #!!!!! TODO: determing LP, MILP, MINLP if possible
+       
+        try:
+            import openopt
+        except:
+            raise FuncDesignerException('to perform optimization you should have openopt installed')
+            
+        if 'constraints' in kwargs:
+            # TODO: mention it in doc
+            kwargs['constraints'] = set(kwargs['constraints']).update(set(constraints))
+        else:
+            kwargs['constraints'] = constraints
+
+        isLinear = objective.is_linear and all([c.is_linear for c in constraints])
+        if isLinear:
+            p = openopt.LP(objective, *args, **kwargs)
+            if 'solver' not in kwargs:
+                for solver in self.lpSolvers:
+                    if (':' not in solver and not openopt.oosolver(solver)).isInstalled or (solver == 'glpk' and not openopt.oosolver('cvxopt_lp').isInstalled):
+                        continue
+                    if solver == 'glpk' :
+                        p = openopt.LP([1, -1], lb = [1, 1], ub=[10, 10])
+                        try:
+                            r = p.solve('glpk')
+                        except:
+                            continue
+                        if r.istop < 0:
+                            continue
+                    pWarn('You have linear problem but no linear solver (lpSolve, glpk, cvxopt_lp) is installed; converter to NLP will be used.')
+                    break
+                kwargs['solver'] = solver
+        else:
+            p = openopt.NLP(objective, *args, **kwargs)
+            if 'solver' not in kwargs:
+                p.solver = 'ralg'
+        # TODO: solver autoselect
+        return p.solve()
+        
+    def _getAllConstraints(self):
+        if self._changed:
+            cons = self.constraints
+            cons.update(_getAllAttachedConstraints(self.items | self.constraints))
+            self._AllConstraints = cons
+            self._changed = False
+        return self._AllConstraints
         
 ####################### ooSystemState #########################
 class ooSystemState:
