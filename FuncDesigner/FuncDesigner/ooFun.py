@@ -297,7 +297,7 @@ class oofun:
             return r
         r = oofun(f, self, d=d)
         r.isCostly = True
-        if isinstance(other, oofun): r.attach((other>0)('rpow_domain_%d'%r._id,  tol=1e-13)) # TODO: if "other" is fixed oofun with integer value - omit this
+        if isinstance(other, oofun): r.attach((other>0)('rpow_domain_%d'%r._id,  tol=-1e-7)) # TODO: if "other" is fixed oofun with integer value - omit this
         return r
 
     def __xor__(self, other):
