@@ -23,21 +23,18 @@ For ralg it doesn't matter.
 from numpy import *
 from openopt import NLP
 
-n = 10
+n = 100
 an = arange(n) # array [0, 1, 2, ..., n-1]
 x0 = n+15*(1+cos(an))
 
-# from all OO-connected NLP solvers
-# only ralg can handle x0 out of dom objFunc:
-# x0 = n+15*(cos(an))
+f = lambda x: (x**2).sum() + sqrt(x**3).sum() 
+df = lambda x: 2*x + 1.5*x**0.5
 
-f = lambda x: (x**2).sum() + sqrt(x**3-arange(n)**3).sum()
-df = lambda x: 2*x + 0.5*3*x**2/sqrt(x**3-arange(n)**3)
-
-lb = arange(n)
+lb = zeros(n)
 solvers = ['ralg']
+#solvers = ['ipopt']
 for solver in solvers:
-    p = NLP(f, x0, df=df, lb=lb, xtol = 1e-7, iprint = 100, maxIter = 10000, maxFunEvals = 1e8)
+    p = NLP(f, x0, df=df, lb=lb, xtol = 1e-6, iprint = 50, maxIter = 10000, maxFunEvals = 1e8)
     #p.checkdf()
     r = p.solve(solver)
-# expected r.xf = [0, 1, 2, ..., n-1]
+# expected r.xf = small values near zero
