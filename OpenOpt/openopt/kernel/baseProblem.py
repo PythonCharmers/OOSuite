@@ -306,15 +306,15 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             probtol = self.contol
             
             """                                    gather attached constraints                                    """
-            
             C = list(self.constraints)
+            self.constraints = set(self.constraints)
             if hasattr(self, 'f'):
                 if type(self.f) in [list, tuple, set]:
                     C += list(self.f)
                 else: # self.f is oofun
                     C.append(self.f)
             from FuncDesigner import _getAllAttachedConstraints
-            self.constraints += list(_getAllAttachedConstraints(C))
+            self.constraints.update(_getAllAttachedConstraints(C))
 
                 
             """                                         handling constraints                                         """
