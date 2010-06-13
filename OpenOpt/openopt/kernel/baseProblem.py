@@ -306,22 +306,14 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             probtol = self.contol
             
             """                                    gather attached constraints                                    """
-            from FuncDesigner import broadcast
-            def _getAllAttachedConstraints(oofuns):
-                r = set()
-                def F(oof):
-                    #print len(oof.attachedConstraints)
-                    r.update(oof.attachedConstraints)
-                broadcast(F, oofuns)
-                return r
-                
+            
             C = list(self.constraints)
             if hasattr(self, 'f'):
                 if type(self.f) in [list, tuple, set]:
                     C += list(self.f)
                 else: # self.f is oofun
                     C.append(self.f)
-            #C.update(*[c._getAllAttachedConstraints() for c in self.constraints])
+            from FuncDesigner import _getAllAttachedConstraints
             self.constraints += list(_getAllAttachedConstraints(C))
 
                 
@@ -621,7 +613,7 @@ class NonLinProblem(baseProblem, nonLinFuncs, Args):
 
                 A = getattr(self,s)
 
-                if not type(A) in [list, tuple]: #TODO: add or ndarray(A)
+                if type(A) not in [list, tuple]: #TODO: add or ndarray(A)
                     A = (A,)#make tuple
                 setattr(self.user, s, A)
             else:
