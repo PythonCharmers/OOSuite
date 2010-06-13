@@ -140,6 +140,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         self.warn = oowarn
         self.info = ooinfo
         self.hint = oohint
+        self.disp = oodisp
         
         self.pWarn = ooPWarn
         

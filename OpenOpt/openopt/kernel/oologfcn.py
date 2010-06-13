@@ -27,5 +27,8 @@ def ooinfo(msg):
 def oohint(msg):
     print('OpenOpt hint: %s' % msg)
 
+def oodisp(msg):
+    print(msg)
+
 def oodebugmsg(p,  msg):
     if p.debug: print('OpenOpt debug msg: %s' % msg)

@@ -173,10 +173,10 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     # Start solving problem:
 
     if p.iprint >= 0:
-        print '-----------------------------------------------------'
-        s = 'solver: ' +  p.solver.__name__ +  '   problem: ' + p.name
+        p.disp('-'*50)
+        s = 'solver: ' +  p.solver.__name__ +  '   problem: ' + p.name + '    type: %s' % p.probType
         if p.showGoal: s += '   goal: ' + p.goal
-        print s
+        p.disp(s)
 
 
 
@@ -304,13 +304,13 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
 def finalTextOutput(p, r):
     if p.iprint >= 0:
         if p.msg is not '':  
-            print("istop: " + str(r.istop) + '(' + p.msg +')')
+            p.disp("istop: " + str(r.istop) + '(' + p.msg +')')
         else: 
-            print("istop: " + str(r.istop))
+            p.disp("istop: " + str(r.istop))
 
-        print('Solver:   Time Elapsed = ' + str(r.elapsed['solver_time']) + ' \tCPU Time Elapsed = ' + str(r.elapsed['solver_cputime']))
+        p.disp('Solver:   Time Elapsed = ' + str(r.elapsed['solver_time']) + ' \tCPU Time Elapsed = ' + str(r.elapsed['solver_cputime']))
         if p.plot:
-            print('Plotting: Time Elapsed = '+ str(r.elapsed['plot_time'])+ ' \tCPU Time Elapsed = ' + str(r.elapsed['plot_cputime']))
+            p.disp('Plotting: Time Elapsed = '+ str(r.elapsed['plot_time'])+ ' \tCPU Time Elapsed = ' + str(r.elapsed['plot_cputime']))
         
         # TODO: add output of NaNs number in constraints (if presernt)
         if p.useScaledResidualOutput: 
@@ -325,11 +325,11 @@ def finalTextOutput(p, r):
                 nNaNsMsg = '1 constraint is equal to NaN, '
             else:
                 nNaNsMsg = ('%d constraints are equal to NaN, ' % nNaNs)
-            print('NO FEASIBLE SOLUTION is obtained (%s%s, objFunc = %0.8g)' % (nNaNsMsg,  rMsg, r.ff))
+            p.disp('NO FEASIBLE SOLUTION is obtained (%s%s, objFunc = %0.8g)' % (nNaNsMsg,  rMsg, r.ff))
         else:
             msg = "objFunValue: " + (p.finalObjFunTextFormat % r.ff)
             if not p.isUC: msg += ' (feasible, %s)' % rMsg
-            print(msg)
+            p.disp(msg)
 
 ##################################################################
 def finalShow(p):
