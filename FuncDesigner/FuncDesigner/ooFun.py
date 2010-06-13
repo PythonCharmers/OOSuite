@@ -976,6 +976,15 @@ def broadcast(func, oofuncs, *args, **kwargs):
     for oof in oofuncs:
         oof._broadcast(func, *args, **kwargs)
 
+def _getAllAttachedConstraints(oofuns):
+    from FuncDesigner import broadcast
+    r = set()
+    def F(oof):
+        #print len(oof.attachedConstraints)
+        r.update(oof.attachedConstraints)
+    broadcast(F, oofuns)
+    return r
+
 class BooleanOOFun(oofun):
     _unnamedBooleanOOFunNumber = 0
     discrete = True
