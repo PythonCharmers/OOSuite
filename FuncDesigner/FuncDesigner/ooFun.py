@@ -921,29 +921,29 @@ class oofun:
 
     def check_d1(self, point):
         if self.d is None:
-            print('Error: no user-provided derivative(s) for oofun ' + self.name + ' are attached')
+            self.disp('Error: no user-provided derivative(s) for oofun ' + self.name + ' are attached')
             return # TODO: return non-void result
         separator = 75 * '*'
-        print(separator)
+        self.disp(separator)
         assert type(self.d) != list
         val = self(point)
         input = self._getInput(point)
         ds= self._getDerivativeSelf(point, Vars=None,  fixedVars=None)
-        print(self.name + ': checking user-supplied gradient')
-        print('according to:')
-        print('    diffInt = ' + str(self.diffInt)) # TODO: ADD other parameters: allowed epsilon, maxDiffLines etc
-        print('    |1 - info_user/info_numerical| < maxViolation = '+ str(self.maxViolation))        
+        self.disp(self.name + ': checking user-supplied gradient')
+        self.disp('according to:')
+        self.disp('    diffInt = ' + str(self.diffInt)) # TODO: ADD other parameters: allowed epsilon, maxDiffLines etc
+        self.disp('    |1 - info_user/info_numerical| < maxViolation = '+ str(self.maxViolation))        
         j = -1
         for i in xrange(len(self.input)):#var in Vars:
             var = self.input[i]
-            if len(self.input) > 1: print('by input variable number ' + str(i) + ':')
+            if len(self.input) > 1: self.disp('by input variable number ' + str(i) + ':')
             if isinstance(self.d, tuple) and self.d[i] is None:
-                print('user-provided derivative for input number ' + str(i) + ' is absent, skipping the one;')
-                print(separator)
+                self.disp('user-provided derivative for input number ' + str(i) + ' is absent, skipping the one;')
+                self.disp(separator)
                 continue
             if not isinstance(self.input[i], oofun):
-                print('input number ' + str(i) + ' is not oofun instance, skipping the one;')
-                print(separator)
+                self.disp('input number ' + str(i) + ' is not oofun instance, skipping the one;')
+                self.disp(separator)
                 continue
             j += 1
             check_d1(lambda *args: self.fun(*args), ds[j], input, \

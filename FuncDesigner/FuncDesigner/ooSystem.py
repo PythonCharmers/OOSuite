@@ -129,11 +129,11 @@ class ooSystem:
                 kwargs['solver'] = solver
             p = openopt.LP(objective, *args, **kwargs)
         else:
-            raise 0
             p = openopt.NLP(objective, *args, **kwargs)
             if 'solver' not in kwargs:
                 p.solver = 'ralg'
         # TODO: solver autoselect
+        #if p.iprint >= 0: p.disp('The optimization problem is  ' + p.probType)
         return p.solve()
         
     def _getAllConstraints(self):
