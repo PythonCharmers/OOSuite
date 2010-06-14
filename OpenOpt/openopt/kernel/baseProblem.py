@@ -563,10 +563,10 @@ class NonLinProblem(baseProblem, nonLinFuncs, Args):
         if 'maxViolation' in kwargs:
             maxViolation = kwargs['maxViolation']
             
-        print(funcType + (': checking user-supplied gradient of shape (%d, %d)' % (getattr(self, funcType[1:])(xCheck).size, xCheck.size)))
-        print('according to:')
-        print('    diffInt = ' + str(self.diffInt)) # TODO: ADD other parameters: allowed epsilon, maxDiffLines etc
-        print('    |1 - info_user/info_numerical| < maxViolation = '+ str(maxViolation))        
+        self.disp(funcType + (': checking user-supplied gradient of shape (%d, %d)' % (getattr(self, funcType[1:])(xCheck).size, xCheck.size)))
+        self.disp('according to:')
+        self.disp('    diffInt = ' + str(self.diffInt)) # TODO: ADD other parameters: allowed epsilon, maxDiffLines etc
+        self.disp('    |1 - info_user/info_numerical| < maxViolation = '+ str(maxViolation))        
         
         check_d1(getattr(self, funcType[1:]), getattr(self, funcType), xCheck, **kwargs)
         

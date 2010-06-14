@@ -52,6 +52,12 @@ def oosolver(solverName, *args,  **kwargs):
     if args != ():
         raise OpenOptException("Error: oosolver() doesn't consume any *args, use **kwargs only")
     try:
+        if ':' in solverName:
+            # TODO: make it more properly
+            # currently it's used for to get filed isInstalled value
+            # from ooSystem
+            solverName = solverName.split(':')[1]
+            
         solverClass = getattr(my_import('openopt.solvers.'+solverPaths[solverName]), solverName)
         solverClassInstance = solverClass()
         solverClassInstance.fieldsForProbInstance = {}
