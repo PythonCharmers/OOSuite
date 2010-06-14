@@ -1,6 +1,6 @@
 # Handling of FuncDesigner probs
 
-from numpy import empty, hstack, vstack, asfarray, all, atleast_1d, cumsum, asarray, zeros,  atleast_2d, ndarray, prod, ones
+from numpy import empty, hstack, vstack, asfarray, all, atleast_1d, cumsum, asarray, zeros,  atleast_2d, ndarray, prod, ones, copy, nan
 from nonOptMisc import scipyInstalled, Hstack, Vstack, Find, isspmatrix, SparseMatrixConstructor, DenseMatrixConstructor, Bmat
 
 def setStartVectorAndTranslators(p):
@@ -54,7 +54,15 @@ def setStartVectorAndTranslators(p):
     from FuncDesigner import oopoint
     startDictData = [] if fixedVars is None else [(v, startPoint[v]) for v in fixedVars]
 
-    vector2point = lambda x: oopoint(startDictData + [(oov, x[oovar_indexes[i]:oovar_indexes[i+1]]) for i, oov in enumerate(optVars)])
+    #vector2point = lambda x: oopoint(startDictData + [(oov, x[oovar_indexes[i]:oovar_indexes[i+1]]) for i, oov in enumerate(optVars)])
+    p._FDtranslator = {'prevX':nan}
+    def vector2point(x): 
+        if all(x==p._FDtranslator['prevX']):
+            return p._FDtranslator['prevVal']
+        r = oopoint(startDictData + [(oov, x[oovar_indexes[i]:oovar_indexes[i+1]]) for i, oov in enumerate(optVars)])
+        p._FDtranslator['prevVal'] = r
+        p._FDtranslator['prevX'] = copy(x)
+        return r
 
     oovarsIndDict = dict([(oov, (oovar_indexes[i], oovar_indexes[i+1])) for i, oov in enumerate(optVars)])
         
