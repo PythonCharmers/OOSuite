@@ -112,22 +112,24 @@ class ooSystem:
 
         isLinear = objective.is_linear and all([c.oofun.is_linear for c in constraints])
         if isLinear:
+            p = openopt.LP(objective, *args, **kwargs)
             if 'solver' not in kwargs:
                 for solver in self.lpSolvers:
                     if (':' not in solver and not openopt.oosolver(solver).isInstalled )or (solver == 'glpk' and not openopt.oosolver('cvxopt_lp').isInstalled):
                         continue
                     if solver == 'glpk' :
-                        p = openopt.LP([1, -1], lb = [1, 1], ub=[10, 10])
+                        p2 = openopt.LP([1, -1], lb = [1, 1], ub=[10, 10])
                         try:
-                            r = p.solve('glpk')
+                            r = p2.solve('glpk', iprint=-5)
                         except:
                             continue
                         if r.istop < 0:
                             continue
+                        else:
+                            break
+                if ':' in solver:
                     pWarn('You have linear problem but no linear solver (lpSolve, glpk, cvxopt_lp) is installed; converter to NLP will be used.')
-                    break
-                kwargs['solver'] = solver
-            p = openopt.LP(objective, *args, **kwargs)
+                p.solver = solver
         else:
             p = openopt.NLP(objective, *args, **kwargs)
             if 'solver' not in kwargs:

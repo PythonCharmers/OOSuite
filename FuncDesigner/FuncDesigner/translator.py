@@ -1,6 +1,6 @@
 # Handling of FuncDesigner probs
 
-from numpy import empty, hstack, vstack, asfarray, all, atleast_1d, cumsum, asarray, zeros,  ndarray, prod, ones, isscalar
+from numpy import empty, hstack, vstack, asfarray, all, atleast_1d, cumsum, asarray, zeros,  ndarray, prod, ones, isscalar, nan, array_equal, copy
 #from nonOptMisc import scipyInstalled, Hstack, Vstack, Find, isspmatrix, SparseMatrixConstructor, DenseMatrixConstructor, Bmat
 
 from misc import FuncDesignerException
@@ -39,7 +39,16 @@ class FuncDesignerTranslator:
         
         #startDictData = [] #if fixedVars is None else [(v, startPoint[v]) for v in fixedVars]
         #self.vector2point = lambda x: ooPoint(startDictData + [(v, x[oovar_indexes[i]:oovar_indexes[i+1]]) for i, v in enumerate(Variables)])
-        self.vector2point = lambda x: ooPoint([(v, atleast_1d(x)[oovar_indexes[i]:oovar_indexes[i+1]]) for i, v in enumerate(Variables)])
+        #self.vector2point = lambda x: ooPoint([(v, atleast_1d(x)[oovar_indexes[i]:oovar_indexes[i+1]]) for i, v in enumerate(Variables)])
+        self._SavedValues = {'prevX':nan}
+        def vector2point(x): 
+            if all(x==self._SavedValues['prevX']):
+                return self._SavedValues['prevVal']
+            r = ooPoint([(v, atleast_1d(x)[oovar_indexes[i]:oovar_indexes[i+1]]) for i, v in enumerate(Variables)])
+            self._SavedValues['prevVal'] = r
+            self._SavedValues['prevX'] = copy(x)
+            return r
+        self.vector2point = vector2point
         
     point2vector = lambda point: atleast_1d(hstack([(point[v] if v in point else zeros(self._shapeDict[v])) for v in self.freeVars]))
         
