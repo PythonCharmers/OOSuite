@@ -17,7 +17,7 @@ LICENSE             = 'new BSD'
 
 from __init__ import __version__ as Ver
 
-DOWNLOAD_URL        = 'http://openopt.org/images/5/50/DerApproximator0.18.zip'
+DOWNLOAD_URL        = 'http://openopt.org/images/6/6a/DerApproximator.zip'
 
 try:
     import setuptools
