@@ -81,7 +81,7 @@ class ode:
             from scipy import integrate
         except:
             raise FuncDesignerException('to solve ode you mush have scipy installed, see scipy.org')
-        y, infodict = integrate.odeint(self.func, self.y0, self.timeArray, Dfun = self.derivative, full_output=True)#, col_deriv=True)
+        y, infodict = integrate.odeint(self.func, self.y0, self.timeArray, Dfun = self.derivative, full_output=True)
         resultDict = dict(self.ooT.vector2point(y.T))
         
         for key, value in resultDict.items():

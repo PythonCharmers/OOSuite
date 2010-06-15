@@ -38,8 +38,7 @@ class FuncDesignerTranslator:
         # TODO: mb use oovarsIndDict here as well (as for derivatives?)
         
         #startDictData = [] #if fixedVars is None else [(v, startPoint[v]) for v in fixedVars]
-        #self.vector2point = lambda x: ooPoint(startDictData + [(v, x[oovar_indexes[i]:oovar_indexes[i+1]]) for i, v in enumerate(Variables)])
-        #self.vector2point = lambda x: ooPoint([(v, atleast_1d(x)[oovar_indexes[i]:oovar_indexes[i+1]]) for i, v in enumerate(Variables)])
+        # TODO: involve fixed variables
         self._SavedValues = {'prevX':nan}
         def vector2point(x): 
             if all(x==self._SavedValues['prevX']):
