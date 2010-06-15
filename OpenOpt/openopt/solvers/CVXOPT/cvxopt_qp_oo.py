@@ -8,6 +8,7 @@ class cvxopt_qp(baseSolver):
     __alg__ = "see http://abel.ee.ucla.edu/cvxopt"
     __optionalDataThatCanBeHandled__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub']
     properTextOutput = True
+    _canHandleScipySparse = True
     def __init__(self): pass
     def __solver__(self, p):
         return CVXOPT_QP_Solver(p, 'native_CVXOPT_QP_Solver')

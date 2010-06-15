@@ -10,7 +10,8 @@ class dsdp(baseSolver):
     __optionalDataThatCanBeHandled__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'S', 'd']
     gaptol = 1e-5
     properTextOutput = True
-
+    _canHandleScipySparse = True
+    
     def __init__(self): pass
 
     def __solver__(self, p):
