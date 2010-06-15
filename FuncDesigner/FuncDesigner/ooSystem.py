@@ -9,7 +9,7 @@ class ooSystem:
         self.items = set()
         self.constraints = set()
         self.nlpSolvers = ['ralg']
-        self.lpSolvers = ['lpSolve', 'glpk', 'cvxopt_lp', 'lp:ipopt', 'lp:algencan', 'lp:scipy_slsqp', 'lp:ralg', 'lp:scipy_cobyla']
+        self.lpSolvers = ['glpk', 'lpSolve', 'cvxopt_lp', 'lp:ipopt', 'lp:algencan', 'lp:scipy_slsqp', 'lp:ralg', 'lp:scipy_cobyla']
         for arg in args:
             if isinstance(arg, set):
                self.items.update(arg)
