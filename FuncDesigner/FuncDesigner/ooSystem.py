@@ -68,7 +68,7 @@ class ooSystem:
         
         
         activeConstraints = []
-        allAreFinite = all([isfinite(elem(point)) for elem in self.items])
+        allAreFinite = all([all(isfinite(elem(point))) for elem in self.items])
         
         for c in cons:
             val = c.oofun(point)
