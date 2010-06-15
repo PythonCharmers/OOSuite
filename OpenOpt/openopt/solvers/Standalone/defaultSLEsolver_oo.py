@@ -1,6 +1,7 @@
 from numpy.linalg import norm
-from numpy import dot, asfarray, atleast_1d,  zeros, ones, int, float64, where, inf, linalg, ndarray
+from numpy import dot, asfarray, atleast_1d,  zeros, ones, int, float64, where, inf, linalg, ndarray, prod
 from openopt.kernel.baseSolver import baseSolver
+from openopt.kernel.nonOptMisc import scipyAbsentMsg, isspmatrix
 
 try:
     import scipy
@@ -34,16 +35,12 @@ class defaultSLEsolver(baseSolver):
         elif solver == 'autoselect':
             if not scipyInstalled or not hasattr(scipy.sparse, 'linalg'):
                 useDense = True
-                if isinstance(p.C, ndarray) and len(p.C.nonzero()[0]) > 0.25 * p.C.size > 10000: 
-                    if not hasattr(scipy.sparse, 'linalg'):
+                if isspmatrix(p.C) and prod(p.C.shape)>100000 and not hasattr(scipy.sparse, 'linalg'):
                         s = """you use new version of scipy where scipy.sparse.linalg was moved to scikits.umfpack. 
                         It is not ajusted with the version of our soft you are using yet. 
-                        Thus SLE will be solved as dense. 
+                        Thus the SLE will be solved as dense. 
                         If sparsity is strongly required, you could use rendering (see FuncDesigner doc)"""
                         p.pWarn(s)
-                    else:
-                        pass
-                    #p.pWarn(scipyAbsentMsg)
                     
                 solver = self.defaultDenseSolver
                 self.matrixSLEsolver = solver
