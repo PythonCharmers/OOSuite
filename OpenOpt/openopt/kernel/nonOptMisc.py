@@ -4,7 +4,7 @@ except:
     pass
 
 from oologfcn import OpenOptException
-from numpy import zeros, bmat, hstack, vstack, ndarray, copy
+from numpy import zeros, bmat, hstack, vstack, ndarray, copy, where, prod, asarray, atleast_1d
 try:
     import scipy
     scipyInstalled = True
@@ -12,8 +12,18 @@ try:
     from scipy.sparse import isspmatrix, csr_matrix, coo_matrix
     from scipy.sparse import bmat as Bmat
     from scipy.sparse import hstack as HstackSP, vstack as VstackSP, find as Find
-    Hstack = lambda Tuple: HstackSP(Tuple) if any([isspmatrix(elem) for elem in Tuple]) else hstack(Tuple)
-    Vstack = lambda Tuple: VstackSP(Tuple) if any([isspmatrix(elem) for elem in Tuple]) else vstack(Tuple)
+    def Hstack(Tuple):
+        #elems = asarray(Tuple, dtype=object)
+        ind = where([prod(elem.shape)!=0 for elem in Tuple])[0].tolist()
+        elems = [Tuple[i] for i in ind]
+        # [elem if prod(elem.shape)!=0 for elem in Tuple]
+        return HstackSP(elems) if any([isspmatrix(elem) for elem in elems]) else hstack(elems)
+    def Vstack(Tuple):
+        ind = where([prod(elem.shape)!=0 for elem in Tuple])[0].tolist()
+        elems = [Tuple[i] for i in ind]
+        return VstackSP(elems) if any([isspmatrix(elem) for elem in elems]) else hstack(elems)
+    #Hstack = lambda Tuple: HstackSP(Tuple) if any([isspmatrix(elem) for elem in Tuple]) else hstack(Tuple)
+    #Vstack = lambda Tuple: VstackSP(Tuple) if any([isspmatrix(elem) for elem in Tuple]) else vstack(Tuple)
     SparseMatrixConstructor = lambda *args, **kwargs: scipy.sparse.lil_matrix(*args, **kwargs)
 except:
     scipyInstalled = False
