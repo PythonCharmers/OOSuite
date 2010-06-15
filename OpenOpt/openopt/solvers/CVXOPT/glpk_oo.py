@@ -8,7 +8,8 @@ class glpk(baseSolver):
     __homepage__ = 'http://www.gnu.org/software/glpk'
     #__alg__ = ""
     __optionalDataThatCanBeHandled__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'intVars', 'binVars']
-
+    _canHandleScipySparse = True
+    
     def __init__(self): pass
 
     def __solver__(self, p):
