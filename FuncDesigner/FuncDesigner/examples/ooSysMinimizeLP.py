@@ -8,9 +8,12 @@ startPoint = {a:[100, 12], b:2, c:40} # for to ajust sizes of the variables
 S = oosystem(f, another_func)
 # add some constraints
 S &= [2*c+a-10 < 1500+0.1*b, a-10<150, c<300, a[0]>8.9, c>-100, 
-      (a+b > [ 7.9, 7.8 ])('sum_a_b', tol=1.00000e-12), a > -10, b > -10, b<10]
+      (a+2*b > [ 7.9, 7.8 ])('sum_a_b', tol=1.00000e-12), a > -10, b > -10, b<10]
 
-r = S.minimize(f, startPoint) 
+for i in xrange(1000):
+    S &= b+i*c > 10*i + sum(a)
+
+r = S.minimize(f, startPoint, solver='lpSolve') 
 # you could use S.maximize as well
 
 # default LP solvers are (sequentially, if installed): lpSolve, glpk, cvxopt_lp, lp:ipopt, lp:algencan, lp:scipy_slsqp, lp:ralg, lp:cobyla
@@ -30,6 +33,7 @@ a_opt,  b_opt, c_opt = r(a, b, c)
 """
 Expected output:
 ...
-objFunValue: -375.5 (feasible, max(residuals/requiredTolerances) = 0)
-{a: array([ 8.9, -2.2]), b: array([ 10.]), c: array([-100.])}
+Solver:   Time Elapsed = 0.07 	CPU Time Elapsed = 0.01
+objFunValue: 45.883673 (feasible, max(residuals/requiredTolerances) = 0)
+{a: array([  8.9, -10. ]), b: array([ 8.9]), c: array([ 9.79591837])}
 """
