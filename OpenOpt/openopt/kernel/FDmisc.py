@@ -66,7 +66,7 @@ def setStartVectorAndTranslators(p):
 
     oovarsIndDict = dict([(oov, (oovar_indexes[i], oovar_indexes[i+1])) for i, oov in enumerate(optVars)])
         
-    def pointDerivative2array(pointDerivarive, asSparse = False,  func=None, point=None): 
+    def pointDerivative2array(pointDerivarive, asSparse = 'auto',  func=None, point=None): 
         # asSparse can be True, False, 'auto'
         # !!!!!!!!!!! TODO: implement asSparse = 'auto' properly
         if not scipyInstalled and asSparse == 'auto':

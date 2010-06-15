@@ -9,7 +9,7 @@ from ooIter import ooIter
 from Point import Point
 from iterPrint import ooTextOutput
 from ooMisc import setNonLinFuncsNumber, assignScript
-from nonOptMisc import isspmatrix, scipyInstalled, scipyAbsentMsg, csr_matrix
+from nonOptMisc import isspmatrix, scipyInstalled, scipyAbsentMsg, csr_matrix, Vstack, Hstack
 from copy import copy as Copy
 try:
     from DerApproximator import check_d1
@@ -275,7 +275,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     self.err('while using oovars providing lb, ub, A, Aeq for whole prob is forbidden, use for each oovar instead')
                     
             if not isinstance(self.x0, dict):
-                self.err('Unexpected start point type: Python dict expected, '+ str(type(p.x0)) + ' obtained')
+                self.err('Unexpected start point type: Python dict expected, '+ str(type(self.x0)) + ' obtained')
             
             if self.fixedVars is None or (self.optVars is not None and len(self.optVars)<len(self.fixedVars)):
                 D_kwargs = {'Vars':self.optVars}
@@ -409,9 +409,9 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 else:
                     self.err('inform OpenOpt developers of the bug')
             if len(b) != 0:
-                self.A, self.b = vstack(A), hstack(b)
+                self.A, self.b = Vstack(A), Hstack(b)
             if len(beq) != 0:
-                self.Aeq, self.beq = vstack(Aeq), hstack(beq)
+                self.Aeq, self.beq = Vstack(Aeq), Hstack(beq)
             for vName, vVal in LB.items():
                 inds = oovD[vName]
                 lb[inds[0]:inds[1]] = vVal
@@ -441,9 +441,10 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         
         for fn in ('A', 'Aeq'):
             fv = getattr(self, fn)
-            if fv is not None:# and fv != []:
-                afv = asfarray(fv) if not isspmatrix(fv) else fv.toarray() # TODO: omit casting to dense matrix
-                if ndim(afv) > 1:
+            if fv is not None:
+                #afv = asfarray(fv) if not isspmatrix(fv) else fv.toarray() # TODO: omit casting to dense matrix
+                afv = asfarray(fv)  if type(fv) in [list, tuple] else fv
+                if len(afv.shape) > 1:
                     if afv.shape[1] != self.n:
                         self.err('incorrect ' + fn + ' size')
                 else:
@@ -456,13 +457,13 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         SizeThreshold = 2 ** 15
         if scipyInstalled:
             from scipy.sparse import csc_matrix
-            if nA > SizeThreshold and not isspmatrix(self.A) and flatnonzero(self.A).size < 0.25*nA:
+            if isspmatrix(self.A) or (nA > SizeThreshold  and flatnonzero(self.A).size < 0.25*nA):
                 self._A = csc_matrix(self.A)
-            if nAeq > SizeThreshold and not isspmatrix(self.Aeq) and flatnonzero(self.Aeq).size < 0.25*nAeq:
+            if isspmatrix(self.Aeq) or (nAeq > SizeThreshold and flatnonzero(self.Aeq).size < 0.25*nAeq):
                 self._Aeq = csc_matrix(self.Aeq)
+            
         elif nA > SizeThreshold or nAeq > SizeThreshold:
             self.pWarn(scipyAbsentMsg)
-            
         self._baseProblemIsPrepared = True
         
 

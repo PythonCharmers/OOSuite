@@ -159,6 +159,10 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
         if SMALL_DELTA_X in p.kernelIterFuncs: p.kernelIterFuncs.pop(SMALL_DELTA_X)
         if SMALL_DELTA_F in p.kernelIterFuncs: p.kernelIterFuncs.pop(SMALL_DELTA_F)
 
+    if not p.solver._canHandleScipySparse:
+        if hasattr(p.A, 'toarray'): p.A = p.A.toarray()
+        if hasattr(p.Aeq, 'toarray'): p.Aeq = p.Aeq.toarray()
+
 #    p.xf = nan * ones([p.n, 1])
 #    p.ff = nan
     #todo : add scaling, etc

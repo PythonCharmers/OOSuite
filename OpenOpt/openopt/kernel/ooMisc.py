@@ -1,6 +1,6 @@
 __docformat__ = "restructuredtext en"
 from numpy import zeros, ones, copy, isfinite, where, asarray, inf, array, asfarray, dot, ndarray, prod, flatnonzero
-from nonOptMisc import scipyAbsentMsg, scipyInstalled, isspmatrix
+from nonOptMisc import scipyAbsentMsg, scipyInstalled, isspmatrix, Hstack, Vstack, SparseMatrixConstructor, coo_matrix
 
 def Len(arg):
     if arg == None or arg == [] or (isinstance(arg, ndarray) and arg.size==1 and arg == array(None, dtype=object)):
@@ -27,27 +27,42 @@ def xBounds2Matrix(p):
     nLB, nUB, nEQ = Len(indLB), Len(indUB), Len(indEQ)
 
     if  nLB>0 or nUB>0:
-        A, b = copy(p.A), copy(p.b)
-        p.A = zeros([Len(p.b) + nLB+nUB, p.n])
-        p.b = zeros(Len(p.b) + nLB+nUB)
-        p.b[:Len(b)] = b.flatten() # sometimes flatten is needed when called before runProbSolver(), from tests
-        p.A[:Len(b)] = A
-        for i in  xrange(len(indLB)):
-            p.A[initLenB+i, indLB[i]] = -1
-            p.b[initLenB+i] = -p.lb[indLB[i]]
-        for i in  xrange(len(indUB)):
-            p.A[initLenB+len(indLB)+i, indUB[i]] = 1
-            p.b[initLenB+len(indLB)+i] = p.ub[indUB[i]]
+        if isspmatrix(p.A) or (scipyInstalled and nLB+nUB>=p.A.shape[0]):
+            print 1
+            R1 = coo_matrix((-ones(nLB), (range(nLB), indLB)), shape=(nLB, p.n))
+            print 2
+            R2 = coo_matrix((ones(nUB), (range(nUB), indUB)), shape=(nUB, p.n))
+            print 3
+        else:
+            R1 = zeros((nLB, p.n))
+            R1[range(nLB), indLB] = -1
+            R2 = zeros((nUB, p.n))
+            R2[range(nUB), indUB] = 1
+        
+        p.A = Vstack((p.A, R1, R2))
+        if isspmatrix(p.A): p._A = p.A.tocsc()
+        p.b = Hstack((p.b, -p.lb[indLB], p.ub[indUB]))
 
     if nEQ>0:
-        Aeq, beq = copy(p.Aeq), copy(p.beq)
-        p.Aeq = zeros([Len(p.beq) + nEQ, p.n])
-        p.beq = zeros(Len(p.beq) + nEQ)
-        p.beq[:Len(beq)] = beq
-        p.Aeq[:Len(beq)] = Aeq
-        for i in xrange(len(indEQ)):
-            p.Aeq[initLenBeq+i, indEQ[i]] = 1
-            p.beq[initLenBeq+i] = p.lb[indEQ[i]] # = p.ub[indEQ[i]], because they are the same
+        if isspmatrix(p.Aeq) or (scipyInstalled and nEQ>=p.Aeq.shape[0]):
+            R = coo_matrix(([-1]*nLB, (range(nLB), indLB)), shape=(nLB, p.n))
+        else:
+            R = zeros((nEQ, p.n))
+        
+        p.Aeq = Vstack((p.Aeq, R))
+        if isspmatrix(p.Aeq): p._Aeq = p.Aeq.tocsc()
+        
+        p.beq = Hstack((p.beq, p.lb[indEQ]))
+
+#
+#        Aeq, beq = p.Aeq.copy(), p.beq.copy()
+#        p.Aeq = zeros([Len(p.beq) + nEQ, p.n])
+#        p.beq = zeros(Len(p.beq) + nEQ)
+#        p.beq[:Len(beq)] = beq
+#        p.Aeq[:Len(beq)] = Aeq
+#        for i in xrange(len(indEQ)):
+#            p.Aeq[initLenBeq+i, indEQ[i]] = 1
+#            p.beq[initLenBeq+i] = p.lb[indEQ[i]] # = p.ub[indEQ[i]], because they are the same
 
     p.lb = -inf*ones(p.n)
     p.ub = inf*ones(p.n)

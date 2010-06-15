@@ -9,13 +9,16 @@ try:
     import scipy
     scipyInstalled = True
     scipyAbsentMsg = ''
-    from scipy.sparse import isspmatrix, csr_matrix
+    from scipy.sparse import isspmatrix, csr_matrix, coo_matrix
     from scipy.sparse import bmat as Bmat
-    from scipy.sparse import hstack as Hstack, vstack as Vstack, find as Find
+    from scipy.sparse import hstack as HstackSP, vstack as VstackSP, find as Find
+    Hstack = lambda Tuple: HstackSP(Tuple) if any([isspmatrix(elem) for elem in Tuple]) else hstack(Tuple)
+    Vstack = lambda Tuple: VstackSP(Tuple) if any([isspmatrix(elem) for elem in Tuple]) else vstack(Tuple)
     SparseMatrixConstructor = lambda *args, **kwargs: scipy.sparse.lil_matrix(*args, **kwargs)
 except:
     scipyInstalled = False
     csr_matrix = None
+    coo_matrix = None
     scipyAbsentMsg = 'Probably scipy installation could speed up running the code involved'
     isspmatrix = lambda *args,  **kwargs:  False
     Hstack = hstack
