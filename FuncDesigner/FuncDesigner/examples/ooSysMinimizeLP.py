@@ -16,7 +16,7 @@ for i in xrange(1000):
 r = S.minimize(f, startPoint, solver='lpSolve') 
 # you could use S.maximize as well
 
-# default LP solvers are (sequentially, if installed): lpSolve, glpk, cvxopt_lp, lp:ipopt, lp:algencan, lp:scipy_slsqp, lp:ralg, lp:cobyla
+# default LP solvers are (sequentially, if installed): lpSolve, glpk, cvxopt_lp, lp:ipopt, lp:algencan, lp:scipy_slsqp, lp:ralg
 # to change solver you can use kwarg "solver", e.g.
 # r = S.minimize(f, startPoint, solver = 'cvxopt_lp')
 # also you can provide any openopt kwargs:
