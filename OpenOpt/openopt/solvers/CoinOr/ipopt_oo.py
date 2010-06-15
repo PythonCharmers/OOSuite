@@ -57,10 +57,14 @@ class ipopt(baseSolver):
                     r = vstack(r)
                 else:
                     r = Vstack(r)
+                    if isspmatrix(r):
+                        from scipy import __version__
+                        if __version__.startswith('0.7.3') or __version__.startswith('0.7.2') or __version__.startswith('0.7.1') or __version__.startswith('0.7.0'):
+                            p.pWarn('updating scipy to version >= 0.7.4 is very recommended for the problem with the solver IPOPT')
             else:
                 r = array([])
             
-            if isspmatrix(r): r = r.A
+            #if isspmatrix(r): r = r.A
             # isspmatrix(r) turned off till more proper sparse matrices fancy indexation
             if isspmatrix(r):
                 I, J, _ = Find(r)
@@ -74,7 +78,7 @@ class ipopt(baseSolver):
                     I, J = where(r)
             
             else:
-                print('unimplemented type:%s' % str(type(r))) # dense matrix? 
+                p.disp('unimplemented type:%s' % str(type(r))) # dense matrix? 
                 
             
             nnzj = len(I)
@@ -122,8 +126,7 @@ class ipopt(baseSolver):
             if p.isFDmodel: 
                 # TODO: make it more properly
                 if isspmatrix(r):
-                    R = r.A#tolil()
-                    # sometimes works very slow even for lil, at least for current scipy version 0.8.0.dev6096 :
+                    R = r.tocsr()
                     R = R[I, J]
                 else: 
                     R = r[I, J]
