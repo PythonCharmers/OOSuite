@@ -8,5 +8,5 @@ from ode import ode
 from overloads import *
 from misc import FuncDesignerException
 import integrate, interpolate
-__version__ = '0.18'
+__version__ = '0.19'
 
