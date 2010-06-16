@@ -267,7 +267,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         if self._baseProblemIsPrepared: return
         if self._isFDmodel():
             self.isFDmodel = True
-            
+
             for fn in ['lb', 'ub', 'A', 'Aeq', 'b', 'beq']:
                 if not hasattr(self, fn): continue
                 val = getattr(self, fn)
@@ -281,10 +281,9 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 D_kwargs = {'Vars':self.optVars}
             else:
                 D_kwargs = {'fixedVars':self.fixedVars}
+            D_kwargs['asSparse'] = 'auto'
             self._D_kwargs = D_kwargs
-            
             setStartVectorAndTranslators(self)
-            
             lb, ub = -inf*ones(self.n), inf*ones(self.n)
 
             # TODO: get rid of start c, h = None, use [] instead
@@ -307,6 +306,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             probtol = self.contol
             
             """                                    gather attached constraints                                    """
+            
             C = list(self.constraints)
             self.constraints = set(self.constraints)
             if hasattr(self, 'f'):
@@ -316,12 +316,10 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     C.append(self.f)
             from FuncDesigner import _getAllAttachedConstraints
             self.constraints.update(_getAllAttachedConstraints(C))
-
-                
+            
             """                                         handling constraints                                         """
             for c in self.constraints:
                 if not hasattr(c, 'isConstraint'): self.err('The type' + str(type(c)) + 'is inappropriate for problem constraints')
-                
                 f, tol = c.oofun, c.tol
                 Name = f.name
                 dep = f._getDep()
@@ -349,7 +347,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     scaleFactor = abs(probtol / tol)
                     f *= scaleFactor
                     _lb, _ub = _lb * scaleFactor, _ub * scaleFactor
-                    
+
                 if areFixed(dep):
                     # TODO: get rid of self.contol, use separate contols for each constraint
                     Contol = tol if tol != 0 else self.contol
@@ -359,6 +357,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                         self.err(s)
                     # TODO: check doesn't constraint value exeed self.contol
                     continue
+
                 if self.probType in ['LP', 'MILP', 'LLSP', 'LLAVP'] and not f.is_linear:
                     self.err('for LP/MILP/LLSP/LLAVP all constraints have to be linear, while ' + f.name + ' is not')
                 
@@ -422,7 +421,6 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         else: # not namedvariablesStyle
             if self.fixedVars is not None or self.optVars is not None:
                 self.err('fixedVars and optVars are valid for optimization of FuncDesigner models only')
-                
         if self.x0 is None: 
             arr = ['lb', 'ub']
             if self.probType in ['LP', 'MILP', 'QP', 'SOCP', 'SDP']: arr.append('f')
@@ -438,7 +436,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         if not hasattr(self, 'n'): self.n = self.x0.size
         if not hasattr(self, 'lb'): self.lb = -inf * ones(self.n)
         if not hasattr(self, 'ub'): self.ub =  inf * ones(self.n)        
-        
+
         for fn in ('A', 'Aeq'):
             fv = getattr(self, fn)
             if fv is not None:
@@ -452,7 +450,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 setattr(self, fn, afv)
             else:
                 setattr(self, fn, asfarray([]).reshape(0, self.n))
-        
+                
         nA, nAeq = prod(self.A.shape), prod(self.Aeq.shape) 
         SizeThreshold = 2 ** 15
         if scipyInstalled:
