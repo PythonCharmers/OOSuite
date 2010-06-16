@@ -663,9 +663,9 @@ class oofun:
             return dict([(key, Copy(val)) for key, val in self.d_val_prev.items()])
         else:
             self.evals_d += 1
-        
+
         derivativeSelf = self._getDerivativeSelf(x, Vars, fixedVars)
-        
+
         r = Derivative()
         Keys = set()
         ac = -1
@@ -706,9 +706,12 @@ class oofun:
 #                    if prod(derivativeSelf[ac].shape) == 1 or prod(val.shape) == 1:
 #                        rr = derivativeSelf[ac] * val
 #                    else:
-                    
+
                     if isscalar(val) or val.ndim < 2: val = atleast_2d(val)
+
                     t1, t2 = self._considerSparse(derivativeSelf[ac], val)
+                    
+                    
                     cond_2 = t1.ndim > 1 or t2.ndim > 1
                     if cond_2:
                         # warning! t1,t2 can be sparse matrices, so I don't use t = atleast_2d(t) directly
@@ -752,7 +755,6 @@ class oofun:
 #                        rr = rr.flatten() # TODO: check it and mb remove
 # TODO: implement it instead of the code below
                     
-                    
                     if min(rr.shape) == 1: 
                         assert isinstance(rr, ndarray) or isspmatrix(rr), 'Error in FuncDesigner AD, inform developers'
 #                        if not isinstance(rr, ndarray): 
@@ -771,12 +773,9 @@ class oofun:
                         r[key] = rr
                         Keys.add(key)
 
-
         if isinstance(x, ooPoint): self._point_id1 = x._id
         dp = dict([(key, Copy(value)) for key, value in r.items()])
-
         self.d_val_prev = dp
-        
         self.d_key_prev = dict([(elem, Copy(x[elem])) for elem in dep])
         
         return r
