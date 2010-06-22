@@ -1,7 +1,5 @@
 __docformat__ = "restructuredtext en"
 
-#from kernel.baseProblem import *
-#from numpy import asarray
 from kernel.LP import LP as CLP
 from kernel.SDP import SDP as CSDP
 from kernel.QP import QP as CQP
