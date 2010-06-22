@@ -711,9 +711,14 @@ class ralg(baseSolver):
         arr=ones(n, dtype=self.T)
         arr[ind_fixed] = 0
         b = diag(arr)
-
+        
+        if hasattr(Aeq, 'tocsc'):Aeq = Aeq.tocsc()
+        
         for i in xrange(nLinEq):
-            g = economyMult(b.T, Aeq[i])
+            vec = Aeq[i]
+            #raise 0
+            if hasattr(vec, 'toarray'): vec = vec.toarray().flatten()
+            g = economyMult(b.T, vec)
             #ind_nnz = nonzero(g)[0]
             ng = norm(g)
             g = (g / ng).reshape(-1,1)
@@ -737,6 +742,7 @@ class ralg(baseSolver):
  
     def linEqProjection(self, x, Aeq, beq):
         # TODO: handle case nbeq = 1 ?
+        if hasattr(Aeq, 'toarray'):Aeq = Aeq.toarray()
         AeqT = Aeq.T
         AeqAeqT = dot(Aeq, AeqT)
         Aeqx = dot(Aeq, x)
