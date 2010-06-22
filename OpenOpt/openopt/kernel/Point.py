@@ -284,11 +284,7 @@ class Point:
             else: # f(newPoint) is not NaN
                 return True
 
-    def isFeas(self, *args, **kwargs):
-        return self.__isFeas__(*args, **kwargs)
-
-    #def __isFeas__(self, altLinInEq = False):
-    def __isFeas__(self, altLinInEq):
+    def isFeas(self, altLinInEq):
         if not all(isfinite(self.f())): return False
         contol = self.p.contol
         if altLinInEq:
@@ -420,6 +416,7 @@ class Point:
             ind_lb, ind_ub = where(lb>threshold)[0], where(ub>threshold)[0]
             ind_lin_ineq = where(lin_ineq>threshold)[0]
             ind_lin_eq = where(abs(lin_eq)>threshold)[0]
+            
 
             USE_SQUARES = 1
             if USE_SQUARES:
@@ -507,15 +504,17 @@ class Point:
                         tmp = p.dc(x, ind)
                         if new:
                             if min(tmp.shape) == 1:
+                                if hasattr(tmp, 'toarray'): 
+                                    tmp = tmp.toarray()#.flatten()
                                 if activeC.size == prod(tmp.shape):
                                     activeC = activeC.reshape(tmp.shape)
-                                tmp *= activeC/norm(tmp)
+                                tmp *= (activeC-th*(1.0-1e-15))/norm(tmp)
                             else:
                                 if hasattr(tmp, 'toarray'):
                                     tmp = tmp.toarray()
-                                tmp *= ((activeC - th)/sqrt((tmp**2).sum(1))).reshape(-1, 1)
+                                tmp *= ((activeC - th*(1.0-1e-15))/sqrt((tmp**2).sum(1))).reshape(-1, 1)
                             
-                        if tmp.ndim > 1: 
+                        if tmp.ndim > 1:
                             tmp = tmp.sum(0)
                         direction += (tmp.A if isspmatrix(tmp) or isinstance(tmp, matrix) else tmp).flatten()
                 
@@ -530,13 +529,15 @@ class Point:
                         tmp = p.dh(x, ind1)
                         if new:
                             if min(tmp.shape) == 1:
+                                if hasattr(tmp, 'toarray'): 
+                                    tmp = tmp.toarray()#.flatten()
                                 if H1.size == prod(tmp.shape):
-                                    H1 = h1.reshape(tmp.shape)
-                                tmp *= H1/norm(tmp)
+                                    H1 = H1.reshape(tmp.shape)
+                                tmp *= (H1-th*(1.0-1e-15))/norm(tmp)
                             else:
                                 if hasattr(tmp, 'toarray'):
                                     tmp = tmp.toarray()
-                                tmp *= ((H1 - th)/sqrt((tmp**2).sum(1))).reshape(-1, 1)
+                                tmp *= ((H1 - th*(1.0-1e-15))/sqrt((tmp**2).sum(1))).reshape(-1, 1)
                         
                         if tmp.ndim > 1: 
                             tmp = tmp.sum(0)
@@ -545,18 +546,17 @@ class Point:
                     H2 = H[ind2]
                     if len(ind2) > 0:
                         tmp = p.dh(x, ind2)
-#                        if tmp.shape[0]==1: 
-#                            if hasattr(tmp, 'toarray'):tmp=tmp.toarray()
-#                            tmp = tmp.flatten()                        
                         if new:
                             if min(tmp.shape) == 1:
+                                if hasattr(tmp, 'toarray'): 
+                                    tmp = tmp.toarray()#.flatten()
                                 if H2.size == prod(tmp.shape):
-                                    H2 = H2.reshape(tmp.shape)
-                                tmp *= -H2/norm(tmp)
+                                    H2 = H2.reshape(tmp.shape)                                    
+                                tmp *= (-H2-th*(1.0-1e-15))/norm(tmp)
                             else:
                                 if hasattr(tmp, 'toarray'):
-                                    tmp = tmp.A
-                                tmp *= ((-H2 - th)/sqrt((tmp**2).sum(1))).reshape(-1, 1)
+                                    tmp = tmp.toarray()
+                                tmp *= ((-H2 - th*(1.0-1e-15))/sqrt((tmp**2).sum(1))).reshape(-1, 1)
                         
                         if tmp.ndim > 1: 
                             tmp = tmp.sum(0)
