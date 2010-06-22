@@ -1,6 +1,6 @@
 # created by Dmitrey
 from numpy import copy, isnan, array, argmax, abs, vstack, zeros, any, isfinite, all, where, asscalar, \
-sign, dot, sqrt, array_equal, nanmax, inf, hstack, isscalar, logical_or, matrix, asfarray
+sign, dot, sqrt, array_equal, nanmax, inf, hstack, isscalar, logical_or, matrix, asfarray, prod
 from numpy.linalg import norm
 from nonOptMisc import Copy
 
@@ -506,13 +506,13 @@ class Point:
                     if len(ind) > 0:
                         tmp = p.dc(x, ind)
                         if new:
-                            if len(ind)==1:
-                                #pass
+                            if min(tmp.shape) == 1:
+                                if activeC.size == prod(tmp.shape):
+                                    activeC = activeC.reshape(tmp.shape)
                                 tmp *= activeC/norm(tmp)
                             else:
                                 if hasattr(tmp, 'toarray'):
-                                    tmp = tmp.A
-                                #tmp *= ((activeC - th)/asfarray([norm(tmp[i]) for i in xrange(tmp.shape[0])])).reshape(-1, 1)
+                                    tmp = tmp.toarray()
                                 tmp *= ((activeC - th)/sqrt((tmp**2).sum(1))).reshape(-1, 1)
                             
                         if tmp.ndim > 1: 
@@ -528,15 +528,14 @@ class Point:
                     H1 = H[ind1]
                     if len(ind1) > 0:
                         tmp = p.dh(x, ind1)
-                        
                         if new:
-                            if len(ind1)==1:
-                                #pass
+                            if min(tmp.shape) == 1:
+                                if H1.size == prod(tmp.shape):
+                                    H1 = h1.reshape(tmp.shape)
                                 tmp *= H1/norm(tmp)
                             else:
                                 if hasattr(tmp, 'toarray'):
-                                    tmp = tmp.A
-                                #tmp *= ((H1-th)/asfarray([norm(tmp[i]) for i in xrange(tmp.shape[0])])).reshape(-1, 1)
+                                    tmp = tmp.toarray()
                                 tmp *= ((H1 - th)/sqrt((tmp**2).sum(1))).reshape(-1, 1)
                         
                         if tmp.ndim > 1: 
@@ -546,19 +545,17 @@ class Point:
                     H2 = H[ind2]
                     if len(ind2) > 0:
                         tmp = p.dh(x, ind2)
-                        
+#                        if tmp.shape[0]==1: 
+#                            if hasattr(tmp, 'toarray'):tmp=tmp.toarray()
+#                            tmp = tmp.flatten()                        
                         if new:
-                            if len(ind2)==1:
-                                #pass
-#                                print '--------------'
-#                                print (H2/norm(tmp)).flatten()
-#                                print tmp.shape
+                            if min(tmp.shape) == 1:
+                                if H2.size == prod(tmp.shape):
+                                    H2 = H2.reshape(tmp.shape)
                                 tmp *= -H2/norm(tmp)
-#                                print tmp.shape
                             else:
                                 if hasattr(tmp, 'toarray'):
                                     tmp = tmp.A
-                                #tmp *= ((H2+th)/asfarray([norm(tmp[i]) for i in xrange(tmp.shape[0])])).reshape(-1, 1)
                                 tmp *= ((-H2 - th)/sqrt((tmp**2).sum(1))).reshape(-1, 1)
                         
                         if tmp.ndim > 1: 
