@@ -160,7 +160,7 @@ class nonLinFuncs:
                 """                                                 getting derivatives                                                 """
                 if getDerivative:
                     func = lambda x: fun(*((x,) + Args))
-                    d1 = get_d1(func, x, pointVal = None, diffInt = finiteDiffNumbers, stencil=p.JacobianApproximationStencil)
+                    d1 = get_d1(func, x, pointVal = None, diffInt = finiteDiffNumbers, stencil=p.JacobianApproximationStencil, exactShape=True)
                     r[agregate_counter:agregate_counter+d1.size] = d1
                     
                 agregate_counter += atleast_1d(asarray(v)).shape[0]
@@ -267,7 +267,9 @@ class nonLinFuncs:
                 #agregate_counter += m
             #TODO: inline ind modification!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             
+            #raise 0
             derivatives = Vstack(derivatives) if any(isspmatrix(derivatives)) else vstack(derivatives)
+            
             
 
             if ind is None:
@@ -287,9 +289,9 @@ class nonLinFuncs:
             if not isinstance(derivatives, ndarray): 
                 derivatives = derivatives.toarray()
 
-        if min(derivatives.shape) == 1: 
-            if isspmatrix(derivatives): derivatives = derivatives.A
-            derivatives = derivatives.flatten()
+#        if min(derivatives.shape) == 1: 
+#            if isspmatrix(derivatives): derivatives = derivatives.A
+#            derivatives = derivatives.flatten()
         if ind is None and not ignorePrev: p.prevVal[derivativesType]['val'] = derivatives
 
         if funcType=='f':

@@ -1,11 +1,8 @@
-#from gtk import Window
-from numpy import hstack, ravel, isnan
+from numpy import hstack, ravel, isnan, asfarray, log10, array,  isfinite, array, asarray
 from openopt import __version__ as ooversion
 ooversion = str(ooversion)
-
 from setDefaultIterFuncs import stopcase
 
-from numpy import asfarray, log10, array,  isfinite, array, asarray
 class Graphics:
     def __init__(self):
         self.drawFuncs = [self.oodraw]
