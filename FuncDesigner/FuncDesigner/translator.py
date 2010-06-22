@@ -43,7 +43,10 @@ class FuncDesignerTranslator:
         def vector2point(x): 
             if all(x==self._SavedValues['prevX']):
                 return self._SavedValues['prevVal']
-            r = ooPoint([(v, atleast_1d(x)[oovar_indexes[i]:oovar_indexes[i+1]]) for i, v in enumerate(Variables)])
+                
+            # without copy() ipopt and probably others can replace it by noise after closing
+            r = ooPoint([(v, atleast_1d(x)[oovar_indexes[i]:oovar_indexes[i+1]].copy()) for i, v in enumerate(Variables)])
+            
             self._SavedValues['prevVal'] = r
             self._SavedValues['prevX'] = copy(x)
             return r
