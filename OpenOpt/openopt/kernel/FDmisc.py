@@ -1,5 +1,4 @@
 # Handling of FuncDesigner probs
-
 from numpy import empty, hstack, vstack, asfarray, all, atleast_1d, cumsum, asarray, zeros,  atleast_2d, ndarray, prod, ones, copy, nan
 from nonOptMisc import scipyInstalled, Hstack, Vstack, Find, isspmatrix, SparseMatrixConstructor, DenseMatrixConstructor, Bmat
 
@@ -59,9 +58,13 @@ def setStartVectorAndTranslators(p):
     def vector2point(x): 
         if all(x==p._FDtranslator['prevX']):
             return p._FDtranslator['prevVal']
-        r = oopoint(startDictData + [(oov, x[oovar_indexes[i]:oovar_indexes[i+1]]) for i, oov in enumerate(optVars)])
-        p._FDtranslator['prevVal'] = r
+            
+        # without copy() ipopt and probably others can replace it by noise after closing
+        r = oopoint(startDictData + [(oov, x[oovar_indexes[i]:oovar_indexes[i+1]].copy()) for i, oov in enumerate(optVars)])
+        
+        p._FDtranslator['prevVal'] = r 
         p._FDtranslator['prevX'] = copy(x)
+
         return r
 
     oovarsIndDict = dict([(oov, (oovar_indexes[i], oovar_indexes[i+1])) for i, oov in enumerate(optVars)])
