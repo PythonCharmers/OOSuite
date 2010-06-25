@@ -503,7 +503,7 @@ class Point:
                     if len(ind) > 0:
                         tmp = p.dc(x, ind)
                         if new:
-                            if min(tmp.shape) == 1:
+                            if tmp.ndim == 1 or min(tmp.shape) == 1:
                                 if hasattr(tmp, 'toarray'): 
                                     tmp = tmp.toarray()#.flatten()
                                 if activeC.size == prod(tmp.shape):
@@ -528,7 +528,7 @@ class Point:
                     if len(ind1) > 0:
                         tmp = p.dh(x, ind1)
                         if new:
-                            if min(tmp.shape) == 1:
+                            if tmp.ndim == 1 or min(tmp.shape) == 1:
                                 if hasattr(tmp, 'toarray'): 
                                     tmp = tmp.toarray()#.flatten()
                                 if H1.size == prod(tmp.shape):
@@ -547,7 +547,7 @@ class Point:
                     if len(ind2) > 0:
                         tmp = p.dh(x, ind2)
                         if new:
-                            if min(tmp.shape) == 1:
+                            if tmp.ndim == 1 or min(tmp.shape) == 1:
                                 if hasattr(tmp, 'toarray'): 
                                     tmp = tmp.toarray()#.flatten()
                                 if H2.size == prod(tmp.shape):
