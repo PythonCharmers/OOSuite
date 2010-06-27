@@ -14,10 +14,12 @@ class stogo(NLOPT_BASE):
     #_canHandleScipySparse = True
     
     __funcForIterFcnConnection__ = 'f'
+    useRand = True
     
     def __init__(self): pass
     def __solver__(self, p):
-        p.f_iter = 1
+        #p.f_iter = 1
+        if not p.__isFiniteBoxBounded__(): p.err('this solver requires finite lb, ub: lb <= x <= ub')
         p.maxNonSuccess = 1e10
         p.maxIter = 1e10
         if isinf(p.maxTime):
@@ -26,8 +28,7 @@ class stogo(NLOPT_BASE):
             since you have not provided it, 15 sec will be used"""
             p.pWarn(s)
             p.maxTime = 15
-        
-        NLOPT_AUX(p, nlopt.GD_STOGO_RAND)
-        #NLOPT_AUX(p, nlopt.GD_STOGO)
+        solver = nlopt.GD_STOGO_RAND if self.useRand else nlopt.GD_STOGO
+        NLOPT_AUX(p, solver)
         
         #NLOPT_AUX(p, nlopt.GD_MLSL_LDS)
