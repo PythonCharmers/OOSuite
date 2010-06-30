@@ -1,6 +1,6 @@
 # Handling of FuncDesigner probs
 
-from numpy import empty, hstack, vstack, asfarray, all, atleast_1d, cumsum, asarray, zeros,  ndarray, prod, ones, isscalar, nan, array_equal, copy
+from numpy import empty, hstack, vstack, asfarray, all, atleast_1d, cumsum, asarray, zeros,  ndarray, prod, ones, isscalar, nan, array_equal, copy, array
 #from nonOptMisc import scipyInstalled, Hstack, Vstack, Find, isspmatrix, SparseMatrixConstructor, DenseMatrixConstructor, Bmat
 
 from misc import FuncDesignerException
@@ -23,11 +23,12 @@ class FuncDesignerTranslator:
             # TODO: assert v.size (if provided) == PointOrVariables[v]).size
             # and same with shapes
         else:
-            assert type(pointOrVariables) in [list, tuple, set]
+            assert type(PointOrVariables) in [list, tuple, set]
             Variables = PointOrVariables
-            self._sizeDict = dict([(v, (v.size if hasattr(v, 'size') else 1)) for v in Variables])
+            self._sizeDict = dict([(v, (v.size if hasattr(v, 'size') and isinstance(v.size, int) else 1)) for v in Variables])
             self._shapeDict = dict([(v, (v.shape if hasattr(v, 'shape') else ())) for v in Variables])
             
+        self._variables = Variables
         self.n = sum(self._sizeDict.values())
         
         oovar_sizes = self._sizeDict.values() # FD: for opt oovars only
@@ -40,19 +41,20 @@ class FuncDesignerTranslator:
         #startDictData = [] #if fixedVars is None else [(v, startPoint[v]) for v in fixedVars]
         # TODO: involve fixed variables
         self._SavedValues = {'prevX':nan}
-        def vector2point(x): 
+        def vector2point(x):
             if all(x==self._SavedValues['prevX']):
                 return self._SavedValues['prevVal']
                 
+            
             # without copy() ipopt and probably others can replace it by noise after closing
-            r = ooPoint([(v, atleast_1d(x)[oovar_indexes[i]:oovar_indexes[i+1]].copy()) for i, v in enumerate(Variables)])
+            r = ooPoint([(v, atleast_1d(x)[oovar_indexes[i]:oovar_indexes[i+1]].copy()) for i, v in enumerate(self._variables)])
             
             self._SavedValues['prevVal'] = r
             self._SavedValues['prevX'] = copy(x)
             return r
         self.vector2point = vector2point
         
-    point2vector = lambda point: atleast_1d(hstack([(point[v] if v in point else zeros(self._shapeDict[v])) for v in self.freeVars]))
+    point2vector = lambda self, point: array(atleast_1d(hstack([(point[v] if v in point else zeros(self._shapeDict[v])) for v in self._variables])), 'float')
         
     def pointDerivative2array(self, pointDerivarive, asSparse = False,  func=None, point=None): 
         # asSparse can be True, False, 'auto'
