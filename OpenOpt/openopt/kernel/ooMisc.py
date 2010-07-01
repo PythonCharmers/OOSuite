@@ -43,6 +43,7 @@ def xBounds2Matrix(p):
                 p._A = p.A
             else:
                 p.A = p.A.A
+                if hasattr(p, '_A'): delattr(p, '_A')
                 
         p.b = Hstack((p.b, -p.lb[indLB], p.ub[indUB]))
 
@@ -59,6 +60,7 @@ def xBounds2Matrix(p):
                 p._Aeq = p.Aeq
             else:
                 p.Aeq = p.Aeq.A
+                if hasattr(p, '_Aeq'): delattr(p, '_Aeq')
             
         p.beq = Hstack((p.beq, p.lb[indEQ]))
 
