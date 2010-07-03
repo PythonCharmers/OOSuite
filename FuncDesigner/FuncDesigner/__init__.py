@@ -6,7 +6,7 @@ from ooPoint import ooPoint as oopoint
 from sle import sle
 from ode import ode
 from overloads import *
-from misc import FuncDesignerException
+from misc import FuncDesignerException, _getDiffVarsID
 import integrate, interpolate
 __version__ = '0.19'
 

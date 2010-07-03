@@ -3,7 +3,7 @@
 from numpy import inf, asfarray, copy, all, any, empty, atleast_2d, zeros, dot, asarray, atleast_1d, empty, ones, ndarray, \
 where, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum, prod, nonzero, isnan
 from numpy.linalg import norm
-from misc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg#, _broadcast_id
+from misc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg
 from copy import deepcopy
 from ooPoint import ooPoint
 Copy = lambda arg: arg.copy() if hasattr(arg, 'copy') else copy(arg)
@@ -19,7 +19,14 @@ try:
     import scipy
     SparseMatrixConstructor = lambda *args, **kwargs: scipy.sparse.lil_matrix(*args, **kwargs)
     from scipy import sparse
-    Hstack = sparse.hstack
+    from scipy.sparse import hstack as HstackSP
+    def Hstack(Tuple):
+        #elems = asarray(Tuple, dtype=object)
+        ind = where([prod(elem.shape)!=0 for elem in Tuple])[0].tolist()
+        elems = [Tuple[i] for i in ind]
+        # [elem if prod(elem.shape)!=0 for elem in Tuple]
+        return HstackSP(elems) if any([isspmatrix(elem) for elem in elems]) else hstack(elems)
+        
     from scipy.sparse import isspmatrix
 except:
     scipy = None
@@ -52,6 +59,7 @@ class oofun:
     diffInt = 1.5e-8
     maxViolation = 1e-2
     _unnamedFunNumber = 1
+    _lastDiffVarsID = -1
 
     _usedIn = 0
     _level = 0
@@ -578,7 +586,8 @@ class oofun:
 
 
     """                                              derivatives                                           """
-    def D(self, x, Vars=None, fixedVars = None, resultKeysType = 'vars', asSparse = False, exactShape = False):
+    def D(self, x, Vars=None, fixedVars = None, resultKeysType = 'vars', asSparse = False, exactShape = False, diffVarsID = 0):
+        
         # resultKeysType doesn't matter for the case isinstance(Vars, oovar)
         if Vars is not None and fixedVars is not None:
             raise FuncDesignerException('No more than one argument from "Vars" and "fixedVars" is allowed for the function')
@@ -589,7 +598,10 @@ class oofun:
             self._prev_D_Vars_key = Vars if (Vars is None or (isinstance(Vars, oofun) and Vars.is_oovar) ) else set([v.name for v in Vars])
             self._prev_D_fixedVars_key = fixedVars if (fixedVars is None or (isinstance(fixedVars, oofun) and fixedVars.is_oovar) ) \
             else set([v.name for v in fixedVars])
-        sameDerivativeVariables = True if (self._prev_D_Vars_key == Vars and self._prev_D_fixedVars_key == fixedVars) else False
+
+        sameDerivativeVariables = True if diffVarsID == self._lastDiffVarsID or (self._prev_D_Vars_key == Vars and self._prev_D_fixedVars_key == fixedVars) else False
+        if diffVarsID != 0: self._lastDiffVarsID = diffVarsID
+            
         
         #TODO: remove cloned code
         if Vars is not None:
@@ -777,7 +789,6 @@ class oofun:
         dp = dict([(key, Copy(value)) for key, value in r.items()])
         self.d_val_prev = dp
         self.d_key_prev = dict([(elem, Copy(x[elem])) for elem in dep])
-        
         return r
 
     # TODO: handle 2**15 & 0.25 as parameters
