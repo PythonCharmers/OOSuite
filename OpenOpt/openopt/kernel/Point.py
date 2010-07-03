@@ -1,6 +1,6 @@
 # created by Dmitrey
 from numpy import copy, isnan, array, argmax, abs, vstack, zeros, any, isfinite, all, where, asscalar, \
-sign, dot, sqrt, array_equal, nanmax, inf, hstack, isscalar, logical_or, matrix, asfarray, prod
+sign, dot, sqrt, array_equal, nanmax, inf, hstack, isscalar, logical_or, matrix, asfarray, prod, arange
 from numpy.linalg import norm
 from nonOptMisc import Copy
 
@@ -429,7 +429,9 @@ class Point:
                     b = p.b[ind_lin_ineq]
                     if hasattr(p, '_A'):
                         a = p._A[ind_lin_ineq] 
-                        tmp = a._mul_sparse_matrix(csr_matrix(self.x.reshape(p.n, 1))).toarray().flatten() - b - threshold
+                        tmp = a._mul_sparse_matrix(csr_matrix((self.x, (arange(n), zeros(n))), shape=(n, 1))).toarray().flatten() - b - threshold
+                        
+                        #tmp = a._mul_sparse_matrix(csr_matrix((self.x, reshape(p.n, 1))).toarray().flatten() - b - threshold
                         d += a.T._mul_sparse_matrix(tmp.reshape(tmp.size, 1)).A.flatten()
                         #d += dot(a.T, dot(a, self.x)  - b) 
                     else:
