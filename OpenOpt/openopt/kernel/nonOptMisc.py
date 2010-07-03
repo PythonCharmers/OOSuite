@@ -21,7 +21,7 @@ try:
     def Vstack(Tuple):
         ind = where([prod(elem.shape)!=0 for elem in Tuple])[0].tolist()
         elems = [Tuple[i] for i in ind]
-        return VstackSP(elems) if any([isspmatrix(elem) for elem in elems]) else hstack(elems)
+        return VstackSP(elems) if any([isspmatrix(elem) for elem in elems]) else vstack(elems)
     #Hstack = lambda Tuple: HstackSP(Tuple) if any([isspmatrix(elem) for elem in Tuple]) else hstack(Tuple)
     #Vstack = lambda Tuple: VstackSP(Tuple) if any([isspmatrix(elem) for elem in Tuple]) else vstack(Tuple)
     SparseMatrixConstructor = lambda *args, **kwargs: scipy.sparse.lil_matrix(*args, **kwargs)
