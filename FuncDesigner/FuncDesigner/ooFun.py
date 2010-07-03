@@ -650,7 +650,9 @@ class oofun:
             
     def _D(self, x, Vars=None, fixedVars = None, sameDerivativeVariables=True, asSparse = 'auto'):
         if self.is_oovar: 
-            return {} if fixedVars is not None and self in fixedVars else {self.name:Eye(self(x).size) if asSparse is not False else eye(self(x).size)}
+            return {} if (fixedVars is not None and self in fixedVars) or (Vars is not None and self not in Vars) \
+            else {self.name:Eye(self(x).size) if asSparse is not False else eye(self(x).size)}
+            
         if self.discrete: raise FuncDesignerException('The oofun or oovar instance has been declared as discrete, no derivative is available')
 #        if Vars is not None and fixedVars is not None:
 #            raise FuncDesignerException('No more than one parameter from Vars and fixedVars is allowed')
@@ -799,10 +801,12 @@ class oofun:
                 self.pWarn(scipyAbsentMsg)
                 return t1,  t2
             t1 = scipy.sparse.csc_matrix(t1)
+            #t1 = scipy.sparse.coo_matrix(t1).tocsc()
             if t1.shape[1] != t2.shape[0]: # can be from flattered t1
                 assert t1.shape[0] == t2.shape[0], 'bug in FuncDesigner Kernel, inform developers'
                 t1 = t1.T
             t2 = scipy.sparse.csr_matrix(t2)
+            #t2 = scipy.sparse.coo_matrix(t2).tocsr()
         return t1,  t2
 
     def _getDerivativeSelf(self, x, Vars,  fixedVars):
