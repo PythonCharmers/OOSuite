@@ -16,7 +16,7 @@ class pswarm(baseSolver):
 
     __info__ = "parameters: social (default = 0.5), cognitial (0.5), fweight (0.4), iweight (0.9), size (42), tol (1e-5), ddelta (0.5), idelta (2.0). Can handle constraints lb <= x <= ub (values beyond 1e20 are treated as 1e20), A x <= b. Documentation says pswarm is capable of using parallel calculations (via MPI) but I don't know is it relevant to Python API."
     __optionalDataThatCanBeHandled__ = ['lb', 'ub', 'A', 'b']
-    __isIterPointAlwaysFeasible__ = lambda self, p: True
+    __isIterPointAlwaysFeasible__ = lambda self, p: p.__isNoMoreThanBoxBounded__()
 
     social = 0.5
     cognitial = 0.5
