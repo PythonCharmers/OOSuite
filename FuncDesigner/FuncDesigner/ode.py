@@ -1,5 +1,5 @@
 from translator import FuncDesignerTranslator
-from misc import FuncDesignerException, Extras
+from misc import FuncDesignerException, Extras, _getDiffVarsID
 from numpy import ndarray, hstack, vstack, isscalar, asarray, zeros
 from ooVar import oovar
 from ooFun import oofun 
@@ -62,12 +62,13 @@ class ode:
             return hstack([func(tmp) for func in Funcs])
         self.func = func
         
+        _FDVarsID = _getDiffVarsID()
         def derivative(y, t):
             tmp = dict(ooT.vector2point(y))
             tmp[timeVariable] = t
             r = []
             for func in Funcs:
-                tt = func.D(tmp)
+                tt = func.D(tmp, diffVarsID = _FDVarsID)
                 tt.pop(timeVariable)
                 r.append(ooT.pointDerivative2array(tt))
             return vstack(r)
