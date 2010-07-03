@@ -47,19 +47,20 @@ class nonLinFuncs:
         # TODO: move it into runprobsolver or baseproblem
         if p.prevVal[userFunctionType]['val'] is None:
             p.prevVal[userFunctionType]['val'] = zeros(getattr(p, 'n'+userFunctionType))
-            
+
         if prevKey is not None and p.iter > 0 and array_equal(x,  prevKey) and ind is None and not ignorePrev:
             #TODO: add counter of the situations
             if not getDerivative:
                 r = copy(p.prevVal[userFunctionType]['val'])
                 #if p.debug: assert array_equal(r,  p.wrapped_func(x, IND, userFunctionType, True, getDerivative))
                 if ind is not None: r = r[ind]
-
+                
                 if userFunctionType == 'f':
                     if p.isObjFunValueASingleNumber: r = r.sum(0)
                     if p.invertObjFunc: r = -r
                     if  p.solver.__funcForIterFcnConnection__=='f' and any(isnan(x)):
                         p.nEvals['f'] += 1
+
                         if p.nEvals['f']%p.f_iter == 0:
                             p.iterfcn(x, fk = r)
                 return r
@@ -84,15 +85,15 @@ class nonLinFuncs:
         else:
             nXvectors = x.shape[0]
 
-        # TODO: mb replace D by _D?
+        # TODO: use certificate instead 
         if getDerivative and p.isFDmodel:
             if p.optVars is None or (p.fixedVars is not None and len(p.optVars) < len(p.fixedVars)):
                 funcs2 = [(lambda x, i=i: \
-                  p._pointDerivative2array(funcs[i].D(x, Vars = p.optVars, asSparse='auto'), asSparse='auto')) \
+                  p._pointDerivative2array(funcs[i].D(x, Vars = p.optVars, asSparse='auto', diffVarsID=p._FDVarsID), asSparse='auto', func=funcs[i], point=x)) \
                   for i in xrange(len(funcs))]
             else:
                 funcs2 = [(lambda x, i=i: \
-                  p._pointDerivative2array(funcs[i].D(x, fixedVars = p.fixedVars, asSparse='auto'), asSparse='auto', func=funcs[i], point=x)) \
+                  p._pointDerivative2array(funcs[i].D(x, fixedVars = p.fixedVars, asSparse='auto', diffVarsID=p._FDVarsID), asSparse='auto', func=funcs[i], point=x)) \
                   for i in xrange(len(funcs))]
         else:
             funcs2 = funcs
@@ -298,7 +299,7 @@ class nonLinFuncs:
             if hasattr(p, 'solver') and not p.solver.__iterfcnConnected__  and p.solver.__funcForIterFcnConnection__=='df':
                 if p.df_iter is True: p.iterfcn(x)
                 elif p.nEvals[derivativesType]%p.df_iter == 0: p.iterfcn(x) # call iterfcn each {p.df_iter}-th df call
-
+        
         return derivatives
 
 

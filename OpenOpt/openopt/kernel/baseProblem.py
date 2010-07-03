@@ -267,6 +267,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         if self._baseProblemIsPrepared: return
         if self._isFDmodel():
             self.isFDmodel = True
+            from FuncDesigner import _getAllAttachedConstraints, _getDiffVarsID
+            self._FDVarsID = _getDiffVarsID()
 
             for fn in ['lb', 'ub', 'A', 'Aeq', 'b', 'beq']:
                 if not hasattr(self, fn): continue
@@ -282,6 +284,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             else:
                 D_kwargs = {'fixedVars':self.fixedVars}
             D_kwargs['asSparse'] = 'auto'
+            D_kwargs['diffVarsID'] = self._FDVarsID
+            
             self._D_kwargs = D_kwargs
             setStartVectorAndTranslators(self)
             lb, ub = -inf*ones(self.n), inf*ones(self.n)
@@ -314,7 +318,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     C += list(self.f)
                 else: # self.f is oofun
                     C.append(self.f)
-            from FuncDesigner import _getAllAttachedConstraints
+            
             self.constraints.update(_getAllAttachedConstraints(C))
             
             """                                         handling constraints                                         """
@@ -647,7 +651,7 @@ class NonLinProblem(baseProblem, nonLinFuncs, Args):
                 setattr(self, 'n'+s, 0)
             else:
                 setNonLinFuncsNumber(self,  s)
-
+                
         self.prepared = True
 
     # TODO: move the function to child classes
