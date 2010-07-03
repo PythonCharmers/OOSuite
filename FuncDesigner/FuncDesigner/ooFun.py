@@ -3,7 +3,7 @@
 from numpy import inf, asfarray, copy, all, any, empty, atleast_2d, zeros, dot, asarray, atleast_1d, empty, ones, ndarray, \
 where, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum, prod, nonzero, isnan
 from numpy.linalg import norm
-from misc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg
+from misc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scipyInstalled
 from copy import deepcopy
 from ooPoint import ooPoint
 Copy = lambda arg: arg.copy() if hasattr(arg, 'copy') else copy(arg)
@@ -59,7 +59,7 @@ class oofun:
     diffInt = 1.5e-8
     maxViolation = 1e-2
     _unnamedFunNumber = 1
-    _lastDiffVarsID = -1
+    _lastDiffVarsID = 0
 
     _usedIn = 0
     _level = 0
@@ -71,6 +71,8 @@ class oofun:
     _point_id1 = 0
 
     pWarn = lambda self, msg: pWarn(msg)
+    def disp(self, msg): 
+        print(msg)
     
     __array_priority__ = 15# set it greater than 1 to prevent invoking numpy array __mul__ etc
 
@@ -326,10 +328,17 @@ class oofun:
         if not isinstance(ind, oofun):
             f = lambda x: x[ind]
             def d(x):
-                r = zeros(x.shape)
-                r[ind] = 1
+                condBigMatrix = x.size > 100 
+                if condBigMatrix and scipyInstalled:
+                    r = SparseMatrixConstructor((1, x.shape[0]))
+                    r[0, ind] = 1.0
+                else: 
+                    if not scipyInstalled: self.pWarn(scipyAbsentMsg)
+                    r = zeros(x.shape)
+                    r[ind] = 1
                 return r
-        else:
+        else: # NOT IMPLEMENTED PROPERLY YET
+            self.pWarn('Slicing by oofuns IS NOT IMPLEMENTED PROPERLY YET')
             f = lambda x, _ind: x[_ind]
             def d(x, _ind):
                 r = zeros(x.shape)
@@ -357,9 +366,9 @@ class oofun:
         f = lambda x: x[ind1:ind2]
         def d(x):
             condBigMatrix = x.size > 100 #and (ind2-ind1) > 0.25*x.size
-            if condBigMatrix and scipy is None:
+            if condBigMatrix and not scipyInstalled:
                 self.pWarn(scipyAbsentMsg)
-            if condBigMatrix and scipy is not None:
+            if condBigMatrix and scipyInstalled:
                 m1 = SparseMatrixConstructor((ind2-ind1, ind1))
                 m2 = Eye(ind2-ind1)
                 m3 = SparseMatrixConstructor((ind2-ind1, x.size - ind2))
@@ -595,13 +604,18 @@ class oofun:
         if not isinstance(x, ooPoint): x = ooPoint(x)
         #self._directlyDwasInwolved = True
         if not hasattr(self, '_prev_D_Vars_key'):
-            self._prev_D_Vars_key = Vars if (Vars is None or (isinstance(Vars, oofun) and Vars.is_oovar) ) else set([v.name for v in Vars])
-            self._prev_D_fixedVars_key = fixedVars if (fixedVars is None or (isinstance(fixedVars, oofun) and fixedVars.is_oovar) ) \
-            else set([v.name for v in fixedVars])
-
-        sameDerivativeVariables = True if diffVarsID == self._lastDiffVarsID or (self._prev_D_Vars_key == Vars and self._prev_D_fixedVars_key == fixedVars) else False
-        if diffVarsID != 0: self._lastDiffVarsID = diffVarsID
+            sameDerivativeVariables = False
+            self._prev_D_Vars_key = ()
+            self._prev_D_fixedVars_key = ()
             
+
+        #if diffVarsID == self._lastDiffVarsID: raise 0
+        sameDerivativeVariables = True if diffVarsID == self._lastDiffVarsID or (self._prev_D_Vars_key is Vars and self._prev_D_fixedVars_key is fixedVars) else False
+        self._prev_D_Vars_key = Vars if (Vars is None or (isinstance(Vars, oofun) and Vars.is_oovar) ) else set([v._id for v in Vars])
+        self._prev_D_fixedVars_key = fixedVars if (fixedVars is None or (isinstance(fixedVars, oofun) and fixedVars.is_oovar) ) \
+            else set([v._id for v in fixedVars])
+        if diffVarsID != 0: self._lastDiffVarsID = diffVarsID
+        #print 'sameDerivativeVariables:', sameDerivativeVariables
         
         #TODO: remove cloned code
         if Vars is not None:
@@ -649,6 +663,7 @@ class oofun:
             
             
     def _D(self, x, Vars=None, fixedVars = None, sameDerivativeVariables=True, asSparse = 'auto'):
+        assert not self.is_oovar#self._id == 33 
         if self.is_oovar: 
             return {} if (fixedVars is not None and self in fixedVars) or (Vars is not None and self not in Vars) \
             else {self.name:Eye(self(x).size) if asSparse is not False else eye(self(x).size)}
@@ -715,54 +730,61 @@ class oofun:
                 # asSparse should be 'autoselect' here, not the value taken from the function arguments!
                 elem_d = inp._D(x, Vars=Vars, fixedVars=fixedVars, sameDerivativeVariables=sameDerivativeVariables, asSparse = 'auto') 
                 
+                t1 = derivativeSelf[ac]
+                
                 for key, val in elem_d.items():
+                    #assert any(atleast_1d(val.A if not isinstance(val, ndarray) else val))
                     
 #                    if prod(derivativeSelf[ac].shape) == 1 or prod(val.shape) == 1:
 #                        rr = derivativeSelf[ac] * val
 #                    else:
 
                     if isscalar(val) or val.ndim < 2: val = atleast_2d(val)
+                    
+                    if prod(t1.shape)==1 or prod(val.shape)==1:
+                        rr = t1 * val
+                    else:
+                        
+                        t1, t2 = self._considerSparse(t1, val)
 
-                    t1, t2 = self._considerSparse(derivativeSelf[ac], val)
-                    
-                    
-                    cond_2 = t1.ndim > 1 or t2.ndim > 1
-                    if cond_2:
-                        # warning! t1,t2 can be sparse matrices, so I don't use t = atleast_2d(t) directly
-                        #if t1.ndim < 2: t1 = atleast_2d(t1) 
-                        if t2.ndim < 2: 
-                            assert t1.ndim > 1, 'error in FuncDesigner kernel, inform developers'
-                            if t1.shape[1] != t2.shape[0]:
+                        cond_2 = t1.ndim > 1 or t2.ndim > 1
+                        if cond_2:
+                            # warning! t1,t2 can be sparse matrices, so I don't use t = atleast_2d(t) directly
+                            #if t1.ndim < 2: t1 = atleast_2d(t1) 
+                            if t2.ndim < 2: 
+                                assert t1.ndim > 1, 'error in FuncDesigner kernel, inform developers'
+                                if t1.shape[1] != t2.shape[0]:
+                                    t2 = t2.reshape(1, -1)
+                                #t2 = atleast_2d(t2)
+                        else:
+                            # hence these are ndarrays
+                            if self(x).size > 1:
+                                t1 = t1.reshape(-1, 1)
                                 t2 = t2.reshape(1, -1)
-                            #t2 = atleast_2d(t2)
-                    else:
-                        # hence these are ndarrays
-                        if self(x).size > 1:
-                            t1 = t1.reshape(-1, 1)
-                            t2 = t2.reshape(1, -1)
+                            else:
+                                t1 = t1.reshape(1, -1)
+                                t2 = t2.reshape(-1, 1)
+                                #t1 = t1.flatten()
+                                #t2 = t2.flatten()
+                        
+                        if not (isinstance(t1,  ndarray) and isinstance(t2,  ndarray)):
+                            if scipy is None:
+                                self.pWarn(scipyAbsentMsg)
+                                rr = atleast_1d(dot(t1, t2))
+                            else:
+                                #t1 = scipy.sparse.csc_matrix(t1) if not isinstance(t1, scipy.sparse.csc_matrix) else t1
+                                t1 = t1 if isinstance(t1, scipy.sparse.csc_matrix) else t1.tocsc() if isspmatrix(t1)  else scipy.sparse.csc_matrix(t1)
+                                t2 = t2 if isinstance(t2, scipy.sparse.csr_matrix) else t2.tocsr() if isspmatrix(t2)  else scipy.sparse.csr_matrix(t2)
+                                if t2.shape[0] != t1.shape[1]:
+                                    if t2.shape[1] == t1.shape[1]:
+                                        t2 = t2.T
+                                    else:
+                                        raise FuncDesignerException('incorrect shape in FuncDesigner function _D(), inform developers about the bug')
+                                rr = t1._mul_sparse_matrix(t2)
+                                if asSparse is False:
+                                    rr = rr.toarray() 
                         else:
-                            t1 = t1.reshape(1, -1)
-                            t2 = t2.reshape(-1, 1)
-                            #t1 = t1.flatten()
-                            #t2 = t2.flatten()
-                    
-                    if not (isinstance(t1,  ndarray) and isinstance(t2,  ndarray)):
-                        if scipy is None:
-                            self.pWarn(scipyAbsentMsg)
                             rr = atleast_1d(dot(t1, t2))
-                        else:
-                            t1 = scipy.sparse.csc_matrix(t1)
-                            t2 = scipy.sparse.csr_matrix(t2)
-                            if t2.shape[0] != t1.shape[1]:
-                                if t2.shape[1] == t1.shape[1]:
-                                    t2 = t2.T
-                                else:
-                                    raise FuncDesignerException('incorrect shape in FuncDesigner function _D(), inform developers about the bug')
-                            rr = t1._mul_sparse_matrix(t2)
-                            if asSparse is False:
-                                rr = rr.toarray() 
-                    else:
-                        rr = atleast_1d(dot(t1, t2))
                     assert rr.ndim>1
 
 #                    if min(rr.shape) == 1 and isinstance(rr, ndarray): 
@@ -786,9 +808,10 @@ class oofun:
                     else:
                         r[key] = rr
                         Keys.add(key)
-
+        
         if isinstance(x, ooPoint): self._point_id1 = x._id
         dp = dict([(key, Copy(value)) for key, value in r.items()])
+        
         self.d_val_prev = dp
         self.d_key_prev = dict([(elem, Copy(x[elem])) for elem in dep])
         return r
@@ -800,12 +823,12 @@ class oofun:
             if scipy is None: 
                 self.pWarn(scipyAbsentMsg)
                 return t1,  t2
-            t1 = scipy.sparse.csc_matrix(t1)
+            if not isinstance(t1, scipy.sparse.csc_matrix): t1 = scipy.sparse.csc_matrix(t1)
             #t1 = scipy.sparse.coo_matrix(t1).tocsc()
             if t1.shape[1] != t2.shape[0]: # can be from flattered t1
                 assert t1.shape[0] == t2.shape[0], 'bug in FuncDesigner Kernel, inform developers'
                 t1 = t1.T
-            t2 = scipy.sparse.csr_matrix(t2)
+            if not isinstance(t2, scipy.sparse.csr_matrix): t2 = scipy.sparse.csr_matrix(t2)
             #t2 = scipy.sparse.coo_matrix(t2).tocsr()
         return t1,  t2
 
@@ -891,19 +914,14 @@ class oofun:
                 if not isinstance(tmp, ndarray):
                     csc_tmp = tmp.tocsc()
                 for i, inp in enumerate(Input):
+                    if self.input[i].discrete or (self.input[i].is_oovar and ((Vars is not None and self.input[i] not in Vars) or (fixedVars is not None and self.input[i] in fixedVars))):
+                        ac += inp.size
+                        continue                                    
                     if isinstance(tmp, ndarray):
                         TMP = tmp[:, ac:ac+inp.size]
                     else: # scipy.sparse matrix
                         TMP = csc_tmp[:, ac:ac+inp.size]
                     ac += inp.size
-                    if self.input[i].discrete: continue
-                    #!!!!!!!!! TODO: handle fixed cases properly!!!!!!!!!!!!
-                    #if hasattr(self.input[i], 'fixed') and self.input[i].fixed: continue 
-                    if self.input[i].is_oovar and ((Vars is not None and self.input[i] not in Vars) or (fixedVars is not None and self.input[i] in fixedVars)):
-                        continue                                    
-                    
-                    #if Input[i].size == 1: TMP = TMP.flatten()
-                    #if isinstance(TMP, ndarray) and min(TMP.shape) == 1: TMP = TMP.flatten()
                     derivativeSelf.append(TMP)
                     
             # TODO: is it required?
