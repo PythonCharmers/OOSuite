@@ -595,7 +595,7 @@ class oofun:
 
 
     """                                              derivatives                                           """
-    def D(self, x, Vars=None, fixedVars = None, resultKeysType = 'vars', asSparse = False, exactShape = False, diffVarsID = 0):
+    def D(self, x, Vars=None, fixedVars = None, resultKeysType = 'vars', asSparse = False, exactShape = False, diffVarsID = -1):
         
         # resultKeysType doesn't matter for the case isinstance(Vars, oovar)
         if Vars is not None and fixedVars is not None:
@@ -603,18 +603,16 @@ class oofun:
         assert type(Vars) != ndarray and type(fixedVars) != ndarray
         if not isinstance(x, ooPoint): x = ooPoint(x)
         #self._directlyDwasInwolved = True
-        if not hasattr(self, '_prev_D_Vars_key'):
-            sameDerivativeVariables = False
-            self._prev_D_Vars_key = ()
-            self._prev_D_fixedVars_key = ()
+        #if not hasattr(self, '_prev_D_Vars_key'):
+            #sameDerivativeVariables = False
+            #self._prev_D_Vars_key = None
+            #self._prev_D_fixedVars_key = None
             
 
-        #if diffVarsID == self._lastDiffVarsID: raise 0
-        sameDerivativeVariables = True if diffVarsID == self._lastDiffVarsID or (self._prev_D_Vars_key is Vars and self._prev_D_fixedVars_key is fixedVars) else False
-        self._prev_D_Vars_key = Vars if (Vars is None or (isinstance(Vars, oofun) and Vars.is_oovar) ) else set([v._id for v in Vars])
-        self._prev_D_fixedVars_key = fixedVars if (fixedVars is None or (isinstance(fixedVars, oofun) and fixedVars.is_oovar) ) \
-            else set([v._id for v in fixedVars])
-        if diffVarsID != 0: self._lastDiffVarsID = diffVarsID
+        #sameDerivativeVariables = True if diffVarsID == self._lastDiffVarsID or (self._prev_D_Vars_key is Vars and self._prev_D_fixedVars_key is fixedVars) else False
+        #self._prev_D_Vars_key = set([Vars] if not isinstance(Vars, (list, tuple, set)) else Vars)
+        #self._prev_D_fixedVars_key = set([fixedVars] if not isinstance(fixedVars, (list, tuple, set)) else fixedVars)
+        
         #print 'sameDerivativeVariables:', sameDerivativeVariables
         
         #TODO: remove cloned code
@@ -632,7 +630,7 @@ class oofun:
                 if not fixedVars.is_oovar:
                     raise FuncDesignerException('argument fixedVars is expected as oovar or python list/tuple of oovar instances')
                 fixedVars = set([fixedVars])
-        r = self._D(x, Vars, fixedVars, sameDerivativeVariables = sameDerivativeVariables, asSparse = asSparse)
+        r = self._D(x, diffVarsID, Vars, fixedVars, asSparse = asSparse)
         if isinstance(Vars, oofun):
             if Vars.is_oovar:
                 return Vars(r)
@@ -643,7 +641,6 @@ class oofun:
             if resultKeysType == 'names':
                 raise FuncDesignerException("""This possibility is out of date, 
                 if it is still present somewhere in FuncDesigner doc inform developers""")
-                return r
             elif resultKeysType == 'vars':
                 rr = {}
                 tmpDict = Vars if Vars is not None else x
@@ -662,8 +659,7 @@ class oofun:
                 raise FuncDesignerException('Incorrect argument resultKeysType, should be "vars" or "names"')
             
             
-    def _D(self, x, Vars=None, fixedVars = None, sameDerivativeVariables=True, asSparse = 'auto'):
-        assert not self.is_oovar#self._id == 33 
+    def _D(self, x, diffVarsID, Vars=None, fixedVars = None, asSparse = 'auto'):
         if self.is_oovar: 
             return {} if (fixedVars is not None and self in fixedVars) or (Vars is not None and self not in Vars) \
             else {self.name:Eye(self(x).size) if asSparse is not False else eye(self(x).size)}
@@ -674,6 +670,7 @@ class oofun:
         
         
         CondSamePointByID = True if isinstance(x, ooPoint) and self._point_id1 == x._id else False
+        sameDerivativeVariables = diffVarsID == self._lastDiffVarsID 
         
         dep = self._getDep()
         ##########################
@@ -684,7 +681,8 @@ class oofun:
         involveStore = self.isCostly
 
         #cond_same_point = hasattr(self, 'd_key_prev') and sameDerivativeVariables and (CondSamePointByID or (involveStore and         all([array_equal(x[elem], self.d_key_prev[elem]) for elem in dep])))
-        cond_same_point = hasattr(self, 'd_key_prev') and sameDerivativeVariables and (CondSamePointByID or (involveStore and all([array_equal(x[elem], self.d_key_prev[elem]) for elem in dep])))
+        
+        cond_same_point = sameDerivativeVariables and (CondSamePointByID or (involveStore and hasattr(self, 'd_key_prev') and all([array_equal(x[elem], self.d_key_prev[elem]) for elem in dep])))
         
         if cond_same_point:
             self.same_d += 1
@@ -692,6 +690,9 @@ class oofun:
             return dict([(key, Copy(val)) for key, val in self.d_val_prev.items()])
         else:
             self.evals_d += 1
+
+        if isinstance(x, ooPoint): self._point_id1 = x._id
+        if diffVarsID != -1: self._lastDiffVarsID = diffVarsID
 
         derivativeSelf = self._getDerivativeSelf(x, Vars, fixedVars)
 
@@ -727,26 +728,17 @@ class oofun:
             else:
                 ac += 1
                 
-                # asSparse should be 'autoselect' here, not the value taken from the function arguments!
-                elem_d = inp._D(x, Vars=Vars, fixedVars=fixedVars, sameDerivativeVariables=sameDerivativeVariables, asSparse = 'auto') 
+                # asSparse should be 'auto' here, not the value taken from the function arguments!
+                elem_d = inp._D(x, Vars=Vars, fixedVars=fixedVars, diffVarsID=diffVarsID, asSparse = 'auto') 
                 
                 t1 = derivativeSelf[ac]
                 
                 for key, val in elem_d.items():
-                    #assert any(atleast_1d(val.A if not isinstance(val, ndarray) else val))
-                    
-#                    if prod(derivativeSelf[ac].shape) == 1 or prod(val.shape) == 1:
-#                        rr = derivativeSelf[ac] * val
-#                    else:
-
                     if isscalar(val) or val.ndim < 2: val = atleast_2d(val)
-                    
                     if prod(t1.shape)==1 or prod(val.shape)==1:
                         rr = t1 * val
                     else:
-                        
                         t1, t2 = self._considerSparse(t1, val)
-
                         cond_2 = t1.ndim > 1 or t2.ndim > 1
                         if cond_2:
                             # warning! t1,t2 can be sparse matrices, so I don't use t = atleast_2d(t) directly
@@ -764,15 +756,12 @@ class oofun:
                             else:
                                 t1 = t1.reshape(1, -1)
                                 t2 = t2.reshape(-1, 1)
-                                #t1 = t1.flatten()
-                                #t2 = t2.flatten()
                         
                         if not (isinstance(t1,  ndarray) and isinstance(t2,  ndarray)):
                             if scipy is None:
                                 self.pWarn(scipyAbsentMsg)
                                 rr = atleast_1d(dot(t1, t2))
                             else:
-                                #t1 = scipy.sparse.csc_matrix(t1) if not isinstance(t1, scipy.sparse.csc_matrix) else t1
                                 t1 = t1 if isinstance(t1, scipy.sparse.csc_matrix) else t1.tocsc() if isspmatrix(t1)  else scipy.sparse.csc_matrix(t1)
                                 t2 = t2 if isinstance(t2, scipy.sparse.csr_matrix) else t2.tocsr() if isspmatrix(t2)  else scipy.sparse.csr_matrix(t2)
                                 if t2.shape[0] != t1.shape[1]:
@@ -785,14 +774,15 @@ class oofun:
                                     rr = rr.toarray() 
                         else:
                             rr = atleast_1d(dot(t1, t2))
-                    assert rr.ndim>1
+                    #assert rr.ndim>1
 
 #                    if min(rr.shape) == 1 and isinstance(rr, ndarray): 
 #                        rr = rr.flatten() # TODO: check it and mb remove
 # TODO: implement it instead of the code below
                     
-                    if min(rr.shape) == 1: 
-                        assert isinstance(rr, ndarray) or isspmatrix(rr), 'Error in FuncDesigner AD, inform developers'
+#                    if min(rr.shape) == 1: 
+#                        assert isinstance(rr, ndarray) or isspmatrix(rr), 'Error in FuncDesigner AD, inform developers'
+                        
 #                        if not isinstance(rr, ndarray): 
 #                            rr = rr.toarray()
 #                        rr = rr.flatten() # TODO: check it and mb remove
@@ -809,7 +799,6 @@ class oofun:
                         r[key] = rr
                         Keys.add(key)
         
-        if isinstance(x, ooPoint): self._point_id1 = x._id
         dp = dict([(key, Copy(value)) for key, value in r.items()])
         
         self.d_val_prev = dp
