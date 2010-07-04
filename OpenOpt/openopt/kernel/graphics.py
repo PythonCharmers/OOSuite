@@ -202,6 +202,7 @@ class Graphics:
             if p.useScaledResidualOutput: yy22 -= log10(p.contol)
             YY.append(yy22)
             if IND_start<=IND_end:
+                if len(p.iterValues.r) == 0: return
                 rr = p.iterValues.r[-1] 
                 if p.useScaledResidualOutput: rr -= log10(p.contol)
                 if len(p.iterValues.r) >= 1: yySave.append(log10(p.contol/self.REDUCE+asfarray(rr)))
