@@ -37,14 +37,14 @@ def xBounds2Matrix(p):
             R2[range(nUB), indUB] = 1
         
         p.A = Vstack((p.A, R1, R2))
+        if hasattr(p, '_A'): delattr(p, '_A')
         if isspmatrix(p.A): 
             if prod(p.A.shape)>10000:
                 p.A = p.A.tocsc()
                 p._A = p.A
             else:
                 p.A = p.A.A
-                if hasattr(p, '_A'): delattr(p, '_A')
-                
+        
         p.b = Hstack((p.b, -p.lb[indLB], p.ub[indUB]))
 
     if nEQ>0:
@@ -54,13 +54,13 @@ def xBounds2Matrix(p):
             R = zeros((nEQ, p.n))
         
         p.Aeq = Vstack((p.Aeq, R))
+        if hasattr(p, '_Aeq'): delattr(p, '_Aeq')
         if isspmatrix(p.Aeq): 
             if prod(p.Aeq.shape)>10000:
                 p.Aeq = p.Aeq.tocsc()
                 p._Aeq = p.Aeq
             else:
                 p.Aeq = p.Aeq.A
-                if hasattr(p, '_Aeq'): delattr(p, '_Aeq')
             
         p.beq = Hstack((p.beq, p.lb[indEQ]))
 
