@@ -355,7 +355,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 if areFixed(dep):
                     # TODO: get rid of self.contol, use separate contols for each constraint
                     Contol = tol if tol != 0 else self.contol
-                    if not c(self._x0, Contol):
+                    if not c(self._x0, tol=Contol):
                         s = """'constraint "%s" with all-fixed optimization variables it depends on is infeasible in start point, 
                         hence the problem is infeasible, maybe you should change start point'""" % c.name
                         self.err(s)
