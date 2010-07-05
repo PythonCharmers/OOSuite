@@ -154,7 +154,7 @@ class oofun:
     # overload "a+b"
     # @checkSizes
     def __add__(self, other):
-        if not isinstance(other, oofun) and not isscalar(other) and not isinstance(other, ndarray) and not isinstance(other, list):
+        if not isinstance(other, (oofun, list, ndarray, tuple)) and not isscalar(other):
             raise FuncDesignerException('operation oofun_add is not implemented for the type ' + str(type(other)))
             
         
@@ -175,8 +175,11 @@ class oofun:
         if isinstance(other, oofun):
             r = oofun(lambda x, y: x+y, [self, other], d = (lambda x, y: aux_d(x, y), lambda x, y: aux_d(y, x)))
         else:
-            other = asarray(other)
+            other = array(other, 'float')
             r = oofun(lambda a: a+other, self)# TODO: involve sparsity if possible!
+#            if other.size == 1:  # TODO: or other.size == self.size for fixed sizes
+#                r.D, r._D, r.d = self.D, self._D, self.d
+#            else:
             r.d = lambda x: aux_d(x, other)
                 
 # TODO: create linear field with operators +, -, *(non-oofunc), /(non-oofunc)
@@ -197,8 +200,7 @@ class oofun:
     # overload "a-b"
     def __sub__(self, other):
         if isinstance(other, list) and type(other[0]) in (int, float):
-            return self + (-asfarray(other))
-            other = -asfarray(other)
+            return self + (-array(other, 'float'))
         else:
             return self + (-other)
 
@@ -210,7 +212,7 @@ class oofun:
         if isinstance(other, oofun):
             r = oofun(lambda x, y: x/y, [self, other])
             def aux_dx(x, y):
-                x, y, = asarray(x), asarray(y)
+                x, y, = asfarray(x), asfarray(y) # TODO: get rid of it
                 if x.size != 1:
                     assert x.size == y.size or y.size == 1, 'incorrect size for oofun devision'
                 r = 1.0 / y
@@ -226,15 +228,15 @@ class oofun:
                 return r
             r.d = (aux_dx, aux_dy)
         else:
-            r = oofun(lambda a: a/asarray(other), self)# TODO: involve sparsity if possible!
-            r.d = lambda x: 1.0/asarray(other) if x.size == 1 else Diag(ones(x.size)/asarray(other))
+            r = oofun(lambda a: a/asfarray(other), self)# TODO: involve sparsity if possible!
+            r.d = lambda x: 1.0/asfarray(other) if x.size == 1 else Diag(ones(x.size)/asfarray(other))
         if self.is_linear and not isinstance(other, oofun):
             r.is_linear = True
         #r.isCostly = True
         return r
 
     def __rdiv__(self, other):
-        other = asarray(other) # TODO: sparse matrices handling!
+        other = asfarray(other) # TODO: sparse matrices handling!
         r = oofun(lambda x: other/x, self)# TODO: involve sparsity if possible!
         def d(x):
             if other.size > 1 or x.size > 1: return Diag(- other / x**2)
@@ -285,8 +287,8 @@ class oofun:
         d_y = lambda x, y: x ** y * log(x) if y.size == 1 else Diag(x ** y * log(x))
             
         if not isinstance(other, oofun):
-            f = lambda x: x ** asarray(other)
-            d = lambda x: d_x(x, asarray(other))
+            f = lambda x: x ** array(other, 'float')
+            d = lambda x: d_x(x, array(other, 'float'))
             input = self
         else:
             f = lambda x, y: x ** y
@@ -300,10 +302,10 @@ class oofun:
     def __rpow__(self, other):
         assert not isinstance(other, oofun)# if failed - check __pow__implementation
             
-        f = lambda x: asarray(other) ** x
+        f = lambda x: asfarray(other) ** x
         #d = lambda x: Diag(asarray(other) **x * log(asarray(other)))
         def d(x):
-            r = Diag(asarray(other) **x * log(asarray(other))) if x.size > 1 else asarray(other)**x * log(asarray(other))
+            r = Diag(asfarray(other) **x * log(asfarray(other))) if x.size > 1 else asfarray(other)**x * log(asfarray(other))
             return r
         r = oofun(f, self, d=d)
         r.isCostly = True
@@ -428,7 +430,6 @@ class oofun:
             r = LinearConstraint(self-other, lb = 0.0)
         else:
             r = NonLinearConstraint(self - other, lb=0.0) # do not perform check for other == 0, copy should be returned, not self!
-        #r.type = 'ineq'
         return r
 
     def __ge__(self, other): # overload for >=
@@ -444,7 +445,6 @@ class oofun:
             r = LinearConstraint(self-other, ub = 0.0)
         else:
             r = NonLinearConstraint(self - other, ub = 0.0) # do not perform check for other == 0, copy should be returned, not self!
-        #r.type = 'ineq'
         return r            
 
 
@@ -462,25 +462,16 @@ class oofun:
             r = LinearConstraint(self-other, ub = 0.0, lb = 0.0)
         else:
             r = NonLinearConstraint(self - other, ub = 0.0, lb = 0.0) # do not perform check for other == 0, copy should be returned, not self!
-        #r.type = 'ineq'
         return r  
             
 
 
     """                                             getInput                                              """
     def _getInput(self, x):
-        if not type(self.input) in (list, tuple):
+        if type(self.input) not in (list, tuple):
             self.input = [self.input]
-        r = []
-        #self.inputOOVarTotalLength = 0
-        for item in self.input:
-            if isinstance(item, oofun): 
-                rr = atleast_1d(item(x))
-            else:
-                rr = atleast_1d(item)
-            r.append(rr)
-            #self.inputOOVarTotalLength += rr.size
-        return tuple(r)
+#        #self.inputOOVarTotalLength = 0
+        return tuple([atleast_1d(item(x)) if isinstance(item, oofun) else atleast_1d(item) for item in self.input])
 
     """                                                getDep                                             """
     def _getDep(self):
@@ -490,23 +481,15 @@ class oofun:
             self.dep = None
         else:
             r = set()
-            #r.fill(False)
-            if not type(self.input) in (list, tuple):
+            if type(self.input) not in (list, tuple):
                 self.input = [self.input]
             for oofunInstance in self.input:
                 if not isinstance(oofunInstance, oofun): continue
-                # TODO: checkme!
-                
                 if oofunInstance.is_oovar:
                     r.add(oofunInstance)
                     continue
-                
                 tmp = oofunInstance._getDep()
-                
                 if tmp is None: continue
-                
-                if type(tmp) != set:
-                    raise FuncDesignerException('unknown type of oofun or oovar dependence')
                 r.update(tmp)
             self.dep = r    
         return self.dep
@@ -529,8 +512,6 @@ class oofun:
                 return self
                 
         assert not isinstance(x, oofun), "you can't invoke oofun on another one oofun"
-        # TODO: get rid of hasattr(self, 'fixed')
-        #if self.isAlreadyPrepared:
         
         #!!!!!!!!!!!!!!!!!!! TODO: HANDLE FIXED OOFUNCS
         
@@ -544,20 +525,18 @@ class oofun:
         dep = self._getDep()
         
         CondSamePointByID = True if isinstance(x, ooPoint) and self._point_id == x._id else False
-        #print isinstance(x, ooPoint), 
-        #if  isinstance(x, ooPoint): print self._point_id == x._id
-        
-        #stCond = self.isCostly# or (self._level-2)%4 == 0
+
         cond_same_point = hasattr(self, 'f_key_prev') and \
         (CondSamePointByID or (self.isCostly and all([array_equal(x[elem], self.f_key_prev[elem.name]) for elem in dep])))
         if cond_same_point:
             #print 'same'
             self.same += 1
-            if isinstance(self.f_val_prev, ndarray) or isspmatrix(self.f_val_prev):
+            if hasattr(self.f_val_prev, 'copy'):
                 return self.f_val_prev.copy()
             elif isscalar(self.f_val_prev):
                 return copy(self.f_val_prev)
-            else: return deepcopy(self.f_val_prev) # Is it used somewhere?
+            else: 
+                return deepcopy(self.f_val_prev) # Is it used somewhere?
         #print 'other'
         self.evals += 1
         
@@ -775,17 +754,7 @@ class oofun:
                         else:
                             rr = atleast_1d(dot(t1, t2))
                     #assert rr.ndim>1
-
-#                    if min(rr.shape) == 1 and isinstance(rr, ndarray): 
-#                        rr = rr.flatten() # TODO: check it and mb remove
-# TODO: implement it instead of the code below
-                    
-#                    if min(rr.shape) == 1: 
-#                        assert isinstance(rr, ndarray) or isspmatrix(rr), 'Error in FuncDesigner AD, inform developers'
                         
-#                        if not isinstance(rr, ndarray): 
-#                            rr = rr.toarray()
-#                        rr = rr.flatten() # TODO: check it and mb remove
                     if key in Keys:
                         if isinstance(r[key], ndarray) and hasattr(rr, 'toarray'): # i.e. rr is sparse matrix
                             rr = rr.toarray() # I guess r[key] will hardly be all-zeros
@@ -812,13 +781,13 @@ class oofun:
             if scipy is None: 
                 self.pWarn(scipyAbsentMsg)
                 return t1,  t2
-            if not isinstance(t1, scipy.sparse.csc_matrix): t1 = scipy.sparse.csc_matrix(t1)
-            #t1 = scipy.sparse.coo_matrix(t1).tocsc()
+            if not isinstance(t1, scipy.sparse.csc_matrix): 
+                t1 = scipy.sparse.csc_matrix(t1)
             if t1.shape[1] != t2.shape[0]: # can be from flattered t1
                 assert t1.shape[0] == t2.shape[0], 'bug in FuncDesigner Kernel, inform developers'
                 t1 = t1.T
-            if not isinstance(t2, scipy.sparse.csr_matrix): t2 = scipy.sparse.csr_matrix(t2)
-            #t2 = scipy.sparse.coo_matrix(t2).tocsr()
+            if not isinstance(t2, scipy.sparse.csr_matrix): 
+                t2 = scipy.sparse.csr_matrix(t2)
         return t1,  t2
 
     def _getDerivativeSelf(self, x, Vars,  fixedVars):
@@ -860,15 +829,7 @@ class oofun:
                             tmp = atleast_2d(tmp)
                             
                             ########################################
-                            # PREV
-#                            if tmp.shape[0] != nOutput: 
-#                                # TODO: add debug msg
-##                                print('incorrect shape in FD AD _getDerivativeSelf')
-##                                print tmp.shape[0], nOutput, tmp
-#                                if tmp.shape[1] != nOutput: raise FuncDesignerException('error in getDerivativeSelf()')
-#                                tmp = tmp.T
-                            
-                            # NEW
+
                             Tmp = len(Input[i])
                             if tmp.shape[1] != Tmp: 
                                 # TODO: add debug msg
@@ -877,7 +838,6 @@ class oofun:
                                 if tmp.shape[0] != Tmp: raise FuncDesignerException('error in getDerivativeSelf()')
                                 tmp = tmp.T
                                     
-                            # END
                             ########################################
                             
                         derivativeSelf.append(tmp)
@@ -885,19 +845,12 @@ class oofun:
                 tmp = self.d(*Input)
                 if isscalar(tmp) or type(tmp) in (ndarray, tuple, list): # i.e. not a scipy.sparse matrix
                     tmp = atleast_2d(tmp)
-                    # PREV
-#                    if tmp.shape[0] != nOutput: 
-#                        # TODO: add debug msg
-#                        if tmp.shape[1] != nOutput: raise FuncDesignerException('error in getDerivativeSelf()')
-#                        tmp = tmp.T
-                    # NEW
                     expectedTotalInputLength = sum([len(elem) for elem in Input])
                     if tmp.shape[1] != expectedTotalInputLength: 
                         # TODO: add debug msg
                         if tmp.shape[0] != expectedTotalInputLength: raise FuncDesignerException('error in getDerivativeSelf()')
                         tmp = tmp.T
                         
-                   
                 ac = 0
                 if isinstance(tmp, ndarray) and hasattr(tmp, 'toarray'): tmp = tmp.A # is dense matrix
                 if not isinstance(tmp, ndarray):
@@ -926,15 +879,10 @@ class oofun:
                 raise FuncDesignerException('To perform gradients check you should have DerApproximator installed, see http://openopt.org/DerApproximator')
                 
             derivativeSelf = get_d1(self.fun, Input, diffInt=self.diffInt, stencil = self.stencil, args=self.args, pointVal = self(x), exactShape = True)
-
+            if type(derivativeSelf) != list:
+                derivativeSelf = [derivativeSelf]
         
-        # TODO: it should be handled in a better way, with personal derivatives for named inputs
-        if isinstance(derivativeSelf, ndarray):
-            assert len(self.input) == 1, 'error in package engine, please inform developers'
-            derivativeSelf = [derivativeSelf]
-        #print 'derivativeSelf:', derivativeSelf
-        #assert derivativeSelf[0].dtype == float
-        assert all([derivativeSelf[i].ndim > 1 for i in xrange(len(derivativeSelf))])
+        assert all([elem.ndim > 1 for elem in derivativeSelf])
         return derivativeSelf
 
     def D2(self, x):
@@ -1076,7 +1024,7 @@ class SmoothFDConstraint(BaseFDConstraint):
         self.lb, self.ub = -inf, inf
         for key in kwargs.keys():
             if key in ['lb', 'ub']:
-                setattr(self, key, asarray(kwargs[key]))
+                setattr(self, key, asfarray(kwargs[key]))
             else:
                 raise FuncDesignerException('Unexpected key in FuncDesigner constraint constructor kwargs')
     
