@@ -37,9 +37,8 @@ class oofun:
     #is_oovarSlice = False
     
     d = None # derivative
-    input = None 
+    input = None#[] 
     #usedIn =  set()
-    isAlreadyPrepared = False
     is_oovar = False
     is_linear = False
     isConstraint = False
@@ -89,6 +88,7 @@ class oofun:
     """                                         Class constructor                                   """
 
     def __init__(self, fun, input=None, *args, **kwargs):
+    #def __init__(self, fun, input=[], *args, **kwargs):
         assert len(args) == 0 #and input is not None
         self.fun, self.input = fun, input
         
@@ -100,7 +100,6 @@ class oofun:
         
         if 'name' not in kwargs.keys():
             self.name = 'unnamed_oofun_' + str(oofun._unnamedFunNumber)
-            #if oofun._unnamedFunNumber == 44437: raise 0
             oofun._unnamedFunNumber += 1
 
         for key, item in kwargs.iteritems():
@@ -171,16 +170,17 @@ class oofun:
             else:
                 raise FuncDesignerException('for oofun summation a+b should be size(a)=size(b) or size(a)=1 or size(b)=1')        
 
-        
         if isinstance(other, oofun):
             r = oofun(lambda x, y: x+y, [self, other], d = (lambda x, y: aux_d(x, y), lambda x, y: aux_d(y, x)))
         else:
             other = array(other, 'float')
-            r = oofun(lambda a: a+other, self)# TODO: involve sparsity if possible!
+            r = oofun(lambda a: a+other, self)
+            r.d = lambda x: aux_d(x, other)
+        
 #            if other.size == 1:  # TODO: or other.size == self.size for fixed sizes
 #                r.D, r._D, r.d = self.D, self._D, self.d
 #            else:
-            r.d = lambda x: aux_d(x, other)
+            
                 
 # TODO: create linear field with operators +, -, *(non-oofunc), /(non-oofunc)
         if self.is_linear and (not isinstance(other, oofun) or other.is_linear): 
@@ -475,6 +475,7 @@ class oofun:
 
     """                                                getDep                                             """
     def _getDep(self):
+        # returns Python set of oovars it depends on
         if hasattr(self, 'dep'):
             return self.dep
         elif self.input is None:
@@ -554,7 +555,7 @@ class oofun:
         if isinstance(x, ooPoint): 
             self._point_id = x._id
         
-        if self.isCostly or isinstance(x, ooPoint):
+        if (self.isCostly or isinstance(x, ooPoint)) and self.input[0] is not None:
             # TODO: simplify it
             self.f_val_prev = tmp
             self.f_key_prev = dict([(elem.name, copy(x[elem])) for elem in dep])
@@ -643,6 +644,8 @@ class oofun:
             return {} if (fixedVars is not None and self in fixedVars) or (Vars is not None and self not in Vars) \
             else {self.name:Eye(self(x).size) if asSparse is not False else eye(self(x).size)}
             
+        if self.input[0] is None: return {} # fixed oofun. TODO: implement input = [] properly
+            
         if self.discrete: raise FuncDesignerException('The oofun or oovar instance has been declared as discrete, no derivative is available')
 #        if Vars is not None and fixedVars is not None:
 #            raise FuncDesignerException('No more than one parameter from Vars and fixedVars is allowed')
@@ -681,7 +684,7 @@ class oofun:
         for i, inp in enumerate(self.input):
             if not isinstance(inp, oofun): continue
             if inp.discrete: continue
-            if fixedVars is not None and inp.is_oovar and inp in fixedVars: continue
+
             #!!!!!!!!! TODO: handle fixed cases properly!!!!!!!!!!!!
             #if hasattr(inp, 'fixed') and inp.fixed: continue
 
@@ -794,7 +797,7 @@ class oofun:
         Input = self._getInput(x)
 #        if hasattr(self, 'size') and isscalar(self.size): nOutput = self.size
 #        else: nOutput = self(x).size 
-        hasUserSuppliedDerivative = hasattr(self, 'd') and self.d is not None
+        hasUserSuppliedDerivative = self.d is not None
         if hasUserSuppliedDerivative:
             derivativeSelf = []
             if type(self.d) == tuple:
@@ -876,7 +879,7 @@ class oofun:
         else:
             if Vars is not None or fixedVars is not None: raise FuncDesignerException("sorry, custom oofun derivatives don't work with Vars/fixedVars arguments yet")
             if not DerApproximatorIsInstalled:
-                raise FuncDesignerException('To perform gradients check you should have DerApproximator installed, see http://openopt.org/DerApproximator')
+                raise FuncDesignerException('To perform this operation you should have DerApproximator installed, see http://openopt.org/DerApproximator')
                 
             derivativeSelf = get_d1(self.fun, Input, diffInt=self.diffInt, stencil = self.stencil, args=self.args, pointVal = self(x), exactShape = True)
             if type(derivativeSelf) != list:
@@ -1052,6 +1055,18 @@ def ooFun(*args, **kwargs):
     r.isCostly = True
     return r
 
+def atleast_oofun(arg):
+    if isinstance(arg, oofun):
+        return arg
+    elif hasattr(arg, 'copy'):
+        tmp = arg.copy()
+        return oofun(lambda *args: tmp, is_linear=True, isConstraint = True)
+    elif isscalar(arg):
+        tmp = array(arg, 'float')
+        return oofun(lambda *args: tmp, is_linear=True, isConstraint = True)
+    else:
+        return oofun(lambda *args, **kwargs: arg(*args,  **kwargs))
+        #raise FuncDesignerException('incorrect type for the function _atleast_oofun')
 
 #
 #class ooconstraint(oofun):
