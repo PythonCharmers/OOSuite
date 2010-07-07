@@ -1,7 +1,8 @@
 """
 Example of FuncDesigner functions integration
 Currently scipy.intergate.quad is used Fortan library QUADPACK, (R^n->R^1 only),
-maybe in future higher order solvers will be connected (
+maybe in future higher order solvers will be connected,
+e.g. scipy.intergate dblquad, tplquad, quadrature, fixed_quad, trapz etc
 """
 from FuncDesigner import *
 a, b, c = oovars('a', 'b', 'c') 
