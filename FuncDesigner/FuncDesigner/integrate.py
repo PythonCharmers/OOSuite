@@ -11,19 +11,18 @@ try:
 except:
     scipyInstalled = False
 
-def scipy_quad(func, a, b, integration_var, **kwargs):
+def integrator(func, domain,  **kwargs):
     if not scipyInstalled:
         raise FuncDesignerException('to use scipy_integrate_quad you should have scipy installed, see scipy.org')
-
-    if not isinstance(integration_var, oovar):
-        raise FuncDesignerException('integration variable must be FuncDesigner oovar')
 
 #    if not isinstance(domain, dict) or len(domain) != 1: 
 #        raise FuncDesignerException('currently integration domain must be of type Pythoon dict {integr_var:(val_from, val_to)} only')
     
     #integration_var = domain.keys()[0]
     #_from, _to =  domain.values()[0]
-    
+    integration_var, a, b = domain
+    if not isinstance(integration_var, oovar):
+        raise FuncDesignerException('integration variable must be FuncDesigner oovar')
     a, b, func = atleast_oofun(a), atleast_oofun(b), atleast_oofun(func)
 
     def f(point=None):
