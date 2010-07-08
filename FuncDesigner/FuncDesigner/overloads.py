@@ -148,7 +148,7 @@ def sum(inp, *args, **kwargs):
         _inp = set(INP)
         #!!!!!!!!!!!!!!!!!! TODO: check INP for complex cases (not list of oovars)
         r = oofun(f, input=INP, is_linear=is_linear) 
-        def _D(point, Vars=None, fixedVars = None, sameDerivativeVariables=True, asSparse = 'auto'):
+        def _D(point, diffVarsID, Vars=None, fixedVars = None, asSparse = 'auto'):
             # TODO: handle involvePrevData
             # TODO: handle fixed vars
             r, keys = {}, set()
@@ -168,7 +168,7 @@ def sum(inp, *args, **kwargs):
                         r[elem] = tmpres
                         keys.add(elem)
                 else:
-                    tmp = elem._D(point, Vars, fixedVars, *args, **kwargs)
+                    tmp = elem._D(point, diffVarsID, Vars, fixedVars, *args, **kwargs)
                     for key, val in tmp.items():
                         if key in keys:
                             if isinstance(r[key], np.ndarray) and not isinstance(val, np.ndarray): # i.e. tmpres is sparse matrix
