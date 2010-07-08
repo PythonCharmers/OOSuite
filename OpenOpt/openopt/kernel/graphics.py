@@ -291,7 +291,6 @@ class Graphics:
                         else:# p.istop = 0
                             s = self.specifierUndefined
                     else: s = self.specifierError
-                #pylab.scatter([xx[-1]], [yy2[-1]], color, marker = s, markersize = self.markerSize, style=1)
                 if s == self.specifierOK: marker = (5, 1, 0)
                 else: marker = s
                 if isnan(yy2[-1]):
