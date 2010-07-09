@@ -62,7 +62,7 @@ class ralg(baseSolver):
         n = p.n
         x0 = p.x0
         
-        if p.nbeq == 0 or any(abs(p.__get_AeqX_eq_Beq_residuals__(x0))>p.contol): # TODO: add "or Aeqconstraints(x0) out of contol"
+        if p.nbeq == 0 or any(abs(p._get_AeqX_eq_Beq_residuals(x0))>p.contol): # TODO: add "or Aeqconstraints(x0) out of contol"
             x0[x0<p.lb] = p.lb[x0<p.lb]
             x0[x0>p.ub] = p.ub[x0>p.ub]
         
@@ -90,7 +90,7 @@ class ralg(baseSolver):
             B0 = self.getPrimevalDilationMatrixWRTlinEqConstraints(p)
             #Aeq, beq, nbeq = p.Aeq, p.beq, p.nbeq
             
-            if any(abs(p.__get_AeqX_eq_Beq_residuals__(x0))>p.contol/16.0):
+            if any(abs(p._get_AeqX_eq_Beq_residuals(x0))>p.contol/16.0):
                 #p.debugmsg('old point Aeq residual:'+str(norm(dot(Aeq, x0)-beq)))
                 try:
                     x0 = self.linEqProjection(x0, p.Aeq, p.beq)

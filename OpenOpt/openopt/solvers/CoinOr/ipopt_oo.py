@@ -92,7 +92,7 @@ class ipopt(baseSolver):
             r = array(())
             if p.userProvided.c: r = p.c(x)
             if p.userProvided.h: r = hstack((r, p.h(x)))
-            r = hstack((r, p.__get_AX_Less_B_residuals__(x), p.__get_AeqX_eq_Beq_residuals__ (x)))
+            r = hstack((r, p._get_AX_Less_B_residuals(x), p._get_AeqX_eq_Beq_residuals(x)))
             return r
 
 #        def eval_jac_g(x, flag, userdata = None):

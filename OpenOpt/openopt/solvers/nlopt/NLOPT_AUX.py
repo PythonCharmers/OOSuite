@@ -1,21 +1,20 @@
 #from numpy import asarray,  ones, all, isfinite, copy, nan, concatenate, array, dot
 #from openopt.kernel.ooMisc import WholeRepr2LinConst, xBounds2Matrix
 from openopt.kernel.setDefaultIterFuncs import SOLVED_WITH_UNIMPLEMENTED_OR_UNKNOWN_REASON,  SMALL_DELTA_X, SMALL_DELTA_F
-from numpy import isfinite, asscalar, asfarray, abs, copy, isinf, ones
+from numpy import isfinite, asscalar, asfarray, abs, copy, isinf, ones, array
 import nlopt
 
 def NLOPT_AUX(p, solver):
     
-    if p.nc>0 or p.nh > 0 or p.nb > 0 or p.nbeq > 0:
-        p.err('other than box-bound constraints are not implemented yet')
+    if p.nb > 0 or p.nbeq > 0:
+        p.err('general linear constraints are not implemented yet')
     
     def myfunc(x, grad):
-        #raise 0
         #if p.istop != 0: raise nlopt.FORCED_STOP
         if grad.size > 0:
-            #print 'gradient'
-            grad = p.df(x)
+            grad[:]= p.df(x.copy())
         return asscalar(p.f(x))
+        #return p.f(x)
     
     opt = nlopt.opt(solver, p.n)
     opt.set_min_objective(myfunc)
@@ -24,6 +23,32 @@ def NLOPT_AUX(p, solver):
     ub = [elem if isfinite(elem) else float(elem) for elem in p.ub.tolist()]
     if any(isfinite(lb)): opt.set_lower_bounds(lb)
     if any(isfinite(ub)): opt.set_upper_bounds(ub)
+    
+    # TODO: A, Aeq
+    
+    if p.nc > 0:
+        def c(result, x, grad):
+            if grad.size > 0:
+                grad[:] = p.dc(x.copy())
+            result[:] = p.c(x)
+        opt.add_inequality_mconstraint(c, array([p.contol]*p.nc))
+        
+    if p.nb > 0:
+        def c_lin(result, x, grad):
+            if grad.size > 0:
+                grad[:] = p.A.copy()
+            result[:] = p.__get_AX_Less_B_residuals__(x)
+        opt.add_inequality_mconstraint(c_lin, array([p.contol]*p.nc))
+    
+    if p.nh > 0:
+        def h(result, x, grad):
+            if grad.size > 0:
+                tmp = p.dh(x.copy())
+                if hasattr(tmp, 'toarray'): tmp = tmp.toarray()
+                grad[:] = tmp
+            result[:] = p.h(x).copy()
+        #opt.add_equality_mconstraint(h, array([0.75*p.contol]*p.nh))
+        
     
     if isfinite(p.maxTime): 
         opt.set_maxtime(p.maxTime)
@@ -34,7 +59,7 @@ def NLOPT_AUX(p, solver):
     opt.set_xtol_abs(p.xtol)
     opt.set_ftol_abs(p.ftol)
     opt.set_maxeval(p.maxFunEvals)
-    # others like fEnough, maxFunEvals, maxtime are handled by OO  kernel
+    # others like fEnough, maxFunEvals, are handled by OO  kernel
     
     x0 = asfarray(p.x0).copy()
     
@@ -54,8 +79,14 @@ def NLOPT_AUX(p, solver):
     #x0[ind] = p.lb[ind] + 1e-15*abs((max(1.0, p.lb[x0<p.lb])))
     #x0[x0>p.ub] = p.ub[x0>p.ub] - 1e-15*min((1.0, abs(p.ub[x0>p.ub])))
     
-    p.xk = p.xf = opt.optimize(x0.tolist())
+    x = opt.optimize(x0.tolist())
+    if p.point(p.xk).betterThan(p.point(x)):
+        x = p.xk
+        #p.iterfcn(x)
+    p.xk = x
+    
     iStop = opt.get_stopval()
+
     if p.istop == 0:
         if iStop == nlopt.XTOL_REACHED:
             p.istop,  p.msg = SMALL_DELTA_X, '|| X[k] - X[k-1] || < xtol'

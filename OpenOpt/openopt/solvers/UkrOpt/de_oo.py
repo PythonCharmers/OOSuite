@@ -89,7 +89,7 @@ class de(baseSolver):
         
         func = p.f
         
-        constraints = lambda x: np.hstack((p.c(x), p.__get_AX_Less_B_residuals__(x)))
+        constraints = lambda x: np.hstack((p.c(x), p._get_AX_Less_B_residuals(x)))
         
         #################################################
         np.random.seed()
