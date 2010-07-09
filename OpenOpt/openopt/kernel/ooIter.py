@@ -45,12 +45,14 @@ def ooIter(p, *args,  **kwargs):
         p.iterTime.append(p.currtime - p.timeStart)
 
         if p.probType not in ('GLP', 'MILP') and ((p.iter == 1 and array_equal(p.xk,  p.x0)) or condEqualLastPoints):
-            for fn in dir(p.iterValues).append(['iterCPUTime', 'iterTime']):
-                attr = getattr(p.iterValues,  fn)
-                if type(attr) == list:
-                    attr.pop(-1)
-                elif type(attr) not in [str, NoneType]:
-                    p.warn('Found incorrect type ' + str(type(attr)) +' in p.iterValues (Python list expected), it can lead to error(s)!')
+            elems = [getattr(p.iterValues,  fn) for fn in dir(p.iterValues)] + [p.iterTime, p.iterCPUTime]#dir(p.iterValues)
+#            elems+=['iterCPUTime', 'iterTime']
+            for elem in elems:
+                #attr = getattr(p.iterValues,  fn)
+                if type(elem) == list:
+                    elem.pop(-1)
+                elif type(elem) not in [str, NoneType]:
+                    p.warn('Found incorrect type ' + str(type(elem)) +' in p.iterValues (Python list expected), it can lead to error(s)!')
             #TODO: handle case x0 = x1 = x2 = ...
             if not (p.isFinished and condEqualLastPoints): return
 
