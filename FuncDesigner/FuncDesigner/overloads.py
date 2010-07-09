@@ -147,12 +147,14 @@ def sum(inp, *args, **kwargs):
 #            return np.sum(args)
         _inp = set(INP)
         #!!!!!!!!!!!!!!!!!! TODO: check INP for complex cases (not list of oovars)
-        r = oofun(f, input=INP, is_linear=is_linear) 
+        r = oofun(f, INP, is_linear=is_linear) 
         def _D(point, diffVarsID, Vars=None, fixedVars = None, asSparse = 'auto'):
             # TODO: handle involvePrevData
             # TODO: handle fixed vars
             r, keys = {}, set()
             for elem in _inp:
+                if len(elem.input)==0 or elem.input[0] is None: continue # TODO: get rid if None, use [] instead
+                if elem.discrete: continue
                 if elem.is_oovar:
                     if (fixedVars is not None and elem in fixedVars) or (Vars is not None and elem not in Vars): continue
                     sz = np.asarray(point[elem]).size

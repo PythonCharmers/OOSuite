@@ -481,18 +481,37 @@ class oofun:
         elif self.input is None:
             self.dep = None
         else:
-            r = set()
             if type(self.input) not in (list, tuple):
                 self.input = [self.input]
+            #OLD
+#            r = set()
+#            for oofunInstance in self.input:
+#                if not isinstance(oofunInstance, oofun): continue
+#                if oofunInstance.is_oovar:
+#                    r.add(oofunInstance)
+#                    continue
+#                tmp = oofunInstance._getDep()
+#                if tmp is None: continue
+#                r.update(tmp)
+#            self.dep = r    
+            # / OLD
+            
+            # NEW
+            r_oovars = []
+            r_oofuns = []
             for oofunInstance in self.input:
                 if not isinstance(oofunInstance, oofun): continue
                 if oofunInstance.is_oovar:
-                    r.add(oofunInstance)
+                    r_oovars.append(oofunInstance)
                     continue
                 tmp = oofunInstance._getDep()
-                if tmp is None: continue
-                r.update(tmp)
+                if tmp is None or len(tmp)==0: continue # TODO: remove None, use [] instead
+                r_oofuns.append(tmp)
+            r = set(r_oovars)
+            r.update(*r_oofuns)
             self.dep = r    
+            # /NEW
+            
         return self.dep
 
 
@@ -711,7 +730,7 @@ class oofun:
                 ac += 1
                 
                 # asSparse should be 'auto' here, not the value taken from the function arguments!
-                elem_d = inp._D(x, Vars=Vars, fixedVars=fixedVars, diffVarsID=diffVarsID, asSparse = 'auto') 
+                elem_d = inp._D(x, diffVarsID, Vars=Vars, fixedVars=fixedVars, asSparse = 'auto') 
                 
                 t1 = derivativeSelf[ac]
                 
