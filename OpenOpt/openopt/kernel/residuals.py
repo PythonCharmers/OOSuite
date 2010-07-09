@@ -22,48 +22,48 @@ except:
 class residuals:
     def __init__(self):
         pass
-    def __get_nonLinInEq_residuals__(self, x):
+    def _get_nonLinInEq_residuals(self, x):
         if hasattr(self.userProvided, 'c') and self.userProvided.c: return self.c(x)
         else: return empty_arr.copy()
 
-    def __get_nonLinEq_residuals__(self, x):
+    def _get_nonLinEq_residuals(self, x):
         if hasattr(self.userProvided, 'h') and self.userProvided.h: return self.h(x)
         else: return empty_arr.copy()
 
-    def __get_AX_Less_B_residuals__(self, x):
+    def _get_AX_Less_B_residuals(self, x):
         if self.A != None and self.A.size > 0: 
             return self.matmult(self.A, x).flatten() - self.b if not hasattr(self, '_A') else \
             self._A._mul_sparse_matrix(csr_matrix((x, (arange(self.n), zeros(self.n))), shape=(self.n, 1))).toarray().flatten() - self.b
             #return self.matmult(self.A, x).flatten() - self.b if not hasattr(self, '_A') else self._A._mul_sparse_matrix(csr_matrix(x).reshape((self.n, 1))).toarray().flatten() - self.b
         else: return empty_arr.copy()
 
-    def __get_AeqX_eq_Beq_residuals__(self, x):
+    def _get_AeqX_eq_Beq_residuals(self, x):
         if self.Aeq != None and self.Aeq.size>0 : 
             return self.matmult(self.Aeq, x).flatten() - self.beq if not hasattr(self, '_Aeq') else \
             self._Aeq._mul_sparse_matrix(csr_matrix((x, (arange(self.n), zeros(self.n))), shape=(self.n, 1))).toarray().flatten() - self.beq
         else: return empty_arr.copy()
 
-    def __getLbresiduals__(self, x):
+    def _getLbresiduals(self, x):
         return self.lb - x
 
-    def __getUbresiduals__(self, x):
+    def _getUbresiduals(self, x):
         return x - self.ub
 
-    def __getresiduals__(self, x):
+    def _getresiduals(self, x):
 #        if 'x' in self.prevVal['r'].keys() and all(x == self.prevVal['r']['x']):
 #            return self.prevVal['r']['Val']
         # TODO: add quadratic constraints
         r = EmptyClass()
         # TODO: simplify it!
         if self.__baseClassName__ == 'NonLin':
-            r.c = self.__get_nonLinInEq_residuals__(x)
-            r.h = self.__get_nonLinEq_residuals__(x)
+            r.c = self._get_nonLinInEq_residuals(x)
+            r.h = self._get_nonLinEq_residuals(x)
         else:
             r.c = r.h = 0
-        r.lin_ineq = self.__get_AX_Less_B_residuals__(x)
-        r.lin_eq= self.__get_AeqX_eq_Beq_residuals__(x)
-        r.lb = self.__getLbresiduals__(x)
-        r.ub = self.__getUbresiduals__(x)
+        r.lin_ineq = self._get_AX_Less_B_residuals(x)
+        r.lin_eq= self._get_AeqX_eq_Beq_residuals(x)
+        r.lb = self._getLbresiduals(x)
+        r.ub = self._getUbresiduals(x)
 #        self.prevVal['r']['Val'] = deepcopy(r)
 #        self.prevVal['r']['x'] = copy(x)
         return r
@@ -80,7 +80,7 @@ class residuals:
         returns only r
         """
 
-        residuals = self.__getresiduals__(x)
+        residuals = self._getresiduals(x)
         r, fname, ind = 0, None, None
         for field in ('c',  'lin_ineq', 'lb', 'ub'):
             fv = array(getattr(residuals, field)).flatten()
@@ -108,7 +108,7 @@ class residuals:
         else:
             return r
 
-    def __getMaxConstrGradient2__(self, x):
+    def _getMaxConstrGradient2(self, x):
         g = zeros(self.n)
         mr0 = self.getMaxResidual(x)
         for j in xrange(self.n):
@@ -143,7 +143,7 @@ class residuals:
         else:
             return g
 
-    def __getLagrangeresiduals__(self, x, lm):
+    def _getLagrangeresiduals(self, x, lm):
         #lm is Lagrange multipliers
         residuals = self.getresiduals(x)
         r = 0
@@ -158,7 +158,7 @@ class residuals:
 
     def isFeas(self, x):
         if hasattr(self, 'isNaNInConstraintsAllowed') and not self.isNaNInConstraintsAllowed and \
-        (any(isnan(self.__get_nonLinEq_residuals__(x))) or any(isnan(self.__get_nonLinInEq_residuals__(x)))):
+        (any(isnan(self._get_nonLinEq_residuals(x))) or any(isnan(self._get_nonLinInEq_residuals(x)))):
             return False
         is_X_finite = all(isfinite(x))
         is_ConTol_OK = self.getMaxResidual(x) <= self.contol

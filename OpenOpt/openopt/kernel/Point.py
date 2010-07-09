@@ -107,11 +107,11 @@ class Point:
 #        return copy(self._intConstraints)
 
     def lin_ineq(self):
-        if not hasattr(self, '_lin_ineq'): self._lin_ineq = self.p.__get_AX_Less_B_residuals__(self.x)
+        if not hasattr(self, '_lin_ineq'): self._lin_ineq = self.p._get_AX_Less_B_residuals(self.x)
         return copy(self._lin_ineq)
 
     def lin_eq(self):
-        if not hasattr(self, '_lin_eq'): self._lin_eq = self.p.__get_AeqX_eq_Beq_residuals__(self.x)
+        if not hasattr(self, '_lin_eq'): self._lin_eq = self.p._get_AeqX_eq_Beq_residuals(self.x)
         return copy(self._lin_eq)
 
     def lb(self):
