@@ -24,8 +24,11 @@ class LP(MatrixProblem):
         MatrixProblem.__prepare__(self)
         if self.x0 is None: self.x0 = zeros(self.n)
         if hasattr(self.f, 'is_oovar'): # hence is oofun or oovar
-            #raise 0
-            _f = self._point2vector(self.f.D(self._x0))
+            # optVars and fixedVars are already rendered to both not-None here (if it's the case)
+            # but current .D() implementation doesn't allow to use both arguments
+            # BTW translator ignores fixed vars in derivatives, so passing fixedVars here can be omitted 
+            # but is performed for more safety wrt future changes
+            _f = self._point2vector(self.f.D(self._x0, fixedVars = self.fixedVars)) 
             self.f, self._f = _f, self.f
             self._init_f_vector = _f # we don't take p.goal into account here
             _c = self._f(self._x0) - dot(self.f, self.x0)
