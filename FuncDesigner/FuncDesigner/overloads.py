@@ -153,7 +153,8 @@ def sum(inp, *args, **kwargs):
             # TODO: handle fixed vars
             r, keys = {}, set()
             for elem in _inp:
-                if len(elem.input)==0 or elem.input[0] is None: continue # TODO: get rid if None, use [] instead
+                if not elem.is_oovar and (elem.input is None or len(elem.input)==0 or elem.input[0] is None): 
+                    continue # TODO: get rid if None, use [] instead
                 if elem.discrete: continue
                 if elem.is_oovar:
                     if (fixedVars is not None and elem in fixedVars) or (Vars is not None and elem not in Vars): continue
