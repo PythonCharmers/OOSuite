@@ -16,7 +16,7 @@ def NLOPT_AUX(p, solver):
     if solver in [nlopt.LD_MMA] and (p.nbeq != 0 or p.nh != 0): 
         opt = nlopt.opt(nlopt.LD_AUGLAG, p.n)
         opt2 = nlopt.opt(solver, p.n)
-        setStopCriteria(opt2, p)
+        setStopCriteria(opt2, p, reduce=10.0)
         opt.set_local_optimizer(opt2)
     else:
         opt = nlopt.opt(solver, p.n)
@@ -98,9 +98,9 @@ def NLOPT_AUX(p, solver):
             p.istop = SOLVED_WITH_UNIMPLEMENTED_OR_UNKNOWN_REASON
 #    p._opt = opt
 
-def setStopCriteria(opt, p):
-    opt.set_xtol_abs(p.xtol)
-    opt.set_ftol_abs(p.ftol)
+def setStopCriteria(opt, p, reduce=1.0):
+    opt.set_xtol_abs(p.xtol/reduce)
+    opt.set_ftol_abs(p.ftol/reduce)
     opt.set_maxeval(p.maxFunEvals)
     if isfinite(p.maxTime): 
         opt.set_maxtime(p.maxTime)
