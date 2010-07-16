@@ -333,7 +333,8 @@ def NLP(*args, **kwargs):
         scipy_bfgs, scipy_cg, scipy_ncg, 
         (these ones cannot handle user-provided gradient) scipy_powell and scipy_fmin 
     box-bounded:
-        scipy_lbfgsb, scipy_tnc
+        scipy_lbfgsb, scipy_tnc - require scipy installed
+        bobyqa - doesn't use derivatives; requires http://openopt.org/nlopt installed
     all constraints:
         ralg
         ipopt (requires ipopt + pyipopt installed)
@@ -343,6 +344,7 @@ def NLP(*args, **kwargs):
         algencan (ver. 2.0.3 or more recent, very powerful constrained solver, GPL,
         requires ALGENCAN + Python interface installed,
         see http://www.ime.usp.br/~egbirgin/tango/)
+        mma and auglag - require http://openopt.org/nlopt installed
 
     """
     return CNLP(*args, **kwargs)
@@ -367,6 +369,7 @@ def NSP(*args, **kwargs):
     Solvers available for now:
         ralg - all constraints, medium-scale (nVars = 1...1000), can handle user-provided gradient/subgradient
         scipy_fmin - a Nelder-Mead simplex algorithm implementation, cannot handle constraints and derivatives
+        sbplx  -  A variant of Nelder-Mead algorithm; requires http://openopt.org/nlopt installed
         ShorEllipsoid (unconstrained for now) - small-scale, nVars=1...10, requires r0: ||x0-x*||<=r0
     """
     return CNSP(*args, **kwargs)
@@ -465,6 +468,7 @@ def GLP(*args, **kwargs):
         galileo - a GA-based solver by Donald Goodman, requires finite lb <= x <= ub
         pswarm (requires PSwarm installed), license: BSD, can handle Ax<=b, requires finite search area
         de (this is temporary name, will be changed till next OO release v. 0.22), license: BSD, requires finite lb <= x <= ub, can handle Ax<=b, c(x) <= 0. The solver is based on differential evolution and made by Stepan Hlushak.
+        stogo - can use derivatives; requires http://openopt.org/nlopt installed
     """
     return CGLP(*args, **kwargs)
 
