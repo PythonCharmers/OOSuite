@@ -8,10 +8,7 @@ class slmvm2(NLOPT_BASE):
     __authors__ = 'Prof. Ladislav Luksan'
     
     __optionalDataThatCanBeHandled__ = ['lb', 'ub']
-    
-    #__funcForIterFcnConnection__ = 'f'
-    
+   
     def __init__(self): pass
     def __solver__(self, p):
-        # TODO: CONSTRAINTS!
         NLOPT_AUX(p, nlopt.LD_VAR2)

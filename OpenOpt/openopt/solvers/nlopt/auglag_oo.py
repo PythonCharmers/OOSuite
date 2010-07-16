@@ -8,11 +8,6 @@ class auglag(NLOPT_BASE):
     
     __optionalDataThatCanBeHandled__ = ['lb', 'ub', 'c', 'h','A', 'b', 'Aeq', 'beq']
     
-    # TODO: implement 'A', 'Aeq', 'b', 'beq',
-    #__optionalDataThatCanBeHandled__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'c', 'h']
-    
-    #properTextOutput = True
-    
     #TODO: check it!
     #_canHandleScipySparse = True
     
@@ -21,5 +16,4 @@ class auglag(NLOPT_BASE):
     
     def __init__(self): pass
     def __solver__(self, p):
-        # TODO: CONSTRAINTS!
         NLOPT_AUX(p, nlopt.LD_AUGLAG)
