@@ -2,9 +2,9 @@ from NLOPT_AUX import NLOPT_AUX
 from NLOPT_BASE import NLOPT_BASE
 import nlopt
 
-class mma(NLOPT_BASE):
-    __name__ = 'mma'
-    __alg__ = "Method of Moving Asymptotes"
+class auglag(NLOPT_BASE):
+    __name__ = 'auglag'
+    __alg__ = "Augmented Lagrangian"
     
     __optionalDataThatCanBeHandled__ = ['lb', 'ub', 'c', 'h','A', 'b', 'Aeq', 'beq']
     
@@ -22,4 +22,4 @@ class mma(NLOPT_BASE):
     def __init__(self): pass
     def __solver__(self, p):
         # TODO: CONSTRAINTS!
-        NLOPT_AUX(p, nlopt.LD_MMA)
+        NLOPT_AUX(p, nlopt.LD_AUGLAG)
