@@ -22,6 +22,7 @@ def ooIter(p, *args,  **kwargs):
     maybe in future some text output will also be generated here.
     also, some stop criteria are handled via the func.
     """
+    
     if p.finalIterFcnFinished: return
     
     if has_Tkinter:
@@ -34,7 +35,6 @@ def ooIter(p, *args,  **kwargs):
     if not p.iter:
         p.lastDrawTime = p.currtime
         p.lastDrawIter = 0
-
 
     if not p.isFinished or len(p.iterValues.f) == 0:
         p.solver.__decodeIterFcnArgs__(p,  *args,  **kwargs)
@@ -57,13 +57,13 @@ def ooIter(p, *args,  **kwargs):
             if not (p.isFinished and condEqualLastPoints): return
 
         #TODO: turn off xtol and ftol for artifically iterfcn funcs
-    
-        if not p.userStop and not condEqualLastPoints:
+
+        if not p.userStop and (not condEqualLastPoints or p.probType == 'GLP'):
             for key, fun in p.kernelIterFuncs.iteritems():
                 r =  fun(p)
                 if r is not False:
                     p.stopdict[key] = True
-                    if p.istop == 0 or not (key in [IS_MAX_ITER_REACHED, IS_MAX_CPU_TIME_REACHED, IS_MAX_TIME_REACHED, IS_MAX_FUN_EVALS_REACHED]):
+                    if p.istop == 0 or key not in [IS_MAX_ITER_REACHED, IS_MAX_CPU_TIME_REACHED, IS_MAX_TIME_REACHED, IS_MAX_FUN_EVALS_REACHED]:
                         p.istop = key
                         if type(r) == tuple:
                             p.msg = r[1]
