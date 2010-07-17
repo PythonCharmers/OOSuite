@@ -6,6 +6,7 @@ class ptn(NLOPT_BASE):
     __name__ = 'ptn'
     __alg__ = 'Preconditioned truncated Newton'
     __authors__ = 'Prof. Ladislav Luksan'
+    __isIterPointAlwaysFeasible__ = True
     
     __optionalDataThatCanBeHandled__ = ['lb', 'ub']
     

@@ -7,7 +7,7 @@ class bobyqa(NLOPT_BASE):
     __alg__ = 'Bound constrained Optimization BY Quadratic Approximation'
     __authors__ = 'Michael JD Powell'
     __optionalDataThatCanBeHandled__ = ['lb', 'ub']
-    __isIterPointAlwaysFeasible__ = lambda self, p: True
+    __isIterPointAlwaysFeasible__ = True
     
     __funcForIterFcnConnection__ = 'f'
     

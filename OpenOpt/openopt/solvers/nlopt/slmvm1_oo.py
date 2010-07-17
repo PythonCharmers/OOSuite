@@ -6,6 +6,7 @@ class slmvm1(NLOPT_BASE):
     __name__ = 'slmvm1'
     __alg__ = 'Shifted limited-memory variable-metric, rank 1'
     __authors__ = 'Prof. Ladislav Luksan'
+    __isIterPointAlwaysFeasible__ = True
     
     __optionalDataThatCanBeHandled__ = ['lb', 'ub']
     

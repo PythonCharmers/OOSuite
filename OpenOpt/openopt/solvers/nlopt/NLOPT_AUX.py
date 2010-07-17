@@ -4,7 +4,7 @@ from openopt.kernel.setDefaultIterFuncs import SOLVED_WITH_UNIMPLEMENTED_OR_UNKN
 from numpy import isfinite, asscalar, asfarray, abs, copy, isinf, ones, array
 import nlopt
 
-def NLOPT_AUX(p, solver):
+def NLOPT_AUX(p, solver, opts=None):
     
     def myfunc(x, grad):
         #if p.istop != 0: raise nlopt.FORCED_STOP
@@ -20,6 +20,10 @@ def NLOPT_AUX(p, solver):
         opt.set_local_optimizer(opt2)
     else:
         opt = nlopt.opt(solver, p.n)
+    
+    if opts is not None:
+        for option, val in opts.items():
+            getattr(opt, option)(val)
         
     opt.set_min_objective(myfunc)
     if any(p.lb==p.ub): p.pWarn('nlopt solvers badly handle problems with variables fixed via setting lb=ub')
@@ -102,6 +106,7 @@ def setStopCriteria(opt, p, reduce=1.0):
     opt.set_xtol_abs(p.xtol/reduce)
     opt.set_ftol_abs(p.ftol/reduce)
     opt.set_maxeval(p.maxFunEvals)
+    #opt.set_maxiter(p.maxIter)
     if isfinite(p.maxTime): 
         opt.set_maxtime(p.maxTime)
     #    opt.set_xtol_rel(1e-1)
