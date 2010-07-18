@@ -57,7 +57,9 @@ def setDefaultIterFuncs(className):
     return d
 
 def small_df(p):
-    if not hasattr(p, '_df') or p._df == None or p.norm(p._df) >= p.gtol or not all(isfinite(p._df)) or not p.isFeas(p.iterValues.x[-1]): return False
+    if not hasattr(p, '_df') or p._df is None: return False
+    if hasattr(p._df, 'toarray'):p._df = p._df.toarray()
+    if p.norm(p._df) >= p.gtol or not all(isfinite(p._df)) or not p.isFeas(p.iterValues.x[-1]): return False
     return (True, '|| gradient F(X[k]) || < gtol')
     #return False if not hasattr(p, 'dF') or p.dF == None or p.norm(p.dF) > p.gtol else True
 
