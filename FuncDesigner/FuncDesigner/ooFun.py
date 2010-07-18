@@ -717,15 +717,13 @@ class oofun:
 #                if (tmp.ndim <= 1 or min(tmp.shape) == 1) and not isspmatrix(tmp):
 #                    tmp = tmp.flatten()
 
-                Key  = inp
-                if Key in Keys:
-                    if prod(tmp.shape) <= prod(r[Key].shape) and type(r[Key]) == type(tmp) == ndarray: # some sparse matrices has no += implemented 
-                        r[Key] += tmp
+                if inp in r:
+                    if prod(tmp.shape) <= prod(r[inp].shape) and type(r[inp]) == type(tmp) == ndarray: # some sparse matrices has no += implemented 
+                        r[inp] += tmp
                     else:
-                        r[Key] = r[Key] + tmp
+                        r[inp] = r[inp] + tmp
                 else:
-                    r[Key] = tmp
-                    Keys.add(Key)
+                    r[inp] = tmp
             else:
                 ac += 1
                 
@@ -777,7 +775,7 @@ class oofun:
                             rr = atleast_1d(dot(t1, t2))
                     #assert rr.ndim>1
                         
-                    if key in Keys:
+                    if key in r:
                         if isinstance(r[key], ndarray) and hasattr(rr, 'toarray'): # i.e. rr is sparse matrix
                             rr = rr.toarray() # I guess r[key] will hardly be all-zeros
                         elif hasattr(r[key], 'toarray') and isinstance(rr, ndarray): # i.e. r[key] is sparse matrix
@@ -788,7 +786,6 @@ class oofun:
                             r[key] = r[key] + rr
                     else:
                         r[key] = rr
-                        Keys.add(key)
         
         dp = dict([(key, Copy(value)) for key, value in r.items()])
         
