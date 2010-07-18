@@ -490,6 +490,7 @@ class Point:
         #or (useCurrentBestFeasiblePoint and hasattr(p, 'currentBestFeasiblePoint') and self.f() - p.currentBestFeasiblePoint.f() > self.mr()):
         #if (maxRes <= p.contol and all(isfinite(self.df())) and (p.isNaNInConstraintsAllowed or self.nNaNs() == 0)) :
             self.direction, self.dType = self.df(),'f'
+            if hasattr(self.direction, 'toarray'): self.direction = self.direction.toarray()
             return self.direction.copy()
         else:
             if approach == 'all active':
@@ -584,7 +585,7 @@ class Point:
                 else:
                     p.err('error in getRalgDirection (unknown residual type ' + fname + ' ), you should report the bug')
                 self.direction = d.flatten()
-            if isspmatrix(self.direction): self.direction = self.direction.A
+            if hasattr(self.direction, 'toarray'): self.direction = self.direction.toarray()
             return self.direction.copy() # it may be modified in ralg when some constraints coords are NaN
 
 #    def __getDirection__(self, useCurrentBestFeasiblePoint = False):
