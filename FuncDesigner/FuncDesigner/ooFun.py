@@ -698,7 +698,6 @@ class oofun:
         derivativeSelf = self._getDerivativeSelf(x, Vars, fixedVars)
 
         r = Derivative()
-        Keys = set()
         ac = -1
         for i, inp in enumerate(self.input):
             if not isinstance(inp, oofun): continue
