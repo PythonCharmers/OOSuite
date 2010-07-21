@@ -39,7 +39,7 @@ def setStartVectorAndTranslators(p):
     # point2vector = lambda point: atleast_1d(hstack([asfarray(point[oov]) for oov in optVars]))
     
 
-    point2vector = lambda point: atleast_1d(hstack([(point[oov] if oov in point else zeros(asarray(startPoint[oov]).shape)) for oov in optVars]))
+    point2vector = lambda point: atleast_1d(hstack([(point[oov] if oov in point else zeros(asarray(startPoint[oov]).size)) for oov in optVars]))
     # 2nd case can trigger from objective/constraints defined over some of opt oovars only
         
     vector_x0 = point2vector(startPoint)
