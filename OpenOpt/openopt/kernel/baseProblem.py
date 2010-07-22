@@ -91,6 +91,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
     storeIterPoints = False 
 
     userStop = False # becomes True is stopped by user
+    
+    useSparse = 'auto' # involve sparse matrices: 'auto' (autoselect, premature) | True | False
 
     x0 = None
     isFDmodel = False # OO kernel set it to True if oovars/oofuns are used
@@ -372,6 +374,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     if f in self._fixedVars: 
                         if self.x0 is None: self.err('your problem has fixed oovar '+ Name + ' but no value for the one in start point is provided')
                         continue
+                    
                     inds = oovD[f]
                     f_size = inds[1] - inds[0]
 

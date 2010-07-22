@@ -38,6 +38,9 @@ class nonLinFuncs:
         # x being vector p.n x 1 or matrix X=[x1 x2 x3...xk], size(X)=[p.n, k]
         if not isspmatrix(x): 
             x = asfarray(x)
+        else:
+            if p.debug:
+                p.pWarn('[oo debug] sparse matrix x in nonlinfuncs.py has been encountered')
         
         if not ignorePrev: 
             prevKey = p.prevVal[userFunctionType]['key']
@@ -89,11 +92,11 @@ class nonLinFuncs:
         if getDerivative and p.isFDmodel:
             if p.optVars is None or (p.fixedVars is not None and len(p.optVars) < len(p.fixedVars)):
                 funcs2 = [(lambda x, i=i: \
-                  p._pointDerivative2array(funcs[i].D(x, Vars = p.optVars, asSparse='auto', diffVarsID=p._FDVarsID), asSparse='auto', func=funcs[i], point=x)) \
+                  p._pointDerivative2array(funcs[i].D(x, Vars = p.optVars, asSparse=p.useSparse, diffVarsID=p._FDVarsID), asSparse=p.useSparse, func=funcs[i], point=x)) \
                   for i in xrange(len(funcs))]
             else:
                 funcs2 = [(lambda x, i=i: \
-                  p._pointDerivative2array(funcs[i].D(x, fixedVars = p.fixedVars, asSparse='auto', diffVarsID=p._FDVarsID), asSparse='auto', func=funcs[i], point=x)) \
+                  p._pointDerivative2array(funcs[i].D(x, fixedVars = p.fixedVars, asSparse=p.useSparse, diffVarsID=p._FDVarsID), asSparse=p.useSparse, func=funcs[i], point=x)) \
                   for i in xrange(len(funcs))]
         else:
             funcs2 = funcs
@@ -127,7 +130,9 @@ class nonLinFuncs:
                 X = [x[i] for i in xrange(nXvectors)]
             else:
                 X = [((x[i],) + Args) for i in xrange(nXvectors)]
+            
             r = hstack([map(fun, X) for fun in Funcs]).reshape(1, -1)
+           
         elif not getDerivative:
             r = hstack([fun(*(X, )+Args) for fun in Funcs])
             if not ignorePrev and ind is None:
