@@ -38,8 +38,8 @@ def setStartVectorAndTranslators(p):
     # point should be FuncDesigner point that currently is Python dict        
     # point2vector = lambda point: atleast_1d(hstack([asfarray(point[oov]) for oov in optVars]))
     
-
-    point2vector = lambda point: atleast_1d(hstack([(point[oov] if oov in point else zeros(asarray(startPoint[oov]).size)) for oov in optVars]))
+    p._optVarSizes = dict([(oov, asarray(startPoint[oov]).size) for oov in optVars])
+    point2vector = lambda point: atleast_1d(hstack([(point[oov] if oov in point else zeros(sizes[oov])) for oov in p._optVarSizes]))
     # 2nd case can trigger from objective/constraints defined over some of opt oovars only
         
     vector_x0 = point2vector(startPoint)
@@ -107,7 +107,7 @@ def setStartVectorAndTranslators(p):
         if asSparse == 'auto':
             nTotal = sum([prod(elem.shape) for elem in pointDerivarive.values()])
             nNonZero = sum([(elem.size if isspmatrix(elem) else len(flatnonzero(elem))) for elem in pointDerivarive.values()])
-            involveSparse = 4*nNonZero < nTotal and nTotal > 100000
+            involveSparse = 4*nNonZero < nTotal and nTotal > 1000
         # 2. Create init result matrix
 #        if funcLen == 1:
 #            r = DenseMatrixConstructor(n)
