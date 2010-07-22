@@ -123,7 +123,7 @@ class FuncDesignerTranslator:
                     r[indexes[0]:indexes[1]] = val.flatten()
                 else:
                     r[indexes[0]:indexes[1], :] = val.T
-            if asSparse and funcLen == 1: 
+            if asSparse is True and funcLen == 1: 
                 return SparseMatrixConstructor(r)
             else: 
                 return r.T if r.ndim > 1 else r.reshape(1, -1)
