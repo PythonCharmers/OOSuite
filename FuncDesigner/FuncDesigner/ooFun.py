@@ -703,18 +703,12 @@ class oofun:
             if not isinstance(inp, oofun): continue
             if inp.discrete: continue
 
-            #!!!!!!!!! TODO: handle fixed cases properly!!!!!!!!!!!!
-            #if hasattr(inp, 'fixed') and inp.fixed: continue
-
-            # TODO: check for unique oovar names!
             if inp.is_oovar: 
                 if (Vars is not None and inp not in Vars) or (fixedVars is not None and inp in fixedVars):
                     continue                
                 ac += 1
                 tmp = derivativeSelf[ac]
                 assert tmp.ndim > 1 
-#                if (tmp.ndim <= 1 or min(tmp.shape) == 1) and not isspmatrix(tmp):
-#                    tmp = tmp.flatten()
 
                 if inp in r:
                     if prod(tmp.shape) <= prod(r[inp].shape) and type(r[inp]) == type(tmp) == ndarray: # some sparse matrices has no += implemented 
@@ -726,8 +720,7 @@ class oofun:
             else:
                 ac += 1
                 
-                # asSparse should be 'auto' here, not the value taken from the function arguments!
-                elem_d = inp._D(x, diffVarsID, Vars=Vars, fixedVars=fixedVars, asSparse = 'auto') 
+                elem_d = inp._D(x, diffVarsID, Vars=Vars, fixedVars=fixedVars, asSparse = asSparse) 
                 
                 t1 = derivativeSelf[ac]
                 
