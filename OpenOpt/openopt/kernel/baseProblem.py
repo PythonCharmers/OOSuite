@@ -285,7 +285,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 D_kwargs = {'Vars':self.optVars}
             else:
                 D_kwargs = {'fixedVars':self.fixedVars}
-            D_kwargs['asSparse'] = 'auto'
+            D_kwargs['asSparse'] = self.useSparse
             D_kwargs['diffVarsID'] = self._FDVarsID
             
             self._D_kwargs = D_kwargs

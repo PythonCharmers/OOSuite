@@ -90,6 +90,11 @@ class nonLinFuncs:
 
         # TODO: use certificate instead 
         if getDerivative and p.isFDmodel:
+            
+            if p.useSparse == 'auto' and hasattr(p, 'nc') and hasattr(p, 'nh'):
+                if (p.nc + p.nh) * p.n < 10**6:
+                    p.useSparse = False # TODO: improve the premature autoselect
+                    
             if p.optVars is None or (p.fixedVars is not None and len(p.optVars) < len(p.fixedVars)):
                 funcs2 = [(lambda x, i=i: \
                   p._pointDerivative2array(funcs[i].D(x, Vars = p.optVars, asSparse=p.useSparse, diffVarsID=p._FDVarsID), asSparse=p.useSparse, func=funcs[i], point=x)) \

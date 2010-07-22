@@ -39,7 +39,9 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     #p = copy.deepcopy(p_, memo=None, _nil=[])
     p = p_
     if args is not (): p.err('unexpected args for p.solve()')
-    if hasattr(p, 'was_involved'): p.err("please use re-assigned prob struct")
+    if hasattr(p, 'was_involved'): p.err("""You can't run same prob instance for twice. 
+    Please reassign prob struct. 
+    You can avoid it via using FuncDesigner oosystem.""")
     else: p.was_involved = True
 
     if solver_str_or_instance is None:
