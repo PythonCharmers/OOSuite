@@ -105,7 +105,7 @@ def setStartVectorAndTranslators(p):
         # 1. Calculate number of zero/nonzero elements
         involveSparse = asSparse
         if asSparse == 'auto':
-            nTotal = sum([prod(elem.shape) for elem in pointDerivarive.values()])
+            nTotal = n * funcLen#sum([prod(elem.shape) for elem in pointDerivarive.values()])
             nNonZero = sum([(elem.size if isspmatrix(elem) else len(flatnonzero(elem))) for elem in pointDerivarive.values()])
             involveSparse = 4*nNonZero < nTotal and nTotal > 1000
         # 2. Create init result matrix
