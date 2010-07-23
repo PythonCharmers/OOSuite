@@ -216,7 +216,7 @@ def setStartVectorAndTranslators(p):
     # TODO: replave p.x0 in RunProbSolver finish  
     p._x0, p.x0 = p.x0, vector_x0 
     
-    def linearOOFunsToMatrices(oofuns):
+    def linearOOFunsToMatrices(oofuns): #, useSparse = 'auto'
         # oofuns should be linear
         C, d = [], []
         Z = p._vector2point(zeros(p.n))
@@ -227,7 +227,7 @@ def setStartVectorAndTranslators(p):
                 lin_oofun = elem
             if not lin_oofun.is_linear:
                 raise OpenOptException("this function hasn't been intended to work with nonlinear FuncDesigner oofuns")
-            C.append(p._pointDerivative2array(lin_oofun._D(Z, **p._D_kwargs), useSparse = 'auto'))
+            C.append(p._pointDerivative2array(lin_oofun._D(Z, **p._D_kwargs), useSparse = p.useSparse))
             d.append(-lin_oofun(Z))
             
         if any([isspmatrix(elem) for elem in C]):
