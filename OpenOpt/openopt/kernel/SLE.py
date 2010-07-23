@@ -4,7 +4,7 @@ from numpy import asfarray, ones, inf, dot, nan, zeros, any, all, isfinite, eye,
 from numpy.linalg import norm
 from oologfcn import OpenOptException
 import NLP
-from nonOptMisc import scipyInstalled
+from nonOptMisc import scipyInstalled, Vstack
 
 try:
     import scipy
@@ -27,8 +27,7 @@ class SLE(MatrixProblem):
     def __init__(self, *args, **kwargs):
         MatrixProblem.__init__(self, *args, **kwargs)
     
-    def useSparse(self):
-        return True if (scipyInstalled and self.n > 100) else False
+    _useSparse = lambda self: True if (scipyInstalled and self.n > 100) else False
 
     def objFunc(self, x):
         if isinstance(self.C, ndarray):
@@ -62,7 +61,7 @@ class SLE(MatrixProblem):
             if not cond_all_oofuns_but_not_cons and not cond_cons:
                 raise OpenOptException('for FuncDesigner sle constructor args must be either all-equalities or all-oofuns')            
             
-            AsSparse = self.useSparse if isscalar(self.useSparse) else self.useSparse()
+            AsSparse = bool(self.useSparse) if isscalar(self.useSparse) else self.useSparse()
 #            if AsSparse:
 #                from scipy import sparse
 #                if not hasattr(sparse, 'linalg'):
@@ -85,15 +84,10 @@ class SLE(MatrixProblem):
                 C.append(self._pointDerivative2array(lin_oofun.D(Z, **self._D_kwargs), useSparse = AsSparse))
                 d.append(-lin_oofun(Z))
                 
-            if AsSparse:
-                Vstack = scipy.sparse.vstack
-            else:
-                Vstack = lambda C: vstack([(c if type(c)==ndarray else c.A) for c in C]) # i.e. numpy.vstack
-            #raise 0
             self.d = hstack(d).flatten()
             self.C  = Vstack(C)
 
-            if AsSparse: self.C_as_csc = self.C.tocsc()
+            if hasattr(self.C, 'tocsc'): self.C_as_csc = self.C.tocsc()
             
             if isinstance(self.C,ndarray) and self.n > 100 and len(flatnonzero(self.C))/self.C.size < 0.3:
                 s = "Probably you'd better solve this SLE as sparse"
