@@ -8,7 +8,7 @@ class galileo(baseSolver):
     __license__ = "GPL"
     __authors__ = 'Donald Goodman, dgoodman-at-cs.msstate.edu, connected to OO by Dmitrey'
     __alg__ = "Genetic Algorithm, same as ga2, the C++ canonical genetic algorithm lib, also by Donald Goodman"
-    __iterfcnConnected__ = True
+    iterfcnConnected = True
     __homepage__ = 'http://www.cs.msstate.edu/~dgoodman'
 
     __info__ = """

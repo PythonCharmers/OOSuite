@@ -8,7 +8,7 @@ class scipy_ncg(baseSolver):
     #__authors__ =
     __alg__ = "Newton-CG"
     __info__ = 'unconstrained NLP solver, can handle 2nd derivatives'
-    __iterfcnConnected__ = True
+    iterfcnConnected = True
 
     def __init__(self):pass
     def __solver__(self, p):

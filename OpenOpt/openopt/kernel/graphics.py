@@ -81,7 +81,7 @@ class Graphics:
             else:
                 Y_LABELS = ['objective function']
 
-            if not (p.__isUnconstrained__() or p.solver.__isIterPointAlwaysFeasible__(p)):
+            if not (p._isUnconstrained() or p.solver.__isIterPointAlwaysFeasible__(p)):
                 self.isMaxConstraintSubplotRequired = True
                 if p.useScaledResidualOutput:
                     Y_LABELS.append('log10(MaxConstraint/ConTol)')

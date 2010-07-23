@@ -9,7 +9,7 @@ class sbplx(NLOPT_BASE):
     __optionalDataThatCanBeHandled__ = ['lb', 'ub']
     __isIterPointAlwaysFeasible__ = lambda self, p: True
     
-    __funcForIterFcnConnection__ = 'f'
+    funcForIterFcnConnection = 'f'
     
     def __init__(self): pass
     def __solver__(self, p):

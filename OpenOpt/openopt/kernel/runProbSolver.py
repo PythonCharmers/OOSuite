@@ -94,7 +94,7 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     p.iterValues.r = [] # iter MaxResidual
     p.iterValues.rt = [] # iter MaxResidual Type: 'c', 'h', 'lb' etc
     p.iterValues.ri = [] # iter MaxResidual Index
-    if p.__baseClassName__ == 'NonLin':p.iterValues.nNaNs = [] # number of constraints equal to numpy.nan
+    if p._baseClassName == 'NonLin':p.iterValues.nNaNs = [] # number of constraints equal to numpy.nan
 
 
 
@@ -147,7 +147,7 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
 
     #if p.probType not in ['LP', 'QP', 'MILP', 'LLSP']: p.objFunc(p.x0)
 
-    p.isUC = p.__isUnconstrained__()
+    p.isUC = p._isUnconstrained()
     if p.solver.__isIterPointAlwaysFeasible__ is True or \
     (not p.solver.__isIterPointAlwaysFeasible__ is False and p.solver.__isIterPointAlwaysFeasible__(p)):
         assert p.data4TextOutput[-1] == 'log10(maxResidual)'
@@ -157,7 +157,7 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
 
     if p.showFeas and p.data4TextOutput[-1] != 'isFeasible': p.data4TextOutput.append('isFeasible')
 
-    if not p.solver.__iterfcnConnected__:
+    if not p.solver.iterfcnConnected:
         if SMALL_DELTA_X in p.kernelIterFuncs: p.kernelIterFuncs.pop(SMALL_DELTA_X)
         if SMALL_DELTA_F in p.kernelIterFuncs: p.kernelIterFuncs.pop(SMALL_DELTA_F)
 

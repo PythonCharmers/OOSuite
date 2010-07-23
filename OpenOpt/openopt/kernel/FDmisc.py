@@ -70,22 +70,19 @@ def setStartVectorAndTranslators(p):
 
     oovarsIndDict = dict([(oov, (oovar_indexes[i], oovar_indexes[i+1])) for i, oov in enumerate(optVars)])
         
-    def pointDerivative2array(pointDerivarive, asSparse = 'auto',  func=None, point=None): 
-        # asSparse can be True, False, 'auto'
-        # !!!!!!!!!!! TODO: implement asSparse = 'auto' properly
-        if not scipyInstalled and asSparse == 'auto':
-            asSparse = False
-        if asSparse is not False and not scipyInstalled:
+    def pointDerivative2array(pointDerivarive, useSparse = 'auto',  func=None, point=None): 
+        
+        # useSparse can be True, False, 'auto'
+        if not scipyInstalled and useSparse == 'auto':
+            useSparse = False
+        if useSparse is True and not scipyInstalled:
             p.err('to handle sparse matrices you should have module scipy installed') 
-
-        # however, this check is performed in other function (before this one)
-        # and those constraints are excluded automaticvally
 
         if len(pointDerivarive) == 0: 
             if func is not None:
                 assert point is not None
                 funcLen = func(point).size
-                if asSparse is not False:
+                if useSparse is not False:
                     return SparseMatrixConstructor((funcLen, n))
                 else:
                     return DenseMatrixConstructor((funcLen, n))
@@ -103,8 +100,8 @@ def setStartVectorAndTranslators(p):
         # CHANGES
         
         # 1. Calculate number of zero/nonzero elements
-        involveSparse = asSparse
-        if asSparse == 'auto':
+        involveSparse = useSparse
+        if useSparse == 'auto':
             nTotal = n * funcLen#sum([prod(elem.shape) for elem in pointDerivarive.values()])
             nNonZero = sum([(elem.size if isspmatrix(elem) else len(flatnonzero(elem))) for elem in pointDerivarive.values()])
             involveSparse = 4*nNonZero < nTotal and nTotal > 1000
@@ -137,7 +134,7 @@ def setStartVectorAndTranslators(p):
 #        if funcLen == 1:
 #            r = DenseMatrixConstructor(n)
 #        else:
-#            if asSparse:
+#            if useSparse:
 #                r = SparseMatrixConstructor((n, funcLen))
 #            else:
 #                r = DenseMatrixConstructor((n, funcLen))            
@@ -176,11 +173,11 @@ def setStartVectorAndTranslators(p):
                     r[indexes[0]:indexes[1]] = val.flatten()
                 else:
                     r[:, indexes[0]:indexes[1]] = val.reshape(funcLen, prod(val.shape)/funcLen)
-            if asSparse is True and funcLen == 1: 
+            if useSparse is True and funcLen == 1: 
                 return SparseMatrixConstructor(r)
             elif r.ndim <= 1:
                 r = r.reshape(1, -1)
-            if asSparse is False and hasattr(r, 'toarray'):
+            if useSparse is False and hasattr(r, 'toarray'):
                 r = r.toarray()
             return r
                 
@@ -230,7 +227,7 @@ def setStartVectorAndTranslators(p):
                 lin_oofun = elem
             if not lin_oofun.is_linear:
                 raise OpenOptException("this function hasn't been intended to work with nonlinear FuncDesigner oofuns")
-            C.append(p._pointDerivative2array(lin_oofun._D(Z, **p._D_kwargs), asSparse = 'auto'))
+            C.append(p._pointDerivative2array(lin_oofun._D(Z, **p._D_kwargs), useSparse = 'auto'))
             d.append(-lin_oofun(Z))
             
         if any([isspmatrix(elem) for elem in C]):

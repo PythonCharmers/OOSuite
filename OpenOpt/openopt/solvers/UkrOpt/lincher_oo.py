@@ -19,7 +19,7 @@ class lincher(baseSolver):
     __optionalDataThatCanBeHandled__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'c', 'h']
 
     __isIterPointAlwaysFeasible__ = lambda self, p: p.__isNoMoreThanBoxBounded__()
-    __iterfcnConnected__ = True
+    iterfcnConnected = True
 
     def __init__(self): pass
 

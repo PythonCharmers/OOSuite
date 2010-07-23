@@ -13,7 +13,7 @@ class stogo(NLOPT_BASE):
     #TODO: check it!
     #_canHandleScipySparse = True
     
-    __funcForIterFcnConnection__ = 'f'
+    funcForIterFcnConnection = 'f'
     useRand = True
     
     def __init__(self): pass

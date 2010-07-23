@@ -594,7 +594,7 @@ class oofun:
 
 
     """                                              derivatives                                           """
-    def D(self, x, Vars=None, fixedVars = None, resultKeysType = 'vars', asSparse = False, exactShape = False, diffVarsID = -1):
+    def D(self, x, Vars=None, fixedVars = None, resultKeysType = 'vars', useSparse = False, exactShape = False, diffVarsID = -1):
         
         # resultKeysType doesn't matter for the case isinstance(Vars, oovar)
         if Vars is not None and fixedVars is not None:
@@ -629,7 +629,7 @@ class oofun:
                 if not fixedVars.is_oovar:
                     raise FuncDesignerException('argument fixedVars is expected as oovar or python list/tuple of oovar instances')
                 fixedVars = set([fixedVars])
-        r = self._D(x, diffVarsID, Vars, fixedVars, asSparse = asSparse)
+        r = self._D(x, diffVarsID, Vars, fixedVars, useSparse = useSparse)
         if isinstance(Vars, oofun):
             if Vars.is_oovar:
                 return Vars(r)
@@ -658,10 +658,10 @@ class oofun:
                 raise FuncDesignerException('Incorrect argument resultKeysType, should be "vars" or "names"')
             
             
-    def _D(self, x, diffVarsID, Vars=None, fixedVars = None, asSparse = 'auto'):
+    def _D(self, x, diffVarsID, Vars=None, fixedVars = None, useSparse = 'auto'):
         if self.is_oovar: 
             return {} if (fixedVars is not None and self in fixedVars) or (Vars is not None and self not in Vars) \
-            else {self.name:Eye(self(x).size) if asSparse is not False else eye(self(x).size)}
+            else {self.name:Eye(self(x).size) if useSparse is not False else eye(self(x).size)}
             
         if self.input[0] is None: return {} # fixed oofun. TODO: implement input = [] properly
             
@@ -720,7 +720,7 @@ class oofun:
             else:
                 ac += 1
                 
-                elem_d = inp._D(x, diffVarsID, Vars=Vars, fixedVars=fixedVars, asSparse = asSparse) 
+                elem_d = inp._D(x, diffVarsID, Vars=Vars, fixedVars=fixedVars, useSparse = useSparse) 
                 
                 t1 = derivativeSelf[ac]
                 
@@ -761,7 +761,7 @@ class oofun:
                                     else:
                                         raise FuncDesignerException('incorrect shape in FuncDesigner function _D(), inform developers about the bug')
                                 rr = t1._mul_sparse_matrix(t2)
-                                if asSparse is False:
+                                if useSparse is False:
                                     rr = rr.toarray() 
                         else:
                             rr = atleast_1d(dot(t1, t2))

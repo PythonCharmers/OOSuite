@@ -9,7 +9,7 @@ class bobyqa(NLOPT_BASE):
     __optionalDataThatCanBeHandled__ = ['lb', 'ub']
     __isIterPointAlwaysFeasible__ = True
     
-    __funcForIterFcnConnection__ = 'f'
+    funcForIterFcnConnection = 'f'
     
     def __solver__(self, p):
 #        if p.n < 15:

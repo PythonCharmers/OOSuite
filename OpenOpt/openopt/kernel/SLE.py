@@ -27,7 +27,7 @@ class SLE(MatrixProblem):
     def __init__(self, *args, **kwargs):
         MatrixProblem.__init__(self, *args, **kwargs)
     
-    def asSparse(self):
+    def useSparse(self):
         return True if (scipyInstalled and self.n > 100) else False
 
     def objFunc(self, x):
@@ -62,7 +62,7 @@ class SLE(MatrixProblem):
             if not cond_all_oofuns_but_not_cons and not cond_cons:
                 raise OpenOptException('for FuncDesigner sle constructor args must be either all-equalities or all-oofuns')            
             
-            AsSparse = self.asSparse if isscalar(self.asSparse) else self.asSparse()
+            AsSparse = self.useSparse if isscalar(self.useSparse) else self.useSparse()
 #            if AsSparse:
 #                from scipy import sparse
 #                if not hasattr(sparse, 'linalg'):
@@ -82,7 +82,7 @@ class SLE(MatrixProblem):
                     lin_oofun = elem
                 if not lin_oofun.is_linear:
                     raise OpenOptException('SLE constructor requires all equations to be linear')
-                C.append(self._pointDerivative2array(lin_oofun.D(Z, **self._D_kwargs), asSparse = AsSparse))
+                C.append(self._pointDerivative2array(lin_oofun.D(Z, **self._D_kwargs), useSparse = AsSparse))
                 d.append(-lin_oofun(Z))
                 
             if AsSparse:

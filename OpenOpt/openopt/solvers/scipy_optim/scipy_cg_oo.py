@@ -8,7 +8,7 @@ class scipy_cg(baseSolver):
     #__authors__ =
     __alg__ = "nonlinear conjugate gradient algorithm of Polak and Ribiere See Wright, and Nocedal 'Numerical Optimization', 1999, pg. 120-122"
     __info__ = 'unconstrained NLP solver'
-    __iterfcnConnected__ = True
+    iterfcnConnected = True
 
     def __init__(self):pass
     def __solver__(self, p):

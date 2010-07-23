@@ -41,7 +41,7 @@ class Point:
 
     def f(self):
         if not hasattr(self, '_f'): 
-            if self.p.__baseClassName__ == 'NonLin':
+            if self.p._baseClassName == 'NonLin':
                 self._f = self.p.f(self.x)
             else:
                 self._f = self.p.objFunc(self.x)
@@ -128,7 +128,7 @@ class Point:
             r, fname, ind = 0, None, None
             ineqs = ['lin_ineq', 'lb', 'ub']
             eqs = ['lin_eq']
-            if self.p.__baseClassName__ == 'NonLin':
+            if self.p._baseClassName == 'NonLin':
                 ineqs.append('c')
                 eqs.append('h')
             elif self.p.probType in ['MILP', 'MINLP']:
@@ -310,7 +310,7 @@ class Point:
 
     def nNaNs(self):
         # returns number of nans in constraints
-        if self.p.__baseClassName__ != 'NonLin': return 0
+        if self.p._baseClassName != 'NonLin': return 0
         r = 0
         c, h = self.c(), self.h()
         r += len(where(isnan(c))[0])

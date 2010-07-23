@@ -22,8 +22,8 @@ class baseSolver:
 
     __optionalDataThatCanBeHandled__ = []
     __isIterPointAlwaysFeasible__ = lambda self, p: p.isUC#TODO: provide possibility of simple True, False
-    __iterfcnConnected__ = False
-    __funcForIterFcnConnection__ = 'df' # the field is used for non-linear solvers with not-connected iter function
+    iterfcnConnected = False
+    funcForIterFcnConnection = 'df' # the field is used for non-linear solvers with not-connected iter function
     _canHandleScipySparse = False # True if can handle linear constraints Ax<=b, Aeq x = beq and nonlin cons derivs
     properTextOutput = False
 
@@ -48,7 +48,7 @@ class baseSolver:
             if len(args)>0: p.xk = args[0]
             elif 'xk' in kwargs.keys(): p.xk = kwargs['xk']
             elif not hasattr(p, 'xk'): p.err('iterfcn must get x value, if you see it inform oo developers')
-            if p.__baseClassName__ == 'NonLin': 
+            if p._baseClassName == 'NonLin': 
                 p.nNaNs = len(where(isnan(p.c(p.xk)))[0]) + len(where(isnan(p.h(p.xk)))[0])
 
             if len(args)>1: p.fk = args[1]
@@ -67,7 +67,7 @@ class baseSolver:
         p.iterValues.r.append(ravel(p.rk)[0])
         p.iterValues.rt.append(p.rtk)
         p.iterValues.ri.append(p.rik)
-        if p.__baseClassName__ == 'NonLin': p.iterValues.nNaNs.append(p.nNaNs)
+        if p._baseClassName == 'NonLin': p.iterValues.nNaNs.append(p.nNaNs)
 
         #TODO: handle kwargs correctly! (decodeIterFcnArgs)
 

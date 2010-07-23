@@ -55,7 +55,7 @@ class residuals:
         # TODO: add quadratic constraints
         r = EmptyClass()
         # TODO: simplify it!
-        if self.__baseClassName__ == 'NonLin':
+        if self._baseClassName == 'NonLin':
             r.c = self._get_nonLinInEq_residuals(x)
             r.h = self._get_nonLinEq_residuals(x)
         else:

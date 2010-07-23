@@ -8,7 +8,7 @@ class scipy_bfgs(baseSolver):
     #__authors__ =
     __alg__ = "BFGS"
     __info__ = 'unconstrained NLP solver'
-    __iterfcnConnected__ = True
+    iterfcnConnected = True
 
     def __init__(self):pass
     def __solver__(self, p):

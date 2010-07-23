@@ -15,7 +15,7 @@ class scipy_cobyla(baseSolver):
     __alg__ = "Constrained Optimization BY Linear Approximation"
     __info__ = 'constrained NLP solver, no user-defined derivatives are handled'#TODO: add '__info__' field to other solvers
     __optionalDataThatCanBeHandled__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'c', 'h']
-    __funcForIterFcnConnection__ = 'f'
+    funcForIterFcnConnection = 'f'
 
     def __init__(self): pass
     def __solver__(self, p):

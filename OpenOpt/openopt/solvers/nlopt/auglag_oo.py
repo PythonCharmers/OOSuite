@@ -11,7 +11,7 @@ class auglag(NLOPT_BASE):
     #TODO: check it!
     #_canHandleScipySparse = True
     
-    #__funcForIterFcnConnection__ = 'f'
+    #funcForIterFcnConnection = 'f'
     
     
     def __init__(self): pass

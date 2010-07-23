@@ -11,7 +11,7 @@ class pswarm(baseSolver):
     __license__ = "LGPL"
     __authors__ = 'A. I. F. Vaz (http://www.norg.uminho.pt/aivaz), connected to OO by Dmitrey'
     __alg__ = "A. I. F. Vaz and L. N. Vicente, A particle swarm pattern search method for bound constrained global optimization, Journal of Global Optimization, 39 (2007) 197-219. The algorithm combines pattern search and particle swarm. Basically, it applies a directional direct search in the poll step (coordinate search in the pure simple bounds case) and particle swarm in the search step."
-    __iterfcnConnected__ = True
+    iterfcnConnected = True
     __homepage__ = 'http://www.norg.uminho.pt/aivaz/pswarm/'
 
     __info__ = "parameters: social (default = 0.5), cognitial (0.5), fweight (0.4), iweight (0.9), size (42), tol (1e-5), ddelta (0.5), idelta (2.0). Can handle constraints lb <= x <= ub (values beyond 1e20 are treated as 1e20), A x <= b. Documentation says pswarm is capable of using parallel calculations (via MPI) but I don't know is it relevant to Python API."

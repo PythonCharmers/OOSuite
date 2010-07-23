@@ -10,7 +10,7 @@ class nssolve(baseSolver):
     __license__ = "BSD"
     __authors__ = 'Dmitrey Kroshko'
     __alg__ = "based on Naum Z. Shor r-alg"
-    __iterfcnConnected__ = True
+    iterfcnConnected = True
     __optionalDataThatCanBeHandled__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'c', 'h']
     __isIterPointAlwaysFeasible__ = lambda self, p: p.isUC
     __info__ = """

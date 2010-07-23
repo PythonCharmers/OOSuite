@@ -61,7 +61,7 @@ class nonLinFuncs:
                 if userFunctionType == 'f':
                     if p.isObjFunValueASingleNumber: r = r.sum(0)
                     if p.invertObjFunc: r = -r
-                    if  p.solver.__funcForIterFcnConnection__=='f' and any(isnan(x)):
+                    if  p.solver.funcForIterFcnConnection=='f' and any(isnan(x)):
                         p.nEvals['f'] += 1
 
                         if p.nEvals['f']%p.f_iter == 0:
@@ -97,11 +97,11 @@ class nonLinFuncs:
                     
             if p.optVars is None or (p.fixedVars is not None and len(p.optVars) < len(p.fixedVars)):
                 funcs2 = [(lambda x, i=i: \
-                  p._pointDerivative2array(funcs[i].D(x, Vars = p.optVars, asSparse=p.useSparse, diffVarsID=p._FDVarsID), asSparse=p.useSparse, func=funcs[i], point=x)) \
+                  p._pointDerivative2array(funcs[i].D(x, Vars = p.optVars, useSparse=p.useSparse, diffVarsID=p._FDVarsID), useSparse=p.useSparse, func=funcs[i], point=x)) \
                   for i in xrange(len(funcs))]
             else:
                 funcs2 = [(lambda x, i=i: \
-                  p._pointDerivative2array(funcs[i].D(x, fixedVars = p.fixedVars, asSparse=p.useSparse, diffVarsID=p._FDVarsID), asSparse=p.useSparse, func=funcs[i], point=x)) \
+                  p._pointDerivative2array(funcs[i].D(x, fixedVars = p.fixedVars, useSparse=p.useSparse, diffVarsID=p._FDVarsID), useSparse=p.useSparse, func=funcs[i], point=x)) \
                   for i in xrange(len(funcs))]
         else:
             funcs2 = funcs
@@ -199,7 +199,7 @@ class nonLinFuncs:
             assert x.size == p.n#TODO: add python list possibility here
             x = x_0 # for to suppress numerical instability effects while x +/- delta_x
 
-        if userFunctionType == 'f' and hasattr(p, 'solver') and p.solver.__funcForIterFcnConnection__=='f' and hasattr(p, 'f_iter'):
+        if userFunctionType == 'f' and hasattr(p, 'solver') and p.solver.funcForIterFcnConnection=='f' and hasattr(p, 'f_iter'):
             if p.nEvals['f']%p.f_iter == 0:
                 p.iterfcn(x, r)
 
@@ -208,7 +208,7 @@ class nonLinFuncs:
 
 
 
-    def wrapped_1st_derivatives(p, x, ind_, funcType, ignorePrev, asSparse):
+    def wrapped_1st_derivatives(p, x, ind_, funcType, ignorePrev, useSparse):
         if isinstance(x, dict):
             if not p.isFDmodel: p.err('calling the function with argument of type dict is allowed for FuncDesigner models only')
             if ind_ is not None:p.err('the operation is turned off for argument of type dict when ind!=None')
@@ -295,7 +295,7 @@ class nonLinFuncs:
                     if not isinstance(derivatives, ndarray): derivatives = derivatives.toarray()
                     derivatives = derivatives.flatten()
         
-        if asSparse is False or not scipyInstalled or not hasattr(p, 'solver') or not p.solver._canHandleScipySparse: 
+        if useSparse is False or not scipyInstalled or not hasattr(p, 'solver') or not p.solver._canHandleScipySparse: 
             # p can has no attr 'solver' if it is called from checkdf, checkdc, checkdh
             if not isinstance(derivatives, ndarray): 
                 derivatives = derivatives.toarray()
@@ -306,7 +306,7 @@ class nonLinFuncs:
         if ind is None and not ignorePrev: p.prevVal[derivativesType]['val'] = derivatives
 
         if funcType=='f':
-            if hasattr(p, 'solver') and not p.solver.__iterfcnConnected__  and p.solver.__funcForIterFcnConnection__=='df':
+            if hasattr(p, 'solver') and not p.solver.iterfcnConnected  and p.solver.funcForIterFcnConnection=='df':
                 if p.df_iter is True: p.iterfcn(x)
                 elif p.nEvals[derivativesType]%p.df_iter == 0: p.iterfcn(x) # call iterfcn each {p.df_iter}-th df call
         

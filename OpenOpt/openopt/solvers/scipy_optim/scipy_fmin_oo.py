@@ -8,7 +8,7 @@ class scipy_fmin(baseSolver):
     #__authors__ =
     __alg__ = "Nelder-Mead simplex algorithm"
     __info__ = 'unconstrained NLP/NSP solver, cannot handle user-supplied gradient'
-    __iterfcnConnected__ = True
+    iterfcnConnected = True
 
     def __init__(self):pass
     def __solver__(self, p):

@@ -199,7 +199,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
 
     def __isNoMoreThanBoxBounded__(self): # TODO: make this function 'lazy'
         s = ((), [], array([]), None)
-        return self.b.size ==0 and self.beq.size==0 and (self.__baseClassName__ == 'Matrix' or (not self.userProvided.c and not self.userProvided.h))
+        return self.b.size ==0 and self.beq.size==0 and (self._baseClassName == 'Matrix' or (not self.userProvided.c and not self.userProvided.h))
 
 #    def __1stBetterThan2nd__(self,  f1, f2,  r1=None,  r2=None):
 #        if self.isUC:
@@ -267,6 +267,12 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
     # Base class method
     def _prepare(self): 
         if self._baseProblemIsPrepared: return
+        if self.useSparse == 0:
+            self.useSparse = False
+        elif self.useSparse == 1:
+            self.useSparse = True
+        if self.useSparse == True and not scipyInstalled:
+            self.err("You can't set useSparse=True without scipy installed")
         if self._isFDmodel():
             self.isFDmodel = True
             from FuncDesigner import _getAllAttachedConstraints, _getDiffVarsID
@@ -285,7 +291,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 D_kwargs = {'Vars':self.optVars}
             else:
                 D_kwargs = {'fixedVars':self.fixedVars}
-            D_kwargs['asSparse'] = self.useSparse
+            D_kwargs['useSparse'] = self.useSparse
             D_kwargs['diffVarsID'] = self._FDVarsID
             
             self._D_kwargs = D_kwargs
@@ -416,8 +422,10 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     self.err('inform OpenOpt developers of the bug')
             if len(b) != 0:
                 self.A, self.b = Vstack(A), Hstack(b)
+                if hasattr(self.b, 'toarray'): self.b = self.b.toarray()
             if len(beq) != 0:
                 self.Aeq, self.beq = Vstack(Aeq), Hstack(beq)
+                if hasattr(self.beq, 'toarray'): self.beq = self.beq.toarray()
             for vName, vVal in LB.items():
                 inds = oovD[vName]
                 lb[inds[0]:inds[1]] = vVal
@@ -469,12 +477,13 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             
         elif nA > SizeThreshold or nAeq > SizeThreshold:
             self.pWarn(scipyAbsentMsg)
+            
         self._baseProblemIsPrepared = True
         
 
 
 class MatrixProblem(baseProblem):
-    __baseClassName__ = 'Matrix'
+    _baseClassName = 'Matrix'
     #obsolete, should be removed
     # still it is used by lpSolve
     # Awhole * x {<= | = | >= } b
@@ -496,7 +505,7 @@ class MatrixProblem(baseProblem):
         self.prepared = True
 
     # TODO: move the function to child classes
-    def __isUnconstrained__(self):
+    def _isUnconstrained(self):
         s = ((), [], array([]), None)
         return self.b.size ==0 and self.beq.size==0 and (self.lb in s or all(isinf(self.lb))) and (self.ub in s or all(isinf(self.ub)))
 
@@ -514,7 +523,7 @@ class Args:
     f, c, h = (), (), ()
 
 class NonLinProblem(baseProblem, nonLinFuncs, Args):
-    __baseClassName__ = 'NonLin'
+    _baseClassName = 'NonLin'
     isNaNInConstraintsAllowed = False
     diffInt = ProbDefaults['diffInt']        #finite-difference gradient aproximation step
     #non-linear constraints
@@ -597,8 +606,8 @@ class NonLinProblem(baseProblem, nonLinFuncs, Args):
     def __prepare__(self):
         baseProblem._prepare(self)
         if hasattr(self, 'solver'):
-            if not self.solver.__iterfcnConnected__:
-                if self.solver.__funcForIterFcnConnection__ == 'f':
+            if not self.solver.iterfcnConnected:
+                if self.solver.funcForIterFcnConnection == 'f':
                     if not hasattr(self, 'f_iter'):
                         self.f_iter = max((self.n, 4))
                 else:
@@ -629,8 +638,8 @@ class NonLinProblem(baseProblem, nonLinFuncs, Args):
                 setattr(self, s, lambda x, IND=None, userFunctionType= s, ignorePrev=False, getDerivative=False: \
                         self.wrapped_func(x, IND, userFunctionType, ignorePrev, getDerivative))
             elif derivativeOrder == 1:
-                setattr(self, s, lambda x, ind=None, funcType=s[-1], ignorePrev = False, asSparse='auto':
-                        self.wrapped_1st_derivatives(x, ind, funcType, ignorePrev, asSparse))
+                setattr(self, s, lambda x, ind=None, funcType=s[-1], ignorePrev = False, useSparse='auto':
+                        self.wrapped_1st_derivatives(x, ind, funcType, ignorePrev, useSparse))
             elif derivativeOrder == 2:
                 setattr(self, s, getattr(self, 'user_'+s))
             else:
@@ -658,7 +667,7 @@ class NonLinProblem(baseProblem, nonLinFuncs, Args):
         self.prepared = True
 
     # TODO: move the function to child classes
-    def __isUnconstrained__(self):
+    def _isUnconstrained(self):
         s = ((), [], array([]), None)
         return self.b.size ==0 and self.beq.size==0 and not self.userProvided.c and not self.userProvided.h \
             and (self.lb in s or all(isinf(self.lb))) and (self.ub in s or all(isinf(self.ub)))

@@ -11,7 +11,7 @@ class de(baseSolver):
     __license__ = "BSD"
     __authors__ = "Stepan Hlushak, stepanko - at - gmail - dot - com, connected to OO by Dmitrey"
     __alg__ = "Two array differential evolution algorithm, Feoktistov V. Differential Evolution. In Search of Solutions (Springer, 2006)(ISBN 0387368965)."
-    __iterfcnConnected__ = True
+    iterfcnConnected = True
     __homepage__ = ''
     __isIterPointAlwaysFeasible__ = lambda self, p: p.__isNoMoreThanBoxBounded__()
     __optionalDataThatCanBeHandled__ = ['lb', 'ub', 'A', 'b', 'c']

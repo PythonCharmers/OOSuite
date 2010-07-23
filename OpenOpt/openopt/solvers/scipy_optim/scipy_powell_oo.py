@@ -8,7 +8,7 @@ class scipy_powell(baseSolver):
     #__authors__ =
     __alg__ = ""
     __info__ = 'unconstrained NLP solver, cannot handle user-supplied gradient'
-    __iterfcnConnected__ = True
+    iterfcnConnected = True
 
     def __init__(self):pass
     def __solver__(self, p):

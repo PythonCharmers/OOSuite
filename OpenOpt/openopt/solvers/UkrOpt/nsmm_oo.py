@@ -9,7 +9,7 @@ class nsmm(baseSolver):
     __license__ = "BSD"
     __authors__ = 'Dmitrey Kroshko'
     __alg__ = "based on Naum Z. Shor r-alg"
-    __iterfcnConnected__ = True
+    iterfcnConnected = True
     __optionalDataThatCanBeHandled__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'c', 'h']
     __info__ = """
     Solves mini-max problem

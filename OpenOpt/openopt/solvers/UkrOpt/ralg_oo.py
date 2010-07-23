@@ -19,7 +19,7 @@ class ralg(baseSolver):
     __authors__ = "Dmitrey"
     __alg__ = "Naum Z. Shor R-algorithm with adaptive space dilation & some modifications"
     __optionalDataThatCanBeHandled__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'c', 'h']
-    __iterfcnConnected__ = True
+    iterfcnConnected = True
     _canHandleScipySparse = True
 
     #ralg default parameters
@@ -39,6 +39,7 @@ class ralg(baseSolver):
     newLinEq = True
     new_bs = True
     skipPrevIterNaNsInDilation = True
+    #new_s = False
 
     def needRej(self, p, b, g, g_dilated):
 #        r = log10(1e15 * p.norm(g_dilated) / p.norm(g))
@@ -146,6 +147,7 @@ class ralg(baseSolver):
         
         SwitchEncountered = False
         selfNeedRej = False
+        doScale = False
         
         #directionVectorsList = []
 #        #pass-by-ref! not copy!
@@ -171,6 +173,11 @@ class ralg(baseSolver):
             g_tmp = economyMult(b.T, moveDirection)
             if any(g_tmp): g_tmp /= p.norm(g_tmp)
             g1 = p.matmult(b, g_tmp)
+            
+#            norm_moveDirection = p.norm(g1)
+#            if doScale:
+#                g1 *= (norm_moveDirection_prev/norm_moveDirection) ** 0.5
+#            norm_moveDirection_prev = norm_moveDirection
 
 #            if p.debug and hasattr(p, 'x_opt'):
 #                cos_phi_0 = p.matmult(moveDirection,  prevIter_best_ls_point.x - p.x_opt)/p.norm(moveDirection)/p.norm(prevIter_best_ls_point.x - p.x_opt)
@@ -694,6 +701,8 @@ class ralg(baseSolver):
             #prevDirectionForDilation = directionForDilation
 
             #iterPoint = None
+            #doScale = self.new_s and prevIter_PointForDilation.isFeas(True) !=  best_ls_point.isFeas(True)
+            #print doScale
             prevIter_best_ls_point = best_ls_point
             prevIter_PointForDilation = best_ls_point
             prevDirectionForDilation = best_ls_point._getDirection(self.approach)

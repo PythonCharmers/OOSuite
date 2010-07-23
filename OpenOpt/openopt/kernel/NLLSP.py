@@ -21,7 +21,7 @@ class NLLSP(NonLinProblem):
 
         ff = lambda x: sum(asfarray(self.f(x))**2)
         if self.userProvided.df:
-            dff = lambda x: dot(2*asfarray(self.f(x)), asfarray(self.df(x,asSparse=False)))
+            dff = lambda x: dot(2*asfarray(self.f(x)), asfarray(self.df(x,useSparse=False)))
             p = NLP.NLP(ff, self.x0, df=dff)
         else:
             p = NLP.NLP(ff, self.x0)

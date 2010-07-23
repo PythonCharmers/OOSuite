@@ -56,12 +56,12 @@ class FuncDesignerTranslator:
         
     point2vector = lambda self, point: array(atleast_1d(hstack([(point[v] if v in point else zeros(self._shapeDict[v])) for v in self._variables])), 'float')
         
-    def pointDerivative2array(self, pointDerivarive, asSparse = False,  func=None, point=None): 
-        # asSparse can be True, False, 'auto'
-        # !!!!!!!!!!! TODO: implement asSparse = 'auto' properly
-        if asSparse == 'auto' and not scipyInstalled:
-            asSparse = False
-        if asSparse is not False and not scipyInstalled:
+    def pointDerivative2array(self, pointDerivarive, useSparse = False,  func=None, point=None): 
+        # useSparse can be True, False, 'auto'
+        # !!!!!!!!!!! TODO: implement useSparse = 'auto' properly
+        if useSparse == 'auto' and not scipyInstalled:
+            useSparse = False
+        if useSparse is not False and not scipyInstalled:
             raise FuncDesignerException('to handle sparse matrices you should have module scipy installed') 
 
         # however, this check is performed in other function (before this one)
@@ -72,7 +72,7 @@ class FuncDesignerTranslator:
             if func is not None:
                 assert point is not None
                 funcLen = func(point).size
-                if asSparse:
+                if useSparse:
                     return SparseMatrixConstructor((funcLen, n))
                 else:
                     return DenseMatrixConstructor((funcLen, n))
@@ -89,13 +89,13 @@ class FuncDesignerTranslator:
         
         newStyle = 1
         
-        if asSparse is not False and newStyle:
+        if useSparse is not False and newStyle:
             r2 = []
-            hasSparse = False
+            huseSparse = False
             for i, var in enumerate(optVars):
                 if var in pointDerivarive:#i.e. one of its keys
                     tmp = pointDerivarive[var]
-                    if isspmatrix(tmp): hasSparse = True
+                    if isspmatrix(tmp): huseSparse = True
                     if isinstance(tmp, float) or (isinstance(tmp, ndarray) and tmp.shape == ()):
                         tmp = atleast_1d(tmp)
                     if tmp.ndim < 2:
@@ -103,27 +103,27 @@ class FuncDesignerTranslator:
                     r2.append(tmp)
                 else:
                     r2.append(SparseMatrixConstructor((funcLen, oovar_sizes[i])))
-                    hasSparse = True
-            r3 = Hstack(r2) if hasSparse else hstack(r2)
+                    huseSparse = True
+            r3 = Hstack(r2) if huseSparse else hstack(r2)
             if isspmatrix(r3) and r3.nnz > 0.25 * prod(r3.shape): r3 = r3.A
             return r3
         else:
             if funcLen == 1:
                 r = DenseMatrixConstructor(n)
             else:
-                if asSparse:
+                if useSparse:
                     r = SparseMatrixConstructor((n, funcLen))
                 else:
                     r = DenseMatrixConstructor((n, funcLen))            
             for key, val in pointDerivarive.items():
                 # TODO: remove indexes, do as above for sparse 
                 indexes = self.oovarsIndDict[key]
-                if not asSparse and isspmatrix(val): val = val.A
+                if not useSparse and isspmatrix(val): val = val.A
                 if r.ndim == 1:
                     r[indexes[0]:indexes[1]] = val.flatten()
                 else:
                     r[indexes[0]:indexes[1], :] = val.T
-            if asSparse is True and funcLen == 1: 
+            if useSparse is True and funcLen == 1: 
                 return SparseMatrixConstructor(r)
             else: 
                 return r.T if r.ndim > 1 else r.reshape(1, -1)

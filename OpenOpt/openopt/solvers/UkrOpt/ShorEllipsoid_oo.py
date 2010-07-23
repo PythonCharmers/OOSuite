@@ -16,7 +16,7 @@ class ShorEllipsoid(baseSolver):
     __license__ = "BSD"
     __authors__ = "Dmitrey"
     __alg__ = "Naum Z. Shor modificated method of ellipsoids"
-    __iterfcnConnected__ = True
+    iterfcnConnected = True
     #__optionalDataThatCanBeHandled__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'c', 'h']
 
     def __init__(self): pass

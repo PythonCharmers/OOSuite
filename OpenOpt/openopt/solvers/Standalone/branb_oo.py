@@ -14,7 +14,7 @@ class branb(baseSolver):
     __alg__ = "branch-and-cut (currently the implementation is quite primitive)"
     __info__ = ''
     __optionalDataThatCanBeHandled__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'discreteVars', 'c', 'h']
-    __iterfcnConnected__ = True
+    iterfcnConnected = True
     __isIterPointAlwaysFeasible__ = lambda self, p: True
     #eps = 1e-7
     nlpSolver = None
