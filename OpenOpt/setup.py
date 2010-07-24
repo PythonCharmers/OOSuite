@@ -66,20 +66,20 @@ def configuration(parent_package='',top_path=None, package_name=DISTNAME):
 
 
 if __name__ == "__main__":
-    solverPaths = {}
-    #File = string.join(__file__.split(os.sep)[:-1], os.sep)
-    for root, dirs, files in os.walk('openopt'+os.sep +'solvers'):
-        #for root, dirs, files in os.walk(os.path.dirname(file)+os.sep+'solvers'):
-        rd = root.split(os.sep)
-        if '.svn' in rd: continue
-        rd = rd[rd.index('solvers')+1:]
-        for file in files:
-            if len(file)>6 and file[-6:] == '_oo.py':
-                solverPaths[file[:-6]] = string.join(rd,'.') + '.'+file[:-3]
-    f = open('solverPaths.py', 'w')
-    f.write('solverPaths = ' + str(solverPaths))
-    f.close()
-    shutil.move('solverPaths.py', 'openopt' + os.sep + 'kernel' + os.sep + 'solverPaths.py')
+#    solverPaths = {}
+#    #File = string.join(__file__.split(os.sep)[:-1], os.sep)
+#    for root, dirs, files in os.walk('openopt'+os.sep +'solvers'):
+#        #for root, dirs, files in os.walk(os.path.dirname(file)+os.sep+'solvers'):
+#        rd = root.split(os.sep)
+#        if '.svn' in rd: continue
+#        rd = rd[rd.index('solvers')+1:]
+#        for file in files:
+#            if len(file)>6 and file[-6:] == '_oo.py':
+#                solverPaths[file[:-6]] = string.join(rd,'.') + '.'+file[:-3]
+#    f = open('solverPaths.py', 'w')
+#    f.write('solverPaths = ' + str(solverPaths))
+#    f.close()
+#    shutil.move('solverPaths.py', 'openopt' + os.sep + 'kernel' + os.sep + 'solverPaths.py')
 
 
 

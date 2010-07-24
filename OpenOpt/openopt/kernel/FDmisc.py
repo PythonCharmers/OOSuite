@@ -207,7 +207,6 @@ def setStartVectorAndTranslators(p):
         return result
         
     p._getPattern = getPattern
-    p.oovars = optVars # Where it is used?
     p.optVars, p.fixedVars = optVars, fixedVars
     p._point2vector, p._vector2point = point2vector, vector2point
     p._pointDerivative2array = pointDerivative2array

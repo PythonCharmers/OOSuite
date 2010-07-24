@@ -1,8 +1,4 @@
-try:
-    from solverPaths import solverPaths
-except:
-    pass
-
+import string, os
 from oologfcn import OpenOptException
 from numpy import zeros, bmat, hstack, vstack, ndarray, copy, where, prod, asarray, atleast_1d
 try:
@@ -41,7 +37,17 @@ except:
 DenseMatrixConstructor = lambda *args, **kwargs: zeros(*args, **kwargs)
 
 ##################################################################
+solverPaths = {}
 def getSolverFromStringName(p, solver_str):
+    if len(solverPaths) == 0:
+        f = string.join(__file__.split(os.sep)[:-2], os.sep)+os.sep+'solvers'
+        for root, dirs, files in os.walk(f):
+            rd = root.split(os.sep)
+            if '.svn' in rd: continue
+            rd = rd[rd.index('solvers')+1:]
+            for file in files:
+                if file.endswith('_oo.py'):
+                    solverPaths[file[:-6]] = string.join(rd,'.') + '.'+file[:-3]
     if solver_str not in solverPaths:
         p.err('incorrect solver is called, maybe the solver "' + solver_str +'" is not installed. Also, maybe you have forgot to use "python setup.py install" after updating OpenOpt from subversion repository')
     if p.debug:
@@ -49,7 +55,7 @@ def getSolverFromStringName(p, solver_str):
     else:
         try:
             solverClass = getattr(my_import('openopt.solvers.'+solverPaths[solver_str]), solver_str)
-        except:
+        except ImportError:
             p.err('incorrect solver is called, maybe the solver "' + solver_str +'" require its installation, check http://www.openopt.org/%s or try p._solve() for more details' % p.probType)
     return solverClass()
 
