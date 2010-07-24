@@ -335,6 +335,7 @@ def NLP(*args, **kwargs):
     box-bounded:
         scipy_lbfgsb, scipy_tnc - require scipy installed
         bobyqa - doesn't use derivatives; requires http://openopt.org/nlopt installed
+        ptn, slmvm1, slmvm2 - require http://openopt.org/nlopt installed
     all constraints:
         ralg
         ipopt (requires ipopt + pyipopt installed)
