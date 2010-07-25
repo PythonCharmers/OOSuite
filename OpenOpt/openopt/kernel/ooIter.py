@@ -111,7 +111,7 @@ def ooIter(p, *args,  **kwargs):
     
     if p.isFinished: p.finalIterFcnFinished = True
     if p.istop and not p.solver.iterfcnConnected and not p.isFinished and not p.solver.__cannotHandleExceptions__:
-        p.debugmsg('exit solver via exception')
+        p.debugmsg('exit solver via exception; istop=%d' % p.istop)
         raise isSolved
 
 

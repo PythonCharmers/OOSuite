@@ -11,6 +11,7 @@ class baseSolver:
     __solver__ = "Undefined. If you are a user and got the message, inform developers please."
     __homepage__ = 'Undefined. Use web search'
     __info__ = 'None'
+    _requiresBestPointDetection = False
 
     """__cannotHandleExceptions__  is
     True for ipopt and mb some others,
@@ -44,13 +45,16 @@ class baseSolver:
             p.xk, p.fk = point.x, point.f()
             p.rk, p.rtk, p.rik = point.mr(True)
             p.nNaNs = point.nNaNs()
+            if p.solver._requiresBestPointDetection and (p.iter == 0 or point.betterThan(p._bestPoint)): p._bestPoint = point
         else:
             if len(args)>0: p.xk = args[0]
             elif 'xk' in kwargs.keys(): p.xk = kwargs['xk']
             elif not hasattr(p, 'xk'): p.err('iterfcn must get x value, if you see it inform oo developers')
             if p._baseClassName == 'NonLin': 
                 p.nNaNs = len(where(isnan(p.c(p.xk)))[0]) + len(where(isnan(p.h(p.xk)))[0])
-
+            if p.solver._requiresBestPointDetection:
+                currPoint = p.point(p.xk)
+                if p.iter == 0 or currPoint.betterThan(p._bestPoint): p._bestPoint = currPoint
             if len(args)>1: p.fk = args[1]
             elif 'fk' in kwargs.keys(): p.fk = kwargs['fk']
             else: fArg = False
@@ -96,6 +100,6 @@ class baseSolver:
         if p.invertObjFunc: v = -v
 
         p.iterValues.f.append(v)
-
         
+
 

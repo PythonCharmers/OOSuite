@@ -90,9 +90,13 @@ def NLOPT_AUX(p, solver, opts=None):
     #x0[x0>p.ub] = p.ub[x0>p.ub] - 1e-15*min((1.0, abs(p.ub[x0>p.ub])))
 #    if p.solver.__name__ == 'auglag':
 #        opt.set_local_optimizer('mma')
-    x = opt.optimize(x0.tolist()).copy()
-    if p.point(x).betterThan(p.point(p.xk)):
-        p.xk = x
+    try:
+        x = opt.optimize(x0.tolist()).copy()
+        #if p.point(x).betterThan(p.point(p.xk)):
+            #p.xk = x
+    except:
+        pass
+    p.xk = p._bestPoint.x
         #x = p.xk
         #p.iterfcn(x)
     
