@@ -157,8 +157,7 @@ class residuals:
                    #r.res_lb * lm.res_lb + r.res_ub * lm.res_ub
 
     def isFeas(self, x):
-        if hasattr(self, 'isNaNInConstraintsAllowed') and not self.isNaNInConstraintsAllowed and \
-        (any(isnan(self._get_nonLinEq_residuals(x))) or any(isnan(self._get_nonLinInEq_residuals(x)))):
+        if any(isnan(self._get_nonLinEq_residuals(x))) or any(isnan(self._get_nonLinInEq_residuals(x))):
             return False
         is_X_finite = all(isfinite(x))
         is_ConTol_OK = self.getMaxResidual(x) <= self.contol

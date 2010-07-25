@@ -524,7 +524,6 @@ class Args:
 
 class NonLinProblem(baseProblem, nonLinFuncs, Args):
     _baseClassName = 'NonLin'
-    isNaNInConstraintsAllowed = False
     diffInt = ProbDefaults['diffInt']        #finite-difference gradient aproximation step
     #non-linear constraints
     c = None # c(x)<=0

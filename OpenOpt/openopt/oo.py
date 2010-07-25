@@ -259,8 +259,6 @@ def NLP(*args, **kwargs):
     b, beq: corresponding vectors of lengthes m1, m2
     lb, ub: vectors of length n subjected to lb <= x <= ub constraints, may include +/- inf values
 
-    isNaNInConstraintsAllowed = {False} | True : is nan (not a number) allowed in optim point for non-linear constraints.
-
     iprint = {10}: print text output every <iprint> iteration
     goal = {'minimum'} | 'min' | 'maximum' | 'max' - minimize or maximize objective function
     diffInt = {1e-7} : finite-difference gradient aproximation step, scalar or vector of length nVars

@@ -289,14 +289,14 @@ class Point:
         contol = self.p.contol
         if altLinInEq:
             if hasattr(self, '_mr_alt'):
-                if self._mr_alt > contol or (not self.p.isNaNInConstraintsAllowed and self.nNaNs() != 0): return False
+                if self._mr_alt > contol or self.nNaNs() != 0: return False
             else:
                 #TODO: simplify it!
                 #for fn in residuals: (...)
                 if self.__all_lin_ineq() > contol: return False
         else:
             if hasattr(self, '_mr'):
-                if self._mr > contol or (not self.p.isNaNInConstraintsAllowed and self.nNaNs() != 0): return False
+                if self._mr > contol or self.nNaNs() != 0: return False
             else:
                 #TODO: simplify it!
                 #for fn in residuals: (...)
