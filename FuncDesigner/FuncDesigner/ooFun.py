@@ -6,7 +6,14 @@ from numpy.linalg import norm
 from misc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scipyInstalled
 from copy import deepcopy
 from ooPoint import ooPoint
-Copy = lambda arg: arg.copy() if hasattr(arg, 'copy') else copy(arg)
+
+def Copy(elem, useSparse):
+    # useSparse can be changed while saved data is involved
+    if useSparse is False and isspmatrix(elem):
+        return elem.copy().toarray()
+    elif hasattr(elem, 'copy'): return elem.copy()
+    else: return copy(elem)
+    
 
 try:
     from DerApproximator import get_d1, check_d1
@@ -688,7 +695,7 @@ class oofun:
         if cond_same_point:
             self.same_d += 1
             #return deepcopy(self.d_val_prev)
-            return dict([(key, Copy(val)) for key, val in self.d_val_prev.items()])
+            return dict([(key, Copy(val, useSparse)) for key, val in self.d_val_prev.items()])
         else:
             self.evals_d += 1
 
@@ -733,15 +740,12 @@ class oofun:
                             t2 = val
                         else:
                             t1, t2 = self._considerSparse(t1, val)
-                        cond_2 = t1.ndim > 1 or t2.ndim > 1
-                        if cond_2:
+                        if t1.ndim > 1 or t2.ndim > 1:
                             # warning! t1,t2 can be sparse matrices, so I don't use t = atleast_2d(t) directly
-                            #if t1.ndim < 2: t1 = atleast_2d(t1) 
                             if t2.ndim < 2: 
                                 assert t1.ndim > 1, 'error in FuncDesigner kernel, inform developers'
                                 if t1.shape[1] != t2.shape[0]:
                                     t2 = t2.reshape(1, -1)
-                                #t2 = atleast_2d(t2)
                         else:
                             # hence these are ndarrays
                             if self(x).size > 1:
@@ -752,7 +756,8 @@ class oofun:
                                 t2 = t2.reshape(-1, 1)
                         
                         if not (isinstance(t1,  ndarray) and isinstance(t2,  ndarray)):
-                            if scipy is None:
+                            # CHECKME: is it trigger somewhere?
+                            if not scipyInstalled:
                                 self.pWarn(scipyAbsentMsg)
                                 rr = atleast_1d(dot(t1, t2))
                             else:
@@ -782,10 +787,10 @@ class oofun:
                     else:
                         r[key] = rr
         
-        dp = dict([(key, Copy(value)) for key, value in r.items()])
+        dp = dict([(key, Copy(value, useSparse)) for key, value in r.items()])
         
         self.d_val_prev = dp
-        self.d_key_prev = dict([(elem, Copy(x[elem])) for elem in dep])
+        self.d_key_prev = dict([(elem, Copy(x[elem], useSparse=False)) for elem in dep])
         return r
 
     # TODO: handle 2**15 & 0.25 as parameters
