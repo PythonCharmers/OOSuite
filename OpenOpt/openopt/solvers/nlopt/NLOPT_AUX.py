@@ -18,8 +18,14 @@ def NLOPT_AUX(p, solver, opts=None):
         opt2 = nlopt.opt(solver, p.n)
         setStopCriteria(opt2, p, reduce=10.0)
         opt.set_local_optimizer(opt2)
+    elif solver == nlopt.G_MLSL_LDS:
+        opt = nlopt.opt(nlopt.G_MLSL_LDS, p.n)
+        opt2 = nlopt.opt(nlopt.LD_TNEWTON_PRECOND_RESTART, p.n)
+        setStopCriteria(opt2, p, reduce=10.0)
+        opt.set_local_optimizer(opt2)        
     else:
         opt = nlopt.opt(solver, p.n)
+    
     
     if opts is not None:
         for option, val in opts.items():
