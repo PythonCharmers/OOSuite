@@ -729,7 +729,10 @@ class oofun:
                     if prod(t1.shape)==1 or prod(val.shape)==1:
                         rr = t1 * val
                     else:
-                        t1, t2 = self._considerSparse(t1, val)
+                        if useSparse is False:
+                            t2 = val
+                        else:
+                            t1, t2 = self._considerSparse(t1, val)
                         cond_2 = t1.ndim > 1 or t2.ndim > 1
                         if cond_2:
                             # warning! t1,t2 can be sparse matrices, so I don't use t = atleast_2d(t) directly
