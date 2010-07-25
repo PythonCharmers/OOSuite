@@ -7,13 +7,13 @@ from misc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scipyI
 from copy import deepcopy
 from ooPoint import ooPoint
 
-def Copy(elem, useSparse):
-    # useSparse can be changed while saved data is involved
-    if useSparse is False and isspmatrix(elem):
-        return elem.copy().toarray()
-    elif hasattr(elem, 'copy'): return elem.copy()
-    else: return copy(elem)
-    
+#def Copy(elem, useSparse):
+#    # useSparse can be changed while saved data is involved
+#    if useSparse is False and isspmatrix(elem):
+#        return elem.copy().toarray()
+#    elif hasattr(elem, 'copy'): return elem.copy()
+#    else: return copy(elem)
+Copy = lambda arg: arg.copy() if hasattr(arg, 'copy') else copy(arg)
 
 try:
     from DerApproximator import get_d1, check_d1
@@ -657,6 +657,7 @@ class oofun:
                     if oov not in r or (fixedVars is not None and oov in fixedVars):
                         continue
                     tmp = r[oov]
+                    if useSparse == False and hasattr(tmp, 'toarray'): tmp = tmp.toarray()
                     if not exactShape and min(tmp.shape) == 1 and not isspmatrix(tmp):
                         tmp = tmp.flatten()
                     rr[oov] = tmp
@@ -695,7 +696,7 @@ class oofun:
         if cond_same_point:
             self.same_d += 1
             #return deepcopy(self.d_val_prev)
-            return dict([(key, Copy(val, useSparse)) for key, val in self.d_val_prev.items()])
+            return dict([(key, Copy(val)) for key, val in self.d_val_prev.items()])
         else:
             self.evals_d += 1
 
@@ -787,10 +788,10 @@ class oofun:
                     else:
                         r[key] = rr
         
-        dp = dict([(key, Copy(value, useSparse)) for key, value in r.items()])
+        dp = dict([(key, Copy(value)) for key, value in r.items()])
         
         self.d_val_prev = dp
-        self.d_key_prev = dict([(elem, Copy(x[elem], useSparse=False)) for elem in dep])
+        self.d_key_prev = dict([(elem, Copy(x[elem])) for elem in dep])
         return r
 
     # TODO: handle 2**15 & 0.25 as parameters
