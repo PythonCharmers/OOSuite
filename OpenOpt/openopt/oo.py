@@ -467,7 +467,7 @@ def GLP(*args, **kwargs):
         galileo - a GA-based solver by Donald Goodman, requires finite lb <= x <= ub
         pswarm (requires PSwarm installed), license: BSD, can handle Ax<=b, requires finite search area
         de (this is temporary name, will be changed till next OO release v. 0.22), license: BSD, requires finite lb <= x <= ub, can handle Ax<=b, c(x) <= 0. The solver is based on differential evolution and made by Stepan Hlushak.
-        stogo - can use derivatives; requires http://openopt.org/nlopt installed
+        stogo and mlsl - can use derivatives; require http://openopt.org/nlopt installed
         isres - can handle any constraints; requires http://openopt.org/nlopt installed
     """
     return CGLP(*args, **kwargs)
