@@ -75,6 +75,7 @@ class oofun:
     _broadcast_id = 0
     _point_id = 0
     _point_id1 = 0
+    #_c = 0.0
 
     pWarn = lambda self, msg: pWarn(msg)
     def disp(self, msg): 
@@ -163,8 +164,6 @@ class oofun:
         if not isinstance(other, (oofun, list, ndarray, tuple)) and not isscalar(other):
             raise FuncDesignerException('operation oofun_add is not implemented for the type ' + str(type(other)))
             
-        
-            
         # TODO: check for correct sizes during f, not only f.d 
     
         def aux_d(x, y):
@@ -181,8 +180,18 @@ class oofun:
             r = oofun(lambda x, y: x+y, [self, other], d = (lambda x, y: aux_d(x, y), lambda x, y: aux_d(y, x)))
         else:
             other = array(other, 'float')
+#            if other.size == 1:
+#                #r = oofun(lambda *ARGS, **KWARGS: None, input = self.input)
+#                r = oofun(lambda a: a+other, self)
+#                #r._D = lambda *args,  **kwargs: self._D(*args,  **kwargs)
+#                r.d = lambda x: aux_d(x, other)
+#                #assert len(r._getDep())>0
+#                #r._c = self._c + other
+#            else:
             r = oofun(lambda a: a+other, self)
             r.d = lambda x: aux_d(x, other)
+            r._getFuncCalcEngine = lambda *args,  **kwargs: self._getFuncCalcEngine(*args,  **kwargs) + other
+            
         
 #            if other.size == 1:  # TODO: or other.size == self.size for fixed sizes
 #                r.D, r._D, r.d = self.D, self._D, self.d
@@ -475,10 +484,8 @@ class oofun:
 
     """                                             getInput                                              """
     def _getInput(self, x):
-        if type(self.input) not in (list, tuple):
-            self.input = [self.input]
-#        #self.inputOOVarTotalLength = 0
-        return tuple([atleast_1d(item(x)) if isinstance(item, oofun) else atleast_1d(item) for item in self.input])
+#        self.inputOOVarTotalLength = 0
+        return tuple([atleast_1d(item._getFuncCalcEngine(x)) if isinstance(item, oofun) else asarray(item) for item in self.input])
 
     """                                                getDep                                             """
     def _getDep(self):
@@ -529,8 +536,8 @@ class oofun:
         if (len(kwargs) == 1 and 'name' not in kwargs) or len(kwargs) > 1:
             raise FuncDesignerException('only "name" is allowed for oofun keyword arguments')
         if len(args) != 0:
-            if not isinstance(args[0], str):
-                x = args[0]
+            if type(args[0]) != str:
+                assert not isinstance(args[0], oofun), "you can't invoke oofun on another one oofun"
             else:
                 self.name = args[0]
                 return self
@@ -538,7 +545,7 @@ class oofun:
                 self.name = kwargs['name']
                 return self
                 
-        assert not isinstance(x, oofun), "you can't invoke oofun on another one oofun"
+        return self._getFuncCalcEngine(*args, **kwargs)
         
         #!!!!!!!!!!!!!!!!!!! TODO: HANDLE FIXED OOFUNCS
         
@@ -548,23 +555,22 @@ class oofun:
 #                return atleast_1d(copy(self.f_val_prev))
 #            else:
 #                return deepcopy(self.f_val_prev)
-            
+    def _getFuncCalcEngine(self, *args, **kwargs):
         dep = self._getDep()
-        
-        CondSamePointByID = True if isinstance(x, ooPoint) and self._point_id == x._id else False
+        x = args[0]
+        CondSamePointByID = True if type(x) == ooPoint and self._point_id == x._id else False
 
-        cond_same_point = hasattr(self, 'f_key_prev') and \
-        (CondSamePointByID or (self.isCostly and all([array_equal(x[elem], self.f_key_prev[elem.name]) for elem in dep])))
+        cond_same_point = CondSamePointByID or \
+        (self.isCostly and 'f_key_prev' in self.__dict__  and all([array_equal(x[elem], self.f_key_prev[elem.name]) for elem in dep]))
+        
         if cond_same_point:
-            #print 'same'
             self.same += 1
-            if hasattr(self.f_val_prev, 'copy'):
-                return self.f_val_prev.copy()
-            elif isscalar(self.f_val_prev):
+            if isscalar(self.f_val_prev):
                 return copy(self.f_val_prev)
+            elif hasattr(self.f_val_prev, 'copy'):
+                return self.f_val_prev.copy()
             else: 
                 return deepcopy(self.f_val_prev) # Is it used somewhere?
-        #print 'other'
         self.evals += 1
         
         if type(self.args) != tuple:
@@ -573,23 +579,24 @@ class oofun:
         if self.args != ():
             Input += self.args
         tmp = self.fun(*Input)
-        if isinstance(tmp, list) or isinstance(tmp, tuple):
+        if isinstance(tmp, (list, tuple)):
             tmp = hstack(tmp)
+        
+        #if self._c != 0.0: tmp += self._c
         
         #self.outputTotalLength = ([asarray(elem).size for elem in self.fun(*Input)])#self.f_val_prev.size # TODO: omit reassigning
         
-        if isinstance(x, ooPoint): 
+        if type(x) == ooPoint: 
             self._point_id = x._id
         
-        if (self.isCostly or isinstance(x, ooPoint)) and self.input[0] is not None:
+        if (type(x) == ooPoint or self.isCostly) and self.input[0] is not None:
             # TODO: simplify it
             self.f_val_prev = tmp
             self.f_key_prev = dict([(elem.name, copy(x[elem])) for elem in dep])
-                
-            if isinstance(self.f_val_prev, ndarray) or isscalar(self.f_val_prev):
+            
+            if hasattr(self.f_val_prev, 'copy'): return self.f_val_prev.copy()
+            elif isscalar(self.f_val_prev):
                 return copy(self.f_val_prev)
-            elif isspmatrix(self.f_val_prev):
-                return self.f_val_prev.copy()
             else:
                 return deepcopy(self.f_val_prev) # Is it used somewhere?
         else:
