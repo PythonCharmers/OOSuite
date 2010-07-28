@@ -21,25 +21,20 @@ class oovar(oofun):
             kwargs['name'] = name
         oofun.__init__(self, lambda *ARGS: None, *args, **kwargs)
         
-        
-    def requireSize(self, size):
-        self.size = size
-
-    def _getFunc(self, x):
-        s = 'for oovar ' + self.name + \
-                " the point involved doesn't contain niether name nor the oovar instance. Maybe you try to get function value or derivative in a point where value for an oovar is missing"
+    def _getFuncCalcEngine(self, x):
         if isinstance(x, dict):
             if self in x:
-                r = atleast_1d(asfarray(x[self]))
+                r = asfarray(x[self])
             elif self.name in x:
-                r = atleast_1d(asfarray(x[self.name]))
+                r = asfarray(x[self.name])
             else:
+                s = 'for oovar ' + self.name + \
+                " the point involved doesn't contain niether name nor the oovar instance. Maybe you try to get function value or derivative in a point where value for an oovar is missing"
                 raise FuncDesignerException(s)
+        elif hasattr(x, 'xf'):
+            r = atleast_1d(asfarray(x.xf[self]))
         else:
-            try:
-                r = atleast_1d(asfarray(x.xf[self]))
-            except:
-                raise FuncDesignerException(s)
+            raise FuncDesignerException('Incorrect data type (%s) while obtaining oovar %s value' %(type(x), self.name))
         Size = r.size
         if isscalar(self.size) and Size != self.size:
             s = 'incorrect size for oovar %s: %d is required, %d is obtained' % (self.name, self.size, Size)

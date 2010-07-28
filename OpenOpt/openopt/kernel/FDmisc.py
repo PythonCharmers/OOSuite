@@ -103,7 +103,7 @@ def setStartVectorAndTranslators(p):
         involveSparse = useSparse
         if useSparse == 'auto':
             nTotal = n * funcLen#sum([prod(elem.shape) for elem in pointDerivarive.values()])
-            nNonZero = sum([(elem.size if isspmatrix(elem) else len(flatnonzero(elem))) for elem in pointDerivarive.values()])
+            nNonZero = sum([(elem.size if isspmatrix(elem) else len(flatnonzero(asarray(elem)))) for elem in pointDerivarive.values()])
             involveSparse = 4*nNonZero < nTotal and nTotal > 1000
         # 2. Create init result matrix
 #        if funcLen == 1:
@@ -170,7 +170,7 @@ def setStartVectorAndTranslators(p):
                 indexes = oovarsIndDict[key]
                 if not involveSparse and isspmatrix(val): val = val.A
                 if r.ndim == 1:
-                    r[indexes[0]:indexes[1]] = val.flatten()
+                    r[indexes[0]:indexes[1]] = val.flatten() if type(val) == ndarray else val
                 else:
                     r[:, indexes[0]:indexes[1]] = val.reshape(funcLen, prod(val.shape)/funcLen)
             if useSparse is True and funcLen == 1: 

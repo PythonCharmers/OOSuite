@@ -191,6 +191,7 @@ class oofun:
             r = oofun(lambda a: a+other, self)
             r.d = lambda x: aux_d(x, other)
             r._getFuncCalcEngine = lambda *args,  **kwargs: self._getFuncCalcEngine(*args,  **kwargs) + other
+            if other.size == 1 and not self.is_oovar: r._D = lambda *args,  **kwargs: self._D(*args,  **kwargs) 
             
         
 #            if other.size == 1:  # TODO: or other.size == self.size for fixed sizes

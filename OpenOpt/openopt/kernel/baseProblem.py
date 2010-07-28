@@ -293,6 +293,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 D_kwargs = {'fixedVars':self.fixedVars}
             D_kwargs['useSparse'] = self.useSparse
             D_kwargs['diffVarsID'] = self._FDVarsID
+            D_kwargs['exactShape'] = True
             
             self._D_kwargs = D_kwargs
             setStartVectorAndTranslators(self)
