@@ -13,7 +13,7 @@ S &= [2*c+a-10 < 1500+0.1*b, a-10<150, c<300, a[0]>8.9, c>-100,
 for i in xrange(1000):
     S &= b+i*c > 10*i + sum(a)
 
-r = S.minimize(f, startPoint, solver='lpSolve') 
+r = S.minimize(f, startPoint, solver='glpk') 
 # you could use S.maximize as well
 
 # default LP solvers are (sequentially, if installed): lpSolve, glpk, cvxopt_lp, lp:ipopt, lp:algencan, lp:scipy_slsqp, lp:ralg
@@ -33,7 +33,7 @@ a_opt,  b_opt, c_opt = r(a, b, c)
 """
 Expected output:
 ...
-Solver:   Time Elapsed = 0.07 	CPU Time Elapsed = 0.01
-objFunValue: 45.883673 (feasible, max(residuals/requiredTolerances) = 0)
-{a: array([  8.9, -10. ]), b: array([ 8.9]), c: array([ 9.79591837])}
+Solver:   Time Elapsed = 0.02 	CPU Time Elapsed = 0.02
+objFunValue: 46.65996 (feasible, max(residuals/requiredTolerances) = 0)
+{a: array([  8.9, -10. ]), b: array([ 8.9]), c: array([ 9.98998999])}
 """
