@@ -1,5 +1,5 @@
 # Handling of FuncDesigner probs
-from numpy import empty, hstack, vstack, asfarray, all, atleast_1d, cumsum, asarray, zeros,  atleast_2d, ndarray, prod, ones, copy, nan, flatnonzero
+from numpy import empty, hstack, vstack, asfarray, all, atleast_1d, cumsum, asarray, zeros,  atleast_2d, ndarray, prod, ones, copy, nan, flatnonzero, array_equal
 from nonOptMisc import scipyInstalled, Hstack, Vstack, Find, isspmatrix, SparseMatrixConstructor, DenseMatrixConstructor, Bmat
 
 def setStartVectorAndTranslators(p):
@@ -56,12 +56,13 @@ def setStartVectorAndTranslators(p):
     #vector2point = lambda x: oopoint(startDictData + [(oov, x[oovar_indexes[i]:oovar_indexes[i+1]]) for i, oov in enumerate(optVars)])
     p._FDtranslator = {'prevX':nan}
     def vector2point(x): 
-        if all(x==p._FDtranslator['prevX']):
+        x = atleast_1d(asfarray(x)).copy()
+        if array_equal(x, p._FDtranslator['prevX']):
             return p._FDtranslator['prevVal']
             
         # without copy() ipopt and probably others can replace it by noise after closing
         r = oopoint(startDictData + \
-                    [(oov, atleast_1d(x)[oovar_indexes[i]:oovar_indexes[i+1]].copy()) for i, oov in enumerate(optVars)])
+                    [(oov, x[oovar_indexes[i]:oovar_indexes[i+1]]) for i, oov in enumerate(optVars)])
         
         p._FDtranslator['prevVal'] = r 
         p._FDtranslator['prevX'] = copy(x)
