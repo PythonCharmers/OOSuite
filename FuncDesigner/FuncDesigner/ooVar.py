@@ -1,6 +1,6 @@
 # created by Dmitrey
 
-from numpy import nan, asarray, isfinite, empty, zeros, inf, any, array, prod, atleast_1d, asfarray, isscalar
+from numpy import nan, asarray, isfinite, empty, zeros, inf, any, array, prod, atleast_1d, asfarray, isscalar, ndarray
 from misc import FuncDesignerException, checkSizes
 from ooFun import oofun
 
@@ -23,8 +23,9 @@ class oovar(oofun):
         
     def _getFuncCalcEngine(self, x):
         if isinstance(x, dict):
-            if self in x:
-                r = asfarray(x[self])
+            tmp = x.get(self, None)
+            if tmp is not None:
+                r = tmp if type(tmp)==ndarray else asfarray(tmp)
             elif self.name in x:
                 r = asfarray(x[self.name])
             else:
@@ -32,6 +33,7 @@ class oovar(oofun):
                 " the point involved doesn't contain niether name nor the oovar instance. Maybe you try to get function value or derivative in a point where value for an oovar is missing"
                 raise FuncDesignerException(s)
         elif hasattr(x, 'xf'):
+            # TODO: possibility of squeezing
             r = atleast_1d(asfarray(x.xf[self]))
         else:
             raise FuncDesignerException('Incorrect data type (%s) while obtaining oovar %s value' %(type(x), self.name))

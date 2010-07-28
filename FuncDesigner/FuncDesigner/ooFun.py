@@ -706,9 +706,6 @@ class oofun:
         if self.discrete: 
             return {}
             #raise FuncDesignerException('The oofun or oovar instance has been declared as discrete, no derivative is available')
-#        if Vars is not None and fixedVars is not None:
-#            raise FuncDesignerException('No more than one parameter from Vars and fixedVars is allowed')
-        
         
         CondSamePointByID = True if isinstance(x, ooPoint) and self._point_id1 == x._id else False
         sameDerivativeVariables = diffVarsID == self._lastDiffVarsID 
@@ -765,10 +762,11 @@ class oofun:
                 t1 = derivativeSelf[ac]
                 
                 for key, val in elem_d.items():
-                    if isscalar(val) or val.ndim < 2: val = atleast_2d(val)
-                    if prod(t1.shape)==1 or prod(val.shape)==1:
+                    #if isscalar(val) or val.ndim < 2: val = atleast_2d(val)
+                    if isscalar(val) or isscalar(t1) or prod(t1.shape)==1 or prod(val.shape)==1:
                         rr = t1 * val
                     else:
+                        if val.ndim < 2: val = atleast_2d(val)
                         if useSparse is False:
                             t2 = val
                         else:
@@ -781,7 +779,7 @@ class oofun:
                                     t2 = t2.reshape(1, -1)
                         else:
                             # hence these are ndarrays
-                            if self(x).size > 1:
+                            if self._getFuncCalcEngine(x).size > 1:
                                 t1 = t1.reshape(-1, 1)
                                 t2 = t2.reshape(1, -1)
                             else:
@@ -873,7 +871,7 @@ class oofun:
                         if not DerApproximatorIsInstalled:
                             raise FuncDesignerException('To perform gradients check you should have DerApproximator installed, see http://openopt.org/DerApproximator')
                         derivativeSelf.append(get_d1(self.fun, Input, diffInt=self.diffInt, stencil = self.stencil, \
-                                                     args=self.args, varForDifferentiation = i, pointVal = self(x), exactShape = True))
+                                                     args=self.args, varForDifferentiation = i, pointVal = self._getFuncCalcEngine(x), exactShape = True))
                     else:
                         # !!!!!!!!!!!!!! TODO: add check for user-supplied derivative shape
                         tmp = deriv(*Input)
@@ -930,8 +928,10 @@ class oofun:
             if not DerApproximatorIsInstalled:
                 raise FuncDesignerException('To perform this operation you should have DerApproximator installed, see http://openopt.org/DerApproximator')
                 
-            derivativeSelf = get_d1(self.fun, Input, diffInt=self.diffInt, stencil = self.stencil, args=self.args, pointVal = self(x), exactShape = True)
-            if type(derivativeSelf) != list:
+            derivativeSelf = get_d1(self.fun, Input, diffInt=self.diffInt, stencil = self.stencil, args=self.args, pointVal = self._getFuncCalcEngine(x), exactShape = True)
+            if type(derivativeSelf) == tuple:
+                derivativeSelf = list(derivativeSelf)
+            elif type(derivativeSelf) != list:
                 derivativeSelf = [derivativeSelf]
         
         assert all([elem.ndim > 1 for elem in derivativeSelf])
