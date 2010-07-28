@@ -253,7 +253,7 @@ class oofun:
             r._getFuncCalcEngine = lambda *args,  **kwargs: self._getFuncCalcEngine(*args,  **kwargs) / other
             r.d = lambda x: 1.0/asfarray(other) if x.size == 1 else Diag(ones(x.size)/other)
 #            if other.size == 1 or 'size' in self.__dict__ and self.size in (1, other.size):
-            if not self.is_oovar: 
+            if not self.is_oovar and other.size == 1:
                 r._D = lambda *args, **kwargs: dict([(key, value/other) for key, value in self._D(*args, **kwargs).items()])
                 def _d(*args, **kwargs):
                     raise FuncDesignerException('bug in FD kernel, inform developers')
@@ -302,8 +302,8 @@ class oofun:
             other = array(other, 'float')
             r = oofun(lambda x: x*other, self)# TODO: involve sparsity if possible!
             r._getFuncCalcEngine = lambda *args,  **kwargs: other * self._getFuncCalcEngine(*args,  **kwargs)
-            r.d = lambda x: aux_d(x, asfarray(other))
-            if not self.is_oovar:
+            r.d = lambda x: aux_d(x, other)
+            if not self.is_oovar and other.size == 1:
                 r._D = lambda *args, **kwargs: dict([(key, other*value) for key, value in self._D(*args, **kwargs).items()])
                 def _d(*args, **kwargs):
                     raise FuncDesignerException('bug in FD kernel, inform developers')
