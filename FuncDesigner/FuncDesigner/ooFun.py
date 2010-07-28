@@ -702,7 +702,9 @@ class oofun:
             
         if self.input[0] is None: return {} # fixed oofun. TODO: implement input = [] properly
             
-        if self.discrete: raise FuncDesignerException('The oofun or oovar instance has been declared as discrete, no derivative is available')
+        if self.discrete: 
+            return {}
+            #raise FuncDesignerException('The oofun or oovar instance has been declared as discrete, no derivative is available')
 #        if Vars is not None and fixedVars is not None:
 #            raise FuncDesignerException('No more than one parameter from Vars and fixedVars is allowed')
         
