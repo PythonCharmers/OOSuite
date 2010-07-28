@@ -191,13 +191,10 @@ class oofun:
             r = oofun(lambda a: a+other, self)
             r.d = lambda x: aux_d(x, other)
             r._getFuncCalcEngine = lambda *args,  **kwargs: self._getFuncCalcEngine(*args,  **kwargs) + other
-            if other.size == 1 and not self.is_oovar: r._D = lambda *args,  **kwargs: self._D(*args,  **kwargs) 
             
-        
-#            if other.size == 1:  # TODO: or other.size == self.size for fixed sizes
-#                r.D, r._D, r.d = self.D, self._D, self.d
-#            else:
-            
+            # TODO: get rid of "not self.is_oovar"
+            if (other.size == 1 or ('size' in self.__dict__ and self.size == other.size)) and not self.is_oovar: 
+                r._D = lambda *args,  **kwargs: self._D(*args,  **kwargs) 
                 
 # TODO: create linear field with operators +, -, *(non-oofunc), /(non-oofunc)
         if self.is_linear and (not isinstance(other, oofun) or other.is_linear): 
@@ -210,9 +207,15 @@ class oofun:
     
     # overload "-a"
     def __neg__(self): 
-        return oofun(lambda a: -a, self, \
-                     d = lambda a: -1.0 if a.size == 1 else -Eye(a.size), \
+        r = oofun(lambda a: -a, self, \
+                     d = lambda a: -Eye(a.size), \
                      is_linear = True if self.is_linear else False)
+        r._getFuncCalcEngine = lambda *args,  **kwargs: -self._getFuncCalcEngine(*args,  **kwargs)
+        def _D(*args, **kwargs):
+            r = self._D(*args, **kwargs)
+            return dict([(key, -value) for key, value in r.items()])
+        r._D = _D
+        return r
         
     # overload "a-b"
     def __sub__(self, other):
@@ -245,8 +248,17 @@ class oofun:
                 return r
             r.d = (aux_dx, aux_dy)
         else:
-            r = oofun(lambda a: a/asfarray(other), self)# TODO: involve sparsity if possible!
-            r.d = lambda x: 1.0/asfarray(other) if x.size == 1 else Diag(ones(x.size)/asfarray(other))
+            other = array(other,'float')
+            r = oofun(lambda a: a/other, self)# TODO: involve sparsity if possible!
+            r._getFuncCalcEngine = lambda *args,  **kwargs: self._getFuncCalcEngine(*args,  **kwargs) / other
+            r.d = lambda x: 1.0/asfarray(other) if x.size == 1 else Diag(ones(x.size)/other)
+#            if other.size == 1 or 'size' in self.__dict__ and self.size in (1, other.size):
+            if not self.is_oovar: 
+                r._D = lambda *args, **kwargs: dict([(key, value/other) for key, value in self._D(*args, **kwargs).items()])
+                def _d(*args, **kwargs):
+                    raise FuncDesignerException('bug in FD kernel, inform developers')
+                r.d = _d
+            
         if self.is_linear and not isinstance(other, oofun):
             r.is_linear = True
         #r.isCostly = True
@@ -287,8 +299,17 @@ class oofun:
             
             r.d = (lambda x, y: aux_d(x, y), lambda x, y: aux_d(y, x))
         else:
+            other = array(other, 'float')
             r = oofun(lambda x: x*other, self)# TODO: involve sparsity if possible!
+            r._getFuncCalcEngine = lambda *args,  **kwargs: other * self._getFuncCalcEngine(*args,  **kwargs)
             r.d = lambda x: aux_d(x, asfarray(other))
+            if not self.is_oovar:
+                r._D = lambda *args, **kwargs: dict([(key, other*value) for key, value in self._D(*args, **kwargs).items()])
+                def _d(*args, **kwargs):
+                    raise FuncDesignerException('bug in FD kernel, inform developers')
+                r.d = _d
+            #else:
+                #r.d = lambda x: aux_d(x, asfarray(other))
         if self.is_linear and not isinstance(other, oofun):
             r.is_linear = True
         #r.isCostly = True
