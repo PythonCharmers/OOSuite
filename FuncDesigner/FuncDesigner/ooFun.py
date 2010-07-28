@@ -1,7 +1,7 @@
 # created by Dmitrey
 
 from numpy import inf, asfarray, copy, all, any, empty, atleast_2d, zeros, dot, asarray, atleast_1d, empty, ones, ndarray, \
-where, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum, prod, nonzero, isnan
+where, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum, prod, nonzero, isnan, asscalar
 from numpy.linalg import norm
 from misc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scipyInstalled
 from copy import deepcopy
@@ -13,7 +13,7 @@ from ooPoint import ooPoint
 #        return elem.copy().toarray()
 #    elif hasattr(elem, 'copy'): return elem.copy()
 #    else: return copy(elem)
-Copy = lambda arg: arg.copy() if hasattr(arg, 'copy') else copy(arg)
+Copy = lambda arg: asscalar(arg) if type(arg)==ndarray and arg.size == 1 else arg.copy() if hasattr(arg, 'copy') else copy(arg)
 
 try:
     from DerApproximator import get_d1, check_d1
@@ -687,8 +687,9 @@ class oofun:
                         continue
                     tmp = r[oov]
                     if useSparse == False and hasattr(tmp, 'toarray'): tmp = tmp.toarray()
-                    if not exactShape and min(tmp.shape) == 1 and not isspmatrix(tmp):
-                        tmp = tmp.flatten()
+                    if not exactShape and not isspmatrix(tmp):
+                        if tmp.size == 1: tmp = asscalar(tmp)
+                        elif min(tmp.shape) == 1: tmp = tmp.flatten()
                     rr[oov] = tmp
                 return rr
             else:
@@ -698,7 +699,7 @@ class oofun:
     def _D(self, x, diffVarsID, Vars=None, fixedVars = None, useSparse = 'auto'):
         if self.is_oovar: 
             return {} if (fixedVars is not None and self in fixedVars) or (Vars is not None and self not in Vars) \
-            else {self.name:Eye(self(x).size) if useSparse is not False else eye(self(x).size)}
+            else {self:Eye(asarray(x[self].size))}
             
         if self.input[0] is None: return {} # fixed oofun. TODO: implement input = [] properly
             
