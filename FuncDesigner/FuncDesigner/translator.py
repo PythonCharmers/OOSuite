@@ -121,7 +121,7 @@ class FuncDesignerTranslator:
                 indexes = self.oovarsIndDict[key]
                 if not useSparse and isspmatrix(val): val = val.A
                 if r.ndim == 1:
-                    r[indexes[0]:indexes[1]] = val.flatten()
+                    r[indexes[0]:indexes[1]] = val if isscalar(val) else val.flatten()
                 else:
                     r[indexes[0]:indexes[1], :] = val.T
             if useSparse is True and funcLen == 1: 
