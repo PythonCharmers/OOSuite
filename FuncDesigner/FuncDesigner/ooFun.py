@@ -125,8 +125,7 @@ class oofun:
                     levels.append(elem._level)
             self._level = max(levels)+1
 
-    def __hash__(self):
-        return self._id
+    __hash__ = lambda self: self._id
     
     def named(self, name):
         s = """The function "named" is deprecated and will be removed in future FuncDesigner versions, 
@@ -144,19 +143,7 @@ class oofun:
             self.attachedConstraints.add(arg)
         return self
     
-   
-#    def _get_attached_constraints(self):
-#        return self.attachedConstraints
-        
-        # recursively!
-#        r = self.attachedConstraints
-#        for inp in self.input:
-#            if not isinstance(inp, oofun): continue
-#            r.update(inp.attachedConstraints)
-#        return r
-        
-    def __repr__(self):
-        return self.name
+    __repr__ = lambda self: self.name
         
     # overload "a+b"
     # @checkSizes
@@ -200,8 +187,7 @@ class oofun:
             r.is_linear = True
         return r
     
-    def __radd__(self, other):
-        return self.__add__(other)
+    __radd__ = lambda self, other: self.__add__(other)
     
     # overload "-a"
     def __neg__(self): 
@@ -212,14 +198,8 @@ class oofun:
         return r
         
     # overload "a-b"
-    def __sub__(self, other):
-        if isinstance(other, list) and type(other[0]) in (int, float):
-            return self + (-array(other, 'float'))
-        else:
-            return self + (-other)
-
-    def __rsub__(self, other):
-        return other + (-self)
+    __sub__ = lambda self, other: self + (-array(other, 'float')) if isinstance(other, list) and type(other[0]) in (int, float) else self + (-other)
+    __rsub__ = lambda self, other: other + (-self)
 
     # overload "a/b"
     def __div__(self, other):
@@ -300,8 +280,7 @@ class oofun:
         #r.isCostly = True
         return r
 
-    def __rmul__(self, other):
-        return self.__mul__(other)
+    __rmul__ = lambda self, other: self.__mul__(other)
 
     def __pow__(self, other):
         
@@ -335,11 +314,9 @@ class oofun:
         if isinstance(other, oofun): r.attach((other>0)('rpow_domain_%d'%r._id,  tol=-1e-7)) # TODO: if "other" is fixed oofun with integer value - omit this
         return r
 
-    def __xor__(self, other):
-        raise FuncDesignerException('For power of oofuncs use a**b, not a^b')
+    def __xor__(self, other): raise FuncDesignerException('For power of oofuns use a**b, not a^b')
         
-    def __rxor__(self, other):
-        raise FuncDesignerException('For power of oofuncs use a**b, not a^b')
+    def __rxor__(self, other): raise FuncDesignerException('For power of oofuns use a**b, not a^b')
         
     def __getitem__(self, ind): # overload for oofun[ind]
         assert not isinstance(ind, oofun), 'slicing by oofuns is unimplemented yet'
@@ -455,8 +432,8 @@ class oofun:
             r = NonLinearConstraint(self - other, lb=0.0) # do not perform check for other == 0, copy should be returned, not self!
         return r
 
-    def __ge__(self, other): # overload for >=
-        return self.__gt__(other)
+    # overload for >=
+    __ge__ = lambda self, other:  self.__gt__(other)
 
     # TODO: fix it for discrete problems like MILP
     def __lt__(self, other): # overload for <
@@ -470,12 +447,10 @@ class oofun:
             r = NonLinearConstraint(self - other, ub = 0.0) # do not perform check for other == 0, copy should be returned, not self!
         return r            
 
-
-    def __le__(self, other): # overload for <=
-        return self.__lt__(other)
+    # overload for <=
+    __le__ = lambda self, other: self.__lt__(other)
     
-    def __eq__(self, other):
-        return self.eq(other)
+    __eq__ = lambda self, other: self.eq(other)
     
     def eq(self, other):
         if other in (None, (), []): return False
@@ -486,7 +461,6 @@ class oofun:
         else:
             r = NonLinearConstraint(self - other, ub = 0.0, lb = 0.0) # do not perform check for other == 0, copy should be returned, not self!
         return r  
-            
 
 
     """                                             getInput                                              """
