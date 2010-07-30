@@ -94,15 +94,14 @@ def dot(inp1, inp2):
     if not isinstance(inp1, oofun) and not isinstance(inp2, oofun): return np.dot(inp1, inp2)
     
     if not isinstance(inp1, oofun): 
-        #inp1, inp2 = inp2, np.asfarray(inp1)
         is_linear = inp2.is_linear
     else:
         is_linear = inp1.is_linear and not isinstance(inp2, oofun)
     
     def aux_d(x, y):
-        #assert x.ndim <= 1 and y.ndim <= 1
         if y.size == 1: 
-            r = np.empty(x.size)
+            #r = np.empty(x.size) - use it?
+            r = np.empty(asarray(x).size)
             r.fill(y)
             r = Diag(r)
         else:
@@ -206,13 +205,29 @@ def prod(inp, *args, **kwargs):
         raise FuncDesignerException('oofun for prod(x, *args,**kwargs) is not implemented yet')
     return inp.prod()
 
-def norm(inp, *args, **kwargs):
-    if len(args) != 0 or len(kwargs) != 0:
-        raise FuncDesignerException('oofun for norm(x, *args,**kwargs) is not implemented yet')
-    def d(x):
-        s = np.sqrt(np.sum(x**2))
-        return x /  s if s != 0 else np.zeros(x.size) # however, dirivative doesn't exist in (0,0,..., 0)
-    return oofun(np.linalg.norm, inp, d = lambda x: Diag(d(x)), isCostly = True)
+# Todo: implement norm_1, norm_inf etc
+norm = lambda inp: sqrt(inp**2)
+
+#def norm(inp, *args, **kwargs):
+#    if len(args) != 0 or len(kwargs) != 0:
+#        raise FuncDesignerException('oofun for norm(x, *args,**kwargs) is not implemented yet')
+#    
+#    #np.linalg.norm
+#    f = lambda x: np.sqrt(np.sum(x**2))
+#    
+#    r = oofun(f, inp, isCostly = True)
+#    
+#    def d(x):
+#        
+#    
+#    #r.d = lambda *args, **kwargs: 
+#        
+#        #s = r(x)
+#        #return Diag(x /  s if s != 0 else np.zeros(x.size)) # however, dirivative doesn't exist in (0,0,..., 0)
+#    r.d = d
+#    
+#    return r
+    
 
 def size(inp, *args, **kwargs):
     if not isinstance(inp, oofun): return np.size(inp, *args, **kwargs)
