@@ -51,5 +51,8 @@ class diffVarsID:
 DiffVarsID = diffVarsID()
 _getDiffVarsID = lambda *args: DiffVarsID._getDiffVarsID(*args)
 
+def raise_except(*args, **kwargs):
+    raise FuncDesignerException('bug in FuncDesigner engine, inform developers')
+    
 class Extras:
     pass

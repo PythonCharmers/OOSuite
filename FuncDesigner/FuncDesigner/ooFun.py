@@ -3,7 +3,7 @@
 from numpy import inf, asfarray, copy, all, any, empty, atleast_2d, zeros, dot, asarray, atleast_1d, empty, ones, ndarray, \
 where, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum, prod, nonzero, isnan, asscalar
 from numpy.linalg import norm
-from misc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scipyInstalled
+from misc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scipyInstalled, raise_except
 from copy import deepcopy
 from ooPoint import ooPoint
 
@@ -192,29 +192,23 @@ class oofun:
             r.d = lambda x: aux_d(x, other)
             r._getFuncCalcEngine = lambda *args,  **kwargs: self._getFuncCalcEngine(*args,  **kwargs) + other
             r.discrete = self.discrete
-            # TODO: get rid of "not self.is_oovar"
-            if (other.size == 1 or ('size' in self.__dict__ and self.size == other.size)) and not self.is_oovar: 
+            if (other.size == 1 or ('size' in self.__dict__ and self.size == other.size)): 
                 r._D = lambda *args,  **kwargs: self._D(*args,  **kwargs) 
                 
 # TODO: create linear field with operators +, -, *(non-oofunc), /(non-oofunc)
         if self.is_linear and (not isinstance(other, oofun) or other.is_linear): 
             r.is_linear = True
         return r
-        #r = oofun(lambda point: )
     
     def __radd__(self, other):
         return self.__add__(other)
     
     # overload "-a"
     def __neg__(self): 
-        r = oofun(lambda a: -a, self, \
-                     d = lambda a: -Eye(a.size), \
-                     is_linear = True if self.is_linear else False)
+        r = oofun(lambda a: -a, self, d = lambda a: -Eye(a.size), is_linear = self.is_linear)
         r._getFuncCalcEngine = lambda *args,  **kwargs: -self._getFuncCalcEngine(*args,  **kwargs)
-        def _D(*args, **kwargs):
-            r = self._D(*args, **kwargs)
-            return dict([(key, -value) for key, value in r.items()])
-        r._D = _D
+        r._D = lambda *args, **kwargs: dict([(key, -value) for key, value in self._D(*args, **kwargs).items()])
+        r.d = raise_except
         return r
         
     # overload "a-b"
@@ -253,14 +247,12 @@ class oofun:
             r._getFuncCalcEngine = lambda *args,  **kwargs: self._getFuncCalcEngine(*args,  **kwargs) / other
             r.d = lambda x: 1.0/asfarray(other) if x.size == 1 else Diag(ones(x.size)/other)
 #            if other.size == 1 or 'size' in self.__dict__ and self.size in (1, other.size):
-            if not self.is_oovar and other.size == 1:
+            if other.size == 1:
                 r._D = lambda *args, **kwargs: dict([(key, value/other) for key, value in self._D(*args, **kwargs).items()])
-                def _d(*args, **kwargs):
-                    raise FuncDesignerException('bug in FD kernel, inform developers')
-                r.d = _d
+                r.d = raise_except
             
-        if self.is_linear and not isinstance(other, oofun):
-            r.is_linear = True
+        r.is_linear = self.is_linear and not isinstance(other, oofun)
+        # r.discrete = self.discrete and (?)
         #r.isCostly = True
         return r
 
@@ -303,13 +295,8 @@ class oofun:
             r.d = lambda x: aux_d(x, other)
             if other.size == 1:
                 r._D = lambda *args, **kwargs: dict([(key, other*value) for key, value in self._D(*args, **kwargs).items()])
-                def _d(*args, **kwargs):
-                    raise FuncDesignerException('bug in FD kernel, inform developers')
-                r.d = _d
-            #else:
-                #r.d = lambda x: aux_d(x, asfarray(other))
-        if self.is_linear and not isinstance(other, oofun):
-            r.is_linear = True
+                r.d = raise_except
+        r.is_linear = self.is_linear and not isinstance(other, oofun)
         #r.isCostly = True
         return r
 
