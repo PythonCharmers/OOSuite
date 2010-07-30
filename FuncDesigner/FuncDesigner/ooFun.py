@@ -191,7 +191,7 @@ class oofun:
             r = oofun(lambda a: a+other, self)
             r.d = lambda x: aux_d(x, other)
             r._getFuncCalcEngine = lambda *args,  **kwargs: self._getFuncCalcEngine(*args,  **kwargs) + other
-            
+            r.discrete = self.discrete
             # TODO: get rid of "not self.is_oovar"
             if (other.size == 1 or ('size' in self.__dict__ and self.size == other.size)) and not self.is_oovar: 
                 r._D = lambda *args,  **kwargs: self._D(*args,  **kwargs) 
@@ -249,7 +249,7 @@ class oofun:
             r.d = (aux_dx, aux_dy)
         else:
             other = array(other,'float')
-            r = oofun(lambda a: a/other, self)# TODO: involve sparsity if possible!
+            r = oofun(lambda a: a/other, self, discrete = self.discrete)# TODO: involve sparsity if possible!
             r._getFuncCalcEngine = lambda *args,  **kwargs: self._getFuncCalcEngine(*args,  **kwargs) / other
             r.d = lambda x: 1.0/asfarray(other) if x.size == 1 else Diag(ones(x.size)/other)
 #            if other.size == 1 or 'size' in self.__dict__ and self.size in (1, other.size):
@@ -265,12 +265,10 @@ class oofun:
         return r
 
     def __rdiv__(self, other):
-        other = asfarray(other) # TODO: sparse matrices handling!
-        r = oofun(lambda x: other/x, self)# TODO: involve sparsity if possible!
-        def d(x):
-            if other.size > 1 or x.size > 1: return Diag(- other / x**2)
-            else: return -other / x**2
-        r.d = d
+        assert not isinstance(other, oofun)
+        other = array(other, 'float') # TODO: sparse matrices handling!
+        r = oofun(lambda x: other/x, self, discrete = self.discrete)
+        r.d = lambda x: Diag(- other / x**2)
         #r.isCostly = True
         return r
 
@@ -300,10 +298,10 @@ class oofun:
             r.d = (lambda x, y: aux_d(x, y), lambda x, y: aux_d(y, x))
         else:
             other = array(other, 'float')
-            r = oofun(lambda x: x*other, self)# TODO: involve sparsity if possible!
+            r = oofun(lambda x: x*other, self, discrete = self.discrete)
             r._getFuncCalcEngine = lambda *args,  **kwargs: other * self._getFuncCalcEngine(*args,  **kwargs)
             r.d = lambda x: aux_d(x, other)
-            if not self.is_oovar and other.size == 1:
+            if other.size == 1:
                 r._D = lambda *args, **kwargs: dict([(key, other*value) for key, value in self._D(*args, **kwargs).items()])
                 def _d(*args, **kwargs):
                     raise FuncDesignerException('bug in FD kernel, inform developers')
@@ -699,7 +697,7 @@ class oofun:
     def _D(self, x, diffVarsID, Vars=None, fixedVars = None, useSparse = 'auto'):
         if self.is_oovar: 
             return {} if (fixedVars is not None and self in fixedVars) or (Vars is not None and self not in Vars) \
-            else {self:Eye(asarray(x[self].size))}
+            else {self:Eye(asarray(x[self]).size)}
             
         if self.input[0] is None: return {} # fixed oofun. TODO: implement input = [] properly
             
