@@ -374,8 +374,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 
                     
                 # TODO: simplify condition of box-bounded oovar detection
-                if f.is_oovar:# and not hasattr(c.lb, 'is_oovar') and not hasattr(c.ub, 'is_oovar'): # is BoxBoundConstraint
-                    if f in self._fixedVars: 
+                if f.is_oovar:
+                    if areFixed(dep):  
                         if self.x0 is None: self.err('your problem has fixed oovar '+ Name + ' but no value for the one in start point is provided')
                         continue
                     
