@@ -335,10 +335,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 if not hasattr(c, 'isConstraint'): self.err('The type' + str(type(c)) + 'is inappropriate for problem constraints')
                 f, tol = c.oofun, c.tol
                 Name = f.name
-                dep = f._getDep()
-                if dep is None: # hence it's oovar
-                    assert f.is_oovar
-                    dep = set([f])
+                
+                dep = set([f]) if f.is_oovar else f._getDep()
 
                 _lb, _ub = c.lb, c.ub
                 if tol < 0:
@@ -377,7 +375,6 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     
                 # TODO: simplify condition of box-bounded oovar detection
                 if f.is_oovar:# and not hasattr(c.lb, 'is_oovar') and not hasattr(c.ub, 'is_oovar'): # is BoxBoundConstraint
-                    
                     if f in self._fixedVars: 
                         if self.x0 is None: self.err('your problem has fixed oovar '+ Name + ' but no value for the one in start point is provided')
                         continue
