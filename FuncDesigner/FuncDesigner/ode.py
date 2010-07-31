@@ -2,8 +2,8 @@ from translator import FuncDesignerTranslator
 from misc import FuncDesignerException, Extras, _getDiffVarsID
 from numpy import ndarray, hstack, vstack, isscalar, asarray, zeros
 from ooVar import oovar
-from ooFun import oofun 
-from overloads import fixed_oofun
+from ooFun import oofun, atleast_oofun
+#from overloads import fixed_oofun
 
 class ode:
     # Ordinary differential equations
@@ -40,8 +40,9 @@ class ode:
         Point4TranslatorAssignment = {}
         
         for v, func in equations.items():
-            if not isinstance(func,  oofun):
-                func = fixed_oofun(func)
+            func = atleast_oofun(func)
+#            if not isinstance(func,  oofun):
+#                func = fixed_oofun(func)
             if not isinstance(v, oovar):
                 raise FuncDesignerException('ode: dict keys must be FuncDesigner oovars, got "%s" instead' % type(v))
             startFVal = asarray(func(startPoint))

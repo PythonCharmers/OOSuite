@@ -7,12 +7,6 @@ from misc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scipyI
 from copy import deepcopy
 from ooPoint import ooPoint
 
-#def Copy(elem, useSparse):
-#    # useSparse can be changed while saved data is involved
-#    if useSparse is False and isspmatrix(elem):
-#        return elem.copy().toarray()
-#    elif hasattr(elem, 'copy'): return elem.copy()
-#    else: return copy(elem)
 Copy = lambda arg: asscalar(arg) if type(arg)==ndarray and arg.size == 1 else arg.copy() if hasattr(arg, 'copy') else copy(arg)
 
 try:
@@ -100,7 +94,6 @@ class oofun:
         assert len(args) == 0 #and input is not None
         self.fun = fun
         
-        
         #self._broadcast_id = 0
         self._id = oofun._id
         self.attachedConstraints = set()
@@ -110,7 +103,7 @@ class oofun:
         if 'name' not in kwargs.keys():
             self.name = 'unnamed_oofun_' + str(oofun._unnamedFunNumber)
             oofun._unnamedFunNumber += 1
-
+        
         for key, item in kwargs.iteritems():
             #print key
             #assert key in self.__allowedFields__ # TODO: make set comparison
@@ -119,8 +112,7 @@ class oofun:
         if isinstance(input, (tuple, list)): self.input = [(elem if isinstance(elem, oofun) else array(elem, 'float')) for elem in input]
         elif input is not None: self.input = [input]
         else: self.input = [None] # TODO: get rid of None, use input = [] instead
-        #assert (input is not None) or self.is_oovar
-        #assert self.name != 'unnamed_oofun_32'
+
         if input is not None:
             levels = [0]
             for elem in self.input: # if a
@@ -251,7 +243,6 @@ class oofun:
     # overload "a*b"
     def __mul__(self, other):
         def aux_d(x, y):
-            #assert y.size <100000
             if x.size == 1:
                 return y.copy()
             elif y.size == 1:
@@ -562,7 +553,8 @@ class oofun:
         
         if type(self.args) != tuple:
             self.args = (self.args, )
-        Input = self._getInput(x)
+            
+        Input = self._getInput(x) 
         if self.args != ():
             Input += self.args
         tmp = self.fun(*Input)
@@ -1010,7 +1002,15 @@ class BaseFDConstraint(BooleanOOFun):
         if len(args) == 0:
            if len(kwargs) == 0: raise FuncDesignerException('You should provide at least one argument')
            return self
+           
+        if isinstance(args[0], str):
+            self.name = args[0]
+            return self
+            
+        return self._getFuncCalcEngine(*args,  **kwargs)
         
+    def _getFuncCalcEngine(self, *args,  **kwargs):
+    
         if isinstance(args[0], dict): # is FD Point
             val = self.oofun(args[0])
             if any(isnan(val)):
@@ -1021,11 +1021,8 @@ class BaseFDConstraint(BooleanOOFun):
             elif any(atleast_1d(val-self.ub)>Tol):
                 return False
             return True
-        elif isinstance(args[0], str):
-            self.name = args[0]
-            return self
         else:
-            raise FuncDesignerException('unexpected type: '+type(args[0]))
+            raise FuncDesignerException('unexpected type: %s' % type(args[0]))
 
     def __init__(self, oofun_Involved, *args, **kwargs):
         BooleanOOFun.__init__(self, oofun_Involved, *args, **kwargs)
@@ -1079,13 +1076,13 @@ def atleast_oofun(arg):
         return arg
     elif hasattr(arg, 'copy'):
         tmp = arg.copy()
-        return oofun(lambda *args: tmp, input = None, is_linear=True, isConstraint = True)
+        return oofun(lambda *args: tmp, input = None, is_linear=True, discrete=True)#, isConstraint = True)
     elif isscalar(arg):
         tmp = array(arg, 'float')
-        return oofun(lambda *args: tmp, input = None, is_linear=True, isConstraint = True)
+        return oofun(lambda *args: tmp, input = None, is_linear=True, discrete=True)#, isConstraint = True)
     else:
-        return oofun(lambda *args, **kwargs: arg(*args,  **kwargs))
-        #raise FuncDesignerException('incorrect type for the function _atleast_oofun')
+        #return oofun(lambda *args, **kwargs: arg(*args,  **kwargs), input=None, discrete=True)
+        raise FuncDesignerException('incorrect type for the function _atleast_oofun')
 
 #
 #class ooconstraint(oofun):
