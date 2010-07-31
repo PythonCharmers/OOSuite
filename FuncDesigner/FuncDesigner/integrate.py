@@ -33,7 +33,10 @@ def integrator(func, domain,  **kwargs):
         #T = FuncDesignerTranslator(p2)
         def vect_func(x):
             p2[integration_var] = x
-            return func(p2)[0]
+            tmp = func(p2)
+            if np.isscalar(tmp): return tmp
+            elif tmp.size == 1: return np.asscalar(tmp)
+            else: FuncDesignerException('incorrect data type, probably bug in uncDesigner kernel')
     #vect_func = lambda x: func(T.vector2point(x))
 
         # TODO: better handling of fixed variables

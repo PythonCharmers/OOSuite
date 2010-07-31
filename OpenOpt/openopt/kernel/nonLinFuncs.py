@@ -389,7 +389,8 @@ def getFuncsAndExtractIndexes(p, funcs, ind, userFunctionType):
         def f_aux(x, i=i): 
             r = Funcs2[i][0](x)
             # TODO: are other formats better?
-            r = r.tocsc()[Funcs2[i][1]] if isspmatrix(r) else r[Funcs2[i][1]]
+            if not isscalar(r):
+                r = r.tocsc()[Funcs2[i][1]] if isspmatrix(r) else r[Funcs2[i][1]]
             return r
         Funcs.append(f_aux)
         #Funcs.append(lambda x, i=i: Funcs2[i][0](x)[Funcs2[i][1]])

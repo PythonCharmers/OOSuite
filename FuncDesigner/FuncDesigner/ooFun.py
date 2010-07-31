@@ -98,7 +98,8 @@ class oofun:
     def __init__(self, fun, input=None, *args, **kwargs):
     #def __init__(self, fun, input=[], *args, **kwargs):
         assert len(args) == 0 #and input is not None
-        self.fun, self.input = fun, input
+        self.fun = fun
+        
         
         #self._broadcast_id = 0
         self._id = oofun._id
@@ -115,9 +116,12 @@ class oofun:
             #assert key in self.__allowedFields__ # TODO: make set comparison
             setattr(self, key, item)
             
+        if isinstance(input, (tuple, list)): self.input = [(elem if isinstance(elem, oofun) else array(elem, 'float')) for elem in input]
+        elif input is not None: self.input = [input]
+        else: self.input = [None] # TODO: get rid of None, use input = [] instead
+        #assert (input is not None) or self.is_oovar
+        #assert self.name != 'unnamed_oofun_32'
         if input is not None:
-            if type(self.input) not in [list, tuple]:
-                self.input = [self.input]
             levels = [0]
             for elem in self.input: # if a
                 if isinstance(elem, oofun):
@@ -289,29 +293,30 @@ class oofun:
         d_y = lambda x, y: x ** y * log(x) if y.size == 1 else Diag(x ** y * log(x))
             
         if not isinstance(other, oofun):
-            f = lambda x: x ** array(other, 'float')
-            d = lambda x: d_x(x, array(other, 'float'))
+            if not isscalar(other): other = array(other)
+            f = lambda x: x ** other
+            d = lambda x: d_x(x, other)
             input = self
         else:
             f = lambda x, y: x ** y
             d = (d_x, d_y)
             input = [self, other]
         r = oofun(f, input, d = d)
-        if isinstance(other, oofun) or not isinstance(other, int): r.attach((self>0)('pow_domain_%d'%r._id, tol=-1e-7)) # TODO: if "other" is fixed oofun with integer value - omit this
+        if isinstance(other, oofun) or (not isinstance(other, int) and (type(other) == ndarray and other.flatten()[0] != int)): 
+            r.attach((self>0)('pow_domain_%d'%r._id, tol=-1e-7)) # TODO: if "other" is fixed oofun with integer value - omit this
         r.isCostly = True
         return r
 
     def __rpow__(self, other):
         assert not isinstance(other, oofun)# if failed - check __pow__implementation
-            
-        f = lambda x: asfarray(other) ** x
+        
+        if not isscalar(other) and type(other) != ndarray: other = asfarray(other)
+        
+        f = lambda x: other ** x
         #d = lambda x: Diag(asarray(other) **x * log(asarray(other)))
-        def d(x):
-            r = Diag(asfarray(other) **x * log(asfarray(other))) if x.size > 1 else asfarray(other)**x * log(asfarray(other))
-            return r
+        d = lambda x: Diag(other **x * log(other)) 
         r = oofun(f, self, d=d)
         r.isCostly = True
-        if isinstance(other, oofun): r.attach((other>0)('rpow_domain_%d'%r._id,  tol=-1e-7)) # TODO: if "other" is fixed oofun with integer value - omit this
         return r
 
     def __xor__(self, other): raise FuncDesignerException('For power of oofuns use a**b, not a^b')
@@ -466,7 +471,8 @@ class oofun:
     """                                             getInput                                              """
     def _getInput(self, x):
 #        self.inputOOVarTotalLength = 0
-        return tuple([atleast_1d(item._getFuncCalcEngine(x)) if isinstance(item, oofun) else asarray(item) for item in self.input])
+        #return tuple([atleast_1d(item._getFuncCalcEngine(x)) if isinstance(item, oofun) else atleast_1d(item) for item in self.input])
+        return tuple([(item._getFuncCalcEngine(x) if isinstance(item, oofun) else item) for item in self.input])
 
     """                                                getDep                                             """
     def _getDep(self):
@@ -704,10 +710,10 @@ class oofun:
                     continue                
                 ac += 1
                 tmp = derivativeSelf[ac]
-                assert tmp.ndim > 1 
+                #assert tmp.ndim > 1 
 
                 if inp in r:
-                    if prod(tmp.shape) <= prod(r[inp].shape) and type(r[inp]) == type(tmp) == ndarray: # some sparse matrices has no += implemented 
+                    if isscalar(tmp) or prod(tmp.shape) <= prod(r[inp].shape) and type(r[inp]) == type(tmp) == ndarray: # some sparse matrices has no += implemented 
                         r[inp] += tmp
                     else:
                         r[inp] = r[inp] + tmp
@@ -834,12 +840,13 @@ class oofun:
                     else:
                         # !!!!!!!!!!!!!! TODO: add check for user-supplied derivative shape
                         tmp = deriv(*Input)
-                        if isscalar(tmp) or type(tmp) in (ndarray, tuple, list): # i.e. not a scipy.sparse matrix
+                        if not isscalar(tmp) and type(tmp) in (ndarray, tuple, list): # i.e. not a scipy.sparse matrix
                             tmp = atleast_2d(tmp)
                             
                             ########################################
 
-                            Tmp = len(Input[i])
+                            _tmp = Input[i]
+                            Tmp = 1 if isscalar(_tmp) or prod(_tmp.shape) == 1 else len(Input[i])
                             if tmp.shape[1] != Tmp: 
                                 # TODO: add debug msg
 #                                print('incorrect shape in FD AD _getDerivativeSelf')
@@ -852,9 +859,9 @@ class oofun:
                         derivativeSelf.append(tmp)
             else:
                 tmp = self.d(*Input)
-                if isscalar(tmp) or type(tmp) in (ndarray, tuple, list): # i.e. not a scipy.sparse matrix
+                if not isscalar(tmp) and type(tmp) in (ndarray, tuple, list): # i.e. not a scipy.sparse matrix
                     tmp = atleast_2d(tmp)
-                    expectedTotalInputLength = sum([len(elem) for elem in Input])
+                    expectedTotalInputLength = sum([elem.size for elem in Input])
                     if tmp.shape[1] != expectedTotalInputLength: 
                         # TODO: add debug msg
                         if tmp.shape[0] != expectedTotalInputLength: raise FuncDesignerException('error in getDerivativeSelf()')
@@ -862,17 +869,20 @@ class oofun:
                         
                 ac = 0
                 if isinstance(tmp, ndarray) and hasattr(tmp, 'toarray'): tmp = tmp.A # is dense matrix
-                if not isinstance(tmp, ndarray):
+                if not isinstance(tmp, ndarray) and not isscalar(tmp):
                     csc_tmp = tmp.tocsc()
                 for i, inp in enumerate(Input):
-                    if self.input[i].discrete or (self.input[i].is_oovar and ((Vars is not None and self.input[i] not in Vars) or (fixedVars is not None and self.input[i] in fixedVars))):
+                    t = self.input[i]
+                    if t.discrete or (t.is_oovar and ((Vars is not None and t not in Vars) or (fixedVars is not None and t in fixedVars))):
                         ac += inp.size
                         continue                                    
                     if isinstance(tmp, ndarray):
                         TMP = tmp[:, ac:ac+inp.size]
+                    elif isscalar(tmp):
+                        TMP = tmp
                     else: # scipy.sparse matrix
                         TMP = csc_tmp[:, ac:ac+inp.size]
-                    ac += inp.size
+                    ac += 1 if isscalar(inp) else inp.size
                     derivativeSelf.append(TMP)
                     
             # TODO: is it required?
@@ -893,7 +903,7 @@ class oofun:
             elif type(derivativeSelf) != list:
                 derivativeSelf = [derivativeSelf]
         
-        assert all([elem.ndim > 1 for elem in derivativeSelf])
+        #assert all([elem.ndim > 1 for elem in derivativeSelf])
         return derivativeSelf
 
     def D2(self, x):
@@ -954,7 +964,8 @@ class oofun:
 def broadcast(func, oofuncs, *args, **kwargs):
     oofun._BroadCastID += 1
     for oof in oofuncs:
-        oof._broadcast(func, *args, **kwargs)
+        if oof is not None: 
+            oof._broadcast(func, *args, **kwargs)
 
 def _getAllAttachedConstraints(oofuns):
     from FuncDesigner import broadcast
@@ -970,8 +981,8 @@ class BooleanOOFun(oofun):
     discrete = True
     # an oofun that returns True/False
     def __init__(self, oofun_Involved, *args, **kwargs):
-        oofun.__init__(self, oofun_Involved, *args, **kwargs)
-        self.input = oofun_Involved.input
+        oofun.__init__(self, oofun_Involved._getFuncCalcEngine, (oofun_Involved.input if not oofun_Involved.is_oovar else oofun_Involved), *args, **kwargs)
+        #self.input = oofun_Involved.input
         BooleanOOFun._unnamedBooleanOOFunNumber += 1
         self.name = 'unnamed_boolean_oofun_' + str(BooleanOOFun._unnamedBooleanOOFunNumber)
         
@@ -1068,10 +1079,10 @@ def atleast_oofun(arg):
         return arg
     elif hasattr(arg, 'copy'):
         tmp = arg.copy()
-        return oofun(lambda *args: tmp, is_linear=True, isConstraint = True)
+        return oofun(lambda *args: tmp, input = None, is_linear=True, isConstraint = True)
     elif isscalar(arg):
         tmp = array(arg, 'float')
-        return oofun(lambda *args: tmp, is_linear=True, isConstraint = True)
+        return oofun(lambda *args: tmp, input = None, is_linear=True, isConstraint = True)
     else:
         return oofun(lambda *args, **kwargs: arg(*args,  **kwargs))
         #raise FuncDesignerException('incorrect type for the function _atleast_oofun')

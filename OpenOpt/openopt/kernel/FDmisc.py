@@ -227,7 +227,7 @@ def setStartVectorAndTranslators(p):
                 lin_oofun = elem
             if not lin_oofun.is_linear:
                 raise OpenOptException("this function hasn't been intended to work with nonlinear FuncDesigner oofuns")
-            C.append(p._pointDerivative2array(lin_oofun._D(Z, **p._D_kwargs), useSparse = p.useSparse))
+            C.append(p._pointDerivative2array(lin_oofun.D(Z, **p._D_kwargs), useSparse = p.useSparse))
             d.append(-lin_oofun(Z))
             
         if any([isspmatrix(elem) for elem in C]):
