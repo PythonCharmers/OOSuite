@@ -1,6 +1,6 @@
 import string, os
 from oologfcn import OpenOptException
-from numpy import zeros, bmat, hstack, vstack, ndarray, copy, where, prod, asarray, atleast_1d
+from numpy import zeros, bmat, hstack, vstack, ndarray, copy, where, prod, asarray, atleast_1d, isscalar, atleast_2d
 try:
     import scipy
     scipyInstalled = True
@@ -10,14 +10,14 @@ try:
     from scipy.sparse import hstack as HstackSP, vstack as VstackSP, find as Find
     def Hstack(Tuple):
         #elems = asarray(Tuple, dtype=object)
-        ind = where([prod(elem.shape)!=0 for elem in Tuple])[0].tolist()
+        ind = where([isscalar(elem) or prod(elem.shape)!=0 for elem in Tuple])[0].tolist()
         elems = [Tuple[i] for i in ind]
         # [elem if prod(elem.shape)!=0 for elem in Tuple]
-        return HstackSP(elems) if any([isspmatrix(elem) for elem in elems]) else hstack(elems)
+        return HstackSP(elems) if any([isspmatrix(elem) for elem in elems]) else hstack([(atleast_2d(elem) if type(elem)!=ndarray else elem) for elem in elems])
     def Vstack(Tuple):
         ind = where([prod(elem.shape)!=0 for elem in Tuple])[0].tolist()
         elems = [Tuple[i] for i in ind]
-        return VstackSP(elems) if any([isspmatrix(elem) for elem in elems]) else vstack(elems)
+        return VstackSP(elems) if any([isspmatrix(elem) for elem in elems]) else vstack([(atleast_2d(elem) if type(elem)!=ndarray else elem) for elem in elems])
     #Hstack = lambda Tuple: HstackSP(Tuple) if any([isspmatrix(elem) for elem in Tuple]) else hstack(Tuple)
     #Vstack = lambda Tuple: VstackSP(Tuple) if any([isspmatrix(elem) for elem in Tuple]) else vstack(Tuple)
     SparseMatrixConstructor = lambda *args, **kwargs: scipy.sparse.lil_matrix(*args, **kwargs)
@@ -34,7 +34,18 @@ except:
         raise OpenOptException('error in OpenOpt kernel, inform developers')
     def Find(*args, **kwargs): 
         raise OpenOptException('error in OpenOpt kernel, inform developers')
+        
 DenseMatrixConstructor = lambda *args, **kwargs: zeros(*args, **kwargs)
+
+def Eye(n):
+    if not scipyInstalled and n>150:
+        pWarn(scipyAbsentMsg)
+    if n == 1:
+        return 1.0
+    elif n <= 16 or not scipyInstalled:
+        return eye(n)
+    else:
+        return scipy.sparse.identity(n)
 
 ##################################################################
 solverPaths = {}

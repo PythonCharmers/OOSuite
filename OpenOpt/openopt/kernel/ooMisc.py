@@ -27,9 +27,9 @@ def xBounds2Matrix(p):
     nLB, nUB, nEQ = Len(indLB), Len(indUB), Len(indEQ)
 
     if  nLB>0 or nUB>0:
-        if isspmatrix(p.A) or (scipyInstalled and nLB+nUB>=p.A.shape[0]):
-            R1 = coo_matrix((-ones(nLB), (range(nLB), indLB)), shape=(nLB, p.n))
-            R2 = coo_matrix((ones(nUB), (range(nUB), indUB)), shape=(nUB, p.n))
+        if p.useSparse or (isspmatrix(p.A) or (scipyInstalled and nLB+nUB>=p.A.shape[0]) and p.useSparse is not False):
+            R1 = coo_matrix((-ones(nLB), (range(nLB), indLB)), shape=(nLB, p.n)) if nLB != 0 else zeros((0, p.n))
+            R2 = coo_matrix((ones(nUB), (range(nUB), indUB)), shape=(nUB, p.n)) if nUB != 0 else zeros((0, p.n))
         else:
             R1 = zeros((nLB, p.n))
             R1[range(nLB), indLB] = -1
@@ -49,7 +49,7 @@ def xBounds2Matrix(p):
 
     if nEQ>0:
         
-        if isspmatrix(p.Aeq) or (scipyInstalled and nEQ>=p.Aeq.shape[0]):
+        if p.useSparse or (isspmatrix(p.Aeq) or (scipyInstalled and nEQ>=p.Aeq.shape[0]) and p.useSparse is not False):
             R = coo_matrix(([1]*nEQ, (range(nEQ), indEQ)), shape=(nEQ, p.n))
         else:
             R = zeros((nEQ, p.n))
@@ -83,13 +83,13 @@ def xBounds2Matrix(p):
     # TODO: prevent code clone with baseProblem.py
     nA, nAeq = prod(p.A.shape), prod(p.Aeq.shape) 
     SizeThreshold = 2 ** 15
-    if scipyInstalled:
+    if scipyInstalled and p.useSparse is not False:
         from scipy.sparse import csc_matrix
         if nA > SizeThreshold and not isspmatrix(p.A) and flatnonzero(p.A).size < 0.25*nA:
             p._A = csc_matrix(p.A)
         if nAeq > SizeThreshold and not isspmatrix(p.Aeq) and flatnonzero(p.Aeq).size < 0.25*nAeq:
             p._Aeq = csc_matrix(p.Aeq)
-    elif nA > SizeThreshold or nAeq > SizeThreshold:
+    if nA > SizeThreshold or nAeq > SizeThreshold and not scipyInstalled and p.useSparse is not False:
         p.pWarn(scipyAbsentMsg)
 
 
