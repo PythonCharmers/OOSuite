@@ -91,7 +91,7 @@ class FuncDesignerTranslator:
         newStyle = 1
         
         # TODO: remove "useSparse = False", replace by code from FDmisc
-        useSparse = False
+        assert useSparse is False, 'sparsity is not implemented in FD translator yet'
         
         if useSparse is not False and newStyle:
             r2 = []
