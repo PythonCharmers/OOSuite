@@ -48,12 +48,14 @@ def xBounds2Matrix(p):
         p.b = Hstack((p.b, -p.lb[indLB], p.ub[indUB]))
 
     if nEQ>0:
+        
         if isspmatrix(p.Aeq) or (scipyInstalled and nEQ>=p.Aeq.shape[0]):
-            R = coo_matrix(([-1]*nLB, (range(nLB), indLB)), shape=(nLB, p.n))
+            R = coo_matrix(([1]*nEQ, (range(nEQ), indEQ)), shape=(nEQ, p.n))
         else:
             R = zeros((nEQ, p.n))
-        
+        #raise 0
         p.Aeq = Vstack((p.Aeq, R))
+        
         if hasattr(p, '_Aeq'): delattr(p, '_Aeq')
         if isspmatrix(p.Aeq): 
             if prod(p.Aeq.shape)>10000:
@@ -63,6 +65,7 @@ def xBounds2Matrix(p):
                 p.Aeq = p.Aeq.A
             
         p.beq = Hstack((p.beq, p.lb[indEQ]))
+        
 
 #
 #        Aeq, beq = p.Aeq.copy(), p.beq.copy()

@@ -2,12 +2,7 @@ from numpy.linalg import norm
 from numpy import dot, asfarray, atleast_1d,  zeros, ones, int, float64, where, inf, ndarray
 from openopt.kernel.baseSolver import baseSolver
 from openopt.kernel.nonOptMisc import isspmatrix, scipyInstalled, scipyAbsentMsg
-
-try:
-    from lsqr import lsqr as LSQR
-except:
-    from openopt.kernel.oologfcn import OpenOptException
-    raise OpenOptException('You should have lsqr installed, see OO LLSP doc webpage for details')
+from lsqr import lsqr as LSQR
 
 try:
     from scipy.sparse import csc_matrix, csr_matrix
