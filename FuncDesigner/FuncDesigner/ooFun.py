@@ -22,11 +22,16 @@ try:
     from scipy import sparse
     from scipy.sparse import hstack as HstackSP
     def Hstack(Tuple):
-        #elems = asarray(Tuple, dtype=object)
-        ind = where([prod(elem.shape)!=0 for elem in Tuple])[0].tolist()
+        ind = where([isscalar(elem) or prod(elem.shape)!=0 for elem in Tuple])[0].tolist()
         elems = [Tuple[i] for i in ind]
-        # [elem if prod(elem.shape)!=0 for elem in Tuple]
-        return HstackSP(elems) if any([isspmatrix(elem) for elem in elems]) else hstack(elems)
+        if any([isspmatrix(elem) for elem in elems]):
+            return HstackSP(elems)
+        
+        s = set([(0 if isscalar(elem) else elem.ndim) for elem in elems])
+        ndim = max(s)
+        if ndim <= 1:  return hstack(elems)
+        assert ndim <= 2
+        return hstack(elems) if (0 not in s and 1 not in s) else hstack([atleast_2d(elem) for elem in elems])
         
     from scipy.sparse import isspmatrix
 except:

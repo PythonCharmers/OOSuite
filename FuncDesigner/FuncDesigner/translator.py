@@ -90,13 +90,16 @@ class FuncDesignerTranslator:
         
         newStyle = 1
         
+        # TODO: remove "useSparse = False", replace by code from FDmisc
+        useSparse = False
+        
         if useSparse is not False and newStyle:
             r2 = []
-            huseSparse = False
+            hasSparse = False
             for i, var in enumerate(optVars):
                 if var in pointDerivarive:#i.e. one of its keys
                     tmp = pointDerivarive[var]
-                    if isspmatrix(tmp): huseSparse = True
+                    if isspmatrix(tmp): hasSparse = True
                     if isinstance(tmp, float) or (isinstance(tmp, ndarray) and tmp.shape == ()):
                         tmp = atleast_1d(tmp)
                     if tmp.ndim < 2:
@@ -104,8 +107,8 @@ class FuncDesignerTranslator:
                     r2.append(tmp)
                 else:
                     r2.append(SparseMatrixConstructor((funcLen, oovar_sizes[i])))
-                    huseSparse = True
-            r3 = Hstack(r2) if huseSparse else hstack(r2)
+                    hasSparse = True
+            r3 = Hstack(r2) if hasSparse else hstack(r2)
             if isspmatrix(r3) and r3.nnz > 0.25 * prod(r3.shape): r3 = r3.A
             return r3
         else:
