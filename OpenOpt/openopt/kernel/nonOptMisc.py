@@ -1,6 +1,6 @@
 import string, os
 from oologfcn import OpenOptException
-from numpy import zeros, bmat, hstack, vstack, ndarray, copy, where, prod, asarray, atleast_1d, isscalar, atleast_2d
+from numpy import zeros, bmat, hstack, vstack, ndarray, copy, where, prod, asarray, atleast_1d, isscalar, atleast_2d, eye
 try:
     import scipy
     scipyInstalled = True
