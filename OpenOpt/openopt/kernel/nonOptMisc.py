@@ -1,6 +1,6 @@
 import string, os
 from oologfcn import OpenOptException
-from numpy import zeros, bmat, hstack, vstack, ndarray, copy, where, prod, asarray, atleast_1d, isscalar, atleast_2d, eye
+from numpy import zeros, bmat, hstack, vstack, ndarray, copy, where, prod, asarray, atleast_1d, isscalar, atleast_2d, eye, diag
 try:
     import scipy
     scipyInstalled = True
@@ -61,6 +61,15 @@ def Eye(n):
         return eye(n)
     else:
         return scipy.sparse.identity(n)
+
+def Diag(x):
+    if not scipyInstalled and len(x)>150: 
+        pWarn(scipyAbsentMsg)
+    if isscalar(x): return x
+    elif len(x) == 1: return asfarray(x)
+    elif len(x) < 16 or not scipyInstalled: return diag(x)
+    else: return scipy.sparse.spdiags(x, [0], len(x), len(x)) 
+
 
 ##################################################################
 solverPaths = {}

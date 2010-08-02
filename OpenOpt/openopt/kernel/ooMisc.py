@@ -89,7 +89,7 @@ def xBounds2Matrix(p):
             p._A = csc_matrix(p.A)
         if nAeq > SizeThreshold and not isspmatrix(p.Aeq) and flatnonzero(p.Aeq).size < 0.25*nAeq:
             p._Aeq = csc_matrix(p.Aeq)
-    if nA > SizeThreshold or nAeq > SizeThreshold and not scipyInstalled and p.useSparse is not False:
+    if (nA > SizeThreshold or nAeq > SizeThreshold) and not scipyInstalled and p.useSparse is not False:
         p.pWarn(scipyAbsentMsg)
 
 
