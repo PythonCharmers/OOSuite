@@ -1,7 +1,7 @@
 # created by Dmitrey
 
 from numpy import inf, asfarray, copy, all, any, empty, atleast_2d, zeros, dot, asarray, atleast_1d, empty, ones, ndarray, \
-where, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum, prod, nonzero, isnan, asscalar
+where, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum, prod, nonzero, isnan, asscalar, zeros_like, ones_like
 from numpy.linalg import norm
 from misc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scipyInstalled, raise_except
 from copy import deepcopy
@@ -155,12 +155,14 @@ class oofun:
         # TODO: check for correct sizes during f, not only f.d 
     
         def aux_d(x, y):
-            if x.size == 1:
-                return ones(y.size)
-            elif y.size == 1:
-                return Eye(x.size)
-            elif x.size == y.size:
-                return Eye(y.size)
+            Xsize = 1 if isscalar(x) else x.size
+            Ysize = 1 if isscalar(y) else y.size
+            if Xsize == 1:
+                return ones(Ysize)
+            elif Ysize == 1:
+                return Eye(Xsize)
+            elif Xsize == Ysize:
+                return Eye(Ysize)
             else:
                 raise FuncDesignerException('for oofun summation a+b should be size(a)=size(b) or size(a)=1 or size(b)=1')        
 
@@ -192,7 +194,7 @@ class oofun:
     
     # overload "-a"
     def __neg__(self): 
-        r = oofun(lambda a: -a, self, d = lambda a: -Eye(a.size), is_linear = self.is_linear)
+        r = oofun(lambda a: -a, self, d = lambda a: -Eye(1 if isscalar(a) else a.size), is_linear = self.is_linear)
         r._getFuncCalcEngine = lambda *args,  **kwargs: -self._getFuncCalcEngine(*args,  **kwargs)
         r._D = lambda *args, **kwargs: dict([(key, -value) for key, value in self._D(*args, **kwargs).items()])
         r.d = raise_except
@@ -207,18 +209,22 @@ class oofun:
         if isinstance(other, oofun):
             r = oofun(lambda x, y: x/y, [self, other])
             def aux_dx(x, y):
-                x, y, = asfarray(x), asfarray(y) # TODO: get rid of it
-                if x.size != 1:
-                    assert x.size == y.size or y.size == 1, 'incorrect size for oofun devision'
+                #x, y, = asfarray(x), asfarray(y) # TODO: get rid of it
+                Xsize = 1 if isscalar(x) else x.size
+                Ysize = 1 if isscalar(y) else y.size
+                if Xsize != 1:
+                    assert Xsize == Ysize or Ysize == 1, 'incorrect size for oofun devision'
                 r = 1.0 / y
-                if x.size != 1:
-                    if y.size == 1: r = r.tolist() * x.size
+                if Xsize != 1:
+                    if Ysize == 1: r = r.tolist() * Xsize
                     r = Diag(r)
                 return r                
             def aux_dy(x, y):
+                Xsize = 1 if isscalar(x) else x.size
+                Ysize = 1 if isscalar(y) else y.size                
                 r = -x / y**2
-                if y.size != 1:
-                    assert x.size == y.size or x.size == 1, 'incorrect size for oofun devision'
+                if Ysize != 1:
+                    assert Xsize == Ysize or Xsize == 1, 'incorrect size for oofun devision'
                     r = Diag(r)
                 return r
             r.d = (aux_dx, aux_dy)
@@ -226,7 +232,7 @@ class oofun:
             other = array(other,'float')
             r = oofun(lambda a: a/other, self, discrete = self.discrete)# TODO: involve sparsity if possible!
             r._getFuncCalcEngine = lambda *args,  **kwargs: self._getFuncCalcEngine(*args,  **kwargs) / other
-            r.d = lambda x: 1.0/asfarray(other) if x.size == 1 else Diag(ones(x.size)/other)
+            r.d = lambda x: 1.0/other if (isscalar(x) or x.size == 1) else Diag(ones(x.size)/other)
 #            if other.size == 1 or 'size' in self.__dict__ and self.size in (1, other.size):
             if other.size == 1:
                 r._D = lambda *args, **kwargs: dict([(key, value/other) for key, value in self._D(*args, **kwargs).items()])
@@ -248,25 +254,21 @@ class oofun:
     # overload "a*b"
     def __mul__(self, other):
         def aux_d(x, y):
-            if x.size == 1:
-                return y.copy()
-            elif y.size == 1:
-                r = empty(x.size)
+            Xsize = 1 if isscalar(x) else x.size
+            Ysize = 1 if isscalar(y) else y.size
+            if Xsize == 1:
+                return Copy(y)
+            elif Ysize == 1:
+                r = empty(Xsize)
                 r.fill(y)
                 return Diag(r)
-            elif x.size == y.size:
+            elif Xsize == Ysize:
                 return Diag(y)
             else:
                 raise FuncDesignerException('for oofun multiplication a*b should be size(a)=size(b) or size(a)=1 or size(b)=1')                    
         
         if isinstance(other, oofun):
-            def f(x, y):
-                if x.size != 1 and y.size != 1 and x.size != y.size:
-                    raise FuncDesignerException('for oofun multiplications a*b should be size(a)=size(b) or size(a)=1 or size(b)=1')
-                return x*y
-                
-            r = oofun(f, [self, other])
-            
+            r = oofun(lambda x, y: x*y, [self, other])
             r.d = (lambda x, y: aux_d(x, y), lambda x, y: aux_d(y, x))
         else:
             other = array(other, 'float')
@@ -284,9 +286,9 @@ class oofun:
 
     def __pow__(self, other):
         
-        d_x = lambda x, y: y * x ** (y - 1) if x.size == 1 else Diag(y * x ** (y - 1))
+        d_x = lambda x, y: y * x ** (y - 1) if (isscalar(x) or x.size == 1) else Diag(y * x ** (y - 1))
 
-        d_y = lambda x, y: x ** y * log(x) if y.size == 1 else Diag(x ** y * log(x))
+        d_y = lambda x, y: x ** y * log(x) if (isscalar(y) or y.size == 1) else Diag(x ** y * log(x))
             
         if not isinstance(other, oofun):
             if not isscalar(other): other = array(other)
@@ -331,13 +333,14 @@ class oofun:
         if not isinstance(ind, oofun):
             f = lambda x: x[ind]
             def d(x):
-                condBigMatrix = x.size > 100 
+                Xsize = 1 if isscalar(x) else x.size
+                condBigMatrix = Xsize > 100 
                 if condBigMatrix and scipyInstalled:
                     r = SparseMatrixConstructor((1, x.shape[0]))
                     r[0, ind] = 1.0
                 else: 
                     if not scipyInstalled: self.pWarn(scipyAbsentMsg)
-                    r = zeros(x.shape)
+                    r = zeros_like(x)
                     r[ind] = 1
                 return r
         else: # NOT IMPLEMENTED PROPERLY YET
@@ -368,7 +371,7 @@ class oofun:
         assert not isinstance(ind1, oofun) and not isinstance(ind2, oofun), 'slicing by oofuns is unimplemented yet'
         f = lambda x: x[ind1:ind2]
         def d(x):
-            condBigMatrix = x.size > 100 #and (ind2-ind1) > 0.25*x.size
+            condBigMatrix = (1 if isscalar(x) else x.size) > 100 #and (ind2-ind1) > 0.25*x.size
             if condBigMatrix and not scipyInstalled:
                 self.pWarn(scipyAbsentMsg)
             if condBigMatrix and scipyInstalled:
@@ -394,8 +397,8 @@ class oofun:
     def sum(self):
         r = oofun(sum, self)
         def d(x):
-            if x.ndim > 1: raise FuncDesignerException('sum(x) is not implemented yet for arrays with ndim > 1')
-            return ones(x.size) 
+            if type(x) == ndarray and x.ndim > 1: raise FuncDesignerException('sum(x) is not implemented yet for arrays with ndim > 1')
+            return ones_like(x) 
         r.d, r.is_linear = d, self.is_linear
         return r
     
@@ -403,6 +406,7 @@ class oofun:
         # TODO: consider using r.isCostly = True
         r = oofun(prod, self)
         def d(x):
+            x = asarray(x) # prod is used rarely, so optimizing it is not important
             if x.ndim > 1: raise FuncDesignerException('prod(x) is not implemented yet for arrays with ndim > 1')
             ind_zero = where(x==0)[0].tolist()
             ind_nonzero = nonzero(x)[0].tolist()
@@ -539,6 +543,7 @@ class oofun:
 #            else:
 #                return deepcopy(self.f_val_prev)
     def _getFuncCalcEngine(self, *args, **kwargs):
+        #print kwargs.keys()
         dep = self._getDep()
         x = args[0]
         CondSamePointByID = True if type(x) == ooPoint and self._point_id == x._id else False
@@ -548,12 +553,8 @@ class oofun:
         
         if cond_same_point:
             self.same += 1
-            if isscalar(self.f_val_prev):
-                return copy(self.f_val_prev)
-            elif hasattr(self.f_val_prev, 'copy'):
-                return self.f_val_prev.copy()
-            else: 
-                return deepcopy(self.f_val_prev) # Is it used somewhere?
+            return self.f_val_prev.copy() # self.f_val_prev is ndarray always 
+            
         self.evals += 1
         
         if type(self.args) != tuple:
@@ -575,14 +576,15 @@ class oofun:
         
         if (type(x) == ooPoint or self.isCostly) and self.input[0] is not None:
             # TODO: simplify it
-            self.f_val_prev = tmp
+            self.f_val_prev = copy(tmp) # always yields ndarray
             self.f_key_prev = dict([(elem.name, copy(x[elem])) for elem in dep])
             
-            if hasattr(self.f_val_prev, 'copy'): return self.f_val_prev.copy()
-            elif isscalar(self.f_val_prev):
-                return copy(self.f_val_prev)
-            else:
-                return deepcopy(self.f_val_prev) # Is it used somewhere?
+            return copy(self.f_val_prev)
+#            if hasattr(self.f_val_prev, 'copy'): return self.f_val_prev.copy()
+#            elif isscalar(self.f_val_prev):
+#                return copy(self.f_val_prev)
+#            else:
+#                return deepcopy(self.f_val_prev) # Is it used somewhere?
         else:
             return tmp
 
@@ -673,6 +675,11 @@ class oofun:
         sameDerivativeVariables = diffVarsID == self._lastDiffVarsID 
         
         dep = self._getDep()
+        
+        rebuildFixedCheck = not sameDerivativeVariables
+        if rebuildFixedCheck:
+            self._isFixed = (fixedVars is not None and dep.issubset(fixedVars)) or (Vars is not None and dep.isdisjoint(Vars))
+        if self._isFixed: return {}
         ##########################
         
         # TODO: optimize it. Omit it for simple cases.

@@ -129,7 +129,7 @@ def sum(inp, *args, **kwargs):
 
     if condIterableOfOOFuns:
         is_linear = True
-        d, INP, r0 = [], [], 0
+        d, INP, r0 = [], [], 0.0
         j = -1
         for elem in inp: # TODO: mb use reduce() or something like that
             if not isinstance(elem, oofun): 
