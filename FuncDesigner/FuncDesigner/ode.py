@@ -69,7 +69,7 @@ class ode:
             tmp[timeVariable] = t
             r = []
             for func in Funcs:
-                tt = func.D(tmp, diffVarsID = _FDVarsID)
+                tt = func.D(tmp, fixedVarsScheduleID = _FDVarsID)
                 tt.pop(timeVariable)
                 r.append(ooT.pointDerivative2array(tt))
             return vstack(r)

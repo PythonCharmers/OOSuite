@@ -89,20 +89,33 @@ class nonLinFuncs:
             nXvectors = x.shape[0]
 
         # TODO: use certificate instead 
-        if getDerivative and p.isFDmodel:
-            
-            if p.useSparse == 'auto' and hasattr(p, 'nc') and hasattr(p, 'nh'):
-                if (p.nc + p.nh) * p.n < 10**6:
-                    p.useSparse = False # TODO: improve the premature autoselect
-                    
-            if p.optVars is None or (p.fixedVars is not None and len(p.optVars) < len(p.fixedVars)):
-                funcs2 = [(lambda x, i=i: \
-                  p._pointDerivative2array(funcs[i].D(x, Vars = p.optVars, useSparse=p.useSparse, diffVarsID=p._FDVarsID, exactShape=True), useSparse=p.useSparse, func=funcs[i], point=x)) \
-                  for i in xrange(len(funcs))]
+        if p.isFDmodel:
+            if getDerivative:
+                if p.useSparse == 'auto' and hasattr(p, 'nc') and hasattr(p, 'nh'):
+                    if (p.nc + p.nh) * p.n < 10**6:
+                        p.useSparse = False # TODO: improve the premature autoselect
+                        
+                if p.optVars is None or (p.fixedVars is not None and len(p.optVars) < len(p.fixedVars)):
+                    funcs2 = [(lambda x, i=i: \
+                      p._pointDerivative2array(
+                                               funcs[i].D(x, Vars = p.optVars, useSparse=p.useSparse, fixedVarsScheduleID=p._FDVarsID, exactShape=True), 
+                                               useSparse=p.useSparse, func=funcs[i], point=x)) \
+                      for i in xrange(len(funcs))]
+                else:
+                    funcs2 = [(lambda x, i=i: \
+                      p._pointDerivative2array(
+                                               funcs[i].D(x, fixedVars = p.fixedVars, useSparse=p.useSparse, fixedVarsScheduleID=p._FDVarsID, exactShape=True), 
+                                               useSparse=p.useSparse, func=funcs[i], point=x)) \
+                      for i in xrange(len(funcs))]
             else:
-                funcs2 = [(lambda x, i=i: \
-                  p._pointDerivative2array(funcs[i].D(x, fixedVars = p.fixedVars, useSparse=p.useSparse, diffVarsID=p._FDVarsID, exactShape=True), useSparse=p.useSparse, func=funcs[i], point=x)) \
-                  for i in xrange(len(funcs))]
+                if p.optVars is None or (p.fixedVars is not None and len(p.optVars) < len(p.fixedVars)):
+                    funcs2 = [(lambda x, i=i: \
+                               funcs[i]._getFuncCalcEngine(x, Vars = p.optVars, fixedVarsScheduleID=p._FDVarsID))\
+                      for i in xrange(len(funcs))]
+                else:
+                    funcs2 = [(lambda x, i=i: \
+                               funcs[i]._getFuncCalcEngine(x, fixedVars = p.fixedVars, fixedVarsScheduleID=p._FDVarsID))\
+                      for i in xrange(len(funcs))]
         else:
             funcs2 = funcs
             
@@ -121,10 +134,7 @@ class nonLinFuncs:
             Args = args
             
         if nXvectors == 1:
-            if p.isFDmodel:
-                X = p._vector2point(x) 
-            else:
-                X = x
+            X = p._vector2point(x) if p.isFDmodel else x
         
         if nXvectors > 1: # and hence getDerivative isn't involved
             #temporary, to be fixed

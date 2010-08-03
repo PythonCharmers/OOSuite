@@ -43,12 +43,12 @@ def Diag(x):
     elif len(x) < 16 or not scipyInstalled: return diag(x)
     else: return scipy.sparse.spdiags(x, [0], len(x), len(x)) 
 
-class diffVarsID:
-    diffVarsID = 0
+class fixedVarsScheduleID:
+    fixedVarsScheduleID = 0
     def _getDiffVarsID(*args):
-        diffVarsID.diffVarsID += 1
-        return diffVarsID.diffVarsID
-DiffVarsID = diffVarsID()
+        fixedVarsScheduleID.fixedVarsScheduleID += 1
+        return fixedVarsScheduleID.fixedVarsScheduleID
+DiffVarsID = fixedVarsScheduleID()
 _getDiffVarsID = lambda *args: DiffVarsID._getDiffVarsID(*args)
 
 def raise_except(*args, **kwargs):

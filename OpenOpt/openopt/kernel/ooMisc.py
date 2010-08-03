@@ -177,8 +177,10 @@ def setNonLinFuncsNumber(p,  userFunctionType):
     
     if p.isFDmodel:
         X = p._x0
+        kwargs = {'Vars': p.optVars, 'fixedVarsScheduleID':p._FDVarsID, 'fixedVars': p.fixedVars}
     else:
         X = p.x0
+        kwargs = {}
 
     if len(fv) == 1: p.functype[userFunctionType] = 'single func'
     if fv is None or (type(fv) in [list, tuple] and (len(fv)==0 or fv[0] is None)):
@@ -199,7 +201,7 @@ def setNonLinFuncsNumber(p,  userFunctionType):
     else:
         if type(fv) in [list, tuple]: FV = fv[0]
         else:  FV = fv
-        setattr(p, 'n'+userFunctionType, asfarray(FV(*(X, ) + args)).size)
+        setattr(p, 'n'+userFunctionType, asfarray(FV(*(X, ) + args, **kwargs)).size)
 
 def economyMult(M, V):
     #return dot(M, V)

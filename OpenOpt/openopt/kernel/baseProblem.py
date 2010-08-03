@@ -292,7 +292,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             else:
                 D_kwargs = {'fixedVars':self.fixedVars}
             D_kwargs['useSparse'] = self.useSparse
-            D_kwargs['diffVarsID'] = self._FDVarsID
+            D_kwargs['fixedVarsScheduleID'] = self._FDVarsID
             D_kwargs['exactShape'] = True
             
             self._D_kwargs = D_kwargs

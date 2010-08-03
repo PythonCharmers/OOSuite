@@ -65,6 +65,7 @@ class oofun:
     maxViolation = 1e-2
     _unnamedFunNumber = 1
     _lastDiffVarsID = 0
+    _lastFuncVarsID = 0
 
     _usedIn = 0
     _level = 0
@@ -469,10 +470,10 @@ class oofun:
 
 
     """                                             getInput                                              """
-    def _getInput(self, x):
+    def _getInput(self, *args, **kwargs):
 #        self.inputOOVarTotalLength = 0
         #return tuple([atleast_1d(item._getFuncCalcEngine(x)) if isinstance(item, oofun) else atleast_1d(item) for item in self.input])
-        return tuple([(item._getFuncCalcEngine(x) if isinstance(item, oofun) else item) for item in self.input])
+        return tuple([(item._getFuncCalcEngine(*args, **kwargs) if isinstance(item, oofun) else item) for item in self.input])
 
     """                                                getDep                                             """
     def _getDep(self):
@@ -520,8 +521,6 @@ class oofun:
     def _getFunc(self, *args, **kwargs):
         if len(args) == 0 and len(kwargs) == 0:
             raise FuncDesignerException('at least one argument is required')
-        if (len(kwargs) == 1 and 'name' not in kwargs) or len(kwargs) > 1:
-            raise FuncDesignerException('only "name" is allowed for oofun keyword arguments')
         if len(args) != 0:
             if type(args[0]) != str:
                 assert not isinstance(args[0], oofun), "you can't invoke oofun on another one oofun"
@@ -533,34 +532,40 @@ class oofun:
                 return self
                 
         return self._getFuncCalcEngine(*args, **kwargs)
-        
-        #!!!!!!!!!!!!!!!!!!! TODO: HANDLE FIXED OOFUNCS
-        
-#        if self.fixed and hasattr(self, 'f_key_prev'):
-#            # TODO: remove duplicated code from the func
-#            if isinstance(self.f_val_prev, ndarray) or isinstance(self.f_val_prev, float):
-#                return atleast_1d(copy(self.f_val_prev))
-#            else:
-#                return deepcopy(self.f_val_prev)
+
+
     def _getFuncCalcEngine(self, *args, **kwargs):
-        #print kwargs.keys()
         dep = self._getDep()
         x = args[0]
         CondSamePointByID = True if type(x) == ooPoint and self._point_id == x._id else False
 
+        fixedVarsScheduleID = kwargs.get('fixedVarsScheduleID', -1)
+        fixedVars = kwargs.get('fixedVars', None)
+        Vars = kwargs.get('Vars', None) 
+        
+        sameVarsScheduleID = fixedVarsScheduleID == self._lastFuncVarsID 
+        rebuildFixedCheck = not sameVarsScheduleID
+        if fixedVarsScheduleID != -1: self._lastFuncVarsID = fixedVarsScheduleID
+        
+        if rebuildFixedCheck:
+            self._isFixed = (fixedVars is not None and dep.issubset(fixedVars)) or (Vars is not None and dep.isdisjoint(Vars))
+            
         cond_same_point = CondSamePointByID or \
-        (self.isCostly and 'f_key_prev' in self.__dict__  and all([array_equal(x[elem], self.f_key_prev[elem.name]) for elem in dep]))
+        ('f_key_prev' in self.__dict__  and (self._isFixed or (self.isCostly and  all([array_equal(x[elem], self.f_key_prev[elem]) for elem in dep]))))
         
         if cond_same_point:
             self.same += 1
             return self.f_val_prev.copy() # self.f_val_prev is ndarray always 
             
         self.evals += 1
+        if self.name == 'ff': 
+            print self.evals, self._isFixed, fixedVarsScheduleID, self._lastFuncVarsID
+            if self.evals > 1: raise 0
         
         if type(self.args) != tuple:
             self.args = (self.args, )
             
-        Input = self._getInput(x) 
+        Input = self._getInput(*args, **kwargs) 
         if self.args != ():
             Input += self.args
         tmp = self.fun(*Input)
@@ -574,17 +579,10 @@ class oofun:
         if type(x) == ooPoint: 
             self._point_id = x._id
         
-        if (type(x) == ooPoint or self.isCostly) and self.input[0] is not None:
-            # TODO: simplify it
-            self.f_val_prev = copy(tmp) # always yields ndarray
-            self.f_key_prev = dict([(elem.name, copy(x[elem])) for elem in dep])
-            
+        if (type(x) == ooPoint or self.isCostly or self._isFixed):
+            self.f_val_prev = copy(tmp) 
+            self.f_key_prev = dict([(elem, copy(x[elem])) for elem in dep])
             return copy(self.f_val_prev)
-#            if hasattr(self.f_val_prev, 'copy'): return self.f_val_prev.copy()
-#            elif isscalar(self.f_val_prev):
-#                return copy(self.f_val_prev)
-#            else:
-#                return deepcopy(self.f_val_prev) # Is it used somewhere?
         else:
             return tmp
 
@@ -594,25 +592,13 @@ class oofun:
 
 
     """                                              derivatives                                           """
-    def D(self, x, Vars=None, fixedVars = None, resultKeysType = 'vars', useSparse = False, exactShape = False, diffVarsID = -1):
+    def D(self, x, Vars=None, fixedVars = None, resultKeysType = 'vars', useSparse = False, exactShape = False, fixedVarsScheduleID = -1):
         
         # resultKeysType doesn't matter for the case isinstance(Vars, oovar)
         if Vars is not None and fixedVars is not None:
             raise FuncDesignerException('No more than one argument from "Vars" and "fixedVars" is allowed for the function')
         assert type(Vars) != ndarray and type(fixedVars) != ndarray
         if not isinstance(x, ooPoint): x = ooPoint(x)
-        #self._directlyDwasInwolved = True
-        #if not hasattr(self, '_prev_D_Vars_key'):
-            #sameDerivativeVariables = False
-            #self._prev_D_Vars_key = None
-            #self._prev_D_fixedVars_key = None
-            
-
-        #sameDerivativeVariables = True if diffVarsID == self._lastDiffVarsID or (self._prev_D_Vars_key is Vars and self._prev_D_fixedVars_key is fixedVars) else False
-        #self._prev_D_Vars_key = set([Vars] if not isinstance(Vars, (list, tuple, set)) else Vars)
-        #self._prev_D_fixedVars_key = set([fixedVars] if not isinstance(fixedVars, (list, tuple, set)) else fixedVars)
-        
-        #print 'sameDerivativeVariables:', sameDerivativeVariables
         
         #TODO: remove cloned code
         if Vars is not None:
@@ -629,7 +615,7 @@ class oofun:
                 if not fixedVars.is_oovar:
                     raise FuncDesignerException('argument fixedVars is expected as oovar or python list/tuple of oovar instances')
                 fixedVars = set([fixedVars])
-        r = self._D(x, diffVarsID, Vars, fixedVars, useSparse = useSparse)
+        r = self._D(x, fixedVarsScheduleID, Vars, fixedVars, useSparse = useSparse)
         if isinstance(Vars, oofun):
             if Vars.is_oovar:
                 return Vars(r)
@@ -660,7 +646,7 @@ class oofun:
                 raise FuncDesignerException('Incorrect argument resultKeysType, should be "vars" or "names"')
             
             
-    def _D(self, x, diffVarsID, Vars=None, fixedVars = None, useSparse = 'auto'):
+    def _D(self, x, fixedVarsScheduleID, Vars=None, fixedVars = None, useSparse = 'auto'):
         if self.is_oovar: 
             return {} if (fixedVars is not None and self in fixedVars) or (Vars is not None and self not in Vars) \
             else {self:Eye(asarray(x[self]).size)}
@@ -672,11 +658,11 @@ class oofun:
             #raise FuncDesignerException('The oofun or oovar instance has been declared as discrete, no derivative is available')
         
         CondSamePointByID = True if isinstance(x, ooPoint) and self._point_id1 == x._id else False
-        sameDerivativeVariables = diffVarsID == self._lastDiffVarsID 
+        sameVarsScheduleID = fixedVarsScheduleID == self._lastDiffVarsID 
         
         dep = self._getDep()
         
-        rebuildFixedCheck = not sameDerivativeVariables
+        rebuildFixedCheck = not sameVarsScheduleID
         if rebuildFixedCheck:
             self._isFixed = (fixedVars is not None and dep.issubset(fixedVars)) or (Vars is not None and dep.isdisjoint(Vars))
         if self._isFixed: return {}
@@ -689,7 +675,7 @@ class oofun:
 
         #cond_same_point = hasattr(self, 'd_key_prev') and sameDerivativeVariables and (CondSamePointByID or (involveStore and         all([array_equal(x[elem], self.d_key_prev[elem]) for elem in dep])))
         
-        cond_same_point = sameDerivativeVariables and (CondSamePointByID or (involveStore and hasattr(self, 'd_key_prev') and all([array_equal(x[elem], self.d_key_prev[elem]) for elem in dep])))
+        cond_same_point = sameVarsScheduleID and (CondSamePointByID or (involveStore and hasattr(self, 'd_key_prev') and all([array_equal(x[elem], self.d_key_prev[elem]) for elem in dep])))
         
         if cond_same_point:
             self.same_d += 1
@@ -699,9 +685,9 @@ class oofun:
             self.evals_d += 1
 
         if isinstance(x, ooPoint): self._point_id1 = x._id
-        if diffVarsID != -1: self._lastDiffVarsID = diffVarsID
+        if fixedVarsScheduleID != -1: self._lastDiffVarsID = fixedVarsScheduleID
 
-        derivativeSelf = self._getDerivativeSelf(x, Vars, fixedVars)
+        derivativeSelf = self._getDerivativeSelf(x, fixedVarsScheduleID, Vars, fixedVars)
 
         r = Derivative()
         ac = -1
@@ -726,7 +712,7 @@ class oofun:
             else:
                 ac += 1
                 
-                elem_d = inp._D(x, diffVarsID, Vars=Vars, fixedVars=fixedVars, useSparse = useSparse) 
+                elem_d = inp._D(x, fixedVarsScheduleID, Vars=Vars, fixedVars=fixedVars, useSparse = useSparse) 
                 
                 t1 = derivativeSelf[ac]
                 
@@ -809,8 +795,8 @@ class oofun:
                 t2 = scipy.sparse.csr_matrix(t2)
         return t1,  t2
 
-    def _getDerivativeSelf(self, x, Vars,  fixedVars):
-        Input = self._getInput(x)
+    def _getDerivativeSelf(self, x, fixedVarsScheduleID, Vars,  fixedVars):
+        Input = self._getInput(x, fixedVarsScheduleID=fixedVarsScheduleID, Vars=Vars,  fixedVars=fixedVars)
 #        if hasattr(self, 'size') and isscalar(self.size): nOutput = self.size
 #        else: nOutput = self(x).size 
         hasUserSuppliedDerivative = self.d is not None

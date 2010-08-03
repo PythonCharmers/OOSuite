@@ -21,7 +21,7 @@ class oovar(oofun):
             kwargs['name'] = name
         oofun.__init__(self, lambda *ARGS: None, *args, **kwargs)
         
-    def _getFuncCalcEngine(self, x):
+    def _getFuncCalcEngine(self, x, **kwargs):
         if isinstance(x, dict):
             tmp = x.get(self, None)
             if tmp is not None:
