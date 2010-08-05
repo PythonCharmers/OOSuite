@@ -30,13 +30,14 @@ try:
         s = set([(0 if isscalar(elem) else elem.ndim) for elem in elems])
         ndim = max(s)
         if ndim <= 1:  return hstack(elems)
-        assert ndim <= 2
-        return hstack(elems) if (0 not in s and 1 not in s) else hstack([atleast_2d(elem) for elem in elems])
+        assert ndim <= 2 and 1 not in s, 'bug in FuncDesigner kernel, inform developers'
+        return hstack(elems) if 0 not in s else hstack([atleast_2d(elem) for elem in elems])
         
     from scipy.sparse import isspmatrix
 except:
     scipy = None
     isspmatrix = lambda *args,  **kwargs:  False
+    Hstack = hstack
 
 class oofun:
     #TODO:

@@ -61,7 +61,7 @@ class SLE(MatrixProblem):
             if not cond_all_oofuns_but_not_cons and not cond_cons:
                 raise OpenOptException('for FuncDesigner sle constructor args must be either all-equalities or all-oofuns')            
             
-            AsSparse = bool(self.useSparse) if isscalar(self.useSparse) else self.useSparse()
+            AsSparse = bool(self.useSparse) if type(self.useSparse) != str else self._useSparse()
 #            if AsSparse:
 #                from scipy import sparse
 #                if not hasattr(sparse, 'linalg'):

@@ -18,8 +18,8 @@ try:
         s = set([(0 if isscalar(elem) else elem.ndim) for elem in elems])
         ndim = max(s)
         if ndim <= 1:  return hstack(elems)
-        assert ndim <= 2
-        return hstack(elems) if (0 not in s and 1 not in s) else hstack([atleast_2d(elem) for elem in elems])
+        assert ndim <= 2 and 1 not in s, 'bug in OpenOpt kernel, inform developers'
+        return hstack(elems) if 0 not in s else hstack([atleast_2d(elem) for elem in elems])
         
     def Vstack(Tuple):
         ind = where([prod(elem.shape)!=0 for elem in Tuple])[0].tolist()
@@ -30,8 +30,8 @@ try:
         s = set([(0 if isscalar(elem) else elem.ndim) for elem in elems])
         ndim = max(s)
         if ndim <= 1:  return vstack(elems)
-        assert ndim <= 2
-        return vstack(elems) if (0 not in s and 1 not in s) else vstack([atleast_2d(elem) for elem in elems])
+        assert ndim <= 2 and 1 not in s, 'bug in OpenOpt kernel, inform developers'
+        return vstack(elems) if 0 not in s else vstack([atleast_2d(elem) for elem in elems])
         
     #Hstack = lambda Tuple: HstackSP(Tuple) if any([isspmatrix(elem) for elem in Tuple]) else hstack(Tuple)
     #Vstack = lambda Tuple: VstackSP(Tuple) if any([isspmatrix(elem) for elem in Tuple]) else vstack(Tuple)
