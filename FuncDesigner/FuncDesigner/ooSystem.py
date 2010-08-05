@@ -1,7 +1,7 @@
 from misc import FuncDesignerException, pWarn
 from ooFun import oofun, BaseFDConstraint, _getAllAttachedConstraints
 from ooPoint import ooPoint
-from numpy import isnan, ndarray, isfinite
+from numpy import isnan, ndarray, isfinite, asscalar, all, asarray, atleast_1d
 
 class ooSystem:
     def __init__(self, *args,  **kwargs):
@@ -68,11 +68,11 @@ class ooSystem:
         
         
         activeConstraints = []
-        allAreFinite = all([all(isfinite(elem(point))) for elem in self.items])
+        allAreFinite = all([all(isfinite(asarray(elem(point)))) for elem in self.items])
         
         for c in cons:
             val = c.oofun(point)
-            if c(point) is False or any(isnan(val)): 
+            if c(point) is False or any(isnan(atleast_1d(val))): 
                 activeConstraints.append(c)
                 #_activeConstraints.append([c, val, max((val-c.ub, c.lb-val)), c.tol])
                 
@@ -169,7 +169,7 @@ class ooSystemState:
         # access by elements and their names
 
 
-simplify = lambda val: val[0] if isinstance(val, ndarray) and val.size == 1 else val
+simplify = lambda val: asscalar(val) if isinstance(val, ndarray) and val.size == 1 else val
 
 
 
