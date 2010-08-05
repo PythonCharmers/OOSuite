@@ -271,6 +271,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             self.useSparse = False
         elif self.useSparse == 1:
             self.useSparse = True
+        if self.useSparse == 'auto' and not scipyInstalled:
+            self.useSparse = False
         if self.useSparse == True and not scipyInstalled:
             self.err("You can't set useSparse=True without scipy installed")
         if self._isFDmodel():
