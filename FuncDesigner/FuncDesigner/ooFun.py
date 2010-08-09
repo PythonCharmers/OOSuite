@@ -21,7 +21,7 @@ try:
     import scipy
     SparseMatrixConstructor = lambda *args, **kwargs: scipy.sparse.lil_matrix(*args, **kwargs)
     from scipy import sparse
-    from scipy.sparse import hstack as HstackSP
+    from scipy.sparse import hstack as HstackSP, isspmatrix_csc, isspmatrix_csr
     def Hstack(Tuple):
         ind = where([isscalar(elem) or prod(elem.shape)!=0 for elem in Tuple])[0].tolist()
         elems = [Tuple[i] for i in ind]
@@ -727,29 +727,29 @@ class oofun:
                             t2 = val
                         else:
                             t1, t2 = self._considerSparse(t1, val)
-                        if t1.ndim > 1 or t2.ndim > 1:
-                            # warning! t1,t2 can be sparse matrices, so I don't use t = atleast_2d(t) directly
-                            if t2.ndim < 2: 
-                                assert t1.ndim > 1, 'error in FuncDesigner kernel, inform developers'
-                                if t1.shape[1] != t2.shape[0]:
-                                    t2 = t2.reshape(1, -1)
-                        else:
-                            # hence these are ndarrays
-                            if self._getFuncCalcEngine(x).size > 1:
-                                t1 = t1.reshape(-1, 1)
-                                t2 = t2.reshape(1, -1)
-                            else:
-                                t1 = t1.reshape(1, -1)
-                                t2 = t2.reshape(-1, 1)
+#                        if t1.ndim > 1 or t2.ndim > 1:
+#                            # warning! t1,t2 can be sparse matrices, so I don't use t = atleast_2d(t) directly
+#                            if t2.ndim < 2: 
+#                                #assert t1.ndim > 1, 'error in FuncDesigner kernel, inform developers'
+#                                if t1.shape[1] != t2.shape[0]:
+#                                    t2 = t2.reshape(1, -1)
+#                        else:
+#                            # hence these are ndarrays
+#                            if self._getFuncCalcEngine(x).size > 1:
+#                                t1 = t1.reshape(-1, 1)
+#                                t2 = t2.reshape(1, -1)
+#                            else:
+#                                t1 = t1.reshape(1, -1)
+#                                t2 = t2.reshape(-1, 1)
                         
-                        if not (isinstance(t1,  ndarray) and isinstance(t2,  ndarray)):
+                        if not type(t1) == type(t2) ==  ndarray:
                             # CHECKME: is it trigger somewhere?
                             if not scipyInstalled:
                                 self.pWarn(scipyAbsentMsg)
-                                rr = atleast_1d(dot(t1, t2))
+                                rr = dot(t1, t2)
                             else:
-                                t1 = t1 if isinstance(t1, scipy.sparse.csc_matrix) else t1.tocsc() if isspmatrix(t1)  else scipy.sparse.csc_matrix(t1)
-                                t2 = t2 if isinstance(t2, scipy.sparse.csr_matrix) else t2.tocsr() if isspmatrix(t2)  else scipy.sparse.csr_matrix(t2)
+                                t1 = t1 if isspmatrix_csc(t1) else t1.tocsc() if isspmatrix(t1)  else scipy.sparse.csc_matrix(t1)
+                                t2 = t2 if isspmatrix_csr(t2) else t2.tocsr() if isspmatrix(t2)  else scipy.sparse.csr_matrix(t2)
                                 if t2.shape[0] != t1.shape[1]:
                                     if t2.shape[1] == t1.shape[1]:
                                         t2 = t2.T
@@ -759,7 +759,7 @@ class oofun:
                                 if useSparse is False:
                                     rr = rr.toarray() 
                         else:
-                            rr = atleast_1d(dot(t1, t2))
+                            rr = dot(t1, t2)
                     #assert rr.ndim>1
                         
                     if key in r:
@@ -774,9 +774,7 @@ class oofun:
                     else:
                         r[key] = rr
         
-        dp = dict([(key, Copy(value)) for key, value in r.items()])
-        
-        self._d_val_prev = dp
+        self._d_val_prev = dict([(key, Copy(value)) for key, value in r.items()])
         self._d_key_prev = dict([(elem, Copy(x[elem])) for elem in dep]) if involveStore else None
         return r
 
