@@ -526,6 +526,24 @@ class oofun:
         if len(args) != 0:
             if type(args[0]) != str:
                 assert not isinstance(args[0], oofun), "you can't invoke oofun on another one oofun"
+                
+                if self.is_oovar:
+                    if isinstance(x, dict):
+                        tmp = x.get(self, None)
+                        if tmp is not None:
+                            return tmp #if type(tmp)==ndarray else asfarray(tmp)
+                        elif self.name in x:
+                            return asfarray(x[self.name])
+                        else:
+                            s = 'for oovar ' + self.name + \
+                            " the point involved doesn't contain neither name nor the oovar instance. Maybe you try to get function value or derivative in a point where value for an oovar is missing"
+                            raise FuncDesignerException(s)
+                    elif hasattr(x, 'xf'):
+                        # TODO: possibility of squeezing
+                        return x.xf[self]
+                    else:
+                        raise FuncDesignerException('Incorrect data type (%s) while obtaining oovar %s value' %(type(x), self.name))
+            
             else:
                 self.name = args[0]
                 return self
@@ -537,8 +555,10 @@ class oofun:
 
 
     def _getFuncCalcEngine(self, *args, **kwargs):
-        dep = self._getDep()
         x = args[0]
+        
+        dep = self._getDep()
+        
         CondSamePointByID = True if type(x) == ooPoint and self._point_id == x._id else False
 
         fixedVarsScheduleID = kwargs.get('fixedVarsScheduleID', -1)

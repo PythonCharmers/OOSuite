@@ -22,26 +22,31 @@ class oovar(oofun):
         oofun.__init__(self, lambda *ARGS: None, *args, **kwargs)
         
     def _getFuncCalcEngine(self, x, **kwargs):
-        if isinstance(x, dict):
-            tmp = x.get(self, None)
-            if tmp is not None:
-                r = tmp #if type(tmp)==ndarray else asfarray(tmp)
-            elif self.name in x:
-                r = asfarray(x[self.name])
-            else:
-                s = 'for oovar ' + self.name + \
-                " the point involved doesn't contain niether name nor the oovar instance. Maybe you try to get function value or derivative in a point where value for an oovar is missing"
-                raise FuncDesignerException(s)
-        elif hasattr(x, 'xf'):
-            # TODO: possibility of squeezing
-            r = x.xf[self]
-        else:
-            raise FuncDesignerException('Incorrect data type (%s) while obtaining oovar %s value' %(type(x), self.name))
-        
-        if 'size' in self.__dict__ and type(self.size) == int and Len(r)  != self.size: # len(r) for lists/tuples
-            s = 'incorrect size for oovar %s: %d is required, %d is obtained' % (self.name, self.size, Size)
+        r = x.get(self, None)
+        if r is not None: 
+            return r
+        else:                             
+            s = 'for oovar ' + self.name + \
+            " the point involved doesn't contain neither name nor the oovar instance. Maybe you try to get function value or derivative in a point where value for an oovar is missing"
             raise FuncDesignerException(s)
-        return r
+        
+        
+#        if isinstance(x, dict):
+#            tmp = x.get(self, None)
+#            if tmp is not None:
+#                return tmp #if type(tmp)==ndarray else asfarray(tmp)
+#            elif self.name in x:
+#                return asfarray(x[self.name])
+#            else:
+#                s = 'for oovar ' + self.name + \
+#                " the point involved doesn't contain niether name nor the oovar instance. Maybe you try to get function value or derivative in a point where value for an oovar is missing"
+#                raise FuncDesignerException(s)
+#        elif hasattr(x, 'xf'):
+#            # TODO: possibility of squeezing
+#            return x.xf[self]
+#        else:
+#            raise FuncDesignerException('Incorrect data type (%s) while obtaining oovar %s value' %(type(x), self.name))
+        
         
 #    def _initialize(self, p):
 #

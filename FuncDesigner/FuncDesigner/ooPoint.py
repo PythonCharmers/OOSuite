@@ -21,6 +21,12 @@ class ooPoint(dict):
             
         dict.__init__(self, items)
         
+        for key, val in items:
+            if 'size' in key.__dict__ and type(key.size) == int and Len(val)  != key.size: 
+                s = 'incorrect size for oovar %s: %d is required, %d is obtained' % (self.name, self.size, Size)
+                raise FuncDesignerException(s)
+
+        
         ooPoint._id += 1
         self._id = ooPoint._id
     
