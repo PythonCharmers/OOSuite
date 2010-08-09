@@ -8,6 +8,7 @@ from copy import deepcopy
 from ooPoint import ooPoint
 
 Copy = lambda arg: asscalar(arg) if type(arg)==ndarray and arg.size == 1 else arg.copy() if hasattr(arg, 'copy') else copy(arg)
+Len = lambda x: 1 if isscalar(x) else x.size if type(x)==ndarray else len(x)
 
 try:
     from DerApproximator import get_d1, check_d1
@@ -76,6 +77,8 @@ class oofun:
     _broadcast_id = 0
     _point_id = 0
     _point_id1 = 0
+    _f_key_prev = None
+    _f_val_prev = None
     #_c = 0.0
 
     pWarn = lambda self, msg: pWarn(msg)
@@ -157,8 +160,7 @@ class oofun:
         # TODO: check for correct sizes during f, not only f.d 
     
         def aux_d(x, y):
-            Xsize = 1 if isscalar(x) else x.size
-            Ysize = 1 if isscalar(y) else y.size
+            Xsize, Ysize = Len(x), Len(y)
             if Xsize == 1:
                 return ones(Ysize)
             elif Ysize == 1:
@@ -196,7 +198,7 @@ class oofun:
     
     # overload "-a"
     def __neg__(self): 
-        r = oofun(lambda a: -a, self, d = lambda a: -Eye(1 if isscalar(a) else a.size), is_linear = self.is_linear)
+        r = oofun(lambda a: -a, self, d = lambda a: -Eye(Len(a)), is_linear = self.is_linear)
         r._getFuncCalcEngine = lambda *args,  **kwargs: -self._getFuncCalcEngine(*args,  **kwargs)
         r._D = lambda *args, **kwargs: dict([(key, -value) for key, value in self._D(*args, **kwargs).items()])
         r.d = raise_except
@@ -212,8 +214,7 @@ class oofun:
             r = oofun(lambda x, y: x/y, [self, other])
             def aux_dx(x, y):
                 #x, y, = asfarray(x), asfarray(y) # TODO: get rid of it
-                Xsize = 1 if isscalar(x) else x.size
-                Ysize = 1 if isscalar(y) else y.size
+                Xsize, Ysize = Len(x), Len(y)
                 if Xsize != 1:
                     assert Xsize == Ysize or Ysize == 1, 'incorrect size for oofun devision'
                 r = 1.0 / y
@@ -222,8 +223,7 @@ class oofun:
                     r = Diag(r)
                 return r                
             def aux_dy(x, y):
-                Xsize = 1 if isscalar(x) else x.size
-                Ysize = 1 if isscalar(y) else y.size                
+                Xsize, Ysize = Len(x), Len(y)
                 r = -x / y**2
                 if Ysize != 1:
                     assert Xsize == Ysize or Xsize == 1, 'incorrect size for oofun devision'
@@ -256,8 +256,7 @@ class oofun:
     # overload "a*b"
     def __mul__(self, other):
         def aux_d(x, y):
-            Xsize = 1 if isscalar(x) else x.size
-            Ysize = 1 if isscalar(y) else y.size
+            Xsize, Ysize = Len(x), Len(y)
             if Xsize == 1:
                 return Copy(y)
             elif Ysize == 1:
@@ -335,7 +334,7 @@ class oofun:
         if not isinstance(ind, oofun):
             f = lambda x: x[ind]
             def d(x):
-                Xsize = 1 if isscalar(x) else x.size
+                Xsize = Len(x)
                 condBigMatrix = Xsize > 100 
                 if condBigMatrix and scipyInstalled:
                     r = SparseMatrixConstructor((1, x.shape[0]))
@@ -373,7 +372,7 @@ class oofun:
         assert not isinstance(ind1, oofun) and not isinstance(ind2, oofun), 'slicing by oofuns is unimplemented yet'
         f = lambda x: x[ind1:ind2]
         def d(x):
-            condBigMatrix = (1 if isscalar(x) else x.size) > 100 #and (ind2-ind1) > 0.25*x.size
+            condBigMatrix = Len(x) > 100 #and (ind2-ind1) > 0.25*x.size
             if condBigMatrix and not scipyInstalled:
                 self.pWarn(scipyAbsentMsg)
             if condBigMatrix and scipyInstalled:
@@ -552,11 +551,11 @@ class oofun:
             self._isFixed = (fixedVars is not None and dep.issubset(fixedVars)) or (Vars is not None and dep.isdisjoint(Vars))
             
         cond_same_point = CondSamePointByID or \
-        ('f_key_prev' in self.__dict__  and (self._isFixed or (self.isCostly and  all([array_equal(x[elem], self.f_key_prev[elem]) for elem in dep]))))
+        (self._f_val_prev is not None and (self._isFixed or (self.isCostly and  all([array_equal(x[elem], self._f_key_prev[elem]) for elem in dep]))))
         
         if cond_same_point:
             self.same += 1
-            return self.f_val_prev.copy() # self.f_val_prev is ndarray always 
+            return self._f_val_prev.copy() # self._f_val_prev is ndarray always 
             
         self.evals += 1
         
@@ -578,9 +577,9 @@ class oofun:
             self._point_id = x._id
         
         if (type(x) == ooPoint or self.isCostly or self._isFixed):
-            self.f_val_prev = copy(tmp) 
-            self.f_key_prev = dict([(elem, copy(x[elem])) for elem in dep])
-            return copy(self.f_val_prev)
+            self._f_val_prev = copy(tmp) 
+            self._f_key_prev = dict([(elem, copy(x[elem])) for elem in dep]) if self.isCostly else None
+            return copy(self._f_val_prev)
         else:
             return tmp
 
@@ -795,8 +794,11 @@ class oofun:
 
     def _getDerivativeSelf(self, x, fixedVarsScheduleID, Vars,  fixedVars):
         Input = self._getInput(x, fixedVarsScheduleID=fixedVarsScheduleID, Vars=Vars,  fixedVars=fixedVars)
+        expectedTotalInputLength = sum([Len(elem) for elem in Input])
+        
 #        if hasattr(self, 'size') and isscalar(self.size): nOutput = self.size
 #        else: nOutput = self(x).size 
+
         hasUserSuppliedDerivative = self.d is not None
         if hasUserSuppliedDerivative:
             derivativeSelf = []
@@ -846,7 +848,7 @@ class oofun:
                 tmp = self.d(*Input)
                 if not isscalar(tmp) and type(tmp) in (ndarray, tuple, list): # i.e. not a scipy.sparse matrix
                     tmp = atleast_2d(tmp)
-                    expectedTotalInputLength = sum([elem.size for elem in Input])
+                    
                     if tmp.shape[1] != expectedTotalInputLength: 
                         # TODO: add debug msg
                         if tmp.shape[0] != expectedTotalInputLength: raise FuncDesignerException('error in getDerivativeSelf()')
@@ -862,12 +864,12 @@ class oofun:
                         ac += inp.size
                         continue                                    
                     if isinstance(tmp, ndarray):
-                        TMP = tmp[:, ac:ac+inp.size]
+                        TMP = tmp[:, ac:ac+Len(inp)]
                     elif isscalar(tmp):
                         TMP = tmp
                     else: # scipy.sparse matrix
                         TMP = csc_tmp[:, ac:ac+inp.size]
-                    ac += 1 if isscalar(inp) else inp.size
+                    ac += Len(inp)
                     derivativeSelf.append(TMP)
                     
             # TODO: is it required?

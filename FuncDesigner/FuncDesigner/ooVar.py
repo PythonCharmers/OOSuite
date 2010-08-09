@@ -2,7 +2,7 @@
 
 from numpy import nan, asarray, isfinite, empty, zeros, inf, any, array, prod, atleast_1d, asfarray, isscalar, ndarray
 from misc import FuncDesignerException, checkSizes
-from ooFun import oofun
+from ooFun import oofun, Len
 
 class oovar(oofun):
     is_oovar = True
@@ -34,11 +34,12 @@ class oovar(oofun):
                 raise FuncDesignerException(s)
         elif hasattr(x, 'xf'):
             # TODO: possibility of squeezing
-            r = atleast_1d(asfarray(x.xf[self]))
+            r = x.xf[self]
         else:
             raise FuncDesignerException('Incorrect data type (%s) while obtaining oovar %s value' %(type(x), self.name))
-        Size = r.size
-        if isscalar(self.size) and Size != self.size:
+        
+        
+        if 'size' in self.__dict__ and type(self.size) == int and Len(r)  != self.size: # len(r) for lists/tuples
             s = 'incorrect size for oovar %s: %d is required, %d is obtained' % (self.name, self.size, Size)
             raise FuncDesignerException(s)
         return r
