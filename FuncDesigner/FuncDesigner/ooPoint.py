@@ -7,21 +7,25 @@
 #from copy import deepcopy
 
 from misc import FuncDesignerException
-from numpy import asfarray, ndarray
+from numpy import asfarray, ndarray, isscalar
 
 class ooPoint(dict):
     _id = 0
     def __init__(self, *args, **kwargs):
         if args:
-            items = [(key, asfarray(val) if type(val) != ndarray else val) for key, val in args[0]] if not isinstance(args[0], dict) else args[0].items()
+            if not isinstance(args[0], dict):
+                items = [(key, asfarray(val) if not isscalar(val) else float(val)) for key, val in args[0]] 
+            else:
+                items = [(key, asfarray(val) if not isscalar(val) else float(val)) for key, val in args[0].items()] 
         elif kwargs:
-            items = [(key, asfarray(val) if type(val) != ndarray else val) for key, val in kwargs.items()]
+            items = [(key, asfarray(val) if not isscalar(val) else float(val)) for key, val in kwargs.items()]
         else:
             raise FuncDesignerException('incorrect oopoint constructor arguments')
             
         dict.__init__(self, items)
         
         for key, val in items:
+            assert type(val) not in [list, ndarray] or type(val[0]) != int
             if 'size' in key.__dict__ and type(key.size) == int and Len(val)  != key.size: 
                 s = 'incorrect size for oovar %s: %d is required, %d is obtained' % (self.name, self.size, Size)
                 raise FuncDesignerException(s)

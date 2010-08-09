@@ -521,17 +521,21 @@ class oofun:
 
     """                                                getFunc                                             """
     def _getFunc(self, *args, **kwargs):
+        Args = args
         if len(args) == 0 and len(kwargs) == 0:
             raise FuncDesignerException('at least one argument is required')
         if len(args) != 0:
             if type(args[0]) != str:
                 assert not isinstance(args[0], oofun), "you can't invoke oofun on another one oofun"
-                
+                x = args[0]
+                if isinstance(x, dict) and not isinstance(x, ooPoint): 
+                    x = ooPoint(x)
+                    Args = (x,)+args[1:]
                 if self.is_oovar:
                     if isinstance(x, dict):
                         tmp = x.get(self, None)
                         if tmp is not None:
-                            return tmp #if type(tmp)==ndarray else asfarray(tmp)
+                            return float(tmp) if isscalar(tmp) or type(tmp)==ndarray else array(tmp, 'float')
                         elif self.name in x:
                             return asfarray(x[self.name])
                         else:
@@ -551,7 +555,7 @@ class oofun:
                 self.name = kwargs['name']
                 return self
                 
-        return self._getFuncCalcEngine(*args, **kwargs)
+        return self._getFuncCalcEngine(*Args, **kwargs)
 
 
     def _getFuncCalcEngine(self, *args, **kwargs):

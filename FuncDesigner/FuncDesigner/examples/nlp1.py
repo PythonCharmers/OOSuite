@@ -11,6 +11,7 @@ r = p.minimize('ralg', plot=0, xtol=1e-7)
 #r = p.solve('ralg') # for NLPs old-style (openopt 0.25 and below) p.solve() is same to p.minimize()
 #r = p.maximize('ralg')
 print(r.xf)
+print a(r.xf)
 a_opt,  b_opt, c_opt = r(a, b, c)
 # or any of the following: 
 # a_opt,  b_opt, c_opt = r(a), r(b), r(c)
