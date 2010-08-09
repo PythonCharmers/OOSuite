@@ -79,6 +79,8 @@ class oofun:
     _point_id1 = 0
     _f_key_prev = None
     _f_val_prev = None
+    _d_key_prev = None
+    _d_val_prev = None
     #_c = 0.0
 
     pWarn = lambda self, msg: pWarn(msg)
@@ -670,14 +672,16 @@ class oofun:
         #involveStore = not isTransmit or self._directlyDwasInwolved
         involveStore = self.isCostly
 
-        #cond_same_point = hasattr(self, 'd_key_prev') and sameDerivativeVariables and (CondSamePointByID or (involveStore and         all([array_equal(x[elem], self.d_key_prev[elem]) for elem in dep])))
+        #cond_same_point = hasattr(self, '_d_key_prev') and sameDerivativeVariables and (CondSamePointByID or (involveStore and         all([array_equal(x[elem], self.d_key_prev[elem]) for elem in dep])))
         
-        cond_same_point = sameVarsScheduleID and (CondSamePointByID or (involveStore and hasattr(self, 'd_key_prev') and all([array_equal(x[elem], self.d_key_prev[elem]) for elem in dep])))
+        cond_same_point = sameVarsScheduleID and \
+        ((CondSamePointByID and self._d_val_prev is not None) or \
+        (involveStore and self._d_key_prev is not None and all([array_equal(x[elem], self._d_key_prev[elem]) for elem in dep])))
         
         if cond_same_point:
             self.same_d += 1
             #return deepcopy(self.d_val_prev)
-            return dict([(key, Copy(val)) for key, val in self.d_val_prev.items()])
+            return dict([(key, Copy(val)) for key, val in self._d_val_prev.items()])
         else:
             self.evals_d += 1
 
@@ -772,8 +776,8 @@ class oofun:
         
         dp = dict([(key, Copy(value)) for key, value in r.items()])
         
-        self.d_val_prev = dp
-        self.d_key_prev = dict([(elem, Copy(x[elem])) for elem in dep])
+        self._d_val_prev = dp
+        self._d_key_prev = dict([(elem, Copy(x[elem])) for elem in dep]) if involveStore else None
         return r
 
     # TODO: handle 2**15 & 0.25 as parameters
