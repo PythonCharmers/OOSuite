@@ -25,7 +25,7 @@ class oovar(oofun):
         if isinstance(x, dict):
             tmp = x.get(self, None)
             if tmp is not None:
-                r = tmp if type(tmp)==ndarray else asfarray(tmp)
+                r = tmp #if type(tmp)==ndarray else asfarray(tmp)
             elif self.name in x:
                 r = asfarray(x[self.name])
             else:
@@ -37,7 +37,6 @@ class oovar(oofun):
             r = x.xf[self]
         else:
             raise FuncDesignerException('Incorrect data type (%s) while obtaining oovar %s value' %(type(x), self.name))
-        
         
         if 'size' in self.__dict__ and type(self.size) == int and Len(r)  != self.size: # len(r) for lists/tuples
             s = 'incorrect size for oovar %s: %d is required, %d is obtained' % (self.name, self.size, Size)

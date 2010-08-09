@@ -7,11 +7,20 @@
 #from copy import deepcopy
 
 from misc import FuncDesignerException
+from numpy import asfarray, ndarray
 
 class ooPoint(dict):
     _id = 0
     def __init__(self, *args, **kwargs):
-        dict.__init__(self, *args, **kwargs)
+        if args:
+            items = [(key, asfarray(val) if type(val) != ndarray else val) for key, val in args[0]]
+        elif kwargs:
+            items = [(key, asfarray(val) if type(val) != ndarray else val) for key, val in kwargs.items()]
+        else:
+            raise FuncDesignerException('incorrect oopoint constructor arguments')
+            
+        dict.__init__(self, items)
+        
         ooPoint._id += 1
         self._id = ooPoint._id
     
