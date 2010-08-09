@@ -559,9 +559,6 @@ class oofun:
             return self.f_val_prev.copy() # self.f_val_prev is ndarray always 
             
         self.evals += 1
-        if self.name == 'ff': 
-            print self.evals, self._isFixed, fixedVarsScheduleID, self._lastFuncVarsID
-            if self.evals > 1: raise 0
         
         if type(self.args) != tuple:
             self.args = (self.args, )
@@ -820,9 +817,6 @@ class oofun:
                     if inp.is_oovar and ((Vars is not None and inp not in Vars) or (fixedVars is not None and inp in fixedVars)):
                         continue
                         
-                    # TODO: implement it properly + related changes in _D()
-                    #if not inp.is_oovar and self.theseAreFixed(set(inp._getDep())): continue
-                    
                     if deriv is None:
                         if not DerApproximatorIsInstalled:
                             raise FuncDesignerException('To perform gradients check you should have DerApproximator installed, see http://openopt.org/DerApproximator')
