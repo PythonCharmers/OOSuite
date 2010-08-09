@@ -6,9 +6,9 @@ from ooFun import oofun, Len
 
 class oovar(oofun):
     is_oovar = True
-    shape = nan
-    fixed = False
-    initialized = False
+    #shape = nan
+    #fixed = False
+    #initialized = False
     is_linear = True
     _unnamedVarNumber = 1#static variable for oovar class
 

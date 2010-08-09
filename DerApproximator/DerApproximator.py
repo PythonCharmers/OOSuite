@@ -12,7 +12,7 @@ class DerApproximatorException:
 def get_d1(fun, vars, diffInt=1.5e-8, pointVal = None, args=(), stencil = 3, varForDifferentiation = None, exactShape = False):
     """
     Usage: get_d1(fun, x, diffInt=1.5e-8, pointVal = None, args=(), stencil = 3, varForDifferentiation = None, exactShape = False)
-    fun: R^n -> R^m, x0 from R^n: function and point where derivatives should be obtained 
+    fun: R^n -> R^m, x: Python list (not tuple!) or numpy array from R^n: function and point where derivatives should be obtained 
     diffInt - step for stencil
     pointVal - fun(x) if known (it is used from OpenOpt and FuncDesigner)
     args - additional args for fun, if not equalk to () then fun(x, *args) will be involved 
@@ -27,7 +27,9 @@ def get_d1(fun, vars, diffInt=1.5e-8, pointVal = None, args=(), stencil = 3, var
     diffInt = atleast_1d(diffInt)
     if atleast_1d(diffInt).size > 1: assert type(vars) == ndarray, 'not implemented yet'
     
-    if type(vars) not in [list, tuple] or isscalar(vars[0]):
+    if type(vars) == tuple:
+        Vars = [asfarray(var) for var in vars]
+    elif type(vars) not in [list, tuple] or isscalar(vars[0]):
         Vars = [vars, ]
     else: 
         Vars = list(vars)
@@ -55,7 +57,7 @@ def get_d1(fun, vars, diffInt=1.5e-8, pointVal = None, args=(), stencil = 3, var
             S = Args[i]
         else:
             S = asfarray([Args[i]])
-            
+        S = atleast_1d(S)
         agregate_counter = 0
         assert asarray(Args[i]).ndim <= 1, 'derivatives for more than single dimension variables are not implemented yet'
         
@@ -72,7 +74,7 @@ def get_d1(fun, vars, diffInt=1.5e-8, pointVal = None, args=(), stencil = 3, var
 
         for j in xrange(S.size):
             di = float(asscalar(diff_int[j]))
-            tmp = S[j]
+            tmp = S[j] #if S.ndim > 0 else asscalar(S)
             di = diff_int[j]
             di2 = di / 2.0
             S[j] += di
@@ -112,7 +114,8 @@ def get_d1(fun, vars, diffInt=1.5e-8, pointVal = None, args=(), stencil = 3, var
         if not exactShape and min(d1.shape)==1: d1 = d1.flatten()
         
         r.append(asfarray(d1))
-    if varForDifferentiation is not None or isscalar(vars) or (type(vars) in [list, tuple, ndarray] and isscalar(vars[0])): r = d1
+
+    if varForDifferentiation is not None or isscalar(vars): r = d1
     else: r = tuple(r)
     return r
 

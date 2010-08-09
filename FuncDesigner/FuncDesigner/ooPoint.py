@@ -13,7 +13,7 @@ class ooPoint(dict):
     _id = 0
     def __init__(self, *args, **kwargs):
         if args:
-            items = [(key, asfarray(val) if type(val) != ndarray else val) for key, val in args[0]]
+            items = [(key, asfarray(val) if type(val) != ndarray else val) for key, val in args[0]] if not isinstance(args[0], dict) else args[0].items()
         elif kwargs:
             items = [(key, asfarray(val) if type(val) != ndarray else val) for key, val in kwargs.items()]
         else:

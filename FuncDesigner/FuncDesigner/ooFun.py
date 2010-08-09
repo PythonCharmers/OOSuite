@@ -913,6 +913,8 @@ class oofun:
                 derivativeSelf = [derivativeSelf]
         
         #assert all([elem.ndim > 1 for elem in derivativeSelf])
+       # assert len(derivativeSelf[0])!=16
+        #assert (type(derivativeSelf[0]) in (int, float)) or derivativeSelf[0][0]>480.00006752 or derivativeSelf[0][0]<480.00006750
         return derivativeSelf
 
     def D2(self, x):
