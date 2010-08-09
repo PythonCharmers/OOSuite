@@ -535,7 +535,7 @@ class oofun:
                     if isinstance(x, dict):
                         tmp = x.get(self, None)
                         if tmp is not None:
-                            return float(tmp) if isscalar(tmp) or type(tmp)==ndarray else array(tmp, 'float')
+                            return float(tmp) if isscalar(tmp) else array(tmp, 'float')
                         elif self.name in x:
                             return asfarray(x[self.name])
                         else:
