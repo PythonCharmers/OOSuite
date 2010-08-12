@@ -115,7 +115,7 @@ def get_d1(fun, vars, diffInt=1.5e-8, pointVal = None, args=(), stencil = 3, var
         
         r.append(asfarray(d1))
 
-    if varForDifferentiation is not None or isscalar(vars): r = d1
+    if varForDifferentiation is not None or isscalar(vars) or isinstance(vars, ndarray): r = d1
     else: r = tuple(r)
     return r
 
