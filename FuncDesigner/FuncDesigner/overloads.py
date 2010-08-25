@@ -147,7 +147,14 @@ def sum(inp, *args, **kwargs):
 #            return np.sum(args)
         _inp = set(INP)
         #!!!!!!!!!!!!!!!!!! TODO: check INP for complex cases (not list of oovars)
+        
         r = oofun(f, INP, is_linear=is_linear) 
+        
+        def getOrder(*args, **kwargs):
+            orders = [0]+[inp.getOrder(*args, **kwargs) for inp in INP]
+            return max(orders)
+        r.getOrder = getOrder
+        
         def _D(point, fixedVarsScheduleID, Vars=None, fixedVars = None, useSparse = 'auto'):
             # TODO: handle involvePrevData
             # TODO: handle fixed vars
@@ -204,6 +211,7 @@ def prod(inp, *args, **kwargs):
     if not isinstance(inp, oofun): return np.prod(inp, *args, **kwargs)
     if len(args) != 0 or len(kwargs) != 0:
         raise FuncDesignerException('oofun for prod(x, *args,**kwargs) is not implemented yet')
+    #r.getOrder = lambda *args, **kwargs: prod([(1 if not isinstance(inp, oofun) else inp.getOrder(*args, **kwargs)) for inp in self.input])
     return inp.prod()
 
 # Todo: implement norm_1, norm_inf etc

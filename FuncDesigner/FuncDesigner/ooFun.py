@@ -68,6 +68,7 @@ class oofun:
     _unnamedFunNumber = 1
     _lastDiffVarsID = 0
     _lastFuncVarsID = 0
+    _lastOrderVarsID = 0
 
     _usedIn = 0
     _level = 0
@@ -82,16 +83,15 @@ class oofun:
     _d_key_prev = None
     _d_val_prev = None
     #_c = 0.0
-
+    __array_priority__ = 15# set it greater than 1 to prevent invoking numpy array __mul__ etc
+    
     pWarn = lambda self, msg: pWarn(msg)
+    
     def disp(self, msg): 
         print(msg)
     
-    __array_priority__ = 15# set it greater than 1 to prevent invoking numpy array __mul__ etc
-
-    
     def __getattr__(self, attr):
-        if attr != 'size': raise AttributeError
+        if attr != 'size': raise AttributeError('you are trying to obtain incorrect attribute "%s" for FuncDesigner oofun "%s"' %(attr, self.name))
         
         # to prevent creating of several oofuns binded to same oofun.size
         r = oofun(lambda x: asarray(x).size, self, is_linear=True, discrete = True)
@@ -174,6 +174,8 @@ class oofun:
 
         if isinstance(other, oofun):
             r = oofun(lambda x, y: x+y, [self, other], d = (lambda x, y: aux_d(x, y), lambda x, y: aux_d(y, x)))
+            r.discrete = self.discrete and other.discrete
+            r.getOrder = lambda *args, **kwargs: max((self.getOrder(*args, **kwargs), other.getOrder(*args, **kwargs)))
         else:
             other = array(other, 'float')
 #            if other.size == 1:
@@ -188,6 +190,7 @@ class oofun:
             r.d = lambda x: aux_d(x, other)
             r._getFuncCalcEngine = lambda *args,  **kwargs: self._getFuncCalcEngine(*args,  **kwargs) + other
             r.discrete = self.discrete
+            r.getOrder = self.getOrder
             if (other.size == 1 or ('size' in self.__dict__ and self.size == other.size)): 
                 r._D = lambda *args,  **kwargs: self._D(*args,  **kwargs) 
                 
@@ -202,12 +205,13 @@ class oofun:
     def __neg__(self): 
         r = oofun(lambda a: -a, self, d = lambda a: -Eye(Len(a)), is_linear = self.is_linear)
         r._getFuncCalcEngine = lambda *args,  **kwargs: -self._getFuncCalcEngine(*args,  **kwargs)
+        r.getOrder = self.getOrder
         r._D = lambda *args, **kwargs: dict([(key, -value) for key, value in self._D(*args, **kwargs).items()])
         r.d = raise_except
         return r
         
     # overload "a-b"
-    __sub__ = lambda self, other: self + (-array(other, 'float')) if isinstance(other, list) and type(other[0]) in (int, float) else self + (-other)
+    __sub__ = lambda self, other: self + (-array(other, 'float')) if type(other) in (list, tuple, ndarray) and type(other[0]) in (int, float) else self + (-other)
     __rsub__ = lambda self, other: other + (-self)
 
     # overload "a/b"
@@ -232,9 +236,14 @@ class oofun:
                     r = Diag(r)
                 return r
             r.d = (aux_dx, aux_dy)
+            def getOrder(*args, **kwargs):
+                order1, order2 = self.getOrder(*args, **kwargs), other.getOrder(*args, **kwargs)
+                return order1 if order2 == 0 else inf
+            r.getOrder = getOrder
         else:
             other = array(other,'float')
             r = oofun(lambda a: a/other, self, discrete = self.discrete)# TODO: involve sparsity if possible!
+            r.getOrder = self.getOrder
             r._getFuncCalcEngine = lambda *args,  **kwargs: self._getFuncCalcEngine(*args,  **kwargs) / other
             r.d = lambda x: 1.0/other if (isscalar(x) or x.size == 1) else Diag(ones(x.size)/other)
 #            if other.size == 1 or 'size' in self.__dict__ and self.size in (1, other.size):
@@ -253,6 +262,10 @@ class oofun:
         r = oofun(lambda x: other/x, self, discrete = self.discrete)
         r.d = lambda x: Diag(- other / x**2)
         #r.isCostly = True
+        def getOrder(*args, **kwargs):
+            order = self.getOrder(*args, **kwargs)
+            return 0 if order == 0 else inf
+        r.getOrder = getOrder
         return r
 
     # overload "a*b"
@@ -273,9 +286,11 @@ class oofun:
         if isinstance(other, oofun):
             r = oofun(lambda x, y: x*y, [self, other])
             r.d = (lambda x, y: aux_d(x, y), lambda x, y: aux_d(y, x))
+            r.getOrder = lambda *args, **kwargs: self.getOrder(*args, **kwargs) + other.getOrder(*args, **kwargs)
         else:
             other = array(other, 'float')
             r = oofun(lambda x: x*other, self, discrete = self.discrete)
+            r.getOrder = self.getOrder
             r._getFuncCalcEngine = lambda *args,  **kwargs: other * self._getFuncCalcEngine(*args,  **kwargs)
             r.d = lambda x: aux_d(x, other)
             if other.size == 1:
@@ -354,12 +369,11 @@ class oofun:
                 r[_ind] = 1
                 return r
                 
-        r = oofun(f, self, d = d, size = 1)
+        r = oofun(f, self, d = d, size = 1, getOrder = self.getOrder)
         # TODO: check me!
         # what about a[a.size/2:]?
         if self.is_linear and not isinstance(ind,  oofun):
             r.is_linear = True
-            
             
         # TODO: edit me!
 #        if self.is_oovar:
@@ -388,7 +402,7 @@ class oofun:
                 m3 = zeros((ind2-ind1, x.size - ind2))
                 r = hstack((m1, m2, m3))
             return r
-        r = oofun(f, self, d = d)
+        r = oofun(f, self, d = d, getOrder = self.getOrder)
         if self.is_linear:
             r.is_linear = True
         return r
@@ -398,7 +412,7 @@ class oofun:
         #raise FuncDesignerException('using len(obj) (where obj is oovar or oofun) is not possible (at least yet), use obj.size instead')
 
     def sum(self):
-        r = oofun(sum, self)
+        r = oofun(sum, self, getOrder = self.getOrder)
         def d(x):
             if type(x) == ndarray and x.ndim > 1: raise FuncDesignerException('sum(x) is not implemented yet for arrays with ndim > 1')
             return ones_like(x) 
@@ -408,6 +422,7 @@ class oofun:
     def prod(self):
         # TODO: consider using r.isCostly = True
         r = oofun(prod, self)
+        #r.getOrder = lambda *args, **kwargs: self.getOrder(*args, **kwargs)*self.size
         def d(x):
             x = asarray(x) # prod is used rarely, so optimizing it is not important
             if x.ndim > 1: raise FuncDesignerException('prod(x) is not implemented yet for arrays with ndim > 1')
@@ -535,7 +550,7 @@ class oofun:
                     if isinstance(x, dict):
                         tmp = x.get(self, None)
                         if tmp is not None:
-                            return float(tmp) if isscalar(tmp) else array(tmp, 'float')
+                            return float(tmp) if isscalar(tmp) else asfarray(tmp)
                         elif self.name in x:
                             return asfarray(x[self.name])
                         else:
@@ -725,7 +740,6 @@ class oofun:
                     continue                
                 ac += 1
                 tmp = derivativeSelf[ac]
-                #assert tmp.ndim > 1 
 
                 if inp in r:
                     if isscalar(tmp) or prod(tmp.shape) <= prod(r[inp].shape) and type(r[inp]) == type(tmp) == ndarray: # some sparse matrices has no += implemented 
@@ -751,20 +765,6 @@ class oofun:
                             t2 = val
                         else:
                             t1, t2 = self._considerSparse(t1, val)
-#                        if t1.ndim > 1 or t2.ndim > 1:
-#                            # warning! t1,t2 can be sparse matrices, so I don't use t = atleast_2d(t) directly
-#                            if t2.ndim < 2: 
-#                                #assert t1.ndim > 1, 'error in FuncDesigner kernel, inform developers'
-#                                if t1.shape[1] != t2.shape[0]:
-#                                    t2 = t2.reshape(1, -1)
-#                        else:
-#                            # hence these are ndarrays
-#                            if self._getFuncCalcEngine(x).size > 1:
-#                                t1 = t1.reshape(-1, 1)
-#                                t2 = t2.reshape(1, -1)
-#                            else:
-#                                t1 = t1.reshape(1, -1)
-#                                t2 = t2.reshape(-1, 1)
                         
                         if not type(t1) == type(t2) ==  ndarray:
                             # CHECKME: is it trigger somewhere?
@@ -954,10 +954,34 @@ class oofun:
             check_d1(lambda *args: self.fun(*args), ds[j], input, \
                  func_name=self.name, diffInt=self.diffInt, pointVal = val, args=self.args, \
                  stencil = max((3, self.stencil)), maxViolation=self.maxViolation, varForCheck = i)
-    
+
+    def getOrder(self, Vars=None, fixedVars=None, fixedVarsScheduleID=-1):
+        # returns polinomial order of the oofun
+        if isinstance(Vars, oofun): Vars = set([Vars])
+        elif Vars is not None and type(Vars) != set: Vars = set([Vars])
+        
+        if isinstance(fixedVars, oofun): fixedVars = set([fixedVars])
+        elif fixedVars is not None and type(fixedVars) != set: fixedVars = set(fixedVars)
+        
+        sameVarsScheduleID = fixedVarsScheduleID == self._lastOrderVarsID 
+        rebuildFixedCheck = not sameVarsScheduleID
+        if fixedVarsScheduleID != -1: self._lastOrderVarsID = fixedVarsScheduleID
+        
+        if rebuildFixedCheck:
+            # ajust new value of self._order wrt new free/fixed vars schedule
+            if self.discrete: self._order = 0
+       
+            if self.is_oovar:
+                if (fixedVars is not None and self in fixedVars) or (Vars is not None and self not in Vars):
+                    self._order = 0
+                else:
+                    self._order = 1
+            else:
+                self._order = inf
+            
+        return self._order
     
     # TODO: should broadcast return non-void result?
-
     def _broadcast(self, func, *args, **kwargs):
         if self._broadcast_id == oofun._BroadCastID: 
             return # already done for this one
@@ -972,7 +996,8 @@ class oofun:
         for c in self.attachedConstraints:
             c._broadcast(func, *args, **kwargs)
         func(self)
-        
+    
+   
         """                                             End of class oofun                                             """
 
 # TODO: make it work for ooSystem as well
