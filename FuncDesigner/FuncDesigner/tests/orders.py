@@ -52,4 +52,11 @@ c16 = (a*b).sum(); assert c16.getOrder() == 2 and c16.getOrder(fixedVars=a) == 1
 # test >
 c17 = a>b; assert c17.getOrder() == inf
 
+# test sin
+c18 = sin(a); assert c18.getOrder() == inf
+
+# test ifThenElse
+c19 = ifThenElse(a>1, a, b); assert c19.getOrder() == inf
+# TODO: try to set correct value from val1, val2 if condition is fixed
+
 print 'passed'

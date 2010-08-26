@@ -956,9 +956,12 @@ class oofun:
                  stencil = max((3, self.stencil)), maxViolation=self.maxViolation, varForCheck = i)
 
     def getOrder(self, Vars=None, fixedVars=None, fixedVarsScheduleID=-1):
+        
+        # TODO: improve it wrt fixedVarsScheduleID
+        
         # returns polinomial order of the oofun
         if isinstance(Vars, oofun): Vars = set([Vars])
-        elif Vars is not None and type(Vars) != set: Vars = set([Vars])
+        elif Vars is not None and type(Vars) != set: Vars = set(Vars)
         
         if isinstance(fixedVars, oofun): fixedVars = set([fixedVars])
         elif fixedVars is not None and type(fixedVars) != set: fixedVars = set(fixedVars)

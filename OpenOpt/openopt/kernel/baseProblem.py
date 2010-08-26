@@ -288,7 +288,11 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     
             if not isinstance(self.x0, dict):
                 self.err('Unexpected start point type: Python dict expected, '+ str(type(self.x0)) + ' obtained')
-            
+
+            if self.probType in ['LP', 'MILP'] and self.f.getOrder(self.optVars, self.fixedVars) > 1:
+                self.err('for LP/MILP objective function has to be linear, while this one ("%s") is not' % self.f.name)
+
+
             if self.fixedVars is None or (self.optVars is not None and len(self.optVars)<len(self.fixedVars)):
                 D_kwargs = {'Vars':self.optVars}
             else:
@@ -371,10 +375,9 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     # TODO: check doesn't constraint value exeed self.contol
                     continue
 
-                if self.probType in ['LP', 'MILP', 'LLSP', 'LLAVP'] and not f.is_linear:
+                if self.probType in ['LP', 'MILP', 'LLSP', 'LLAVP'] and f.getOrder(self.optVars, self.fixedVars) > 1:
                     self.err('for LP/MILP/LLSP/LLAVP all constraints have to be linear, while ' + f.name + ' is not')
                 
-                    
                 # TODO: simplify condition of box-bounded oovar detection
                 if f.is_oovar:
                     if areFixed(dep):  

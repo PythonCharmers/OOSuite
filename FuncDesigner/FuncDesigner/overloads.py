@@ -110,6 +110,7 @@ def dot(inp1, inp2):
         return r
         
     r = oofun(lambda x, y: x * y if x.size == 1 or y.size == 1 else np.dot(x, y), [inp1, inp2], d=(lambda x, y: aux_d(x, y), lambda x, y: aux_d(y, x)))
+    r.getOrder = lambda *args, **kwargs: (x.getOrder(*args, **kwargs) if isinstance(x, oofun) else 0) + (y.getOrder(*args, **kwargs) if isinstance(y, oofun) else 0)
     r.is_linear = is_linear
     r.isCostly = True
     return r
@@ -240,7 +241,7 @@ norm = lambda inp: sqrt(inp**2)
 
 def size(inp, *args, **kwargs):
     if not isinstance(inp, oofun): return np.size(inp, *args, **kwargs)
-    return inp.size()
+    return inp.size
     
 def ifThenElse(condition, val1, val2, *args, **kwargs):
     
@@ -253,22 +254,20 @@ def ifThenElse(condition, val1, val2, *args, **kwargs):
     if isinstance(condition, bool): 
         return Val1 if condition else Val2
     elif isinstance(condition, oofun):
-            
-        #def f(conditionResult, value1Result, value2Result): 
-            #return value1Result if conditionResult else value2Result
-        
-        
-        #f = lambda point: (Val1(point) if isinstance(Val1, oofun) else Val1) if condition(point) else (Val2(point) if isinstance(Val2, oofun) else Val2)
-        
         f = lambda conditionResult, value1Result, value2Result: value1Result if conditionResult else value2Result
         # !!! Don't modify it elseware function will evaluate both expressions despite of condition value 
         r = oofun(f, [condition, val1, val2])
-        #r._getFunc = f
         r.D = lambda point, *args, **kwargs: (Val1.D(point, *args, **kwargs) if isinstance(Val1, oofun) else {}) if condition(point) else \
         (Val2.D(point, *args, **kwargs) if isinstance(Val2, oofun) else {})
         r._D = lambda point, *args, **kwargs: (Val1._D(point, *args, **kwargs) if isinstance(Val1, oofun) else {}) if condition(point) else \
         (Val2._D(point, *args, **kwargs) if isinstance(Val2, oofun) else {})
         r.d = errFunc
+        
+        # TODO: try to set correct value from val1, val2 if condition is fixed
+#        def getOrder(Vars=None, fixedVars=None, *args, **kwargs):
+#            dep = condition.getDep()
+#            if Vars is not None and dep.is
+
         return r
     else:
         raise FuncDesignerException('ifThenElse requires 1st argument (condition) to be either boolean or oofun, got %s instead' % type(condition))

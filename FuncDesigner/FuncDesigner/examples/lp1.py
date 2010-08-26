@@ -28,5 +28,5 @@ p.constraints = [x+5*y<15, x[0]<4, f1<[25, 35], f1>-100, 2*f1+4*z<[80, 800], 5*f
 r = p.solve('lpSolve') # glpk is name of solver involved, see OOF doc for more arguments
 
 # Decode solution
-print('Solution: x = %s   y = %f  z = %f' % (str(r[x]), r[y], r[z]))
+print('Solution: x = %s   y = %f  z = %f' % (r(x), r(y), r(z)))
 # Solution: x = [-4.25 -4.25]   y = -20.000000  z = 4.000000
