@@ -110,7 +110,7 @@ class ooSystem:
         else:
             kwargs['constraints'] = constraints
 
-        isLinear = objective.is_linear and all([c.oofun.is_linear for c in constraints])
+        isLinear = objective.getOrder(self.optVars, self.fixedVars) < 2 and all([(c.oofun.getOrder(self.optVars, self.fixedVars) < 2) for c in constraints])
         if isLinear:
             p = openopt.LP(objective, *args, **kwargs)
             if 'solver' not in kwargs:

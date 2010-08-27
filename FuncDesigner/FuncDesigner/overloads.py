@@ -102,7 +102,7 @@ def dot(inp1, inp2):
     def aux_d(x, y):
         if y.size == 1: 
             #r = np.empty(x.size) - use it?
-            r = np.empty(asarray(x).size)
+            r = np.empty_like(x)
             r.fill(y)
             r = Diag(r)
         else:
