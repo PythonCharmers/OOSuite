@@ -450,10 +450,8 @@ class oofun:
     def __gt__(self, other): # overload for >
         if self.is_oovar and not isinstance(other, oofun):
             r = BoxBoundConstraint(self, lb = other)
-        elif self.is_linear and (not isinstance(other, oofun) or other.is_linear):
-            r = LinearConstraint(self-other, lb = 0.0)
         else:
-            r = NonLinearConstraint(self - other, lb=0.0) # do not perform check for other == 0, copy should be returned, not self!
+            r = Constraint(self - other, lb=0.0) # do not perform check for other == 0, copy should be returned, not self!
         return r
 
     # overload for >=
@@ -465,10 +463,8 @@ class oofun:
         #(self.is_oovar or self.is_oovarSlice)
         if self.is_oovar and not isinstance(other, oofun):
             r = BoxBoundConstraint(self, ub = other)
-        elif self.is_linear and (not isinstance(other, oofun) or other.is_linear):
-            r = LinearConstraint(self-other, ub = 0.0)
         else:
-            r = NonLinearConstraint(self - other, ub = 0.0) # do not perform check for other == 0, copy should be returned, not self!
+            r = Constraint(self - other, ub = 0.0) # do not perform check for other == 0, copy should be returned, not self!
         return r            
 
     # overload for <=
@@ -480,10 +476,7 @@ class oofun:
         if other in (None, (), []): return False
         if self.is_oovar and not isinstance(other, oofun):
             raise FuncDesignerException('Constraints like this: "myOOVar = <some value>" are not implemented yet and are not recommended; for openopt use optVars / fixedVars instead')
-        if self.is_linear and (not isinstance(other, oofun) or other.is_linear):
-            r = LinearConstraint(self-other, ub = 0.0, lb = 0.0)
-        else:
-            r = NonLinearConstraint(self - other, ub = 0.0, lb = 0.0) # do not perform check for other == 0, copy should be returned, not self!
+        r = Constraint(self - other, ub = 0.0, lb = 0.0) # do not perform check for other == 0, copy should be returned, not self!
         return r  
 
 
@@ -1100,7 +1093,7 @@ class SmoothFDConstraint(BaseFDConstraint):
                 raise FuncDesignerException('Unexpected key in FuncDesigner constraint constructor kwargs')
     
 
-class NonLinearConstraint(SmoothFDConstraint):
+class Constraint(SmoothFDConstraint):
     def __init__(self, *args, **kwargs):
         SmoothFDConstraint.__init__(self, *args, **kwargs)
         
@@ -1109,10 +1102,6 @@ class BoxBoundConstraint(SmoothFDConstraint):
     def __init__(self, *args, **kwargs):
         SmoothFDConstraint.__init__(self, *args, **kwargs)
         
-class LinearConstraint(SmoothFDConstraint):
-    def __init__(self, *args, **kwargs):
-        SmoothFDConstraint.__init__(self, *args, **kwargs)
-
 class Derivative(dict):
     def __init__(self):
         pass
