@@ -965,8 +965,12 @@ class oofun:
                 else:
                     self._order = 1
             else:
-                self._order = inf
-            
+                orders = [(inp.getOrder(Vars, fixedVars) if isinstance(inp, oofun) else 0) for inp in self.input]
+                self._order = inf if any(asarray(orders) != 0) else 0
+
+#                dep = self.getDep()
+#                if (fixedVars is not None and self in fixedVars) or (Vars is not None and dep.isself not in Vars)
+                #self._order = inf
         return self._order
     
     # TODO: should broadcast return non-void result?

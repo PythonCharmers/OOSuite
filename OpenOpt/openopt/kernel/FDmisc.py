@@ -51,7 +51,13 @@ def setStartVectorAndTranslators(p):
     
     # TODO: mb use oovarsIndDict here as well (as for derivatives?)
     from FuncDesigner import oopoint
-    startDictData = [] if fixedVars is None else [(v, startPoint[v]) for v in fixedVars]
+    startDictData = []
+    if fixedVars is not None:
+        for v in fixedVars:
+            val = startPoint.get(v, 'absent')
+            if val == 'absent':
+                p.err('value for fixed variable %s is absent in start point' % v.name)
+            startDictData.append((v, val))
 
     #vector2point = lambda x: oopoint(startDictData + [(oov, x[oovar_indexes[i]:oovar_indexes[i+1]]) for i, oov in enumerate(optVars)])
     p._FDtranslator = {'prevX':nan}
