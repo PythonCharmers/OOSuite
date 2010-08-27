@@ -211,7 +211,7 @@ class oofun:
         return r
         
     # overload "a-b"
-    __sub__ = lambda self, other: self + (-array(other, 'float')) if type(other) in (list, tuple, ndarray) and type(other[0]) in (int, float) else self + (-other)
+    __sub__ = lambda self, other: self + (-array(other, 'float')) if type(other) in (list, tuple, ndarray) else self + (-other)
     __rsub__ = lambda self, other: other + (-self)
 
     # overload "a/b"

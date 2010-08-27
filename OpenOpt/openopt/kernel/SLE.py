@@ -79,7 +79,7 @@ class SLE(MatrixProblem):
                     lin_oofun = elem.oofun
                 else:
                     lin_oofun = elem
-                if not lin_oofun.is_linear:
+                if lin_oofun.getOrder(self.optVars, self.fixedVars) > 1:
                     raise OpenOptException('SLE constructor requires all equations to be linear')
                 C.append(self._pointDerivative2array(lin_oofun.D(Z, **self._D_kwargs), useSparse = AsSparse))
                 d.append(-lin_oofun(Z))

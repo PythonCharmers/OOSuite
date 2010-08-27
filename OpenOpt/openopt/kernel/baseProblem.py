@@ -404,19 +404,19 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                         else:
                             UB[f] = min((val, UB[f]))
                 elif _lb == _ub:
-                    if f.is_linear:
+                    if f.getOrder(self.optVars, self.fixedVars) < 2:
                         Aeq.append(self._pointDerivative2array(f.D(Z, **D_kwargs)))      
                         beq.append(-f(Z)+_lb)
                     elif self.h is None: self.h = [f+_lb]
                     else: self.h.append(f+_lb)
                 elif isfinite(_ub):
-                    if f.is_linear:
+                    if f.getOrder(self.optVars, self.fixedVars) < 2:
                         A.append(self._pointDerivative2array(f.D(Z, **D_kwargs)))                       
                         b.append(-f(Z)+_ub)
                     elif self.c is None: self.c = [f - _ub]
                     else: self.c.append(f - _ub)
                 elif isfinite(_lb):
-                    if f.is_linear:
+                    if f.getOrder(self.optVars, self.fixedVars) < 2:
                         A.append(-self._pointDerivative2array(f.D(Z, **D_kwargs)))                       
                         b.append(f(Z) - _lb)                        
                     elif self.c is None: self.c = [- f - _lb]
