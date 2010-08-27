@@ -3,6 +3,7 @@ FuncDesigner sparse SLE example
 """
 
 from FuncDesigner import *
+from numpy import arange
 from time import time
 t = time()
 
@@ -10,7 +11,7 @@ n = 1000
 
 a, b, c = oovar(), oovar(size=n), oovar(size=2*n)
 
-f1 = a + sum(b*range(5, n+5))
+f1 = a + sum(b*arange(5, n+5))
 f2 = a + 2*b + c.sum() 
 f3 = a + a.size + 2*c.size 
 f4 = c + range(4, 2*n+4) + 4*f3

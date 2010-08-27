@@ -9,6 +9,8 @@
 from misc import FuncDesignerException
 from numpy import asfarray, ndarray, isscalar
 
+Len = lambda x: 1 if isscalar(x) else x.size if type(x)==ndarray else len(x)
+
 class ooPoint(dict):
     _id = 0
     def __init__(self, *args, **kwargs):

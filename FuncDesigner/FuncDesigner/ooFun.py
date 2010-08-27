@@ -94,7 +94,7 @@ class oofun:
         if attr != 'size': raise AttributeError('you are trying to obtain incorrect attribute "%s" for FuncDesigner oofun "%s"' %(attr, self.name))
         
         # to prevent creating of several oofuns binded to same oofun.size
-        r = oofun(lambda x: asarray(x).size, self, is_linear=True, discrete = True)
+        r = oofun(lambda x: asarray(x).size, self, is_linear=True, discrete = True, getOrder = lambda *args, **kwargs: 0)
         self.size = r 
 
         return r
@@ -132,6 +132,7 @@ class oofun:
                     elem._usedIn += 1
                     levels.append(elem._level)
             self._level = max(levels)+1
+            
 
     __hash__ = lambda self: self._id
     
