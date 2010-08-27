@@ -48,7 +48,6 @@ class oofun:
     input = None#[] 
     #usedIn =  set()
     is_oovar = False
-    is_linear = False
     isConstraint = False
     #isDifferentiable = True
     discrete = False
@@ -94,7 +93,7 @@ class oofun:
         if attr != 'size': raise AttributeError('you are trying to obtain incorrect attribute "%s" for FuncDesigner oofun "%s"' %(attr, self.name))
         
         # to prevent creating of several oofuns binded to same oofun.size
-        r = oofun(lambda x: asarray(x).size, self, is_linear=True, discrete = True, getOrder = lambda *args, **kwargs: 0)
+        r = oofun(lambda x: asarray(x).size, self, discrete = True, getOrder = lambda *args, **kwargs: 0)
         self.size = r 
 
         return r
@@ -195,16 +194,13 @@ class oofun:
             if (other.size == 1 or ('size' in self.__dict__ and self.size == other.size)): 
                 r._D = lambda *args,  **kwargs: self._D(*args,  **kwargs) 
                 
-# TODO: create linear field with operators +, -, *(non-oofunc), /(non-oofunc)
-        if self.is_linear and (not isinstance(other, oofun) or other.is_linear): 
-            r.is_linear = True
         return r
     
     __radd__ = lambda self, other: self.__add__(other)
     
     # overload "-a"
     def __neg__(self): 
-        r = oofun(lambda a: -a, self, d = lambda a: -Eye(Len(a)), is_linear = self.is_linear)
+        r = oofun(lambda a: -a, self, d = lambda a: -Eye(Len(a)))
         r._getFuncCalcEngine = lambda *args,  **kwargs: -self._getFuncCalcEngine(*args,  **kwargs)
         r.getOrder = self.getOrder
         r._D = lambda *args, **kwargs: dict([(key, -value) for key, value in self._D(*args, **kwargs).items()])
@@ -252,7 +248,6 @@ class oofun:
                 r._D = lambda *args, **kwargs: dict([(key, value/other) for key, value in self._D(*args, **kwargs).items()])
                 r.d = raise_except
             
-        r.is_linear = self.is_linear and not isinstance(other, oofun)
         # r.discrete = self.discrete and (?)
         #r.isCostly = True
         return r
@@ -297,7 +292,6 @@ class oofun:
             if other.size == 1:
                 r._D = lambda *args, **kwargs: dict([(key, other*value) for key, value in self._D(*args, **kwargs).items()])
                 r.d = raise_except
-        r.is_linear = self.is_linear and not isinstance(other, oofun)
         #r.isCostly = True
         return r
 
@@ -373,8 +367,6 @@ class oofun:
         r = oofun(f, self, d = d, size = 1, getOrder = self.getOrder)
         # TODO: check me!
         # what about a[a.size/2:]?
-        if self.is_linear and not isinstance(ind,  oofun):
-            r.is_linear = True
             
         # TODO: edit me!
 #        if self.is_oovar:
@@ -404,8 +396,7 @@ class oofun:
                 r = hstack((m1, m2, m3))
             return r
         r = oofun(f, self, d = d, getOrder = self.getOrder)
-        if self.is_linear:
-            r.is_linear = True
+
         return r
    
     #def __len__(self):
@@ -417,7 +408,7 @@ class oofun:
         def d(x):
             if type(x) == ndarray and x.ndim > 1: raise FuncDesignerException('sum(x) is not implemented yet for arrays with ndim > 1')
             return ones_like(x) 
-        r.d, r.is_linear = d, self.is_linear
+        r.d = d
         return r
     
     def prod(self):
@@ -1117,10 +1108,10 @@ def atleast_oofun(arg):
         return arg
     elif hasattr(arg, 'copy'):
         tmp = arg.copy()
-        return oofun(lambda *args: tmp, input = None, is_linear=True, discrete=True)#, isConstraint = True)
+        return oofun(lambda *args, **kwargs: tmp, input = None, getOrder = lambda *args,  **kwargs: 0, discrete=True)#, isConstraint = True)
     elif isscalar(arg):
         tmp = array(arg, 'float')
-        return oofun(lambda *args: tmp, input = None, is_linear=True, discrete=True)#, isConstraint = True)
+        return oofun(lambda *args, **kwargs: tmp, input = None, getOrder = lambda *args,  **kwargs: 0, discrete=True)#, isConstraint = True)
     else:
         #return oofun(lambda *args, **kwargs: arg(*args,  **kwargs), input=None, discrete=True)
         raise FuncDesignerException('incorrect type for the function _atleast_oofun')

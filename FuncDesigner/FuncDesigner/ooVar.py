@@ -9,7 +9,6 @@ class oovar(oofun):
     #shape = nan
     #fixed = False
     #initialized = False
-    is_linear = True
     _unnamedVarNumber = 1#static variable for oovar class
 
     def __init__(self, name=None, *args, **kwargs):

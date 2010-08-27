@@ -94,11 +94,6 @@ def log2(inp):
 def dot(inp1, inp2):
     if not isinstance(inp1, oofun) and not isinstance(inp2, oofun): return np.dot(inp1, inp2)
     
-    if not isinstance(inp1, oofun): 
-        is_linear = inp2.is_linear
-    else:
-        is_linear = inp1.is_linear and not isinstance(inp2, oofun)
-    
     def aux_d(x, y):
         if y.size == 1: 
             #r = np.empty(x.size) - use it?
@@ -111,7 +106,6 @@ def dot(inp1, inp2):
         
     r = oofun(lambda x, y: x * y if x.size == 1 or y.size == 1 else np.dot(x, y), [inp1, inp2], d=(lambda x, y: aux_d(x, y), lambda x, y: aux_d(y, x)))
     r.getOrder = lambda *args, **kwargs: (x.getOrder(*args, **kwargs) if isinstance(x, oofun) else 0) + (y.getOrder(*args, **kwargs) if isinstance(y, oofun) else 0)
-    r.is_linear = is_linear
     r.isCostly = True
     return r
 
@@ -129,7 +123,6 @@ def sum(inp, *args, **kwargs):
         return np.sum(inp, *args, **kwargs)
 
     if condIterableOfOOFuns:
-        is_linear = True
         d, INP, r0 = [], [], 0.0
         j = -1
         for elem in inp: # TODO: mb use reduce() or something like that
@@ -139,7 +132,6 @@ def sum(inp, *args, **kwargs):
                 continue
             j += 1
             INP.append(elem)
-            if not elem.is_linear: is_linear = False
 
         # TODO:  check for fixed inputs
         f = lambda *args: r0 + np.sum(args)
@@ -149,7 +141,7 @@ def sum(inp, *args, **kwargs):
         _inp = set(INP)
         #!!!!!!!!!!!!!!!!!! TODO: check INP for complex cases (not list of oovars)
         
-        r = oofun(f, INP, is_linear=is_linear) 
+        r = oofun(f, INP) 
         
         def getOrder(*args, **kwargs):
             orders = [0]+[inp.getOrder(*args, **kwargs) for inp in INP]
