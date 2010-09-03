@@ -13,7 +13,11 @@ S &= [2*c+a-10 < 1500+0.1*b, a-10<150, c<300, a[0]>8.9, c>-100,
 for i in xrange(1000):
     S &= b+i*c > 10*i + sum(a)
 
-r = S.minimize(f, startPoint, solver='glpk') 
+w = oovar()
+S &= a+sin(w) < 100
+startPoint[w] = 1
+
+r = S.minimize(f+cos(w), startPoint, fixedVars=w) 
 # you could use S.maximize as well
 
 # default LP solvers are (sequentially, if installed): lpSolve, glpk, cvxopt_lp, lp:ipopt, lp:algencan, lp:scipy_slsqp, lp:ralg

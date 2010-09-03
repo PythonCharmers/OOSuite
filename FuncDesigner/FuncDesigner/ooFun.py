@@ -313,7 +313,7 @@ class oofun:
             d = (d_x, d_y)
             input = [self, other]
         r = oofun(f, input, d = d)
-        if isinstance(other, oofun) or (not isinstance(other, int) and (type(other) == ndarray and other.flatten()[0] != int)): 
+        if isinstance(other, oofun) or (not isinstance(other, int) or (type(other) == ndarray and other.flatten()[0] != int)): 
             r.attach((self>0)('pow_domain_%d'%r._id, tol=-1e-7)) # TODO: if "other" is fixed oofun with integer value - omit this
         r.isCostly = True
         return r
@@ -968,9 +968,6 @@ class oofun:
                 orders = [(inp.getOrder(Vars, fixedVars) if isinstance(inp, oofun) else 0) for inp in self.input]
                 self._order = inf if any(asarray(orders) != 0) else 0
 
-#                dep = self.getDep()
-#                if (fixedVars is not None and self in fixedVars) or (Vars is not None and dep.isself not in Vars)
-                #self._order = inf
         return self._order
     
     # TODO: should broadcast return non-void result?
