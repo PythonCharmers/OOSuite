@@ -676,11 +676,11 @@ class ralg(baseSolver):
             """                                If stop required                                """
             
             if p.istop:
-                if self.needRej(p, b, g1, g) or not feasiblePointWasEncountered:
-                    b = B0.copy()
-                    hs = max((p.norm(prevIter_best_ls_point.x - best_ls_point.x) , 128*p.xtol))
-                    p.istop = 0
-                else:
+#                if self.needRej(p, b, g1, g) or not feasiblePointWasEncountered:
+#                    b = B0.copy()
+#                    hs = max((p.norm(prevIter_best_ls_point.x - best_ls_point.x) , 128*p.xtol))
+#                    p.istop = 0
+#                else:
                     restoreProb()
                     p.iterfcn(bestPoint)
                     #p.istop, p.msg = istop, msg
