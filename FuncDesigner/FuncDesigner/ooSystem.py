@@ -83,59 +83,76 @@ class ooSystem:
         
     def minimize(self, *args, **kwargs):
         kwargs['goal'] = 'minimum'
-        return self._optimize(*args, **kwargs)
+        return self._solve(*args, **kwargs)
         
     def maximize(self, *args, **kwargs):
         kwargs['goal'] = 'maximum'
-        return self._optimize(*args, **kwargs)
+        return self._solve(*args, **kwargs)
 
-    def _optimize(self, objective, *args, **kwargs):
-        if isinstance(objective, BaseFDConstraint):
-            raise FuncDesignerException("1st argument can't be of type 'FuncDesigner constraint', it should be 'FuncDesigner oofun'")
-        elif not isinstance(objective, oofun):
-            raise FuncDesignerException('1st argument should be objective function of type "FuncDesigner oofun"')
-        
-        constraints = self._getAllConstraints()
+    def solve(self, *args, **kwargs):
+        kwargs['goal'] = 'solution'
+        assert len(args) == 0 or all([not isinstance(arg, oofun) for arg in args])
+        return self._solve(*args, **kwargs)
+
+    def _solve(self, *args, **kwargs):
         
         #!!!!! TODO: determing LP, MILP, MINLP if possible
-       
         try:
             import openopt
         except:
-            raise FuncDesignerException('to perform optimization you should have openopt installed')
+            raise FuncDesignerException('to perform the operation you should have openopt installed')
             
-        if 'constraints' in kwargs:
-            # TODO: mention it in doc
-            kwargs['constraints'] = set(kwargs['constraints']).update(set(constraints))
-        else:
-            kwargs['constraints'] = constraints
+        constraints = self._getAllConstraints()
+            
+        # TODO: mention it in doc
+        kwargs['constraints'] = set(kwargs['constraints']).update(set(constraints)) if 'constraints' in kwargs else constraints
         
-        optVars = kwargs.get('optVars', None)
-        fixedVars = kwargs.get('fixedVars', None)
-        isLinear = objective.getOrder(optVars, fixedVars) < 2 and all([(c.oofun.getOrder(optVars, fixedVars) < 2) for c in constraints])
-        if isLinear:
-            p = openopt.LP(objective, *args, **kwargs)
-            if 'solver' not in kwargs:
-                for solver in self.lpSolvers:
-                    if (':' not in solver and not openopt.oosolver(solver).isInstalled )or (solver == 'glpk' and not openopt.oosolver('cvxopt_lp').isInstalled):
-                        continue
-                    if solver == 'glpk' :
-                        p2 = openopt.LP([1, -1], lb = [1, 1], ub=[10, 10])
-                        try:
-                            r = p2.solve('glpk', iprint=-5)
-                        except:
+        optVars, fixedVars = kwargs.get('optVars', None), kwargs.get('fixedVars', None)
+        isSystemOfEquations = kwargs['goal'] == 'solution'
+        
+        isLinear = all([(c.oofun.getOrder(optVars, fixedVars) < 2) for c in constraints])
+        #if not isSystemOfEquations: 
+        
+        
+        if isSystemOfEquations:
+            if isLinear: # Linear equations system
+                p = openopt.SLE(*args, **kwargs)
+            else: # Nonlinear equations system
+                p = openopt.NLSP(*args, **kwargs)
+                
+        else: # an optimization problem
+            assert len(args) > 0,  'you should have objective function as 1st argument'
+            objective = args[0]
+            if isinstance(objective, BaseFDConstraint):
+                raise FuncDesignerException("1st argument can't be of type 'FuncDesigner constraint', it should be 'FuncDesigner oofun'")
+            elif not isinstance(objective, oofun):
+                raise FuncDesignerException('1st argument should be objective function of type "FuncDesigner oofun"')
+            
+            isLinear &= objective.getOrder(optVars, fixedVars) < 2
+            
+            if isLinear:
+                p = openopt.LP(*args, **kwargs)
+                if 'solver' not in kwargs:
+                    for solver in self.lpSolvers:
+                        if (':' not in solver and not openopt.oosolver(solver).isInstalled )or (solver == 'glpk' and not openopt.oosolver('cvxopt_lp').isInstalled):
                             continue
-                        if r.istop < 0:
-                            continue
-                        else:
-                            break
-                if ':' in solver:
-                    pWarn('You have linear problem but no linear solver (lpSolve, glpk, cvxopt_lp) is installed; converter to NLP will be used.')
-                p.solver = solver
-        else:
-            p = openopt.NLP(objective, *args, **kwargs)
-            if 'solver' not in kwargs:
-                p.solver = 'ralg'
+                        if solver == 'glpk' :
+                            p2 = openopt.LP([1, -1], lb = [1, 1], ub=[10, 10])
+                            try:
+                                r = p2.solve('glpk', iprint=-5)
+                            except:
+                                continue
+                            if r.istop < 0:
+                                continue
+                            else:
+                                break
+                    if ':' in solver:
+                        pWarn('You have linear problem but no linear solver (lpSolve, glpk, cvxopt_lp) is installed; converter to NLP will be used.')
+                    p.solver = solver
+            else:
+                p = openopt.NLP(*args, **kwargs)
+                if 'solver' not in kwargs:
+                    p.solver = 'ralg'
         # TODO: solver autoselect
         #if p.iprint >= 0: p.disp('The optimization problem is  ' + p.probType)
         return p.solve()

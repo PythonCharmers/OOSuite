@@ -9,8 +9,8 @@ import NLP
 class NLSP(NonLinProblem):
     _optionalData = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'c', 'h']
     probType = 'NLSP'
-    goal = 'minimize residual'
-    allowedGoals = ['minimize residual']
+    goal = 'solution'
+    allowedGoals = ['solution']
     isObjFunValueASingleNumber = False
     showGoal = False
     expectedArgs = ['f', 'x0']
