@@ -19,8 +19,10 @@ class oovar(oofun):
         else:
             kwargs['name'] = name
         oofun.__init__(self, lambda *ARGS: None, *args, **kwargs)
-        
+    
+    
     def _getFuncCalcEngine(self, x, **kwargs):
+        if hasattr(x, 'xf'):return x.xf[self]
         r = x.get(self, None)
         if r is not None: 
             return r

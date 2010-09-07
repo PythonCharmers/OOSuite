@@ -187,7 +187,6 @@ class ooSystemState:
         # TODO: implement it
         # access by elements and their names
 
-
 simplify = lambda val: asscalar(val) if isinstance(val, ndarray) and val.size == 1 else val
 
 

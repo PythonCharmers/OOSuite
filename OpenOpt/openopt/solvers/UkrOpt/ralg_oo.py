@@ -118,12 +118,12 @@ class ralg(baseSolver):
         b = B0.copy()
 #        B_f = diag(ones(n))
 #        B_constr = diag(ones(n))
-        hs = T(h0)
+        hs = asarray(h0, T)
         ls_arr = []
-        w = T(1.0/alp-1.0)
+        w = asarray(1.0/alp-1.0, T)
 
         """                            Shor r-alg engine                           """
-        bestPoint = p.point(atleast_1d(T(copy(x0))))
+        bestPoint = p.point(asarray(copy(x0), T))
         prevIter_best_ls_point = bestPoint
         prevIter_PointForDilation = bestPoint
         prevIter_bestPointBeforeTurn = bestPoint
@@ -621,7 +621,7 @@ class ralg(baseSolver):
                     g = (g / ng).reshape(-1,1)
                     vec1 = economyMult(b, g).reshape(-1,1)# TODO: remove economyMult, use dot?
                     #if alp_addition != 0: p.debugmsg('alp_addition:' + str(alp_addition))
-                    w = T(1.0/(alp+alp_addition)-1.0) 
+                    w = asarray(1.0/(alp+alp_addition)-1.0, T) 
                     vec2 = w * g.T
                     b += p.matmult(vec1, vec2)
             
