@@ -4,6 +4,8 @@ from cvxopt_misc import *
 import cvxopt.solvers as cvxopt_solvers
 
 def CVXOPT_LLSP_Solver(p, solverName):
+        cvxopt_solvers.options['maxiters'] = p.maxIter
+        cvxopt_solvers.options['feastol'] = p.contol    
         if p.iprint <= 0: 
             cvxopt_solvers.options['show_progress'] = False
             cvxopt_solvers.options['MSK_IPAR_LOG'] = 0

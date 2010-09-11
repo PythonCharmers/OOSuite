@@ -5,6 +5,8 @@ import cvxopt.solvers as cvxopt_solvers
 
 def CVXOPT_QP_Solver(p, solverName):
         if solverName == 'native_CVXOPT_QP_Solver': solverName = None
+        cvxopt_solvers.options['maxiters'] = p.maxIter
+        cvxopt_solvers.options['feastol'] = p.contol
         if p.iprint <= 0: 
             cvxopt_solvers.options['show_progress'] = False
             cvxopt_solvers.options['MSK_IPAR_LOG'] = 0

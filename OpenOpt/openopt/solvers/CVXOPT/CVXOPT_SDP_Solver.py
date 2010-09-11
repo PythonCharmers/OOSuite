@@ -29,6 +29,8 @@ def DictToList(d):
 
 def CVXOPT_SDP_Solver(p, solverName):
     if solverName == 'native_CVXOPT_SDP_Solver': solverName = None
+    cvxopt_solvers.options['maxiters'] = p.maxIter
+    cvxopt_solvers.options['feastol'] = p.contol    
     if p.iprint <= 0:
         cvxopt_solvers.options['show_progress'] = False
         cvxopt_solvers.options['LPX_K_MSGLEV'] = 0

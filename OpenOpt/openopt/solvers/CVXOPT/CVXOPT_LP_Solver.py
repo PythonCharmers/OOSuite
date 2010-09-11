@@ -7,6 +7,8 @@ from openopt.kernel.setDefaultIterFuncs import SOLVED_WITH_UNIMPLEMENTED_OR_UNKN
 
 def CVXOPT_LP_Solver(p, solverName):
     if solverName == 'native_CVXOPT_LP_Solver': solverName = None
+    cvxopt_solvers.options['maxiters'] = p.maxIter
+    cvxopt_solvers.options['feastol'] = p.contol    
     if p.iprint <= 0:
         cvxopt_solvers.options['show_progress'] = False
         cvxopt_solvers.options['LPX_K_MSGLEV'] = 0
