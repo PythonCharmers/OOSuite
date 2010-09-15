@@ -73,7 +73,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
     #if iprint<0 -- no output
     #if iprint==0 -- final output only
 
-    maxIter = 400
+    maxIter = 1000
     maxFunEvals = 10000 # TODO: move it to NinLinProblem class?
     maxCPUTime = inf
     maxTime = inf
