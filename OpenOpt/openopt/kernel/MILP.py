@@ -27,7 +27,7 @@ class MILP(LP):
         if self.isFDmodel:
             for iv in self.intVars:
                 if self.fixedVars is not None and iv in self.fixedVars or\
-                self.optVars is not None and iv not in self.optVars:
+                self.freeVars is not None and iv not in self.freeVars:
                     continue
                 r1, r2 = self._oovarsIndDict[iv]
                 r += range(r1, r2)

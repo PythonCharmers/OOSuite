@@ -165,6 +165,9 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
         if hasattr(p.A, 'toarray'): p.A = p.A.toarray()
         if hasattr(p.Aeq, 'toarray'): p.Aeq = p.Aeq.toarray()
 
+    if hasattr(p, 'optVars'):
+        p.err('"optVars" is deprecated, use "freeVars" instead ("optVars" is not appropriate for some prob types, e.g. systems of (non)linear equations)')
+
 #    p.xf = nan * ones([p.n, 1])
 #    p.ff = nan
     #todo : add scaling, etc

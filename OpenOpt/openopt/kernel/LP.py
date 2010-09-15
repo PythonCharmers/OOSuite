@@ -24,7 +24,7 @@ class LP(MatrixProblem):
         MatrixProblem.__prepare__(self)
         if self.x0 is None: self.x0 = zeros(self.n)
         if hasattr(self.f, 'is_oovar'): # hence is oofun or oovar
-            # optVars and fixedVars are already rendered to both not-None here (if it's the case)
+            # freeVars and fixedVars are already rendered to both not-None here (if it's the case)
             # but current .D() implementation doesn't allow to use both arguments
             # BTW translator ignores fixed vars in derivatives, so passing fixedVars here can be omitted 
             # but is performed for more safety wrt future changes
@@ -137,13 +137,13 @@ class LP(MatrixProblem):
         
         # set variables names
         if self.isFDmodel:
-            assert not isinstance(self.optVars, set), 'error in openopt kernel, inform developers'
-            #assert len(self.optVars) == self.n, 'not implemented yet for oovars of size > 1'
-            #names = [oov.name for oov in self.optVars]
+            assert not isinstance(self.freeVars, set), 'error in openopt kernel, inform developers'
+            #assert len(self.freeVars) == self.n, 'not implemented yet for oovars of size > 1'
+            #names = [oov.name for oov in self.freeVars]
             x0 = self._x0
             names = []
-            #assert not isinstance(self.optVars,  set), 'error in openopt kernel, inform developers'
-            for oov in self.optVars:
+            #assert not isinstance(self.freeVars,  set), 'error in openopt kernel, inform developers'
+            for oov in self.freeVars:
                 if oov.name.startswith('unnamed'):
                     L('delete_lp')
                     self.err('For exporting FuncDesigner models into MPS files you cannot have variables with names starting with "unnamed"')

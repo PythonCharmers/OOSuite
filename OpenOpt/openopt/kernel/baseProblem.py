@@ -124,7 +124,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
     legend = ''
 
     fixedVars = None
-    optVars = None
+    freeVars = None
 
     istop = 0
 
@@ -289,12 +289,12 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             if not isinstance(self.x0, dict):
                 self.err('Unexpected start point type: Python dict expected, '+ str(type(self.x0)) + ' obtained')
 
-            if self.probType in ['LP', 'MILP'] and self.f.getOrder(self.optVars, self.fixedVars) > 1:
+            if self.probType in ['LP', 'MILP'] and self.f.getOrder(self.freeVars, self.fixedVars) > 1:
                 self.err('for LP/MILP objective function has to be linear, while this one ("%s") is not' % self.f.name)
 
 
-            if self.fixedVars is None or (self.optVars is not None and len(self.optVars)<len(self.fixedVars)):
-                D_kwargs = {'Vars':self.optVars}
+            if self.fixedVars is None or (self.freeVars is not None and len(self.freeVars)<len(self.fixedVars)):
+                D_kwargs = {'Vars':self.freeVars}
             else:
                 D_kwargs = {'fixedVars':self.fixedVars}
             D_kwargs['useSparse'] = self.useSparse
@@ -316,10 +316,10 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             LB = {}
             UB = {}
             
-            if len(self._fixedVars) < len(self._optVars):
+            if len(self._fixedVars) < len(self._freeVars):
                 areFixed = lambda dep: dep.issubset(self._fixedVars)
             else:
-                areFixed = lambda dep: dep.isdisjoint(self._optVars)
+                areFixed = lambda dep: dep.isdisjoint(self._freeVars)
             self.theseAreFixed = areFixed
             
             probtol = self.contol
@@ -375,7 +375,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     # TODO: check doesn't constraint value exeed self.contol
                     continue
 
-                if self.probType in ['LP', 'MILP', 'LLSP', 'LLAVP'] and f.getOrder(self.optVars, self.fixedVars) > 1:
+                if self.probType in ['LP', 'MILP', 'LLSP', 'LLAVP'] and f.getOrder(self.freeVars, self.fixedVars) > 1:
                     self.err('for LP/MILP/LLSP/LLAVP all constraints have to be linear, while ' + f.name + ' is not')
                 
                 # TODO: simplify condition of box-bounded oovar detection
@@ -404,19 +404,19 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                         else:
                             UB[f] = min((val, UB[f]))
                 elif _lb == _ub:
-                    if f.getOrder(self.optVars, self.fixedVars) < 2:
+                    if f.getOrder(self.freeVars, self.fixedVars) < 2:
                         Aeq.append(self._pointDerivative2array(f.D(Z, **D_kwargs)))      
                         beq.append(-f(Z)+_lb)
                     elif self.h is None: self.h = [f+_lb]
                     else: self.h.append(f+_lb)
                 elif isfinite(_ub):
-                    if f.getOrder(self.optVars, self.fixedVars) < 2:
+                    if f.getOrder(self.freeVars, self.fixedVars) < 2:
                         A.append(self._pointDerivative2array(f.D(Z, **D_kwargs)))                       
                         b.append(-f(Z)+_ub)
                     elif self.c is None: self.c = [f - _ub]
                     else: self.c.append(f - _ub)
                 elif isfinite(_lb):
-                    if f.getOrder(self.optVars, self.fixedVars) < 2:
+                    if f.getOrder(self.freeVars, self.fixedVars) < 2:
                         A.append(-self._pointDerivative2array(f.D(Z, **D_kwargs)))                       
                         b.append(f(Z) - _lb)                        
                     elif self.c is None: self.c = [- f - _lb]
@@ -437,8 +437,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 ub[inds[0]:inds[1]] = vVal
             self.lb, self.ub = lb, ub
         else: # not namedvariablesStyle
-            if self.fixedVars is not None or self.optVars is not None:
-                self.err('fixedVars and optVars are valid for optimization of FuncDesigner models only')
+            if self.fixedVars is not None or self.freeVars is not None:
+                self.err('fixedVars and freeVars are valid for optimization of FuncDesigner models only')
         if self.x0 is None: 
             arr = ['lb', 'ub']
             if self.probType in ['LP', 'MILP', 'QP', 'SOCP', 'SDP']: arr.append('f')

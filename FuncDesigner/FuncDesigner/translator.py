@@ -13,7 +13,7 @@ class FuncDesignerTranslator:
 #    fixedVars = []
     def __init__(self, PointOrVariables, **kwargs): #, freeVars=None, fixedVars=None
         #assert freeVars is not None or fixedVars is not None, 'at most one parameter of "fixedVars" and "freeVars" is allowed'
-        #assert 'optVars' not in kwargs, 'only "fixedVars" and "freeVars" arguments are allowed, not "optVars"'
+        #assert 'freeVars' not in kwargs, 'only "fixedVars" and "freeVars" arguments are allowed, not "freeVars"'
         
         if isinstance(PointOrVariables, dict):
             Point = PointOrVariables
@@ -96,7 +96,7 @@ class FuncDesignerTranslator:
         if useSparse is not False and newStyle:
             r2 = []
             hasSparse = False
-            for i, var in enumerate(optVars):
+            for i, var in enumerate(freeVars):
                 if var in pointDerivarive:#i.e. one of its keys
                     tmp = pointDerivarive[var]
                     if isspmatrix(tmp): hasSparse = True

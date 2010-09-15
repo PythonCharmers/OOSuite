@@ -95,10 +95,10 @@ class nonLinFuncs:
                     if (p.nc + p.nh) * p.n < 10**6:
                         p.useSparse = False # TODO: improve the premature autoselect
                         
-                if p.optVars is None or (p.fixedVars is not None and len(p.optVars) < len(p.fixedVars)):
+                if p.freeVars is None or (p.fixedVars is not None and len(p.freeVars) < len(p.fixedVars)):
                     funcs2 = [(lambda x, i=i: \
                       p._pointDerivative2array(
-                                               funcs[i].D(x, Vars = p.optVars, useSparse=p.useSparse, fixedVarsScheduleID=p._FDVarsID, exactShape=True), 
+                                               funcs[i].D(x, Vars = p.freeVars, useSparse=p.useSparse, fixedVarsScheduleID=p._FDVarsID, exactShape=True), 
                                                useSparse=p.useSparse, func=funcs[i], point=x)) \
                       for i in xrange(len(funcs))]
                 else:
@@ -108,9 +108,9 @@ class nonLinFuncs:
                                                useSparse=p.useSparse, func=funcs[i], point=x)) \
                       for i in xrange(len(funcs))]
             else:
-                if p.optVars is None or (p.fixedVars is not None and len(p.optVars) < len(p.fixedVars)):
+                if p.freeVars is None or (p.fixedVars is not None and len(p.freeVars) < len(p.fixedVars)):
                     funcs2 = [(lambda x, i=i: \
-                               funcs[i]._getFuncCalcEngine(x, Vars = p.optVars, fixedVarsScheduleID=p._FDVarsID))\
+                               funcs[i]._getFuncCalcEngine(x, Vars = p.freeVars, fixedVarsScheduleID=p._FDVarsID))\
                       for i in xrange(len(funcs))]
                 else:
                     funcs2 = [(lambda x, i=i: \

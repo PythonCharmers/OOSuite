@@ -466,7 +466,7 @@ class oofun:
     def eq(self, other):
         if other in (None, (), []): return False
         if self.is_oovar and not isinstance(other, oofun):
-            raise FuncDesignerException('Constraints like this: "myOOVar = <some value>" are not implemented yet and are not recommended; for openopt use optVars / fixedVars instead')
+            raise FuncDesignerException('Constraints like this: "myOOVar = <some value>" are not implemented yet and are not recommended; for openopt use freeVars / fixedVars instead')
         r = Constraint(self - other, ub = 0.0, lb = 0.0) # do not perform check for other == 0, copy should be returned, not self!
         return r  
 

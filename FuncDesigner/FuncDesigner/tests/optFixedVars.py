@@ -36,9 +36,9 @@ print 'ff.D same: ', ff.same_d, 'ff.D evals: ', ff.evals_d
 
 print('opt_a: ', a(r))
 #
-## Alternatively, you can set optVars instead of fixedVars: 
-#optVars = [a, c] # or optVars = [a] / c / [b,c] / [a,c] etc
-#p = NLP(objective, startPoint, optVars = optVars, constraints = constraints)
+## Alternatively, you can set freeVars instead of fixedVars: 
+#freeVars = [a, c] # or freeVars = [a] / c / [b,c] / [a,c] etc
+#p = NLP(objective, startPoint, freeVars = freeVars, constraints = constraints)
 #r = p.solve('ralg')
 #print('opt_a: ', a(r), '   opt_c: ', c(r))
 #

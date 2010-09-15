@@ -9,16 +9,16 @@ def setStartVectorAndTranslators(p):
     # !!!! TODO: handle fixed oovars
     #oovars = list(startPoint.keys())
     
-    fixedVars, optVars = None, None
+    fixedVars, freeVars = None, None
     
-    if p.optVars is not None:
-        if type(p.optVars) not in [list, tuple]:
-            assert hasattr(p.optVars, 'is_oovar')
-            p.optVars = [p.optVars]
-            optVars = p.optVars
+    if p.freeVars is not None:
+        if type(p.freeVars) not in [list, tuple]:
+            assert hasattr(p.freeVars, 'is_oovar')
+            p.freeVars = [p.freeVars]
+            freeVars = p.freeVars
         else:
-            optVars = list(p.optVars)
-        fixedVars = list(set(startPoint.keys()).difference(set(optVars)))
+            freeVars = list(p.freeVars)
+        fixedVars = list(set(startPoint.keys()).difference(set(freeVars)))
         p.fixedVars = fixedVars
     elif p.fixedVars is not None:
         if type(p.fixedVars) not in [list, tuple]:
@@ -27,18 +27,18 @@ def setStartVectorAndTranslators(p):
             fixedVars = p.fixedVars
         else:
             fixedVars = list(p.fixedVars)
-        optVars = list(set(startPoint.keys()).difference(set(fixedVars)))
-        p.optVars = optVars
+        freeVars = list(set(startPoint.keys()).difference(set(fixedVars)))
+        p.freeVars = freeVars
     else:
-        optVars = startPoint.keys()
+        freeVars = startPoint.keys()
     
     p._fixedVars = set(fixedVars) if fixedVars is not None else set()
-    p._optVars = set(optVars) if optVars is not None else set()
+    p._freeVars = set(freeVars) if freeVars is not None else set()
         
     # point should be FuncDesigner point that currently is Python dict        
-    # point2vector = lambda point: atleast_1d(hstack([asfarray(point[oov]) for oov in optVars]))
+    # point2vector = lambda point: atleast_1d(hstack([asfarray(point[oov]) for oov in freeVars]))
     
-    p._optVarSizes = dict([(oov, asarray(startPoint[oov]).size) for oov in optVars])
+    p._optVarSizes = dict([(oov, asarray(startPoint[oov]).size) for oov in freeVars])
     point2vector = lambda point: atleast_1d(hstack([(point[oov] if oov in point else zeros(sizes[oov])) for oov in p._optVarSizes]))
     # 2nd case can trigger from objective/constraints defined over some of opt oovars only
         
@@ -46,7 +46,7 @@ def setStartVectorAndTranslators(p):
     n = vector_x0.size
     p.n = n
     
-    oovar_sizes = [asarray(startPoint[elem]).size for elem in optVars]
+    oovar_sizes = [asarray(startPoint[elem]).size for elem in freeVars]
     oovar_indexes = cumsum([0] + oovar_sizes)
     
     # TODO: mb use oovarsIndDict here as well (as for derivatives?)
@@ -59,7 +59,7 @@ def setStartVectorAndTranslators(p):
                 p.err('value for fixed variable %s is absent in start point' % v.name)
             startDictData.append((v, val))
 
-    #vector2point = lambda x: oopoint(startDictData + [(oov, x[oovar_indexes[i]:oovar_indexes[i+1]]) for i, oov in enumerate(optVars)])
+    #vector2point = lambda x: oopoint(startDictData + [(oov, x[oovar_indexes[i]:oovar_indexes[i+1]]) for i, oov in enumerate(freeVars)])
     p._FDtranslator = {'prevX':nan}
     def vector2point(x): 
         x = atleast_1d(asfarray(x)).copy()
@@ -68,14 +68,14 @@ def setStartVectorAndTranslators(p):
             
         # without copy() ipopt and probably others can replace it by noise after closing
         r = oopoint(startDictData + \
-                    [(oov, x[oovar_indexes[i]:oovar_indexes[i+1]]) for i, oov in enumerate(optVars)])
+                    [(oov, x[oovar_indexes[i]:oovar_indexes[i+1]]) for i, oov in enumerate(freeVars)])
         
         p._FDtranslator['prevVal'] = r 
         p._FDtranslator['prevX'] = copy(x)
 
         return r
 
-    oovarsIndDict = dict([(oov, (oovar_indexes[i], oovar_indexes[i+1])) for i, oov in enumerate(optVars)])
+    oovarsIndDict = dict([(oov, (oovar_indexes[i], oovar_indexes[i+1])) for i, oov in enumerate(freeVars)])
         
     def pointDerivative2array(pointDerivarive, useSparse = 'auto',  func=None, point=None): 
         
@@ -151,7 +151,7 @@ def setStartVectorAndTranslators(p):
             # USE STACK
             r2 = []
             hasSparse = False
-            for i, var in enumerate(optVars):
+            for i, var in enumerate(freeVars):
                 if var in pointDerivarive:#i.e. one of its keys
                     tmp = pointDerivarive[var]
                     if isspmatrix(tmp): hasSparse = True
@@ -197,7 +197,7 @@ def setStartVectorAndTranslators(p):
         for oof in oofuns:
             r = []
             dep = oof._getDep()
-            for oov in optVars:
+            for oov in freeVars:
                 constructor = ones if oov in dep else SparseMatrixConstructor
                 r.append(constructor((1, asarray(startPoint[oov]).size)))
             if any([isspmatrix(elem) for elem in r]):
@@ -214,7 +214,7 @@ def setStartVectorAndTranslators(p):
         return result
         
     p._getPattern = getPattern
-    p.optVars, p.fixedVars = optVars, fixedVars
+    p.freeVars, p.fixedVars = freeVars, fixedVars
     p._point2vector, p._vector2point = point2vector, vector2point
     p._pointDerivative2array = pointDerivative2array
     p._oovarsIndDict = oovarsIndDict
@@ -231,7 +231,7 @@ def setStartVectorAndTranslators(p):
                 lin_oofun = elem.oofun
             else:
                 lin_oofun = elem
-            if lin_oofun.getOrder(self.optVars, self.fixedVars) > 1:
+            if lin_oofun.getOrder(self.freeVars, self.fixedVars) > 1:
                 raise OpenOptException("this function hasn't been intended to work with nonlinear FuncDesigner oofuns")
             C.append(p._pointDerivative2array(lin_oofun.D(Z, **p._D_kwargs), useSparse = p.useSparse))
             d.append(-lin_oofun(Z))

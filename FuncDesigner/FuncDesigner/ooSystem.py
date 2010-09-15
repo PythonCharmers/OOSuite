@@ -107,10 +107,10 @@ class ooSystem:
         # TODO: mention it in doc
         kwargs['constraints'] = set(kwargs['constraints']).update(set(constraints)) if 'constraints' in kwargs else constraints
         
-        optVars, fixedVars = kwargs.get('optVars', None), kwargs.get('fixedVars', None)
+        freeVars, fixedVars = kwargs.get('freeVars', None), kwargs.get('fixedVars', None)
         isSystemOfEquations = kwargs['goal'] == 'solution'
         
-        isLinear = all([(c.oofun.getOrder(optVars, fixedVars) < 2) for c in constraints])
+        isLinear = all([(c.oofun.getOrder(freeVars, fixedVars) < 2) for c in constraints])
         #if not isSystemOfEquations: 
         
         
@@ -128,7 +128,7 @@ class ooSystem:
             elif not isinstance(objective, oofun):
                 raise FuncDesignerException('1st argument should be objective function of type "FuncDesigner oofun"')
             
-            isLinear &= objective.getOrder(optVars, fixedVars) < 2
+            isLinear &= objective.getOrder(freeVars, fixedVars) < 2
             
             if isLinear:
                 p = openopt.LP(*args, **kwargs)

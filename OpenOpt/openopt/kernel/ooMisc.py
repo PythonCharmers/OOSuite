@@ -177,7 +177,7 @@ def setNonLinFuncsNumber(p,  userFunctionType):
     
     if p.isFDmodel:
         X = p._x0
-        kwargs = {'Vars': p.optVars, 'fixedVarsScheduleID':p._FDVarsID, 'fixedVars': p.fixedVars}
+        kwargs = {'Vars': p.freeVars, 'fixedVarsScheduleID':p._FDVarsID, 'fixedVars': p.fixedVars}
     else:
         X = p.x0
         kwargs = {}
