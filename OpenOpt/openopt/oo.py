@@ -91,6 +91,7 @@ def LP(*args, **kwargs):
     r.ff - objFun value (<f,x_opt>) (NaN if a problem occured)
     (see also other r fields)
     Solvers available for now:
+    pclp (BSD) - premature but pure Python implementation with permissive license
     lpSolve (LGPL) - requires lpsolve + Python bindings installations (all mentioned is available in http://sourceforge.net/projects/lpsolve)
     cvxopt_lp (GPL) - requires CVXOPT (http://abel.ee.ucla.edu/cvxopt)
     glpk(GPL2) - requires CVXOPT(http://abel.ee.ucla.edu/cvxopt) & glpk (www.gnu.org/software/glpk)
