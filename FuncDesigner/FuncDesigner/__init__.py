@@ -7,7 +7,7 @@ from sle import sle
 from ode import ode
 from overloads import *
 from misc import FuncDesignerException, _getDiffVarsID
-import interpolate
+from interpolate import scipy_UnivariateSpline as interpolator
 from integrate import integrator
 __version__ = '0.19'
 

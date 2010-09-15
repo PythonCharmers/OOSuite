@@ -10,7 +10,7 @@ from FuncDesigner import *
 a, b, c = oovars('a', 'b', 'c') 
 point1 = {a:1, b: 0, c:[1, 2, 3]}
 
-mySpline = interpolate.scipy_UnivariateSpline([1, 2, 3, 4], [1.001, 4, 9, 16.01])
+mySpline = interpolator([1, 2, 3, 4], [1.001, 4, 9, 16.01])
 
 f = mySpline(a)
 
