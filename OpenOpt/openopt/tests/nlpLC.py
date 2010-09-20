@@ -58,7 +58,7 @@ Aeq, beq = None, None
 contol = 1e-7
 
 # If you use solver algencan, NB! - it ignores xtol and ftol; using maxTime, maxCPUTime, maxIter, maxFunEvals, fEnough is recommended.
-# Note that in algencan gradtol means norm of projected gradient of  the Augmented Lagrangian
+# Note that in algencan gtol means norm of projected gradient of  the Augmented Lagrangian
 # so it should be something like 1e-3...1e-5
 gtol = 1e-7 # (default gtol = 1e-6)
 

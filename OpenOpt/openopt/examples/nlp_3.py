@@ -63,7 +63,7 @@ for j in range(len(solvers)):
     color = colors[j]
     p = NLP(f, x0, c=c, h=h, lb = lb, ub = ub, ftol = 1e-6, maxFunEvals = 1e7, maxIter = 1220, plot = 1, color = color, iprint = 0, legend = [solvers[j]], show= False, xlabel='time', goal='maximum', name='nlp3')
     if solver == 'algencan':
-        p.gradtol = 1e-1
+        p.gtol = 1e-1
     elif solver == 'ralg':
         p.debug = 1
 

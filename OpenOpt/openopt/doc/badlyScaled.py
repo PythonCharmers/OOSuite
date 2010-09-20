@@ -9,7 +9,7 @@ c = lambda x: (x[0]-14)**2-1 # non-lin ineq constraint(s) c(x) <= 0
 
 x0 = [-4,4]
 # even modification of stop criteria can't help to achieve the desired solution:
-someModifiedStopCriteria = {'gradtol': 1e-15,  'ftol': 1e-13,  'xtol': 1e-13, 'maxIter': 1e3}
+someModifiedStopCriteria = {'gtol': 1e-15,  'ftol': 1e-13,  'xtol': 1e-13, 'maxIter': 1e3}
 
 # using default diffInt = 1e-7 is inappropriate:
 p = NLP(f, x0, c=c, iprint = 100, **someModifiedStopCriteria)

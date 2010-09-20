@@ -86,11 +86,11 @@ p.dh = DH
 
 p.contol = 1e-3 # required constraints tolerance, default for NLP is 1e-6
 
-# for ALGENCAN solver gradtol is the only one stop criterium connected to openopt
+# for ALGENCAN solver gtol is the only one stop criterium connected to openopt
 # (except maxfun, maxiter)
-# Note that in ALGENCAN gradtol means norm of projected gradient of  the Augmented Lagrangian
+# Note that in ALGENCAN gtol means norm of projected gradient of  the Augmented Lagrangian
 # so it should be something like 1e-3...1e-5
-p.gradtol = 1e-5 # gradient stop criterium (default for NLP is 1e-6)
+p.gtol = 1e-5 # gradient stop criterium (default for NLP is 1e-6)
 
 
 # see also: help(NLP) -> maxTime, maxCPUTime, ftol and xtol

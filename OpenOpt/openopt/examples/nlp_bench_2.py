@@ -37,7 +37,7 @@ lb = -6*ones(N)
 ub = 6*ones(N)
 lb[3] = 5.5
 ub[4] = 4.5
-gradtol=1e-1
+gtol=1e-1
 ftol = 1e-6
 xtol = 1e-6
 diffInt = 1e-8
@@ -59,11 +59,11 @@ lines, results = [], {}
 for j in range(len(solvers)):
     solver = solvers[j]
     color = colors[j]
-    p = NLP(f, x0, name = 'bench2', df = df, c=c, dc = dc, h=h, dh = dh, lb = lb, ub = ub, gradtol=gradtol, ftol = ftol, maxFunEvals = 1e7, maxIter = maxIter, maxTime = maxTime,  plot = 1, color = color, iprint = 10, legend = [solvers[j]], show=False,  contol = contol)
-#    p = NLP(f, x0, name = 'bench2', df = df, c=c, dc = dc, lb = lb, ub = ub, gradtol=gradtol, ftol = ftol, maxFunEvals = 1e7, maxIter = 1e4, maxTime = maxTime,  plot = 1, color = color, iprint = 0, legend = [solvers[j]], show=False,  contol = contol)
+    p = NLP(f, x0, name = 'bench2', df = df, c=c, dc = dc, h=h, dh = dh, lb = lb, ub = ub, gtol=gtol, ftol = ftol, maxFunEvals = 1e7, maxIter = maxIter, maxTime = maxTime,  plot = 1, color = color, iprint = 10, legend = [solvers[j]], show=False,  contol = contol)
+#    p = NLP(f, x0, name = 'bench2', df = df, c=c, dc = dc, lb = lb, ub = ub, gtol=gtol, ftol = ftol, maxFunEvals = 1e7, maxIter = 1e4, maxTime = maxTime,  plot = 1, color = color, iprint = 0, legend = [solvers[j]], show=False,  contol = contol)
     if solver[:4] == ['ralg']:
         pass
-#        p.gradtol = 1e-8
+#        p.gtol = 1e-8
 #        p.ftol = 1e-7
 #        p.xtol = 1e-7
     elif solver == 'lincher':
