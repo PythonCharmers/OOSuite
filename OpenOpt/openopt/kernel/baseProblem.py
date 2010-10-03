@@ -302,14 +302,16 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             D_kwargs['exactShape'] = True
             
             self._D_kwargs = D_kwargs
+            
             setStartVectorAndTranslators(self)
+            
             lb, ub = -inf*ones(self.n), inf*ones(self.n)
 
             # TODO: get rid of start c, h = None, use [] instead
             A, b, Aeq, beq = [], [], [], []
             
             Z = self._vector2point(zeros(self.n))
-            
+
             if type(self.constraints) not in (list, tuple, set):
                 self.constraints = [self.constraints]
             oovD = self._oovarsIndDict
@@ -482,7 +484,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             self.pWarn(scipyAbsentMsg)
             
         self._baseProblemIsPrepared = True
-        
+
 
 
 class MatrixProblem(baseProblem):
@@ -640,7 +642,7 @@ class NonLinProblem(baseProblem, nonLinFuncs, Args):
                 setattr(self, s, lambda x, IND=None, userFunctionType= s, ignorePrev=False, getDerivative=False: \
                         self.wrapped_func(x, IND, userFunctionType, ignorePrev, getDerivative))
             elif derivativeOrder == 1:
-                setattr(self, s, lambda x, ind=None, funcType=s[-1], ignorePrev = False, useSparse='auto':
+                setattr(self, s, lambda x, ind=None, funcType=s[-1], ignorePrev = False, useSparse=self.useSparse:
                         self.wrapped_1st_derivatives(x, ind, funcType, ignorePrev, useSparse))
             elif derivativeOrder == 2:
                 setattr(self, s, getattr(self, 'user_'+s))
