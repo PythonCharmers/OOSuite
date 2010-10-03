@@ -19,7 +19,7 @@ def manage(p, *args, **kwargs):
     p._kwargs = kwargs
 
     for arg in args:
-        if type(arg) == str: p.solver = arg
+        if type(arg) == str or hasattr(arg, '__solver__'): p.solver = arg
         elif arg in (0, 1, True, False): start = arg
         else: p.err('Incorrect argument for manage()')
 
@@ -45,7 +45,7 @@ def manage(p, *args, **kwargs):
     Frame(root).pack(ipady=4)
     Label(root, text=' OpenOpt ' + ooversion + ' ').pack()
     Label(root, text=' Problem: ' + p.name + ' ').pack()
-    Label(root, text=' Solver: ' + p.solver + ' ').pack()
+    Label(root, text=' Solver: ' + (p.solver if isinstance(p.solver, str) else p.solver.__name__) + ' ').pack()
 
     # Run
     t = StringVar()
