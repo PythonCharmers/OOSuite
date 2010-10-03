@@ -24,7 +24,7 @@ class ipopt(baseSolver):
     _canHandleScipySparse = True
 
     # CHECK ME!
-    __isIterPointAlwaysFeasible__ = lambda self, p: False
+    #__isIterPointAlwaysFeasible__ = lambda self, p: False
     #__isIterPointAlwaysFeasible__ = lambda self, p: p.__isNoMoreThanBoxBounded__()
 
     optFile = 'auto'
