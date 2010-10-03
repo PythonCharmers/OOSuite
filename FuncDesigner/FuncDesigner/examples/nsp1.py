@@ -18,13 +18,13 @@ startPoint = {x: cos(1+arange(N)), y:80}
 p = NSP(f, startPoint, maxIter = 1e5)
 
 r = p.solve('ralg')
-x_opt, y_opt = r.xf[x], r.xf[y]
+x_opt, y_opt = r(x, y)
 print(max(abs(x_opt)), y_opt)
 """
 ...
- 1129  3.000e+01 
-istop:  4 (|| F[k] - F[k-1] || < ftol)
-Solver:   Time Elapsed = 9.27 	CPU Time Elapsed = 8.62
-objFunValue: 30.002138
-(9.6909792750048539e-06, array([  1.03949811e-05]))
+  990  3.000e+01 
+istop: 4(|| F[k] - F[k-1] || < ftol)
+Solver:   Time Elapsed = 11.3 	CPU Time Elapsed = 10.88
+objFunValue: 30.000409
+(2.3481047305075244e-06, array([  6.18404460e-08]))
 """
