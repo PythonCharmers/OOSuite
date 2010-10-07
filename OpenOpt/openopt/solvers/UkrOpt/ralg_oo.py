@@ -12,6 +12,7 @@ from openopt.kernel.Point import Point
 from openopt.kernel.ooMisc import economyMult, Len
 from openopt.kernel.setDefaultIterFuncs import *
 from UkrOptMisc import getBestPointAfterTurn
+from PolytopProjection import PolytopProjection
 
 class ralg(baseSolver):
     __name__ = 'ralg'
@@ -40,6 +41,8 @@ class ralg(baseSolver):
     new_bs = True
     skipPrevIterNaNsInDilation = True
     #new_s = False
+    
+    zhurb = 0
 
     def needRej(self, p, b, g, g_dilated):
 #        r = log10(1e15 * p.norm(g_dilated) / p.norm(g))
@@ -83,12 +86,12 @@ class ralg(baseSolver):
             
         if not self.newLinEq or p.nbeq == 0:
             needProjection = False
-            B0 = eye(n,  dtype=T)
+            B0 = eye(n,  dtype=T) if not self.zhurb else eye(1)
             restoreProb = lambda *args: 0
             Aeq_r, beq_r, nbeq_r = None, None, 0
         else:
             needProjection = True
-            B0 = self.getPrimevalDilationMatrixWRTlinEqConstraints(p)
+            B0 = self.getPrimevalDilationMatrixWRTlinEqConstraints(p) if not self.zhurb else eye(1)
             #Aeq, beq, nbeq = p.Aeq, p.beq, p.nbeq
             
             if any(abs(p._get_AeqX_eq_Beq_residuals(x0))>p.contol/16.0):
@@ -114,7 +117,6 @@ class ralg(baseSolver):
                 p.Aeq, p.beq, p.nbeq = Aeq_r, beq_r, nbeq_r
                 #if nEQ != 0: restore lb, ub
                     
-            
         b = B0.copy()
 #        B_f = diag(ones(n))
 #        B_constr = diag(ones(n))
@@ -128,7 +130,7 @@ class ralg(baseSolver):
         prevIter_PointForDilation = bestPoint
         prevIter_bestPointBeforeTurn = bestPoint
         feasiblePointWasEncountered = bestPoint.isFeas(True)
-
+        
         g = bestPoint._getDirection(self.approach)
         prevDirectionForDilation = g
         moveDirection = g
@@ -170,9 +172,95 @@ class ralg(baseSolver):
             iterStartPoint = prevIter_best_ls_point
             x = iterStartPoint.x.copy()
 
-            g_tmp = economyMult(b.T, moveDirection)
-            if any(g_tmp): g_tmp /= p.norm(g_tmp)
-            g1 = p.matmult(b, g_tmp)
+            if self.zhurb:
+                if itn == 0:
+                    objGradVectors = []
+                    normed_objGradVectors = []
+                    objValues = []
+                    points = []
+                #objGradVectors.append(moveDirection/norm(moveDirection))
+                if isfinite(iterStartPoint.f()):
+                    objGradVectors.append(iterStartPoint.df())
+                    normed_objGradVectors.append(iterStartPoint.df()/norm(iterStartPoint.df()))
+                    objValues.append(asscalar(iterStartPoint.f()))
+                    F = bestPoint.f()
+                    if F == objValues[-1]: 
+                        F -= p.ftol 
+                    F = 0.0                    
+                    points.append(iterStartPoint.x)
+                if not iterStartPoint.isFeas(True):
+                    objGradVectors.append(-iterStartPoint._getDirection(self.approach))
+                    objValues.append(iterStartPoint.mr_alt())
+                    F = 0.0
+                    points.append(iterStartPoint.x)
+                    
+
+                
+                # simplest way to get rid of insufficient vectors
+                # !!!!!!! TODO: implement it properly
+                while self.zhurb < len(objValues):
+                    objValues.pop(0)
+                    objGradVectors.pop(0)
+                    normed_objGradVectors.pop(0)
+                    points.pop(0)
+                
+                #assert not iterStartPoint.betterThan(bestPoint)
+
+                # TODO: use matrix operations instead of the cycle
+                distances = [objValues[i] - F - dot(x-points[i], vec) for i, vec in enumerate(objGradVectors)]
+#                print distances
+#                print objValues
+                polytop = []
+                maxNorm = 0.0
+                norms = []
+                
+                #for i in range(len(objGradVectors)):
+                    #tmp = normed_objGradVectors[i] * distances[i]
+                    #norms.append(norm(tmp))
+                    #polytop.append(tmp)
+                    
+                polytop = asarray(normed_objGradVectors)*reshape(distances, (-1, 1))
+                maxNorm = sqrt(max((polytop**2).sum(1)))
+                polytop /= maxNorm
+
+                g1 = moveDirection
+                if any(g1): g1 /= norm(g1)
+                
+                if len(objGradVectors) > 1:
+                    projection = PolytopProjection(polytop)
+                    g1 = projection
+                    #iterStartPoint2 = p.point(-projection + iterStartPoint.x)
+                    #g1 = (iterStartPoint2.x - x)
+                    if any(g1): g1 /= p.norm(g1)
+                    
+#                    print 'cos phi:', dot(g1, moveDirection)/norm(moveDirection)
+#                    print projection,  iterStartPoint.x
+
+#                    iterStartPoint2 = p.point(x - 1e-9*g1)
+#                    if iterStartPoint2.betterThan(iterStartPoint):
+#                        print 'shifted start point is BETTER (%e < %e)' % (iterStartPoint2.f(),  iterStartPoint.f())
+#                    else:
+#                        print 'shifted start point is WORSE (%e > %e)' % (iterStartPoint2.f(),  iterStartPoint.f())
+                        
+#                    iterStartPoint = iterStartPoint2
+#                    x = iterStartPoint.x
+                    
+                    #print iterStartPoint.f()- p.point(x).f()
+                #g1 = iterStartPoint._getDirection(self.approach)
+                
+                
+                
+#                points.pop()
+#                points.append(iterStartPoint.x)
+                
+                #tmp = asarray(directionVectors)
+                #g1 = PolytopProjection()
+                
+                
+            else:
+                g_tmp = economyMult(b.T, moveDirection)
+                if any(g_tmp): g_tmp /= p.norm(g_tmp)
+                g1 = p.matmult(b, g_tmp)
             
 #            norm_moveDirection = p.norm(g1)
 #            if doScale:
@@ -244,7 +332,7 @@ class ralg(baseSolver):
                     break
                     
             hs /= hs_mult
-            
+#            if self.zhurb: hs /= 1.2
             if ls == p.maxLineSearch-1:
                 p.istop,  p.msg = IS_LINE_SEARCH_FAILED,  'maxLineSearch (' + str(p.maxLineSearch) + ') has been exceeded'
                 restoreProb()
@@ -256,20 +344,38 @@ class ralg(baseSolver):
             #if p.debug and ls != 0: assert not oldPoint.betterThan(best_ls_point)
 
             """                          Backward line search                          """
-            mdx = max((150, 1.5*p.n))*p.xtol
-            if itn == 0:  mdx = max((hs / 128.0, 128*p.xtol )) # TODO: set it after B rej as well
+            if self.zhurb: 
+                #print '%e' % hs
+                maxLS = 300 if ls == 0 else 4
+                maxDeltaF = p.ftol / 16.0
+                mdx = p.xtol / 16.0
+            else:
+                maxLS = 5 if ls == 0 else 1
+                maxDeltaF = 150*p.ftol
+                mdx = max((150, 1.5*p.n))*p.xtol
+            if itn == 0:  
+                mdx = max((hs / 128.0, 128*p.xtol )) # TODO: set it after B rej as well
+                maxLS = 50
+            
             ls_backward = 0
-            maxLS = 3 if ls == 0 else 1
+            
+                
 #            if ls <=3 or ls > 20:
             if self.doBackwardSearch:
                 if self.new_bs:
                     best_ls_point,  PointForDilation, ls_backward = \
-                    getBestPointAfterTurn(oldoldPoint, newPoint, maxLS = maxLS, maxDeltaF = 150*p.ftol, \
+                    getBestPointAfterTurn(oldoldPoint, newPoint, maxLS = maxLS, maxDeltaF = maxDeltaF, \
                                           maxDeltaX = mdx, altLinInEq = True, new_bs = True)
+                    #print ls_backward
                     if PointForDilation.isFeas(True) == iterStartPoint.isFeas(True):
                         lastPointOfSameType = PointForDilation
 #                        elif best_ls_point.isFeas(altLinInEq=True) == iterStartPoint.isFeas(altLinInEq=True):
 #                            lastPointOfSameType = best_ls_point
+                    if self.zhurb: 
+                        #pass
+                        PointForDilation = best_ls_point
+#                        print 'ls_backward:', ls_backward
+#                        print 'PointForDilation.f: %e  iterStartPoint.f: %e  difference: %e' % (PointForDilation.f(),  iterStartPoint.f(), PointForDilation.f() - iterStartPoint.f())
                 else:
                     best_ls_point, ls_backward = \
                     getBestPointAfterTurn(oldoldPoint, newPoint, maxLS = maxLS, altLinInEq = True, new_bs = False)
@@ -303,16 +409,21 @@ class ralg(baseSolver):
             if itn > 3:
                 mean_ls = (3*LS[-1] + 2*LS[-2]+LS[-3]) / 6.0
                 j0 = 3.3
+                #print 'mean_ls:', mean_ls
+                #print 'ls_backward:', ls_backward
                 if mean_ls > j0:
                     hs = (mean_ls - j0 + 1)**0.5 * hs_start
                 else:
                     #hs = (ls/j0) ** 0.5 * hs_start
                     hs = hs_start
-                    if ls == 0 and ls_backward == -maxLS:
+                    if (ls == 0 and ls_backward == -maxLS) or self.zhurb!=0:
                         shift_x = step_x / p.xtol
+                        shift_f = step_f / p.ftol
+#                        print 'shift_x: %e    shift_f: %e' %(shift_x, shift_f)
                         RD = log10(shift_x+1e-100)
                         if PointForDilation.isFeas(True) or prevIter_PointForDilation.isFeas(True):
-                            RD = min((RD, log10(step_f / p.ftol + 1e-100)))
+                            RD = min((RD, log10(shift_f + 1e-100)))
+                        #print 'RD:', RD
                         if RD > 1.0:
                             mp = (0.5, (ls/j0) ** 0.5, 1 - 0.2*RD)
                             hs *= max(mp)
@@ -601,7 +712,8 @@ class ralg(baseSolver):
 #            directionVectorsList.append(gn)
 #            if len(directionVectorsList) > 2: directionVectorsList = directionVectorsList[:-2]
             # CHANGES END
-
+            
+            if self.zhurb: doDilation = False
             if doDilation:
                 g = economyMult(b.T, g1)
                 ng = p.norm(g)
