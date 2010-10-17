@@ -16,7 +16,7 @@ def check(p):
     for fn in p._optionalData:
         if hasattr(p, fn):
             attr = getattr(p, fn)
-            if not fn in p.solver.__optionalDataThatCanBeHandled__ \
+            if fn not in p.solver.__optionalDataThatCanBeHandled__ \
             and \
             ((callable(attr) and getattr(p.userProvided, fn)) or (not callable(attr) and attr not in ([], (), None) and asarray(attr).size>0 and any(isfinite(attr)))):
                 p.err('the solver ' + p.solver.__name__ + ' cannot handle ' + "'" + fn + "' data")

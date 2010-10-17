@@ -237,7 +237,7 @@ class Point:
         else:
             return copy(self._dmr)
 
-    def betterThan(self, point2compare, altLinInEq = False):
+    def betterThan(self, point2compare, altLinInEq = False, bestFeasiblePoint = None):
         """
         usage: result = involvedPoint.better(pointToCompare)
 
@@ -255,6 +255,12 @@ class Point:
         else:
             mr_field = 'mr'
         mr, point2compareResidual = getattr(self, mr_field)(), getattr(point2compare, mr_field)()
+        if bestFeasiblePoint is not None:
+            # TODO: fix f == nan cases!
+            #if isnan(self_f): 
+            mr = max((mr, self.f()  - bestFeasiblePoint.f()))
+            #print mr
+            point2compareResidual = max((point2compare.f() - bestFeasiblePoint.f(), point2compareResidual))
         criticalResidualValue = max((self.p.contol, point2compareResidual))
         self_nNaNs, point2compare_nNaNs = self.nNaNs(), point2compare.nNaNs()
 
@@ -479,22 +485,19 @@ class Point:
                 self._all_lin_ineq_gradient = d
         return copy(self._all_lin_ineq_gradient)
 
-    def _getDirection(self, approach):
-        if hasattr(self, 'direction'):
-            return self.direction.copy()
+    def _getDirection(self, approach, currBestFeasPoint = None):
+#        if hasattr(self, 'direction'):
+#            return self.direction.copy()
         p = self.p
         contol = p.contol
         maxRes, fname, ind = self.mr_alt(1)
         x = self.x
         if self.isFeas(altLinInEq=True):
-        #or (useCurrentBestFeasiblePoint and hasattr(p, 'currentBestFeasiblePoint') and self.f() - p.currentBestFeasiblePoint.f() > self.mr()):
-        #if (maxRes <= p.contol and all(isfinite(self.df())) and (p.isNaNInConstraintsAllowed or self.nNaNs() == 0)) :
             self.direction, self.dType = self.df(),'f'
             if hasattr(self.direction, 'toarray'): self.direction = self.direction.toarray().flatten()
             return self.direction.copy()
         else:
             if approach == 'all active':
-
                 direction = self.__all_lin_ineq_gradient()
                 new = 1
                 if p.userProvided.c:
@@ -585,6 +588,14 @@ class Point:
                 else:
                     p.err('error in getRalgDirection (unknown residual type ' + fname + ' ), you should report the bug')
                 self.direction = d.flatten()
+            if currBestFeasPoint is not None:
+                DF = self.df()
+                nDF = norm(DF)
+                print '>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
+                if nDF > 1e-50:
+                    Ftol = p.Ftol/2.0 if hasattr(p, 'Ftol') else 15 * p.ftol
+                    print 'addition:', (self.f()-currBestFeasPoint.f()-Ftol) * DF / nDF
+                    self.direction += (self.f()-currBestFeasPoint.f()-Ftol) * DF / nDF
             if hasattr(self.direction, 'toarray'): self.direction = self.direction.toarray().flatten()
             return self.direction.copy() # it may be modified in ralg when some constraints coords are NaN
 

@@ -1,6 +1,6 @@
 import NLP
 
-from ooMisc import assignScript
+from ooMisc import assignScript, isspmatrix
 from baseProblem import MatrixProblem
 from numpy import asfarray, ones, inf, dot, asfarray, nan, zeros, isfinite, all, ravel
 
@@ -28,18 +28,21 @@ class QP(MatrixProblem):
         if len(args) > 0 or 'H' in kwargs.keys():
             # TODO: handle sparse cvxopt matrix H unchanges
             # if not ('cvxopt' in str(type(H)) and 'cvxopt' in p.solver): 
-            self.H = asfarray(self.H, float) # TODO: handle the case in runProbSolver()
+            if not isspmatrix(self.H):
+                self.H = asfarray(self.H, float) # TODO: handle the case in runProbSolver()
         
 
     def objFunc(self, x):
-        return asfarray(0.5*dot(x, dot(self.H, x)) + dot(self.f, x).sum()).flatten()
+        return asfarray(0.5*dot(x, self.matMultVec(self.H, x)) + dot(self.f, x).sum()).flatten()
 
     def qp2nlp(self, solver, **solver_params):
         if hasattr(self,'x0'): p = NLP.NLP(ff, self.x0, df=dff, d2f=d2ff)
         else: p = NLP.NLP(ff, zeros(self.n), df=dff, d2f=d2ff)
         p.args.f = self # DO NOT USE p.args = self IN PROB ASSIGNMENT!
+        p.iprint = self.iprint
         self.inspire(p)
         self.iprint = -1
+        
 
         # for QP plot is via NLP
         p.show = self.show

@@ -24,7 +24,7 @@ def CVXOPT_QP_Solver(p, solverName):
     
     if sol['x'] is not None:
         p.xf = xf = asfarray(sol['x']).flatten()
-        p.ff = asfarray(0.5*dot(xf, dot(p.H, xf)) + p.dotmult(p.f, xf).sum()).flatten()
+        p.ff = asfarray(0.5*dot(xf, p.matMultVec(p.H, xf)) + p.dotmult(p.f, xf).sum()).flatten()
         p.duals = concatenate((asfarray(sol['y']).flatten(), asfarray(sol['z']).flatten()))
     else:
         p.ff = nan

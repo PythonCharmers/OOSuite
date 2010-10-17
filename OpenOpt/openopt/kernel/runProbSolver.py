@@ -314,7 +314,7 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
 def finalTextOutput(p, r):
     if p.iprint >= 0:
         if p.msg is not '':  
-            p.disp("istop: " + str(r.istop) + '(' + p.msg +')')
+            p.disp("istop: " + str(r.istop) + ' (' + p.msg +')')
         else: 
             p.disp("istop: " + str(r.istop))
 

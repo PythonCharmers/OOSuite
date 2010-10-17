@@ -64,7 +64,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
     nEvals = {}
 
     lastPrintedIter = -1
-    data4TextOutput = ['objFunVal', 'log10(maxResidual)']
+    
     iterObjFunTextFormat = '%0.3e'
     finalObjFunTextFormat = '%0.8g'
     debug = 0
@@ -125,7 +125,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
 
     fixedVars = None
     freeVars = None
-
+    
     istop = 0
 
     fEnough = -inf # if value less than fEnough will be obtained
@@ -143,6 +143,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         self.info = ooinfo
         self.hint = oohint
         self.disp = oodisp
+        self.data4TextOutput = ['objFunVal', 'log10(maxResidual)']
         
         self.pWarn = ooPWarn
         
