@@ -591,10 +591,8 @@ class Point:
             if currBestFeasPoint is not None:
                 DF = self.df()
                 nDF = norm(DF)
-                print '>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
                 if nDF > 1e-50:
                     Ftol = p.Ftol/2.0 if hasattr(p, 'Ftol') else 15 * p.ftol
-                    print 'addition:', (self.f()-currBestFeasPoint.f()-Ftol) * DF / nDF
                     self.direction += (self.f()-currBestFeasPoint.f()-Ftol) * DF / nDF
             if hasattr(self.direction, 'toarray'): self.direction = self.direction.toarray().flatten()
             return self.direction.copy() # it may be modified in ralg when some constraints coords are NaN
