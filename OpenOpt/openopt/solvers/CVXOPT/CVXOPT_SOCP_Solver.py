@@ -1,5 +1,6 @@
-from numpy import asarray,  ones, all, isfinite, copy, nan, concatenate, array, hstack, vstack
+from numpy import asarray,  ones, all, isfinite, copy, nan, concatenate, array, hstack, vstack, atleast_1d
 from openopt.kernel.ooMisc import WholeRepr2LinConst, xBounds2Matrix
+#from openopt.kernel.nonOptMisc import Vstack
 from cvxopt_misc import *
 import cvxopt.solvers as cvxopt_solvers
 from cvxopt.base import matrix
@@ -24,8 +25,8 @@ def CVXOPT_SOCP_Solver(p, solverName):
     Gq, hq = [], []
     C, d, q, s = p.C, p.d, p.q, p.s
     for i in xrange(len(q)):
-        Gq.append(Matrix(vstack((-q[i],-C[i]))))
-        hq.append(matrix(hstack((s[i], d[i])), tc='d'))
+        Gq.append(Matrix(vstack((-atleast_1d(q[i]),-atleast_1d(C[i])))))
+        hq.append(matrix(hstack((atleast_1d(s[i]), atleast_1d(d[i]))), tc='d'))
 
     sol = cvxopt_solvers.socp(Matrix(p.f), Gl=Matrix(p.A), hl = Matrix(p.b), Gq=Gq, hq=hq, A=Matrix(p.Aeq), b=Matrix(p.beq), solver=solverName)
     p.msg = sol['status']
