@@ -110,7 +110,6 @@ def oosolver(solverName, *args,  **kwargs):
             # currently it's used for to get filed isInstalled value
             # from ooSystem
             solverName = solverName.split(':')[1]
-            
         solverClass = getattr(my_import('openopt.solvers.'+solverPaths[solverName]), solverName)
         solverClassInstance = solverClass()
         solverClassInstance.fieldsForProbInstance = {}
@@ -120,10 +119,11 @@ def oosolver(solverName, *args,  **kwargs):
             else:
                 solverClassInstance.fieldsForProbInstance[key] = value
         solverClassInstance.isInstalled = True
-    except:
+    except ImportError:
         from baseSolver import baseSolver
         solverClassInstance = baseSolver()
         solverClassInstance.__name__ = solverName
+        solverClassInstance.fieldsForProbInstance = {}
         solverClassInstance.isInstalled = False
     return solverClassInstance
 

@@ -27,7 +27,7 @@ def CVXOPT_SOCP_Solver(p, solverName):
         Gq.append(Matrix(vstack((-q[i],-C[i]))))
         hq.append(matrix(hstack((s[i], d[i])), tc='d'))
 
-    sol = cvxopt_solvers.socp(Matrix(p.f), Gq=Gq, hq=hq, A=Matrix(p.Aeq), b=Matrix(p.beq), solver=solverName)
+    sol = cvxopt_solvers.socp(Matrix(p.f), Gl=Matrix(p.A), hl = Matrix(p.b), Gq=Gq, hq=hq, A=Matrix(p.Aeq), b=Matrix(p.beq), solver=solverName)
     p.msg = sol['status']
     if p.msg == 'optimal' :  p.istop = SOLVED_WITH_UNIMPLEMENTED_OR_UNKNOWN_REASON
     else: p.istop = -100

@@ -19,9 +19,10 @@ d1 = [0, 3, -42]
 q1 = array([-3, 6, -10])
 s1 = 27
 
-p = SOCP(f,  C=[C0, C1],  d=[d0, d1], q=[q0, q1], s=[s0, s1])
+p = SOCP(f,  C=[C0, C1],  d=[d0, d1], q=[q0, q1], s=[s0, s1]) 
+# you could add lb <= x <= ub, Ax <= b, Aeq x = beq constraints 
+# via p = SOCP(f,  ..., A=A, b=b, Aeq=Aeq, beq=beq,lb=lb, ub=ub)
 r = p.solve('cvxopt_socp')
 x_opt, f_opt = r.xf,  r.ff
-print ' f_opt:', f_opt, '\n x_opt:', x_opt
-# f_opt: -38.3463678559 
-# x_opt: [-5.01428121 -5.76680444 -8.52162517]
+print(' f_opt: %f    x_opt: %s' % (f_opt, x_opt))
+# f_opt: -38.346368    x_opt: [-5.01428121 -5.76680444 -8.52162517]

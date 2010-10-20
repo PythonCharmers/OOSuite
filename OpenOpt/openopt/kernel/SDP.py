@@ -1,4 +1,3 @@
-from ooMisc import assignScript
 from baseProblem import MatrixProblem
 from numpy import asfarray, ones, inf, dot, asfarray, nan, zeros, isfinite, all
 
@@ -51,31 +50,3 @@ class SDP(MatrixProblem):
 
     def objFunc(self, x):
         return asfarray(dot(self.f, x).sum()).flatten()
-
-#    def qp2nlp(self, solver, **solver_params):
-#        if hasattr(self,'x0'): p = NLP.NLP(ff, self.x0, df=dff, d2f=d2ff)
-#        else: p = NLP.NLP(ff, zeros(self.n), df=dff, d2f=d2ff)
-#        p.args.f = self # DO NOT USE p.args = self IN PROB ASSIGNMENT!
-#        self.inspire(p)
-#        self.iprint = -1
-#
-#        # for QP plot is via NLP
-#        p.show = self.show
-#        p.plot, self.plot = self.plot, 0
-#
-#        #p.checkdf()
-#        r = p.solve(solver, **solver_params)
-#        self.xf, self.ff, self.rf = r.xf, r.ff, r.rf
-#        return r
-
-
-#ff = lambda x, QProb: QProb.objFunc(x)
-#def dff(x, QProb):
-#    r = dot(QProb.H, x)
-#    if all(isfinite(QProb.f)) : r += QProb.f
-#    return r
-#
-#def d2ff(x, QProb):
-#    r = QProb.H
-#    return r
-
