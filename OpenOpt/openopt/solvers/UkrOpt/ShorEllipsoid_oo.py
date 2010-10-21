@@ -44,7 +44,7 @@ class ShorEllipsoid(baseSolver):
         xk = x0.copy()
         p.xk = x0.copy()
 
-        if not hasattr(p, 'r0'):  raise('ShorEllipsoid solver requires r0')
+        if not hasattr(p, 'r0'):  p.err('ShorEllipsoid solver requires r0')
         r = p.r0
 
         f = p.f(x)
