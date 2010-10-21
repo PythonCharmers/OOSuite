@@ -215,9 +215,19 @@ class gsubg(baseSolver):
                 #tmp1, tmp2 = _polyedr[0]/_norms[0] ,  _polyedr[1]/_norms[1]
                 #print '>>>>>>>', dot(tmp1, tmp2)#, tmp1, tmp2
                 #g1 = _polyedr[0]/_norms[0] + _polyedr[1]/_norms[1]
-                g1 = (bestPointAfterTurn._getDirection(self.approach, currBestFeasPoint = bestFeasiblePoint)+\
-                bestPointBeforeTurn._getDirection(self.approach, currBestFeasPoint = bestFeasiblePoint))
-                #g1 = _polyedr[0] + _polyedr[1]
+                if m == 2:
+                    g1 = (bestPointAfterTurn._getDirection(self.approach, currBestFeasPoint = bestFeasiblePoint)+\
+                    bestPointBeforeTurn._getDirection(self.approach, currBestFeasPoint = bestFeasiblePoint))
+                    #g1 = _polyedr[0] + _polyedr[1]
+                else:
+                    A, B = bestPointBeforeTurn.x, bestPointAfterTurn.x
+                    if all(A==B): g1 = P-A
+                    else:
+                        P = x # already updated, i.e. p.point(x - projection1)
+                        t = dot(P-2*A, B-A) / dot(B-A, B-A)
+                        assert isfinite(t)
+                        H = A + t*(B-A)
+                        g1 = P-H
                 g2 = iterStartPoint._getDirection(self.approach, currBestFeasPoint = bestFeasiblePoint)
                 if dot(g1, g2)<0:
                     g1 = -g1
