@@ -1,5 +1,5 @@
 from numpy import diag, array, sqrt,  eye, ones, inf, any, copy, zeros, dot, where, all, tile, sum, nan, isfinite, float64, isnan, log10, \
-max, sign, array_equal, nonzero, ix_, arctan, pi, logical_not, logical_and, atleast_2d, matrix
+max, sign, array_equal, nonzero, ix_, arctan, pi, logical_not, logical_and, atleast_2d, matrix, delete
 from numpy.linalg import norm, solve, LinAlgError
 #try:
 #    from numpy.linalg import cond
@@ -35,8 +35,10 @@ class gsubg(baseSolver):
     doBackwardSearch = True
     new_bs = True
     approach = 'all active'
-    zhurb = 2
-    dual = False
+    zhurb = 50
+    sigma = 1e-3
+    dual = True
+    ls_direction = 'socp'
 
     def __init__(self): pass
     def __solver__(self, p):
@@ -66,11 +68,7 @@ class gsubg(baseSolver):
         g = bestPoint._getDirection(self.approach)
         if not any(g) and all(isfinite(g)):
             # TODO: create ENUMs
-            if bestPoint.isFeas(False):
-                p.istop = 14
-            else:
-                p.istop = -14
-
+            p.istop = 14 if bestPoint.isFeas(False) else -14
             p.msg = 'move direction has all-zero coords'
             return
 
@@ -80,7 +78,8 @@ class gsubg(baseSolver):
         # TODO: add possibility to handle f_opt if known instead of Ftol
         Ftol = p.Ftol/2.0 if hasattr(p, 'Ftol') else 15 * p.ftol
         
-        objGradVectors, points, values, isConstraint = [], [], [], []
+        objGradVectors, vectorNorms, points, values, isConstraint, usefulness, inactive = [], [], [], [], [], [], []
+        StoredInfo = [objGradVectors, vectorNorms, points, values, isConstraint, usefulness, inactive]
         nVec = self.zhurb
         
         """                           gsubg main cycle                                    """
@@ -90,16 +89,13 @@ class gsubg(baseSolver):
             iterStartPoint = prevIter_best_ls_point
             x = iterStartPoint.x.copy()
 
-            #schedule = [bestPoint] if itn == 0 else [bestPointBeforeTurn, bestPointAfterTurn]
-            if itn == 0:
-                schedule = [bestPoint]
-            else: 
-                schedule = []
-                if id(bestPointBeforeTurn.x) != id(points[-1]):
-                    schedule.append(bestPointBeforeTurn)
-                if id(bestPointAfterTurn.x) != id(points[-1]):
-                    schedule.append(bestPointAfterTurn)
+            schedule = [bestPoint] if itn == 0 else [point for point in (bestPointAfterTurn, bestPointBeforeTurn) if id(point.x) != id(points[-1])]
+#            if itn != 0:
+#                x = (bestPointAfterTurn.x+bestPointBeforeTurn.x) / 2.0
+#                iterStartPoint = p.point(x)
+
             
+            nAddedVectors = 0
             for point in schedule:
                 if isfinite(point.f()) and bestFeasiblePoint is not None:
                     tmp = point.df()
@@ -109,73 +105,167 @@ class gsubg(baseSolver):
                         p.iterfcn(point)
                         return
                     objGradVectors.append(tmp)
-                    values.append(asscalar(point.f()))
+                    vectorNorms.append(n_tmp)
+                    val = point.f()
+                    values.append(asscalar(val))
+                    usefulness.append(asscalar(val  - dot(point.x, tmp))/n_tmp)
                     isConstraint.append(False)
                     points.append(point.x)
+                    inactive.append(0)
+                    nAddedVectors += 1
                 if not point.isFeas(True):
-                    tmp = point._getDirection(self.approach, currBestFeasPoint = bestFeasiblePoint)
+                    # TODO: use old-style w/o the arg "currBestFeasPoint = bestFeasiblePoint"
+                    #tmp = point._getDirection(self.approach, currBestFeasPoint = bestFeasiblePoint)
+                    tmp = point._getDirection(self.approach)
+                    n_tmp = norm(tmp)
                     objGradVectors.append(tmp)
-                    values.append(point.mr_alt())
+                    vectorNorms.append(n_tmp)
+                    val = point.mr_alt()
+                    values.append(val)
+                    usefulness.append(asscalar(val  - dot(point.x, tmp))/n_tmp)
                     isConstraint.append(True)
                     points.append(point.x)
-                
+                    inactive.append(0)
+                    nAddedVectors += 1
+                    
+            indToBeRemoved = []
+            
+            if len(values) > nAddedVectors:
+                for j in range(nAddedVectors):
+                    ind = -1-j
+                    #vectors, norms = asarray(objGradVectors[:ind]), asarray(vectorNorms[:ind])
+                    vectors, norms = asarray(objGradVectors), asarray(vectorNorms)
+                    scalarProducts = dot(vectors, objGradVectors[ind])
+                    normProducts = norms * vectorNorms[ind]
+                    IND = where(scalarProducts > normProducts * (1-self.sigma))[0]
+#                    if itn == 2: 
+#                        print '==========='
+#                        print scalarProducts
+#                        print normProducts * (1-self.sigma)
+#                        print '111', IND
+                    if IND.size != 0:
+                        #mostUseful = argmax(-asarray(usefulness)[IND])
+                        #IND = delete(IND, mostUseful)
+                        #indToBeRemoved +=IND.tolist()
+                        indToBeRemoved += IND[:-1].tolist()
+#                        if itn == 2 and IND.size == 1: 
+#                            print '333', norm(objGradVectors[ind])*norm(objGradVectors[IND])/dot(objGradVectors[ind],objGradVectors[IND])
+            
+            indToBeRemoved = list(set(indToBeRemoved)) # TODO: simplify it
+            indToBeRemoved.sort(reverse=True)
+
+            for ind in indToBeRemoved:# TODO: simplify it
+                for List in StoredInfo:
+                    del List[ind]
+                    
             if len(values) > nVec:
-                for arr in (values, objGradVectors, points, isConstraint):
-                    del arr[:-nVec]
-
-            # TODO: use matrix operations instead of the cycle
-            F = (bestFeasiblePoint.f() - Ftol) if bestFeasiblePoint is not None else 0
-
-            # DEBUG
-#            f = lambda x: 2*abs(x[0]-3) + 4*abs(x[1]-5)
-#            points = [array([4, 6])]#, array([3, 6])]
-#            values = [f(points[0])]#, f(points[1])]
-#            F = 0
-#            objGradVectors = [array([2.0, 4.0])]#, array([0.0, 4.0])]
-#            
-#            isConstraint = [False]
-#            x = array([4.0, 7.0])
-            # DEBUG END
-
-            T = valDistances = \
-            asfarray([(asscalar(values[i] - (0 if isConstraint[i] else F)) + dot(x-points[i], vec)) for i, vec in enumerate(objGradVectors)])
-            polyedr = asarray(objGradVectors)
+                for List in StoredInfo:
+                    del List[:-nVec]
             
-            from scipy.sparse import eye
-            from openopt import QP            
-            if itn != 0:
-            #if itn != 0:
-                projection1 = PolytopProjection(polyedr, T = T)
-                #projection2 = - QP(eye(p.n, p.n), zeros_like(x), A=polyedr, b = -valDistances).solve('cvxopt_qp', iprint = -1).xf
-                if self.dual:
-                    #projection1 = PolytopProjection(polyedr, T = -T)
-                    #raise 0
-                    g1 = projection1.flatten()
-                else:
-                    raise 0
-                    #projection2 = QP(eye(p.n, p.n), zeros_like(x), A=polyedr, b = -valDistances).solve('cvxopt_qp', iprint = -1).xf
-                    g1 = projection2
-                
-                #print itn, '>>>>', min(abs(projection1/projection2)), max(abs(projection1/projection2))
+            #assert itn != 2
+            
+            print 'remains: ', len(values), '    removed: ', len(indToBeRemoved), '(',  indToBeRemoved, ')'          
+
+#            if len(values) == 2:
+#                raise 0
+            
+            F = asscalar(bestFeasiblePoint.f() - Ftol) if bestFeasiblePoint is not None else nan
+            #F = 0.0
+
+            #!!!!!!!! CHECK IT
+            valDistances = [((values[i] - (0 if isConstraint[i] else F)) + dot(x-points[i], vec)) for i, vec in enumerate(objGradVectors)]
+            #ValWRTCurrent = -1e-13 + asarray([(values[i] - (0.0 if isConstraint[i] else iterStartPoint.f()) - dot(x-points[i], vec)) for i, vec in enumerate(objGradVectors)])
+            ValWRTCurrent = asarray(valDistances) - iterStartPoint.f()
+           
+            indActive = where(ValWRTCurrent < 0)[0]
+            indInactive = where(ValWRTCurrent >= 0)[0]
+
+            if indInactive.size != 0: 
+                for k in indInactive.tolist():
+                    inactive[k] += 1
+            if indActive.size != 0: 
+                for k in indActive.tolist():
+                    inactive[k] = 0
+            
+            indInactiveToBeRemoved = where(asarray(inactive) > 10)[0]
+            #print 'Active: ',indActive, '    inactive: ', inactive, '  indInactiveToBeRemoved:',  indInactiveToBeRemoved
+            _polyedr = asarray([objGradVectors[k] for k in indActive.tolist()])
+            _norms = asarray([vectorNorms[k] for k in indActive.tolist()])
+            _valDistances = [valDistances[k] for k in indActive.tolist()]
+            
+            if indInactiveToBeRemoved.size != 0: # elseware error in current Python 2.6
+                for j in indInactiveToBeRemoved:
+                    for List in StoredInfo + [valDistances]:
+                        del List[j]
+            
+            m = len(indActive)
+            print 'len(indActive):', len(indActive)
+            if m == 0:
+                g1 = iterStartPoint._getDirection(self.approach, currBestFeasPoint = bestFeasiblePoint)
                 #raise 0
-#                    if itn == 50:
+            elif m == 1:
+                g1 = _polyedr[0]
+            elif m == 2:
+                projection1 = PolytopProjection(_polyedr, asfarray(_valDistances))
+                iterStartPoint = p.point(x - projection1)
+                x = iterStartPoint.x            
+                tmp1, tmp2 = _polyedr[0]/_norms[0] ,  _polyedr[1]/_norms[1]
+                #print '>>>>>>>', dot(tmp1, tmp2)#, tmp1, tmp2
+                #g1 = _polyedr[0]/_norms[0] + _polyedr[1]/_norms[1]
+                g1 = _polyedr[0] + _polyedr[1]
+
+            else:
+                if self.dual:
+                    projection1 = PolytopProjection(_polyedr, asfarray(_valDistances))
+                    if self.ls_direction == 'simple':
+#                        iterStartPoint = p.point(x - projection1)
+#                        x = iterStartPoint.x
+                        g1 = iterStartPoint._getDirection(self.approach, currBestFeasPoint = bestFeasiblePoint)
+                    elif self.ls_direction == 'socp':
+                        _polyedr_normed = asarray([objGradVectors[k]/vectorNorms[k] for k in indActive.tolist()])
+                        
+                        
+                        from FuncDesigner import oovars, dot as DOT
+                        from openopt import NLP
+                        y, t = oovars(2)
+                        #cons = [DOT(_polyedr_normed, y)<t, (y**2).sum()<=1]
+                        cons = [DOT(_polyedr, y)<t, (y**2).sum()<=1]
+                        _p = NLP(t, {t:0, y:zeros(n)}, constraints = cons, iprint = -1)
+                        _r = _p.solve('scipy_slsqp')
+                        g1 = _r(y)
+                        #print g1
+                        iterStartPoint = p.point(iterStartPoint.x - projection1)
+                        x = iterStartPoint.x
+                        
+#                        from openopt import SOCP
+#                        A = hstack((_polyedr, -ones((m, 1))))
+#                        _p = SOCP([0]*n+[1], A=A, b=[0]*m, C=[array([1]*n+[0])], d=[0], q=[array([0]*(n+1))], s=[1])
+#                        _r = _p.solve('cvxopt_socp', iprint = -1)
+#                        g1 = _r.xf[:-1]
 #                        raise 0
+                    elif self.ls_direction == 'double':
+                        F2 = asscalar(bestFeasiblePoint.f() - 1.5*Ftol) if bestFeasiblePoint is not None else nan
+                        valDistances2 = [((values[i] - (0.0 if isConstraint[i] else F2)) + dot(x-points[i], vec)) for i, vec in enumerate(objGradVectors)]
+                        projection2 = PolytopProjection(polyedr, asfarray(valDistances2))
+                        point1, point2 = p.point(iterStartPoint.x - projection1), p.point(iterStartPoint.x - projection2)
+                        d1 = point1._getDirection(self.approach, currBestFeasPoint = bestFeasiblePoint)
+                        if dot(d1, projection1 - projection2) <= 0:
+                            newStartPoint = point2
+                            g1 = projection1 - projection2
+                        else:
+                            newStartPoint = point1
+                            g1 = projection2 - projection1
+                        x = newStartPoint.x
+                        iterStartPoint = newStartPoint
+
+                else:
+                    p.err('only dual subproblem is turned on')
+#                    from scipy.sparse import eye
+#                    from openopt import QP            
+#                    projection2 = QP(eye(p.n, p.n), zeros_like(x), A=polyedr, b = -valDistances).solve('cvxopt_qp', iprint = -1).xf
+#                    g1 = projection2
 
                 
-                #DEBUG
-#                print '-----------'
-#                print iterStartPoint.x 
-#                print '1st direction:', iterStartPoint._getDirection(self.approach, currBestFeasPoint = bestFeasiblePoint)
-#                print '2nd direction:', projection
-#                if itn > 0: 
-#                    raise 0
-                #g1 = iterStartPoint._getDirection(self.approach, currBestFeasPoint = bestFeasiblePoint)
-                #DEBUG END
-                
-            else:
-                g1 = bestPoint._getDirection(self.approach, currBestFeasPoint = bestFeasiblePoint)
-            
-               
             if any(g1): g1 /= p.norm(g1)
             
 
@@ -227,7 +317,7 @@ class gsubg(baseSolver):
 
 
             """                          Backward line search                          """
-            maxLS = 3000 if ls == 0 else 5
+            maxLS = 2 if ls == 0 else 2
             maxDeltaF = p.ftol / 16.0
             maxDeltaX = p.xtol / 16.0
             if itn == 0:  
@@ -248,7 +338,7 @@ class gsubg(baseSolver):
                 bestFeasiblePoint = best_ls_point
 
             
-            best_ls_point = bestPointAfterTurn # elseware lots of difficulties
+            #best_ls_point = bestPointAfterTurn # elseware lots of difficulties
             
             """                                 Updating hs                                 """
             step_x = p.norm(best_ls_point.x - prevIter_best_ls_point.x)
