@@ -205,14 +205,22 @@ class gsubg(baseSolver):
                 #raise 0
             elif m == 1:
                 g1 = _polyedr[0]
-            elif m == 2:
+            elif m >= 2:
                 projection1 = PolytopProjection(_polyedr, asfarray(_valDistances))
+                if any(isnan(projection1)):
+                    p.istop = 900
+                    return
                 iterStartPoint = p.point(x - projection1)
                 x = iterStartPoint.x            
-                tmp1, tmp2 = _polyedr[0]/_norms[0] ,  _polyedr[1]/_norms[1]
+                #tmp1, tmp2 = _polyedr[0]/_norms[0] ,  _polyedr[1]/_norms[1]
                 #print '>>>>>>>', dot(tmp1, tmp2)#, tmp1, tmp2
                 #g1 = _polyedr[0]/_norms[0] + _polyedr[1]/_norms[1]
-                g1 = _polyedr[0] + _polyedr[1]
+                g1 = (bestPointAfterTurn._getDirection(self.approach, currBestFeasPoint = bestFeasiblePoint)+\
+                bestPointBeforeTurn._getDirection(self.approach, currBestFeasPoint = bestFeasiblePoint))
+                #g1 = _polyedr[0] + _polyedr[1]
+                g2 = iterStartPoint._getDirection(self.approach, currBestFeasPoint = bestFeasiblePoint)
+                if dot(g1, g2)<0:
+                    g1 = -g1
 
             else:
                 if self.dual:
@@ -284,7 +292,9 @@ class gsubg(baseSolver):
                 elif ls > 2:
                     hs_mult = 1.05
                 hs *= hs_mult
-
+                assert all(isfinite(g1))
+                assert all(isfinite(x))
+                assert isfinite(hs)
                 x -= hs * g1
                 hs_cumsum += hs
 
@@ -295,7 +305,7 @@ class gsubg(baseSolver):
                 if ls == 0:
                     oldPoint = prevIter_best_ls_point#prevIterPoint
                     oldoldPoint = oldPoint
-                    
+                assert all(isfinite(oldPoint.x))    
                 #if not self.checkTurnByGradient:
                 if newPoint.betterThan(oldPoint, altLinInEq=True, bestFeasiblePoint = bestFeasiblePoint):
                     if newPoint.isFeas(True) and (bestFeasiblePoint is None or newPoint.betterThan(bestFeasiblePoint, altLinInEq=True, bestFeasiblePoint = bestFeasiblePoint)):
@@ -317,7 +327,7 @@ class gsubg(baseSolver):
 
 
             """                          Backward line search                          """
-            maxLS = 2 if ls == 0 else 2
+            maxLS = 5 if ls == 0 else 5
             maxDeltaF = p.ftol / 16.0
             maxDeltaX = p.xtol / 16.0
             if itn == 0:  
@@ -325,12 +335,14 @@ class gsubg(baseSolver):
                 maxLS = 50
             
             ls_backward = 0
-                
+            assert all(isfinite(oldoldPoint.x))    
+            assert all(isfinite(newPoint.x))    
             if self.doBackwardSearch:
                 best_ls_point,  bestPointAfterTurn, ls_backward = \
                 getBestPointAfterTurn(oldoldPoint, newPoint, maxLS = maxLS, maxDeltaF = maxDeltaF, \
                                       maxDeltaX = maxDeltaX, altLinInEq = True, new_bs = True)
-
+            assert all(isfinite(bestPointAfterTurn.x))    
+            assert all(isfinite(best_ls_point.x))    
             # TODO: extract last point from backward search, that one is better than iterPoint
             if best_ls_point.betterThan(bestPoint, altLinInEq=True): bestPoint = best_ls_point
 
@@ -367,6 +379,7 @@ class gsubg(baseSolver):
                         if RD > 1.0:
                             mp = (0.5, (ls/j0) ** 0.5, 1 - 0.2*RD)
                             hs *= max(mp)
+            if hs < p.xtol/2: hs = p.xtol/2
 
             """                            Handling iterPoints                            """
                
@@ -386,7 +399,7 @@ class gsubg(baseSolver):
             if hasattr(p, '_df'): delattr(p, '_df')
             if best_ls_point.isFeas(False) and hasattr(best_ls_point, '_df'): 
                 p._df = best_ls_point.df().copy()           
-                
+            assert all(isfinite(best_ls_point.x))
             p.iterfcn(best_ls_point)
 
             """                             Check stop criteria                           """
