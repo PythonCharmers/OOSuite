@@ -182,9 +182,17 @@ class nonLinFuncs:
                     
                 agregate_counter += atleast_1d(asarray(v)).shape[0]
 
-        #assert p.iter != 176 or userFunctionType != 'f' or not getDerivative
-        if userFunctionType == 'f' and p.isObjFunValueASingleNumber and r.size > 1 and (type(r) == ndarray or min(r.shape) > 1): 
+        #if type(r) == matrix: r = r.A
+            
+        if userFunctionType == 'f' and p.isObjFunValueASingleNumber and prod(r.shape) > 1 and (type(r) == ndarray or min(r.shape) > 1): 
             r = r.sum(0)
+            
+        if userFunctionType == 'f' and p.isObjFunValueASingleNumber:
+            if getDerivative and r.ndim > 1:
+                if min(r.shape) > 1:
+                    p.err('incorrect shape of objective func derivative')
+                r = r.flatten()
+            
 #        if type(r) == matrix: 
 #            raise 0
 #            r = r.A # if _dense_numpy_matrix !
