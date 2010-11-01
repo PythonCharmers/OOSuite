@@ -90,7 +90,10 @@ class oofun:
         print(msg)
     
     def __getattr__(self, attr):
-        if attr != 'size': raise AttributeError('you are trying to obtain incorrect attribute "%s" for FuncDesigner oofun "%s"' %(attr, self.name))
+        if attr == '__len__':
+            raise AttributeError('using len(oofun) is not possible yet, try using oofun.size instead')
+        if attr != 'size': 
+            raise AttributeError('you are trying to obtain incorrect attribute "%s" for FuncDesigner oofun "%s"' %(attr, self.name))
         
         # to prevent creating of several oofuns binded to same oofun.size
         r = oofun(lambda x: asarray(x).size, self, discrete = True, getOrder = lambda *args, **kwargs: 0)
@@ -385,10 +388,12 @@ class oofun:
             if condBigMatrix and not scipyInstalled:
                 self.pWarn(scipyAbsentMsg)
             if condBigMatrix and scipyInstalled:
-                m1 = SparseMatrixConstructor((ind2-ind1, ind1))
-                m2 = Eye(ind2-ind1)
-                m3 = SparseMatrixConstructor((ind2-ind1, x.size - ind2))
-                r = Hstack((m1, m2, m3))
+                r = Eye(ind2-ind1)
+                if ind1 != 0:
+                   m1 = SparseMatrixConstructor((ind2-ind1, ind1))
+                   r = Hstack((SparseMatrixConstructor((ind2-ind1, ind1)), r))
+                if ind2 != x.size:
+                   r = Hstack((r, SparseMatrixConstructor((ind2-ind1, x.size - ind2))))
             else:
                 m1 = zeros((ind2-ind1, ind1))
                 m2 = eye(ind2-ind1)
