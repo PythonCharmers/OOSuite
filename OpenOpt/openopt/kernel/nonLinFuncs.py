@@ -310,6 +310,9 @@ class nonLinFuncs:
 #        if min(derivatives.shape) == 1: 
 #            if isspmatrix(derivatives): derivatives = derivatives.A
 #            derivatives = derivatives.flatten()
+        if type(derivatives) != ndarray and isinstance(derivatives, ndarray): # dense numpy matrix
+            derivatives = derivatives.A
+            
         if ind is None and not ignorePrev: p.prevVal[derivativesType]['val'] = derivatives
 
         if funcType=='f':
