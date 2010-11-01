@@ -1,6 +1,6 @@
 # created by Dmitrey
 from numpy import copy, isnan, array, argmax, abs, vstack, zeros, any, isfinite, all, where, asscalar, \
-sign, dot, sqrt, array_equal, nanmax, inf, hstack, isscalar, logical_or, matrix, asfarray, prod, arange
+sign, dot, sqrt, array_equal, nanmax, inf, hstack, isscalar, logical_or, matrix, asfarray, prod, arange, ndarray
 from numpy.linalg import norm
 from nonOptMisc import Copy
 
@@ -494,7 +494,7 @@ class Point:
         x = self.x
         if self.isFeas(altLinInEq=True):
             self.direction, self.dType = self.df(),'f'
-            if hasattr(self.direction, 'toarray'): self.direction = self.direction.toarray().flatten()
+            if type(self.direction) != ndarray: self.direction = self.direction.A.flatten()
             return self.direction.copy()
         else:
             if approach == 'all active':
@@ -594,7 +594,7 @@ class Point:
                 if nDF > 1e-50:
                     Ftol = p.Ftol/2.0 if hasattr(p, 'Ftol') else 15 * p.ftol
                     self.direction += (self.f()-currBestFeasPoint.f()-Ftol) * DF / nDF
-            if hasattr(self.direction, 'toarray'): self.direction = self.direction.toarray().flatten()
+            if type(self.direction) != ndarray: self.direction = self.direction.A.flatten()
             return self.direction.copy() # it may be modified in ralg when some constraints coords are NaN
 
 #    def __getDirection__(self, useCurrentBestFeasiblePoint = False):
