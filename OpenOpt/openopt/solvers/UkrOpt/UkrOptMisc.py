@@ -129,13 +129,14 @@ def getAltitudeDirection(p, pointTop, point2, point3):
 from openopt.kernel.setDefaultIterFuncs import IS_LINE_SEARCH_FAILED
 from openopt.kernel.ooMisc import isSolved
 
-def getBestPointAfterTurn(oldPoint, newPoint, altLinInEq=None, maxLS = 3, maxDeltaX = None, maxDeltaF = None, \
-                          hs=None, new_bs = True):
+def getBestPointAfterTurn(oldPoint, newPoint, altLinInEq=None, maxLS = 3, maxDeltaX = None, maxDeltaF = None, sf = None, \
+                          hs=None, new_bs = True, checkTurnByGradient = False):
     assert altLinInEq is not None
     p = oldPoint.p
     contol = p.contol
     
     altPoint = oldPoint.linePoint(0.5, newPoint)
+        
 
     if maxLS is None:
         maxLS = p.maxLineSearch
@@ -149,14 +150,27 @@ def getBestPointAfterTurn(oldPoint, newPoint, altLinInEq=None, maxLS = 3, maxDel
             maxDeltaX = 1.5e1*p.xtol
     if maxDeltaF is None: maxDeltaF = 150*p.ftol
     prev_prev_point = newPoint
+    
+    if checkTurnByGradient:
+        direction = newPoint.x-oldPoint.x
+        condNotBetter = lambda altPoint, prevPoint: dot(prevPoint._getDirection(p.solver.approach), direction) <= 0.0
+        dType = 1
+    else:
+        condNotBetter = lambda altPoint, prevPoint: not altPoint.betterThan(prevPoint, altLinInEq=altLinInEq)
+        dType = 2
+            
     for ls in xrange(maxLS):
-        
         altPoint, prevPoint = oldPoint.linePoint(0.5, altPoint), altPoint
-
+        if sf is not None and sf(altPoint):
+            p.debugmsg('Return by sf: ls = %d' % ls)
+            return altPoint, prevPoint, -1-ls
+            
         #!!! "not betterThan" is used vs "betterThan" because prevPoint can become same to altPoint
-        if not altPoint.betterThan(prevPoint, altLinInEq=altLinInEq):
+        #if not altPoint.betterThan(prevPoint, altLinInEq=altLinInEq):
+        if condNotBetter(altPoint, prevPoint):
             if new_bs:
                 bestPoint, pointForDilation = prevPoint, prev_prev_point
+                #if dType == 1: bestPoint = prev_prev_point
                 return bestPoint, pointForDilation, -1-ls
             else:
                 return prev_prev_point, -1-ls

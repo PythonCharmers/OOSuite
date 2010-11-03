@@ -4,6 +4,7 @@ from numpy.linalg import norm
 
 def PolytopProjection(data, T = 1.0):
     n, m = data.shape
+    #data = float128(data)
     H = dot(data, data.T)
     #print H.shape
     #print 'PolytopProjection: n=%d, m=%d, H.shape[0]= %d, H.shape[1]= %d ' %(n, m, H.shape[0], H.shape[1])
@@ -17,8 +18,8 @@ def PolytopProjection(data, T = 1.0):
     #solver = 'nlp:ralg'
 #    solver = 'nlp:algencan'
 #    solver = 'nlp:ipopt'
-    r = p.solve(solver, ftol = 1e-15, xtol = 1e-15)
+    r = p.solve(solver, ftol = 1e-16, xtol = 1e-16, maxIter = 10000)
     sol = r.xf
 
     s = dot(data.T, r.xf)
-    return s.flatten()
+    return s.flatten(), r.xf
