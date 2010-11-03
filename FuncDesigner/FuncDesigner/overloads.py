@@ -152,6 +152,7 @@ def sum(inp, *args, **kwargs):
             # TODO: handle involvePrevData
             # TODO: handle fixed vars
             r, keys = {}, set()
+            
             for elem in _inp:
                 if not elem.is_oovar and (elem.input is None or len(elem.input)==0 or elem.input[0] is None): 
                     continue # TODO: get rid if None, use [] instead
@@ -186,7 +187,7 @@ def sum(inp, *args, **kwargs):
                             r[key] = val
                             keys.add(key)
             if useSparse is False:
-                for key, val in r.iteritems():
+                for key, val in r.items():
                     if np.isscalar(val): val = np.asfarray(val)
                     if not isinstance(val, np.ndarray): # i.e. sparse matrix
                         r[key] = val.toarray()
