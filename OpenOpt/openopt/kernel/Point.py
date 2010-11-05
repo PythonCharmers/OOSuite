@@ -292,7 +292,8 @@ class Point:
 
     def isFeas(self, altLinInEq):
         if not all(isfinite(self.f())): return False
-        contol = self.p.contol
+        if self.p.isUC: return True
+        contol = self.p.contol 
         if altLinInEq:
             if hasattr(self, '_mr_alt'):
                 if self._mr_alt > contol or self.nNaNs() != 0: return False
@@ -376,9 +377,6 @@ class Point:
             threshold = 0.0
 #            if all(isfinite(self.f())): threshold = self.p.contol
 #            else: threshold = 0
-
-            lb, ub = self.lb(), self.ub()
-            lin_ineq = self.lin_ineq()
             lin_eq = self.lin_eq()
             ind_lb, ind_ub = where(lb>threshold)[0], where(ub>threshold)[0]
             ind_lin_ineq = where(lin_ineq>threshold)[0]
