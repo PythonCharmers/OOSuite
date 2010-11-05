@@ -8,6 +8,7 @@ def CVXOPT_QP_Solver(p, solverName):
     cvxopt_solvers.options['maxiters'] = p.maxIter
     cvxopt_solvers.options['feastol'] = p.contol
     cvxopt_solvers.options['abstol'] = p.ftol
+    cvxopt_solvers.options['reltol'] = 1e-16
     if p.iprint <= 0: 
         cvxopt_solvers.options['show_progress'] = False
         cvxopt_solvers.options['MSK_IPAR_LOG'] = 0

@@ -18,7 +18,9 @@ def PolytopProjection(data, T = 1.0):
     #solver = 'nlp:ralg'
 #    solver = 'nlp:algencan'
 #    solver = 'nlp:ipopt'
-    r = p.solve(solver, ftol = 1e-16, xtol = 1e-16, maxIter = 10000)
+    xtol = 1e-6
+    if max(T) < 1e5*xtol: xtol = max(T)/1e5
+    r = p.solve(solver, ftol = 1e-16, xtol = xtol, maxIter = 10000)
     sol = r.xf
 
     s = dot(data.T, r.xf)
