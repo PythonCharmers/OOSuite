@@ -2,10 +2,16 @@ from openopt import QP
 from numpy import *
 from numpy.linalg import norm
 
-def PolytopProjection(data, T = 1.0):
-    n, m = data.shape
+def PolytopProjection(data, T = 1.0, isProduct = False):
+    
     #data = float128(data)
-    H = dot(data, data.T)
+    if isProduct:
+        H = data
+        n = data.shape[0]
+        m = len(T)
+    else:
+        H = dot(data, data.T)
+        n, m = data.shape
     #print H.shape
     #print 'PolytopProjection: n=%d, m=%d, H.shape[0]= %d, H.shape[1]= %d ' %(n, m, H.shape[0], H.shape[1])
     #T = abs(dot(H, ones(n)))
@@ -23,5 +29,8 @@ def PolytopProjection(data, T = 1.0):
     r = p.solve(solver, ftol = 1e-16, xtol = xtol, maxIter = 10000)
     sol = r.xf
 
-    s = dot(data.T, r.xf)
-    return s.flatten(), r.xf
+    if isProduct:
+        return r.xf
+    else:
+        s = dot(data.T, r.xf)
+        return s.flatten(), r.xf        
