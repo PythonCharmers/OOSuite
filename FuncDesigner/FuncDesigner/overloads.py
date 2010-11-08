@@ -105,7 +105,7 @@ def dot(inp1, inp2):
         return r
         
     r = oofun(lambda x, y: x * y if x.size == 1 or y.size == 1 else np.dot(x, y), [inp1, inp2], d=(lambda x, y: aux_d(x, y), lambda x, y: aux_d(y, x)))
-    r.getOrder = lambda *args, **kwargs: (x.getOrder(*args, **kwargs) if isinstance(x, oofun) else 0) + (y.getOrder(*args, **kwargs) if isinstance(y, oofun) else 0)
+    r.getOrder = lambda *args, **kwargs: (inp1.getOrder(*args, **kwargs) if isinstance(inp1, oofun) else 0) + (inp2.getOrder(*args, **kwargs) if isinstance(inp2, oofun) else 0)
     r.isCostly = True
     return r
 
