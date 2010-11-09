@@ -338,10 +338,8 @@ class oofun:
     def __rxor__(self, other): raise FuncDesignerException('For power of oofuns use a**b, not a^b')
         
     def __getitem__(self, ind): # overload for oofun[ind]
-        assert not isinstance(ind, oofun), 'slicing by oofuns is unimplemented yet'
-        if isinstance(ind, dict): return self.__call__(ind) # value in a point
 
-        if  not hasattr(self, '_slicesIndexDict'):
+        if not hasattr(self, '_slicesIndexDict'):
             self._slicesIndexDict = {}
         if ind in self._slicesIndexDict:
             return self._slicesIndexDict[ind]
