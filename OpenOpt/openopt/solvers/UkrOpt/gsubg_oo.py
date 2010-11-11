@@ -102,12 +102,15 @@ class gsubg(baseSolver):
                 #iterStartPoint = prevIter_best_ls_point
                 if bestPointBeforeTurn is None:
                     schedule = [bestPoint]
+                    #x = iterStartPoint.x
                 else:
                     sh = [point1, point2]
                     #sh = [iterStartPoint, bestPointBeforeTurn, bestPointAfterTurn]
                     sh.sort(cmp = lambda point1, point2: -1+2*int(point1.betterThan(point2, altLinInEq=True, bestFeasiblePoint = bestFeasiblePoint)))
                     iterStartPoint = sh[-1]
                     schedule = [point for point in sh if id(point.x) != id(points[-1])]
+                    #x = iterStartPoint.x.copy()
+                    #x = 0.5*(point1.x+point2.x) 
                 #print 'len(schedule):', len(schedule)
                     
                 x = iterStartPoint.x.copy()
@@ -389,7 +392,7 @@ class gsubg(baseSolver):
                 #DEBUG END
                 
                 #assert p.isUC
-                maxRecNum = 4+int(log2(norm(oldoldPoint.x-newPoint.x)/p.xtol)) 
+                maxRecNum = 400#4+int(log2(norm(oldoldPoint.x-newPoint.x)/p.xtol)) 
                 #assert dot(oldoldPoint.df(), newPoint.df()) < 0
                 #assert sign(dot(oldoldPoint.df(), g1)) != sign(dot(newPoint.df(), g1))
                 point1, point2 = LocalizedSearch(oldoldPoint, newPoint, bestFeasiblePoint, Ftol, p, maxRecNum)
@@ -615,12 +618,20 @@ isPointCovered = lambda pointWithSubGradient, pointToCheck, bestFeasiblePoint, F
 
 def LocalizedSearch(point1, point2, bestFeasiblePoint, Ftol, p, maxRecNum):
     for i in range(maxRecNum):
-        p.debugmsg('req num: %d from %d' % (i, maxRecNum))
-        isPoint1Covered = isPointCovered(point2, point1, bestFeasiblePoint, Ftol)
-        isPoint2Covered = isPointCovered(point1, point2, bestFeasiblePoint, Ftol)
-        #print 'isPoint1Covered:', isPoint1Covered, 'isPoint2Covered:', isPoint2Covered
-        if isPoint1Covered and isPoint2Covered:
-            break
+        if p.debug:
+            p.debugmsg('req num: %d from %d' % (i, maxRecNum))
+
+        new = 0
+        if new:
+            if point1.betterThan(point2, altLinInEq=True, bestFeasiblePoint = bestFeasiblePoint) and isPointCovered(point2, point1, bestFeasiblePoint, Ftol) \
+            or point2.betterThan(point1, altLinInEq=True, bestFeasiblePoint = bestFeasiblePoint) and isPointCovered(point1, point2, bestFeasiblePoint, Ftol):
+                break
+        else:
+            isPoint1Covered = isPointCovered(point2, point1, bestFeasiblePoint, Ftol)
+            isPoint2Covered = isPointCovered(point1, point2, bestFeasiblePoint, Ftol)
+            #print 'isPoint1Covered:', isPoint1Covered, 'isPoint2Covered:', isPoint2Covered
+            if isPoint1Covered and isPoint2Covered:
+                break
         
         point = p.point((point1.x + point2.x)/2.0)
         assert p.isUC
