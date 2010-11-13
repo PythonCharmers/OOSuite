@@ -267,7 +267,7 @@ def ifThenElse(condition, val1, val2, *args, **kwargs):
         
         
 def max(inp,  *args,  **kwargs): 
-    assert len(args) == len(kwargs) == 0
+    assert len(args) == len(kwargs) == 0, 'incorrect data type in FuncDesigner max or not implemented yet'
     
     if isinstance(inp, oofun):
         f = lambda x: np.max(x)
@@ -290,7 +290,7 @@ def max(inp,  *args,  **kwargs):
     return r        
     
 def min(inp,  *args,  **kwargs): 
-    assert len(args) == len(kwargs) == 0
+    assert len(args) == len(kwargs) == 0, 'incorrect data type in FuncDesigner min or not implemented yet'
     
     if isinstance(inp, oofun):
         f = lambda x: np.min(x)
