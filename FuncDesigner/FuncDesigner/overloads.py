@@ -266,16 +266,47 @@ def ifThenElse(condition, val1, val2, *args, **kwargs):
         raise FuncDesignerException('ifThenElse requires 1st argument (condition) to be either boolean or oofun, got %s instead' % type(condition))
         
         
-def Max(inp,  *args,  **kwargs): 
+def max(inp,  *args,  **kwargs): 
     assert len(args) == len(kwargs) == 0
     
     if isinstance(inp, oofun):
         f = lambda x: np.max(x)
         def d(x):
             df = inp.d(x)
-            ind_max = np.argmax(x)
-            #raise 0
-            return df[ind_max, :]
+            ind = np.argmax(x)
+            return df[ind, :]
+    elif type(inp) in (list, tuple):
+        f = lambda *args: np.max([arg for arg in args])
+        def d(*args):
+            #df = asfarray([arg.d(x) for arg in inp]
+            ind = np.argmax(args)
+            raise 'not implemented yet'
+            return inp[ind].d(args)
+    
+    else:
+        raise FuncDesignerException('incorrect data type in FuncDesigner max')
+            
+    r = oofun(f, inp, d = d, size = 1)
+    return r        
+    
+def min(inp,  *args,  **kwargs): 
+    assert len(args) == len(kwargs) == 0
+    
+    if isinstance(inp, oofun):
+        f = lambda x: np.min(x)
+        def d(x):
+            df = inp.d(x)
+            ind = np.argmin(x)
+            return df[ind, :]
+    elif type(inp) in (list, tuple):
+        f = lambda *args: np.min([arg for arg in args])
+        def d(*args):
+            ind = np.argmin(args)
+            raise 'not implemented yet'
+            return inp[ind].d(args)
+    
+    else:
+        raise FuncDesignerException('incorrect data type in FuncDesigner min')
             
     r = oofun(f, inp, d = d, size = 1)
     return r        
