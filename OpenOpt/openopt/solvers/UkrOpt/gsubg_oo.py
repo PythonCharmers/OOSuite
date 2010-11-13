@@ -93,8 +93,7 @@ class gsubg(baseSolver):
             # TODO: improve 2 points obtained from backward line search
             koeffs = None
             
-            while ns < self.ns:# and not isOverHalphPi:
-                isOverHalphPi = False
+            while ns < self.ns:
                 ns += 1
                 nAddedVectors = 0
                 projection = None
@@ -166,10 +165,10 @@ class gsubg(baseSolver):
                         
                 indToBeRemovedBySameAngle = []
                 
-                valDistances11 = asfarray(normed_values)#asfarray([values[i]  for i in range(len(objGradVectors))])
-                valDistances22 = asfarray([(0 if isConstraint[i] else -F) for i in range(nVec)]) / asfarray(subGradientNorms)
-                valDistances33 = asfarray([dot(x-points[i], vec) for i, vec in enumerate(normedSubGradients)])
-                valDistances = valDistances11 + valDistances22 + valDistances33
+                valDistances1 = asfarray(normed_values)#asfarray([values[i]  for i in range(len(objGradVectors))])
+                valDistances2 = asfarray([(0 if isConstraint[i] else -F) for i in range(nVec)]) / asfarray(subGradientNorms)
+                valDistances3 = asfarray([dot(x-points[i], vec) for i, vec in enumerate(normedSubGradients)])
+                valDistances = valDistances1 + valDistances2 + valDistances3
                 p.debugmsg('valDistances: ' + str(valDistances))
                 if iterInitialDataSize != 0:
                     for j in range(nAddedVectors):
@@ -205,9 +204,6 @@ class gsubg(baseSolver):
 #                    return
 
 
-                
-                
-
                 valDistances = valDistances.tolist()
                 for ind in indToBeRemovedBySameAngle:# TODO: simplify it
                     for List in StoredInfo + [valDistances]:
@@ -224,33 +220,10 @@ class gsubg(baseSolver):
                 
                 #F = 0.0
 
-                #!!!!!!!! CHECK IT
-#                valDistances1 = asfarray(normed_values)#asfarray([values[i]  for i in range(len(objGradVectors))])
-#                valDistances2 = asfarray([(0 if isConstraint[i] else -F) for i in range(nVec)]) / asfarray(subGradientNorms)
-#                valDistances3 = asfarray([dot(x-points[i], vec) for i, vec in enumerate(normedSubGradients)])
-#                valDistances = valDistances1 + valDistances2 + valDistances3
-                                #assert m > 0
-#                print '0:', valDistances
-#                print '1:', valDistances1
-#                print '2:', valDistances2
-#                print '3:', valDistances3
-                #valDistances = [((values[i] - (0 if isConstraint[i] else F)) + dot(x-points[i], vec)) for i, vec in enumerate(objGradVectors)]
-                #ValWRTCurrent = -1e-13 + asarray([(values[i] - (0.0 if isConstraint[i] else iterStartPoint.f()) - dot(x-points[i], vec)) for i, vec in enumerate(objGradVectors)])
-                #ValWRTCurrent = valDistances - iterStartPoint.f()
                 
                 indActive = where(valDistances >= 0)[0]
                 m = len(indActive)
                 product = None
-
-#                isOverHalphPi = False       
-#                for i in range(m):
-#                    for j in range(i+1, m):
-##                        print '>>>>>>>>>>>>>>>>>', dot(_polyedr2[i], _polyedr2[j])
-#                        if dot(_polyedr2[i], _polyedr2[j]) < -1e-13:
-#                            isOverHalphPi = True
-#                            ns = 0
-#                            break
-#                    if isOverHalphPi: break
 
                 #p.debugmsg('Ftol: %f   m: %d   ns: %d' %(Ftol, m, ns))
                 p.debugmsg('Ftol: %f     ns: %d' %(Ftol, ns))
@@ -258,41 +231,36 @@ class gsubg(baseSolver):
                 if m > 1:
                     normalizedSubGradients = asfarray(normedSubGradients)
                     product = dot(normalizedSubGradients, normalizedSubGradients.T)
-                    activeProduct = product[indActive]
-                    isOverHalphPi = any(activeProduct.flatten() <= 0)
-                    #print 'ns =', ns, 'isOverHalphPi =', isOverHalphPi
-                    if not isOverHalphPi:
-                        g1 = iterStartPoint._getDirection(self.approach, currBestFeasPoint = bestFeasiblePoint)
+
+                    # !!!!!!!!!!!!!            TODO: analitical solution for m==2
+                    new = 0
+                    if nVec == 2 and new:
+                        a, b =normedSubGradients[0]*valDistances[0], normedSubGradients[1]*valDistances[1]
+                        a2, b2, ab = (a**2).sum(), (b**2).sum(), dot(a, b)
+                        beta = a2 * (ab-b2) / (ab**2 - a2 * b2)
+                        alpha = b2 * (ab-a2) / (ab**2 - a2 * b2)
+                        g1 = alpha * a + beta * b
                     else:
-                        # !!!!!!!!!!!!!            TODO: analitical solution for m==2
-                        new = 0
-                        if nVec == 2 and new:
-                            a, b =normedSubGradients[0]*valDistances[0], normedSubGradients[1]*valDistances[1]
-                            a2, b2, ab = (a**2).sum(), (b**2).sum(), dot(a, b)
-                            beta = a2 * (ab-b2) / (ab**2 - a2 * b2)
-                            alpha = b2 * (ab-a2) / (ab**2 - a2 * b2)
-                            g1 = alpha * a + beta * b
-                        else:
-                            p.debugmsg('valDistances:'+str(valDistances))
-                            #projection, koeffs = PolytopProjection(product, asfarray(valDistances), isProduct = True)   
-                            koeffs = PolytopProjection(product, asfarray(valDistances), isProduct = True)   
-                            projection = dot(normalizedSubGradients.T, koeffs).flatten()
+                        p.debugmsg('valDistances:'+str(valDistances))
+                        #projection, koeffs = PolytopProjection(product, asfarray(valDistances), isProduct = True)   
+                        koeffs = PolytopProjection(product, asfarray(valDistances), isProduct = True)   
+                        projection = dot(normalizedSubGradients.T, koeffs).flatten()
+                        
+                        threshold = 1e-9 # for to prevent small numerical issues
+                        if any(dot(normalizedSubGradients, projection) < valDistances * (1-threshold*sign(valDistances)) - threshold):
+                            p.istop = 16
+                            p.msg = 'optimal solution wrt required Ftol has been obtained'
+                            return
+                            #FAILED = True
                             
-                            threshold = 1e-10 # for to prevent small numerical issues
-                            if any(dot(normalizedSubGradients, projection) + threshold < valDistances):
-                                p.istop = 16
-                                p.msg = 'optimal solution wrt required Ftol has been obtained'
-                                return
-                                #FAILED = True
-                                
-                            #p.debugmsg('g1 shift: %f' % norm(g1/norm(g1)-projection/norm(projection)))
-                            g1 = projection
-                            #hs = 0.4*norm(g1)
-                            M = norm(koeffs, inf)
-                            # TODO: remove the cycles
-                            indActive = where(koeffs < M / 1e7)[0]
-                            for k in indActive.tolist():
-                                inactive[k] = 0
+                        #p.debugmsg('g1 shift: %f' % norm(g1/norm(g1)-projection/norm(projection)))
+                        g1 = projection
+                        #hs = 0.4*norm(g1)
+                        M = norm(koeffs, inf)
+                        # TODO: remove the cycles
+                        indActive = where(koeffs < M / 1e7)[0]
+                        for k in indActive.tolist():
+                            inactive[k] = 0
 #                        for List in StoredInfo:
 #                            del List[:]
 #                        nVec = 0
@@ -502,9 +470,7 @@ class gsubg(baseSolver):
                     iterStartPoint = best_ls_point_with_start
                     break
                 else:
-#                    if isOverHalphPi:
-#                        raise 0 
-#                        break
+
                     iterStartPoint = best_ls_point_with_start
 
                 
@@ -530,6 +496,8 @@ class gsubg(baseSolver):
                 
             # "while ns" loop end
             
+            isOverHalphPi = product is not None and any(product[indActive].flatten() <= 0)
+
             if ns == self.ns and isOverHalphPi:
                 p.istop = 16
                 p.msg = 'Max linesearch directions number has been exceeded'
