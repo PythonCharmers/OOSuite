@@ -198,7 +198,11 @@ class gsubg(baseSolver):
                 indToBeRemovedBySameAngle.sort(reverse=True)
 
                 if p.debug: p.debugmsg('indToBeRemovedBySameAngle: ' + str(indToBeRemovedBySameAngle) + ' from %d'  %nVec)
-                if indToBeRemovedBySameAngle == range(nVec-1, nVec-nAddedVectors-1, -1):
+                if indToBeRemovedBySameAngle == range(nVec-1, nVec-nAddedVectors-1, -1) and ns > 4:
+#                    print 'ns =', ns, 'hs =', hs, 'iterStartPoint.f():', iterStartPoint.f(), 'prevInnerCycleIterStartPoint.f()', prevInnerCycleIterStartPoint.f(), \
+#                    'diff:', iterStartPoint.f()-prevInnerCycleIterStartPoint.f()
+                    
+                    #raise 0
                     p.istop = 17
                     p.msg = 'all new subgradients have been removed due to the angle threshold'
                     return
@@ -230,7 +234,7 @@ class gsubg(baseSolver):
 
                 #p.debugmsg('Ftol: %f   m: %d   ns: %d' %(Ftol, m, ns))
                 if p.debug: p.debugmsg('Ftol: %f     ns: %d' %(Ftol, ns))
-                #FAILED = False
+                
                 if m > 1:
                     normalizedSubGradients = asfarray(normedSubGradients)
                     product = dot(normalizedSubGradients, normalizedSubGradients.T)
@@ -375,7 +379,7 @@ class gsubg(baseSolver):
                 maxRecNum = 400#4+int(log2(norm(oldoldPoint.x-newPoint.x)/p.xtol)) 
                 #assert dot(oldoldPoint.df(), newPoint.df()) < 0
                 #assert sign(dot(oldoldPoint.df(), g1)) != sign(dot(newPoint.df(), g1))
-                point1, point2 = LocalizedSearch(oldoldPoint, newPoint, bestFeasiblePoint, Ftol, p, maxRecNum)
+                point1, point2, nLSBackward = LocalizedSearch(oldoldPoint, newPoint, bestFeasiblePoint, Ftol, p, maxRecNum)
                 
                 
                 #assert sign(dot(point1.df(), g1)) != sign(dot(point2.df(), g1))
@@ -448,11 +452,21 @@ class gsubg(baseSolver):
 #                            if RD > 1.0:
 #                                mp = (0.5, (ls/j0) ** 0.5, 1 - 0.2*RD)
 #                                hs *= max(mp)
-                hs = max((p.xtol/2.0, 0.5*step_x))
-                p.debugmsg('hs after 1: %0.1e' % hs)
-                if hs < p.xtol/4: hs = p.xtol/4
-                p.debugmsg('hs after 2: %0.1e' % hs)
 
+                prev_hs = hs
+                if step_x != 0: 
+                    hs = 0.5*step_x                  
+                elif ls  == 0 and nLSBackward > 4:
+                    hs /= 4.0
+                elif ls > 3:
+                    hs *= 2.0
+                else:
+                    hs = max((hs / 10.0,  p.xtol / 100))
+                    #hs = max((p.xtol/100, 0.5*step_x))
+                #print 'step_x:', step_x, 'new_hs:', hs, 'prev_hs:', prev_hs, 'ls:', ls, 'nLSBackward:', nLSBackward
+
+                #if hs < p.xtol/4: hs = p.xtol/4
+                
                 """                            Handling iterPoints                            """
                    
 
@@ -476,7 +490,7 @@ class gsubg(baseSolver):
                 assert p.isUC
 
                 
-                    
+                prevInnerCycleIterStartPoint = iterStartPoint
                 if best_ls_point_with_start.betterThan(iterStartPoint):
                     ns = 0
                     iterStartPoint = best_ls_point_with_start
@@ -631,7 +645,7 @@ def LocalizedSearch(point1, point2, bestFeasiblePoint, Ftol, p, maxRecNum):
 #        
 #
 #        return LocalizedSearch(point, Point, bestFeasiblePoint, Ftol, p, maxRecNum-1)
-    return point1, point2
+    return point1, point2, i
     
 #    if isPoint1Covered and not isPoint2Covered:
 #        return LocalizedSearch(point, point2, bestFeasiblePoint, Ftol, p, maxRecNum-1)
