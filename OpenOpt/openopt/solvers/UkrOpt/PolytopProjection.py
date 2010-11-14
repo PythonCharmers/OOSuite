@@ -1,9 +1,11 @@
 from openopt import QP
-from numpy import *
+from numpy import  dot, asfarray, ones, zeros, max
 from numpy.linalg import norm
 
-def PolytopProjection(data, T = 1.0, isProduct = False):
-    
+def PolytopProjection(data, T = 1.0, isProduct = False, solver = None):
+    if solver is None: 
+        solver = 'cvxopt_qp'
+        
     #data = float128(data)
     if isProduct:
         H = data
@@ -18,12 +20,6 @@ def PolytopProjection(data, T = 1.0, isProduct = False):
     f = -asfarray(T) *ones(n)
     p = QP(H, f, lb = zeros(n), iprint = -1, maxIter = 150)
 
-    solver = 'cvxopt_qp'
-    #solver = 'nlp:scipy_lbfgsb'
-    #solver = 'nlp:scipy_tnc'
-    #solver = 'nlp:ralg'
-#    solver = 'nlp:algencan'
-#    solver = 'nlp:ipopt'
     xtol = 1e-6
     if max(T) < 1e5*xtol: xtol = max(T)/1e5
     r = p.solve(solver, ftol = 1e-16, xtol = xtol, maxIter = 10000)

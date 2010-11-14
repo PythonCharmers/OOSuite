@@ -33,6 +33,7 @@ class gsubg(baseSolver):
     sigma = 1e-3
     dual = True
     ls_direction = 'simple'
+    qpsolver = 'cvxopt_qp'
     ns = 15
 
     def __init__(self): pass
@@ -204,13 +205,6 @@ class gsubg(baseSolver):
                                 
                 #print 'added:', nAddedVectors,'current lenght:', len(values), 'indToBeRemoved:', indToBeRemoved
                 
-                
-#                if len(indToBeRemovedBySameAngle) == 1 and indToBeRemovedBySameAngle[0] == nVec - 1:
-#                    p.istop = 200
-#                    p.msg = 'sigma threshold has been exceeded'
-#                    return
-
-
                 valDistances = valDistances.tolist()
                 valDistances2 = valDistances2.tolist()
                 for ind in indToBeRemovedBySameAngle:# TODO: simplify it
@@ -241,7 +235,7 @@ class gsubg(baseSolver):
                     normalizedSubGradients = asfarray(normedSubGradients)
                     product = dot(normalizedSubGradients, normalizedSubGradients.T)
                     
-                    best_QP_Point = None
+                    #best_QP_Point = None
                     
                     #maxQPshoutouts = 1
                     
@@ -265,7 +259,7 @@ class gsubg(baseSolver):
                         else:
                             #projection, koeffs = PolytopProjection(product, asfarray(ValDistances), isProduct = True)   
                             #print 'before PolytopProjection'
-                            koeffs = PolytopProjection(product, asfarray(ValDistances), isProduct = True)   
+                            koeffs = PolytopProjection(product, asfarray(ValDistances), isProduct = True, solver = self.qpsolver)
                             #print 'after PolytopProjection'
                             projection = dot(normalizedSubGradients.T, koeffs).flatten()
                             
@@ -619,6 +613,7 @@ def LocalizedSearch(point1, point2, bestFeasiblePoint, Ftol, p, maxRecNum):
             if isPoint1Covered and isPoint2Covered:
                 break
         
+        # TODO: prevent small numerical errors accumulation
         point = point1.linePoint(0.5, point2)
         #point = p.point((point1.x + point2.x)/2.0) 
         
