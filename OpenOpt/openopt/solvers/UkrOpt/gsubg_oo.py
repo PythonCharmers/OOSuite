@@ -29,7 +29,7 @@ class gsubg(baseSolver):
     doBackwardSearch = True
     new_bs = True
     approach = 'all active'
-    zhurb = 50
+    zhurb = 100
     sigma = 1e-3
     dual = True
     ls_direction = 'simple'
@@ -82,7 +82,8 @@ class gsubg(baseSolver):
         nMaxVec = self.zhurb
         nVec = 0
         ns = 0
-        ScalarProducts = empty((10, 10))
+        #ScalarProducts = empty((10, 10))
+        maxQPshoutouts = 15
         
         
         """                           gsubg main cycle                                    """
@@ -97,7 +98,8 @@ class gsubg(baseSolver):
                 ns += 1
                 nAddedVectors = 0
                 projection = None
-                F = asscalar(bestFeasiblePoint.f() - Ftol) if bestFeasiblePoint is not None else nan
+                F0 = asscalar(bestFeasiblePoint.f() - Ftol_start) if bestFeasiblePoint is not None else nan
+                
                 #iterStartPoint = prevIter_best_ls_point
                 if bestPointBeforeTurn is None:
                     schedule = [bestPoint]
@@ -165,11 +167,18 @@ class gsubg(baseSolver):
                         
                 indToBeRemovedBySameAngle = []
                 
-                valDistances1 = asfarray(normed_values)#asfarray([values[i]  for i in range(len(objGradVectors))])
-                valDistances2 = asfarray([(0 if isConstraint[i] else -F) for i in range(nVec)]) / asfarray(subGradientNorms)
+                valDistances1 = asfarray(normed_values)
+                valDistances2 = asfarray([(0 if isConstraint[i] else -F0) for i in range(nVec)]) / asfarray(subGradientNorms)
                 valDistances3 = asfarray([dot(x-points[i], vec) for i, vec in enumerate(normedSubGradients)])
+                
                 valDistances = valDistances1 + valDistances2 + valDistances3
-                p.debugmsg('valDistances: ' + str(valDistances))
+
+                
+                #valDistances4 = asfarray([(0 if isConstraint[i] else -F0) for i in range(nVec)]) / asfarray(subGradientNorms)
+                
+                #valDistancesForExcluding = valDistances1 + valDistances3 + valDistances4 # with constraints it may yield different result vs valDistances
+                
+                if p.debug: p.debugmsg('valDistances: ' + str(valDistances))
                 if iterInitialDataSize != 0:
                     for j in range(nAddedVectors):
                         ind = -1-j
@@ -178,11 +187,7 @@ class gsubg(baseSolver):
                         if IND.size != 0:
                             _case = 1
                             if _case == 1:
-                                #tmp = asarray([(values[i] + subGradientNorms[i]*dot(-iterStartPoint.x + points[i], normedSubGradients[i])) for i in IND])
-                                #mostUseful = argmin(tmp)
                                 mostUseful = argmax(valDistances[IND])
-                                #mostUseful = argmin(asarray(epsilons)[IND])
-                                #mostUseful = argmin(asarray(values)[IND])
                                 IND = delete(IND, mostUseful)
                                 indToBeRemovedBySameAngle +=IND.tolist()
                             else:
@@ -190,11 +195,13 @@ class gsubg(baseSolver):
                 assert nVec == len(values)
                 indToBeRemovedBySameAngle = list(set(indToBeRemovedBySameAngle)) # TODO: simplify it
                 indToBeRemovedBySameAngle.sort(reverse=True)
-#                print 'ns:', ns,'indToBeRemoved by similar angle:', indToBeRemoved, 'from', len(values)
-#                print 'values:', values
-#                print 'values(indToBeRemoved):', [values[j] for j in indToBeRemoved]
 
-                p.debugmsg('indToBeRemovedBySameAngle: ' + str(indToBeRemovedBySameAngle) + ' from %d'  %nVec)
+                if p.debug: p.debugmsg('indToBeRemovedBySameAngle: ' + str(indToBeRemovedBySameAngle) + ' from %d'  %nVec)
+                if indToBeRemovedBySameAngle == range(nVec-1, nVec-nAddedVectors-1, -1):
+                    p.istop = 17
+                    p.msg = 'all new subgradients have been removed due to the angle threshold'
+                    return
+                                
                 #print 'added:', nAddedVectors,'current lenght:', len(values), 'indToBeRemoved:', indToBeRemoved
                 
                 
@@ -205,18 +212,20 @@ class gsubg(baseSolver):
 
 
                 valDistances = valDistances.tolist()
+                valDistances2 = valDistances2.tolist()
                 for ind in indToBeRemovedBySameAngle:# TODO: simplify it
-                    for List in StoredInfo + [valDistances]:
+                    for List in StoredInfo + [valDistances, valDistances2]:
                         del List[ind]
                 nVec -= len(indToBeRemovedBySameAngle)
                
                 if nVec > nMaxVec:
-                    for List in StoredInfo + [valDistances]:
+                    for List in StoredInfo + [valDistances, valDistances2]:
                         del List[:-nMaxVec]
                     assert len(StoredInfo[-1]) == nMaxVec
                     nVec = nMaxVec
                     
                 valDistances = asfarray(valDistances)
+                valDistances2 = asfarray(valDistances2)
                 
                 #F = 0.0
 
@@ -226,58 +235,66 @@ class gsubg(baseSolver):
                 product = None
 
                 #p.debugmsg('Ftol: %f   m: %d   ns: %d' %(Ftol, m, ns))
-                p.debugmsg('Ftol: %f     ns: %d' %(Ftol, ns))
+                if p.debug: p.debugmsg('Ftol: %f     ns: %d' %(Ftol, ns))
                 #FAILED = False
                 if m > 1:
                     normalizedSubGradients = asfarray(normedSubGradients)
                     product = dot(normalizedSubGradients, normalizedSubGradients.T)
-
-                    # !!!!!!!!!!!!!            TODO: analitical solution for m==2
-                    new = 0
-                    if nVec == 2 and new:
-                        a, b =normedSubGradients[0]*valDistances[0], normedSubGradients[1]*valDistances[1]
-                        a2, b2, ab = (a**2).sum(), (b**2).sum(), dot(a, b)
-                        beta = a2 * (ab-b2) / (ab**2 - a2 * b2)
-                        alpha = b2 * (ab-a2) / (ab**2 - a2 * b2)
-                        g1 = alpha * a + beta * b
-                    else:
-                        p.debugmsg('valDistances:'+str(valDistances))
-                        #projection, koeffs = PolytopProjection(product, asfarray(valDistances), isProduct = True)   
-                        koeffs = PolytopProjection(product, asfarray(valDistances), isProduct = True)   
-                        projection = dot(normalizedSubGradients.T, koeffs).flatten()
+                    
+                    best_QP_Point = None
+                    
+                    #maxQPshoutouts = 1
+                    
+                    for j in range(maxQPshoutouts):
+                        F = asscalar(bestFeasiblePoint.f() - Ftol * 5**j) if bestFeasiblePoint is not None else nan
+                        valDistances2_modified = asfarray([(0 if isConstraint[i] else -F) for i in range(nVec)]) / asfarray(subGradientNorms)
+                        ValDistances = valDistances +  valDistances2_modified - valDistances2
                         
-                        threshold = 1e-9 # for to prevent small numerical issues
-                        if any(dot(normalizedSubGradients, projection) < valDistances * (1-threshold*sign(valDistances)) - threshold):
-                            p.istop = 16
-                            p.msg = 'optimal solution wrt required Ftol has been obtained'
-                            return
-                            #FAILED = True
+                        # DEBUG!!!!!!!!!
+                        #ValDistances = valDistances
+                        # DEBUG END!!!!!!!!!
+                
+                        # !!!!!!!!!!!!!            TODO: analitical solution for m==2
+                        new = 0
+                        if nVec == 2 and new:
+                            a, b = normedSubGradients[0]*ValDistances[0], normedSubGradients[1]*ValDistances5[1]
+                            a2, b2, ab = (a**2).sum(), (b**2).sum(), dot(a, b)
+                            beta = a2 * (ab-b2) / (ab**2 - a2 * b2)
+                            alpha = b2 * (ab-a2) / (ab**2 - a2 * b2)
+                            g1 = alpha * a + beta * b
+                        else:
+                            #projection, koeffs = PolytopProjection(product, asfarray(ValDistances), isProduct = True)   
+                            #print 'before PolytopProjection'
+                            koeffs = PolytopProjection(product, asfarray(ValDistances), isProduct = True)   
+                            #print 'after PolytopProjection'
+                            projection = dot(normalizedSubGradients.T, koeffs).flatten()
                             
-                        #p.debugmsg('g1 shift: %f' % norm(g1/norm(g1)-projection/norm(projection)))
-                        g1 = projection
-                        #hs = 0.4*norm(g1)
-                        M = norm(koeffs, inf)
-                        # TODO: remove the cycles
-                        indActive = where(koeffs < M / 1e7)[0]
-                        for k in indActive.tolist():
-                            inactive[k] = 0
-#                        for List in StoredInfo:
-#                            del List[:]
-#                        nVec = 0
+                            threshold = 1e-9 # for to prevent small numerical issues
+                            if i == 0 and any(dot(normalizedSubGradients, projection) < ValDistances * (1-threshold*sign(ValDistances)) - threshold):
+                                p.istop = 16
+                                p.msg = 'optimal solution wrt required Ftol has been obtained'
+                                return
+                                
+                            #p.debugmsg('g1 shift: %f' % norm(g1/norm(g1)-projection/norm(projection)))
+                            g1 = projection
+                            #hs = 0.4*norm(g1)
+                            M = norm(koeffs, inf)
+                            # TODO: remove the cycles
+                            indActive = where(koeffs < M / 1e7)[0]
+                            for k in indActive.tolist():
+                                inactive[k] = 0
+                        NewPoint = p.point(x - g1)
+                        #print 'isBetter:', NewPoint.betterThan(p.point(x), altLinInEq=True, bestFeasiblePoint = bestFeasiblePoint)
 
-#                # CHANGES
-#                if projection is not None:
-#                    P = p.point(iterStartPoint.x+projection)
-#                    d = dot(iterStartPoint._getDirection(self.approach, currBestFeasPoint = bestFeasiblePoint), P._getDirection(self.approach, currBestFeasPoint = bestFeasiblePoint))
-#                    if d > 0:
-#                        assert p.isUC
-#                        if Ftol < 0.25*(iterStartPoint.f()-best_ls_point.f()):
-#                            Ftol *= 4.0
-#                    elif (d < 0 or Ftol > abs(point1.f()-point2.f())) and Ftol > Ftol_start:
-#                        Ftol = max((Ftol/16, Ftol_start))
-#                    print 'Ftol:', Ftol, 'nVec:', nVec
-#                # CHANGES end
-
+                        if j == 0 or NewPoint.betterThan(best_QP_Point, altLinInEq=True, bestFeasiblePoint = bestFeasiblePoint): 
+                            best_proj = g1
+                            best_QP_Point = NewPoint
+                        else:
+                            g1 = best_proj
+                            break
+                            
+                    maxQPshoutouts = max((j+2, 1))
+                    #print 'opt j:', j, 'nVec:', nVec
                     #Xdist = norm(projection1)
     #                if hs < 0.25*Xdist :
     #                    hs = 0.25*Xdist
@@ -290,6 +307,7 @@ class gsubg(baseSolver):
                     return                 
                     
                 if any(g1): g1 /= p.norm(g1)
+                #hs = 1 
 
                 """                           Forward line search                          """
 
@@ -515,12 +533,12 @@ class gsubg(baseSolver):
                     inactive[k] += 1
                     
                 indInactiveToBeRemoved = where(asarray(inactive) > 5)[0].tolist()                    
-                p.debugmsg('indInactiveToBeRemoved:'+ str(indInactiveToBeRemoved) + ' from' + str(nVec))
+                if p.debug: p.debugmsg('indInactiveToBeRemoved:'+ str(indInactiveToBeRemoved) + ' from' + str(nVec))
                 if len(indInactiveToBeRemoved) != 0: # elseware error in current Python 2.6
                     indInactiveToBeRemoved.reverse()# will be sorted in descending order
                     nVec -= len(indInactiveToBeRemoved)
                     for j in indInactiveToBeRemoved:
-                        for List in StoredInfo + [valDistances.tolist()]:
+                        for List in StoredInfo:# + [valDistances.tolist()]:
                             del List[j]     
 
                 
@@ -582,7 +600,7 @@ class gsubg(baseSolver):
                     return
 
 isPointCovered = lambda pointWithSubGradient, pointToCheck, bestFeasiblePoint, Ftol:\
-    pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.9*Ftol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df())
+    pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.75*Ftol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df())
 
 def LocalizedSearch(point1, point2, bestFeasiblePoint, Ftol, p, maxRecNum):
     for i in range(maxRecNum):
@@ -601,7 +619,9 @@ def LocalizedSearch(point1, point2, bestFeasiblePoint, Ftol, p, maxRecNum):
             if isPoint1Covered and isPoint2Covered:
                 break
         
-        point = p.point((point1.x + point2.x)/2.0)
+        point = point1.linePoint(0.5, point2)
+        #point = p.point((point1.x + point2.x)/2.0) 
+        
         assert p.isUC
         if bestFeasiblePoint.f() > point.f():
             bestFeasiblePoint = point
