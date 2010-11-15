@@ -456,12 +456,12 @@ class gsubg(baseSolver):
                 prev_hs = hs
                 if step_x != 0: 
                     hs = 0.5*step_x                  
-                elif ls  == 0 and nLSBackward > 4:
-                    hs /= 4.0
-                elif ls > 3:
-                    hs *= 2.0
+#                elif ls  == 0 and nLSBackward > 4:
+#                    hs /= 4.0
+#                elif ls > 3:
+#                    hs *= 2.0
                 else:
-                    hs = max((hs / 10.0,  p.xtol / 100))
+                    hs = max((hs / 1000.0,  p.xtol / 100))
                     #hs = max((p.xtol/100, 0.5*step_x))
                 #print 'step_x:', step_x, 'new_hs:', hs, 'prev_hs:', prev_hs, 'ls:', ls, 'nLSBackward:', nLSBackward
 
