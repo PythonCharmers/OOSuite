@@ -38,7 +38,7 @@ class gsubg(baseSolver):
 
     def __init__(self): pass
     def __solver__(self, p):
-
+        if not p.isUC: return 
         h0 = self.h0
 
         T = self.T
@@ -198,7 +198,7 @@ class gsubg(baseSolver):
                 indToBeRemovedBySameAngle.sort(reverse=True)
 
                 if p.debug: p.debugmsg('indToBeRemovedBySameAngle: ' + str(indToBeRemovedBySameAngle) + ' from %d'  %nVec)
-                if indToBeRemovedBySameAngle == range(nVec-1, nVec-nAddedVectors-1, -1) and ns > 4:
+                if indToBeRemovedBySameAngle == range(nVec-1, nVec-nAddedVectors-1, -1) and ns > 5:
 #                    print 'ns =', ns, 'hs =', hs, 'iterStartPoint.f():', iterStartPoint.f(), 'prevInnerCycleIterStartPoint.f()', prevInnerCycleIterStartPoint.f(), \
 #                    'diff:', iterStartPoint.f()-prevInnerCycleIterStartPoint.f()
                     
@@ -379,7 +379,7 @@ class gsubg(baseSolver):
                 maxRecNum = 400#4+int(log2(norm(oldoldPoint.x-newPoint.x)/p.xtol)) 
                 #assert dot(oldoldPoint.df(), newPoint.df()) < 0
                 #assert sign(dot(oldoldPoint.df(), g1)) != sign(dot(newPoint.df(), g1))
-                point1, point2, nLSBackward = LocalizedSearch(oldoldPoint, newPoint, bestFeasiblePoint, Ftol, p, maxRecNum)
+                point1, point2, nLSBackward = LocalizedSearch(oldoldPoint, newPoint, bestFeasiblePoint, Ftol, p, maxRecNum, self.approach)
                 
                 
                 #assert sign(dot(point1.df(), g1)) != sign(dot(point2.df(), g1))
@@ -461,7 +461,7 @@ class gsubg(baseSolver):
 #                elif ls > 3:
 #                    hs *= 2.0
                 else:
-                    hs = max((hs / 1000.0,  p.xtol / 100))
+                    hs = max((hs / 1e4,  p.xtol / 1e3))
                     #hs = max((p.xtol/100, 0.5*step_x))
                 #print 'step_x:', step_x, 'new_hs:', hs, 'prev_hs:', prev_hs, 'ls:', ls, 'nLSBackward:', nLSBackward
 
@@ -610,7 +610,7 @@ class gsubg(baseSolver):
 isPointCovered = lambda pointWithSubGradient, pointToCheck, bestFeasiblePoint, Ftol:\
     pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.75*Ftol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df())
 
-def LocalizedSearch(point1, point2, bestFeasiblePoint, Ftol, p, maxRecNum):
+def LocalizedSearch(point1, point2, bestFeasiblePoint, Ftol, p, maxRecNum, approach):
     for i in range(maxRecNum):
         if p.debug:
             p.debugmsg('req num: %d from %d' % (i, maxRecNum))
@@ -632,10 +632,10 @@ def LocalizedSearch(point1, point2, bestFeasiblePoint, Ftol, p, maxRecNum):
         #point = p.point((point1.x + point2.x)/2.0) 
         
         assert p.isUC
-        if bestFeasiblePoint.f() > point.f():
+        if point.isFeas(True) and (bestFeasiblePoint is None or bestFeasiblePoint.f() > point.f()):
             bestFeasiblePoint = point
         
-        if dot(point.df(), point1.x-point2.x) < 0:
+        if dot(point._getDirection(approach, currBestFeasPoint = bestFeasiblePoint), point1.x-point2.x) < 0:
             point2 = point
         else:
             point1 = point
