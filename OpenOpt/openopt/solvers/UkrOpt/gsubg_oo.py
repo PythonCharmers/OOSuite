@@ -13,7 +13,7 @@ class gsubg(baseSolver):
     __license__ = "BSD"
     __authors__ = "Dmitrey"
     __alg__ = "Nikolay G. Zhurbenko generalized epsilon-subgradient"
-    __optionalDataThatCanBeHandled__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'c', 'h']
+    #__optionalDataThatCanBeHandled__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'c', 'h']
     iterfcnConnected = True
     _canHandleScipySparse = True
 
@@ -38,7 +38,7 @@ class gsubg(baseSolver):
 
     def __init__(self): pass
     def __solver__(self, p):
-        if not p.isUC: return 
+        
         h0 = self.h0
 
         T = self.T
