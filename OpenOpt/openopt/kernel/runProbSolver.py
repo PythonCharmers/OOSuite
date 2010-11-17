@@ -1,6 +1,6 @@
 __docformat__ = "restructuredtext en"
 from time import time, clock
-from numpy import asfarray, copy, inf, nan, isfinite, ones, ndim, all, atleast_1d, any, isnan, array_equiv, asscalar, asarray, where
+from numpy import asfarray, copy, inf, nan, isfinite, ones, ndim, all, atleast_1d, any, isnan, array_equiv, asscalar, asarray, where, ndarray
 from setDefaultIterFuncs import stopcase,  SMALL_DELTA_X,  SMALL_DELTA_F
 from check import check
 import copy
@@ -164,6 +164,11 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     if not p.solver._canHandleScipySparse:
         if hasattr(p.A, 'toarray'): p.A = p.A.toarray()
         if hasattr(p.Aeq, 'toarray'): p.Aeq = p.Aeq.toarray()
+    
+    if isinstance(p.A, ndarray) and type(p.A) != ndarray: # numpy matrix
+        p.A = p.A.A 
+    if isinstance(p.Aeq, ndarray) and type(p.Aeq) != ndarray: # numpy matrix
+        p.Aeq = p.Aeq.A 
 
     if hasattr(p, 'optVars'):
         p.err('"optVars" is deprecated, use "freeVars" instead ("optVars" is not appropriate for some prob types, e.g. systems of (non)linear equations)')

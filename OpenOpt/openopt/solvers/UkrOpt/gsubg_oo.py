@@ -264,6 +264,7 @@ class gsubg(baseSolver):
                             #projection, koeffs = PolytopProjection(product, asfarray(ValDistances), isProduct = True)   
                             #print 'before PolytopProjection'
                             koeffs = PolytopProjection(product, asfarray(ValDistances), isProduct = True, solver = self.qpsolver)
+                            #print koeffs
                             #print 'after PolytopProjection'
                             projection = dot(normalizedSubGradients.T, koeffs).flatten()
                             
@@ -278,7 +279,7 @@ class gsubg(baseSolver):
                             #hs = 0.4*norm(g1)
                             M = norm(koeffs, inf)
                             # TODO: remove the cycles
-                            indActive = where(koeffs < M / 1e7)[0]
+                            indActive = where(koeffs >= M / 1e7)[0]
                             for k in indActive.tolist():
                                 inactive[k] = 0
                         NewPoint = p.point(x - g1)
@@ -536,11 +537,10 @@ class gsubg(baseSolver):
             # TODO: mb move it inside inner loop
             if koeffs is not None:
                 indInactive = where(koeffs < M / 1e7)[0]
-
                 for k in indInactive.tolist():
                     inactive[k] += 1
-                    
                 indInactiveToBeRemoved = where(asarray(inactive) > 5)[0].tolist()                    
+#                print ('indInactiveToBeRemoved:'+ str(indInactiveToBeRemoved) + ' from' + str(nVec))
                 if p.debug: p.debugmsg('indInactiveToBeRemoved:'+ str(indInactiveToBeRemoved) + ' from' + str(nVec))
                 if len(indInactiveToBeRemoved) != 0: # elseware error in current Python 2.6
                     indInactiveToBeRemoved.reverse()# will be sorted in descending order
