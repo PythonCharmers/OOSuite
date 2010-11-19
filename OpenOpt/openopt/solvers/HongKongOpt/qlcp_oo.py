@@ -14,7 +14,9 @@ class qlcp(baseSolver):
     
     def __init__(self): pass
     def __solver__(self, p):
-        x,  retcode = QPSolve(p.f, p.H, p.A, p.b, p.Aeq, p.beq, p.lb, p.ub)
+        # TODO: add QI
+        x,  retcode = QPSolve(p.H, p.f, p.A, p.b, p.Aeq, p.beq, p.lb, p.ub)
+#Q, e, A=None, b=None, Aeq=None, beq=None, lb=None, ub=None, QI=None
         if retcode[0] == 1:
             p.istop = 1000
             p.xf = x
