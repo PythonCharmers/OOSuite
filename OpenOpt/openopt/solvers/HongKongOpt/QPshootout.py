@@ -41,7 +41,7 @@ if linalg.det(Q) != 0:
     QI = linalg.inv(Q)
 else:
     QI = None
-x = qlcp(e, Q, QI=QI, A=A, b=b, Aeq=Aeq, beq=beq, lb=lb, ub=ub)
+x = qlcp(Q, e, QI=QI, A=A, b=b, Aeq=Aeq, beq=beq, lb=lb, ub=ub)
 t = time.clock() - t
 print "time:", t, "seconds"
 if x == None:
@@ -55,7 +55,7 @@ print "\n==================================================="
 print "Starting minimization with Openopt CVX..."
 t = time.clock()
 p = QP(Q, e, A=A, b=b, Aeq=Aeq, beq=beq, lb=lb, ub=ub)
-r = p.solve('cvxopt_qp', iprint = 0)
+r = p.solve('cvxopt_qp', iprint = -1)
 t = time.clock() - t
 print "time:", t, "seconds"
 x = p.xf

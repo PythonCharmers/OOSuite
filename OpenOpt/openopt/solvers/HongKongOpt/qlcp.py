@@ -24,7 +24,7 @@ from numpy import *
 from scipy.linalg import lu_factor, lu_solve
 from LCPSolve import LCPSolve
 
-def qlcp(e, Q, QI=None, A=None, b=None, Aeq=None, beq=None, lb=None, ub=None):
+def qlcp(Q, e, A=None, b=None, Aeq=None, beq=None, lb=None, ub=None, QI=None):
     '''
     Minimizes e'x + 1/2 x'Q x subject to optional inequality, equality and
     box-bound (converted ti inequality) constraints.
@@ -158,11 +158,12 @@ def qlcp(e, Q, QI=None, A=None, b=None, Aeq=None, beq=None, lb=None, ub=None):
                 # Use formula (1) at http://www.csd.uwo.ca/~watt/pub/reprints/2006-mc-bminv-poster.pdf
                 # This is applicable only as long as Q and Aeq.T * Q * Aeq are not singular (i.e.,
                 # Q not singular and Aeq full row rank).
-                AeqT = Aeq.T
-                SQI = linalg.inv(dot(Aeq, dot(QI, AeqT)))   # inverse of Shur's complement of Q in B
+                QIAeqT = dot(QI,Aeq.T)
+                SQI = linalg.inv(dot(Aeq, QIAeqT))   # inverse of Shur's complement of Q in B
+                QIAeqTSQI = dot(QIAeqT,SQI)
                 BI = vstack([
-                    hstack([QI-dot(dot(dot(dot(QI,AeqT),SQI),Aeq),QI), -dot(dot(QI,AeqT),SQI)]),
-                    hstack([          dot(SQI,dot(Aeq,QI)),                    SQI]),
+                    hstack([QI-dot(dot(QIAeqTSQI,Aeq),QI), -QIAeqTSQI]),
+                    hstack([dot(SQI,dot(Aeq,QI)),                 SQI]),
                     ])            
         
         A0BI = dot(A0, BI)
@@ -233,7 +234,7 @@ if __name__ == "__main__":
                ])
     b = array([0.5, 0.5, 0.5, -0.2, -0.2, -0.2, 1.+1e-14, -(1.-1e-14)]) 
     
-    x = qlcp(-e, 2*Q/rt, A, b)
+    x = qlcp(2*Q/rt, -e, A, b)
         
     if x == None:
         print "Ray termination, sorry: no solution"
@@ -258,7 +259,7 @@ if __name__ == "__main__":
     Aeq = array([[1., 1., 1.]])
     beq = array([1.])
     # maximize utility up = ep - 2*vp/rt
-    x = qlcp(-e, 2*Q/rt, A, b, Aeq, beq)
+    x = qlcp(2*Q/rt, -e, A, b, Aeq, beq)
     if x == None:
         print "Ray termination, sorry: no solution"
     else:
@@ -282,7 +283,7 @@ if __name__ == "__main__":
     beq = None #array([-1.])
     A = None
     b = None
-    x = qlcp(-e, 2*Q, A=A, b=b, Aeq=Aeq, beq=beq, lb=lb, ub=ub)
+    x = qlcp(2*Q, -e, A=A, b=b, Aeq=Aeq, beq=beq, lb=lb, ub=ub)
     if x == None:
         print "Ray termination, sorry: no solution"
     else:
