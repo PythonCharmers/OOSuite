@@ -5,13 +5,11 @@ matrix = cvxopt.base.matrix
 sparse = cvxopt.base.sparse
 Sparse = cvxopt.spmatrix
 
-from numpy import asfarray, copy, array
+from numpy import asfarray, copy, array, prod
 from openopt.kernel.nonOptMisc import isspmatrix
 
 def Matrix(x):
-#    if x == None or x.size == 0:
-#        return None
-#    else:
+    if x is None or prod(x.shape) == 0: return None
     if isspmatrix(x):
         if min(x.shape) > 1:
             from scipy.sparse import find
@@ -21,8 +19,7 @@ def Matrix(x):
             x = x.toarray()
     
     x = asfarray(x)
-    #float - to avoid integer devision
-    if x.ndim > 1 and x.nonzero()[0].size > 0.7*x.size: #todo: replace 0.7 by prob param
+    if x.ndim > 1 and x.nonzero()[0].size < 0.3*x.size: #todo: replace 0.3 by prob param
         return sparse(x.tolist()).T # without tolist currently it doesn't work
     else:  return matrix(x, tc='d')
 
