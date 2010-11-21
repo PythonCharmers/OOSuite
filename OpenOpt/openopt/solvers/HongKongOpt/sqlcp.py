@@ -21,85 +21,117 @@ THE SOFTWARE.
 '''
 from numpy import *
 from qlcp import qlcp
-from openopt import QP
-
-import numpy as np  # required by numdifftools (go figure)
-
-def _simple_grad(f, x, delta = 1e-6):
+try:
+    from openopt import QP
+except:
+    pass # if OpenOpt is not installed, the qpsolver kwarg can't be specified
+try:
+    import cvxopt, cvxopt.solvers
+except:
+    pass # if CVXOPT is not installed, the qpsolver kwarg can't be specified
+ 
+    
+def _simple_grad(f, x, delta = 1e-8):
     nvars = x.shape[0]
-    I = eye(nvars)
-    Z = zeros(nvars)
-    grad = array([(f(x+I[i,:]*delta) - f(x-I[i,:]*delta))/delta/2. for i in xrange(nvars)])
+    Id = eye(nvars)*delta
+    grad = array([(f(x+Id[i,:]) - f(x-Id[i,:]))/(2*delta) for i in xrange(nvars)])
     return grad
 
-''''''
-def _simple_hessian(f, x, delta = 1e-6):
+def _simple_hessian(f, x, delta = 1e-4):    # generally too slow for use
     g = lambda x: _simple_grad(f, x, delta = delta) # g(x) is the gradient of f
     return _simple_grad(g, x, delta=delta)
-''''''
-def _simple_hessdiag(f, x, delta = 1e-6):
+
+def _simple_hessdiag(f, x, delta = 1e-4):
     nvars = x.shape[0]
-    I = eye(nvars)
-    Z = zeros(nvars)
-    hd = array([(f(x+I[i,:]*delta) + f(x-I[i,:]*delta) - 2*f(x))/delta**2 for i in xrange(nvars)])
+    Id = eye(nvars)*delta
+    hd = array([(f(x+Id[i,:]) + f(x-Id[i,:]) - 2*f(x))/delta**2 for i in xrange(nvars)])
     return diag(hd)
 
-
-'''
-# algopy is buggy and very slow: do not use
-import algopy
-def _algopy_grad(f, x, delta = 1e-6):
-    nvars = x.shape[0]
-    xu = algopy.UTPM(zeros((2,nvars,nvars)))
-    xu.data[0,:] = x
-    xu.data[1,:,:] = eye(nvars)
-    return f(xu).data[1]
-
-def _algopy_hessian(f, x0, delta):
-    return algopy.UTPM.extract_hessian(x0.shape[0], f(algopy.UTPM.init_hessian(x0)))
-def _algopy_hessdiag(f, x0, delta):
-    H = _algopy_hessian(f, x0, delta)
-    return diag(diag(H))
-'''
-def sqlcp(f, x0, A=None, b=None, Aeq=None, beq=None, lb=None, ub=None, minstep=1e-15, minrfchange=1e-15, qpsolver='qlcp'):
+def sqlcp(f, x0, df=None, A=None, b=None, Aeq=None, beq=None, lb=None, ub=None, minstep=1e-15, minfchg=1e-15, qpsolver='qlcp'):
     '''
     SQP solver. Approximates f in x0 with paraboloid with same gradient an hessian,
-    then finds its minimum with the quadratic solver qlcp and uses it as new point, 
-    iterating till norm of change in x drops below minstep. 
+    then finds its minimum with a quadratic solver (qlcp by default) and uses it as new point, 
+    iterating till chnges in x and/or f drop below given limits. 
     Requires the Hessian to be definite positive.
     The Hessian is initially approximated by its principal diagonal, and then
     updated at every step with the BFGS method.
+    f:        objective function of x to be minimized
+    x0:       initial value for f
+    df:       gradient of f: df(f) should return a function of such as f(x) would
+              return the gradient of f in x. If missing or None, an approximation 
+              will be calculated with an internal finite-differences procedure.
+    A:        array of inequality constraints (A x >= b)
+    b:        right-hand side of A x >= b
+    Aeq:      array of equality constraints (Aeq x = beq)
+    beq:      right-hand side of Aeq x >= beq
+    lb:       lower bounds for x (assumed -Inf if missing)
+    ub:       upper bounds for x (assumed +Inf if missing)
+    minstep:  iterations terminate when updates to x become < minstep (default: 1e-15)
+    minfchg:  iterations terminate when changes in f become < minfchg (default: 1e-15)
+    qpsolver: if None or 'qlcp', qlcp; else a solver for openopt.QP (if OpenOpt 
+              and that particular solver are installed)
     '''
     if qpsolver == None:
         qpsolver = 'qlcp'
-    #gradf = _algopy_grad
-    gradf = _simple_grad
+        
     nvars = x0.shape[0]
     x = x0.copy()
     niter = 0
     deltah = 1e-4
     deltag = deltah**2
+    
+    if df == None:  # df(x) is the gradient of f in x
+        df = lambda x: _simple_grad(f, x, deltag)
+    
     twoI = 2.*eye(nvars)
     oldfx = f(x)
-    gradfx = gradf(f, x, deltag)  # return the gradient of f() at x
-    #hessfx = _simple_hessian(f,x,delta=deltah)
+    gradfx = df(x)  # return the gradient of f() at x
     hessfx = _simple_hessdiag(f,x,delta=deltah) # good enough, and much faster, but only works if REAL Hessian is DP!
-    #hessfx = _algopy_hessian(f,x,delta=deltah) # uses Automatic Differentiation
     invhessfx = linalg.inv(hessfx)
     while True:
         niter += 1
         #print "f(",x,"):",f(x)
-        bb = b if b == None else b-dot(A,x)
-        bbeq = beq if beq == None else beq-dot(Aeq,x)
-        lbb = lb if lb == None else lb - x
-        ubb = ub if ub == None else ub - x
+        
+        # compute the b, beq, lb and ub for the QP sub-problem (as bx, beqx, lbx, ubx)
+        bx = b if b == None else b-dot(A,x)
+        beqx = beq if beq == None else beq-dot(Aeq,x)
+        lbx = lb if lb == None else lb - x
+        ubx = ub if ub == None else ub - x
+
         if qpsolver == 'qlcp':
-            deltax = qlcp(hessfx, gradfx, A=A, b=bb, Aeq=Aeq, beq=bbeq, lb=lbb, ub=ubb, QI=invhessfx)
+            deltax = qlcp(hessfx, gradfx, A=A, b=bx, Aeq=Aeq, beq=beqx, lb=lbx, ub=ubx, QI=invhessfx)
         elif qpsolver == 'cvxopt_qp':
-            p = QP(hessfx, gradfx, A=A, b=bb, Aeq=Aeq, beq=bbeq, lb=lbb, ub=ubb)
-            r = p.solve('cvxopt_qp', iprint = -1)
-            deltax = p.xf
-            print "iter:",niter,", deltax:",deltax
+            # CVXOPT's QP can't handle ub and lb, so we must convert them (if present) in rows of A and b
+            if lbx != None:
+                delmask = (lbx != -Inf)
+                addA = compress(delmask, eye(nvars), axis=0)
+                addb = compress(delmask, lbx, axis=0)
+                cxA = vstack([A, -addA]) if A != None else -addA
+                cxb = concatenate([bx, -addb]) if bx != None else -addb
+            if ubx != None:
+                delmask = (ubx != Inf)
+                addA = compress(delmask, eye(nvars), axis=0)
+                addb = compress(delmask, ubx, axis=0)
+                cxA = copy(vstack([cxA, addA])) if cxA != None else addA
+                cxb = copy(concatenate([cxb, addb])) if cxb != None else addb
+
+            viaOpenOpt = True
+            if viaOpenOpt:    
+                p = QP(hessfx, gradfx, A=cxA, b=cxb, Aeq=Aeq, beq=beqx)
+                #print type(hessfx), 
+                r = p.solve('cvxopt_qp', iprint = -1)
+                deltax = p.xf
+            else: # direct call to CVXOPT's qp
+                cvxopt.solvers.options['show_progress'] = False
+                sol = cvxopt.solvers.qp(cvxopt.matrix(hessfx), 
+                    cvxopt.matrix(gradfx), 
+                    cvxopt.matrix(cxA) if cxA != None else None, 
+                    cvxopt.matrix(cxb) if cxb != None else None, 
+                    cvxopt.matrix(Aeq) if Aeq != None else None, 
+                    cvxopt.matrix(beqx) if beqx != None else None)
+                deltax = squeeze(asarray(sol['x']))
+            
+        print "iter:",niter,", deltax:\n",deltax
         
         if deltax == None:
             print "Cannot converge, sorry."
@@ -110,16 +142,17 @@ def sqlcp(f, x0, A=None, b=None, Aeq=None, beq=None, lb=None, ub=None, minstep=1
         if linalg.norm(deltax) < minstep:
             break
         fx = f(x)
-        if abs(fx-oldfx) < minrfchange*abs(fx):
+        if abs(fx-oldfx) < minfchg*abs(fx):
             break
         oldfx = fx
         oldgradfx = gradfx.copy()
-        gradfx = gradf(f, x, deltag)  # return the gradient of f() at the new x
+        gradfx = df(x)  # return the gradient of f() at the new x
         # we might also put a termination test on the norm of grad...
         
         '''
         # recalc hessian afresh would be sloooow...
-        hessfx = _simple_hessian(f,x,delta=deltah)  # return the hessian of f() at x
+        #hessfx = _simple_hessian(f,x,delta=deltah)  # return the hessian of f() at x
+        hessfx = _simple_hessdiag(f,x,delta=deltah)  # return the hessian (diag only) of f() at x
         invhessfx = linalg.inv(hessfx)
         '''
         # update Hessian and its inverse with BFGS based on current Hessian, deltax and deltagrad    
@@ -147,14 +180,16 @@ if __name__ == "__main__":
     import time
     
     set_printoptions(suppress=True) # no annoying auto-exp print format
-    #print "Print options:",get_printoptions() 
-    '''
+
+    """
     # find minimum of upside-down multi-gaussian with circular contour, 
     # centered in [1, 1, 1...]
     f = lambda x: -exp(-dot(x-1.,x-1.)) # min in (1., 1., ....) == -1.     
 
-    nvars = 10
-    x0 = array([0.8]*nvars)
+    #nvars = 10
+    #x0 = array([0.8]*nvars)
+    nvars = 2
+    x0 = array([0.8, 1.2])
     
     x, niter = sqlcp(f, x0, lb=array([-2.]*nvars), ub=array([2.]*nvars))
     #x, niter = sqlcp(f, x0, lb=array([-2.]*nvars), ub=array([2.]*nvars), qpsolver='cvxopt_qp' )
@@ -164,7 +199,7 @@ if __name__ == "__main__":
         print "x:", x, ", f(x):", f(x)
     else:
         print "sqlcp() did not converge (encountered Hessian <= 0.)"
-    '''
+    """
     # use sqlcp to find the weights for three types of optimal portfolios: 
     # 1. Minimum Variance
     # 2. Maximum Diversification (http://www.iijournals.com/doi/abs/10.3905/JPM.2008.35.1.40 )
@@ -214,8 +249,9 @@ if __name__ == "__main__":
         return -dot(x, s)/sqrt(dot(x, dot(sigma,x))) # "-" because we want to maximize divers., not minimize
 
     def ERC(x):
-        mr = asmatrix(x * dot(sigma, x)) # elementwise multiplication
-        return sum(asarray(mr-mr.T)**2) 
+        mr = array([multiply(x, dot(sigma, x))]) # elementwise multiplication
+        md = (mr-mr.T).flatten()
+        return dot(md,md)
 
     n = sigma.shape[0]
     x0 = ones(n)/n
@@ -224,9 +260,54 @@ if __name__ == "__main__":
     print "--------- computing 1/n portfolio ---------"
     print "risk:",sqrt(dot(x0,dot(sigma,x0)))
 
-    # change this line to use a QP solver other than qlcp
-    optimizers =         [['sqlcp           ', lambda f: sqlcp(f, x0, Aeq=array([ones_like(ub)]), beq=ones(1), lb=lb, ub=ub, minstep=1e-8, qpsolver='cvxopt_qp')[0]]]
-    #optimizers =         [['sqlcp           ', lambda f: sqlcp(f, x0, Aeq=array([ones_like(ub)]), beq=ones(1), lb=lb, ub=ub, minstep=1e-8, qpsolver='qlcp')[0]]]
+    # Alternatives for gradients automatic calculation 
+    
+    grad = lambda f: None # default: uses the internal function _simple_gradient()
+    
+    '''
+    # numdifftools is slower than DerApproximator. Maybe more accurate, though.
+    # http://pypi.python.org/pypi/Numdifftools/
+    import numdifftools as nd, numpy as np
+    grad = lambda f: nd.Gradient(f) 
+    '''
+    
+    '''
+    # algopy is limited (can't handle certain expressions in f) and very slow: do not use.
+    # http://pypi.python.org/pypi/algopy/0.2.4
+    import algopy
+    def _algopy_grad(f, x):
+        nvars = x.shape[0]
+        xu = algopy.UTPM(zeros((2,nvars,nvars)))
+        xu.data[0,:] = x
+        xu.data[1,:,:] = eye(nvars)
+        return f(xu).data[1]
+    grad = lambda f: lambda x: _algopy_grad(f,x)
+    '''
+
+    '''
+    # FuncDesigner is much faster than algopy, but unable to handle expressions 
+    # (such as e.g. NumPy's .flatten() method or linalg.norm() function) so it
+    # doesn't work with the test case for the function ERC.
+    # http://pypi.python.org/pypi/FuncDesigner , http://openopt.org/FuncDesigner 
+    from FuncDesigner import *
+    def _funcdes_grad(f, x):
+        oox = oovar()
+        oof = f(oox)
+        r = oof.D({oox:x})
+        return r[oox]
+    grad = lambda f: lambda x: _funcdes_grad(f,x)
+    '''
+
+    '''
+    # DerApproximator is more or less equivalent to the internal _simple_gradient()
+    # http://pypi.python.org/pypi/DerApproximator , http://openopt.org/DerApproximator 
+    import DerApproximator as DA
+    grad = lambda f: lambda x: DA.get_d1(f, x, stencil=2) # stencil=3 is more accurate but slower
+    '''    
+    
+    # change this line to use, inside sqlcp, a QP solver other than qlcp 
+    #optimizers =         [['sqlcp           ', lambda f: sqlcp(f, x0, Aeq=array([ones_like(ub)]), beq=ones(1), lb=lb, ub=ub, minstep=1e-8, qpsolver='qlcp', df=grad(f))[0]]]
+    optimizers =         [['sqlcp           ', lambda f: sqlcp(f, x0, Aeq=array([ones_like(ub)]), beq=ones(1), lb=lb, ub=ub, minstep=1e-6, qpsolver='cvxopt_qp', df=grad(f))[0]]]
         
     try:
         from scipy.optimize import fmin_slsqp
@@ -247,4 +328,4 @@ if __name__ == "__main__":
             x = array(optimizer[1](f))
             print optimizer[0],": risk:",sqrt(dot(x,dot(sigma,x))), ", time:",time.clock()-t
 
-        
+ 
