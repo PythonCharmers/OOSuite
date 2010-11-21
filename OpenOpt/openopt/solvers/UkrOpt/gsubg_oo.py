@@ -38,7 +38,7 @@ class gsubg(baseSolver):
 
     def __init__(self): pass
     def __solver__(self, p):
-        
+        assert self.approach == 'all active'
         h0 = self.h0
 
         T = self.T
@@ -75,7 +75,10 @@ class gsubg(baseSolver):
         
         # TODO: add possibility to handle f_opt if known instead of Ftol
         #Ftol = 1.0
-        Ftol_start = p.Ftol/2.0 if hasattr(p, 'Ftol') else 15 * p.ftol
+        if p.Ftol is None:
+            p.warn('The solver requres user-supplied Ftol (objective function tolerance); 15*ftol will be used')
+            p.Ftol = 15 * p.ftol
+        Ftol_start = p.Ftol/2.0
         Ftol = Ftol_start
         
         subGradientNorms, points, values, isConstraint, epsilons, inactive, normedSubGradients, normed_values = [], [], [], [], [], [], [], []
@@ -96,6 +99,7 @@ class gsubg(baseSolver):
             koeffs = None
             
             while ns < self.ns:
+                
                 ns += 1
                 nAddedVectors = 0
                 projection = None
@@ -114,8 +118,9 @@ class gsubg(baseSolver):
                     #x = iterStartPoint.x.copy()
                     #x = 0.5*(point1.x+point2.x) 
                 #print 'len(schedule):', len(schedule)
-                    
+                
                 x = iterStartPoint.x.copy()
+                #print 'itn:', itn, 'ns:', ns, 'x:', x
 #                if itn != 0:
 #                    Xdist = norm(prevIter_best_ls_point.x-bestPointAfterTurn.x)
 #                    if hs < 0.25*Xdist :
@@ -125,7 +130,7 @@ class gsubg(baseSolver):
                 iterInitialDataSize = len(values)
                 for point in schedule:
                     if isfinite(point.f()) and bestFeasiblePoint is not None:
-                        tmp = point.df()
+                        tmp = point.df().flatten()
                         if not isinstance(tmp, ndarray) or isinstance(tmp, matrix):
                             tmp = tmp.A.flatten()
                         n_tmp = norm(tmp)
@@ -193,7 +198,7 @@ class gsubg(baseSolver):
                                 indToBeRemovedBySameAngle +=IND.tolist()
                             else:
                                 indToBeRemovedBySameAngle += IND[:-1].tolist()
-                assert nVec == len(values)
+
                 indToBeRemovedBySameAngle = list(set(indToBeRemovedBySameAngle)) # TODO: simplify it
                 indToBeRemovedBySameAngle.sort(reverse=True)
 
@@ -243,7 +248,7 @@ class gsubg(baseSolver):
                     
                     #maxQPshoutouts = 1
                     
-                    for j in range(maxQPshoutouts):
+                    for j in range(maxQPshoutouts if bestFeasiblePoint is not None else 1):
                         F = asscalar(bestFeasiblePoint.f() - Ftol * 5**j) if bestFeasiblePoint is not None else nan
                         valDistances2_modified = asfarray([(0 if isConstraint[i] else -F) for i in range(nVec)]) / asfarray(subGradientNorms)
                         ValDistances = valDistances +  valDistances2_modified - valDistances2
@@ -267,9 +272,10 @@ class gsubg(baseSolver):
                             #print koeffs
                             #print 'after PolytopProjection'
                             projection = dot(normalizedSubGradients.T, koeffs).flatten()
-                            
+                            #if itn != 0: raise 0
+                            #if ns > 3: raise 0
                             threshold = 1e-9 # for to prevent small numerical issues
-                            if i == 0 and any(dot(normalizedSubGradients, projection) < ValDistances * (1-threshold*sign(ValDistances)) - threshold):
+                            if j == 0 and any(dot(normalizedSubGradients, projection) < ValDistances * (1-threshold*sign(ValDistances)) - threshold):
                                 p.istop = 16
                                 p.msg = 'optimal solution wrt required Ftol has been obtained'
                                 return
@@ -305,7 +311,12 @@ class gsubg(baseSolver):
                     p.istop = 900
                     return                 
                     
-                if any(g1): g1 /= p.norm(g1)
+                if any(g1): 
+                    g1 /= p.norm(g1)
+                else:
+                    p.istop = 103 if p.point(x).isFeas(False) else -103
+                    #raise 0
+                    return
                 #hs = 1 
 
                 """                           Forward line search                          """
@@ -488,17 +499,20 @@ class gsubg(baseSolver):
                 
                 #hs = max((norm(best_ls_point_with_start.x-iterStartPoint.x)/2, 64*p.xtol))
 
-                assert p.isUC
+                if p.debug: assert p.isUC
 
                 
                 prevInnerCycleIterStartPoint = iterStartPoint
-                if best_ls_point_with_start.betterThan(iterStartPoint):
+                
+                #if ns > 3: raise 0
+                if best_ls_point_with_start.betterThan(iterStartPoint, altLinInEq=True, bestFeasiblePoint = bestFeasiblePoint):
+                    #raise 0
                     ns = 0
                     iterStartPoint = best_ls_point_with_start
                     break
                 else:
-
                     iterStartPoint = best_ls_point_with_start
+                
 
                 
 
@@ -610,6 +624,16 @@ class gsubg(baseSolver):
 isPointCovered = lambda pointWithSubGradient, pointToCheck, bestFeasiblePoint, Ftol:\
     pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.75*Ftol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df())
 
+def isPointCovered2(pointWithSubGradient, pointToCheck, bestFeasiblePoint, Ftol):
+    if bestFeasiblePoint is not None \
+    and pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.75*Ftol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df()):
+        return True
+    if not pointWithSubGradient.isFeas(True) and pointWithSubGradient.mr_alt() + 1e-15 > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient._getDirection('all active', currBestFeasPoint = bestFeasiblePoint)):
+        return True
+    return False
+
+
+
 def LocalizedSearch(point1, point2, bestFeasiblePoint, Ftol, p, maxRecNum, approach):
     for i in range(maxRecNum):
         if p.debug:
@@ -624,17 +648,18 @@ def LocalizedSearch(point1, point2, bestFeasiblePoint, Ftol, p, maxRecNum, appro
             isPoint1Covered = isPointCovered(point2, point1, bestFeasiblePoint, Ftol)
             isPoint2Covered = isPointCovered(point1, point2, bestFeasiblePoint, Ftol)
             #print 'isPoint1Covered:', isPoint1Covered, 'isPoint2Covered:', isPoint2Covered
-            if isPoint1Covered and isPoint2Covered:
+            if isPoint1Covered and isPoint2Covered:# and i != 0:
                 break
         
         # TODO: prevent small numerical errors accumulation
         point = point1.linePoint(0.5, point2)
         #point = p.point((point1.x + point2.x)/2.0) 
         
-        assert p.isUC
+        
         if point.isFeas(True) and (bestFeasiblePoint is None or bestFeasiblePoint.f() > point.f()):
             bestFeasiblePoint = point
         
+        if p.debug: assert p.isUC
         if dot(point._getDirection(approach, currBestFeasPoint = bestFeasiblePoint), point1.x-point2.x) < 0:
             point2 = point
         else:
