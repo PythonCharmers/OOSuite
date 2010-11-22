@@ -114,8 +114,8 @@ def get_d1(fun, vars, diffInt=1.5e-8, pointVal = None, args=(), stencil = 3, var
         if not exactShape and min(d1.shape)==1: d1 = d1.flatten()
         
         r.append(asfarray(d1))
-
-    if varForDifferentiation is not None or isscalar(vars) or isinstance(vars, ndarray): r = d1
+    #raise 0
+    if varForDifferentiation is not None or isscalar(vars) or isinstance(vars, ndarray) or isinstance(vars, list): r = d1
     else: r = tuple(r)
     return r
 
