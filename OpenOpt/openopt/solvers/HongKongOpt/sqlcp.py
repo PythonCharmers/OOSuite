@@ -22,14 +22,9 @@ THE SOFTWARE.
 from numpy import *
 from qlcp import qlcp
 try:
-    from openopt import QP
+    import openopt
 except:
     pass # if OpenOpt is not installed, the qpsolver kwarg can't be specified
-try:
-    import cvxopt, cvxopt.solvers
-except:
-    pass # if CVXOPT is not installed, the qpsolver kwarg can't be specified
- 
     
 def _simple_grad(f, x, delta = 1e-8):
     nvars = x.shape[0]
@@ -47,11 +42,11 @@ def _simple_hessdiag(f, x, delta = 1e-4):
     hd = array([(f(x+Id[i,:]) + f(x-Id[i,:]) - 2*f(x))/delta**2 for i in xrange(nvars)])
     return diag(hd)
 
-def sqlcp(f, x0, df=None, A=None, b=None, Aeq=None, beq=None, lb=None, ub=None, minstep=1e-15, minfchg=1e-15, qpsolver='qlcp'):
+def sqlcp(f, x0, df=None, A=None, b=None, Aeq=None, beq=None, lb=None, ub=None, minstep=1e-15, minfchg=1e-15, qpsolver=None):
     '''
-    SQP solver. Approximates f in x0 with paraboloid with same gradient an hessian,
+    SQP solver. Approximates f in x0 with paraboloid with same gradient and hessian,
     then finds its minimum with a quadratic solver (qlcp by default) and uses it as new point, 
-    iterating till chnges in x and/or f drop below given limits. 
+    iterating till changes in x and/or f drop below given limits. 
     Requires the Hessian to be definite positive.
     The Hessian is initially approximated by its principal diagonal, and then
     updated at every step with the BFGS method.
@@ -67,13 +62,11 @@ def sqlcp(f, x0, df=None, A=None, b=None, Aeq=None, beq=None, lb=None, ub=None, 
     lb:       lower bounds for x (assumed -Inf if missing)
     ub:       upper bounds for x (assumed +Inf if missing)
     minstep:  iterations terminate when updates to x become < minstep (default: 1e-15)
-    minfchg:  iterations terminate when changes in f become < minfchg (default: 1e-15)
-    qpsolver: if None or 'qlcp', qlcp; else a solver for openopt.QP (if OpenOpt 
-              and that particular solver are installed)
+    minfchg:  iterations terminate when RELATIVE changes in f become < minfchg (default: 1e-15)
+    qpsolver: if None, qlcp; else a solver accepted by openopt.QP (if OpenOpt and 
+              that particular solver are installed)
     '''
-    if qpsolver == None:
-        qpsolver = 'qlcp'
-        
+       
     nvars = x0.shape[0]
     x = x0.copy()
     niter = 0
@@ -98,40 +91,14 @@ def sqlcp(f, x0, df=None, A=None, b=None, Aeq=None, beq=None, lb=None, ub=None, 
         lbx = lb if lb == None else lb - x
         ubx = ub if ub == None else ub - x
 
-        if qpsolver == 'qlcp':
+        if qpsolver == None:
             deltax = qlcp(hessfx, gradfx, A=A, b=bx, Aeq=Aeq, beq=beqx, lb=lbx, ub=ubx, QI=invhessfx)
-        elif qpsolver == 'cvxopt_qp':
-            # CVXOPT's QP can't handle ub and lb, so we must convert them (if present) in rows of A and b
-            if lbx != None:
-                delmask = (lbx != -Inf)
-                addA = compress(delmask, eye(nvars), axis=0)
-                addb = compress(delmask, lbx, axis=0)
-                cxA = vstack([A, -addA]) if A != None else -addA
-                cxb = concatenate([bx, -addb]) if bx != None else -addb
-            if ubx != None:
-                delmask = (ubx != Inf)
-                addA = compress(delmask, eye(nvars), axis=0)
-                addb = compress(delmask, ubx, axis=0)
-                cxA = copy(vstack([cxA, addA])) if cxA != None else addA
-                cxb = copy(concatenate([cxb, addb])) if cxb != None else addb
-
-            viaOpenOpt = True
-            if viaOpenOpt:    
-                p = QP(hessfx, gradfx, A=cxA, b=cxb, Aeq=Aeq, beq=beqx)
-                #print type(hessfx), 
-                r = p.solve('cvxopt_qp', iprint = -1)
-                deltax = p.xf
-            else: # direct call to CVXOPT's qp
-                cvxopt.solvers.options['show_progress'] = False
-                sol = cvxopt.solvers.qp(cvxopt.matrix(hessfx), 
-                    cvxopt.matrix(gradfx), 
-                    cvxopt.matrix(cxA) if cxA != None else None, 
-                    cvxopt.matrix(cxb) if cxb != None else None, 
-                    cvxopt.matrix(Aeq) if Aeq != None else None, 
-                    cvxopt.matrix(beqx) if beqx != None else None)
-                deltax = squeeze(asarray(sol['x']))
-            
-        print "iter:",niter,", deltax:\n",deltax
+        else:
+            p = openopt.QP(hessfx, gradfx, A=A, b=bx, Aeq=Aeq, beq=beqx, lb=lbx, ub=ubx)
+            p.ftol = 1.e-10
+            r = p.solve(qpsolver, iprint = -1)
+            deltax = p.xf
+        #print "iter:",niter,", deltax:\n",deltax
         
         if deltax == None:
             print "Cannot converge, sorry."
@@ -304,11 +271,16 @@ if __name__ == "__main__":
     import DerApproximator as DA
     grad = lambda f: lambda x: DA.get_d1(f, x, stencil=2) # stencil=3 is more accurate but slower
     '''    
-    
-    # change this line to use, inside sqlcp, a QP solver other than qlcp 
-    #optimizers =         [['sqlcp           ', lambda f: sqlcp(f, x0, Aeq=array([ones_like(ub)]), beq=ones(1), lb=lb, ub=ub, minstep=1e-8, qpsolver='qlcp', df=grad(f))[0]]]
-    optimizers =         [['sqlcp           ', lambda f: sqlcp(f, x0, Aeq=array([ones_like(ub)]), beq=ones(1), lb=lb, ub=ub, minstep=1e-6, qpsolver='cvxopt_qp', df=grad(f))[0]]]
-        
+    optimizers = []
+
+    optimizers.append(['sqlcp/qlcp      ', lambda f: sqlcp(f, x0, Aeq=array([ones_like(ub)]), beq=ones(1), lb=lb, ub=ub, minstep=1e-6, df=grad(f))[0]])
+
+    try:
+        from openopt import QP
+        optimizers.append(['sqlcp/cvxopt_qp ', lambda f: sqlcp(f, x0, Aeq=array([ones_like(ub)]), beq=ones(1), lb=lb, ub=ub, minstep=1e-6, df=grad(f), qpsolver='cvxopt_qp')[0]])
+    except:
+        pass
+
     try:
         from scipy.optimize import fmin_slsqp
         optimizers.append(['scipy.fmin_slsqp', lambda f: fmin_slsqp(f, x0, eqcons=[lambda x: sum(x)-1.], bounds =[(lb[i], ub[i]) for i in xrange(x0.shape[0])], iter=100000, acc=1e-14, iprint=0, full_output=False)])
@@ -320,7 +292,7 @@ if __name__ == "__main__":
         optimizers.append(['openopt.NLP-ralg', lambda f: asarray(NLP(f, x0, lb=lb, ub=ub, args=(), Aeq=ones_like(x0), beq=[1.], maxFunEvals = 1000000, ftol = 1e-12, iprint=-1).solve('ralg').xf) ])
     except:
         pass
-        
+
     for f in (MVP, MDP, ERC):
         print "--------- computing",f.__name__,"portfolio ---------"
         for optimizer in optimizers:
