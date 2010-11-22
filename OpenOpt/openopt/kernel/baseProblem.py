@@ -82,6 +82,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
     gtol = 1e-6 # TODO: move it to NinLinProblem class?
     ftol = 1e-6
     contol = 1e-6
+    
+    Ftol = None
 
     minIter = 0
     minFunEvals = 0
