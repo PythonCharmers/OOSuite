@@ -219,13 +219,13 @@ class oofun:
         if isinstance(other, oofun):
             r = oofun(lambda x, y: x/y, [self, other])
             def aux_dx(x, y):
-                #x, y, = asfarray(x), asfarray(y) # TODO: get rid of it
-                Xsize, Ysize = Len(x), Len(y)
+                x, y, = asfarray(x), asfarray(y) 
+                Xsize, Ysize = x.size, y.size
                 if Xsize != 1:
                     assert Xsize == Ysize or Ysize == 1, 'incorrect size for oofun devision'
                 r = 1.0 / y
                 if Xsize != 1:
-                    if Ysize == 1: r = r.tolist() * Xsize
+                    if Ysize == 1: r = atleast_1d(r).tolist() * Xsize
                     r = Diag(r)
                 return r                
             def aux_dy(x, y):
@@ -478,7 +478,12 @@ class oofun:
     def _getInput(self, *args, **kwargs):
 #        self.inputOOVarTotalLength = 0
         #return tuple([atleast_1d(item._getFuncCalcEngine(x)) if isinstance(item, oofun) else atleast_1d(item) for item in self.input])
-        return tuple([(item._getFuncCalcEngine(*args, **kwargs) if isinstance(item, oofun) else item) for item in self.input])
+        r = []
+        for item in self.input:
+            tmp = item._getFuncCalcEngine(*args, **kwargs) if isinstance(item, oofun) else item
+            r.append(tmp if type(tmp) not in (list, tuple) else asfarray(tmp))
+        return tuple(r)
+        #return tuple([asfarray(item._getFuncCalcEngine(*args, **kwargs) if isinstance(item, oofun) else item) for item in self.input])
 
     """                                                getDep                                             """
     def _getDep(self):
@@ -921,7 +926,7 @@ class oofun:
         assert type(self.d) != list
         val = self(point)
         input = self._getInput(point)
-        ds= self._getDerivativeSelf(point, Vars=None,  fixedVars=None)
+        ds= self._getDerivativeSelf(point, fixedVarsScheduleID = -1, Vars=None,  fixedVars=None)
         self.disp(self.name + ': checking user-supplied gradient')
         self.disp('according to:')
         self.disp('    diffInt = ' + str(self.diffInt)) # TODO: ADD other parameters: allowed epsilon, maxDiffLines etc
