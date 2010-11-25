@@ -3,23 +3,12 @@ from numpy import copy, isnan, array, argmax, abs, vstack, zeros, any, isfinite,
 sign, dot, sqrt, array_equal, nanmax, inf, hstack, isscalar, logical_or, matrix, asfarray, prod, arange, ndarray
 from numpy.linalg import norm
 from nonOptMisc import Copy
-
 from pointProjection import pointProjection
-
-
-
-try:
-    from scipy.sparse import csr_matrix
-except:
-    pass
-
-__docformat__ = "restructuredtext en"
 empty_arr = array(())
 try:
-    import scipy
+    from scipy.sparse import isspmatrix, csr_matrix
     scipyInstalled = True
-    from scipy.sparse import isspmatrix
-except:
+except ImportError:
     scipyInstalled = False
     isspmatrix = lambda *args,  **kwargs:  False
 
@@ -157,12 +146,13 @@ class Point:
             return asscalar(copy(self._mr)), self._mrName, asscalar(copy(self._mrInd))
         else: return asscalar(copy(self._mr))
 
-    def mr_alt(self, retAll = False):
+    def mr_alt(self, retAll = False, bestFeasiblePoint=None):
+        # TODO: add fix wrt bestFeasiblePoint handling
         if not hasattr(self, '_mr_alt'):
             mr, fname, ind = self.mr(retAll = True)
             self._mr_alt, self._mrName_alt,  self._mrInd_alt= mr, fname, ind
             c, h= self.c(), self.h()
-            all_lin_ineq = self.__all_lin_ineq()
+            all_lin_ineq = self._All_lin_ineq()
             r = 0.0
             Type = 'all_lin_ineq'
             if c.size != 0:
@@ -194,6 +184,8 @@ class Point:
             tol = p.contol / 2.0
             if p.solver.approach == 'all active':
                 val = (c[c>tol] - 0).sum() + (h[h>tol] - tol).sum() - (h[h<-tol] + tol).sum() + all_lin_ineq
+                if bestFeasiblePoint is not None:
+                    val += max((0, self.f()-bestFeasiblePoint.f())) * p.contol / p.Ftol
                 self._mr_alt, self._mrName_alt,  self._mrInd_alt = val, 'all active', 0
             else:
                 val = r
@@ -250,18 +242,23 @@ class Point:
             
         contol = self.p.contol
 
+        
         if altLinInEq:
             mr_field = 'mr_alt'
         else:
             mr_field = 'mr'
         mr, point2compareResidual = getattr(self, mr_field)(), getattr(point2compare, mr_field)()
-        if bestFeasiblePoint is not None:
-            # TODO: fix f == nan cases!
-            #if isnan(self_f): 
-            mr = max((mr, self.f()  - bestFeasiblePoint.f()))
-            #print mr
-            point2compareResidual = max((point2compare.f() - bestFeasiblePoint.f(), point2compareResidual))
-        criticalResidualValue = max((self.p.contol, point2compareResidual))
+#        if altLinInEq and bestFeasiblePoint is not None and isfinite(self.f()) and isfinite(point2compare.f()):
+#            Ftol = self.p.Ftol
+#            mr += (self.f()  - bestFeasiblePoint.f() + Ftol) *contol / Ftol
+#            point2compareResidual += (point2compare.f() - bestFeasiblePoint.f()+Ftol) *contol / Ftol
+#            mr += max((0, self.f()  - bestFeasiblePoint.f())) *contol/ Ftol
+#            point2compareResidual += max((0, point2compare.f() - bestFeasiblePoint.f())) *contol/ Ftol
+#            assert self.f() >= bestFeasiblePoint.f()
+#            assert point2compare.f() >= bestFeasiblePoint.f()
+#            mr += (self.f()  - bestFeasiblePoint.f()) / Ftol
+#            point2compareResidual += (point2compare.f() - bestFeasiblePoint.f()) / Ftol
+        criticalResidualValue = max((contol, point2compareResidual))
         self_nNaNs, point2compare_nNaNs = self.nNaNs(), point2compare.nNaNs()
 
         if point2compare_nNaNs  > self_nNaNs: return True
@@ -300,7 +297,7 @@ class Point:
             else:
                 #TODO: simplify it!
                 #for fn in residuals: (...)
-                if self.__all_lin_ineq() > contol: return False
+                if self._All_lin_ineq() > contol: return False
         else:
             if hasattr(self, '_mr'):
                 if self._mr > contol or self.nNaNs() != 0: return False
@@ -368,29 +365,28 @@ class Point:
     #def __getDirection__(self, useCurrentBestFeasiblePoint = False):
     #def __getDirection__(self, altLinInEq = False):
 
-    def __all_lin_ineq(self): # TODO: rename it wrt lin_eq that are present here
+    def _All_lin_ineq(self): # TODO: rename it wrt lin_eq that are present here
         if not hasattr(self, '_all_lin_ineq'):
             lb, ub, lin_ineq = self.lb(), self.ub(), self.lin_ineq()
             r = 0.0
             # TODO: CHECK IT - when 0 (if some nans), when contol
-            #threshold = self.p.contol/2.0
-            threshold = 0.0
+
 #            if all(isfinite(self.f())): threshold = self.p.contol
-#            else: threshold = 0
+#            else: 0.0 = 0
             lin_eq = self.lin_eq()
-            ind_lb, ind_ub = where(lb>threshold)[0], where(ub>threshold)[0]
-            ind_lin_ineq = where(lin_ineq>threshold)[0]
-            ind_lin_eq = where(abs(lin_eq)>threshold)[0]
+            ind_lb, ind_ub = where(lb>0.0)[0], where(ub>0.0)[0]
+            ind_lin_ineq = where(lin_ineq>0.0)[0]
+            ind_lin_eq = where(abs(lin_eq)>0.0)[0]
             USE_SQUARES = 1
             if USE_SQUARES:
                 if ind_lb.size != 0:
-                    r += sum((lb[ind_lb]-threshold) ** 2)
+                    r += sum(lb[ind_lb] ** 2)
                 if ind_ub.size != 0:
-                    r += sum((ub[ind_ub]-threshold) ** 2)
+                    r += sum(ub[ind_ub] ** 2)
                 if ind_lin_ineq.size != 0:
-                    r += sum((lin_ineq[ind_lin_ineq]-threshold) ** 2)
+                    r += sum(lin_ineq[ind_lin_ineq] ** 2)
                 if ind_lin_eq.size != 0:
-                    r += sum((lin_eq[ind_lin_eq]-threshold) ** 2)
+                    r += sum(lin_eq[ind_lin_eq] ** 2)
                 #self._all_lin_ineq = sqrt(r)
                 self._all_lin_ineq = r / self.p.contol
             else:
@@ -406,48 +402,47 @@ class Point:
                     
         return copy(self._all_lin_ineq)
 
-    def __all_lin_ineq_gradient(self):
+    def _All_lin_ineq_gradient(self):
         if not hasattr(self, '_all_lin_ineq_gradient'):
             p = self.p
             n = p.n
             d = zeros(n)
-            threshold = 0.0
-            #threshold = self.p.contol/2.0
+
 
             lb, ub = self.lb(), self.ub()
             lin_ineq = self.lin_ineq()
             lin_eq = self.lin_eq()
-            ind_lb, ind_ub = where(lb>threshold)[0], where(ub>threshold)[0]
-            ind_lin_ineq = where(lin_ineq>threshold)[0]
-            ind_lin_eq = where(abs(lin_eq)>threshold)[0]
+            ind_lb, ind_ub = where(lb>0.0)[0], where(ub>0.0)[0]
+            ind_lin_ineq = where(lin_ineq>0.0)[0]
+            ind_lin_eq = where(abs(lin_eq)>0.0)[0]
             
 
             USE_SQUARES = 1
             if USE_SQUARES:
                 if ind_lb.size != 0:
-                    d[ind_lb] -= lb[ind_lb]-threshold# d/dx((x-lb)^2) for violated constraints
+                    d[ind_lb] -= lb[ind_lb]# d/dx((x-lb)^2) for violated constraints
                 if ind_ub.size != 0:
-                    d[ind_ub] += ub[ind_ub]-threshold# d/dx((x-ub)^2) for violated constraints
+                    d[ind_ub] += ub[ind_ub]# d/dx((x-ub)^2) for violated constraints
                 if ind_lin_ineq.size != 0:
                     # d/dx((Ax-b)^2)
                     b = p.b[ind_lin_ineq]
                     if hasattr(p, '_A'):
                         a = p._A[ind_lin_ineq] 
-                        tmp = a._mul_sparse_matrix(csr_matrix((self.x, (arange(n), zeros(n))), shape=(n, 1))).toarray().flatten() - b - threshold
+                        tmp = a._mul_sparse_matrix(csr_matrix((self.x, (arange(n), zeros(n))), shape=(n, 1))).toarray().flatten() - b 
                         
-                        #tmp = a._mul_sparse_matrix(csr_matrix((self.x, reshape(p.n, 1))).toarray().flatten() - b - threshold
+                        #tmp = a._mul_sparse_matrix(csr_matrix((self.x, reshape(p.n, 1))).toarray().flatten() - b 
                         d += a.T._mul_sparse_matrix(tmp.reshape(tmp.size, 1)).A.flatten()
                         #d += dot(a.T, dot(a, self.x)  - b) 
                     else:
                         a = p.A[ind_lin_ineq] 
-                        d += dot(a.T, dot(a, self.x)  - b-threshold) # d/dx((Ax-b)^2)
+                        d += dot(a.T, dot(a, self.x)  - b) # d/dx((Ax-b)^2)
                 if ind_lin_eq.size != 0:
                     raise ('nonzero threshold is not ajusted with lin eq yet')
                     aeq = p.Aeq[ind_lin_eq]
                     beq = p.beq[ind_lin_eq]
                     d += dot(aeq.T, dot(aeq, self.x)  - beq) # 0.5*d/dx((Aeq x - beq)^2)
                     
-                #devider = self.__all_lin_ineq()
+                #devider = self._All_lin_ineq()
                 devider = 0.5*self.p.contol
                 if devider != 0:
                     self._all_lin_ineq_gradient = d / devider
@@ -496,8 +491,15 @@ class Point:
             return self.direction.copy()
         else:
             if approach == 'all active':
-                direction = self.__all_lin_ineq_gradient()
-                new = 1
+                direction = self._All_lin_ineq_gradient()
+                
+                if p.solver.__name__ == 'ralg':
+                    new = 1
+                elif p.solver.__name__ == 'gsubg':
+                    new = 0
+                else:
+                    p.err('unhandled case in Point._getDirection')
+                    
                 if p.userProvided.c:
                     th = 0.0
                     #th = contol / 2.0
@@ -506,6 +508,7 @@ class Point:
                     activeC = C[ind]
                     if len(ind) > 0:
                         tmp = p.dc(x, ind)
+
                         if new:
                             if tmp.ndim == 1 or min(tmp.shape) == 1:
                                 if hasattr(tmp, 'toarray'): 
@@ -517,7 +520,7 @@ class Point:
                                 if hasattr(tmp, 'toarray'):
                                     tmp = tmp.toarray()
                                 tmp *= ((activeC - th*(1.0-1e-15))/sqrt((tmp**2).sum(1))).reshape(-1, 1)
-                            
+                                
                         if tmp.ndim > 1:
                             tmp = tmp.sum(0)
                         direction += (tmp.A if isspmatrix(tmp) or isinstance(tmp, matrix) else tmp).flatten()
@@ -531,6 +534,7 @@ class Point:
                     H1 = H[ind1]
                     if len(ind1) > 0:
                         tmp = p.dh(x, ind1)
+                        
                         if new:
                             if tmp.ndim == 1 or min(tmp.shape) == 1:
                                 if hasattr(tmp, 'toarray'): 
@@ -569,7 +573,7 @@ class Point:
                 self.direction = direction
             else:
                 if fname == 'all_lin_ineq':
-                    d = self.__all_lin_ineq_gradient()
+                    d = self._All_lin_ineq_gradient()
                     self.dType = 'all_lin_ineq'
                 elif fname == 'lin_eq':
                     self.p.err("kernel error, inform openopt developers")
@@ -590,8 +594,9 @@ class Point:
                 DF = self.df()
                 nDF = norm(DF)
                 if nDF > 1e-50:
-                    Ftol = p.Ftol/2.0 if hasattr(p, 'Ftol') else 15 * p.ftol
-                    self.direction += (self.f()-currBestFeasPoint.f()-Ftol) * DF / nDF
+                    Ftol = p.Ftol#/2.0 if hasattr(p, 'Ftol') else 15 * p.ftol
+                    #self.direction += ((self.f()-currBestFeasPoint.f())  * p.contol / nDF / Ftol) * DF
+                    self.direction += self.df() * (contol/Ftol) 
             if type(self.direction) != ndarray: self.direction = self.direction.A.flatten()
             return self.direction.copy() # it may be modified in ralg when some constraints coords are NaN
 

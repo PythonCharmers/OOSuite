@@ -1,5 +1,6 @@
 from numpy import diag, array, sqrt,  eye, ones, inf, any, copy, zeros, dot, where, all, tile, sum, nan, isfinite, float64, isnan, log10, \
-max, sign, array_equal, nonzero, ix_, arctan, pi, logical_not, logical_and, atleast_2d, matrix, delete, empty, ndarray
+max, sign, array_equal, nonzero, ix_, arctan, pi, logical_not, logical_and, atleast_2d, matrix, delete, empty, ndarray, \
+logical_and, logical_not
 from numpy.linalg import norm, solve, LinAlgError
 
 from openopt.kernel.baseSolver import *
@@ -39,6 +40,35 @@ class gsubg(baseSolver):
     def __init__(self): pass
     def __solver__(self, p):
         assert self.approach == 'all active'
+        
+#        LB, UB = p.lb, p.ub
+#        fin_lb = isfinite(LB)
+#        fin_ub = isfinite(UB)
+#        ind_lb = where(fin_lb)[0]
+#        ind_ub = where(fin_ub)[0]
+#        ind_only_lb = where(logical_and(fin_lb, logical_not(fin_ub)))[0]
+#        ind_only_ub = where(logical_and(fin_ub, logical_not(fin_lb)))[0]
+#        ind_bb = where(logical_and(fin_ub, fin_lb))[0]
+#        lb_val = LB[ind_only_lb]
+#        ub_val = UB[ind_only_ub]
+#        dist_lb_ub = UB[ind_bb] - LB[ind_bb]
+#        double_dist_lb_ub = 2 * dist_lb_ub
+#        ub_bb = UB[ind_bb]
+#        doubled_ub_bb = 2 * ub_bb
+#        def Point(x):
+#            z = x.copy()
+#            z[ind_only_lb] = abs(x[ind_only_lb]-lb_val) + lb_val
+#            z[ind_only_ub] = ub_val - abs(x[ind_only_ub]-ub_val) 
+#            
+#            ratio = x[ind_bb] / double_dist_lb_ub
+#            z1 = x[ind_bb] - array(ratio, int) * double_dist_lb_ub
+#            ind = where(z1>ub_bb)[0]
+#            z1[ind] = doubled_ub_bb - z1[ind]
+#            z[ind_bb] = z1
+#            #raise 0
+#            return p.point(z)
+        Point = lambda x: p.point(x)
+        
         h0 = self.h0
 
         T = self.T
@@ -55,7 +85,7 @@ class gsubg(baseSolver):
         ls_arr = []
 
         """                         Nikolay G. Zhurbenko generalized epsilon-subgradient engine                           """
-        bestPoint = p.point(asarray(copy(x0), T))
+        bestPoint = Point(asarray(copy(x0), T))
         bestFeasiblePoint = None if not bestPoint.isFeas(True) else bestPoint
         prevIter_best_ls_point = bestPoint
         best_ls_point = bestPoint
@@ -119,8 +149,13 @@ class gsubg(baseSolver):
                     #x = 0.5*(point1.x+point2.x) 
                 #print 'len(schedule):', len(schedule)
                 
+                # DEBUG
+#                schedule = [Point([0]), Point([1])]
+#                iterStartPoint = p.point([0])
+                # DEBUG END
+                
                 x = iterStartPoint.x.copy()
-                #print 'itn:', itn, 'ns:', ns, 'x:', x
+                #print 'itn:', itn, 'ns:', ns, 'x:', x, 'hs:', hs
 #                if itn != 0:
 #                    Xdist = norm(prevIter_best_ls_point.x-bestPointAfterTurn.x)
 #                    if hs < 0.25*Xdist :
@@ -130,9 +165,10 @@ class gsubg(baseSolver):
                 iterInitialDataSize = len(values)
                 for point in schedule:
                     if isfinite(point.f()) and bestFeasiblePoint is not None:
-                        tmp = point.df().flatten()
+                        tmp = point.df()
                         if not isinstance(tmp, ndarray) or isinstance(tmp, matrix):
-                            tmp = tmp.A.flatten()
+                            tmp = tmp.A
+                        tmp = tmp.flatten()
                         n_tmp = norm(tmp)
                         if n_tmp < p.gtol:
                             p._df = n_tmp # TODO: change it 
@@ -237,10 +273,11 @@ class gsubg(baseSolver):
                 m = len(indActive)
                 product = None
 
-                #p.debugmsg('Ftol: %f   m: %d   ns: %d' %(Ftol, m, ns))
+                #print('Ftol: %f   m: %d   ns: %d' %(Ftol, m, ns))
+                #raise 0
                 if p.debug: p.debugmsg('Ftol: %f     ns: %d' %(Ftol, ns))
                 
-                if m > 1:
+                if nVec > 1:
                     normalizedSubGradients = asfarray(normedSubGradients)
                     product = dot(normalizedSubGradients, normalizedSubGradients.T)
                     
@@ -254,13 +291,14 @@ class gsubg(baseSolver):
                         ValDistances = valDistances +  valDistances2_modified - valDistances2
                         
                         # DEBUG!!!!!!!!!
+                        #ValDistances = array([0, -1])
                         #ValDistances = valDistances
                         # DEBUG END!!!!!!!!!
                 
                         # !!!!!!!!!!!!!            TODO: analitical solution for m==2
                         new = 0
                         if nVec == 2 and new:
-                            a, b = normedSubGradients[0]*ValDistances[0], normedSubGradients[1]*ValDistances5[1]
+                            a, b = normedSubGradients[0]*ValDistances[0], normedSubGradients[1]*ValDistances[1]
                             a2, b2, ab = (a**2).sum(), (b**2).sum(), dot(a, b)
                             beta = a2 * (ab-b2) / (ab**2 - a2 * b2)
                             alpha = b2 * (ab-a2) / (ab**2 - a2 * b2)
@@ -272,7 +310,12 @@ class gsubg(baseSolver):
                             #print koeffs
                             #print 'after PolytopProjection'
                             projection = dot(normalizedSubGradients.T, koeffs).flatten()
-                            #if itn != 0: raise 0
+                            #raise 0
+#                            from openopt import QP
+#                            p2 = QP(diag(ones(n)), zeros(n), A=-asfarray(normedSubGradients), b=-ValDistances)
+#                            projection = p2.solve('cvxopt_qp', iprint=-1).xf
+#                            print 'proj:', projection
+#                            if itn != 0: raise 0
                             #if ns > 3: raise 0
                             threshold = 1e-9 # for to prevent small numerical issues
                             if j == 0 and any(dot(normalizedSubGradients, projection) < ValDistances * (1-threshold*sign(ValDistances)) - threshold):
@@ -288,7 +331,7 @@ class gsubg(baseSolver):
                             indActive = where(koeffs >= M / 1e7)[0]
                             for k in indActive.tolist():
                                 inactive[k] = 0
-                        NewPoint = p.point(x - g1)
+                        NewPoint = Point(x - g1)
                         #print 'isBetter:', NewPoint.betterThan(p.point(x), altLinInEq=True, bestFeasiblePoint = bestFeasiblePoint)
 
                         if j == 0 or NewPoint.betterThan(best_QP_Point, altLinInEq=True, bestFeasiblePoint = bestFeasiblePoint): 
@@ -314,7 +357,7 @@ class gsubg(baseSolver):
                 if any(g1): 
                     g1 /= p.norm(g1)
                 else:
-                    p.istop = 103 if p.point(x).isFeas(False) else -103
+                    p.istop = 103 if Point(x).isFeas(False) else -103
                     #raise 0
                     return
                 #hs = 1 
@@ -327,22 +370,25 @@ class gsubg(baseSolver):
                 hs_start = hs
                 if not isinstance(g1, ndarray) or isinstance(g1, matrix):
                     g1 = g1.A.flatten()
+                    
+                hs_mult = 4.0
                 for ls in xrange(p.maxLineSearch):
-                    hs_mult = 1.0
-                    if ls > 20:
-                        hs_mult = 2.0
-                    elif ls > 10:
-                        hs_mult = 1.5
-                    elif ls > 2:
-                        hs_mult = 1.05
-                    hs *= hs_mult
+                    
+#                    if ls > 20:
+#                        hs_mult = 2.0
+#                    elif ls > 10:
+#                        hs_mult = 1.5
+#                    elif ls > 2:
+#                        hs_mult = 1.05
+                    
                     assert all(isfinite(g1))
                     assert all(isfinite(x))
                     assert isfinite(hs)
                     x -= hs * g1
+                    hs *= hs_mult
                     hs_cumsum += hs
 
-                    newPoint = p.point(x) if ls == 0 else iterStartPoint.linePoint(hs_cumsum/(hs_cumsum-hs), oldPoint) #  TODO: take ls into account?
+                    newPoint = Point(x) #if ls == 0 else iterStartPoint.linePoint(hs_cumsum/(hs_cumsum-hs), oldPoint) #  TODO: take ls into account?
                     
                     if self.show_nnan: p.info('ls: %d nnan: %d' % (ls, newPoint.__nnan__()))
                     
@@ -351,9 +397,12 @@ class gsubg(baseSolver):
                         oldoldPoint = oldPoint
                     assert all(isfinite(oldPoint.x))    
                     #if not self.checkTurnByGradient:
+                    
+                    #TODO: create routine for modifying bestFeasiblePoint
+                    if newPoint.isFeas(True) and (bestFeasiblePoint is None or newPoint.f() > bestFeasiblePoint):
+                        bestFeasiblePoint = newPoint
+                            
                     if newPoint.betterThan(oldPoint, altLinInEq=True, bestFeasiblePoint = bestFeasiblePoint):
-                        if newPoint.isFeas(True) and (bestFeasiblePoint is None or newPoint.betterThan(bestFeasiblePoint, altLinInEq=True, bestFeasiblePoint = bestFeasiblePoint)):
-                            bestFeasiblePoint = newPoint
                         if newPoint.betterThan(bestPoint, altLinInEq=True): bestPoint = newPoint
                         oldoldPoint = oldPoint
                         #assert dot(oldoldPoint._getDirection(self.approach), g1)>= 0
@@ -621,20 +670,37 @@ class gsubg(baseSolver):
                     #p.iterfcn(bestPoint)
                     return
 
-isPointCovered = lambda pointWithSubGradient, pointToCheck, bestFeasiblePoint, Ftol:\
+isPointCovered2 = lambda pointWithSubGradient, pointToCheck, bestFeasiblePoint, Ftol, contol:\
     pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.75*Ftol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df())
 
-def isPointCovered2(pointWithSubGradient, pointToCheck, bestFeasiblePoint, Ftol):
+def isPointCovered3(pointWithSubGradient, pointToCheck, bestFeasiblePoint, Ftol, contol):
     if bestFeasiblePoint is not None \
     and pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.75*Ftol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df()):
         return True
-    if not pointWithSubGradient.isFeas(True) and pointWithSubGradient.mr_alt() + 1e-15 > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient._getDirection('all active', currBestFeasPoint = bestFeasiblePoint)):
+    if not pointWithSubGradient.isFeas(True) and \
+    pointWithSubGradient.mr_alt() + 1e-15 > \
+    dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient._getDirection('all active', currBestFeasPoint = bestFeasiblePoint)):
         return True
     return False
 
+def isPointCovered4(pointWithSubGradient, pointToCheck, bestFeasiblePoint, Ftol, contol):
+    if not pointWithSubGradient.isFeas(True):
+        if  pointWithSubGradient.mr_alt(bestFeasiblePoint = bestFeasiblePoint) + 0.5*contol > \
+            dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient._getDirection('all active')):#, currBestFeasPoint = bestFeasiblePoint)):
+            return True
+            #pass
+        else:
+            return False
+    elif pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.75*Ftol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df()):
+        # if pointWithSubGradient is feas (i.e. not 1st case) than bestFeasiblePoint is not None
+        return True
+        
+    return False
 
+isPointCovered = isPointCovered4
 
 def LocalizedSearch(point1, point2, bestFeasiblePoint, Ftol, p, maxRecNum, approach):
+    contol = p.contol
     for i in range(maxRecNum):
         if p.debug:
             p.debugmsg('req num: %d from %d' % (i, maxRecNum))
@@ -645,8 +711,8 @@ def LocalizedSearch(point1, point2, bestFeasiblePoint, Ftol, p, maxRecNum, appro
             or point2.betterThan(point1, altLinInEq=True, bestFeasiblePoint = bestFeasiblePoint) and isPointCovered(point1, point2, bestFeasiblePoint, Ftol):
                 break
         else:
-            isPoint1Covered = isPointCovered(point2, point1, bestFeasiblePoint, Ftol)
-            isPoint2Covered = isPointCovered(point1, point2, bestFeasiblePoint, Ftol)
+            isPoint1Covered = isPointCovered(point2, point1, bestFeasiblePoint, Ftol, contol)
+            isPoint2Covered = isPointCovered(point1, point2, bestFeasiblePoint, Ftol, contol)
             #print 'isPoint1Covered:', isPoint1Covered, 'isPoint2Covered:', isPoint2Covered
             if isPoint1Covered and isPoint2Covered:# and i != 0:
                 break
