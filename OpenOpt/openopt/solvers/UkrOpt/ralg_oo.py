@@ -134,6 +134,7 @@ class ralg(baseSolver):
             # TODO: create ENUMs
             p.istop = 14 if bestPoint.isFeas(False) else -14
             p.msg = 'move direction has all-zero coords'
+            p.iterfcn(bestPoint)
             return
 
         HS = []
