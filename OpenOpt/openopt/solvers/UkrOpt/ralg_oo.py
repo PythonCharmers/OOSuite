@@ -132,9 +132,10 @@ class ralg(baseSolver):
         moveDirection = g
         if not any(g) and all(isfinite(g)):
             # TODO: create ENUMs
+            p.iterfcn(bestPoint)
+            restoreProb()
             p.istop = 14 if bestPoint.isFeas(False) else -14
             p.msg = 'move direction has all-zero coords'
-            p.iterfcn(bestPoint)
             return
 
         HS = []
