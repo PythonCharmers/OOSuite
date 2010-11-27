@@ -146,51 +146,66 @@ class Point:
             return asscalar(copy(self._mr)), self._mrName, asscalar(copy(self._mrInd))
         else: return asscalar(copy(self._mr))
 
+    def sum_of_all_active_constraints(self):
+        if not hasattr(self, '_sum_of_all_active_constraints'):
+            p = self.p
+            if p.solver.__name__ == 'ralg':
+                tol = p.contol / 2.0
+            elif p.solver.__name__ == 'gsubg':
+                tol = 0.0
+            else:
+                p.err('unimplemented case in Point.py')
+                
+            c, h= self.c(), self.h()
+            all_lin = self.all_lin()
+            self._sum_of_all_active_constraints = (c[c>0] - 0).sum() + (h[h>tol] - tol).sum() - (h[h<-tol] + tol).sum() + all_lin
+        return Copy(self._sum_of_all_active_constraints)
+                
     def mr_alt(self, retAll = False, bestFeasiblePoint=None):
+
         # TODO: add fix wrt bestFeasiblePoint handling
         if not hasattr(self, '_mr_alt'):
-            mr, fname, ind = self.mr(retAll = True)
-            self._mr_alt, self._mrName_alt,  self._mrInd_alt= mr, fname, ind
-            c, h= self.c(), self.h()
-            all_lin_ineq = self._All_lin_ineq()
-            r = 0.0
-            Type = 'all_lin_ineq'
-            if c.size != 0:
-                ind_max = argmax(c)
-                val_max = c[ind_max]
-                if val_max > r:
-                    r = val_max
-                    Type = 'c'
-                    ind = ind_max
-            if h.size != 0:
-                h = abs(h)
-                ind_max = argmax(h)
-                val_max = h[ind_max]
-                #hm = abs(h).max()
-                if val_max > r:
-                    r = val_max
-                    Type = 'h'
-                    ind = ind_max
-#            if lin_eq.size != 0:
-#                l_eq = abs(lin_eq)
-#                ind_max = argmax(l_eq)
-#                val_max = l_eq[ind_max]
-#                if val_max > r:
-#                    r = val_max
-#                    Type = 'lin_eq'
-#                    ind = ind_max
             p = self.p
-            #tol = 0.0
-            tol = p.contol / 2.0
             if p.solver.approach == 'all active':
-                val = (c[c>tol] - 0).sum() + (h[h>tol] - tol).sum() - (h[h<-tol] + tol).sum() + all_lin_ineq
+                Type = 'all_lin'
+                val = self.sum_of_all_active_constraints()
                 if bestFeasiblePoint is not None:
-                    val += max((0, self.f()-bestFeasiblePoint.f())) * p.contol / p.Ftol
+                    val += max((0, self.f()-bestFeasiblePoint.f()+p.Ftol)) * p.contol / p.Ftol
+
                 self._mr_alt, self._mrName_alt,  self._mrInd_alt = val, 'all active', 0
             else:
-                val = r
-                self._mr_alt, self._mrName_alt,  self._mrInd_alt = val, Type, 0
-            assert p.nbeq == 0
+                p.err('bug in openopt kernel, inform developers')
+#                r = 0.0
+#                if c.size != 0:
+#                    ind_max = argmax(c)
+#                    val_max = c[ind_max]
+#                    if val_max > r:
+#                        r = val_max
+#                        Type = 'c'
+#                        ind = ind_max
+#                if h.size != 0:
+#                    h = abs(h)
+#                    ind_max = argmax(h)
+#                    val_max = h[ind_max]
+#                    #hm = abs(h).max()
+#                    if val_max > r:
+#                        r = val_max
+#                        Type = 'h'
+#                        ind = ind_max                
+#                lin_eq = self.lin_eq()
+#                if lin_eq.size != 0:
+#                    l_eq = abs(lin_eq)
+#                    ind_max = argmax(l_eq)
+#                    val_max = l_eq[ind_max]
+#                    if val_max > r:
+#                        r = val_max
+#                        Type = 'lin_eq'
+#                        ind = ind_max
+#                lin_ineq = self.lin_ineq()
+#                # TODO: implement it
+#                val = r
+#                self._mr_alt, self._mrName_alt,  self._mrInd_alt = val, Type, 0
+
         if retAll:
             return asscalar(copy(self._mr_alt)), self._mrName_alt, asscalar(copy(self._mrInd_alt))
         else: return asscalar(copy(self._mr_alt))
@@ -244,10 +259,10 @@ class Point:
 
         
         if altLinInEq:
-            mr_field = 'mr_alt'
+            mr, point2compareResidual = self.mr_alt(bestFeasiblePoint=bestFeasiblePoint), point2compare.mr_alt(bestFeasiblePoint=bestFeasiblePoint)
         else:
-            mr_field = 'mr'
-        mr, point2compareResidual = getattr(self, mr_field)(), getattr(point2compare, mr_field)()
+            mr, point2compareResidual =  self.mr(), point2compare.mr_alt()
+        
 #        if altLinInEq and bestFeasiblePoint is not None and isfinite(self.f()) and isfinite(point2compare.f()):
 #            Ftol = self.p.Ftol
 #            mr += (self.f()  - bestFeasiblePoint.f() + Ftol) *contol / Ftol
@@ -297,7 +312,7 @@ class Point:
             else:
                 #TODO: simplify it!
                 #for fn in residuals: (...)
-                if self._All_lin_ineq() > contol: return False
+                if self.all_lin() > contol: return False
         else:
             if hasattr(self, '_mr'):
                 if self._mr > contol or self.nNaNs() != 0: return False
@@ -365,8 +380,8 @@ class Point:
     #def __getDirection__(self, useCurrentBestFeasiblePoint = False):
     #def __getDirection__(self, altLinInEq = False):
 
-    def _All_lin_ineq(self): # TODO: rename it wrt lin_eq that are present here
-        if not hasattr(self, '_all_lin_ineq'):
+    def all_lin(self): # TODO: rename it wrt lin_eq that are present here
+        if not hasattr(self, '_all_lin'):
             lb, ub, lin_ineq = self.lb(), self.ub(), self.lin_ineq()
             r = 0.0
             # TODO: CHECK IT - when 0 (if some nans), when contol
@@ -387,8 +402,8 @@ class Point:
                     r += sum(lin_ineq[ind_lin_ineq] ** 2)
                 if ind_lin_eq.size != 0:
                     r += sum(lin_eq[ind_lin_eq] ** 2)
-                #self._all_lin_ineq = sqrt(r)
-                self._all_lin_ineq = r / self.p.contol
+                #self._all_lin = sqrt(r)
+                self._all_lin = r / self.p.contol
             else:
                 if ind_lb.size != 0:
                     r += sum(lb[ind_lb])
@@ -398,12 +413,12 @@ class Point:
                     r += sum(lin_ineq[ind_lin_ineq])
                 if ind_lin_eq.size != 0:
                     r += sum(abs(lin_eq[ind_lin_eq]))
-                self._all_lin_ineq = r
+                self._all_lin = r
                     
-        return copy(self._all_lin_ineq)
+        return copy(self._all_lin)
 
-    def _All_lin_ineq_gradient(self):
-        if not hasattr(self, '_all_lin_ineq_gradient'):
+    def all_lin_gradient(self):
+        if not hasattr(self, '_all_lin_gradient'):
             p = self.p
             n = p.n
             d = zeros(n)
@@ -412,9 +427,9 @@ class Point:
             lb, ub = self.lb(), self.ub()
             lin_ineq = self.lin_ineq()
             lin_eq = self.lin_eq()
-            ind_lb, ind_ub = where(lb>0.0)[0], where(ub>0.0)[0]
-            ind_lin_ineq = where(lin_ineq>0.0)[0]
-            ind_lin_eq = where(abs(lin_eq)>0.0)[0]
+            ind_lb, ind_ub = where(lb > 0.0)[0], where(ub > 0.0)[0]
+            ind_lin_ineq = where(lin_ineq > 0.0)[0]
+            ind_lin_eq = where(abs(lin_eq) != 0.0)[0]
             
 
             USE_SQUARES = 1
@@ -437,17 +452,16 @@ class Point:
                         a = p.A[ind_lin_ineq] 
                         d += dot(a.T, dot(a, self.x)  - b) # d/dx((Ax-b)^2)
                 if ind_lin_eq.size != 0:
-                    raise ('nonzero threshold is not ajusted with lin eq yet')
-                    aeq = p.Aeq[ind_lin_eq]
-                    beq = p.beq[ind_lin_eq]
-                    d += dot(aeq.T, dot(aeq, self.x)  - beq) # 0.5*d/dx((Aeq x - beq)^2)
+                    if isspmatrix(p.Aeq):
+                        p.err('this solver is not ajusted to handle sparse Aeq matrices yet')
+                    #self.p.err('nonzero threshold is not ajusted with lin eq yet')
+                    aeq = p.Aeq#[ind_lin_eq]
+                    beq = p.beq#[ind_lin_eq]
+                    d += dot(aeq.T, dot(aeq, self.x)  - beq) # d/dx((Aeq x - beq)^2)
                     
-                #devider = self._All_lin_ineq()
-                devider = 0.5*self.p.contol
-                if devider != 0:
-                    self._all_lin_ineq_gradient = d / devider
-                else:
-                    self._all_lin_ineq_gradient = d
+                assert p.contol > 0
+                self._all_lin_gradient = 2.0 * d / p.contol
+
             else:
                 if ind_lb.size != 0:
                     d[ind_lb] -= 1# d/dx(lb-x) for violated constraints
@@ -475,15 +489,15 @@ class Point:
 #                    aeq = p.Aeq[ind_lin_eq]
 #                    beq = p.beq[ind_lin_eq]
 #                    d += dot(aeq.T, dot(aeq, self.x)  - beq) # 0.5*d/dx((Aeq x - beq)^2)
-                self._all_lin_ineq_gradient = d
-        return copy(self._all_lin_ineq_gradient)
+                self._all_lin_gradient = d
+        return copy(self._all_lin_gradient)
 
     def _getDirection(self, approach, currBestFeasPoint = None):
 #        if hasattr(self, 'direction'):
 #            return self.direction.copy()
         p = self.p
         contol = p.contol
-        maxRes, fname, ind = self.mr_alt(1)
+        maxRes, fname, ind = self.mr_alt(1, bestFeasiblePoint = currBestFeasPoint)
         x = self.x
         if self.isFeas(altLinInEq=True):
             self.direction, self.dType = self.df(),'f'
@@ -491,7 +505,7 @@ class Point:
             return self.direction.copy()
         else:
             if approach == 'all active':
-                direction = self._All_lin_ineq_gradient()
+                direction = self.all_lin_gradient()
                 
                 if p.solver.__name__ == 'ralg':
                     new = 1
@@ -572,9 +586,9 @@ class Point:
                 self.dType  = 'all active'
                 self.direction = direction
             else:
-                if fname == 'all_lin_ineq':
-                    d = self._All_lin_ineq_gradient()
-                    self.dType = 'all_lin_ineq'
+                if fname == 'all_lin':
+                    d = self.all_lin_gradient()
+                    self.dType = 'all_lin'
                 elif fname == 'lin_eq':
                     self.p.err("kernel error, inform openopt developers")
                     #d = self.dmr()
@@ -590,82 +604,16 @@ class Point:
                 else:
                     p.err('error in getRalgDirection (unknown residual type ' + fname + ' ), you should report the bug')
                 self.direction = d.flatten()
-            if currBestFeasPoint is not None:
+
+            if type(self.direction) != ndarray: self.direction = self.direction.A.flatten()
+            
+            if currBestFeasPoint is not None:# and self.f()-currBestFeasPoint.f()+0.25*p.Ftol > 0:
                 DF = self.df()
                 nDF = norm(DF)
                 if nDF > 1e-50:
                     Ftol = p.Ftol#/2.0 if hasattr(p, 'Ftol') else 15 * p.ftol
                     #self.direction += ((self.f()-currBestFeasPoint.f())  * p.contol / nDF / Ftol) * DF
-                    self.direction += self.df() * (contol/Ftol) 
-            if type(self.direction) != ndarray: self.direction = self.direction.A.flatten()
+                    self.direction += self.df() * (contol/Ftol)       
+                    
             return self.direction.copy() # it may be modified in ralg when some constraints coords are NaN
-
-#    def __getDirection__(self, useCurrentBestFeasiblePoint = False):
-#        if hasattr(self, 'direction'):
-#            return self.direction
-#        p = self.p
-#        contol = p.contol
-#        maxRes, fname, ind = self.mr(retAll=True)
-#        if (maxRes <= p.contol and all(isfinite(self.df())) and (p.isNaNInConstraintsAllowed or self.nNaNs() == 0)) \
-#        or (useCurrentBestFeasiblePoint and hasattr(p, 'currentBestFeasiblePoint') and self.f() - p.currentBestFeasiblePoint.f() > self.mr()):
-#        #if (maxRes <= p.contol and all(isfinite(self.df())) and (p.isNaNInConstraintsAllowed or self.nNaNs() == 0)) :
-#            self.direction, self.dType = self.df(),'f'
-#            return self.direction
-#        else:
-#            d = zeros(p.n)
-#            #if any(self.lb()>contol) or any(self.ub()>contol) or any(self.lin_eq()>contol) or any(self.lin_ineq()>contol):
-#            lb = self.lb()
-#            ub = self.ub()
-#            lin_ineq = self.lin_ineq()
-#            lin_eq = self.lin_eq()
-#            c = self.c()
-#            h = self.h()
-#
-#            LB = lb[lb>contol/2]
-#            UB = ub[ub>contol/2]
-#            LIN_INEQ = lin_ineq[lin_ineq>contol/2]
-#            nActiveLinInEq = LB.size + UB.size + LIN_INEQ.size
-#            LinConstraints = sum(LB** 2) + sum(UB ** 2)
-#            if  LIN_INEQ.size > 0: LinConstraints+= sum(LIN_INEQ ** 2)
-#            #if  lin_eq.size > 0: LinConstraints+= sum(lin_eq[abs(lin_eq)>contol] ** 2)
-##
-#            maxNonLinConstraint = 0.0
-#            if c.size > 0: maxNonLinConstraint = max((maxNonLinConstraint, max(c)))
-#            if h.size > 0: maxNonLinConstraint = max((maxNonLinConstraint, max(abs(h))))
-#
-#            if nActiveLinInEq != 0 and LinConstraints/nActiveLinInEq >= p.contol * maxNonLinConstraint and (lin_eq.size == 0 or LinConstraints/nActiveLinInEq >= p.contol * abs(lin_eq).max()):#fname in ['lb',  'ub',  'lin_eq',  'lin_ineq']:# or tmp > maxNonLinConstraint:
-#                threshold = contol
-#                ind_lb = where(lb>contol)[0]
-#                ind_ub = where(ub>contol)[0]
-#                ind_lin_ineq = where(lin_ineq>threshold)[0]
-#                #ind_lin_eq = where(abs(lin_eq)>threshold)[0]
-#
-#                if ind_lb.size != 0:
-#                    d[ind_lb] -= lb[ind_lb]# 0.5*d/dx((x-lb)^2) for violated constraints
-#                if ind_ub.size != 0:
-#                    d[ind_ub] += ub[ind_ub]# 0.5*d/dx((x-ub)^2) for violated constraints
-#                if ind_lin_ineq.size != 0:
-#                    a = p.A[ind_lin_ineq]
-#                    b = p.b[ind_lin_ineq]
-#                    d += dot(a.T, dot(a, self.x)  - b) # 0.5*d/dx((Ax-b)^2)
-##                if ind_lin_eq.size != 0:
-##                    aeq = p.Aeq[ind_lin_eq]
-##                    beq = p.beq[ind_lin_eq]
-##                    d += dot(aeq.T, dot(aeq, self.x)  - beq) # 0.5*d/dx((Ax-b)^2)
-#                self.direction, self.dType = d/p.contol/nActiveLinInEq, 'linear'
-#            elif fname == 'lin_eq':
-#                d = self.dmr()
-#                self.direction = d.flatten()
-#                self.dType = 'lin_eq'
-#            elif fname == 'c':
-#                d = self.dmr()#self.dc(ind)
-#                self.direction = d.flatten()
-#                self.dType = 'c'
-#            elif fname == 'h':
-#                d = self.dmr()#sign(self.h(ind))*self.dh(ind)
-#                self.direction = d.flatten()
-#                self.dType = 'h'
-#            else:
-#                p.err('error in getRalgDirection (unknown residual type ' + fname + ' ), you should report the bug')
-#            return self.direction
 
