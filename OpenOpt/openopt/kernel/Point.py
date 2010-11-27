@@ -170,7 +170,9 @@ class Point:
                 Type = 'all_lin'
                 val = self.sum_of_all_active_constraints()
                 if bestFeasiblePoint is not None:
-                    val += max((0, self.f()-bestFeasiblePoint.f()+p.Ftol)) * p.contol / p.Ftol
+                    
+                    # not "+="!!!!! Else some problems with array shapes can occur
+                    val = val + max((0, self.f()-bestFeasiblePoint.f()+p.Ftol)) * p.contol / p.Ftol
 
                 self._mr_alt, self._mrName_alt,  self._mrInd_alt = val, 'all active', 0
             else:
