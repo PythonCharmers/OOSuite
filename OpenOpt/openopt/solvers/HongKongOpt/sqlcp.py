@@ -39,10 +39,10 @@ def _simple_hessian(f, x, delta = 1e-4):    # generally too slow for use
 def _simple_hessdiag(f, x, delta = 1e-4):
     nvars = x.shape[0]
     Id = eye(nvars)*delta
-    hd = array([(f(x+Id[i,:]) + f(x-Id[i,:]) - 2*f(x))/delta**2 for i in xrange(nvars)])
+    hd = array([(f(x+Id[i,:]) + f(x-Id[i,:]) - 2*f(x))/delta**2 for i in xrange(nvars)]).flatten()
     return diag(hd)
 
-def sqlcp(f, x0, df=None, A=None, b=None, Aeq=None, beq=None, lb=None, ub=None, minstep=1e-15, minfchg=1e-15, qpsolver=None):
+def sqlcp(f, x0, df=None, A=None, b=None, Aeq=None, beq=None, lb=None, ub=None, minstep=1e-15, minfchg=1e-15, qpsolver=None, callback = None):
     '''
     SQP solver. Approximates f in x0 with paraboloid with same gradient and hessian,
     then finds its minimum with a quadratic solver (qlcp by default) and uses it as new point, 
@@ -111,6 +111,9 @@ def sqlcp(f, x0, df=None, A=None, b=None, Aeq=None, beq=None, lb=None, ub=None, 
         fx = f(x)
         if abs(fx-oldfx) < minfchg*abs(fx):
             break
+        if callback is not None and callback(x):
+            break
+            
         oldfx = fx
         oldgradfx = gradfx.copy()
         gradfx = df(x)  # return the gradient of f() at the new x
