@@ -1,6 +1,8 @@
 from numpy import isfinite, any
 from openopt.kernel.baseSolver import *
 from sqlcp import sqlcp as SQLCP
+from numpy.linalg import LinAlgError
+
 class sqlcp(baseSolver):
     __name__ = 'sqlcp'
     __license__ = "MIT"
@@ -29,4 +31,9 @@ class sqlcp(baseSolver):
         def callback(x):
             p.iterfcn(x)
             return True if p.istop else False
-        SQLCP(p.f, p.x0, df=p.df, A=A , b=b, Aeq=Aeq, beq=beq, lb=p.lb, ub=p.ub, minstep=p.xtol, minfchg=1e-15, qpsolver=self.qpsolver, callback = callback)
+        try:
+            SQLCP(p.f, p.x0, df=p.df, A=A , b=b, Aeq=Aeq, beq=beq, lb=p.lb, ub=p.ub, minstep=p.xtol, minfchg=1e-15, qpsolver=self.qpsolver, callback = callback)
+        except LinAlgError:
+            p.msg = 'linalg error, probably failed to invert Hesse matrix'
+            p.istop = -100
+            
