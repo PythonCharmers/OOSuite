@@ -151,10 +151,12 @@ class Point:
             p = self.p
             if p.solver.__name__ == 'ralg':
                 tol = p.contol / 2.0
-            elif p.solver.__name__ == 'gsubg':
-                tol = 0.0
             else:
-                p.err('unimplemented case in Point.py')
+                tol = 0.0
+#            elif p.solver.__name__ == 'gsubg':
+#                tol = 0.0
+#            else:
+#                p.err('unimplemented case in Point.py')
                 
             c, h= self.c(), self.h()
             all_lin = self.all_lin()
@@ -166,7 +168,7 @@ class Point:
         # TODO: add fix wrt bestFeasiblePoint handling
         if not hasattr(self, '_mr_alt'):
             p = self.p
-            if p.solver.approach == 'all active':
+            if not hasattr(p.solver, 'approach') or p.solver.approach == 'all active':
                 Type = 'all_lin'
                 val = self.sum_of_all_active_constraints()
                 if bestFeasiblePoint is not None:
