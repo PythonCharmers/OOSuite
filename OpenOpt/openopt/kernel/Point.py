@@ -166,15 +166,24 @@ class Point:
     def mr_alt(self, retAll = False, bestFeasiblePoint=None):
 
         # TODO: add fix wrt bestFeasiblePoint handling
+        
+        ###################################################
+        # DEBUG!
+        # IT SAVES DIFFERENT VALUES WRT WITH OR WITHOUT bestFeasiblePoint
+        # IT HAS BEEN CALLED 1ST TIME
+        if hasattr(self, '_mr_alt'): delattr(self, '_mr_alt')
+        ###################################################
+        
         if not hasattr(self, '_mr_alt'):
             p = self.p
             if not hasattr(p.solver, 'approach') or p.solver.approach == 'all active':
-                Type = 'all_lin'
                 val = self.sum_of_all_active_constraints()
                 if bestFeasiblePoint is not None:
                     
                     # not "+="!!!!! Else some problems with array shapes can occur
-                    val = val + max((0, self.f()-bestFeasiblePoint.f()+p.Ftol)) * p.contol / p.Ftol
+                    #print self.f()-bestFeasiblePoint.f()
+#                    val = val + max((0, self.f()-bestFeasiblePoint.f())) * p.contol / p.Ftol 
+                    pass
 
                 self._mr_alt, self._mrName_alt,  self._mrInd_alt = val, 'all active', 0
             else:
@@ -265,7 +274,7 @@ class Point:
         if altLinInEq:
             mr, point2compareResidual = self.mr_alt(bestFeasiblePoint=bestFeasiblePoint), point2compare.mr_alt(bestFeasiblePoint=bestFeasiblePoint)
         else:
-            mr, point2compareResidual =  self.mr(), point2compare.mr_alt()
+            mr, point2compareResidual =  self.mr(), point2compare.mr()
         
 #        if altLinInEq and bestFeasiblePoint is not None and isfinite(self.f()) and isfinite(point2compare.f()):
 #            Ftol = self.p.Ftol
@@ -309,17 +318,13 @@ class Point:
     def isFeas(self, altLinInEq):
         if not all(isfinite(self.f())): return False
         if self.p.isUC: return True
+        if self.nNaNs() != 0: return False
         contol = self.p.contol 
         if altLinInEq:
-            if hasattr(self, '_mr_alt'):
-                if self._mr_alt > contol or self.nNaNs() != 0: return False
-            else:
-                #TODO: simplify it!
-                #for fn in residuals: (...)
-                if self.all_lin() > contol: return False
+            if  self.mr_alt() > contol: return False
         else:
             if hasattr(self, '_mr'):
-                if self._mr > contol or self.nNaNs() != 0: return False
+                if self._mr > contol: return False
             else:
                 #TODO: simplify it!
                 #for fn in residuals: (...)
@@ -327,8 +332,8 @@ class Point:
                 if any(self.ub() > contol): return False
                 if any(abs(self.lin_eq()) > contol): return False
                 if any(self.lin_ineq() > contol): return False
-        if any(abs(self.h()) > contol): return False
-        if any(self.c() > contol): return False
+                if any(abs(self.h()) > contol): return False
+                if any(self.c() > contol): return False
         return True
 
     def nNaNs(self):
@@ -371,18 +376,8 @@ class Point:
             r._c = _c
         
         # TODO: mb same for h?
-
-        
         return r
-        
 
-#    def directionType(self, *args, **kwargs):
-#        if not hasattr(self, 'dType'):
-#            self.__getDirection__(*args, **kwargs)
-#        return self.dType
-
-    #def __getDirection__(self, useCurrentBestFeasiblePoint = False):
-    #def __getDirection__(self, altLinInEq = False):
 
     def all_lin(self): # TODO: rename it wrt lin_eq that are present here
         if not hasattr(self, '_all_lin'):
@@ -402,12 +397,18 @@ class Point:
                     r += sum(lb[ind_lb] ** 2)
                 if ind_ub.size != 0:
                     r += sum(ub[ind_ub] ** 2)
+
+#                if ind_lb.size != 0:
+#                    r += sum(lb[ind_lb])
+#                if ind_ub.size != 0:
+#                    r += sum(ub[ind_ub])
                 if ind_lin_ineq.size != 0:
                     r += sum(lin_ineq[ind_lin_ineq] ** 2)
                 if ind_lin_eq.size != 0:
                     r += sum(lin_eq[ind_lin_eq] ** 2)
-                #self._all_lin = sqrt(r)
+
                 self._all_lin = r / self.p.contol
+#                self._all_lin = r
             else:
                 if ind_lb.size != 0:
                     r += sum(lb[ind_lb])
@@ -463,7 +464,8 @@ class Point:
                     beq = p.beq#[ind_lin_eq]
                     d += dot(aeq.T, dot(aeq, self.x)  - beq) # d/dx((Aeq x - beq)^2)
                     
-                assert p.contol > 0
+
+#                self._all_lin_gradient = 2.0 * d
                 self._all_lin_gradient = 2.0 * d / p.contol
 
             else:
@@ -496,100 +498,103 @@ class Point:
                 self._all_lin_gradient = d
         return copy(self._all_lin_gradient)
 
+    def sum_of_all_active_constraints_gradient(self):
+        if not hasattr(self, '_sum_of_all_active_constraints_gradient'):
+            p = self.p
+            contol = p.contol
+            x = self.x
+            direction = self.all_lin_gradient()
+            if p.solver.__name__ == 'ralg':
+                new = 1
+            elif p.solver.__name__ == 'gsubg':
+                new = 0
+            else:
+                p.err('unhandled case in Point._getDirection')
+                
+            if p.userProvided.c:
+                th = 0.0
+                #th = contol / 2.0
+                C = p.c(x)
+                ind = where(C>th)[0]
+                activeC = C[ind]
+                if len(ind) > 0:
+                    tmp = p.dc(x, ind)
+
+                    if new:
+                        if tmp.ndim == 1 or min(tmp.shape) == 1:
+                            if hasattr(tmp, 'toarray'): 
+                                tmp = tmp.toarray()#.flatten()
+                            if activeC.size == prod(tmp.shape):
+                                activeC = activeC.reshape(tmp.shape)
+                            tmp *= (activeC-th*(1.0-1e-15))/norm(tmp)
+                        else:
+                            if hasattr(tmp, 'toarray'):
+                                tmp = tmp.toarray()
+                            tmp *= ((activeC - th*(1.0-1e-15))/sqrt((tmp**2).sum(1))).reshape(-1, 1)
+                            
+                    if tmp.ndim > 1:
+                        tmp = tmp.sum(0)
+                    direction += (tmp.A if isspmatrix(tmp) or isinstance(tmp, matrix) else tmp).flatten()
+            
+
+            if p.userProvided.h:
+                #th = 0.0
+                th = contol / 2.0
+                H = p.h(x)
+                ind1 = where(H>th)[0]
+                H1 = H[ind1]
+                if len(ind1) > 0:
+                    tmp = p.dh(x, ind1)
+                    
+                    if new:
+                        if tmp.ndim == 1 or min(tmp.shape) == 1:
+                            if hasattr(tmp, 'toarray'): 
+                                tmp = tmp.toarray()#.flatten()
+                            if H1.size == prod(tmp.shape):
+                                H1 = H1.reshape(tmp.shape)
+                            tmp *= (H1-th*(1.0-1e-15))/norm(tmp)
+                        else:
+                            if hasattr(tmp, 'toarray'):
+                                tmp = tmp.toarray()
+                            tmp *= ((H1 - th*(1.0-1e-15))/sqrt((tmp**2).sum(1))).reshape(-1, 1)
+                    
+                    if tmp.ndim > 1: 
+                        tmp = tmp.sum(0)
+                    direction += (tmp.A if isspmatrix(tmp) or isinstance(tmp, matrix) else tmp).flatten()
+                ind2 = where(H<-th)[0]
+                H2 = H[ind2]
+                if len(ind2) > 0:
+                    tmp = p.dh(x, ind2)
+                    if new:
+                        if tmp.ndim == 1 or min(tmp.shape) == 1:
+                            if hasattr(tmp, 'toarray'): 
+                                tmp = tmp.toarray()#.flatten()
+                            if H2.size == prod(tmp.shape):
+                                H2 = H2.reshape(tmp.shape)                                    
+                            tmp *= (-H2-th*(1.0-1e-15))/norm(tmp)
+                        else:
+                            if hasattr(tmp, 'toarray'):
+                                tmp = tmp.toarray()
+                            tmp *= ((-H2 - th*(1.0-1e-15))/sqrt((tmp**2).sum(1))).reshape(-1, 1)
+                    
+                    if tmp.ndim > 1: 
+                        tmp = tmp.sum(0)
+                    direction -= (tmp.A if isspmatrix(tmp) or isinstance(tmp, matrix) else tmp).flatten()
+            self._sum_of_all_active_constraints_gradient = direction
+        return Copy(self._sum_of_all_active_constraints_gradient)
+
+
     def _getDirection(self, approach, currBestFeasPoint = None):
-#        if hasattr(self, 'direction'):
-#            return self.direction.copy()
-        p = self.p
-        contol = p.contol
-        maxRes, fname, ind = self.mr_alt(1, bestFeasiblePoint = currBestFeasPoint)
-        x = self.x
         if self.isFeas(altLinInEq=True):
             self.direction, self.dType = self.df(),'f'
             if type(self.direction) != ndarray: self.direction = self.direction.A.flatten()
             return self.direction.copy()
         else:
             if approach == 'all active':
-                direction = self.all_lin_gradient()
-                
-                if p.solver.__name__ == 'ralg':
-                    new = 1
-                elif p.solver.__name__ == 'gsubg':
-                    new = 0
-                else:
-                    p.err('unhandled case in Point._getDirection')
-                    
-                if p.userProvided.c:
-                    th = 0.0
-                    #th = contol / 2.0
-                    C = p.c(x)
-                    ind = where(C>th)[0]
-                    activeC = C[ind]
-                    if len(ind) > 0:
-                        tmp = p.dc(x, ind)
-
-                        if new:
-                            if tmp.ndim == 1 or min(tmp.shape) == 1:
-                                if hasattr(tmp, 'toarray'): 
-                                    tmp = tmp.toarray()#.flatten()
-                                if activeC.size == prod(tmp.shape):
-                                    activeC = activeC.reshape(tmp.shape)
-                                tmp *= (activeC-th*(1.0-1e-15))/norm(tmp)
-                            else:
-                                if hasattr(tmp, 'toarray'):
-                                    tmp = tmp.toarray()
-                                tmp *= ((activeC - th*(1.0-1e-15))/sqrt((tmp**2).sum(1))).reshape(-1, 1)
-                                
-                        if tmp.ndim > 1:
-                            tmp = tmp.sum(0)
-                        direction += (tmp.A if isspmatrix(tmp) or isinstance(tmp, matrix) else tmp).flatten()
-                
-
-                if p.userProvided.h:
-                    #th = 0.0
-                    th = contol / 2.0
-                    H = p.h(x)
-                    ind1 = where(H>th)[0]
-                    H1 = H[ind1]
-                    if len(ind1) > 0:
-                        tmp = p.dh(x, ind1)
-                        
-                        if new:
-                            if tmp.ndim == 1 or min(tmp.shape) == 1:
-                                if hasattr(tmp, 'toarray'): 
-                                    tmp = tmp.toarray()#.flatten()
-                                if H1.size == prod(tmp.shape):
-                                    H1 = H1.reshape(tmp.shape)
-                                tmp *= (H1-th*(1.0-1e-15))/norm(tmp)
-                            else:
-                                if hasattr(tmp, 'toarray'):
-                                    tmp = tmp.toarray()
-                                tmp *= ((H1 - th*(1.0-1e-15))/sqrt((tmp**2).sum(1))).reshape(-1, 1)
-                        
-                        if tmp.ndim > 1: 
-                            tmp = tmp.sum(0)
-                        direction += (tmp.A if isspmatrix(tmp) or isinstance(tmp, matrix) else tmp).flatten()
-                    ind2 = where(H<-th)[0]
-                    H2 = H[ind2]
-                    if len(ind2) > 0:
-                        tmp = p.dh(x, ind2)
-                        if new:
-                            if tmp.ndim == 1 or min(tmp.shape) == 1:
-                                if hasattr(tmp, 'toarray'): 
-                                    tmp = tmp.toarray()#.flatten()
-                                if H2.size == prod(tmp.shape):
-                                    H2 = H2.reshape(tmp.shape)                                    
-                                tmp *= (-H2-th*(1.0-1e-15))/norm(tmp)
-                            else:
-                                if hasattr(tmp, 'toarray'):
-                                    tmp = tmp.toarray()
-                                tmp *= ((-H2 - th*(1.0-1e-15))/sqrt((tmp**2).sum(1))).reshape(-1, 1)
-                        
-                        if tmp.ndim > 1: 
-                            tmp = tmp.sum(0)
-                        direction -= (tmp.A if isspmatrix(tmp) or isinstance(tmp, matrix) else tmp).flatten()
                 self.dType  = 'all active'
-                self.direction = direction
+                self.direction = self.sum_of_all_active_constraints_gradient()
             else:
+                maxRes, fname, ind = self.mr_alt(1, bestFeasiblePoint = currBestFeasPoint)
                 if fname == 'all_lin':
                     d = self.all_lin_gradient()
                     self.dType = 'all_lin'
@@ -611,13 +616,16 @@ class Point:
 
             if type(self.direction) != ndarray: self.direction = self.direction.A.flatten()
             
-            if currBestFeasPoint is not None:# and self.f()-currBestFeasPoint.f()+0.25*p.Ftol > 0:
-                DF = self.df()
-                nDF = norm(DF)
-                if nDF > 1e-50:
-                    Ftol = p.Ftol#/2.0 if hasattr(p, 'Ftol') else 15 * p.ftol
-                    #self.direction += ((self.f()-currBestFeasPoint.f())  * p.contol / nDF / Ftol) * DF
-                    self.direction += self.df() * (contol/Ftol)       
+#            print 'currBestFeasPoint is not None:', (currBestFeasPoint is not None), 'self.f() > currBestFeasPoint.f():', self.f() > currBestFeasPoint.f()
+
+            contol, Ftol = self.p.contol, self.p.Ftol
+#            print self.f(),  currBestFeasPoint.f(), self.f() - Ftol ==  currBestFeasPoint.f()
+            
+            if currBestFeasPoint is not None and self.f() + 0.25*Ftol > currBestFeasPoint.f():
+                
+                #self.direction += ((self.f()-currBestFeasPoint.f())  * p.contol / nDF / Ftol) * DF
+#                self.direction += self.df() * (contol/Ftol)       
+                pass
                     
             return self.direction.copy() # it may be modified in ralg when some constraints coords are NaN
 

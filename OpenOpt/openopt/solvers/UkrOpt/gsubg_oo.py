@@ -14,7 +14,7 @@ class gsubg(baseSolver):
     __license__ = "BSD"
     __authors__ = "Dmitrey"
     __alg__ = "Nikolay G. Zhurbenko generalized epsilon-subgradient"
-    #__optionalDataThatCanBeHandled__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'c', 'h']
+    __optionalDataThatCanBeHandled__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'c', 'h']
     iterfcnConnected = True
     _canHandleScipySparse = True
 
@@ -40,6 +40,7 @@ class gsubg(baseSolver):
     def __init__(self): pass
     def __solver__(self, p):
         assert self.approach == 'all active'
+        if not p.isUC: p.warn('Handling of constraints is not implemented properly for the solver %s yet' % self.__name__)
         
 #        LB, UB = p.lb, p.ub
 #        fin_lb = isfinite(LB)
@@ -149,10 +150,6 @@ class gsubg(baseSolver):
                     #x = 0.5*(point1.x+point2.x) 
                 #print 'len(schedule):', len(schedule)
                 
-                # DEBUG
-#                schedule = [Point([0]), Point([1])]
-#                iterStartPoint = p.point([0])
-                # DEBUG END
                 
                 x = iterStartPoint.x.copy()
                 #print 'itn:', itn, 'ns:', ns, 'x:', x, 'hs:', hs
@@ -164,7 +161,32 @@ class gsubg(baseSolver):
                 
                 iterInitialDataSize = len(values)
                 for point in schedule:
-                    if isfinite(point.f()) and bestFeasiblePoint is not None:
+                    if point.sum_of_all_active_constraints()>p.contol:
+                        #print '111111'
+#                    if not point.isFeas(True):
+                        # TODO: use old-style w/o the arg "currBestFeasPoint = bestFeasiblePoint"
+                        #tmp = point._getDirection(self.approach, currBestFeasPoint = bestFeasiblePoint)
+                        nVec += 1
+                        tmp = point.sum_of_all_active_constraints_gradient()#, currBestFeasPoint = bestFeasiblePoint)
+                        if not isinstance(tmp, ndarray) or isinstance(tmp, matrix):
+                            tmp = tmp.A.flatten()
+                        n_tmp = norm(tmp)
+                        assert n_tmp != 0.0
+                        normedSubGradients.append(tmp/n_tmp)
+                        subGradientNorms.append(n_tmp)
+                        val = point.sum_of_all_active_constraints()
+                        values.append(asscalar(val))
+                        normed_values.append(asscalar(val/n_tmp))
+                        #epsilons.append(asscalar(val / n_tmp - dot(point.x, tmp)/n_tmp**2))
+                        epsilons.append(asscalar((val + dot(point.x, tmp))/n_tmp))
+                        #epsilons.append(asscalar(val - dot(point.x, tmp))/n_tmp)
+                        #epsilons.append(asscalar(val))
+                        isConstraint.append(True)
+                        points.append(point.x)
+                        inactive.append(0)
+                        nAddedVectors += 1                    
+                    elif isfinite(point.f()):
+                        #print '222222'
                         tmp = point.df()
                         if not isinstance(tmp, ndarray) or isinstance(tmp, matrix):
                             tmp = tmp.A
@@ -184,28 +206,9 @@ class gsubg(baseSolver):
                         isConstraint.append(False)
                         points.append(point.x)
                         inactive.append(0)
-                        nAddedVectors += 1
-                    if not point.isFeas(True):
-                        # TODO: use old-style w/o the arg "currBestFeasPoint = bestFeasiblePoint"
-                        #tmp = point._getDirection(self.approach, currBestFeasPoint = bestFeasiblePoint)
-                        nVec += 1
-                        tmp = point._getDirection(self.approach)
-                        if not isinstance(tmp, ndarray) or isinstance(tmp, matrix):
-                            tmp = tmp.A.flatten()
-                        n_tmp = norm(tmp)
-                        normedSubGradients.append(tmp/n_tmp)
-                        subGradientNorms.append(n_tmp)
-                        val = point.mr_alt()
-                        values.append(val)
-                        normed_values.append(asscalar(val/n_tmp))
-                        #epsilons.append(asscalar(val / n_tmp - dot(point.x, tmp)/n_tmp**2))
-                        epsilons.append(asscalar((val + dot(point.x, tmp))/n_tmp))
-                        #epsilons.append(asscalar(val - dot(point.x, tmp))/n_tmp)
-                        #epsilons.append(asscalar(val))
-                        isConstraint.append(True)
-                        points.append(point.x)
-                        inactive.append(0)
-                        nAddedVectors += 1
+                        nAddedVectors += 1                    
+#                    else:
+#                        p.err('bug in %s, inform openopt developers' % self.__name__)
                         
                 indToBeRemovedBySameAngle = []
                 
@@ -220,7 +223,7 @@ class gsubg(baseSolver):
                 
                 #valDistancesForExcluding = valDistances1 + valDistances3 + valDistances4 # with constraints it may yield different result vs valDistances
                 
-                if p.debug: p.debugmsg('valDistances: ' + str(valDistances))
+#                if p.debug: p.debugmsg('valDistances: ' + str(valDistances))
                 if iterInitialDataSize != 0:
                     for j in range(nAddedVectors):
                         ind = -1-j
@@ -307,9 +310,13 @@ class gsubg(baseSolver):
                             #projection, koeffs = PolytopProjection(product, asfarray(ValDistances), isProduct = True)   
                             #print 'before PolytopProjection'
                             koeffs = PolytopProjection(product, asfarray(ValDistances), isProduct = True, solver = self.qpsolver)
+#                            assert all(isfinite(koeffs))
                             #print koeffs
                             #print 'after PolytopProjection'
                             projection = dot(normalizedSubGradients.T, koeffs).flatten()
+                            
+                            #print 'norm(projection):', norm(projection)
+                            
                             #raise 0
 #                            from openopt import QP
 #                            p2 = QP(diag(ones(n)), zeros(n), A=-asfarray(normedSubGradients), b=-ValDistances)
@@ -399,7 +406,7 @@ class gsubg(baseSolver):
                     #if not self.checkTurnByGradient:
                     
                     #TODO: create routine for modifying bestFeasiblePoint
-                    if newPoint.isFeas(True) and (bestFeasiblePoint is None or newPoint.f() > bestFeasiblePoint):
+                    if newPoint.isFeas(False) and (bestFeasiblePoint is None or newPoint.f() > bestFeasiblePoint):
                         bestFeasiblePoint = newPoint
                             
                     if newPoint.betterThan(oldPoint, altLinInEq=True, bestFeasiblePoint = bestFeasiblePoint):
@@ -522,7 +529,8 @@ class gsubg(baseSolver):
 #                elif ls > 3:
 #                    hs *= 2.0
                 else:
-                    hs = max((hs / 1e4,  p.xtol / 1e3))
+                    hs = max((hs / 10.0,  p.xtol/2.0))
+                p.debugmsg('hs after: %0.1e' % hs)
                     #hs = max((p.xtol/100, 0.5*step_x))
                 #print 'step_x:', step_x, 'new_hs:', hs, 'prev_hs:', prev_hs, 'ls:', ls, 'nLSBackward:', nLSBackward
 
@@ -548,7 +556,7 @@ class gsubg(baseSolver):
                 
                 #hs = max((norm(best_ls_point_with_start.x-iterStartPoint.x)/2, 64*p.xtol))
 
-                if p.debug: assert p.isUC
+                #if p.debug: assert p.isUC
 
                 
                 prevInnerCycleIterStartPoint = iterStartPoint
@@ -678,28 +686,64 @@ def isPointCovered3(pointWithSubGradient, pointToCheck, bestFeasiblePoint, Ftol,
     and pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.75*Ftol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df()):
         return True
     if not pointWithSubGradient.isFeas(True) and \
-    pointWithSubGradient.mr_alt() + 1e-15 > \
+    pointWithSubGradient.mr_alt(bestFeasPoint = bestFeasiblePoint) + 1e-15 > \
     dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient._getDirection('all active', currBestFeasPoint = bestFeasiblePoint)):
         return True
     return False
 
 def isPointCovered4(pointWithSubGradient, pointToCheck, bestFeasiblePoint, Ftol, contol):
-    if not pointWithSubGradient.isFeas(True):
-        if  pointWithSubGradient.mr_alt(bestFeasiblePoint = bestFeasiblePoint) + 0.5*contol > \
-            dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient._getDirection('all active')):#, currBestFeasPoint = bestFeasiblePoint)):
-            return True
-            #pass
-        else:
-            return False
-    elif pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.75*Ftol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df()):
-        # if pointWithSubGradient is feas (i.e. not 1st case) than bestFeasiblePoint is not None
+    #print 'isFeas:', pointWithSubGradient.isFeas(True)
+    if pointWithSubGradient.isFeas(True):
+        # assert bestFeasiblePoint is not None 
+        return pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.75*Ftol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df()) 
+    
+    elif pointWithSubGradient.sum_of_all_active_constraints() + 0.75*contol > \
+    dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.sum_of_all_active_constraints_gradient()):
         return True
-        
+        #return pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.75*Ftol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df()) 
     return False
+    
+#    return pointWithSubGradient.mr_alt(bestFeasiblePoint = bestFeasiblePoint) + 0.25*contol > \
+#        dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient._getDirection('all active', currBestFeasPoint = bestFeasiblePoint))
+######################
+#    
+#    if bestFeasiblePoint is not None \
+#    and pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.75*Ftol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df()): return True
+#    
+#    return pointWithSubGradient.mr_alt(bestFeasiblePoint = bestFeasiblePoint) + 0.25*contol > \
+#            dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient._getDirection('all active', currBestFeasPoint = bestFeasiblePoint))
+######################
+#    isFeas = pointWithSubGradient.isFeas(True)
+#    if isFeas:
+#        return pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.75*Ftol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df())
+#    else:
+#        return pointWithSubGradient.mr_alt(bestFeasiblePoint = bestFeasiblePoint) + 0.25*contol > \
+#            dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient._getDirection('all active', currBestFeasPoint = bestFeasiblePoint))
+######################
+#    isCoveredByConstraints = pointWithSubGradient.mr_alt(bestFeasiblePoint = bestFeasiblePoint) + 0.25*contol > \
+#            dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient._getDirection('all active', currBestFeasPoint = bestFeasiblePoint)) \
+#            if not pointWithSubGradient.isFeas(True) else True
+#    
+#    isCoveredByObjective = pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.75*Ftol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df())\
+#    if bestFeasiblePoint is not None else True
+#    
+#    return isCoveredByConstraints and isCoveredByObjective
+######################
+#    if not pointWithSubGradient.isFeas(True):
+#        return True if  pointWithSubGradient.mr_alt(bestFeasiblePoint = bestFeasiblePoint) + 0.25*contol > \
+#            dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient._getDirection('all active', currBestFeasPoint = bestFeasiblePoint)) else False
+#            #, currBestFeasPoint = bestFeasiblePoint)):
+#        
+#    if pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.75*Ftol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df()):
+#        # if pointWithSubGradient is feas (i.e. not 1st case) than bestFeasiblePoint is not None
+#        return True
+#        
+#    return False
 
 isPointCovered = isPointCovered4
 
 def LocalizedSearch(point1, point2, bestFeasiblePoint, Ftol, p, maxRecNum, approach):
+#    bestFeasiblePoint = None
     contol = p.contol
     for i in range(maxRecNum):
         if p.debug:
@@ -722,32 +766,17 @@ def LocalizedSearch(point1, point2, bestFeasiblePoint, Ftol, p, maxRecNum, appro
         #point = p.point((point1.x + point2.x)/2.0) 
         
         
-        if point.isFeas(True) and (bestFeasiblePoint is None or bestFeasiblePoint.f() > point.f()):
+        if point.isFeas(False) and (bestFeasiblePoint is None or bestFeasiblePoint.f() > point.f()):
             bestFeasiblePoint = point
         
-        if p.debug: assert p.isUC
+        #if p.debug: assert p.isUC
         if dot(point._getDirection(approach, currBestFeasPoint = bestFeasiblePoint), point1.x-point2.x) < 0:
             point2 = point
         else:
             point1 = point
-        
-#        Point = point1 if dot(point.df(), point1.x-point2.x) < 0 else point2
-#        #assert sign(dot(point.df(), point1.x-point2.x)) != sign(dot(Point.df(), point1.x-point2.x))
-#        
-#
-#        return LocalizedSearch(point, Point, bestFeasiblePoint, Ftol, p, maxRecNum-1)
+            
     return point1, point2, i
     
-#    if isPoint1Covered and not isPoint2Covered:
-#        return LocalizedSearch(point, point2, bestFeasiblePoint, Ftol, p, maxRecNum-1)
-#    elif isPoint2Covered and not isPoint1Covered:
-#        return LocalizedSearch(point, point1, bestFeasiblePoint, Ftol, p, maxRecNum-1)
-#    else:
-#        # TODO: check sign
-#        
-#        return LocalizedSearch(point, Point, bestFeasiblePoint, Ftol, p, maxRecNum-1)
-        
-        
         
 ######################33
     #                    from scipy.sparse import eye
