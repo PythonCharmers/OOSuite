@@ -161,7 +161,7 @@ class gsubg(baseSolver):
                 
                 iterInitialDataSize = len(values)
                 for point in schedule:
-                    if point.sum_of_all_active_constraints()>p.contol:
+                    if point.sum_of_all_active_constraints()>0 and any(point.sum_of_all_active_constraints_gradient()):
                         #print '111111'
 #                    if not point.isFeas(True):
                         # TODO: use old-style w/o the arg "currBestFeasPoint = bestFeasiblePoint"
@@ -185,7 +185,7 @@ class gsubg(baseSolver):
                         points.append(point.x)
                         inactive.append(0)
                         nAddedVectors += 1                    
-                    elif isfinite(point.f()):
+                    if isfinite(point.f()):
                         #print '222222'
                         tmp = point.df()
                         if not isinstance(tmp, ndarray) or isinstance(tmp, matrix):
