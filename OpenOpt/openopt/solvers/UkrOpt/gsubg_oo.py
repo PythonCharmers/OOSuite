@@ -107,7 +107,8 @@ class gsubg(baseSolver):
         # TODO: add possibility to handle f_opt if known instead of Ftol
         #Ftol = 1.0
         if p.Ftol is None:
-            p.warn('The solver requres user-supplied Ftol (objective function tolerance); 15*ftol will be used')
+            p.warn("""The solver requres user-supplied Ftol (objective function tolerance); 
+            since you have not provided it value, 15*ftol = %0.1e will be used""" % (15*p.ftol))
             p.Ftol = 15 * p.ftol
         Ftol_start = p.Ftol/2.0
         Ftol = Ftol_start
@@ -161,7 +162,7 @@ class gsubg(baseSolver):
                 
                 iterInitialDataSize = len(values)
                 for point in schedule:
-                    if point.sum_of_all_active_constraints()>0 and any(point.sum_of_all_active_constraints_gradient()):
+                    if (point.sum_of_all_active_constraints()>p.contol / 10 or not isfinite(point.f())) and any(point.sum_of_all_active_constraints_gradient()):
                         #print '111111'
 #                    if not point.isFeas(True):
                         # TODO: use old-style w/o the arg "currBestFeasPoint = bestFeasiblePoint"
@@ -185,7 +186,7 @@ class gsubg(baseSolver):
                         points.append(point.x)
                         inactive.append(0)
                         nAddedVectors += 1                    
-                    if isfinite(point.f()):
+                    if bestFeasiblePoint is not None and isfinite(point.f()):
                         #print '222222'
                         tmp = point.df()
                         if not isinstance(tmp, ndarray) or isinstance(tmp, matrix):
@@ -693,6 +694,14 @@ def isPointCovered3(pointWithSubGradient, pointToCheck, bestFeasiblePoint, Ftol,
 
 def isPointCovered4(pointWithSubGradient, pointToCheck, bestFeasiblePoint, Ftol, contol):
     #print 'isFeas:', pointWithSubGradient.isFeas(True)
+    
+#    if pointWithSubGradient.sum_of_all_active_constraints() != 0 and any(pointWithSubGradient.sum_of_all_active_constraints_gradient()):
+#        return pointWithSubGradient.sum_of_all_active_constraints() + 0.75*contol > \
+#            dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.sum_of_all_active_constraints_gradient())
+#    
+#    return pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.75*Ftol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df()) 
+    
+##############################
     if pointWithSubGradient.isFeas(True):
         # assert bestFeasiblePoint is not None 
         return pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.75*Ftol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df()) 
