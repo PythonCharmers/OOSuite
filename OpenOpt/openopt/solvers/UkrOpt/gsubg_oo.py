@@ -36,11 +36,22 @@ class gsubg(baseSolver):
     ls_direction = 'simple'
     qpsolver = 'cvxopt_qp'
     ns = 15
+    dilation = 'auto'
 
     def __init__(self): pass
     def __solver__(self, p):
         assert self.approach == 'all active'
         if not p.isUC: p.warn('Handling of constraints is not implemented properly for the solver %s yet' % self.__name__)
+        
+        dilation = self.dilation
+        assert dilation in ('auto', True, False, 0, 1)
+        if dilation == 'auto': 
+            dilation = False
+            #dilation = True if p.n < 150 else False
+            p.debugmsg('%s: autoselect set dilation to %s' %(self.__name__, dilation))
+        if dilation:
+            from Dilation import Dilation
+            D = Dilation(p)
         
 #        LB, UB = p.lb, p.ub
 #        fin_lb = isfinite(LB)
@@ -139,7 +150,7 @@ class gsubg(baseSolver):
                 
                 #iterStartPoint = prevIter_best_ls_point
                 if bestPointBeforeTurn is None:
-                    schedule = [bestPoint]
+                    sh = schedule = [bestPoint]
                     #x = iterStartPoint.x
                 else:
                     sh = [point1, point2]
@@ -361,7 +372,14 @@ class gsubg(baseSolver):
                 if any(isnan(g1)):
                     p.istop = 900
                     return                 
-                    
+                
+                if dilation and len(sh) == 2:
+                    point = sh[0] if dot(iterStartPoint._getDirection(self.approach), sh[0]._getDirection(self.approach)) < 0 else sh[1]
+                    D.updateDilationMatrix(iterStartPoint._getDirection(self.approach) - point._getDirection(self.approach), alp = 1.2)
+                    g1 = D.getDilatedVector(g1)
+                    #g1 = tmp
+                
+                
                 if any(g1): 
                     g1 /= p.norm(g1)
                 else:
