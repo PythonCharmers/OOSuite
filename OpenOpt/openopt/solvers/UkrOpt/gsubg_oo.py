@@ -234,7 +234,10 @@ class gsubg(baseSolver):
                     values.append(asscalar(val))
                     normed_values.append(asscalar(val/n_tmp))# equals to 0
                     epsilons.append(asscalar((val + dot(prevIterPoint.x, tmp))/n_tmp))
-                    isConstraint.append(True)
+                    
+                    if not p.isUC: p.pWarn('addASG is not ajusted with constrained problems handling yet')
+                    isConstraint.append(False if p.isUC else True)
+                    
                     points.append(prevIterPoint.x)
                     inactive.append(0)
                     nAddedVectors += 1       
