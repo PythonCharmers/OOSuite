@@ -37,6 +37,7 @@ class gsubg(baseSolver):
     qpsolver = 'cvxopt_qp'
     ns = 15
     dilation = 'auto'
+    addASG = False
 
     def __init__(self): pass
     def __solver__(self, p):
@@ -218,7 +219,26 @@ class gsubg(baseSolver):
                         isConstraint.append(False)
                         points.append(point.x)
                         inactive.append(0)
-                        nAddedVectors += 1                    
+                        nAddedVectors += 1       
+                if self.addASG and itn != 0 and Projection is not None:
+                    tmp = Projection
+                    if not isinstance(tmp, ndarray) or isinstance(tmp, matrix):
+                        tmp = tmp.A
+                    tmp = tmp.flatten()
+                    n_tmp = norm(tmp)
+
+                    nVec += 1
+                    normedSubGradients.append(tmp/n_tmp)
+                    subGradientNorms.append(n_tmp)
+                    val = n_tmp*(1-1e-7) # to prevent small numerical errors accumulation
+                    values.append(asscalar(val))
+                    normed_values.append(asscalar(val/n_tmp))# equals to 0
+                    epsilons.append(asscalar((val + dot(prevIterPoint.x, tmp))/n_tmp))
+                    isConstraint.append(True)
+                    points.append(prevIterPoint.x)
+                    inactive.append(0)
+                    nAddedVectors += 1       
+                        
 #                    else:
 #                        p.err('bug in %s, inform openopt developers' % self.__name__)
                         
@@ -291,7 +311,7 @@ class gsubg(baseSolver):
                 #print('Ftol: %f   m: %d   ns: %d' %(Ftol, m, ns))
                 #raise 0
                 if p.debug: p.debugmsg('Ftol: %f     ns: %d' %(Ftol, ns))
-                
+                Projection = None
                 if nVec > 1:
                     normalizedSubGradients = asfarray(normedSubGradients)
                     product = dot(normalizedSubGradients, normalizedSubGradients.T)
@@ -344,6 +364,7 @@ class gsubg(baseSolver):
                                 
                             #p.debugmsg('g1 shift: %f' % norm(g1/norm(g1)-projection/norm(projection)))
                             g1 = projection
+                            if j == 0: Projection = projection
                             #hs = 0.4*norm(g1)
                             M = norm(koeffs, inf)
                             # TODO: remove the cycles
@@ -622,6 +643,7 @@ class gsubg(baseSolver):
 
             """                Some final things for gsubg main cycle                """
             prevIter_best_ls_point = best_ls_point_with_start
+            prevIterPoint = iterStartPoint
             
             
             # TODO: mb move it inside inner loop
