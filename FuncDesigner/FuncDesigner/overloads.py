@@ -110,7 +110,7 @@ def dot(inp1, inp2):
     return r
 
 
-def sum(inp, *args, **kwargs):
+def _sum(inp, *args, **kwargs):
     #return np.sum(inp, *args, **kwargs)
 #    from time import time
 #    t = time()
@@ -128,13 +128,17 @@ def sum(inp, *args, **kwargs):
         for elem in inp: # TODO: mb use reduce() or something like that
             if not isinstance(elem, oofun): 
                 #r0 = r0 + elem # += is inappropriate because sizes may differ
-                r0 += np.asfarray(elem) # so it doesn't work for different sizes
+                
+                # not '+=' because size can be changed from 1 to another value
+                r0 = r0 + np.asfarray(elem) # so it doesn't work for different sizes
+                
                 continue
+                
             j += 1
             INP.append(elem)
 
         # TODO:  check for fixed inputs
-        f = lambda *args: r0 + np.sum(args)
+        f = lambda *args: r0 + sum(args)
 #        def f(*args):
 #            print args
 #            return np.sum(args)
@@ -296,6 +300,7 @@ def min(inp,  *args,  **kwargs):
         f = lambda x: np.min(x)
         def d(x):
             df = inp.d(x)
+            #df = inp.d(x) if type(inp.d) not in (list, tuple) else np.hstack([item(x) for item in inp.d])
             ind = np.argmin(x)
             return df[ind, :]
     elif type(inp) in (list, tuple):
@@ -304,7 +309,6 @@ def min(inp,  *args,  **kwargs):
             ind = np.argmin(args)
             raise 'not implemented yet'
             return inp[ind].d(args)
-    
     else:
         raise FuncDesignerException('incorrect data type in FuncDesigner min')
             
