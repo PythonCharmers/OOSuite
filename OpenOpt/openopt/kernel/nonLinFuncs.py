@@ -327,6 +327,8 @@ class nonLinFuncs:
             if hasattr(p, 'solver') and not p.solver.iterfcnConnected  and p.solver.funcForIterFcnConnection=='df':
                 if p.df_iter is True: p.iterfcn(x)
                 elif p.nEvals[derivativesType]%p.df_iter == 0: p.iterfcn(x) # call iterfcn each {p.df_iter}-th df call
+            if p.isObjFunValueASingleNumber and derivatives.ndim > 1:
+                derivatives = derivatives.flatten()
         
         return derivatives
 
