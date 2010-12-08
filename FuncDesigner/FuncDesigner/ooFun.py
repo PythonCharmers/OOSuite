@@ -751,7 +751,8 @@ class oofun:
                 for key, val in elem_d.items():
                     #if isscalar(val) or val.ndim < 2: val = atleast_2d(val)
                     if isscalar(val) or isscalar(t1) or prod(t1.shape)==1 or prod(val.shape)==1:
-                        rr = t1 * val
+                        #rr = t1 * val
+                        rr = (t1 if isscalar(t1) or prod(t1.shape)>1 else asscalar(t1)) * (val if isscalar(val) or prod(val.shape)>1 else asscalar(val))
                     else:
                         if val.ndim < 2: val = atleast_2d(val)
                         if useSparse is False:
@@ -784,7 +785,7 @@ class oofun:
                             rr = rr.toarray() # I guess r[key] will hardly be all-zeros
                         elif hasattr(r[key], 'toarray') and isinstance(rr, ndarray): # i.e. r[key] is sparse matrix
                             r[key] = r[key].toarray()
-                        if rr.size == r[key].size and type(rr) == type(r[key]) == ndarray: 
+                        if type(rr) == type(r[key]) == ndarray and rr.size == r[key].size: 
                             r[key] += rr
                         else: 
                             r[key] = r[key] + rr
