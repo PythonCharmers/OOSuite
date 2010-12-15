@@ -53,32 +53,10 @@ class SLE(MatrixProblem):
         MatrixProblem.__prepare__(self)
         if self.isFDmodel:
             equations = self.C
-            ConstraintTags = [elem.isConstraint for elem in equations]
-            cond_all_oofuns_but_not_cons = not any(ConstraintTags) 
-            cond_cons = all(ConstraintTags) 
-            #print 'cond_all_oofuns_but_not_cons:', cond_all_oofuns_but_not_cons
-            #print 'cond_cons:', cond_cons
-            if not cond_all_oofuns_but_not_cons and not cond_cons:
-                raise OpenOptException('for FuncDesigner sle constructor args must be either all-equalities or all-oofuns')            
-            
             AsSparse = bool(self.useSparse) if type(self.useSparse) != str else self._useSparse()
-#            if AsSparse:
-#                from scipy import sparse
-#                if not hasattr(sparse, 'linalg'):
-#                    s = """you use new version of scipy where scipy.sparse.linalg was moved to scikits.umfpack. 
-#                    It is not ajusted with the version of our soft you are using yet. 
-#                    Thus SLE will be solved as dense. 
-#                    If sparsity is strongly required, you could use rendering (see FuncDesigner doc)"""
-#                    self.pWarn(s)
-#                    AsSparse = False
-            
             C, d = [], []
             Z = self._vector2point(zeros(self.n))
-            for elem in self.C:
-                if elem.isConstraint:
-                    lin_oofun = elem.oofun
-                else:
-                    lin_oofun = elem
+            for lin_oofun in equations:
                 if lin_oofun.getOrder(self.freeVars, self.fixedVars) > 1:
                     raise OpenOptException('SLE constructor requires all equations to be linear')
                 C.append(self._pointDerivative2array(lin_oofun.D(Z, **self._D_kwargs), useSparse = AsSparse))

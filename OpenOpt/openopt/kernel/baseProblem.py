@@ -283,6 +283,19 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             from FuncDesigner import _getAllAttachedConstraints, _getDiffVarsID
             self._FDVarsID = _getDiffVarsID()
 
+            if self.probType in ['SLE', 'NLSP']:
+                equations = self.C if self.probType == 'SLE' else self.f
+                ConstraintTags = [elem.isConstraint for elem in equations]
+                cond_all_oofuns_but_not_cons = not any(ConstraintTags) 
+                cond_cons = all(ConstraintTags) 
+                if not cond_all_oofuns_but_not_cons and not cond_cons:
+                    raise OpenOptException('for FuncDesigner SLE/NLSP constructors args must be either all-equalities or all-oofuns')            
+                EQs = [((elem.oofun*(self.ftol/elem.tol) if elem.tol != 0 else elem.oofun) if elem.isConstraint else elem) for elem in equations]
+                if self.probType == 'SLE': self.C = EQs
+                elif self.probType == 'NLSP': self.f = EQs
+                else: raise OpenOptException('bug in OO kernel')
+                
+
             for fn in ['lb', 'ub', 'A', 'Aeq', 'b', 'beq']:
                 if not hasattr(self, fn): continue
                 val = getattr(self, fn)
@@ -399,7 +412,12 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                         if f not in LB:
                             LB[f] = val
                         else:
-                            LB[f] = max((val, LB[f]))
+                            #max((val, LB[f])) doesn't work for arrays
+                            if val.size > 1 or LB[f].size > 1:
+                                LB[f][val > LB[f]] = val[val > LB[f]] if val.size > 1 else asscalar(val)
+                            else:
+                                LB[f] = max((val, LB[f]))
+
                     if any(isfinite(_ub)):
                         if _ub.size not in (f_size, 1): 
                             self.err('incorrect size of upper box-bound constraint for %s: 1 or %d expected, %d obtained' % (Name, f_size, _ub.size))
@@ -407,7 +425,12 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                         if f not in UB:
                             UB[f] = val
                         else:
-                            UB[f] = min((val, UB[f]))
+                            #min((val, UB[f])) doesn't work for arrays
+                            if val.size > 1 or LB[f].size > 1:
+                                UB[f][val < UB[f]] = val[val < UB[f]] if val.size > 1 else asscalar(val)
+                            else:
+                                UB[f] = min((val, UB[f]))
+                            
                 elif _lb == _ub:
                     if f.getOrder(self.freeVars, self.fixedVars) < 2:
                         Aeq.append(self._pointDerivative2array(f.D(Z, **D_kwargs)))      
