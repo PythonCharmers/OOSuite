@@ -515,6 +515,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
 
 class MatrixProblem(baseProblem):
     _baseClassName = 'Matrix'
+    ftol = 1e-8
+    contol = 1e-8
     #obsolete, should be removed
     # still it is used by lpSolve
     # Awhole * x {<= | = | >= } b

@@ -23,7 +23,7 @@ THE SOFTWARE.
 from numpy import *
 from LCPSolve import LCPSolve
 
-def QPSolve(e, Q, A=None, b=None, Aeq=None, beq=None, lb=None, ub=None):
+def QPSolve(Q, e, A=None, b=None, Aeq=None, beq=None, lb=None, ub=None):
     '''
     Note: if lb == None lower bounds are assumed to be -Inf
           if ub == None upper bounds are assumed to be +Inf
