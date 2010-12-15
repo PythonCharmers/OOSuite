@@ -136,6 +136,9 @@ class oofun:
             self._level = max(levels)+1
             
 
+
+        
+
     __hash__ = lambda self: self._id
     
     def named(self, name):
@@ -148,12 +151,16 @@ class oofun:
     def attach(self, *args,  **kwargs):
         if len(kwargs) != 0:
             raise FuncDesignerException('keyword arguments are not implemented for FuncDesigner function "attach"')
-        for arg in args:
+        assert len(args) != 0
+        Args = args[0] if len(args) == 1 and type(args[0]) in (tuple, list, set) else args
+        for arg in Args:
             if not isinstance(arg, BaseFDConstraint):
                 raise FuncDesignerException('the FD function "attach" currently expects only constraints')
-            self.attachedConstraints.add(arg)
+        self.attachedConstraints.update(Args)
         return self
-    
+        
+    def removeAttachedConstraints(self):
+        self.attachedConstraints = set()    
     __repr__ = lambda self: self.name
         
     # overload "a+b"
