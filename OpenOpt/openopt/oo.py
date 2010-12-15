@@ -1,6 +1,7 @@
 __docformat__ = "restructuredtext en"
 
 from kernel.LP import LP as CLP
+from kernel.LCP import LCP as CLCP
 from kernel.SDP import SDP as CSDP
 from kernel.QP import QP as CQP
 from kernel.MILP import MILP as CMILP
@@ -98,6 +99,36 @@ def LP(*args, **kwargs):
     converter to NLP. Example: r = p.solve('nlp:ipopt')
     """
     return CLP(*args, **kwargs)
+
+def LCP(*args, **kwargs):
+    """
+    LCP: constructor for Linear Complementarity Problem assignment
+    find w, z: w = Mz + q
+    
+    valid calls are:
+    p = LP(M, q, <params as kwargs>)
+    p = LP(M=M, q=q, <params as kwargs>)
+    See also: /examples/lcp_*.py
+
+    :Parameters:
+    M: numpy array of size n x n
+    q: vector of length n
+
+    :Returns:
+    OpenOpt LCP class instance
+
+    Notes
+    -----
+    Solving of LCPs is performed via
+    r = p.solve(string_name_of_solver)
+    r.xf - desired solution (1st n/2 coords are w, other n/2 coords are z)
+    r.ff - objFun value (max residual of Mz+q-w) (NaN if a problem occured)
+    (see also other r fields)
+    Solvers available for now:
+    lcpsolve (BSD) 
+
+    """
+    return CLCP(*args, **kwargs)
 
 
 def SDP(*args, **kwargs):
