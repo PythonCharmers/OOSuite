@@ -16,15 +16,15 @@ obj = sum(tmp)
 startPoint = {x: 2*ones(n)}
 
 #solvers = [gsubg, 'ralg', 'ipopt']
-solvers = ['gsubg']
+solvers = ['ralg']
 
 Colors = ['r', 'k','b']
 
 lines = []
 for i, solver in enumerate(solvers):
     p = NSP(obj, startPoint, maxIter = 1700, name = 'rjevsky6 (nVars: ' + str(n)+')', maxTime = 300, maxFunEvals=1e7, color = Colors[i])
-    p.fEnough = 1.0e-2
-    p.Ftol = 0.5e-2
+    p.fEnough = 1.0e-10
+    p.Ftol = 0.5e-10
     r = p.manage(solver, iprint=1, xtol = 1e-6, ftol = 1e-6, debug=0, show = solver == solvers[-1], plot = 0)
 '''
 --------------------------------------------------

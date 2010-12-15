@@ -12,19 +12,21 @@ for i in range(n):
         A[i, j] = 1.0 / (i+j+1) # Python indexation from zero
     b[i] = sum(A[i, :])
         
-startPoint = {x: cos(arange((n)))}
+#startPoint = {x: cos(arange((n)))}
+startPoint = {x: 2*ones(n)}
 obj = dot(x, dot(A, x)) / 2 - dot(b, x)
 
 #solvers = [gsubg, 'ralg', 'ipopt']
-solvers = ['gsubg']
+solvers = ['ralg']
 
 Colors = ['r', 'k','b']
 
 lines = []
 for i, solver in enumerate(solvers):
     p = NSP(obj, startPoint, maxIter = 1700, name = 'rjevsky5 (nVars: ' + str(n)+')', maxTime = 300, maxFunEvals=1e7, color = Colors[i])
-    p.Ftol = 0.5e-2
-    r = p.manage(solver, iprint=1, xtol = 1e-6, ftol = 1e-6, debug=0, show = solver == solvers[-1], plot = 0)
+    p.Ftol = 0.5e-7
+    p.fEnough = -34.4086089
+    r = p.manage(solver, iprint=1, xtol = 1e-6, ftol = 1e-9, debug=0, show = solver == solvers[-1], plot = 0)
 '''
 solver: gsubg   problem: rjevsky5 (nVars: 50)    type: NSP   goal: minimum
  iter    objFunVal   

@@ -10,5 +10,5 @@ from overloads import _sum as sum
 from misc import FuncDesignerException, _getDiffVarsID
 from interpolate import scipy_UnivariateSpline as interpolator
 from integrate import integrator
-__version__ = '0.21'
+__version__ = '0.32'
 

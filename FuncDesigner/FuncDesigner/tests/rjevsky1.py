@@ -34,13 +34,14 @@ f4 = ifThenElse(phi[4]>f3, phi[4], f3)
 obj = f4
 startPoint = {x: cos(arange(n))}
 
-solvers = ['gsubg']
+solvers = ['ralg']
 Colors = ['r', 'k','b']
 
 for i, solver in enumerate(solvers):
     p = NSP(obj, startPoint, maxIter = 17000, name = 'rjevsky1 (nVars: ' + str(n)+')', maxTime = 300, maxFunEvals=1e7, color = Colors[i])
-    p.Ftol = 0.5e-2
-    r = p.solve(solver, iprint=10, xtol = 1e-16, ftol = 1e-36, gtol = 1e-200, debug=0, show = solver == solvers[-1], plot = 0)
+    p.Ftol = 0.5e-10
+    p.fEnough = -0.84140833459
+    r = p.solve(solver, iprint=10, ftol = 1e-15, xtol = 1e-10, debug=0, show = solver == solvers[-1], plot = 0)
 '''
 --------------------------------------------------
 solver: gsubg   problem: rjevsky1 (nVars: 10)    type: NSP   goal: minimum

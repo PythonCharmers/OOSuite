@@ -13,7 +13,7 @@ f = sum(abs(x)*S)
 
 
 solvers = [oosolver('ralg')]
-solvers = [oosolver('gsubg', dual=True, zhurb = 50)]
+solvers = [oosolver('gsubg', addASG = True)]
 #solvers = [oosolver('gsubg', zhurb = 20, dual=False)]
 #solvers = ['ipopt']
 #solvers = ['slmvm2']
@@ -24,6 +24,6 @@ for solver in solvers:
     p.Ftol = 1.0e1
     #p.constraints = (y > 5)(tol=1e-4) #x>1e-1 #[2*y<sin(arange(N))]
     #r = p.solve(solver, iprint=10, xtol = 1e-36, ftol = 1e-16, show = solver == solvers[-1])
-    r = p.manage(solver, iprint=10, xtol = 1e-36, ftol = 1e-16, show = solver == solvers[-1])
+    r = p.solve(solver, iprint=10, xtol = 1e-16, ftol = 1e-6, show = solver == solvers[-1])
     
 

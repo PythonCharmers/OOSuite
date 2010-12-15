@@ -10,20 +10,22 @@ obj = sum([((0.0016+(x[k+1]-x[k])**2)/(0.04*(k+1)))**0.5 for k in range(n)])
 
 
 
-#startPoint = {x: zeros(n)}
+#startPoint = {x: zeros(n+1)}
 startPoint = {x: cos(arange(n+1))}
 
 #solvers = [gsubg, 'ralg', 'ipopt']
 solvers = ['gsubg']
-
+#1.9170260356219775
 Colors = ['r', 'k','b']
 
 lines = []
 for i, solver in enumerate(solvers):
-    p = NSP(obj, startPoint, maxIter = 1700, name = 'rjevsky6 (nVars: ' + str(n)+')', maxTime = 300, maxFunEvals=1e7, color = Colors[i])
-    p.fEnough = 1.0e-2
-    p.Ftol = 0.5e-2
-    r = p.manage(solver, iprint=10, xtol = 1e-6, ftol = 1e-6, debug=0, show = solver == solvers[-1], plot = 0)
+    p = NSP(obj, startPoint, maxIter = 2000, name = 'rjevsky7 (nVars: ' + str(n)+')', maxTime = 300, maxFunEvals=1e7, color = Colors[i])
+    p._prepare()
+    p.c=None
+    p.fEnough = 1.91703
+    p.Ftol = 0.5e-6
+    r = p.manage(solver, iprint=10, xtol = 1e-9, ftol = 1e-16, gtol = 1e-10, debug=0, show = solver == solvers[-1], plot = 0)
 '''
 --------------------------------------------------
 solver: gsubg   problem: rjevsky6 (nVars: 30)    type: NSP   goal: minimum

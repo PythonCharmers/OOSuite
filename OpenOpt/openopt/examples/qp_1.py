@@ -14,7 +14,8 @@ from openopt import QP
 p = QP(diag([1,2,3]), [15,8,80], A = matrix('1 2 3; 8 15 80'), b = [150, 800], Aeq = [0, 1, -1], beq = 25, ub = [15,inf,inf])
 # or p = QP(H=diag([1,2,3]), f=[15,8,80], A = matrix('1 2 3; 8 15 80'), b = [150, 800], Aeq = [0, 1, -1], beq = 25, ub = [15,inf,inf])
 #r = p.solve('cvxopt_qp', iprint = 0)
-r = p.solve('nlp:ralg', xtol=1e-7, alp=3.9, plot=1)#, r = p.solve('nlp:algencan')
+r = p.solve('qlcp', iprint = 0)
+#r = p.solve('nlp:ralg', xtol=1e-7, alp=3.9, plot=1)#, r = p.solve('nlp:algencan')
 f_opt, x_opt = r.ff, r.xf
 # x_opt = array([-14.99999995,  -2.59999996, -27.59999991])
 # f_opt = -1191.90000013
