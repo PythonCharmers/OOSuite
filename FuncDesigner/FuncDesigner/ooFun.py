@@ -759,7 +759,8 @@ class oofun:
                     #if isscalar(val) or val.ndim < 2: val = atleast_2d(val)
                     if isscalar(val) or isscalar(t1) or prod(t1.shape)==1 or prod(val.shape)==1:
                         #rr = t1 * val
-                        rr = (t1 if isscalar(t1) or prod(t1.shape)>1 else asscalar(t1)) * (val if isscalar(val) or prod(val.shape)>1 else asscalar(val))
+                        rr = (t1 if isscalar(t1) or prod(t1.shape)>1 else asscalar(t1) if type(t1)==ndarray else t1[0, 0]) \
+                        * (val if isscalar(val) or prod(val.shape)>1 else asscalar(val) if type(val)==ndarray else val[0, 0])
                     else:
                         if val.ndim < 2: val = atleast_2d(val)
                         if useSparse is False:
