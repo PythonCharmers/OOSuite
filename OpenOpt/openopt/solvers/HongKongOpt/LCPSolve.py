@@ -62,7 +62,7 @@ def LCPSolve(M,q, pivtol=1e-8): # pivtol = smallest allowable pivot element
         basis[locat] = 2*dimen # replace that choice with the row 
         cand = locat + dimen
         pivot = tableau[locat,:]/tableau[locat,2*dimen]
-        tableau[:,:] -= tableau[:,2*dimen:2*dimen+1]*pivot # from each column subtract the column 2*dimen, multiplied by pivot 
+        tableau -= tableau[:,2*dimen:2*dimen+1]*pivot # from each column subtract the column 2*dimen, multiplied by pivot 
         tableau[locat,:] = pivot # set all elements of row locat to pivot
         # Perform complementary pivoting
         oldDivideErr = seterr(divide='ignore')['divide'] # suppress warnings or exceptions on zerodivide inside numpy
@@ -76,7 +76,7 @@ def LCPSolve(M,q, pivtol=1e-8): # pivtol = smallest allowable pivot element
             if abs(eMs[locat]) > pivtol and not missmask.all(): # and if at least one element is not missing 
                 # reduce tableau
                 pivot = tableau[locat,:]/tableau[locat,cand]
-                tableau[:,:] -= tableau[:,cand:cand+1]*pivot 
+                tableau -= tableau[:,cand:cand+1]*pivot 
                 tableau[locat,:] = pivot
                 oldVar = basis[locat]
                 # New variable enters the basis
