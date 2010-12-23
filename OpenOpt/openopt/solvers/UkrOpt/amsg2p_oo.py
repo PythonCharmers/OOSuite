@@ -26,5 +26,5 @@ class amsg2p(baseSolver):
         #assert self.approach == 'all active'
         if not p.isUC: p.warn('Handling of constraints is not implemented properly for the solver %s yet' % self.__name__)
         if p.fOpt is None: p.err('the selver %s requires providing optimal value fOpt')
-        Solver(p.f, p.df, p.x0, p.Ftol, p.Fopt, self.gamma, p.iterfcn)
+        Solver(p.f, p.df, p.x0, p.Ftol, p.fOpt, self.gamma, p.iterfcn)
         
