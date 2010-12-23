@@ -136,6 +136,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
     # this param is handled in iterfcn of OpenOpt kernel
     # so it may be ignored with some solvers not closely connected to OO kernel
 
+    fOpt = None # optimal value, if known
     
 
     def __init__(self, *args, **kwargs):
