@@ -258,8 +258,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             for key in ['c','dc','h','dh','d2c','d2h']:
                 if hasattr(self.userProvided, key):
                     if getattr(self.userProvided, key):
-                        #setattr(newProb, key, getattr(self, key))
-                        setattr(newProb, key, getattr(self.user, key))
+                        #setattr(newProb, key, getattr(self.user, key))
+                        setattr(newProb, key, getattr(self, key)) if self.isFDmodel else setattr(newProb, key, getattr(self.user, key))
                     else:
                         setattr(newProb, key, None)
                         

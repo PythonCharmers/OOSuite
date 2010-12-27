@@ -22,7 +22,7 @@ class MILP(LP):
         self._milp_prepared = True
         LP.__prepare__(self)
         r = []
-        if type(self.intVars) not in [list, tuple]:
+        if type(self.intVars) not in [list, tuple, set]:
             self.intVars = [self.intVars]
         if self.isFDmodel:
             for iv in self.intVars:

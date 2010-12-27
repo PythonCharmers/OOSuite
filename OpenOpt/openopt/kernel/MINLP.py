@@ -20,6 +20,14 @@ class MINLP(NonLinProblem):
         if hasattr(self, 'prepared') and self.prepared == True:
             return
         NonLinProblem.__prepare__(self)    
+        if self.isFDmodel:
+            r = {}
+            for iv in self.freeVars:
+                if iv.domain is None: continue
+                ind1, ind2 = self._oovarsIndDict[iv]
+                assert ind2-ind1 == 1 
+                r[ind1] = iv.domain
+            self.discreteVars = r
         # TODO: use something else instead of dict.keys()
         for key in self.discreteVars.keys():
             fv = self.discreteVars[key]
