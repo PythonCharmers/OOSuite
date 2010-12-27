@@ -4,7 +4,7 @@ from openopt.kernel.setDefaultIterFuncs import IS_NAN_IN_X, SMALL_DELTA_X, SMALL
 #from numpy import asarray, inf, ones, nan
 from numpy import *
 #import openopt
-from openopt import NLP
+from openopt import NLP, OpenOptException
 
 class branb(baseSolver):
     __name__ = 'branb'
@@ -42,11 +42,17 @@ class branb(baseSolver):
 def fminconset(p_current, bestPoint, p):
     p2 = milpTransfer(p)
     p2.lb, p2.ub = p_current.lb, p_current.ub
-    r = p2.solve(p.nlpSolver)
-    curr_NLP_Point = p.point(r.xf)
+    
+    
+    try:
+        r = p2.solve(p.nlpSolver)
+        curr_NLP_Point = p.point(r.xf)
+        curr_NLP_Point._f = r.ff
+    except OpenOptException:
+        r = None
     
     resultPoint = p.point(bestPoint.x)
-    if r.istop <0 or curr_NLP_Point.f() >= bestPoint.f(): 
+    if r is None or r.istop <0 or curr_NLP_Point.f() >= bestPoint.f(): 
         resultPoint._f  = inf
         return resultPoint
     elif r.istop == 0:
@@ -82,13 +88,11 @@ def fminconset(p_current, bestPoint, p):
         below = Below[-1]# index of largest set element below x(k)
         
         p3 = milpTransfer(p)
+        p3.x0 = x.copy()
         
         ub1 = p_current.ub.copy()
         ub1[k] = min((ub1[k], p.discreteVars[k][below]))	# new upper bound on x[k] for 1st subproblem
-        
         ub1[k] = p.discreteVars[k][below]
-        
-        p3.x0 = x.copy()
         p3.ub = ub1
         p3.lb = p_current.lb
         
@@ -129,6 +133,9 @@ def milpTransfer(originProb):
     newProb = NLP(originProb.f, originProb.x0)
     originProb.inspire(newProb)
     newProb.discreteVars = originProb.discreteVars
+    def err(s): # to prevent text output
+        raise OpenOptException(s)
+    newProb.err = err
     for fn in ['df', 'd2f']:
         if hasattr(originProb, fn) and getattr(originProb.userProvided, fn):
             setattr(newProb, fn, getattr(originProb, fn))
