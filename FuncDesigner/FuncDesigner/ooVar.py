@@ -6,6 +6,7 @@ from ooFun import oofun, Len
 
 class oovar(oofun):
     is_oovar = True
+    domain = None
     #shape = nan
     #fixed = False
     #initialized = False
