@@ -55,4 +55,4 @@ p.discrtol = 1.1e-5
 
 r = p.solve('branb', nlpSolver=nlpSolver, plot = True)
 # optim point and value are r.xf and r.ff,
-# see http://openopt.org/Result for more details
+# see http://openopt.org/OOFrameworkDoc#Result_structure for more details
