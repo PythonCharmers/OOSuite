@@ -25,6 +25,16 @@ class amsg2p(baseSolver):
     def __solver__(self, p):
         #assert self.approach == 'all active'
         if not p.isUC: p.warn('Handling of constraints is not implemented properly for the solver %s yet' % self.__name__)
-        if p.fOpt is None: p.err('the selver %s requires providing optimal value fOpt')
-        Solver(p.f, p.df, p.x0, p.Ftol, p.fOpt, self.gamma, p.iterfcn)
-        
+        if p.fOpt is None: p.err('the solver %s requires providing optimal value fOpt')
+        if p.Ftol is None: 
+            s = '''
+            the solver %s requires providing required objective function tolerance Ftol
+            15*ftol = %0.1e will be used instead
+            ''' % (self.__name__, p.ftol)
+            p.pWarn(s)
+            Ftol = 15*p.ftol
+        else: Ftol = p.Ftol
+        x, itn = Solver(p.f, p.df, p.x0, Ftol, p.fOpt, self.gamma, p.iterfcn)
+        if p.f(x) < p.fOpt + Ftol:
+            p.istop = 10
+        #p.iterfcn(x)

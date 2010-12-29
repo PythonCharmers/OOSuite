@@ -8,7 +8,7 @@ def amsg2p(f, df, x0, epsilon, f_opt, gamma, callback = lambda x: False):
     x, n = x0.copy(), x0.size
     df0 = df(x0)
     ndf = norm(df0)
-    h, dzeta, p, B = gamma * (f0 - f_opt) / ndf, df0 / ndf, zeros(n), diag(ones(n)) # TODO: add possibility to create B of type float128
+    h, dzeta, p, B = gamma * (f0 - f_opt) / ndf, df0 / ndf, zeros(n), diag(ones(n, 'float128')) # TODO: add possibility to create B of type float128
     k = 0
     while True:
         k += 1
@@ -31,7 +31,9 @@ def amsg2p(f, df, x0, epsilon, f_opt, gamma, callback = lambda x: False):
             p = (p - mu * dzeta_new) / S
         else:
             p = zeros(n)
-        if callback(x): break # user-demanded stop
+        r = callback(x) 
+        if r not in (0, False): 
+            break # user-demanded stop
 #        print h, F, mu
         dzeta = dzeta_new
     return x, k
