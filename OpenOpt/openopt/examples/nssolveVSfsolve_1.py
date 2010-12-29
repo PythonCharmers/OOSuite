@@ -23,7 +23,7 @@ This test runs ~ a minute on my AMD 3800+
 noise = 1e-8
 
 from openopt import NLSP
-from numpy import asfarray, zeros, cos, sin, arange, cosh, sinh, log10, ceil, floor, arange, inf
+from numpy import asfarray, zeros, cos, sin, arange, cosh, sinh, log10, ceil, floor, arange, inf, nanmin, nanmax
 from time import time
 from scipy import rand
 
@@ -67,7 +67,7 @@ lambda x: sinh(x[2])+x[0]-15 + noise*rand(1)+Count3()]# + (2007 * x[3:]**2).toli
 ##    df[2,2] = cosh(x[2])
 ##    return df
 
-N = 1000
+N = 100
 desired_ftol = 1e-6
 assert desired_ftol - noise*len(x0) > 1e-7
 #w/o gradient:
@@ -117,37 +117,37 @@ print '------------ SUMMARY -------------'
 print 'fsolve_failed number:', scipy_fsolve_failed , '(from', N, '),', 100.0*scipy_fsolve_failed / N, '%'
 print 'nssolve_failed number:', nssolve_failed , '(from', N, '),', 100.0 * nssolve_failed / N, '%'
 
-try:
-    from pylab import *
-    subplot(2,1,1)
-    grid(1)
-    title('scipy.optimize fsolve fails to achive desired ftol: %0.1f%%' %(100.0*scipy_fsolve_failed / N))
-    xmin1, xmax1 = floor(min(fs)), ceil(max(fs))+1
-    hist(fs, arange(xmin1, xmax1))
-    #xlabel('log10(maxResidual)')
-    axvline(log10(desired_ftol), color='green', linewidth=3, ls='--')
-    [ymin1, ymax1] = ylim()
+#try:
+from pylab import *
+subplot(2,1,1)
+grid(1)
+title('scipy.optimize fsolve fails to achive desired ftol: %0.1f%%' %(100.0*scipy_fsolve_failed / N))
+xmin1, xmax1 = floor(nanmin(fs)), ceil(nanmax(fs))+1
+hist(fs, arange(xmin1, xmax1))
+#xlabel('log10(maxResidual)')
+axvline(log10(desired_ftol), color='green', linewidth=3, ls='--')
+[ymin1, ymax1] = ylim()
 
-    ################
-    subplot(2,1,2)
-    grid(1)
-    title('openopt nssolve fails to achive desired ftol: %0.1f%%' % (100.0*nssolve_failed / N))
-    xmin2, xmax2 = floor(min(ns)), ceil(max(ns))+1
-    #hist(ns, 5)
-    hist(ns, arange(xmin2, xmax2))
-    xlabel('log10(maxResidual)')
-    axvline(log10(desired_ftol), color='green', linewidth=3, ls='--')
-    [ymin2, ymax2] = ylim()
+################
+subplot(2,1,2)
+grid(1)
+title('openopt nssolve fails to achive desired ftol: %0.1f%%' % (100.0*nssolve_failed / N))
+xmin2, xmax2 = floor(nanmin(ns)), ceil(nanmax(ns))+1
+#hist(ns, 5)
+hist(ns, arange(xmin2, xmax2))
+xlabel('log10(maxResidual)')
+axvline(log10(desired_ftol), color='green', linewidth=3, ls='--')
+[ymin2, ymax2] = ylim()
 
-    ################
-    xmin, xmax = min(xmin1, xmin2) - 0.1, max(xmax1, xmax2) + 0.1
-    ymin, ymax = 0, max(ymax1, ymax2) * 1.05
-    subplot(2,1,1)
-    xlim(xmin, xmax)
-    ylim(0, ymax)
-    subplot(2,1,2)
-    xlim(xmin, xmax)
-    show()
-except:
-    pass
+################
+xmin, xmax = min(xmin1, xmin2) - 0.1, max(xmax1, xmax2) + 0.1
+ymin, ymax = 0, max(ymax1, ymax2) * 1.05
+subplot(2,1,1)
+xlim(xmin, xmax)
+ylim(0, ymax)
+subplot(2,1,2)
+xlim(xmin, xmax)
+show()
+#except:
+#    pass
 
