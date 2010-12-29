@@ -713,6 +713,7 @@ class ralg(baseSolver):
             #raise 0
             if hasattr(vec, 'toarray'): vec = vec.toarray().flatten()
             g = economyMult(b.T, vec)
+            if not any(g): continue
             #ind_nnz = nonzero(g)[0]
             ng = norm(g)
             g = (g / ng).reshape(-1,1)
@@ -731,7 +732,6 @@ class ralg(baseSolver):
 #                if p.debug: 
 #                    assert abs(norm(p.matmult(vec1, vec2).flatten()) - norm(r.flatten())) < 1e-5
 #                b[ix_(ind_nnz1, ind_nnz2)] += r
- 
         return b
  
     def linEqProjection(self, x, Aeq, beq):
