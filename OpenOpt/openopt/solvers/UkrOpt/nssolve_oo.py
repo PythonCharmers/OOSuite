@@ -1,9 +1,9 @@
-from numpy import asfarray, argmax, sign, inf, log10
+from numpy import asfarray, argmax, sign, inf, log10, dot
 from numpy.linalg import norm
 from openopt.kernel.baseSolver import baseSolver
 from openopt import NSP
 from string import rjust
-from openopt.kernel.setDefaultIterFuncs import IS_MAX_FUN_EVALS_REACHED, FVAL_IS_ENOUGH
+from openopt.kernel.setDefaultIterFuncs import IS_MAX_FUN_EVALS_REACHED, FVAL_IS_ENOUGH, SMALL_DELTA_X, SMALL_DELTA_F
 
 class nssolve(baseSolver):
     __name__ = 'nssolve'
@@ -13,6 +13,8 @@ class nssolve(baseSolver):
     iterfcnConnected = True
     __optionalDataThatCanBeHandled__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'c', 'h']
     __isIterPointAlwaysFeasible__ = lambda self, p: p.isUC
+    
+    nspSolver = 'autoselect'
     __info__ = """
     Solves system of non-smooth or noisy equations
     via (by default) minimizing max residual using NSP solver (default UkrOpt.ralg).
@@ -31,13 +33,19 @@ class nssolve(baseSolver):
 
     def __init__(self):pass
     def __solver__(self, p):
+        if SMALL_DELTA_X in p.kernelIterFuncs.keys(): p.kernelIterFuncs.pop(SMALL_DELTA_X)
+        if SMALL_DELTA_F in p.kernelIterFuncs.keys(): p.kernelIterFuncs.pop(SMALL_DELTA_F)
 
         f = lambda x: max(abs(p.f(x)))
         def df(x):
             F = p.f(x)
             ind = argmax(abs(F))
             return p.df(x, ind) * sign(F[ind])
-
+            
+#        f = lambda x: sum(abs(p.f(x)))
+#        def df(x):
+#            return dot(p.df(x),  sign(p.f(x)))
+            
         def iterfcn(*args,  **kwargs):
             p2.primalIterFcn(*args,  **kwargs)
             #p2.solver.__decodeIterFcnArgs__(p2,  *args,  **kwargs)
@@ -58,15 +66,13 @@ class nssolve(baseSolver):
                 else: p.istop = p2.istop
 
             p.iterfcn()
+            return p.istop
 
 
         p2 = NSP(f, p.x0, df=df, xtol = p.xtol/1e16, gtol = p.gtol/1e16,\
         A=p.A,  b=p.b,  Aeq=p.Aeq,  beq=p.beq,  lb=p.lb,  ub=p.ub, \
         maxFunEvals = p.maxFunEvals, fEnough = p.ftol, maxIter=p.maxIter, iprint = -1, \
-        maxtime = p.maxTime, maxCPUTime = p.maxCPUTime,  noise = p.noise)
-
-        if p.isUC: p2.ftol = p.ftol / 1e16
-        else: p2.ftol = 0
+        maxtime = p.maxTime, maxCPUTime = p.maxCPUTime,  noise = p.noise, fOpt = 0.0)
 
         if p.userProvided.c:
             p2.c,  p2.dc = p.c,  p.dc
@@ -76,7 +82,22 @@ class nssolve(baseSolver):
         p2.primalIterFcn,  p2.iterfcn = p2.iterfcn, iterfcn
 
         if p.debug: p2.iprint = 1
-        r2 = p2.solve('ralg')
+        
+        if self.nspSolver == 'autoselect':
+            nspSolver = 'amsg2p' if p.isUC else 'ralg'
+        else:
+            nspSolver = self.nspSolver
+        
+        #nspSolver = 'ralg'
+        if nspSolver == 'ralg':
+            if p.isUC: p2.ftol = p.ftol / 1e16
+            else: p2.ftol = 0.0
+        else:
+            p2.ftol = 0.0
+            p2.xtol = 0.0
+            p2.gtol = 0.0
+        p2.Ftol = p.ftol
+        r2 = p2.solve(nspSolver)
         #xf = fsolve(p.f, p.x0, fprime=p.df, xtol = p.xtol, maxfev = p.maxFunEvals)
         xf = r2.xf
         p.xk = p.xf = xf

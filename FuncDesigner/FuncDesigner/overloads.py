@@ -213,7 +213,12 @@ def prod(inp, *args, **kwargs):
     return inp.prod()
 
 # Todo: implement norm_1, norm_inf etc
-norm = lambda inp: sqrt(inp**2)
+def norm(*args, **kwargs):
+    if len(kwargs) or len(args) > 1:
+        return np.norm(*args, **kwargs)
+    return sum(args[0]**2) ** 0.5
+    
+#norm = lambda inp: sqrt(inp**2)
 
 #def norm(inp, *args, **kwargs):
 #    if len(args) != 0 or len(kwargs) != 0:

@@ -48,16 +48,16 @@ class NLSP(NonLinProblem):
             # TODO: add nNaNs
 
             p.istop = self.istop
+            return p.istop
 
         ftol_init = self.ftol
         contol_init = self.contol
         
-        if self.isUC: msg_contol = '' 
-        else: msg_contol = 'and contol '
-                
+        msg_contol = '' if self.isUC else 'and contol '
+        
         def nlsp_callback(nlsp):
             # nlsp = self
-            if all(abs(asfarray(self.f(nlsp.xk))) < ftol_init)  and self.getMaxResidual(nlsp.xk) < contol_init:
+            if all(abs(asfarray(self.f(nlsp.xk))) < ftol_init)  and (self.isUC or self.getMaxResidual(nlsp.xk) < contol_init):
                 self.msg = 'solution with required ftol ' + msg_contol+ 'has been reached'
                 return (15, self.msg)
             else:
@@ -69,6 +69,7 @@ class NLSP(NonLinProblem):
         p.goal = 'min'
         #self.fEnough = self.ftol
 
+
         p.iprint = -1
 
         Multiplier = 1e16
@@ -78,7 +79,10 @@ class NLSP(NonLinProblem):
         self.gtol /= Multiplier
 
         p.show = False
-
+        
+        p.fOpt = 0.0
+        p.Ftol = p.ftol**2
+        
         r = p.solve(solver, **solver_params)
 
         #self.ftol *= Multiplier

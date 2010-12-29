@@ -89,7 +89,6 @@ for i in xrange(N):
     else:
         print i+1, 'OK'
 print 'fsolve time elapsed', time()-t
-if scipy_fsolve_failed == 0: print 'None'
 #print 'fsolve_failed number:', scipy_fsolve_failed , '(from', N, '),', 100.0*scipy_fsolve_failed / N, '%'
 print 'counters:', count1, count2, count3
 ############################################################################
@@ -99,8 +98,10 @@ print '---------- nssolve fails ---------'
 nssolve_failed, ns = 0, []
 print 'N log10(MaxResidual) MaxResidual'
 for i in xrange(N):
-    p = NLSP(f, x0, ftol = desired_ftol - noise*len(x0), noise = noise, iprint = -1, maxFunEvals = int(1e7))
-    r = p.solve('nssolve')
+    p = NLSP(f, x0, ftol = desired_ftol - noise*len(x0), iprint = -1, maxFunEvals = int(1e7))
+    #r = p.solve('nssolve')
+    r = p.solve('nlp:amsg2p')
+#    r = p.solve('nlp:amsg2p', iprint=-1)
     v = fvn(r.xf)
     ns.append(log10(v))
     if  v > desired_ftol:
@@ -109,7 +110,6 @@ for i in xrange(N):
     else:
         print i+1, 'OK'
 print 'nssolve time elapsed', time()-t
-if nssolve_failed == 0: print 'None'
 print 'nssolve_failed number:', nssolve_failed , '(from', N, '),', 100.0 * nssolve_failed / N, '%'
 print 'counters:', count1, count2, count3
 ############################################################################
@@ -121,9 +121,9 @@ try:
     from pylab import *
     subplot(2,1,1)
     grid(1)
-    title('scipy.optimize fsolve fails to achive desired ftol: '+ str(100.0*scipy_fsolve_failed / N) +'%')
+    title('scipy.optimize fsolve fails to achive desired ftol: %0.1f%%' %(100.0*scipy_fsolve_failed / N))
     xmin1, xmax1 = floor(min(fs)), ceil(max(fs))+1
-    hist(fs, arange(xmin1, xmax1), new=True)
+    hist(fs, arange(xmin1, xmax1))
     #xlabel('log10(maxResidual)')
     axvline(log10(desired_ftol), color='green', linewidth=3, ls='--')
     [ymin1, ymax1] = ylim()
@@ -131,7 +131,7 @@ try:
     ################
     subplot(2,1,2)
     grid(1)
-    title('openopt nssolve fails to achive desired ftol: '+ str(100.0*nssolve_failed / N) +'%')
+    title('openopt nssolve fails to achive desired ftol: %0.1f%%' % (100.0*nssolve_failed / N))
     xmin2, xmax2 = floor(min(ns)), ceil(max(ns))+1
     #hist(ns, 5)
     hist(ns, arange(xmin2, xmax2))
