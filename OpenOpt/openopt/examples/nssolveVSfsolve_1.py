@@ -67,7 +67,7 @@ lambda x: sinh(x[2])+x[0]-15 + noise*rand(1)+Count3()]# + (2007 * x[3:]**2).toli
 ##    df[2,2] = cosh(x[2])
 ##    return df
 
-N = 100
+N = 1000
 desired_ftol = 1e-6
 assert desired_ftol - noise*len(x0) > 1e-7
 #w/o gradient:
@@ -99,9 +99,9 @@ nssolve_failed, ns = 0, []
 print 'N log10(MaxResidual) MaxResidual'
 for i in xrange(N):
     p = NLSP(f, x0, ftol = desired_ftol - noise*len(x0), iprint = -1, maxFunEvals = int(1e7))
-    #r = p.solve('nssolve')
-    r = p.solve('nlp:amsg2p')
-#    r = p.solve('nlp:amsg2p', iprint=-1)
+    r = p.solve('nssolve')
+    #r = p.solve('nlp:amsg2p')
+    #r = p.solve('nlp:ralg')
     v = fvn(r.xf)
     ns.append(log10(v))
     if  v > desired_ftol:
