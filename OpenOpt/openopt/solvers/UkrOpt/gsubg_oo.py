@@ -230,7 +230,8 @@ class gsubg(baseSolver):
                     nVec += 1
                     normedSubGradients.append(tmp/n_tmp)
                     subGradientNorms.append(n_tmp)
-                    val = n_tmp*(1-1e-7) # to prevent small numerical errors accumulation
+                    val = ProjectionVal
+                    #val = n_tmp*(1-1e-7) # to prevent small numerical errors accumulation
                     values.append(asscalar(val))
                     normed_values.append(asscalar(val/n_tmp))# equals to 0
                     epsilons.append(asscalar((val + dot(prevIterPoint.x, tmp))/n_tmp))
@@ -367,7 +368,9 @@ class gsubg(baseSolver):
                                 
                             #p.debugmsg('g1 shift: %f' % norm(g1/norm(g1)-projection/norm(projection)))
                             g1 = projection
-                            if j == 0: Projection = projection
+                            if j == 0: 
+                                Projection = projection
+                                ProjectionVal = sum(koeffs*asfarray(ValDistances))
                             #hs = 0.4*norm(g1)
                             M = norm(koeffs, inf)
                             # TODO: remove the cycles
@@ -419,8 +422,10 @@ class gsubg(baseSolver):
                 hs_cumsum = 0
                 hs_start = hs
                 if not isinstance(g1, ndarray) or isinstance(g1, matrix):
-                    g1 = g1.A.flatten()
-                    
+                    g1 = g1.A
+                
+                g1 = g1.flatten()
+                
                 hs_mult = 4.0
                 for ls in xrange(p.maxLineSearch):
                     
