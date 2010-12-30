@@ -27,11 +27,10 @@ class ooPoint(dict):
         dict.__init__(self, items)
         
         for key, val in items:
-            assert type(val) not in [list, ndarray] or type(val[0]) != int
+            #assert type(val) not in [list, ndarray] or type(val[0]) != int
             if 'size' in key.__dict__ and type(key.size) == int and Len(val)  != key.size: 
                 s = 'incorrect size for oovar %s: %d is required, %d is obtained' % (self.name, self.size, Size)
                 raise FuncDesignerException(s)
-
         
         ooPoint._id += 1
         self._id = ooPoint._id

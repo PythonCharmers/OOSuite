@@ -322,24 +322,27 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             
             setStartVectorAndTranslators(self)
             
+            #Z = self._vector2point(zeros(self.n))
+            if len(self._fixedVars) < len(self._freeVars):
+                areFixed = lambda dep: dep.issubset(self._fixedVars)
+                Z = dict([(v, zeros_like(self._x0[v]) if v not in self._fixedVars else self._x0[v]) for v in self._x0.keys()])
+            else:
+                areFixed = lambda dep: dep.isdisjoint(self._freeVars)
+                Z = dict([(v, zeros_like(self._x0[v]) if v in self._freeVars else self._x0[v]) for v in self._x0.keys()])
+            self.theseAreFixed = areFixed
+            
             lb, ub = -inf*ones(self.n), inf*ones(self.n)
 
             # TODO: get rid of start c, h = None, use [] instead
             A, b, Aeq, beq = [], [], [], []
             
-            Z = self._vector2point(zeros(self.n))
-
+            
+            
             if type(self.constraints) not in (list, tuple, set):
                 self.constraints = [self.constraints]
             oovD = self._oovarsIndDict
             LB = {}
             UB = {}
-            
-            if len(self._fixedVars) < len(self._freeVars):
-                areFixed = lambda dep: dep.issubset(self._fixedVars)
-            else:
-                areFixed = lambda dep: dep.isdisjoint(self._freeVars)
-            self.theseAreFixed = areFixed
             
             probtol = self.contol
             
@@ -532,7 +535,7 @@ class MatrixProblem(baseProblem):
         baseProblem.__init__(self, *args, **kwargs)
         self.kernelIterFuncs = setDefaultIterFuncs('Matrix')
 
-    def __prepare__(self):
+    def _Prepare(self):
         if self.prepared == True:
             return
         baseProblem._prepare(self)
@@ -591,7 +594,7 @@ class NonLinProblem(baseProblem, nonLinFuncs, Args):
         return self.checkGradient('dh', *args,  **kwargs)
     
     def checkGradient(self, funcType, *args,  **kwargs):
-        self.__prepare__()
+        self._Prepare()
         if not DerApproximatorIsInstalled:
             self.err('To perform gradients check you should have DerApproximator installed, see http://openopt.org/DerApproximator')
         
@@ -636,7 +639,7 @@ class NonLinProblem(baseProblem, nonLinFuncs, Args):
         if self.isFDmodel:
             self.xf = self._vector2point(self.xf)
 
-    def __prepare__(self):
+    def _Prepare(self):
         baseProblem._prepare(self)
         if hasattr(self, 'solver'):
             if not self.solver.iterfcnConnected:

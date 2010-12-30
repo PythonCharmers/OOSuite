@@ -13,12 +13,12 @@ class QP(MatrixProblem):
     _optionalData = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub']
     expectedArgs = ['H', 'f']
     
-    def __prepare__(self):
+    def _Prepare(self):
         # TODO: handle cvxopt sparse matrix case here
         self.n = self.H.shape[0]
         if not hasattr(self, 'x0') or self.x0 is None or self.x0[0] == nan:
             self.x0 = zeros(self.n)
-        MatrixProblem.__prepare__(self)
+        MatrixProblem._Prepare(self)
     
     def __init__(self, *args, **kwargs):
         MatrixProblem.__init__(self, *args, **kwargs)

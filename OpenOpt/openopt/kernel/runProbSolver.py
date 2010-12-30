@@ -58,7 +58,9 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
         #return converter(solverName, *args, **kwargs)
     else:
         isConverter = False
-        if type(solver_str_or_instance) is str:
+        if solver_str_or_instance is None:
+            p.err('you should provide name of solver')
+        elif type(solver_str_or_instance) is str:
             p.solver = getSolverFromStringName(p, solver_str_or_instance)
         else: # solver_str_or_instance is oosolver
             p.solver = solver_str_or_instance
@@ -114,7 +116,7 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     if hasattr(p, 'xlabel'): p.graphics.xlabel = p.xlabel
     if p.graphics.xlabel == 'nf': p.iterValues.nf = [] # iter ObjFunc evaluation number
 
-    p.__prepare__()
+    p._Prepare()
     for fn in ['FunEvals', 'Iter', 'Time', 'CPUTime']:
         if hasattr(p,'min'+fn) and hasattr(p,'max'+fn) and getattr(p,'max'+fn) < getattr(p,'min'+fn):
             p.warn('min' + fn + ' (' + str(getattr(p,'min'+fn)) +') exceeds ' + 'max' + fn + '(' + str(getattr(p,'max'+fn)) +'), setting latter to former')

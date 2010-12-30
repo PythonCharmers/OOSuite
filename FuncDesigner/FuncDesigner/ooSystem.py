@@ -1,7 +1,8 @@
 from misc import FuncDesignerException, pWarn
 from ooFun import oofun, BaseFDConstraint, _getAllAttachedConstraints
 from ooPoint import ooPoint
-from numpy import isnan, ndarray, isfinite, asscalar, all, asarray, atleast_1d
+from numpy import isnan, ndarray, isfinite, asscalar, all, asarray, atleast_1d, array_equal
+from sle import sle
 
 class ooSystem:
     def __init__(self, *args,  **kwargs):
@@ -99,9 +100,10 @@ class ooSystem:
         #!!!!! TODO: determing LP, MILP, MINLP if possible
         try:
             import openopt
-        except:
+        except ImportError:
             raise FuncDesignerException('to perform the operation you should have openopt installed')
-            
+        
+        
         constraints = self._getAllConstraints()
             
         # TODO: mention it in doc
@@ -111,14 +113,22 @@ class ooSystem:
         isSystemOfEquations = kwargs['goal'] == 'solution'
         
         isLinear = all([(c.oofun.getOrder(freeVars, fixedVars) < 2) for c in constraints])
-        #if not isSystemOfEquations: 
-        
         
         if isSystemOfEquations:
             if isLinear: # Linear equations system
-                p = openopt.SLE(*args, **kwargs)
+                p = sle(list(kwargs['constraints']), *args, **kwargs)
             else: # Nonlinear equations system
-                p = openopt.NLSP(*args, **kwargs)
+                f = kwargs['constraints']
+                ############################################
+                if not all([array_equal(c.lb, c.ub) for c in f]):
+                    raise FuncDesignerException('Solving constrained nonlinear systems is not implemented for oosystem yet, use NLSP constructor instead')
+                kwargs['constraints'] = ()
+                ############################################
+                #raise 0
+                p = openopt.NLSP(f, *args, **kwargs)
+                if 'nlpSolver' in kwargs:
+                    p.solver = kwargs['nlpSolver']
+                    
                 
         else: # an optimization problem
             assert len(args) > 0,  'you should have objective function as 1st argument'
@@ -155,6 +165,7 @@ class ooSystem:
                     p.solver = 'ralg'
         # TODO: solver autoselect
         #if p.iprint >= 0: p.disp('The optimization problem is  ' + p.probType)
+        p._isFDmodel = lambda *args,  **kwargs: True
         return p.solve()
         
     def _getAllConstraints(self):

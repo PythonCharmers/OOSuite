@@ -17,10 +17,10 @@ class MILP(LP):
     showGoal = True
     _milp_prepared = False
     
-    def __prepare__(self):
+    def _Prepare(self):
         if self._milp_prepared: return
         self._milp_prepared = True
-        LP.__prepare__(self)
+        LP._Prepare(self)
         r = []
         if type(self.intVars) not in [list, tuple, set]:
             self.intVars = [self.intVars]

@@ -37,8 +37,8 @@ class LLAVP(MatrixProblem):
         self.xf, self.ff, self.rf = r.xf, r.ff, r.rf
         return r
 
-    def __prepare__(self):
-        MatrixProblem.__prepare__(self)
+    def _Prepare(self):
+        MatrixProblem._Prepare(self)
         if not self.damp is None and not any(isfinite(self.X)):
             self.X = zeros(self.n)
 

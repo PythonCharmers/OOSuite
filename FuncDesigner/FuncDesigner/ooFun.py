@@ -742,7 +742,7 @@ class oofun:
                 tmp = derivativeSelf[ac]
 
                 if inp in r:
-                    if isscalar(tmp) or prod(tmp.shape) <= prod(r[inp].shape) and type(r[inp]) == type(tmp) == ndarray: # some sparse matrices has no += implemented 
+                    if isscalar(tmp) or (type(r[inp]) == type(tmp) == ndarray and prod(tmp.shape) <= prod(r[inp].shape)): # some sparse matrices has no += implemented 
                         r[inp] += tmp
                     else:
                         r[inp] = r[inp] + tmp

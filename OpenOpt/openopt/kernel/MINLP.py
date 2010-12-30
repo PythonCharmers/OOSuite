@@ -16,10 +16,10 @@ class MINLP(NonLinProblem):
         NonLinProblem.__init__(self, *args, **kwargs)
         self.iprint=1
 
-    def __prepare__(self):
+    def _Prepare(self):
         if hasattr(self, 'prepared') and self.prepared == True:
             return
-        NonLinProblem.__prepare__(self)    
+        NonLinProblem._Prepare(self)    
         if self.isFDmodel:
             r = {}
             for iv in self.freeVars:

@@ -22,11 +22,11 @@ class sle:
             s = "Currently to solve SLEs via FuncDesigner you should have OpenOpt installed; maybe in future the dependence will be ceased"
             raise FuncDesignerException(s)
         
-        self.decodeArgs(*args)
+        self.decodeArgs(*args, **kwargsForOpenOptSLEconstructor)
         if 'iprint' not in kwargsForOpenOptSLEconstructor.keys():
             kwargsForOpenOptSLEconstructor['iprint'] = -1
         self.p = SLE(self.equations, self.startPoint, **kwargsForOpenOptSLEconstructor)
-        self.p.__prepare__()
+        self.p._Prepare()
         self.A, self.b = self.p.C, self.p.d
         self.decode = lambda x: self.p._vector2point(x)
         
@@ -45,7 +45,7 @@ class sle:
             r.ff = inf
         return r
             
-    def decodeArgs(self, *args):
+    def decodeArgs(self, *args, **kwargs):
         hasStartPoint = False
         for arg in args:
             if isinstance(arg, str):
@@ -55,6 +55,10 @@ class sle:
                 hasStartPoint = True
             else:
                 raise FuncDesignerException('incorrect arg type, should be string (solver name) or dict (start point)')
+                
+        if 'startPoint' in kwargs:
+            startPoint = kwargs['startPoint']
+            hasStartPoint = True
             
         if not hasStartPoint:  
             if hasattr(self, 'startPoint'): return # established from __init__

@@ -18,10 +18,10 @@ class LP(MatrixProblem):
         if len(args) > 1 and not hasattr(args[0], 'is_oovar'):
             self.err('No more than 1 argument is allowed for classic style LP constructor')
 
-    def __prepare__(self):
+    def _Prepare(self):
         if self._lp_prepared: return
         self._lp_prepared = True
-        MatrixProblem.__prepare__(self)
+        MatrixProblem._Prepare(self)
         if self.x0 is None: self.x0 = zeros(self.n)
         if hasattr(self.f, 'is_oovar'): # hence is oofun or oovar
             # freeVars and fixedVars are already rendered to both not-None here (if it's the case)
@@ -111,7 +111,7 @@ class LP(MatrixProblem):
     def get_lpsolve_handler(self, maxNameLength=255, startIndex=0):
         try: from lp_maker import lp_maker, lpsolve
         except ImportError: self.err('To export LP/MILP in files you should have lpsolve and its Python binding properly installed')
-        self.__prepare__()
+        self._Prepare()
         from ooMisc import LinConst2WholeRepr
         LinConst2WholeRepr(self)
         

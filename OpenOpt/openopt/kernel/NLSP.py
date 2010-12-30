@@ -5,6 +5,11 @@ from numpy import inf, asfarray, atleast_1d, dot, abs, ndarray
 from setDefaultIterFuncs import FVAL_IS_ENOUGH, SMALL_DELTA_F
 from nonOptMisc import getSolverFromStringName
 import NLP
+try:
+    import scipy
+    solver = 'scipy_fsolve'
+except ImportError:
+    solver = 'nssolve'
 
 class NLSP(NonLinProblem):
     _optionalData = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'c', 'h']
@@ -14,6 +19,7 @@ class NLSP(NonLinProblem):
     isObjFunValueASingleNumber = False
     showGoal = False
     expectedArgs = ['f', 'x0']
+    solver = solver
     
     def __init__(self, *args, **kwargs):
         NonLinProblem.__init__(self, *args, **kwargs)

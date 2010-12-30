@@ -19,8 +19,8 @@ class SDP(MatrixProblem):
         self.n = self.f.size
         if self.x0 is None: self.x0 = zeros(self.n)
         
-    def __prepare__(self):
-        MatrixProblem.__prepare__(self)
+    def _Prepare(self):
+        MatrixProblem._Prepare(self)
         if self.solver.__name__ in ['cvxopt_sdp', 'dsdp']:
             try:
                 from cvxopt.base import matrix

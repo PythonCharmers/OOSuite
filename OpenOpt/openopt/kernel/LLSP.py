@@ -51,10 +51,10 @@ class LLSP(MatrixProblem):
         self.xf, self.ff, self.rf = r.xf, r.ff, r.rf
         return r
 
-    def __prepare__(self):
+    def _Prepare(self):
         if isinstance(self.d, dict): # FuncDesigner startPoint 
             self.x0 = self.d
-        MatrixProblem.__prepare__(self)
+        MatrixProblem._Prepare(self)
         if self.isFDmodel:
             self.C, self.d = self._linearOOFunsToMatrices(self.C)
         if not self.damp is None and (not hasattr(self, 'X') or not any(isfinite(self.X))):

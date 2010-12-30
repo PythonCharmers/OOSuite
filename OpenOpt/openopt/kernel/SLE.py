@@ -1,6 +1,6 @@
 from ooMisc import assignScript
 from baseProblem import MatrixProblem
-from numpy import asfarray, ones, inf, dot, nan, zeros, any, all, isfinite, eye, vstack, hstack, flatnonzero, isscalar, ndarray, atleast_2d
+from numpy import asfarray, ones, inf, dot, nan, zeros, any, all, isfinite, eye, vstack, hstack, flatnonzero, isscalar, ndarray, atleast_2d, zeros_like
 from numpy.linalg import norm
 from oologfcn import OpenOptException
 import NLP
@@ -45,21 +45,27 @@ class SLE(MatrixProblem):
             r = norm(rr.toarray() - self.d, inf)
             return r
 
-    def __prepare__(self):
+    def _Prepare(self):
         if self._isPrepared: return
         self._isPrepared = True
         if isinstance(self.d, dict): # FuncDesigner startPoint 
             self.x0 = self.d
-        MatrixProblem.__prepare__(self)
+        MatrixProblem._Prepare(self)
         if self.isFDmodel:
             equations = self.C
             AsSparse = bool(self.useSparse) if type(self.useSparse) != str else self._useSparse()
             C, d = [], []
-            Z = self._vector2point(zeros(self.n))
+            if len(self._fixedVars) < len(self._freeVars):
+                Z = dict([(v, zeros_like(self._x0[v]) if v not in self._fixedVars else self._x0[v]) for v in self._x0.keys()])
+            else:
+                Z = dict([(v, zeros_like(self._x0[v]) if v in self._freeVars else self._x0[v]) for v in self._x0.keys()])
+            #Z = self.x0#self._vector2point(zeros(self.n))
+
             for lin_oofun in equations:
                 if lin_oofun.getOrder(self.freeVars, self.fixedVars) > 1:
                     raise OpenOptException('SLE constructor requires all equations to be linear')
                 C.append(self._pointDerivative2array(lin_oofun.D(Z, **self._D_kwargs), useSparse = AsSparse))
+                print C[-1]
                 d.append(-lin_oofun(Z))
                 
             self.d = hstack(d).flatten()

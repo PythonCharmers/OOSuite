@@ -12,7 +12,7 @@ class DFP(NonLinProblem):
     showGoal = False
     isObjFunValueASingleNumber = False
     
-    def __prepare__(self):
+    def _Prepare(self):
         self.X = atleast_2d(self.X)
         self.Y = array(self.Y, float)
         if self.X.shape[0] != self.Y.shape[0]:
@@ -20,7 +20,7 @@ class DFP(NonLinProblem):
                 self.err('incorrect shape of input data')
             else:
                 self.X = self.X.T
-        NonLinProblem.__prepare__(self)
+        NonLinProblem._Prepare(self)
         #if self.Y.ndim
         
         if self.userProvided.df:
