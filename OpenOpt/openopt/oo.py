@@ -362,6 +362,7 @@ def NLP(*args, **kwargs):
     unconstrained:
         scipy_bfgs, scipy_cg, scipy_ncg, 
         (these ones cannot handle user-provided gradient) scipy_powell and scipy_fmin 
+        amsg2p - requires knowing fOpt (optimal value)
     box-bounded:
         scipy_lbfgsb, scipy_tnc - require scipy installed
         bobyqa - doesn't use derivatives; requires http://openopt.org/nlopt installed
@@ -369,9 +370,10 @@ def NLP(*args, **kwargs):
     all constraints:
         ralg
         ipopt (requires ipopt + pyipopt installed)
-        scipy_slsqp (requires scipy from svn 25-Dec-2007 or later)
+        scipy_slsqp
         scipy_cobyla (this one cannot handle user-supplied gradients)
         lincher (requires CVXOPT QP solver),
+        gsubg - for large-scaled problems
         algencan (ver. 2.0.3 or more recent, very powerful constrained solver, GPL,
         requires ALGENCAN + Python interface installed,
         see http://www.ime.usp.br/~egbirgin/tango/)
@@ -398,7 +400,9 @@ def NSP(*args, **kwargs):
     Same usage as NLP (see help(NLP) and /examples/nsp_*.py), but default values of contol, xtol, ftol, diffInt may differ
     Also, default finite-differences derivatives approximation stencil is 3 instead of 1 for NLP
     Solvers available for now:
-        ralg - all constraints, medium-scale (nVars = 1...1000), can handle user-provided gradient/subgradient
+        ralg - all constraints, medium-scaled (nVars = 1...1000), can handle user-provided gradient/subgradient
+        amsg2p - requires knowing fOpt (optimal value), medium-scaled (nVars = 1...1000), can handle user-provided gradient/subgradient
+        gsubg - for large-scaled problems
         scipy_fmin - a Nelder-Mead simplex algorithm implementation, cannot handle constraints and derivatives
         sbplx  -  A variant of Nelder-Mead algorithm; requires http://openopt.org/nlopt installed
         ShorEllipsoid (unconstrained for now) - small-scale, nVars=1...10, requires r0: ||x0-x*||<=r0
