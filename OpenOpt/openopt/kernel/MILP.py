@@ -12,7 +12,6 @@ class MILP(LP):
     storeIterPoints = False
     probType = 'MILP'
     expectedArgs = ['f', 'x0']
-    goal = 'minimum'
     allowedGoals = ['minimum', 'min', 'max', 'maximum']
     showGoal = True
     _milp_prepared = False

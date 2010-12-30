@@ -7,13 +7,13 @@ import NLP
 class LP(MatrixProblem):
     _optionalData = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub']
     expectedArgs = ['f', 'x0']
-    goal = 'minimum'
     probType = 'LP'
     allowedGoals = ['minimum', 'min', 'max', 'maximum']
     showGoal = True
     _lp_prepared = False
 
     def __init__(self, *args, **kwargs):
+        self.goal = 'minimum'
         MatrixProblem.__init__(self, *args, **kwargs)
         if len(args) > 1 and not hasattr(args[0], 'is_oovar'):
             self.err('No more than 1 argument is allowed for classic style LP constructor')
@@ -48,7 +48,7 @@ class LP(MatrixProblem):
 #            self.ub = inf * ones(self.n)
         
         if self.goal in ['max', 'maximum']:
-            self.f = -self.f
+            self.f = -asfarray(self.f)
             
     # TODO: handle this and SDP finalize in single func finalize_for_max
     def __finalize__(self):
