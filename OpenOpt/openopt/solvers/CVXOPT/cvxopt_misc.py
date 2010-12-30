@@ -9,7 +9,7 @@ from numpy import asfarray, copy, array, prod
 from openopt.kernel.nonOptMisc import isspmatrix
 
 def Matrix(x):
-    if x is None or prod(x.shape) == 0: return None
+    if x is None or (hasattr(x, 'shape') and prod(x.shape) == 0): return None
     if isspmatrix(x):
         if min(x.shape) > 1:
             from scipy.sparse import find
