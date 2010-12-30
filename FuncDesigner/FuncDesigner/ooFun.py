@@ -675,7 +675,7 @@ class oofun:
                         continue
                     tmp = r[oov]
                     if useSparse == False and hasattr(tmp, 'toarray'): tmp = tmp.toarray()
-                    if not exactShape and not isspmatrix(tmp):
+                    if not exactShape and not isspmatrix(tmp) and not isscalar(tmp):
                         if tmp.size == 1: tmp = asscalar(tmp)
                         elif min(tmp.shape) == 1: tmp = tmp.flatten()
                     rr[oov] = tmp
@@ -1060,6 +1060,8 @@ class BaseFDConstraint(BooleanOOFun):
         if isinstance(args[0], str):
             self.name = args[0]
             return self
+        elif hasattr(args[0], 'xf'):
+            return self(args[0].xf)
             
         return self._getFuncCalcEngine(*args,  **kwargs)
         
