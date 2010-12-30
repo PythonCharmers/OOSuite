@@ -4,15 +4,15 @@ from numpy import asarray, ones, inf, array, iterable, sort
 
 class MINLP(NonLinProblem):
     _optionalData = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'c', 'h', 'discreteVars']
-    goal = 'minimum'
     probType = 'MINLP'
     allowedGoals = ['minimum', 'min', 'maximum', 'max']
     showGoal = True
     plotOnlyCurrentMinimum = True
-    discreteVars = {}
     discrtol = 1e-5 # tolerance required for discrete constraints 
     expectedArgs = ['f', 'x0']
     def __init__(self, *args, **kwargs):
+        self.goal = 'minimum'
+        self.discreteVars = {}
         NonLinProblem.__init__(self, *args, **kwargs)
         self.iprint=1
 
