@@ -18,7 +18,8 @@ startPoint = {x:8, y:15, z:80, t:-0.5}
 # (at least currently) total number of unknown variables have to match total number of equations m_1 + ... + m+k
 
 # fixedVars and freeVars are optional parameters and can be omitted (that means all variables are unknown)
-# if we set fixedVars=t then FuncDesigner will solve the system as linear (possibly as sparse linear),
+# if we set fixedVars=t then FuncDesigner will solve the system as linear 
+# (sometimes autoselect involve as sparse matrices, you can overwrite it via useSparse = True/False),
 # if we set fixedVars=(other variable) then FuncDesigner will solve the system as nonlinear
 fixedVars=x
 
