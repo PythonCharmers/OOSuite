@@ -15,8 +15,8 @@ f = [2*a + 3*b - 2*(c+[1, 2]) * [3, 4] + 5, # R^nVars - > R^2
      a+4*b+2*c.sum()-45# R^nVars - > R
      ]  
 # Alternatively, you could pass equations:
-# f = [(2*a + 3*b - 2*(c+[1, 2]) * [3, 4]).eq(-5), 
-#            (2*a+15).eq(-13*b), a.eq(-4*b-2*c.sum()+45)]
+# f = [2*a + 3*b - 2*(c+[1, 2]) * [3, 4]==-5, 
+#            2*a+15==-13*b, a==-4*b-2*c.sum()+45]
 
 # Assign SLE
 linSys = sle(f)

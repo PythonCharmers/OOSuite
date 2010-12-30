@@ -29,7 +29,7 @@ f4 = dot(R, f4) # involve matrix multiplication
 # Create Python list of linear equations 
 f = [a+f4+5, 2*a+b*range(10, n+10)+15, a+4*b.sum()+2*c.sum()-45]
 # alternatively, you could pass equations:
-#f = [(a+f4).eq(-5), (2*a+b).eq(-15), a.eq(-4*b.sum()-2*c.sum()+45)]
+f = [a+f4==-5, 2*a+b==-15, a==-4*b.sum()-2*c.sum()+45]
 
 linSys = sle(f)
 r = linSys.solve()

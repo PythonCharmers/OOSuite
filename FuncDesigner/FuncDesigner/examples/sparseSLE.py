@@ -18,7 +18,7 @@ f4 = c + range(4, 2*n+4) + 4*f3
 
 f = [a+f4+5, 2*a+b*range(10, n+10)+15, a+4*b.sum()+2*c.sum()-45]
 # alternatively, you could pass equations:
-#f = [(a+f4).eq(-5), (2*a+b).eq(-15), a.eq(-4*b.sum()-2*c.sum()+45)]
+#f = [a+f4==-5, 2*a+b==-15, a==-4*b.sum()-2*c.sum()+45]
 linSys = sle(f)
 
 r = linSys.solve() # i.e. using autoselect - solver numpy.linalg.solve for dense (for current numpy 1.4 it's LAPACK dgesv)
