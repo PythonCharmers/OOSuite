@@ -65,7 +65,7 @@ for j, solver in enumerate(solvers):
     p.constraints = [c1<0,  c2<0,  h1.eq(0),  h2.eq(0), x > lb, x< ub]
     #p.constraints = h1.eq(0)
     
-    #p.__prepare__()
+    #p._Prepare()
     #print p.dc(p.x0)
     #print h1.D(startPoint)
     #print h2.D(startPoint)

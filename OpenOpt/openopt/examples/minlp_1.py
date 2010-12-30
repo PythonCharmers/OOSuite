@@ -37,8 +37,8 @@ p.contol = 1.1e-6
 p.name = 'minlp_1'
 
 # required field: nlpSolver - should be capable of handling box-bounds at least
-nlpSolver = 'ralg' 
-#nlpSolver = 'ipopt'
+#nlpSolver = 'ralg' 
+nlpSolver = 'ipopt'
 
 # coords of discrete variables and sets of allowed values
 p.discreteVars = {7:range(3, 10), 8:range(3, 10), 9:[2, 3.1, 9]}
@@ -53,6 +53,6 @@ p.discrtol = 1.1e-5
 # p.maxTime = 15
 # p.maxCPUTime = 15
 
-r = p.solve('branb', nlpSolver=nlpSolver, plot = True)
+r = p.solve('branb', nlpSolver=nlpSolver, plot = False)
 # optim point and value are r.xf and r.ff,
 # see http://openopt.org/OOFrameworkDoc#Result_structure for more details

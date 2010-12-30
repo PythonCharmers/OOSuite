@@ -83,7 +83,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
     ftol = 1e-6
     contol = 1e-6
     
-    Ftol = None
+    fTol = None
 
     minIter = 0
     minFunEvals = 0

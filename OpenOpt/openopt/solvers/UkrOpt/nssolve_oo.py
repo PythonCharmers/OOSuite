@@ -108,9 +108,9 @@ class nssolve(baseSolver):
             p2.xtol = 0.0
             p2.gtol = 0.0
         if use2:
-            p2.Ftol = p.ftol ** 2
+            p2.fTol = p.ftol ** 2
         else:
-            p2.Ftol = p.ftol
+            p2.fTol = p.ftol
         r2 = p2.solve(nspSolver)
         #xf = fsolve(p.f, p.x0, fprime=p.df, xtol = p.xtol, maxfev = p.maxFunEvals)
         xf = r2.xf

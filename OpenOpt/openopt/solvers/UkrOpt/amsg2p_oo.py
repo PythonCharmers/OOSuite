@@ -31,20 +31,20 @@ class amsg2p(baseSolver):
             else:
                 p.warn("you haven't provided optimal value fOpt for the solver %s; fEnough = %0.2e will be used instead" %(self.__name__, p.fEnough))
                 p.fOpt = p.fEnough
-        if p.Ftol is None: 
+        if p.fTol is None: 
             s = '''
-            the solver %s requires providing required objective function tolerance Ftol
+            the solver %s requires providing required objective function tolerance fTol
             15*ftol = %0.1e will be used instead
             ''' % (self.__name__, p.ftol)
             p.pWarn(s)
-            Ftol = 15*p.ftol
-        else: Ftol = p.Ftol
+            fTol = 15*p.ftol
+        else: fTol = p.fTol
         
         def itefcn(*args, **kwargs):
             p.iterfcn(*args, **kwargs)
             return p.istop
-        
-        x, itn = Solver(p.f, p.df, p.x0, Ftol, p.fOpt, self.gamma, itefcn)
-        if p.f(x) < p.fOpt + Ftol:
+        x, itn = Solver(p.f, p.df, p.x0, fTol, p.fOpt, self.gamma, itefcn)
+
+        if p.f(x) < p.fOpt + fTol:
             p.istop = 10
         #p.iterfcn(x)

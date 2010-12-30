@@ -1,4 +1,4 @@
-from openopt import NLP
+from openopt import *
 from numpy import cos, arange, ones, asarray, abs, zeros, sqrt, asscalar, inf
 from pylab import legend, show, plot, subplot, xlabel, subplots_adjust
 from string import rjust, ljust, expandtabs, center, lower
@@ -26,11 +26,12 @@ gtol=1e-6
 ftol = 1e-6
 diffInt = 1e-8
 contol = 1e-6
+xtol = 1e-9
 maxFunEvals = 1e6
-maxTime = 10
+maxTime = 1000
 Xlabel = 'time'
 PLOT = 1
-colors = ['b', 'k', 'y', 'g', 'r', 'm', 'c']
+colors = ['k', 'r', 'b', 'g', 'r', 'm', 'c']
 
 ###############################################################
 solvers = ['ralg', 'scipy_cobyla', 'lincher', 'scipy_slsqp', 'ipopt','algencan']
@@ -40,13 +41,25 @@ solvers = ['ralg', 'scipy_cobyla', 'lincher', 'scipy_slsqp', 'ipopt']
 #solvers = ['ipopt','ralg', 'algencan']
 #solvers = ['ralg', 'scipy_cobyla']
 #solvers = ['ralg']
+solvers = ['gsubg', 'ralg', 'scipy_cobyla']
+solvers = ['gsubg', 'ipopt']
+#solvers = ['gsubg', 'ipopt', 'scipy_cg']
+#solvers = ['ipopt']*3
+#solvers = ['ipopt']
+solvers = [oosolver('gsubg', dilation = False)]
 #lb = [-1]*N
 ###############################################################
 
 lines, results = [], {}
-for j, solver in enumerate(solvers):
-    p = NLP(ff, x0, xlabel = Xlabel, c=c, h=h,  lb = lb, ub = ub, gtol=gtol, diffInt = diffInt, ftol = ftol, maxIter = 1390, plot = PLOT, color = colors[j], iprint = 10, df_iter = 4, legend = solver, show=False,  contol = contol,  maxTime = maxTime,  maxFunEvals = maxFunEvals, name='NLP_bench_1')
+legends = solvers
 
+h = None
+
+for j, solver in enumerate(solvers):
+    p = NLP(ff, x0, xlabel = Xlabel, c=c, h=h,  lb = lb, ub = ub, gtol=gtol, xtol = xtol, diffInt = diffInt, ftol = ftol, fTol = 1e-1, 
+            maxIter = 1390, plot = PLOT, color = colors[j], iprint = 1, df_iter = 4, legend = solver, show=False,  
+            contol = contol,  maxTime = maxTime,  maxFunEvals = maxFunEvals, name='NLP_bench_1')
+    p.legend = legends[j]
 
     if solver =='algencan':
         p.gtol = 1e-2
@@ -71,7 +84,7 @@ for j, solver in enumerate(solvers):
 if PLOT:
     for i in range(2):
         subplot(2,1,i+1)
-        legend(lines, solvers)
+        legend(lines, legends)
 
     subplots_adjust(bottom=0.2, hspace=0.3)
 

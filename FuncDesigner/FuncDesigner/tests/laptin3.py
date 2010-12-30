@@ -20,7 +20,7 @@ F_Opt = Sigma*(Lambda/Delta - 1);
 
 S = oosystem(F0) 
 S &= (F1<0,  F2<0)
-r = S.minimize(F0, {X:cos(arange(nVar))}, iprint=10, ftol = 1e-10, Ftol = 0.001, manage=True, maxFunEvals = 1e9, 
+r = S.minimize(F0, {X:cos(arange(nVar))}, iprint=10, ftol = 1e-10, fTol = 0.001, manage=True, maxFunEvals = 1e9, 
                                  xtol = 1e-8, T='float128', maxIter = 1e5, contol=1e-12, solver='gsubg')
 print('Obtained objfunc result: %f   Theoretical: %f' % (F0(r), F_Opt))
 

@@ -20,7 +20,7 @@ for i in xrange(5):
         A[i,j] = -8+sin(8*i) + cos(15*j)
     b[i] = -150 + 80*sin(80*i)
 
-p = MILP(f=f, lb=lb, ub=ub, A=A, b=b, intVars=intVars)
+p = MILP(f=f, lb=lb, ub=ub, A=A, b=b, intVars=intVars, goal='max')
 #r = p.solve('lpSolve')
 r = p.solve('glpk')
 print 'f_opt:', r.ff # 25.801450769161505

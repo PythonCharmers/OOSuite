@@ -21,7 +21,7 @@ solvers = [oosolver('gsubg', addASG = True)]
 for solver in solvers:
     p = NSP(f, startPoint, maxIter = 10000, maxTime = 15000, maxFunEvals=1e7)
     p.fEnough = 1.5e1
-    p.Ftol = 1.0e1
+    p.fTol = 1.0e1
     #p.constraints = (y > 5)(tol=1e-4) #x>1e-1 #[2*y<sin(arange(N))]
     #r = p.solve(solver, iprint=10, xtol = 1e-36, ftol = 1e-16, show = solver == solvers[-1])
     r = p.solve(solver, iprint=10, xtol = 1e-16, ftol = 1e-6, show = solver == solvers[-1])

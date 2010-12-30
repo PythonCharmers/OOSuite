@@ -67,7 +67,7 @@ for i, solver in enumerate(solvers):
     p = NSP(f, startPoint, maxIter = 300, name = 'ns' + str(N+K), maxTime = 15000, maxFunEvals=1e7, color = Colors[i])
     #p.constraints = y>-100
     p.fEnough = 1.0e-1#e-1
-    p.Ftol = 0.5e-1
+    p.fTol = 0.5e-1
     p.debug = 1
     #p.constraints = (y > 5)(tol=1e-4) #x>1e-1 #[2*y<sin(arange(N))]
     #r = p.manage(solver, iprint=10, xtol = 1e-9, ftol = 1e-9, show = solver == solvers[-1], maxIter = 10000)

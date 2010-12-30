@@ -87,7 +87,7 @@ class NLSP(NonLinProblem):
         p.show = False
         
         p.fOpt = 0.0
-        p.Ftol = p.ftol**2
+        p.fTol = p.ftol**2
         
         r = p.solve(solver, **solver_params)
 

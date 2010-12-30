@@ -35,12 +35,12 @@ f4 = ifThenElse(phi[4]>f3, phi[4], f3)
 obj = y + ifThenElse(f4-y>0, f4-y, 0)
 startPoint = {x: ones(n), y:1}
 
-solvers = ['ralg']
+solvers = ['ralg', 'amsg2p', 'gsubg']
 Colors = ['r', 'k','b']
 
 for i, solver in enumerate(solvers):
     p = NSP(obj, startPoint, maxIter = 17000, name = 'rjevsky2 (nVars: ' + str(n)+')', maxTime = 300, maxFunEvals=1e7, color = Colors[i])
-    p.Ftol = 0.5e-12
+    p.fTol = 0.5e-12
     p.fEnough = -0.84140833459
     r = p.solve(solver, iprint=10, ftol = 1e-15, xtol = 1e-12, show = solver == solvers[-1], plot = 0)
 '''
@@ -54,7 +54,7 @@ solver: gsubg   problem: rjevsky2 (nVars: 10)    type: NSP   goal: minimum
    40  -8.414e-01 
    50  -8.414e-01 
    53  -8.414e-01 
-istop: 16 (optimal solution wrt required Ftol has been obtained)
+istop: 16 (optimal solution wrt required fTol has been obtained)
 Solver:   Time Elapsed = 4.55 	CPU Time Elapsed = 4.54
 objFunValue: -0.84138193
 (theoretical:  -0.841408334596)

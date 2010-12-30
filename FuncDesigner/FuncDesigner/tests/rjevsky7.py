@@ -4,28 +4,36 @@ from openopt import NSP, oosolver
 from FuncDesigner import *
 
 n = 30
-x = oovar()
+x = oovars(n+2)
 
-obj = sum([((0.0016+(x[k+1]-x[k])**2)/(0.04*(k+1)))**0.5 for k in range(n)])
+obj = sum([((0.0016+(x[k+1]-x[k])**2)/(0.04*(k+1)))**0.5 for k in range(n+1)])
 
 
 
 #startPoint = {x: zeros(n+1)}
-startPoint = {x: cos(arange(n+1))}
+#startPoint = {x: cos(arange(n+1))}
+X = [0]
+for k in range(n+1):
+    X.append(X[-1]+0.04*((0.0099099*(k+1))/(1-0.0099099*(k+1)))**0.5)
+    
+T_optPoint = dict([(x[i], X[i]) for i in range(n+2)])
+startPoint = dict([(x[i], 0) for i in range(n+2)])
+startPoint[x[-1]] = X[-1]
 
 #solvers = [gsubg, 'ralg', 'ipopt']
 solvers = ['gsubg']
+#solvers = ['ralg']
 #1.9170260356219775
 Colors = ['r', 'k','b']
 
 lines = []
 for i, solver in enumerate(solvers):
-    p = NSP(obj, startPoint, maxIter = 2000, name = 'rjevsky7 (nVars: ' + str(n)+')', maxTime = 300, maxFunEvals=1e7, color = Colors[i])
+    p = NSP(obj, startPoint, fixedVars=(x[0], x[-1]), maxIter = 2000, name = 'rjevsky7 (nVars: ' + str(n)+')', maxTime = 3000, maxFunEvals=1e7, color = Colors[i])
     p._prepare()
     p.c=None
-    p.fEnough = 1.91703
-    p.Ftol = 0.5e-6
-    r = p.manage(solver, iprint=10, xtol = 1e-9, ftol = 1e-16, gtol = 1e-10, debug=0, show = solver == solvers[-1], plot = 0)
+    p.fEnough = 2.08983385058799+4e-10
+    p.fTol = 0.5e-10
+    r = p.solve(solver, iprint=10, xtol = 1e-10, ftol = 1e-16, gtol = 1e-10, debug=0, show = solver == solvers[-1], plot = 0)
 '''
 --------------------------------------------------
 solver: gsubg   problem: rjevsky6 (nVars: 30)    type: NSP   goal: minimum
@@ -43,7 +51,7 @@ OpenOpt Warning: Handling of constraints is not implemented properly for the sol
    90  1.917e+00                   -100.00 
   100  1.917e+00                   -100.00 
   110  1.917e+00                   -100.00 
-istop: 16 (optimal solution wrt required Ftol has been obtained)
+istop: 16 (optimal solution wrt required fTol has been obtained)
 Solver:   Time Elapsed = 33.1 	CPU Time Elapsed = 29.28
 objFunValue: 1.9171393 (feasible, max(residuals/requiredTolerances) = 0)
 (theoretical:  2.08 - difference is due to unclear task description)

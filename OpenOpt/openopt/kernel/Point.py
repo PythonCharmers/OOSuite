@@ -182,7 +182,7 @@ class Point:
                     
                     # not "+="!!!!! Else some problems with array shapes can occur
                     #print self.f()-bestFeasiblePoint.f()
-#                    val = val + max((0, self.f()-bestFeasiblePoint.f())) * p.contol / p.Ftol 
+#                    val = val + max((0, self.f()-bestFeasiblePoint.f())) * p.contol / p.fTol 
                     pass
 
                 self._mr_alt, self._mrName_alt,  self._mrInd_alt = val, 'all active', 0
@@ -277,15 +277,15 @@ class Point:
             mr, point2compareResidual =  self.mr(), point2compare.mr()
         
 #        if altLinInEq and bestFeasiblePoint is not None and isfinite(self.f()) and isfinite(point2compare.f()):
-#            Ftol = self.p.Ftol
-#            mr += (self.f()  - bestFeasiblePoint.f() + Ftol) *contol / Ftol
-#            point2compareResidual += (point2compare.f() - bestFeasiblePoint.f()+Ftol) *contol / Ftol
-#            mr += max((0, self.f()  - bestFeasiblePoint.f())) *contol/ Ftol
-#            point2compareResidual += max((0, point2compare.f() - bestFeasiblePoint.f())) *contol/ Ftol
+#            fTol = self.p.fTol
+#            mr += (self.f()  - bestFeasiblePoint.f() + fTol) *contol / fTol
+#            point2compareResidual += (point2compare.f() - bestFeasiblePoint.f()+fTol) *contol / fTol
+#            mr += max((0, self.f()  - bestFeasiblePoint.f())) *contol/ fTol
+#            point2compareResidual += max((0, point2compare.f() - bestFeasiblePoint.f())) *contol/ fTol
 #            assert self.f() >= bestFeasiblePoint.f()
 #            assert point2compare.f() >= bestFeasiblePoint.f()
-#            mr += (self.f()  - bestFeasiblePoint.f()) / Ftol
-#            point2compareResidual += (point2compare.f() - bestFeasiblePoint.f()) / Ftol
+#            mr += (self.f()  - bestFeasiblePoint.f()) / fTol
+#            point2compareResidual += (point2compare.f() - bestFeasiblePoint.f()) / fTol
         criticalResidualValue = max((contol, point2compareResidual))
         self_nNaNs, point2compare_nNaNs = self.nNaNs(), point2compare.nNaNs()
 
@@ -618,13 +618,13 @@ class Point:
             
 #            print 'currBestFeasPoint is not None:', (currBestFeasPoint is not None), 'self.f() > currBestFeasPoint.f():', self.f() > currBestFeasPoint.f()
 
-            contol, Ftol = self.p.contol, self.p.Ftol
-#            print self.f(),  currBestFeasPoint.f(), self.f() - Ftol ==  currBestFeasPoint.f()
+            contol, fTol = self.p.contol, self.p.fTol
+#            print self.f(),  currBestFeasPoint.f(), self.f() - fTol ==  currBestFeasPoint.f()
             
-            if currBestFeasPoint is not None and self.f() + 0.25*Ftol > currBestFeasPoint.f():
+            if currBestFeasPoint is not None and self.f() + 0.25*fTol > currBestFeasPoint.f():
                 
-                #self.direction += ((self.f()-currBestFeasPoint.f())  * p.contol / nDF / Ftol) * DF
-#                self.direction += self.df() * (contol/Ftol)       
+                #self.direction += ((self.f()-currBestFeasPoint.f())  * p.contol / nDF / fTol) * DF
+#                self.direction += self.df() * (contol/fTol)       
                 pass
                     
             return self.direction.copy() # it may be modified in ralg when some constraints coords are NaN

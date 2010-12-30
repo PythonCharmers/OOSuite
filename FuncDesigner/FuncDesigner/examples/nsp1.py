@@ -12,12 +12,14 @@ N = 75
 koeffs = arange(1, N+1) ** 1.2
 
 f = (abs(x) * koeffs).sum() + abs(y-15) + abs(y+15) + y**2
-
+f /= 1e2
 startPoint = {x: cos(1+arange(N)), y:80}
 
 p = NSP(f, startPoint, maxIter = 1e5)
 
-r = p.solve('ralg')
+#r = p.solve('ralg')
+p.fTol = 1.0
+r = p.manage('gsubg', zhurb = 150, xtol = 1e-17, ftol = 1e-17, maxFunEvals = 1e9)
 x_opt, y_opt = r(x, y)
 print(max(abs(x_opt)), y_opt)
 """

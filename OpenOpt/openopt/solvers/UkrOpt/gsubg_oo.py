@@ -116,14 +116,14 @@ class gsubg(baseSolver):
         HS = []
         LS = []
         
-        # TODO: add possibility to handle f_opt if known instead of Ftol
-        #Ftol = 1.0
-        if p.Ftol is None:
-            p.warn("""The solver requres user-supplied Ftol (objective function tolerance); 
+        # TODO: add possibility to handle f_opt if known instead of fTol
+        #fTol = 1.0
+        if p.fTol is None:
+            p.warn("""The solver requres user-supplied fTol (objective function tolerance); 
             since you have not provided it value, 15*ftol = %0.1e will be used""" % (15*p.ftol))
-            p.Ftol = 15 * p.ftol
-        Ftol_start = p.Ftol/2.0
-        Ftol = Ftol_start
+            p.fTol = 15 * p.ftol
+        fTol_start = p.fTol/2.0
+        fTol = fTol_start
         
         subGradientNorms, points, values, isConstraint, epsilons, inactive, normedSubGradients, normed_values = [], [], [], [], [], [], [], []
         StoredInfo = [subGradientNorms, points, values, isConstraint, epsilons, inactive, normedSubGradients, normed_values]
@@ -147,7 +147,7 @@ class gsubg(baseSolver):
                 ns += 1
                 nAddedVectors = 0
                 projection = None
-                F0 = asscalar(bestFeasiblePoint.f() - Ftol_start) if bestFeasiblePoint is not None else nan
+                F0 = asscalar(bestFeasiblePoint.f() - fTol_start) if bestFeasiblePoint is not None else nan
                 
                 #iterStartPoint = prevIter_best_ls_point
                 if bestPointBeforeTurn is None:
@@ -312,9 +312,9 @@ class gsubg(baseSolver):
                 m = len(indActive)
                 product = None
 
-                #print('Ftol: %f   m: %d   ns: %d' %(Ftol, m, ns))
+                #print('fTol: %f   m: %d   ns: %d' %(fTol, m, ns))
                 #raise 0
-                if p.debug: p.debugmsg('Ftol: %f     ns: %d' %(Ftol, ns))
+                if p.debug: p.debugmsg('fTol: %f     ns: %d' %(fTol, ns))
                 Projection = None
                 if nVec > 1:
                     normalizedSubGradients = asfarray(normedSubGradients)
@@ -325,7 +325,7 @@ class gsubg(baseSolver):
                     #maxQPshoutouts = 1
                     
                     for j in range(maxQPshoutouts if bestFeasiblePoint is not None else 1):
-                        F = asscalar(bestFeasiblePoint.f() - Ftol * 5**j) if bestFeasiblePoint is not None else nan
+                        F = asscalar(bestFeasiblePoint.f() - fTol * 5**j) if bestFeasiblePoint is not None else nan
                         valDistances2_modified = asfarray([(0 if isConstraint[i] else -F) for i in range(nVec)]) / asfarray(subGradientNorms)
                         ValDistances = valDistances +  valDistances2_modified - valDistances2
                         
@@ -363,7 +363,7 @@ class gsubg(baseSolver):
                             threshold = 1e-9 # for to prevent small numerical issues
                             if j == 0 and any(dot(normalizedSubGradients, projection) < ValDistances * (1-threshold*sign(ValDistances)) - threshold):
                                 p.istop = 16
-                                p.msg = 'optimal solution wrt required Ftol has been obtained'
+                                p.msg = 'optimal solution wrt required fTol has been obtained'
                                 return
                                 
                             #p.debugmsg('g1 shift: %f' % norm(g1/norm(g1)-projection/norm(projection)))
@@ -478,16 +478,16 @@ class gsubg(baseSolver):
                 p.debugmsg('ls_forward: %d' %ls)
                 """                          Backward line search                          """
                 maxLS = 500 #if ls == 0 else 5
-                maxDeltaF = p.ftol / 16.0#Ftol/4.0 #p.ftol / 16.0
+                maxDeltaF = p.ftol / 16.0#fTol/4.0 #p.ftol / 16.0
                 maxDeltaX = p.xtol / 2.0 #if m < 2 else hs / 16.0#Xdist/16.0
                 
                 ls_backward = 0
                     
                 #DEBUG
-#                print '!!!!1:', isPointCovered(oldoldPoint, newPoint, bestFeasiblePoint, Ftol), '<<<'
-#                print '!!!!2:', isPointCovered(newPoint, oldoldPoint, bestFeasiblePoint, Ftol), '<<<'
-#                print '!!!!3:', isPointCovered(iterStartPoint, newPoint, bestFeasiblePoint, Ftol), '<<<'
-#                print '!!!!4:', isPointCovered(newPoint, iterStartPoint, bestFeasiblePoint, Ftol), '<<<'
+#                print '!!!!1:', isPointCovered(oldoldPoint, newPoint, bestFeasiblePoint, fTol), '<<<'
+#                print '!!!!2:', isPointCovered(newPoint, oldoldPoint, bestFeasiblePoint, fTol), '<<<'
+#                print '!!!!3:', isPointCovered(iterStartPoint, newPoint, bestFeasiblePoint, fTol), '<<<'
+#                print '!!!!4:', isPointCovered(newPoint, iterStartPoint, bestFeasiblePoint, fTol), '<<<'
 #                raise 0
                 #DEBUG END
                 
@@ -495,7 +495,7 @@ class gsubg(baseSolver):
                 maxRecNum = 400#4+int(log2(norm(oldoldPoint.x-newPoint.x)/p.xtol)) 
                 #assert dot(oldoldPoint.df(), newPoint.df()) < 0
                 #assert sign(dot(oldoldPoint.df(), g1)) != sign(dot(newPoint.df(), g1))
-                point1, point2, nLSBackward = LocalizedSearch(oldoldPoint, newPoint, bestFeasiblePoint, Ftol, p, maxRecNum, self.approach)
+                point1, point2, nLSBackward = LocalizedSearch(oldoldPoint, newPoint, bestFeasiblePoint, fTol, p, maxRecNum, self.approach)
                 
                 
                 #assert sign(dot(point1.df(), g1)) != sign(dot(point2.df(), g1))
@@ -535,11 +535,11 @@ class gsubg(baseSolver):
     #            print 'ls_backward', ls_backward
 
     #            if ls_backward < -4:
-    #                Ftol /= 2.0
+    #                fTol /= 2.0
     #            elif ls > 4:
-    #                Ftol *= 2.0
+    #                fTol *= 2.0
     #                
-    #            print 'Ftol:', Ftol
+    #            print 'fTol:', fTol
                 
                 """                                 Updating hs                                 """
                 step_x = p.norm(best_ls_point.x - prevIter_best_ls_point.x)
@@ -633,7 +633,7 @@ class gsubg(baseSolver):
 #                        iterStartPoint = best_ls_point_with_start
 #                        
 #                        assert p.isUC
-#                        if iterStartPoint.f() - best_ls_point_with_start.f() > Ftol :                        
+#                        if iterStartPoint.f() - best_ls_point_with_start.f() > fTol :                        
 #                            break
 
 #                    else:
@@ -727,12 +727,12 @@ class gsubg(baseSolver):
                     #p.iterfcn(bestPoint)
                     return
 
-isPointCovered2 = lambda pointWithSubGradient, pointToCheck, bestFeasiblePoint, Ftol, contol:\
-    pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.75*Ftol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df())
+isPointCovered2 = lambda pointWithSubGradient, pointToCheck, bestFeasiblePoint, fTol, contol:\
+    pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.75*fTol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df())
 
-def isPointCovered3(pointWithSubGradient, pointToCheck, bestFeasiblePoint, Ftol, contol):
+def isPointCovered3(pointWithSubGradient, pointToCheck, bestFeasiblePoint, fTol, contol):
     if bestFeasiblePoint is not None \
-    and pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.75*Ftol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df()):
+    and pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.75*fTol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df()):
         return True
     if not pointWithSubGradient.isFeas(True) and \
     pointWithSubGradient.mr_alt(bestFeasPoint = bestFeasiblePoint) + 1e-15 > \
@@ -740,24 +740,24 @@ def isPointCovered3(pointWithSubGradient, pointToCheck, bestFeasiblePoint, Ftol,
         return True
     return False
 
-def isPointCovered4(pointWithSubGradient, pointToCheck, bestFeasiblePoint, Ftol, contol):
+def isPointCovered4(pointWithSubGradient, pointToCheck, bestFeasiblePoint, fTol, contol):
     #print 'isFeas:', pointWithSubGradient.isFeas(True)
     
 #    if pointWithSubGradient.sum_of_all_active_constraints() != 0 and any(pointWithSubGradient.sum_of_all_active_constraints_gradient()):
 #        return pointWithSubGradient.sum_of_all_active_constraints() + 0.75*contol > \
 #            dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.sum_of_all_active_constraints_gradient())
 #    
-#    return pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.75*Ftol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df()) 
+#    return pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.75*fTol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df()) 
     
 ##############################
     if pointWithSubGradient.isFeas(True):
         # assert bestFeasiblePoint is not None 
-        return pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.75*Ftol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df()) 
+        return pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.75*fTol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df()) 
     
     elif pointWithSubGradient.sum_of_all_active_constraints() + 0.75*contol > \
     dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.sum_of_all_active_constraints_gradient()):
         return True
-        #return pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.75*Ftol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df()) 
+        #return pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.75*fTol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df()) 
     return False
     
 #    return pointWithSubGradient.mr_alt(bestFeasiblePoint = bestFeasiblePoint) + 0.25*contol > \
@@ -765,14 +765,14 @@ def isPointCovered4(pointWithSubGradient, pointToCheck, bestFeasiblePoint, Ftol,
 ######################
 #    
 #    if bestFeasiblePoint is not None \
-#    and pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.75*Ftol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df()): return True
+#    and pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.75*fTol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df()): return True
 #    
 #    return pointWithSubGradient.mr_alt(bestFeasiblePoint = bestFeasiblePoint) + 0.25*contol > \
 #            dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient._getDirection('all active', currBestFeasPoint = bestFeasiblePoint))
 ######################
 #    isFeas = pointWithSubGradient.isFeas(True)
 #    if isFeas:
-#        return pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.75*Ftol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df())
+#        return pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.75*fTol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df())
 #    else:
 #        return pointWithSubGradient.mr_alt(bestFeasiblePoint = bestFeasiblePoint) + 0.25*contol > \
 #            dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient._getDirection('all active', currBestFeasPoint = bestFeasiblePoint))
@@ -781,7 +781,7 @@ def isPointCovered4(pointWithSubGradient, pointToCheck, bestFeasiblePoint, Ftol,
 #            dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient._getDirection('all active', currBestFeasPoint = bestFeasiblePoint)) \
 #            if not pointWithSubGradient.isFeas(True) else True
 #    
-#    isCoveredByObjective = pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.75*Ftol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df())\
+#    isCoveredByObjective = pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.75*fTol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df())\
 #    if bestFeasiblePoint is not None else True
 #    
 #    return isCoveredByConstraints and isCoveredByObjective
@@ -791,7 +791,7 @@ def isPointCovered4(pointWithSubGradient, pointToCheck, bestFeasiblePoint, Ftol,
 #            dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient._getDirection('all active', currBestFeasPoint = bestFeasiblePoint)) else False
 #            #, currBestFeasPoint = bestFeasiblePoint)):
 #        
-#    if pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.75*Ftol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df()):
+#    if pointWithSubGradient.f() - bestFeasiblePoint.f() + 0.75*fTol > dot(pointWithSubGradient.x - pointToCheck.x, pointWithSubGradient.df()):
 #        # if pointWithSubGradient is feas (i.e. not 1st case) than bestFeasiblePoint is not None
 #        return True
 #        
@@ -799,7 +799,7 @@ def isPointCovered4(pointWithSubGradient, pointToCheck, bestFeasiblePoint, Ftol,
 
 isPointCovered = isPointCovered4
 
-def LocalizedSearch(point1, point2, bestFeasiblePoint, Ftol, p, maxRecNum, approach):
+def LocalizedSearch(point1, point2, bestFeasiblePoint, fTol, p, maxRecNum, approach):
 #    bestFeasiblePoint = None
     contol = p.contol
     for i in range(maxRecNum):
@@ -808,12 +808,12 @@ def LocalizedSearch(point1, point2, bestFeasiblePoint, Ftol, p, maxRecNum, appro
 
         new = 0
         if new:
-            if point1.betterThan(point2, altLinInEq=True, bestFeasiblePoint = bestFeasiblePoint) and isPointCovered(point2, point1, bestFeasiblePoint, Ftol) \
-            or point2.betterThan(point1, altLinInEq=True, bestFeasiblePoint = bestFeasiblePoint) and isPointCovered(point1, point2, bestFeasiblePoint, Ftol):
+            if point1.betterThan(point2, altLinInEq=True, bestFeasiblePoint = bestFeasiblePoint) and isPointCovered(point2, point1, bestFeasiblePoint, fTol) \
+            or point2.betterThan(point1, altLinInEq=True, bestFeasiblePoint = bestFeasiblePoint) and isPointCovered(point1, point2, bestFeasiblePoint, fTol):
                 break
         else:
-            isPoint1Covered = isPointCovered(point2, point1, bestFeasiblePoint, Ftol, contol)
-            isPoint2Covered = isPointCovered(point1, point2, bestFeasiblePoint, Ftol, contol)
+            isPoint1Covered = isPointCovered(point2, point1, bestFeasiblePoint, fTol, contol)
+            isPoint2Covered = isPointCovered(point1, point2, bestFeasiblePoint, fTol, contol)
             #print 'isPoint1Covered:', isPoint1Covered, 'isPoint2Covered:', isPoint2Covered
             if isPoint1Covered and isPoint2Covered:# and i != 0:
                 break
