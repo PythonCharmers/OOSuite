@@ -33,7 +33,6 @@ class cplex(baseSolver):
             for v in p.intVars: tmp[v] = 'I'
             kwargs['types'] = ''.join(tmp.tolist())
         
-        #raise 0
         P.variables.add(obj = p.f.tolist(), ub = p.ub.tolist(), lb = p.lb.tolist(), **kwargs)
         P.objective.set_sense(P.objective.sense.minimize)
         
@@ -51,7 +50,11 @@ class cplex(baseSolver):
                 from scipy import sparse as sp
                 assert sp.isspmatrix(_A)
                 rows, cols, vals = sp.find(_A)
+            P.linear_constraints.set_coefficients(zip(rows.tolist(), cols.tolist(), vals.tolist()))
         
-        P.linear_constraints.set_coefficients(zip(rows.tolist(), cols.tolist(), vals.tolist()))
+        if p.probType.endswith('QP'):
+            assert p.probType in ('QP', 'QCQP')
+            #p.objective.set_quadratic_coefficients()
+            
         P.solve()
         p.xf = np.asfarray(P.solution.get_values())
