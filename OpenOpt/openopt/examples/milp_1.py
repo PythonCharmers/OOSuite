@@ -37,6 +37,6 @@ p = MILP(f=f, lb=lb, ub=ub, A=A, b=b, intVars=intVars, binVars=[1])
 #intVars, binVars indexing from ZERO!
 r = p.solve('glpk') 
 
-print 'f_opt:', r.ff # 26.566058805272387
-print 'x_opt:', r.xf # [15.  1.  -1.5 -1.5 -1. -1.5 8.0330294 15.]
+print 'f_opt:', r.ff # 25.8014507692
+print 'x_opt:', r.xf # [ 15. 10.15072538  -1.5  -1.5  -1. -1.5  -1.5  15.]
 """
