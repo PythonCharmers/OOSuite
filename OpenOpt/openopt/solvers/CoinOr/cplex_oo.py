@@ -12,7 +12,7 @@ class cplex(baseSolver):
     #__homepage__ = 'http://www.coin-or.org/'
     #__info__ = ""
     #__cannotHandleExceptions__ = True
-    __optionalDataThatCanBeHandled__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub']
+    __optionalDataThatCanBeHandled__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'intVars']
     _canHandleScipySparse = True
 
     #options = ''
@@ -24,16 +24,25 @@ class cplex(baseSolver):
         except ImportError:
             p.err('You should have Cplex and its Python API installed')
         
-        P = cplex.Cplex()
-        P.variables.add(obj = p.f.tolist(), ub = p.ub.tolist(), lb = p.lb.tolist())
-        P.objective.set_sense(P.objective.sense.minimize)
         n = p.f.size
+        
+        P = cplex.Cplex()
+        kwargs = {}
+        if hasattr(p, 'intVars') and len(p.intVars)!=0: 
+            tmp = np.asarray(['C']*n, dtype=object)
+            for v in p.intVars: tmp[v] = 'I'
+            kwargs['types'] = ''.join(tmp.tolist())
+        
+        #raise 0
+        P.variables.add(obj = p.f.tolist(), ub = p.ub.tolist(), lb = p.lb.tolist(), **kwargs)
+        P.objective.set_sense(P.objective.sense.minimize)
+        
         
         for _A, _b, _T in [(p.A, p.b,'L'), (p.Aeq, p.beq, 'E')]:
             if _b is None or np.asarray(_b).size == 0:
                 continue
             m = np.asarray(_b).size
-            P.linear_constraints.add(rhs = np.asarray(_b).tolist(), senses = _T*m)
+            P.linear_constraints.add(rhs=np.asarray(_b).tolist(),  senses= _T*m)
             if type(_A) == np.ndarray:
                 rows = np.tile(np.arange(m).reshape(-1, 1), (1, n)).flatten()
                 cols = np.asarray([np.arange(n).tolist()]*m).flatten()
