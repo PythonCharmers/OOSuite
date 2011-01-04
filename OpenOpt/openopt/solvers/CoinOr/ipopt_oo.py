@@ -1,7 +1,5 @@
-__docformat__ = "restructuredtext en"
 from numpy import *
 import re
-from string import lower
 from openopt.kernel.baseSolver import baseSolver
 from openopt.kernel.ooMisc import isSolved
 from openopt.kernel.nonOptMisc import scipyInstalled, Hstack, Vstack, Find, isspmatrix
@@ -24,7 +22,6 @@ class ipopt(baseSolver):
     _canHandleScipySparse = True
 
     # CHECK ME!
-    #__isIterPointAlwaysFeasible__ = lambda self, p: False
     #__isIterPointAlwaysFeasible__ = lambda self, p: p.__isNoMoreThanBoxBounded__()
 
     optFile = 'auto'
@@ -167,7 +164,7 @@ class ipopt(baseSolver):
                 lines.append('jac_d_constant yes\n')
             if p.nh == 0:
                 lines.append('jac_c_constant yes\n')
-            if lower(p.castFrom) in ('lp', 'qp', 'llsp'):
+            if p.castFrom.lower() in ('lp', 'qp', 'llsp'):
                 lines.append('hessian_constant yes\n')
 
 
