@@ -1,7 +1,7 @@
 from ooMisc import assignScript
 from nonOptMisc import isspmatrix
 from baseProblem import MatrixProblem
-from numpy import asarray, ones, inf, dot, nan, zeros, isnan, any, vstack, array, asfarray
+from numpy import asarray, ones, inf, dot, nan, zeros, isnan, any, vstack, array, asfarray, atleast_1d
 import NLP
 
 class LP(MatrixProblem):
@@ -36,6 +36,7 @@ class LP(MatrixProblem):
         else:
             self._init_f_vector = self.f # we don't take p.goal into account here
             self._c = 0
+        self.f = atleast_1d(self.f)
         if not hasattr(self, 'n'): self.n = len(self.f)
         #print 'lb:', self.lb, 'ub:', self.ub
         if not hasattr(self, 'lb'): self.lb = -inf * ones(self.n)
