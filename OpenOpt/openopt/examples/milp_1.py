@@ -20,9 +20,10 @@ for i in xrange(5):
         A[i,j] = -8+sin(8*i) + cos(15*j)
     b[i] = -150 + 80*sin(80*i)
 
-p = MILP(f=f, lb=lb, ub=ub, A=A, b=b, intVars=intVars, goal='max')
+p = MILP(f=f, lb=lb, ub=ub, A=A, b=b, intVars=intVars, goal='min')
 #r = p.solve('lpSolve')
 r = p.solve('glpk')
+#r = p.solve('cplex')
 print 'f_opt:', r.ff # 25.801450769161505
 print 'x_opt:', r.xf # [ 15. 10.15072538 -1.5 -1.5 -1.  -1.5 -1.5 15.]
 
