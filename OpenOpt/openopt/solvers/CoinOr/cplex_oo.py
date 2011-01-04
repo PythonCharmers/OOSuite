@@ -27,6 +27,8 @@ class cplex(baseSolver):
         n = p.f.size
         
         P = cplex.Cplex()
+        P.set_results_stream(None)
+        
         kwargs = {}
         if hasattr(p, 'intVars') and len(p.intVars)!=0: 
             tmp = np.asarray(['C']*n, dtype=object)
@@ -55,11 +57,6 @@ class cplex(baseSolver):
             assert p.probType in ('QP', 'QCQP')
             rows,  cols,  vals = Find(p.H)
             P.objective.set_quadratic_coefficients(zip(rows,  cols,  vals))
-
-            
-            
-#            #rows,  cols,  vals = Find(p.H)
-#            P.objective.set_quadratic_coefficients(zip(*Find(p.H)))
             
         P.solve()
         p.xf = np.asfarray(P.solution.get_values())
