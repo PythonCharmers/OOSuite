@@ -149,7 +149,7 @@ def _sum(inp, *args, **kwargs):
         
         def getOrder(*args, **kwargs):
             orders = [0]+[inp.getOrder(*args, **kwargs) for inp in INP]
-            return max(orders)
+            return np.max(orders)
         r.getOrder = getOrder
         
         def _D(point, fixedVarsScheduleID, Vars=None, fixedVars = None, useSparse = 'auto'):
