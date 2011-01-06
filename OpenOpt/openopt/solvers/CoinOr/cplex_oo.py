@@ -35,9 +35,6 @@ class cplex(baseSolver):
             for v in p.intVars: tmp[v] = 'I'
             kwargs['types'] = ''.join(tmp.tolist())
         
-#        p.lb = -1000*np.ones(p.n)
-#        p.ub = 1000*np.ones(p.n)
-        
         P.variables.add(obj = p.f.tolist(), ub = p.ub.tolist(), lb = p.lb.tolist(), **kwargs)
         P.objective.set_sense(P.objective.sense.minimize)
         
@@ -51,12 +48,15 @@ class cplex(baseSolver):
             Rows += rows
             Cols += cols
             Vals += vals
-        P.linear_constraints.set_coefficients(zip(Rows, Cols, Vals))
+        if len(Rows) != 0:
+            P.linear_constraints.set_coefficients(zip(Rows, Cols, Vals))
         
         if p.probType.endswith('QP'):
             assert p.probType in ('QP', 'QCQP')
             rows,  cols,  vals = Find(p.H)
             P.objective.set_quadratic_coefficients(zip(rows,  cols,  vals))
+            #P.quadratic_constraints.add()
+            #raise 0
             
         P.solve()
         p.xf = np.asfarray(P.solution.get_values())
