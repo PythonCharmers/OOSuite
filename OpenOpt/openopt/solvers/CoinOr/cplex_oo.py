@@ -1,8 +1,8 @@
-import numpy as np
+import sys, numpy as np
 from openopt.kernel.baseSolver import baseSolver
 #from openopt.kernel.ooMisc import isSolved
 #from openopt.kernel.nonOptMisc import scipyInstalled, Hstack, Vstack, Find, isspmatrix
-
+import os
     
 class cplex(baseSolver):
     __name__ = 'cplex'
@@ -26,8 +26,14 @@ class cplex(baseSolver):
         
         n = p.f.size
         
+        # reduce text output
+        os.close(1); os.close(2) # may not work for non-Unix OS
+         
         P = cplex.Cplex()
         P.set_results_stream(None)
+        
+        if np.isfinite(p.maxTime): 
+            P.parameters.timelimit.set(p.maxTime)
         
         kwargs = {}
         if hasattr(p, 'intVars') and len(p.intVars)!=0: 
@@ -50,15 +56,28 @@ class cplex(baseSolver):
             Vals += vals
         if len(Rows) != 0:
             P.linear_constraints.set_coefficients(zip(Rows, Cols, Vals))
+            #P.linear_constraints.set_coefficients(cplex.SparseTriple(Rows, Cols, Vals))
         
-        if p.probType.endswith('QP'):
-            assert p.probType in ('QP', 'QCQP')
+        if p.probType.endswith('QP') or p.probType == 'SOCP':
+            assert p.probType in ('QP', 'QCQP','SOCP')
             rows,  cols,  vals = Find(p.H)
             P.objective.set_quadratic_coefficients(zip(rows,  cols,  vals))
+            
             #P.quadratic_constraints.add()
             #raise 0
-            
+
         P.solve()
+        
+#        class StandardOutputEater:
+#            def write(self, string):
+#                pass
+#        S, sys.stderr = sys.stderr, StandardOutputEater
+#        try:
+#            P.solve()
+#        finally:
+#            #pass
+#            sys.stderr = S
+        
         p.msg = 'Cplex status: "%s"; exit code: %d' % (P.solution.get_status_string(), P.solution.get_status())
         try:
             p.xf = np.asfarray(P.solution.get_values())
