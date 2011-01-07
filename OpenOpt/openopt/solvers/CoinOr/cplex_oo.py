@@ -59,7 +59,11 @@ class cplex(baseSolver):
             #raise 0
             
         P.solve()
-        p.xf = np.asfarray(P.solution.get_values())
+        p.msg = 'Cplex status: "%s"; exit code: %d' % (P.solution.get_status_string(), P.solution.get_status())
+        try:
+            p.xf = np.asfarray(P.solution.get_values())
+        except cplex.exceptions.CplexError:
+            p.xf = p.x0 * np.nan
 
 def Find(M):
     if type(M) == np.ndarray:
