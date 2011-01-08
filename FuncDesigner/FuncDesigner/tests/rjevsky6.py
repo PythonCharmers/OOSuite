@@ -1,4 +1,4 @@
-from numpy import arange, array, ones, arange, zeros, cos
+from numpy import arange, array, ones, zeros, cos, hstack, asarray, ceil
 from numpy.linalg import norm
 from openopt import NSP, oosolver
 from FuncDesigner import *
@@ -10,22 +10,34 @@ T = (0.01 * arange(1, 101))
 tmp = []
 for j in range(100):
     tmp.append(((x-X) * T[j]**arange(n))**2)
-obj = sum(tmp)
+obj = sum(sum(tmp))
 
-#startPoint = {x: zeros(n)}
+
 startPoint = {x: 2*ones(n)}
-
-#solvers = [gsubg, 'ralg', 'ipopt']
-solvers = ['ralg']
-
+def cb(p):
+    tmp = ceil(log10(norm(1.0 - p.xk)))
+    if tmp < cb.TMP:
+#        print 'distance:', tmp, 'itn:', p.iter, 'n_func:', p.nEvals['f'], 'n_grad:', -p.nEvals['df']
+        cb.TMP = tmp
+        cb.stat['dist'].append(tmp)
+        cb.stat['f'].append(p.nEvals['f'])
+        cb.stat['df'].append(-p.nEvals['df'])
+    return False
+asa = lambda x:asarray(x).reshape(-1, 1)
+solvers = ['ralg', 'amsg2p', 'gsubg']
+solvers = [oosolver('amsg2p', gamma = 2.0)]
 Colors = ['r', 'k','b']
-
 lines = []
+R = {}
 for i, solver in enumerate(solvers):
     p = NSP(obj, startPoint, maxIter = 1700, name = 'rjevsky6 (nVars: ' + str(n)+')', maxTime = 300, maxFunEvals=1e7, color = Colors[i])
     p.fEnough = 1.0e-10
-    p.fTol = 0.5e-10
-    r = p.manage(solver, iprint=1, xtol = 1e-6, ftol = 1e-6, debug=0, show = solver == solvers[-1], plot = 0)
+    p.fOpt = 0.0
+    p.fTol = 0.5e-9
+    cb.TMP = 1000
+    cb.stat = {'dist':[], 'f':[], 'df':[]}
+    r = p.solve(solver, iprint=1, xtol = 1e-11, ftol = 1e-11, debug=0, show = solver == solvers[-1], plot = 0, callback = cb)
+    R[solver] = hstack((asa(cb.stat['dist']), asa(cb.stat['f']), asa(cb.stat['df'])))
 '''
 --------------------------------------------------
 solver: gsubg   problem: rjevsky6 (nVars: 15)    type: NSP   goal: minimum
