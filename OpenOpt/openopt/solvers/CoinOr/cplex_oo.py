@@ -1,5 +1,6 @@
 import sys, numpy as np
 from openopt.kernel.baseSolver import baseSolver
+from openopt.kernel.setDefaultIterFuncs import *
 #from openopt.kernel.ooMisc import isSolved
 #from openopt.kernel.nonOptMisc import scipyInstalled, Hstack, Vstack, Find, isspmatrix
 import os
@@ -77,14 +78,26 @@ class cplex(baseSolver):
 #        finally:
 #            #pass
 #            sys.stderr = S
-        
-        p.msg = 'Cplex status: "%s"; exit code: %d' % (P.solution.get_status_string(), P.solution.get_status())
+        s = P.solution.get_status()
+        p.msg = 'Cplex status: "%s"; exit code: %d' % (P.solution.get_status_string(), s)
         try:
             p.xf = np.asfarray(P.solution.get_values())
             p.istop = 1000
         except cplex.exceptions.CplexError:
             p.xf = p.x0 * np.nan
             p.istop = -1
+        
+        # TODO: replace by normal OOP solution
+        if s == P.solution.status.abort_iteration_limit:
+            p.istop = IS_MAX_ITER_REACHED
+            p.msg = 'Max Iter has been reached'
+        elif s == P.solution.status.abort_obj_limit:
+            p.istop = IS_MAX_FUN_EVALS_REACHED
+            p.msg = 'max objfunc evals limit has been reached'
+        elif s == P.solution.status.abort_time_limit or s == P.solution.status.conflict_abort_time_limit:
+            p.istop = IS_MAX_TIME_REACHED
+            p.msg = 'max time limit has been reached'
+            
 
 def Find(M):
     if type(M) == np.ndarray:
