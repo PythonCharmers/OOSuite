@@ -204,10 +204,11 @@ class nonLinFuncs:
         if p.invertObjFunc and userFunctionType=='f':
             r = -r
 
-        if ind is None:
-            p.nEvals[userFunctionType] += nXvectors
-        else:
-            p.nEvals[userFunctionType] = p.nEvals[userFunctionType] + float(nXvectors * len(ind)) / getattr(p, 'n'+ userFunctionType)
+        if not getDerivative or not p.isFDmodel:
+            if ind is None:
+                p.nEvals[userFunctionType] += nXvectors
+            else:
+                p.nEvals[userFunctionType] = p.nEvals[userFunctionType] + float(nXvectors * len(ind)) / getattr(p, 'n'+ userFunctionType)
 
         if getDerivative:
             assert x.size == p.n#TODO: add python list possibility here

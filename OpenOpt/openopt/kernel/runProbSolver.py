@@ -1,6 +1,6 @@
 __docformat__ = "restructuredtext en"
 from time import time, clock
-from numpy import asfarray, copy, inf, nan, isfinite, ones, ndim, all, atleast_1d, any, isnan, array_equiv, asscalar, asarray, where, ndarray
+from numpy import asfarray, copy, inf, nan, isfinite, ones, ndim, all, atleast_1d, any, isnan, array_equiv, asscalar, asarray, where, ndarray, isscalar
 from setDefaultIterFuncs import stopcase,  SMALL_DELTA_X,  SMALL_DELTA_F
 from check import check
 import copy
@@ -250,7 +250,7 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
 
     #p.ff = p.objFuncMultiple2Single(p.ff)
     #if not hasattr(p, 'xf'): p.xf = p.xk
-
+    if type(p.xf) in (list, tuple) or isscalar(p.xf): p.xf = asarray(p.xf)
     p.xf = p.xf.flatten()
     p.rf = p.getMaxResidual(p.xf)
 
