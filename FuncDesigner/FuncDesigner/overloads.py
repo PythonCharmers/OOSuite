@@ -284,23 +284,20 @@ def max(inp,  *args,  **kwargs):
             df = inp.d(x)
             ind = np.argmax(x)
             return df[ind, :]
+        r = oofun(f, inp, d = d, size = 1)
     elif type(inp) in (list, tuple):
         f = lambda *args: np.max([arg for arg in args])
-        def d(*args):
-            #df = asfarray([arg.d(x) for arg in inp]
-            ind = np.argmax(args)
-            raise 'not implemented yet'
-            return inp[ind].d(args)
-    
+        r = oofun(f, inp, size = 1)
+        def _D(point, *args, **kwargs):
+            ind = np.argmax([(s(point) if isinstance(s, oofun) else s) for s in r.input])
+            return r.input[ind]._D(point, *args, **kwargs) if isinstance(r.input[ind], oofun) else {}
+        r._D = _D
     else:
         raise FuncDesignerException('incorrect data type in FuncDesigner max')
-            
-    r = oofun(f, inp, d = d, size = 1)
     return r        
     
 def min(inp,  *args,  **kwargs): 
     assert len(args) == len(kwargs) == 0, 'incorrect data type in FuncDesigner min or not implemented yet'
-    
     if isinstance(inp, oofun):
         f = lambda x: np.min(x)
         def d(x):
@@ -310,10 +307,11 @@ def min(inp,  *args,  **kwargs):
             return df[ind, :]
     elif type(inp) in (list, tuple):
         f = lambda *args: np.min([arg for arg in args])
-        def d(*args):
-            ind = np.argmin(args)
-            raise 'not implemented yet'
-            return inp[ind].d(args)
+        r = oofun(f, inp, size = 1)
+        def _D(point, *args, **kwargs):
+            ind = np.argmin([(s(point) if isinstance(s, oofun) else s) for s in r.input])
+            return r.input[ind]._D(point, *args, **kwargs) if isinstance(r.input[ind], oofun) else {}
+        r._D = _D
     else:
         raise FuncDesignerException('incorrect data type in FuncDesigner min')
             
