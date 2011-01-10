@@ -1,6 +1,7 @@
 import sys, numpy as np
 from openopt.kernel.baseSolver import baseSolver
 from openopt.kernel.setDefaultIterFuncs import *
+from openopt.kernel.ooMisc import LinConst2WholeRepr
 #from openopt.kernel.ooMisc import isSolved
 #from openopt.kernel.nonOptMisc import scipyInstalled, Hstack, Vstack, Find, isspmatrix
 import os
@@ -45,19 +46,13 @@ class cplex(baseSolver):
         P.variables.add(obj = p.f.tolist(), ub = p.ub.tolist(), lb = p.lb.tolist(), **kwargs)
         P.objective.set_sense(P.objective.sense.minimize)
         
-        Rows,  Cols,  Vals = [],  [],  []
-        for _A, _b, _T in [(p.A, p.b,'L'), (p.Aeq, p.beq, 'E')]:
-            if _b is None or np.asarray(_b).size == 0:
-                continue
-            m = np.asarray(_b).size
-            P.linear_constraints.add(rhs=np.asarray(_b).tolist(),  senses= _T*m)
-            rows,  cols,  vals = Find(_A)
-            Rows += rows
-            Cols += cols
-            Vals += vals
-        if len(Rows) != 0:
-            P.linear_constraints.set_coefficients(zip(Rows, Cols, Vals))
-            #P.linear_constraints.set_coefficients(cplex.SparseTriple(Rows, Cols, Vals))
+        LinConst2WholeRepr(p)
+        if p.Awhole is not None:
+            m = np.asarray(p.bwhole).size
+            senses = where(p.dwhole == -1, 'L', 'E')
+            P.linear_constraints.add(rhs=np.asarray(p.bwhole).tolist(),  senses = senses)
+            rows,  cols,  vals = Find(p.Awhole)
+            P.linear_constraints.set_coefficients(zip(rows, cols, vals))
         
         if p.probType.endswith('QP') or p.probType == 'SOCP':
             assert p.probType in ('QP', 'QCQP','SOCP')
