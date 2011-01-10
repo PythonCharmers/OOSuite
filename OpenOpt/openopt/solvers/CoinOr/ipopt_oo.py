@@ -3,6 +3,7 @@ import re
 from openopt.kernel.baseSolver import baseSolver
 from openopt.kernel.ooMisc import isSolved
 from openopt.kernel.nonOptMisc import scipyInstalled, Hstack, Vstack, Find, isspmatrix
+import os
 #from openopt.kernel.setDefaultIterFuncs import SMALL_DF
 try:
     import pyipopt
@@ -31,6 +32,7 @@ class ipopt(baseSolver):
     def __solver__(self, p):
         if not pyipoptInstalled:
             p.err('you should have pyipopt installed')
+        os.close(1); os.close(2) # may not work for non-Unix OS
         nvar = p.n
         x_L = p.lb
         x_U = p.ub
