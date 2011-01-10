@@ -36,7 +36,7 @@ asa = lambda x:asarray(x).reshape(-1, 1)
 Colors = ['r', 'k','b']
 R = {}
 for i, solver in enumerate(solvers):
-    p = NSP(obj, startPoint, maxIter = 1700, name = 'rjevsky4 (nVars: ' + str(n)+')', maxTime = 300, maxFunEvals=1e7, color = Colors[i])
+    p = NSP(obj, startPoint, maxIter = 1700, name = 'Rzhevsky4 (nVars: ' + str(n)+')', maxTime = 300, maxFunEvals=1e7, color = Colors[i])
     p.fTol = 0.5e-20
     p.fOpt = 0.0
     cb.TMP = 1000

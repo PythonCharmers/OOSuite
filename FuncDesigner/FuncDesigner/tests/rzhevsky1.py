@@ -46,7 +46,7 @@ def cb(p):
 asa = lambda x:asarray(x).reshape(-1, 1)
 R = {}
 for i, solver in enumerate(solvers):
-    p = NSP(obj, startPoint, maxIter = 17000, name = 'rjevsky1 (nVars: ' + str(n)+')', maxTime = 300, maxFunEvals=1e7, color = Colors[i])
+    p = NSP(obj, startPoint, maxIter = 17000, name = 'Rzhevsky1 (nVars: ' + str(n)+')', maxTime = 300, maxFunEvals=1e7, color = Colors[i])
     p.fTol = 0.5e-10
     p.fEnough = -0.84140833459
     p.fOpt = -0.841408334596

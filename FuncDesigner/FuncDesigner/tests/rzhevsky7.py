@@ -21,6 +21,7 @@ startPoint = dict([(x[i], 0) for i in range(n+2)])
 startPoint[x[-1]] = X[-1]
 
 solvers = ['gsubg', 'ralg', 'amsg2p']
+solvers = ['ralg', 'amsg2p']
 def cb(p):
     tmp = ceil(log10(norm(asarray(X) - hstack((X[0], p.xk, X[-1])))))
     if tmp < cb.TMP:
@@ -36,15 +37,18 @@ lines = []
 R = {}
 
 for i, solver in enumerate(solvers):
-    p = NSP(obj, startPoint, fixedVars=(x[0], x[-1]), maxIter = 2000, name = 'rjevsky7 (nVars: ' + str(n)+')', maxTime = 3000, maxFunEvals=1e7, color = Colors[i])
+    p = NSP(obj, startPoint, fixedVars=(x[0], x[-1]), maxTime = 20, name = 'Rzhevsky7 (nVars: ' + str(n)+')', maxFunEvals=1e7, color = Colors[i])
     p._prepare()
     p.c=None
     #p.fEnough = 2.08983385058799+4e-10
     p.fOpt = obj(T_optPoint)
-    p.fTol = 0.5e-10
+    p.fTol = 0.5e-15
     cb.TMP = 1000
     cb.stat = {'dist':[], 'f':[], 'df':[]}
     r = p.solve(solver, iprint=10, xtol = 1e-10, ftol = 1e-16, gtol = 1e-10, debug=0, show = solver == solvers[-1], plot = 0, callback = cb)
+    print('objective evals: %d   gradient evals: %d ' % (r.evals['f'],r.evals['df']))
+    print('distance to f*: %0.1e' % (r.ff-p.fOpt))
+    print('distance to x*: %0.1e' % (norm(asarray(X) - hstack((X[0], p.xk, X[-1])))))
     R[solver] = hstack((asa(cb.stat['dist']), asa(cb.stat['f']), asa(cb.stat['df'])))
 '''
 --------------------------------------------------

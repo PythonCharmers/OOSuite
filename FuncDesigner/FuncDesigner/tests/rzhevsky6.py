@@ -30,7 +30,7 @@ Colors = ['r', 'k','b']
 lines = []
 R = {}
 for i, solver in enumerate(solvers):
-    p = NSP(obj, startPoint, maxIter = 1700, name = 'rjevsky6 (nVars: ' + str(n)+')', maxTime = 300, maxFunEvals=1e7, color = Colors[i])
+    p = NSP(obj, startPoint, maxIter = 1700, name = 'Rzhevsky6 (nVars: ' + str(n)+')', maxTime = 300, maxFunEvals=1e7, color = Colors[i])
     p.fEnough = 1.0e-10
     p.fOpt = 0.0
     p.fTol = 0.5e-9
