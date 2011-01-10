@@ -25,13 +25,8 @@ for k in range(5):
         A[k][i, i] = (i+1)*abs(sin(k+1)) / 10.0 + s[k, i]#sum(A[k][i, :])-A[k][i, i] 
 
 phi = [dot(x, dot(A[k], x)) - dot(b[k], x) for k in range(5)]
+obj = max(phi)
 
-f1 = ifThenElse(phi[0]>phi[1], phi[0], phi[1])
-f2 = ifThenElse(phi[2]>f1, phi[2], f1)
-f3 = ifThenElse(phi[3]>f2, phi[3], f2)
-f4 = ifThenElse(phi[4]>f3, phi[4], f3)
-
-obj = f4
 startPoint = {x: ones(n)}
 
 solvers = ['ralg', 'amsg2p', 'gsubg']

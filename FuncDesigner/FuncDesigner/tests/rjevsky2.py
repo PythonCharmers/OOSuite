@@ -27,12 +27,15 @@ for k in range(5):
 
 phi = [dot(x, dot(A[k], x)) - dot(b[k], x) for k in range(5)]
 
-f1 = ifThenElse(phi[0]>phi[1], phi[0], phi[1])
-f2 = ifThenElse(phi[2]>f1, phi[2], f1)
-f3 = ifThenElse(phi[3]>f2, phi[3], f2)
-f4 = ifThenElse(phi[4]>f3, phi[4], f3)
+#f1 = ifThenElse(phi[0]>phi[1], phi[0], phi[1])
+#f2 = ifThenElse(phi[2]>f1, phi[2], f1)
+#f3 = ifThenElse(phi[3]>f2, phi[3], f2)
+#f4 = ifThenElse(phi[4]>f3, phi[4], f3)
+#
+#obj = y + ifThenElse(f4-y>0, f4-y, 0)
 
-obj = y + ifThenElse(f4-y>0, f4-y, 0)
+obj = y + max((0, max(phi)-y))
+
 startPoint = {x: ones(n), y:1}
 
 solvers = ['ralg', 'amsg2p', 'gsubg']

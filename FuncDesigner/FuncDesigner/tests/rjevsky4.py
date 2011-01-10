@@ -13,7 +13,7 @@ xOpt = X = 2 ** (-arange(1, n+1))
 
 m = max(x-X)
 
-obj = ifThenElse(m>0, m, 0) -q*sum(x-X)
+obj = max((m, 0)) -q*sum(x-X)
 
 startPoint = {x: X+1}
 
