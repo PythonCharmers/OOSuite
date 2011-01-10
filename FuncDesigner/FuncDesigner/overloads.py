@@ -305,6 +305,7 @@ def min(inp,  *args,  **kwargs):
             #df = inp.d(x) if type(inp.d) not in (list, tuple) else np.hstack([item(x) for item in inp.d])
             ind = np.argmin(x)
             return df[ind, :]
+        r = oofun(f, inp, d = d, size = 1)
     elif type(inp) in (list, tuple):
         f = lambda *args: np.min([arg for arg in args])
         r = oofun(f, inp, size = 1)
@@ -314,8 +315,6 @@ def min(inp,  *args,  **kwargs):
         r._D = _D
     else:
         raise FuncDesignerException('incorrect data type in FuncDesigner min')
-            
-    r = oofun(f, inp, d = d, size = 1)
     return r        
     
 #def fixed_oofun(Val):
