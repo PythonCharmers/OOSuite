@@ -4,8 +4,10 @@ from cvxopt_misc import *
 import cvxopt.solvers as cvxopt_solvers
 from cvxopt.base import matrix
 from openopt.kernel.setDefaultIterFuncs import SOLVED_WITH_UNIMPLEMENTED_OR_UNKNOWN_REASON,  IS_MAX_ITER_REACHED, IS_MAX_TIME_REACHED, FAILED_WITH_UNIMPLEMENTED_OR_UNKNOWN_REASON, UNDEFINED
+import os
 
 def CVXOPT_LP_Solver(p, solverName):
+    os.close(1); os.close(2)
     if solverName == 'native_CVXOPT_LP_Solver': solverName = None
     cvxopt_solvers.options['maxiters'] = p.maxIter
     cvxopt_solvers.options['feastol'] = p.contol    
