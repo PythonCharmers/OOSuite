@@ -9,8 +9,8 @@ X =  ones(n)
 T = (0.01 * arange(1, 101))
 tmp = []
 for j in range(100):
-    tmp.append(((x-X) * T[j]**arange(n))**2)
-obj = sum(sum(tmp))
+    tmp.append(sum((x-X) * T[j]**arange(n))**2)
+obj = sum(tmp)
 
 
 startPoint = {x: 2*ones(n)}
@@ -29,15 +29,20 @@ solvers = [oosolver('amsg2p', gamma = 2.0)]
 Colors = ['r', 'k','b']
 lines = []
 R = {}
-for i, solver in enumerate(solvers):
-    p = NSP(obj, startPoint, maxIter = 1700, name = 'Rzhevsky6 (nVars: ' + str(n)+')', maxTime = 300, maxFunEvals=1e7, color = Colors[i])
-    p.fEnough = 1.0e-10
-    p.fOpt = 0.0
-    p.fTol = 0.5e-9
-    cb.TMP = 1000
-    cb.stat = {'dist':[], 'f':[], 'df':[]}
-    r = p.solve(solver, iprint=1, xtol = 1e-11, ftol = 1e-11, debug=0, show = solver == solvers[-1], plot = 0, callback = cb)
-    R[solver] = hstack((asa(cb.stat['dist']), asa(cb.stat['f']), asa(cb.stat['df'])))
+for Tol_p in xrange(-10, -31, -1):
+    #print('Tol = 10^%d' % Tol_p)
+    for i, solver in enumerate(solvers):
+        p = NSP(obj, startPoint, maxIter = 1700, name = 'Rzhevsky6 (nVars: ' + str(n)+')', maxTime = 300, maxFunEvals=1e7, color = Colors[i])
+        p.fOpt = 0.0
+        p.fTol = 10**Tol_p
+        cb.TMP = 1000
+        cb.stat = {'dist':[], 'f':[], 'df':[]}
+        r = p.solve(solver, iprint=-1, xtol = 0, ftol = 0, callback = cb)
+        R[solver] = hstack((asa(cb.stat['dist']), asa(cb.stat['f']), asa(cb.stat['df'])))
+        print('itn df dx   %d   %0.1e   %0.1e' % (-r.evals['df'], r.ff-p.fOpt, norm(p.xk-1.0)))
+#        print('objective evals: %d   gradient evals: %d ' % (r.evals['f'],r.evals['df']))
+#        print('distance to f*: %0.1e' % (r.ff-p.fOpt))
+#        print('distance to x*: %0.1e' % norm(p.xk-1.0))
 '''
 --------------------------------------------------
 solver: gsubg   problem: rjevsky6 (nVars: 15)    type: NSP   goal: minimum
