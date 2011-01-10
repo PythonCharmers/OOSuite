@@ -1,14 +1,14 @@
 from numpy import dot, diag, ones, zeros, sqrt
 from numpy.linalg import norm
 
-def amsg2p(f, df, x0, epsilon, f_opt, gamma, callback = lambda x: False):
+def amsg2p(f, df, x0, epsilon, f_opt, gamma, callback = lambda x, f: False):
     # returns optim point and iteration number
     f0 = f(x0)
     if f0 - f_opt <= epsilon: return x0, 0
     x, n = x0.copy(), x0.size
     df0 = df(x0)
     ndf = norm(df0)
-    h, dzeta, p, B = gamma * (f0 - f_opt) / ndf, df0 / ndf, zeros(n), diag(ones(n, 'float128')) # TODO: add possibility to create B of type float128
+    h, dzeta, p, B = gamma * (f0 - f_opt) / ndf, df0 / ndf, zeros(n), diag(ones(n, 'float64')) # TODO: add possibility to create B of type float128
     k = 0
     while True:
         k += 1
@@ -31,7 +31,7 @@ def amsg2p(f, df, x0, epsilon, f_opt, gamma, callback = lambda x: False):
             p = (p - mu * dzeta_new) / S
         else:
             p = zeros(n)
-        r = callback(x) 
+        r = callback(x, F) 
         if r not in (0, False, None): 
             break # user-demanded stop
 #        print h, F, mu
