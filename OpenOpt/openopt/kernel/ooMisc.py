@@ -2,6 +2,8 @@ __docformat__ = "restructuredtext en"
 from numpy import zeros, ones, copy, isfinite, where, asarray, inf, array, asfarray, dot, ndarray, prod, flatnonzero
 from nonOptMisc import scipyAbsentMsg, scipyInstalled, isspmatrix, Hstack, Vstack, SparseMatrixConstructor, coo_matrix
 
+Copy = lambda arg: asscalar(arg) if type(arg)==ndarray and arg.size == 1 else arg.copy() if hasattr(arg, 'copy') else copy(arg)
+
 def Len(arg):
     if arg == None or arg == [] or (isinstance(arg, ndarray) and arg.size==1 and arg == array(None, dtype=object)):
         return 0
@@ -102,7 +104,7 @@ def LinConst2WholeRepr(p):
     if p.A == None and p.Aeq == None:
         return
 
-    Awhole = copy(p.Awhole) # maybe it's already present and not equal to None
+    Awhole = Copy(p.Awhole) # maybe it's already present and not equal to None
     p.Awhole = zeros([Len(p.b) + Len(p.beq) + Len(p.bwhole), p.n])
     if Awhole.size>0: p.Awhole[:Len(p.bwhole)] = Awhole
 
@@ -112,7 +114,7 @@ def LinConst2WholeRepr(p):
     p.Aeq = None
 
 
-    bwhole = copy(p.bwhole)
+    bwhole = Copy(p.bwhole)
     p.bwhole = zeros(Len(p.b) + Len(p.beq) + Len(p.bwhole))
     p.bwhole[:Len(bwhole)] = bwhole
 
@@ -121,7 +123,7 @@ def LinConst2WholeRepr(p):
     p.bwhole[Len(bwhole)+Len(p.b):] = p.beq
 
 
-    dwhole = copy(p.dwhole)
+    dwhole = Copy(p.dwhole)
     p.dwhole = zeros(Len(p.bwhole))
     if dwhole.size: p.dwhole[:Len(bwhole)] = dwhole
     p.dwhole[Len(bwhole):Len(bwhole)+Len(p.b)] = -1
@@ -143,7 +145,7 @@ def WholeRepr2LinConst(p):
     ind_equal = where(p.dwhole == 0)[0]
 
     if len(ind_equal) != 0:
-        Aeq, beq = copy(p.Aeq) , copy(p.beq)
+        Aeq, beq = Copy(p.Aeq) , Copy(p.beq)
         p.Aeq = zeros([Len(p.beq)+len(ind_equal), p.n])
         if Aeq.size: p.Aeq[:Len(p.beq)] = Aeq
         if len(ind_equal): p.Aeq[Len(p.beq):] = p.Awhole[ind_equal]
@@ -152,7 +154,7 @@ def WholeRepr2LinConst(p):
         if len(ind_equal): p.beq[Len(beq):] = p.bwhole[ind_equal]
 
     if len(ind_less) + len(ind_greater)>0:
-        A, b = copy(p.A) , copy(p.b)
+        A, b = Copy(p.A) , Copy(p.b)
         p.A = zeros([Len(p.b)+len(ind_less)+len(ind_greater), p.n])
         if A.size: p.A[:Len(p.b)] = A
         p.A[Len(p.b):Len(p.b)+len(ind_less)] = p.Awhole[ind_less]

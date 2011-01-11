@@ -14,7 +14,7 @@ class cplex(baseSolver):
     #__homepage__ = 'http://www.coin-or.org/'
     #__info__ = ""
     #__cannotHandleExceptions__ = True
-    __optionalDataThatCanBeHandled__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'intVars', 'H']
+    __optionalDataThatCanBeHandled__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'intVars', 'H', 'Qc']
     _canHandleScipySparse = True
 
     #options = ''
@@ -49,30 +49,26 @@ class cplex(baseSolver):
         LinConst2WholeRepr(p)
         if p.Awhole is not None:
             m = np.asarray(p.bwhole).size
-            senses = where(p.dwhole == -1, 'L', 'E')
-            P.linear_constraints.add(rhs=np.asarray(p.bwhole).tolist(),  senses = senses)
-            rows,  cols,  vals = Find(p.Awhole)
-            P.linear_constraints.set_coefficients(zip(rows, cols, vals))
+            senses = where(p.dwhole == -1, 'L', 'E').tolist() # it works w/o tolist() but I use list for more safety
+            P.linear_constraints.add(rhs=np.asarray(p.bwhole).tolist(), senses = senses)
+            P.linear_constraints.set_coefficients(zip(*Find(p.Awhole)))
         
         if p.probType.endswith('QP') or p.probType == 'SOCP':
             assert p.probType in ('QP', 'QCQP','SOCP')
-            rows,  cols,  vals = Find(p.H)
-            P.objective.set_quadratic_coefficients(zip(rows,  cols,  vals))
-            
+            P.objective.set_quadratic_coefficients(zip(*Find(p.H)))
+            if hasattr(p, 'Qc'):
+                for q, u, v in p.Qc:
+                    assert type(q) == np.ndarray
+                    rows,  cols,  vals = Find(q)
+                    quad_expr = cplex.SparseTriple(ind1=rows, ind2=cols, val = vals)
+                    #lin_expr = zip(np.arange(np.atleast_1d(u).size), u)
+                    lin_expr = cplex.SparsePair(ind=np.arange(np.atleast_1d(u).size), val=u)
+                    P.quadratic_constraints.add(quad_expr = quad_expr, lin_expr = lin_expr, rhs = -v if isscalar(v) else -asscalar(v))
+
             #P.quadratic_constraints.add()
             #raise 0
 
         P.solve()
-        
-#        class StandardOutputEater:
-#            def write(self, string):
-#                pass
-#        S, sys.stderr = sys.stderr, StandardOutputEater
-#        try:
-#            P.solve()
-#        finally:
-#            #pass
-#            sys.stderr = S
         s = P.solution.get_status()
         p.msg = 'Cplex status: "%s"; exit code: %d' % (P.solution.get_status_string(), s)
         try:

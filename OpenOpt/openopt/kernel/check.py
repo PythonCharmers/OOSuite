@@ -9,18 +9,11 @@ def check(p):
     if not (p.goal in p.allowedGoals):
         p.err('goal '+ p.goal+' is not available for the '+ p.probType + ' class (at least not implemented yet)')
 
-#    for fn in p.__optionalData__:
-#        if not fn in p.solver.__optionalDataThatCanBeHandled__:
-#            p.err('the solver ' + p.solverName + ' cannot handle ' + "'" + fn + "' data")
-
     for fn in p._optionalData:
-        if hasattr(p, fn):
-            attr = getattr(p, fn)
-            if fn not in p.solver.__optionalDataThatCanBeHandled__ \
-            and \
-            ((callable(attr) and getattr(p.userProvided, fn)) or (not callable(attr) and attr not in ([], (), None) and asarray(attr).size>0 and any(isfinite(attr)))):
-                p.err('the solver ' + p.solver.__name__ + ' cannot handle ' + "'" + fn + "' data")
-
+        attr = getattr(p, fn, None)
+        if attr in (None, [], ()) or fn in p.solver.__optionalDataThatCanBeHandled__: continue
+        if fn == 'Qc' or (callable(attr) and getattr(p.userProvided, fn)) or (not callable(attr) and asarray(attr).size>0 and any(isfinite(attr))):
+            p.err('the solver ' + p.solver.__name__ + ' cannot handle ' + "'" + fn + "' data")
 
     return nErrors
 
