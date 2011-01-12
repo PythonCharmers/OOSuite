@@ -1,7 +1,6 @@
 """
 OpenOpt SOCP example
-This one is same to the sample from
-http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#second-order-cone-programming
+for the problem http://openopt.org/images/2/28/SOCP.png
 """
 
 from numpy import *

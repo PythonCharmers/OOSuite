@@ -1,8 +1,7 @@
 """
 This is OpenOpt SDP example,
-that is in accordance with the sample from 
-CVXOPT SDP doc page
-http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#semidefinite-programming
+for the problem
+http://openopt.org/images/1/12/SDP.png
 """
 
 from numpy import mat
