@@ -58,7 +58,6 @@ class cplex(baseSolver):
             P.objective.set_quadratic_coefficients(zip(*Find(p.H)))
             if hasattr(p, 'Qc'):
                 for q, u, v in p.Qc:
-                    assert type(q) == np.ndarray
                     rows,  cols,  vals = Find(q)
                     quad_expr = cplex.SparseTriple(ind1=rows, ind2=cols, val = vals)
                     #lin_expr = zip(np.arange(np.atleast_1d(u).size), u)
@@ -91,7 +90,7 @@ class cplex(baseSolver):
             
 
 def Find(M):
-    if type(M) == np.ndarray:
+    if isinstance(M, np.ndarray): # numpy array or matrix
         rows, cols = np.where(M)
         vals = M[rows,cols]
     else:
