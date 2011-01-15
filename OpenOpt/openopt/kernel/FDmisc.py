@@ -231,7 +231,7 @@ def setStartVectorAndTranslators(p):
                 lin_oofun = elem.oofun
             else:
                 lin_oofun = elem
-            if lin_oofun.getOrder(self.freeVars, self.fixedVars) > 1:
+            if lin_oofun.getOrder(p.freeVars, p.fixedVars) > 1:
                 raise OpenOptException("this function hasn't been intended to work with nonlinear FuncDesigner oofuns")
             C.append(p._pointDerivative2array(lin_oofun.D(Z, **p._D_kwargs), useSparse = p.useSparse))
             d.append(-lin_oofun(Z))
