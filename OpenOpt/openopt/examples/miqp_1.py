@@ -7,6 +7,7 @@ x1 + 2x2 + 3x3 <= 150            (2)
 8x1 +  15x2 +  80x3 <= 800    (3)
 x2 - x3 = 25.5                           (4)
 x1 <= 15                                  (5)
+x1, x3 are integers
 """
 
 from numpy import diag, matrix, inf
