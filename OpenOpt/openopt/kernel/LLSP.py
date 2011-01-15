@@ -27,7 +27,17 @@ class LLSP(MatrixProblem):
             #self.ub =  inf * ones(self.n)
             if not hasattr(self, 'lb'): self.lb = -inf * ones(self.n)
             if not hasattr(self, 'ub'): self.ub = inf * ones(self.n)
-            if self.x0 is None: self.x0 = zeros(self.n)        
+            if self.x0 is None: self.x0 = zeros(self.n)
+        else: # is FD model
+            if type(self.C) not in (set,  tuple,  list):
+                if 'is_oovar' not in dir(self.C): 
+                    s = '''
+                    Icorrect data type for LLSP constructor, 
+                    first argument should be numpy ndarray, 
+                    scipy sparse matrix, FuncDesigner oofun or list of oofuns'''
+                    p.err(s)
+                self.C = [self.C]
+            
 
 
     def objFunc(self, x):
