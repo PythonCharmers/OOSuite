@@ -49,7 +49,7 @@ class cplex(baseSolver):
         LinConst2WholeRepr(p)
         if p.Awhole is not None:
             m = np.asarray(p.bwhole).size
-            senses = where(p.dwhole == -1, 'L', 'E').tolist() # it works w/o tolist() but I use list for more safety
+            senses = ''.join(where(p.dwhole == -1, 'L', 'E').tolist())
             P.linear_constraints.add(rhs=np.asarray(p.bwhole).tolist(), senses = senses)
             P.linear_constraints.set_coefficients(zip(*Find(p.Awhole)))
         
@@ -66,7 +66,11 @@ class cplex(baseSolver):
 
             #P.quadratic_constraints.add()
             #raise 0
-
+        #raise 0
+        
+        # Temporary walkaround Cplex 12.2.0.0 bug with integers in QP/QCQP
+        P.SOS.get_num()
+        
         P.solve()
         s = P.solution.get_status()
         p.msg = 'Cplex status: "%s"; exit code: %d' % (P.solution.get_status_string(), s)
