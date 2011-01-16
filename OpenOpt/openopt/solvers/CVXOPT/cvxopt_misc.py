@@ -14,7 +14,7 @@ def Matrix(x):
         if min(x.shape) > 1:
             from scipy.sparse import find
             I, J, values = find(x)
-            return Sparse(array(values, float).tolist(), I.tolist(), J.tolist())
+            return Sparse(array(values, float).tolist(), I.tolist(), J.tolist(), x.shape)
         else:
             x = x.toarray()
     
