@@ -20,9 +20,9 @@ A = matrix('1 2 3; 8 15 80')
 b = [150, 800]
 
 # Qc should be list or tuple of triples (P, q, s): 0.5 x^T P x + q x + s <= 0
-Qc = ((diag([1.0, 2.5, 3.0]), [0.1, 0.2, 0.3], -1000), (diag([2.0, 1.0, 3.0]), [0.1, 0.5, 0.3], -1000))
+QC = ((diag([1.0, 2.5, 3.0]), [0.1, 0.2, 0.3], -1000), (diag([2.0, 1.0, 3.0]), [0.1, 0.5, 0.3], -1000))
 
-p = QP(H, f, A = A, b = b, Aeq = [0, 1, -1], beq = 25.5, ub = [15,inf,inf], Qc = Qc, intVars = [0, 2])
+p = QP(H, f, A = A, b = b, Aeq = [0, 1, -1], beq = 25.5, ub = [15,inf,inf], QC = QC, intVars = [0, 2])
 # or p = QP(H=diag([1,2,3]), f=[15,8,80], ...)
 
 r = p.solve('cplex', iprint = 0)
