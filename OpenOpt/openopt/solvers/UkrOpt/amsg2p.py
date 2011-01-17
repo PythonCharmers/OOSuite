@@ -14,6 +14,9 @@ def amsg2p(f, df, x0, epsilon, f_opt, gamma, callback = lambda x, f: False):
         k += 1
         x -= h * dot(B, dzeta)
         F = f(x) 
+        r = callback(x, F) 
+        if r not in (0, False, None): 
+            break # user-demanded stop
         if F - f_opt <= epsilon: break
         DF = df(x)
         DF_dilated = dot(B.T, DF)
@@ -31,9 +34,5 @@ def amsg2p(f, df, x0, epsilon, f_opt, gamma, callback = lambda x, f: False):
             p = (p - mu * dzeta_new) / S
         else:
             p = zeros(n)
-        r = callback(x, F) 
-        if r not in (0, False, None): 
-            break # user-demanded stop
-#        print h, F, mu
         dzeta = dzeta_new
     return x, k
