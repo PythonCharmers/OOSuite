@@ -28,6 +28,7 @@ class sle:
         self.p = SLE(self.equations, self.startPoint, **kwargsForOpenOptSLEconstructor)
         self.p._Prepare()
         self.A, self.b = self.p.C, self.p.d
+        self.n = self.p.C.shape[0]
         self.decode = lambda x: self.p._vector2point(x)
         
     def solve(self, *args): # mb for future implementation - add  **kwargsForOpenOptSLEconstructor here as well
