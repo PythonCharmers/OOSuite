@@ -14,9 +14,9 @@ class cplex(baseSolver):
     #__homepage__ = 'http://www.coin-or.org/'
     #__info__ = ""
     #__cannotHandleExceptions__ = True
-    __optionalDataThatCanBeHandled__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'intVars', 'H', 'Qc']
+    __optionalDataThatCanBeHandled__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'intVars', 'H', 'QC']
     _canHandleScipySparse = True
-
+    
     #options = ''
 
     def __init__(self): pass
@@ -56,8 +56,8 @@ class cplex(baseSolver):
         if p.probType.endswith('QP') or p.probType == 'SOCP':
             assert p.probType in ('QP', 'QCQP','SOCP')
             P.objective.set_quadratic_coefficients(zip(*Find(p.H)))
-            if hasattr(p, 'Qc'):
-                for q, u, v in p.Qc:
+            if hasattr(p, 'QC'):
+                for q, u, v in p.QC:
                     rows,  cols,  vals = Find(q)
                     quad_expr = cplex.SparseTriple(ind1=rows, ind2=cols, val = vals)
                     #lin_expr = zip(np.arange(np.atleast_1d(u).size), u)
