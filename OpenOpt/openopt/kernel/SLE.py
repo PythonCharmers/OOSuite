@@ -42,8 +42,7 @@ class SLE(MatrixProblem):
                 else:
                     raise FuncDesignerException('incorrect shape in FuncDesigner function _D(), inform developers about the bug')
             rr =  t1._mul_sparse_matrix(t2)            
-            r = norm(rr.toarray() - self.d, inf)
-            return r
+            return norm(rr.toarray().flatten() - self.d, inf)
 
     def _Prepare(self):
         if self._isPrepared: return
@@ -69,13 +68,13 @@ class SLE(MatrixProblem):
                 
             self.d = hstack(d).flatten()
             self.C  = Vstack(C)
-
-            if hasattr(self.C, 'tocsc'): self.C_as_csc = self.C.tocsc()
             
+            if hasattr(self.C, 'tocsc'): self.C_as_csc = self.C.tocsc()
             if isinstance(self.C,ndarray) and self.n > 100 and len(flatnonzero(self.C))/self.C.size < 0.3:
                 s = "Probably you'd better solve this SLE as sparse"
                 if not scipyInstalled: s += ' (requires scipy installed)'
                 self.pWarn(s)
+
 
         self.x0 = zeros(self.C.shape[1])
 #        if not self.damp is None and not any(isfinite(self.X)):

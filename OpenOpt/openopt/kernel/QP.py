@@ -10,7 +10,7 @@ class QP(MatrixProblem):
     goal = 'minimum'
     allowedGoals = ['minimum', 'min']
     showGoal = False
-    _optionalData = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'QC']
+    _optionalData = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'QC', 'intVars']
     expectedArgs = ['H', 'f']
     
     def _Prepare(self):
