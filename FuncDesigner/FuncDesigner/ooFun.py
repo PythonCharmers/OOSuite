@@ -527,7 +527,11 @@ class oofun:
                 if tmp is None or len(tmp)==0: continue # TODO: remove None, use [] instead
                 r_oofuns.append(tmp)
             r = set(r_oovars)
-            r.update(*r_oofuns)
+            
+            # Python 2.5 sel.update fails on empty input
+            if len(r_oofuns)!=0: r.update(*r_oofuns)
+            
+            
             self.dep = r    
             # /NEW
             
