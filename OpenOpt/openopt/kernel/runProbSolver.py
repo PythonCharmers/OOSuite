@@ -122,9 +122,6 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
             p.warn('min' + fn + ' (' + str(getattr(p,'min'+fn)) +') exceeds ' + 'max' + fn + '(' + str(getattr(p,'max'+fn)) +'), setting latter to former')
             setattr(p,'max'+fn, getattr(p,'min'+fn))
 
-    if p.probType in ('LP', 'MILP', 'QP') and p.plot:
-        p.warn("plotting for LP/MILP/QP isn't implemented/tested yet")
-
     for fn in ['maxFunEvals', 'maxIter']: setattr(p, fn, int(getattr(p, fn)))# to prevent warnings from numbers like 1e7
 
     if hasattr(p, 'x0'): p.x0 = atleast_1d(asfarray(p.x0).copy())
@@ -236,7 +233,6 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     if p.isFeas(p.xf) and (not p.probType=='MINLP' or p.discreteConstraintsAreSatisfied(p.xf)):
         p.isFeasible = True
     else: p.isFeasible = False
-    
     p.fk = p.objFunc(p.xk)
     if not hasattr(p,  'ff') or any(p.ff==nan): 
         p.iterfcn, tmp_iterfcn = lambda *args: None, p.iterfcn
