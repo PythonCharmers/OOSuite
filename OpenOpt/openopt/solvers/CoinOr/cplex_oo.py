@@ -5,7 +5,9 @@ from openopt.kernel.ooMisc import LinConst2WholeRepr
 #from openopt.kernel.ooMisc import isSolved
 #from openopt.kernel.nonOptMisc import scipyInstalled, Hstack, Vstack, Find, isspmatrix
 import os
-    
+import cplex as CPLEX
+from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X,  SMALL_DELTA_F, IS_NAN_IN_X
+
 class cplex(baseSolver):
     __name__ = 'cplex'
     __license__ = "free for academic"
@@ -16,22 +18,21 @@ class cplex(baseSolver):
     #__cannotHandleExceptions__ = True
     __optionalDataThatCanBeHandled__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'intVars', 'H', 'QC']
     _canHandleScipySparse = True
+    __isIterPointAlwaysFeasible__ = lambda self, p: p.intVars not in ((), [], None)
     
     #options = ''
 
     def __init__(self): pass
     def __solver__(self, p):
-        try:
-            import cplex
-        except ImportError:
-            p.err('You should have Cplex and its Python API installed')
-        
-        n = p.f.size
+        for key in (SMALL_DELTA_X, SMALL_DELTA_F,  IS_NAN_IN_X):
+            if key in p.kernelIterFuncs:
+                p.kernelIterFuncs.pop(key)
         
         # reduce text output
         os.close(1); os.close(2) # may not work for non-Unix OS
-         
-        P = cplex.Cplex()
+        
+        n = p.f.size 
+        P = CPLEX.Cplex()
         P.set_results_stream(None)
         
         if np.isfinite(p.maxTime): 
@@ -59,14 +60,29 @@ class cplex(baseSolver):
             if hasattr(p, 'QC'):
                 for q, u, v in p.QC:
                     rows,  cols,  vals = Find(q)
-                    quad_expr = cplex.SparseTriple(ind1=rows, ind2=cols, val = vals)
+                    quad_expr = CPLEX.SparseTriple(ind1=rows, ind2=cols, val = vals)
                     #lin_expr = zip(np.arange(np.atleast_1d(u).size), u)
-                    lin_expr = cplex.SparsePair(ind=np.arange(np.atleast_1d(u).size), val=u)
+                    lin_expr = CPLEX.SparsePair(ind=np.arange(np.atleast_1d(u).size), val=u)
                     P.quadratic_constraints.add(quad_expr = quad_expr, lin_expr = lin_expr, rhs = -v if isscalar(v) else -asscalar(v))
 
-            #P.quadratic_constraints.add()
-            #raise 0
-        #raise 0
+        X = np.nan*np.ones(p.n)
+        if p.intVars in ([], (), None):
+            class ooContinuousCallback(CPLEX.callbacks.ContinuousCallback):
+                def __call__(self):
+                    p.iterfcn(X, self.get_objective_value(), self.get_primal_infeasibility())
+                    if p.istop != 0: 
+                        self.abort()
+            P.register_callback(ooContinuousCallback)
+        else:
+            class ooMIPCallback(CPLEX.callbacks.MIPInfoCallback):
+                def __call__(self):
+                    #if not self.aborted:
+                    p.iterfcn(X, self.get_best_objective_value(), 0.0)
+                    if p.istop != 0: 
+                        self.abort()
+
+            P.register_callback(ooMIPCallback)
+                #get_incumbent_values            
         
         # Temporary walkaround Cplex 12.2.0.0 bug with integers in QP/QCQP
         P.SOS.get_num()
@@ -77,7 +93,7 @@ class cplex(baseSolver):
         try:
             p.xf = np.asfarray(P.solution.get_values())
             p.istop = 1000
-        except cplex.exceptions.CplexError:
+        except CPLEX.exceptions.CplexError:
             p.xf = p.x0 * np.nan
             p.istop = -1
         
@@ -92,7 +108,15 @@ class cplex(baseSolver):
             p.istop = IS_MAX_TIME_REACHED
             p.msg = 'max time limit has been reached'
             
-
+#class ooContinuousCallback(CPLEX.callbacks.ContinuousCallback):
+#    def __call__(self):
+#        print 'current objective:', self.get_objective_value()
+#        self.p.iterfcn(f=self.get_objective_value())
+#        if self.p.istop != 0: 
+#            cplex.terminate()
+#            return # is "return" nessesary here?
+            
+    
 def Find(M):
     if isinstance(M, np.ndarray): # numpy array or matrix
         rows, cols = np.where(M)

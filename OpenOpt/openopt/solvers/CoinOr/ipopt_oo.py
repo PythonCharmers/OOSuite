@@ -174,16 +174,16 @@ class ipopt(baseSolver):
             ipopt_opt_file.writelines(lines)
             ipopt_opt_file.close()
 
-        x, zl, zu, obj = nlp.solve(p.x0)
-        #raise 0
-        if p.point(p.xk).betterThan(p.point(x)):
-            obj = p.fk
-            p.xk = p.xk.copy() # for more safety
-        else:
-            p.xk, p.fk = x.copy(), obj
 
-        if p.istop == 0: p.istop = 1000
-        #p.xk, p.fk = x.copy(), obj
-        nlp.close()
+        try:
+            x, zl, zu, obj = nlp.solve(p.x0)
+            if p.point(p.xk).betterThan(p.point(x)):
+                obj = p.fk
+                p.xk = p.xk.copy() # for more safety
+            else:
+                p.xk, p.fk = x.copy(), obj
+            if p.istop == 0: p.istop = 1000
+        finally:
+            nlp.close()
 
 
