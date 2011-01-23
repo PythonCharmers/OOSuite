@@ -176,7 +176,7 @@ def _sum(inp, *args, **kwargs):
                         r[elem] = tmpres
                         keys.add(elem)
                 else:
-                    tmp = elem._D(point, fixedVarsScheduleID, Vars, fixedVars, *args, **kwargs)
+                    tmp = elem._D(point, fixedVarsScheduleID, Vars, fixedVars, useSparse = useSparse)
                     for key, val in tmp.items():
                         if key in keys:
                             if isinstance(r[key], np.ndarray) and not isinstance(val, np.ndarray): # i.e. tmpres is sparse matrix
