@@ -20,6 +20,7 @@ class cplex(baseSolver):
     _canHandleScipySparse = True
     __isIterPointAlwaysFeasible__ = lambda self, p: p.intVars not in ((), [], None)
     
+    preprocessor = lambda *args, **kwargs: None
     #options = ''
 
     def __init__(self): pass
@@ -86,6 +87,9 @@ class cplex(baseSolver):
         
         # Temporary walkaround Cplex 12.2.0.0 bug with integers in QP/QCQP
         P.SOS.get_num()
+        
+        self.preprocessor(P, p)
+        p.extras['CplexProb'] = P
         
         P.solve()
         s = P.solution.get_status()

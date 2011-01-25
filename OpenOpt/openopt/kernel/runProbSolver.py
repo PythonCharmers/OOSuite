@@ -191,7 +191,7 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
         if p.showGoal: s += '   goal: ' + p.goal
         p.disp(s)
 
-
+    p.extras = {}
 
     try:
         if isConverter:
@@ -269,7 +269,8 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     r.elapsed['solver_time'] = round(100.0*(time() - p.timeStart))/100.0
     r.elapsed['solver_cputime'] = clock() - p.cpuTimeStart
 
-    for fn in ('ff', 'istop', 'duals', 'isFeasible', 'msg', 'stopcase', 'iterValues',  'special'):
+
+    for fn in ('ff', 'istop', 'duals', 'isFeasible', 'msg', 'stopcase', 'iterValues',  'special', 'extras'):
         if hasattr(p, fn):  setattr(r, fn, getattr(p, fn))
 
     #r.xf = copy.deepcopy(p.xf)
