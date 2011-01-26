@@ -91,7 +91,9 @@ def getSolverFromStringName(p, solver_str):
             solverClass = getattr(my_import('openopt.solvers.'+solverPaths[solver_str]), solver_str)
         except ImportError:
             p.err('incorrect solver is called, maybe the solver "' + solver_str +'" require its installation, check http://www.openopt.org/%s or try p._solve() for more details' % p.probType)
-    return solverClass()
+    r = solverClass()        
+    if not hasattr(r, 'fieldsForProbInstance'): r.fieldsForProbInstance = {}
+    return r
 
 ##################################################################
 def my_import(name):
@@ -125,6 +127,7 @@ def oosolver(solverName, *args,  **kwargs):
         solverClassInstance.__name__ = solverName
         solverClassInstance.fieldsForProbInstance = {}
         solverClassInstance.isInstalled = False
+    #assert hasattr(solverClassInstance, 'fieldsForProbInstance')
     return solverClassInstance
 
 def Copy(arg): 

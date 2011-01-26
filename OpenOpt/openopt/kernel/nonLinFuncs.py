@@ -248,7 +248,7 @@ class nonLinFuncs:
 
         #TODO: patterns!
         nFuncs = getattr(p, 'n'+funcType)
-        if not getattr(p.userProvided, derivativesType):
+        if not getattr(p.userProvided, derivativesType) or p.isFDmodel:
             #                                            x, IND, userFunctionType, ignorePrev, getDerivative
             derivatives = p.wrapped_func(x, ind, funcType, True, True)
             

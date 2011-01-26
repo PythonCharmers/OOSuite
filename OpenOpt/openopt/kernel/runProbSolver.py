@@ -273,6 +273,8 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     for fn in ('ff', 'istop', 'duals', 'isFeasible', 'msg', 'stopcase', 'iterValues',  'special', 'extras'):
         if hasattr(p, fn):  setattr(r, fn, getattr(p, fn))
 
+    if hasattr(p.solver, 'innerState'):
+        r.extras['innerState'] = p.solver.innerState
     #r.xf = copy.deepcopy(p.xf)
     r.xf = p.xf
     r.rf = asscalar(asarray(p.rf))

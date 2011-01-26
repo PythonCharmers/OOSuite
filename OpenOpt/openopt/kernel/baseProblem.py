@@ -240,12 +240,13 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
 
         #TODO: hold it in single place
 
-        fieldsToAssert = ['userProvided', 'contol', 'xtol', 'ftol', 'gtol', 'iprint', 'maxIter', 'maxTime', 'maxCPUTime','fEnough', 'goal', 'color', 'debug', 'maxFunEvals', 'xlabel']
+        fieldsToAssert = ['contol', 'xtol', 'ftol', 'gtol', 'iprint', 'maxIter', 'maxTime', 'maxCPUTime','fEnough', 'goal', 'color', 'debug', 'maxFunEvals', 'xlabel']
         # TODO: boolVars, intVars
         if sameConstraints: fieldsToAssert+= ['lb', 'ub', 'A', 'Aeq', 'b', 'beq']
 
         for key in fieldsToAssert:
             if hasattr(self, key): setattr(newProb, key, getattr(self, key))
+
 
         # note: because of 'userProvided' from prev line
         #self self.userProvided is same to newProb.userProvided
@@ -254,14 +255,17 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
 #                if hasattr(self.userProvided, key) and getattr(self.userProvided, key):
 #                    setattr(newProb, key, getattr(self.user, key))
         
+        Arr = ['f', 'df']
         if sameConstraints:
-            for key in ['c','dc','h','dh','d2c','d2h']:
-                if hasattr(self.userProvided, key):
-                    if getattr(self.userProvided, key):
-                        #setattr(newProb, key, getattr(self.user, key))
-                        setattr(newProb, key, getattr(self, key)) if self.isFDmodel else setattr(newProb, key, getattr(self.user, key))
-                    else:
-                        setattr(newProb, key, None)
+            Arr += ['c','dc','h','dh','d2c','d2h']
+        
+        for key in Arr:
+            if hasattr(self.userProvided, key):
+                if getattr(self.userProvided, key):
+                    #setattr(newProb, key, getattr(self.user, key))
+                    setattr(newProb, key, getattr(self, key)) if self.isFDmodel else setattr(newProb, key, getattr(self.user, key))
+                else:
+                    setattr(newProb, key, None)
                         
     FuncDesignerSign = 'f'
     _isFDmodel = lambda self: hasattr(self, self.FuncDesignerSign) and \
