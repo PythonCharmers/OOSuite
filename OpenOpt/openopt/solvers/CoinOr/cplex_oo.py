@@ -30,10 +30,10 @@ class cplex(baseSolver):
                 p.kernelIterFuncs.pop(key)
         
         # reduce text output
-        try:
-            os.close(1); os.close(2) # may not work for non-Unix OS
-        except:
-            pass
+#        try:
+#            os.close(1); os.close(2) # may not work for non-Unix OS
+#        except:
+#            pass
         
         n = p.f.size 
         P = CPLEX.Cplex()

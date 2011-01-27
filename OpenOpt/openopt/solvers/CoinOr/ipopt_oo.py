@@ -33,10 +33,10 @@ class ipopt(baseSolver):
         if not pyipoptInstalled:
             p.err('you should have pyipopt installed')
             
-        try:
-            os.close(1); os.close(2) # may not work for non-Unix OS
-        except:
-            pass
+#        try:
+#            os.close(1); os.close(2) # may not work for non-Unix OS
+#        except:
+#            pass
             
         nvar = p.n
         x_L = p.lb
