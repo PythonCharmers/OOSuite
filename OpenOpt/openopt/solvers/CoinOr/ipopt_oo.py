@@ -32,7 +32,12 @@ class ipopt(baseSolver):
     def __solver__(self, p):
         if not pyipoptInstalled:
             p.err('you should have pyipopt installed')
-        os.close(1); os.close(2) # may not work for non-Unix OS
+            
+        try:
+            os.close(1); os.close(2) # may not work for non-Unix OS
+        except:
+            pass
+            
         nvar = p.n
         x_L = p.lb
         x_U = p.ub
