@@ -42,17 +42,11 @@ class diagonal:
     def toarray(self):
         return np.diag(self.diag * self.scalarMultiplier)
     
-    def resolve(self, useSparse):
-        if useSparse in (True, 'auto') and scipyInstalled and self.size > 50:
-            r = SP.lil_diags([self.diag*self.scalarMultiplier], [0], (self.size, self.size))
-            #r.setdiag(self.diag*self.scalarMultiplier)
-            return r
-        else: 
-            return self.toarray()
-#        elif useSparse == False or not scipyInstalled:
-#            return self.toarray()
-#        else:
-#            assert 0, 'error in FD kernel'
+    resolve = lambda self, useSparse:\
+        SP.dia_matrix((self.diag*self.scalarMultiplier,0), shape=(self.size,self.size)) \
+        if useSparse in (True, 'auto') and scipyInstalled and self.size > 50 \
+        else self.toarray()
+
     
     def __add__(self, item):
         if type(item) == DiagonalType:
@@ -62,6 +56,9 @@ class diagonal:
         else: # sparse matrix
             assert SP.isspmatrix(item)
             return self.resolve(True)+item
+    
+    def __radd__(self, item):
+        return self.__add__(item)
     
     def __mul__(self, item):
         r = diagonal(self.diag, self.scalarMultiplier) # mb use copy instead?
