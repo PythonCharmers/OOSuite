@@ -764,7 +764,10 @@ class oofun:
                 
                 for key, val in elem_d.items():
                     if type(t1) == DiagonalType or type(val) == DiagonalType:
-                        rr = t1 *  val
+                        if isspmatrix(t1):
+                            rr = t1._mul_sparse_matrix(val.resolve(True))
+                        else:
+                            rr = t1 *  val
 #                        if isscalar(t1) or isscalar(val) or (type(t1) == DiagonalType and type(val) == DiagonalType):
 #                            rr = t1 * val
 #                        else: # ndarray or sparse matrix is present
@@ -899,20 +902,28 @@ class oofun:
                 if isinstance(tmp, ndarray) and hasattr(tmp, 'toarray'): tmp = tmp.A # is dense matrix
                 
                 #if not isinstance(tmp, ndarray) and not isscalar(tmp) and type(tmp) != DiagonalType:
-                    
-                for i, inp in enumerate(Input):
-                    t = self.input[i]
-                    if t.discrete or (t.is_oovar and ((Vars is not None and t not in Vars) or (fixedVars is not None and t in fixedVars))):
-                        ac += inp.size
-                        continue                                    
-                    if isinstance(tmp, ndarray):
-                        TMP = tmp[:, ac:ac+Len(inp)]
-                    elif isscalar(tmp) or type(tmp) == DiagonalType: # TODO: check latter condition
-                        TMP = tmp
-                    else: # scipy.sparse matrix
-                        TMP = tmp.tocsc()[:, ac:ac+inp.size]
-                    ac += Len(inp)
-                    derivativeSelf.append(TMP)
+                if len(Input) == 1:
+                    derivativeSelf = [tmp]
+                else:
+                    for i, inp in enumerate(Input):
+                        t = self.input[i]
+                        if t.discrete or (t.is_oovar and ((Vars is not None and t not in Vars) or (fixedVars is not None and t in fixedVars))):
+                            ac += inp.size
+                            continue                                    
+                        if isinstance(tmp, ndarray):
+                            TMP = tmp[:, ac:ac+Len(inp)]
+                        elif isscalar(tmp):
+                            TMP = tmp
+                        elif type(tmp) == DiagonalType: 
+                            # TODO: mb rework it
+                            if inp.size > 150 and tmp.size > 150:
+                                tmp = tmp.resolve(True).tocsc()
+                            else: tmp.resolve(False) 
+                            TMP = tmp[:, ac:ac+inp.size]
+                        else: # scipy.sparse matrix
+                            TMP = tmp.tocsc()[:, ac:ac+inp.size]
+                        ac += Len(inp)
+                        derivativeSelf.append(TMP)
                     
             # TODO: is it required?
 #                if not hasattr(self, 'outputTotalLength'): self(x)

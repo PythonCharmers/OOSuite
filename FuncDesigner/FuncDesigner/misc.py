@@ -30,7 +30,7 @@ def pWarn(msg):
 
 
 class diagonal:
-    __array_priority__ = 15# set it greater than 1 to prevent invoking numpy array __mul__ etc
+    __array_priority__ = 150000# set it greater than 1 to prevent invoking numpy array __mul__ etc
     
     def __init__(self, arr, scalarMultiplier=1.0):
         assert arr.ndim <= 1
@@ -78,7 +78,7 @@ class diagonal:
                 r = np.dot(self.resolve(False), item)
         else:
             assert SP.isspmatrix(item)
-            if prod(item.shape) == 1:
+            if np.prod(item.shape) == 1:
                 r.scalarMultiplier *= item[0, 0]
             else:
                 tmp = SP.lil_matrix(r.resolve(True)) # r.resolve(True) can yield dense ndarray
