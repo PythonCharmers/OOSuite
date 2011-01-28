@@ -44,8 +44,8 @@ class diagonal:
     
     def resolve(self, useSparse):
         if useSparse in (True, 'auto') and scipyInstalled and self.size > 50:
-            r = SP.lil_matrix((self.size, self.size))
-            r.setdiag(self.diag*self.scalarMultiplier)
+            r = SP.lil_diags([self.diag*self.scalarMultiplier], [0], (self.size, self.size))
+            #r.setdiag(self.diag*self.scalarMultiplier)
             return r
         else: 
             return self.toarray()
