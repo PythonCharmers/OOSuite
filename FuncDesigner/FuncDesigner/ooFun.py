@@ -3,9 +3,10 @@
 from numpy import inf, asfarray, copy, all, any, empty, atleast_2d, zeros, dot, asarray, atleast_1d, empty, ones, ndarray, \
 where, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum, prod, nonzero, isnan, asscalar, zeros_like, ones_like
 from numpy.linalg import norm
-from misc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scipyInstalled, raise_except
+from misc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scipyInstalled, raise_except, DiagonalType
 from copy import deepcopy
 from ooPoint import ooPoint
+
 
 Copy = lambda arg: asscalar(arg) if type(arg)==ndarray and arg.size == 1 else arg.copy() if hasattr(arg, 'copy') else copy(arg)
 Len = lambda x: 1 if isscalar(x) else x.size if type(x)==ndarray else len(x)
@@ -658,6 +659,8 @@ class oofun:
                     raise FuncDesignerException('argument fixedVars is expected as oovar or python list/tuple of oovar instances')
                 fixedVars = set([fixedVars])
         r = self._D(x, fixedVarsScheduleID, Vars, fixedVars, useSparse = useSparse)
+        r = dict([(key, (val if type(val)!=DiagonalType else val.resolve(useSparse))) for key, val in r.items()])
+        #raise 0
         if isinstance(Vars, oofun):
             if Vars.is_oovar:
                 return Vars(r)
@@ -760,8 +763,13 @@ class oofun:
                 t1 = derivativeSelf[ac]
                 
                 for key, val in elem_d.items():
-                    #if isscalar(val) or val.ndim < 2: val = atleast_2d(val)
-                    if isscalar(val) or isscalar(t1) or prod(t1.shape)==1 or prod(val.shape)==1:
+                    if type(t1) == DiagonalType or type(val) == DiagonalType:
+                        rr = t1 *  val
+#                        if isscalar(t1) or isscalar(val) or (type(t1) == DiagonalType and type(val) == DiagonalType):
+#                            rr = t1 * val
+#                        else: # ndarray or sparse matrix is present
+                            
+                    elif isscalar(val) or isscalar(t1) or prod(t1.shape)==1 or prod(val.shape)==1:
                         #rr = t1 * val
                         rr = (t1 if isscalar(t1) or prod(t1.shape)>1 else asscalar(t1) if type(t1)==ndarray else t1[0, 0]) \
                         * (val if isscalar(val) or prod(val.shape)>1 else asscalar(val) if type(val)==ndarray else val[0, 0])
@@ -791,16 +799,17 @@ class oofun:
                         else:
                             rr = dot(t1, t2)
                     #assert rr.ndim>1
-                        
-                    if key in r:
-                        if isinstance(r[key], ndarray) and hasattr(rr, 'toarray'): # i.e. rr is sparse matrix
+                    
+                    Val = r.get(key, None)
+                    if Val is not None:
+                        if isinstance(Val, ndarray) and hasattr(rr, 'toarray'): # i.e. rr is sparse matrix
                             rr = rr.toarray() # I guess r[key] will hardly be all-zeros
-                        elif hasattr(r[key], 'toarray') and isinstance(rr, ndarray): # i.e. r[key] is sparse matrix
-                            r[key] = r[key].toarray()
-                        if type(rr) == type(r[key]) == ndarray and rr.size == r[key].size: 
-                            r[key] += rr
+                        elif hasattr(Val, 'toarray') and isinstance(rr, ndarray): # i.e. Val is sparse matrix
+                            Val = Val.toarray()
+                        if type(rr) == type(Val) == ndarray and rr.size == Val.size: 
+                            Val += rr
                         else: 
-                            r[key] = r[key] + rr
+                            r[key] = Val + rr
                     else:
                         r[key] = rr
         
@@ -859,7 +868,7 @@ class oofun:
                     else:
                         # !!!!!!!!!!!!!! TODO: add check for user-supplied derivative shape
                         tmp = deriv(*Input)
-                        if not isscalar(tmp) and type(tmp) in (ndarray, tuple, list): # i.e. not a scipy.sparse matrix
+                        if not isscalar(tmp) and type(tmp) in (ndarray, tuple, list) and type(tmp) != DiagonalType: # i.e. not a scipy.sparse matrix
                             tmp = atleast_2d(tmp)
                             
                             ########################################
@@ -888,8 +897,9 @@ class oofun:
                         
                 ac = 0
                 if isinstance(tmp, ndarray) and hasattr(tmp, 'toarray'): tmp = tmp.A # is dense matrix
-                if not isinstance(tmp, ndarray) and not isscalar(tmp):
-                    csc_tmp = tmp.tocsc()
+                
+                #if not isinstance(tmp, ndarray) and not isscalar(tmp) and type(tmp) != DiagonalType:
+                    
                 for i, inp in enumerate(Input):
                     t = self.input[i]
                     if t.discrete or (t.is_oovar and ((Vars is not None and t not in Vars) or (fixedVars is not None and t in fixedVars))):
@@ -897,10 +907,10 @@ class oofun:
                         continue                                    
                     if isinstance(tmp, ndarray):
                         TMP = tmp[:, ac:ac+Len(inp)]
-                    elif isscalar(tmp):
+                    elif isscalar(tmp) or type(tmp) == DiagonalType: # TODO: check latter condition
                         TMP = tmp
                     else: # scipy.sparse matrix
-                        TMP = csc_tmp[:, ac:ac+inp.size]
+                        TMP = tmp.tocsc()[:, ac:ac+inp.size]
                     ac += Len(inp)
                     derivativeSelf.append(TMP)
                     
