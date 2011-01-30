@@ -79,6 +79,9 @@ class diagonal:
     def __radd__(self, item):
         return self.__add__(item)
     
+    def __neg__(self):
+        return diagonal(self.diag, -self.scalarMultiplier, isOnes = self.isOnes)
+    
     def __mul__(self, item):
         if np.isscalar(item):
             return diagonal(self.diag, item*self.scalarMultiplier)
