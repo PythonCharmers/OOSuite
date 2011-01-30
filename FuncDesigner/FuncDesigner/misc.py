@@ -30,27 +30,46 @@ def pWarn(msg):
 
 
 class diagonal:
+    isOnes = True
     __array_priority__ = 150000# set it greater than 1 to prevent invoking numpy array __mul__ etc
     
-    def __init__(self, arr, scalarMultiplier=1.0):
+    def __init__(self, arr, scalarMultiplier=1.0, isOnes = False, Copy=True):
         assert arr.ndim <= 1
-        self.diag = arr#.copy() 
+        self.diag = arr.copy() if Copy else arr
         self.scalarMultiplier = scalarMultiplier
         self.size = arr.size
+        self.isOnes = isOnes
         
     
     def toarray(self):
-        return np.diag(self.diag * self.scalarMultiplier)
+        if self.isOnes:
+            tmp = np.empty(self.size)
+            tmp.fill(self.scalarMultiplier)
+            return np.diag(tmp)
+        else:
+            return np.diag(self.diag * self.scalarMultiplier)
     
-    resolve = lambda self, useSparse:\
-        SP.dia_matrix((self.diag*self.scalarMultiplier,0), shape=(self.size,self.size)) \
-        if useSparse in (True, 'auto') and scipyInstalled and self.size > 50 \
-        else self.toarray()
+    def resolve(self, useSparse):
+        if useSparse in (True, 'auto') and scipyInstalled and self.size > 50:
+            if self.isOnes:
+                tmp = empty(self.size)
+                tmp.fill(self.scalarMultiplier)
+            else:
+                tmp = self.diag*self.scalarMultiplier
+            return SP.dia_matrix((tmp,0), shape=(self.size,self.size)) 
+        else:
+            return self.toarray()
+
+
 
     
     def __add__(self, item):
         if type(item) == DiagonalType:
-            return diagonal(self.diag * self.scalarMultiplier + item.diag*item.scalarMultiplier)
+            # TODO: mb use other.diag.copy(), self.diag.copy() for more safety, especially for parallel computations?
+            if self.isOnes and item.isOnes:
+                return diagonal(self.diag, self.scalarMultiplier + item.scalarMultiplier, isOnes = True)
+            else:
+                return diagonal(self.diag * self.scalarMultiplier + item.diag*item.scalarMultiplier)
         elif np.isscalar(item) or type(item) == np.ndarray:
             return self.resolve(False)+item
         else: # sparse matrix
@@ -61,27 +80,30 @@ class diagonal:
         return self.__add__(item)
     
     def __mul__(self, item):
-        r = diagonal(self.diag, self.scalarMultiplier) # mb use copy instead?
         if np.isscalar(item):
-            r.scalarMultiplier *= item
-        elif type(item) == DiagonalType:#diagonal:
-            r.scalarMultiplier *= item.scalarMultiplier
-            
-            ##################
-            # Not in-place modification!
-            r.diag = r.diag * item.diag
-            ##################
-        elif type(item) == np.ndarray:
+            return diagonal(self.diag, item*self.scalarMultiplier)
+        if type(item) == DiagonalType:#diagonal:
+            scalarMultiplier = item.scalarMultiplier * self.scalarMultiplier
+            if self.isOnes:
+                diag = item.diag
+            elif item.isOnes:
+                diag = self.diag
+            else:
+                diag = self.diag * item.diag
+            return diagonal(diag, scalarMultiplier, isOnes = item.isOnes and self.isOnes) 
+        elif isinstance(item, np.ndarray):
             if item.size == 1:
-                r.scalarMultiplier *= np.asscalar(item)
+                return diagonal(self.diag, scalarMultiplier = np.asscalar(item)*self.scalarMultiplier, isOnes = self.isOnes)
             else:
                 r = np.dot(self.resolve(False), item)
         else:
-            assert SP.isspmatrix(item)
+            #assert SP.isspmatrix(item)
             if np.prod(item.shape) == 1:
                 r.scalarMultiplier *= item[0, 0]
             else:
-                tmp = SP.lil_matrix(r.resolve(True)) # r.resolve(True) can yield dense ndarray
+                tmp = r.resolve(True)
+                if not SP.isspmatrix(tmp): # currently lil_matrix and K^ works very slow on sparse matrices
+                    tmp = SP.lil_matrix(tmp) # r.resolve(True) can yield dense ndarray
                 r = tmp._mul_sparse_matrix(item)
         return r
     
@@ -95,11 +117,11 @@ class diagonal:
 
 DiagonalType = type(diagonal(np.array(0)))
 
-Eye = lambda n: 1.0 if n == 1 else diagonal(np.ones(n))
+Eye = lambda n: 1.0 if n == 1 else diagonal(np.ones(n), isOnes = True, Copy = False)
 
 def Diag(x):
     if isscalar(x): return x
-    else: return diagonal(x)
+    else: return diagonal(x, Copy = False)
 #    elif len(x) == 1: return asfarray(x)
 #    elif len(x) < 16 or not scipyInstalled: return diag(x)
 #    else: return scipy.sparse.spdiags(x, [0], len(x), len(x)) 
