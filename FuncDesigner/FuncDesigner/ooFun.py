@@ -22,7 +22,7 @@ try:
     import scipy
     SparseMatrixConstructor = lambda *args, **kwargs: scipy.sparse.lil_matrix(*args, **kwargs)
     from scipy import sparse
-    from scipy.sparse import hstack as HstackSP, isspmatrix_csc, isspmatrix_csr
+    from scipy.sparse import hstack as HstackSP, isspmatrix_csc, isspmatrix_csr, eye as SP_eye
     def Hstack(Tuple):
         ind = where([isscalar(elem) or prod(elem.shape)!=0 for elem in Tuple])[0].tolist()
         elems = [Tuple[i] for i in ind]
@@ -394,10 +394,10 @@ class oofun:
             if condBigMatrix and not scipyInstalled:
                 self.pWarn(scipyAbsentMsg)
             if condBigMatrix and scipyInstalled:
-                r = Eye(ind2-ind1)
+                r = SP_eye(ind2-ind1)
                 if ind1 != 0:
-                   m1 = SparseMatrixConstructor((ind2-ind1, ind1))
-                   r = Hstack((SparseMatrixConstructor((ind2-ind1, ind1)), r))
+                    m1 = SparseMatrixConstructor((ind2-ind1, ind1))
+                    r = Hstack((SparseMatrixConstructor((ind2-ind1, ind1)), r))
                 if ind2 != x.size:
                    r = Hstack((r, SparseMatrixConstructor((ind2-ind1, x.size - ind2))))
             else:
