@@ -80,9 +80,10 @@ class diagonal:
         return self.__add__(item)
     
     def __neg__(self):
-        return diagonal(self.diag, -self.scalarMultiplier, isOnes = self.isOnes)
+        return diagonal(self.diag, -self.scalarMultiplier, isOnes = self.isOnes, Copy=False)
     
-    def __mul__(self, item):
+    def __mul__(self, item): 
+        #!!! PERFORMS MATRIX MULTIPLICATION!!!
         if np.isscalar(item):
             return diagonal(self.diag, item*self.scalarMultiplier)
         if type(item) == DiagonalType:#diagonal:
