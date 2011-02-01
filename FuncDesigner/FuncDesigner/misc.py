@@ -45,6 +45,7 @@ class diagonal:
         if self.isOnes:
             tmp = np.empty(self.size)
             tmp.fill(self.scalarMultiplier)
+            #if tmp.size > 1000: raise 0
             return np.diag(tmp)
         else:
             return np.diag(self.diag * self.scalarMultiplier)
@@ -52,10 +53,11 @@ class diagonal:
     def resolve(self, useSparse):
         if useSparse in (True, 'auto') and scipyInstalled and self.size > 50:
             if self.isOnes:
-                tmp = empty(self.size)
+                tmp = np.empty(self.size)
                 tmp.fill(self.scalarMultiplier)
             else:
                 tmp = self.diag*self.scalarMultiplier
+            #raise 0
             return SP.dia_matrix((tmp,0), shape=(self.size,self.size)) 
         else:
             return self.toarray()
@@ -103,17 +105,20 @@ class diagonal:
                 return (self.scalarMultiplier*self.diag*item.flatten()).reshape(item.shape)
             else:
                 # !!!!!!!!!! TODO:  rework it!!!!!!!!!!!
-                r = np.dot(self.resolve(False if self.size < 100 or not scipyInstalled else True), item)
+                if self.size < 100 or not scipyInstalled:
+                    return np.dot(self.resolve(False), item)
+                else:
+                    return self.resolve(True)._mul_sparse_matrix(item)
         else:
             #assert SP.isspmatrix(item)
             if np.prod(item.shape) == 1:
-                r.scalarMultiplier *= item[0, 0]
+                return diagonal(self.diag, scalarMultiplier = self.scalarMultiplier*item[0, 0])
             else:
-                tmp = r.resolve(True)
+                tmp = self.resolve(True)
                 if not SP.isspmatrix(tmp): # currently lil_matrix and K^ works very slow on sparse matrices
                     tmp = SP.lil_matrix(tmp) # r.resolve(True) can yield dense ndarray
-                r = tmp._mul_sparse_matrix(item)
-        return r
+                return tmp._mul_sparse_matrix(item)
+        #return r
     
     def __getattr__(self, attr):
         if attr == 'T': return self
