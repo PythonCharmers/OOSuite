@@ -34,7 +34,7 @@ class diagonal:
     __array_priority__ = 150000# set it greater than 1 to prevent invoking numpy array __mul__ etc
     
     def __init__(self, arr, scalarMultiplier=1.0, isOnes = False, Copy=True):
-        assert arr.ndim <= 1
+        #assert arr.ndim <= 1
         self.diag = arr.copy() if Copy else arr
         self.scalarMultiplier = scalarMultiplier
         self.size = arr.size
@@ -98,8 +98,12 @@ class diagonal:
         elif isinstance(item, np.ndarray):
             if item.size == 1:
                 return diagonal(self.diag, scalarMultiplier = np.asscalar(item)*self.scalarMultiplier, isOnes = self.isOnes)
+            elif min(item.shape) == 1:
+                #TODO: assert item.ndim <= 2 
+                return (self.scalarMultiplier*self.diag*item.flatten()).reshape(item.shape)
             else:
-                r = np.dot(self.resolve(False), item)
+                # !!!!!!!!!! TODO:  rework it!!!!!!!!!!!
+                r = np.dot(self.resolve(False if self.size < 100 or not scipyInstalled else True), item)
         else:
             #assert SP.isspmatrix(item)
             if np.prod(item.shape) == 1:
@@ -125,7 +129,7 @@ Eye = lambda n: 1.0 if n == 1 else diagonal(np.ones(n), isOnes = True, Copy = Fa
 
 def Diag(x):
     if isscalar(x): return x
-    else: return diagonal(x, Copy = False)
+    else: return diagonal(asfarray(x), Copy = False)
 #    elif len(x) == 1: return asfarray(x)
 #    elif len(x) < 16 or not scipyInstalled: return diag(x)
 #    else: return scipy.sparse.spdiags(x, [0], len(x), len(x)) 
