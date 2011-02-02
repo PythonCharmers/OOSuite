@@ -121,7 +121,7 @@ class diagonal:
         #return r
     
     def __getattr__(self, attr):
-        if attr == 'T': return self
+        if attr == 'T': return self # TODO: mb using copy will be more safe
         elif attr == 'shape': return self.size, self.size
         raise AttributeError('you are trying to obtain incorrect attribute "%s" for FuncDesigner diagonal' %attr)
     

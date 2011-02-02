@@ -59,14 +59,23 @@ def cosh(inp):
     if not isinstance(inp, oofun): return np.cosh(inp)
     return oofun(np.cosh, inp, d = lambda x: Diag(np.sinh(x)))
 
+def angle(inp1, inp2):
+    # returns angle between 2 vectors
+    # TODO: 
+    # 1) handle zero vector(s)
+    # 2) handle small numerical errors more properly
+    #     (currently they are handled via constraint attached to arccos)
+    return arccos(sum(inp1*inp2)/sqrt(sum(inp1**2)*sum(inp2**2)))
+
 def exp(inp):
     if not isinstance(inp, oofun): return np.exp(inp)
     return oofun(np.exp, inp, d = lambda x: Diag(np.exp(x)))
 
-def sqrt(inp):
-    if not isinstance(inp, oofun): return np.sqrt(inp)
+def sqrt(inp, attachConstraints = True):
+    if not isinstance(inp, oofun): 
+        return np.sqrt(inp)
     r = oofun(np.sqrt, inp, d = lambda x: Diag(0.5 / np.sqrt(x)))
-    r.attach((inp>0)('sqrt_domain_zero_bound_%d' % r._id, tol=-1e-7))
+    if attachConstraints: r.attach((inp>0)('sqrt_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
 
 def abs(inp):
@@ -218,6 +227,31 @@ def norm(*args, **kwargs):
         return np.norm(*args, **kwargs)
     return sum(args[0]**2) ** 0.5
     
+
+#def stack(*args, **kwargs):
+#    assert len(kwargs) == 0 and len(args) != 0
+#    if len(args) == 1:
+#        assert type(args[0]) in (list, tuple)
+#        if not any([isinstance(arg, oofun) for arg in args[0]]): return np.hstack(args)
+#        #f = lambda *Args: np.hstack([arg(Args) if isinstance(arg, oofun) else arg for arg in args[0]])
+#        def f(*Args): 
+#            r = np.hstack([arg.fun(Args) if isinstance(arg, oofun) else arg for arg in args[0]])
+#            print '1:', r
+#            raise 0
+#            return r
+#        #d = lambda *Args: np.hstack([arg.d(Args).reshape(-1, 1) if isinstance(arg, oofun) else np.zeros((len(arg))) for arg in args[0]])
+#        def d(*Args):
+#            r = np.hstack([arg.d(Args).reshape(-1, 1) if isinstance(arg, oofun) else np.zeros((len(arg))) for arg in args[0]])
+#            print '2:', r
+#            return r
+#        print 'asdf', args[0]
+#        return oofun(f, args[0], d=d)
+#    else:
+#        raise FuncDesignerException('unimplemented yet')
+#        #assert isinstance(args[0], oofun) 
+        
+    
+
 #norm = lambda inp: sqrt(inp**2)
 
 #def norm(inp, *args, **kwargs):
