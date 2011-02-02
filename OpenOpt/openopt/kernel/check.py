@@ -12,7 +12,7 @@ def check(p):
     for fn in p._optionalData:
         attr = getattr(p, fn, None)
         if attr in (None, [], ()) or fn in p.solver.__optionalDataThatCanBeHandled__: continue
-        if fn == 'Qc' or (callable(attr) and getattr(p.userProvided, fn)) or (not callable(attr) and asarray(attr).size>0 and any(isfinite(attr))):
+        if fn == 'Qc' or (callable(attr) and getattr(p.userProvided, fn)) or (type(attr) in (set, dict, list, tuple) and len(attr)) or (not callable(attr) and asarray(attr).size>0 and any(isfinite(attr))):
             p.err('the solver ' + p.solver.__name__ + ' cannot handle ' + "'" + fn + "' data")
 
     return nErrors
