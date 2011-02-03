@@ -1,6 +1,7 @@
 __docformat__ = "restructuredtext en"
 from time import time, clock
-from numpy import asfarray, copy, inf, nan, isfinite, ones, ndim, all, atleast_1d, any, isnan, array_equiv, asscalar, asarray, where, ndarray, isscalar
+from numpy import asfarray, copy, inf, nan, isfinite, ones, ndim, all, atleast_1d, any, isnan, \
+array_equiv, asscalar, asarray, where, ndarray, isscalar, matrix
 from setDefaultIterFuncs import stopcase,  SMALL_DELTA_X,  SMALL_DELTA_F
 from check import check
 import copy
@@ -363,11 +364,14 @@ class OpenOptResult:
             if not hasattr(self, '_xf'):
                 self._xf = dict([(var.name, value) for var, value in p.xf.items()])
             def c(*args):
-                r = [(self._xf[arg] if isinstance(arg,  str) else self.xf[arg]) for arg in args]
-                return r[0] if len(args)==1 else r
+                condIterable = len(args) == 1 and isinstance(args[0], (list, tuple))# may be tuple, list, oolist
+                Args = args[0] if condIterable else args
+                r = [(self._xf[arg] if isinstance(arg,  str) else self.xf[arg]) for arg in Args]
+                r = [asscalar(item) if type(item) in (ndarray, matrix) and item.size == 1 else item for item in r]
+                return r if condIterable else r if len(args) > 1 else r[0] # if len(args)==1 else r
             self.__call__ = c
 
             # note - it doesn't work for len(args)>1 for current Python ver  2.6
-            self.__getitem__ = c # = self.__call__
+            #self.__getitem__ = c # = self.__call__
 
 class EmptyClass: pass
