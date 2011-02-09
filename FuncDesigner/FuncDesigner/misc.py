@@ -135,28 +135,6 @@ Eye = lambda n: 1.0 if n == 1 else diagonal(np.ones(n), isOnes = True, Copy = Fa
 def Diag(x):
     if isscalar(x): return x
     else: return diagonal(asfarray(x), Copy = False)
-#    elif len(x) == 1: return asfarray(x)
-#    elif len(x) < 16 or not scipyInstalled: return diag(x)
-#    else: return scipy.sparse.spdiags(x, [0], len(x), len(x)) 
-
-#def Eye(n): 
-#    if not scipyInstalled and n>150: 
-#        pWarn(scipyAbsentMsg)
-#    if n == 1:
-#        return 1.0
-#    elif n <= 16 or not scipyInstalled: 
-#        return eye(n) 
-#    else:  
-#        return scipy.sparse.identity(n) 
-
-#def Diag(x):
-#    if not scipyInstalled and len(x)>150: 
-#        pWarn(scipyAbsentMsg)
-#    if isscalar(x): return x
-#    elif len(x) == 1: return asfarray(x)
-#    elif len(x) < 16 or not scipyInstalled: return diag(x)
-#    else: return scipy.sparse.spdiags(x, [0], len(x), len(x)) 
-
 
 class fixedVarsScheduleID:
     fixedVarsScheduleID = 0
@@ -165,6 +143,7 @@ class fixedVarsScheduleID:
         return fixedVarsScheduleID.fixedVarsScheduleID
 DiffVarsID = fixedVarsScheduleID()
 _getDiffVarsID = lambda *args: DiffVarsID._getDiffVarsID(*args)
+
 
 def raise_except(*args, **kwargs):
     raise FuncDesignerException('bug in FuncDesigner engine, inform developers')

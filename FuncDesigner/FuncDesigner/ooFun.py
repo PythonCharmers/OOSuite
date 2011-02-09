@@ -3,7 +3,8 @@
 from numpy import inf, asfarray, copy, all, any, empty, atleast_2d, zeros, dot, asarray, atleast_1d, empty, ones, ndarray, \
 where, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum, prod, nonzero, isnan, asscalar, zeros_like, ones_like
 from numpy.linalg import norm
-from misc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scipyInstalled, raise_except, DiagonalType
+from misc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scipyInstalled, \
+raise_except, DiagonalType
 from copy import deepcopy
 from ooPoint import ooPoint
 
@@ -277,6 +278,8 @@ class oofun:
 
     # overload "a*b"
     def __mul__(self, other):
+        if isinstance(other, ooarray):
+            return other.__mul__(self)
         def aux_d(x, y):
             Xsize, Ysize = Len(x), Len(y)
             if Xsize == 1:
@@ -393,6 +396,7 @@ class oofun:
             condBigMatrix = Len(x) > 100 #and (ind2-ind1) > 0.25*x.size
             if condBigMatrix and not scipyInstalled:
                 self.pWarn(scipyAbsentMsg)
+            
             if condBigMatrix and scipyInstalled:
                 r = SP_eye(ind2-ind1)
                 if ind1 != 0:
@@ -572,8 +576,10 @@ class oofun:
                 self.name = args[0]
                 return self
         else:
-                self.name = kwargs['name']
-                return self
+            for fn in ['name', 'size']:
+                if fn in kwargs:
+                    setattr(self, fn, kwargs[fn])
+            return self
                 
         return self._getFuncCalcEngine(*Args, **kwargs)
 
@@ -597,7 +603,7 @@ class oofun:
             self._isFixed = (fixedVars is not None and dep.issubset(fixedVars)) or (Vars is not None and dep.isdisjoint(Vars))
             
         cond_same_point = CondSamePointByID or \
-        (self._f_val_prev is not None and (self._isFixed or (self.isCostly and  all([array_equal(x[elem], self._f_key_prev[elem]) for elem in dep]))))
+        (self._f_val_prev is not None and (self._isFixed or (self.isCostly and  all([array_equal((x if isinstance(x, dict) else x.xf)[elem], self._f_key_prev[elem]) for elem in dep]))))
         
         if cond_same_point:
             self.same += 1
@@ -624,7 +630,7 @@ class oofun:
         
         if (type(x) == ooPoint or self.isCostly or self._isFixed):
             self._f_val_prev = copy(tmp) 
-            self._f_key_prev = dict([(elem, copy(x[elem])) for elem in dep]) if self.isCostly else None
+            self._f_key_prev = dict([(elem, copy((x if isinstance(x, dict) else x.xf)[elem])) for elem in dep]) if self.isCostly else None
             return copy(self._f_val_prev)
         else:
             return tmp
@@ -1161,33 +1167,80 @@ def atleast_oofun(arg):
         #return oofun(lambda *args, **kwargs: arg(*args,  **kwargs), input=None, discrete=True)
         raise FuncDesignerException('incorrect type for the function _atleast_oofun')
 
-#
-#class ooconstraint(oofun):
-#    def __init__(self, oofun_instance):
-#        self.oofun = oofun_instance
 
-#class oolin(oofun):
-#    def __init__(self, C, d=0, *args, **kwargs):
-#        # returns Cx + d
-#        # TODO: handle FIXED variables here
-#        mtx = atleast_2d(array(C, float))
-#        d = array(d, float)
-#        self.mult, self.add = mtx, d
-#        
-#        # TODO: use p.err instead assert
-#        assert d.ndim <= 1, 'passing d with ndim>1 into oolin Cx+d is forbidden'
-#        if d.size != mtx.shape[0]:
-#            if d.size == 1: FuncDesignerException('Currently for Cx+d using d with size 1 is forbidden for C.shape[0]>1 for the sake of more safety and for openopt users code to be clearer')
-#        
-#        ind_zero = where(all(mtx==0, 0))[0]
-#        def oolin_objFun(*x):
-#            if len(x) == 1:
-#                x = x[0]
-#            X = asfarray(x).ravel()
-#            X[ind_zero] = 0
-#            r = dot(mtx, X) + d # case c = 0 or all-zeros yields insufficient additional calculations, so "if c~=0" can be omitted
-#            return r
-#        oofun.__init__(self, oolin_objFun, *args, **kwargs)
-#        
-#        #derivative:
-#        self.d = lambda *x: mtx.copy()
+class ooarray(ndarray):
+    __array_priority__ = 25
+    def __new__(self, *args, **kwargs):
+        assert len(kwargs) == 0
+        obj = asarray(args[0] if len(args) == 1 else args).view(self)
+        if obj.ndim != 1: raise FuncDesignerException('only 1-d ooarrays are implemented now')
+        #if obj.dtype != object:obj = np.asfarray(obj) #TODO: FIXME !
+        return obj
+
+    def __call__(self, *args, **kwargs):
+        #if self.dtype != object: return asfarray(self)
+        Args = ((args[0], )+ (args[1:])) if len(args) != 0 and type(args[0]) == dict else args
+        tmp = [self[i](*args, **kwargs) if isinstance(self[i], oofun) else self[i] for i in range(self.size)]
+        return array(tmp, dtype=float)
+
+    def __mul__(self, other):
+        if self.size == 1:
+            return ooarray(self[0]*other)
+        elif isscalar(other):
+            return ooarray(self.view(ndarray)*other if self.dtype != object else [self[i]*other for i in range(self.size)])
+        elif isinstance(other, oofun):
+            hasSize = 'size' in dir(other)
+            if not hasSize: raise FuncDesignerException('to perform the operation oofun size should be known')
+            if other.size == 1:
+                if self.dtype == object:
+                    return ooarray([self[i]*other for i in range(self.size)])
+                else:
+                    return ooarray(self*other)
+            else: # other.size > 1
+                # and self.size != 1
+                return ooarray([self[i]*other[i] for i in range(self.size)])
+        elif isinstance(other, ndarray):
+            return ooarray(self*other[0] if other.size == 1 else [self[i]*other[i] for i in range(other.size)])
+        else:
+            raise SpaceFuncsException('bug in multiplication')
+
+    def __div__(self, other):
+        if isscalar(other) or isinstance(other, ndarray) and other.size == 1:
+            return self * (1.0/other)
+        elif isinstance(other, oofun):
+            if self.dtype != object:
+                return self.view(ndarray) / other
+            else:
+                return ooarray([self[i] / other for i in range(self.size)])
+        elif isinstance(other, ooarray):
+            if self.dtype != object:
+                return self.view(ndarray) / other.view(ndarray)
+            else:
+                return ooarray([self[i] / other[i] for i in range(self.size)])
+        else:
+            raise FuncDesignerException('unimplemented yet')
+
+    def __add__(self, other):
+        if isscalar(other) or isinstance(other, ndarray) and other.size == 1:
+            return ooarray(self.view(ndarray) + other)
+        elif isinstance(other, oofun):
+            if self.dtype != object:
+                return self.view(ndarray) + other
+            else:
+                return ooarray([self[i] + other for i in range(self.size)])
+        elif isinstance(other, ooarray):
+            if self.dtype != object:
+                return self.view(ndarray) + other.view(ndarray)
+            else:
+                return ooarray([self[i] + other[i] for i in range(self.size)])
+        else:
+            raise FuncDesignerException('unimplemented yet')
+
+# TODO: implement it!
+# TODO: check __mul__ and __div__ for oofun with size > 1
+
+#    def __add__(self, other):
+#        if isscalar(other) or isinstance(other, ndarray) and other.size == 1:
+#            return self + other
+#        elif  isinstance(other, oofun):
+#            
