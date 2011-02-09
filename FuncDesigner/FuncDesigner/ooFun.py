@@ -1181,7 +1181,7 @@ class ooarray(ndarray):
         #if self.dtype != object: return asfarray(self)
         Args = ((args[0], )+ (args[1:])) if len(args) != 0 and type(args[0]) == dict else args
         tmp = [self[i](*args, **kwargs) if isinstance(self[i], oofun) else self[i] for i in range(self.size)]
-        return array(tmp, dtype=float)
+        return array(tmp, dtype=float).flatten()
 
     def __mul__(self, other):
         if self.size == 1:
