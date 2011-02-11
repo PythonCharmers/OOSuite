@@ -369,7 +369,7 @@ class oofun:
                     r[ind] = 1
                 return r
         else: # NOT IMPLEMENTED PROPERLY YET
-            self.pWarn('Slicing by oofuns IS NOT IMPLEMENTED PROPERLY YET')
+            self.pWarn('Slicing oofun by oofun IS NOT IMPLEMENTED PROPERLY YET')
             f = lambda x, _ind: x[_ind]
             def d(x, _ind):
                 r = zeros(x.shape)
@@ -924,7 +924,7 @@ class oofun:
                             # TODO: mb rework it
                             if inp.size > 150 and tmp.size > 150:
                                 tmp = tmp.resolve(True).tocsc()
-                            else: tmp.resolve(False) 
+                            else: tmp =  tmp.resolve(False) 
                             TMP = tmp[:, ac:ac+inp.size]
                         else: # scipy.sparse matrix
                             TMP = tmp.tocsc()[:, ac:ac+inp.size]
@@ -1169,7 +1169,9 @@ def atleast_oofun(arg):
 
 
 class ooarray(ndarray):
-    __array_priority__ = 25
+    
+    __array_priority__ = 25 # !!! it should exceed oofun.__array_priority__ !!!
+    
     def __new__(self, *args, **kwargs):
         assert len(kwargs) == 0
         obj = asarray(args[0] if len(args) == 1 else args).view(self)

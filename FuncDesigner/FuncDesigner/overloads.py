@@ -1,7 +1,8 @@
 from ooFun import oofun
 import numpy as np
 from misc import FuncDesignerException, Diag, Eye
-from ooFun import atleast_oofun
+from ooFun import atleast_oofun, ooarray
+from ooPoint import ooPoint
 
 #class unary_oofun_overload:
 #    def __init__(self, *args, **kwargs):
@@ -118,18 +119,33 @@ def dot(inp1, inp2):
     r.isCostly = True
     return r
 
+def cross(a, b):
+    if not isinstance(a, oofun) and not isinstance(b, oofun): return np.cross(a, b)
 
-def _sum(inp, *args, **kwargs):
+    
+    def aux_d(x, y):
+        assert x.size == 3 and y.size == 3, 'currently FuncDesigner cross(x,y) is implemented for arrays of length 3 only'
+        return np.array([[0, -y[2], y[1]], [y[2], 0, -y[0]], [-y[1], y[0], 0]])
+   
+    r = oofun(lambda x, y: np.cross(x, y), [a, b], d=(lambda x, y: -aux_d(x, y), lambda x, y: aux_d(y, x)))
+    r.getOrder = lambda *args, **kwargs: (inp1.getOrder(*args, **kwargs) if isinstance(inp1, oofun) else 0) + (inp2.getOrder(*args, **kwargs) if isinstance(inp2, oofun) else 0)
+    return r
+
+def sum(inp, *args, **kwargs):
+    #raise 0
     #return np.sum(inp, *args, **kwargs)
 #    from time import time
 #    t = time()
     
     # TODO: check for numpy.array of oofuns
     #condIterableOfOOFuns = type(inp) in (list, tuple) and any([isinstance(elem, oofun) for elem in inp])
-    condIterableOfOOFuns = type(inp) in (list, tuple) and any([isinstance(elem, oofun) for elem in inp])
+    #print '12345'
+    condIterableOfOOFuns = type(inp) in (list, tuple, ooarray) and any([isinstance(elem, oofun) for elem in (inp.tolist() if isinstance(inp, ooarray) else inp)])
     
     if not isinstance(inp, oofun) and not condIterableOfOOFuns: 
         return np.sum(inp, *args, **kwargs)
+
+    if isinstance(inp, ooarray) and inp.dtype == object: inp = inp.tolist()
 
     if condIterableOfOOFuns:
         d, INP, r0 = [], [], 0.0
@@ -224,8 +240,8 @@ def prod(inp, *args, **kwargs):
 # Todo: implement norm_1, norm_inf etc
 def norm(*args, **kwargs):
     if len(kwargs) or len(args) > 1:
-        return np.norm(*args, **kwargs)
-    return sum(args[0]**2) ** 0.5
+        return np.linalg.norm(*args, **kwargs)
+    return sqrt(sum(args[0]**2),  attachConstraints=False)
     
 
 #def stack(*args, **kwargs):
@@ -251,8 +267,6 @@ def norm(*args, **kwargs):
 #        #assert isinstance(args[0], oofun) 
         
     
-
-#norm = lambda inp: sqrt(inp**2)
 
 #def norm(inp, *args, **kwargs):
 #    if len(args) != 0 or len(kwargs) != 0:
@@ -282,8 +296,7 @@ def size(inp, *args, **kwargs):
 def ifThenElse(condition, val1, val2, *args, **kwargs):
     
     # for future implementation
-    assert len(args) == 0  
-    assert len(kwargs) == 0 
+    assert len(args) == 0 and len(kwargs) == 0 
     Val1 = atleast_oofun(val1)#fixed_oofun(val1) if not isinstance(val1, oofun) else val1
     #if np.isscalar(val1): raise 0
     Val2 = atleast_oofun(val2)#fixed_oofun(val2) if not isinstance(val2, oofun) else val2
@@ -307,7 +320,9 @@ def ifThenElse(condition, val1, val2, *args, **kwargs):
         return r
     else:
         raise FuncDesignerException('ifThenElse requires 1st argument (condition) to be either boolean or oofun, got %s instead' % type(condition))
-        
+
+def decision(*args, **kwargs):
+    pass
         
 def max(inp,  *args,  **kwargs): 
     assert len(args) == len(kwargs) == 0, 'incorrect data type in FuncDesigner max or not implemented yet'
@@ -365,3 +380,17 @@ def errFunc(*args,  **kwargs):
     # this function shouldn't be ever called, an FD kernel hack has been involved
     raise FuncDesignerException('error in FuncDesigner kernel, inform developers')
 
+
+
+
+
+#class oolist(list):
+#    def __call__(self, *args, **kwargs):
+#        #print 'ooarray call start'
+#        tmp = [item(*args, **kwargs) if isinstance(item, oofun) else item for item in self]
+#        r = oolist([np.asscalar(item) if type(item) in (np.ndarray, np.matrix) else item for item in tmp])
+#        #print 'ooarray call end'
+#        return r
+
+#    def __getattr__(self, attr):
+#        if attr == 'size':
