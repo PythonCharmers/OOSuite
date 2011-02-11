@@ -150,6 +150,8 @@ def check_d1(fun, fun_d, vars, func_name='func', diffInt=1.5e-8, pointVal = None
     
     if isinstance(fun_d, ndarray):
         info_user = fun_d
+    elif hasattr(fun_d, 'scalarMultiplier'):# is FD "diagonal" matrix type
+        info_user = fun_d.resolve(False)
     else:
         info_user = asfarray(fun_d(*Args))
     
