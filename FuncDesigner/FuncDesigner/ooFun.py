@@ -1223,6 +1223,8 @@ class ooarray(ndarray):
             raise FuncDesignerException('unimplemented yet')
 
     def __add__(self, other):
+        if isinstance(other, list):
+            other = ooarray(other)
         if isscalar(other) or isinstance(other, ndarray) and other.size == 1:
             return ooarray(self.view(ndarray) + other)
         elif isinstance(other, oofun):
