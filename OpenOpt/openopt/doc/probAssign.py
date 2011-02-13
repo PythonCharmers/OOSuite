@@ -27,11 +27,11 @@ def f(x):
     return x if x>0 else x**2
 p.f = f
 
-# At last, you can modify any prob parameters in solve/manage functions:
+# At last, you can modify any prob parameters in minimize/maximize/solve/manage functions:
 
-r = p.solve('ralg', x0 = -1.5,  iprint = -1, plot = 1, color = 'r') 
+r = p.minimize('ralg', x0 = -1.5,  iprint = -1, plot = 1, color = 'r') 
 # or
-r = p.manage('ralg', start = False, iprint = 0, x0 = -1.5)
+#r = p.manage('ralg', start = False, iprint = 0, x0 = -1.5)
 
 """
 Note that *any* kwarg passed to constructor will be assigned
@@ -43,5 +43,5 @@ It can be very convenient for user-supplied callback functions
 (see /examples/userCallback.py)
 (instead of using "global" as you have to do in MATLAB)
 
-See also http://openopt.org/Result for result structure (r) fields 
+See also http://openopt.org/OOFrameworkDoc#Result_structure for result structure (r) fields 
 """
