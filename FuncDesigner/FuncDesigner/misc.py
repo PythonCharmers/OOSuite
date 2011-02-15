@@ -127,6 +127,11 @@ class diagonal:
     
     def __rmul__(self, item):
         return self.__mul__(item) if isscalar(item) else self.__mul__(item.T).T
+    
+    def __div__(self, other):
+        if isinstance(other, np.ndarray) and other.size == 1: other = np.asscalar(other)
+        if np.isscalar(other): return diagonal(self.diag, self.scalarMultiplier/other, isOnes = self.isOnes) 
+        else: return diagonal(self.diag/other, self.scalarMultiplier) 
 
 DiagonalType = type(diagonal(np.array(0)))
 

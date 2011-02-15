@@ -189,6 +189,7 @@ class oofun:
             r.discrete = self.discrete and other.discrete
             r.getOrder = lambda *args, **kwargs: max((self.getOrder(*args, **kwargs), other.getOrder(*args, **kwargs)))
         else:
+            if isinstance(other,  ooarray): return other + self
             other = array(other, 'float')
 #            if other.size == 1:
 #                #r = oofun(lambda *ARGS, **KWARGS: None, input = self.input)
@@ -1183,7 +1184,11 @@ class ooarray(ndarray):
     def __call__(self, *args, **kwargs):
         #if self.dtype != object: return asfarray(self)
         Args = ((args[0], )+ (args[1:])) if len(args) != 0 and type(args[0]) == dict else args
-        tmp = [self[i](*args, **kwargs) if isinstance(self[i], oofun) else self[i] for i in range(self.size)]
+#        tmp = []
+#        for i in range(self.size):
+#            Tmp = self[i](*args, **kwargs) 
+#            if asscalar(
+        tmp = [asscalar(self[i](*args, **kwargs)) if isinstance(self[i], oofun) else self[i] for i in range(self.size)]
         return array(tmp, dtype=float).flatten()
 
     def __mul__(self, other):
@@ -1208,7 +1213,9 @@ class ooarray(ndarray):
             raise SpaceFuncsException('bug in multiplication')
 
     def __div__(self, other):
-        if isscalar(other) or isinstance(other, ndarray) and other.size == 1:
+        if self.size == 1:
+            return asscalar(self)/other
+        elif isscalar(other) or isinstance(other, ndarray) and other.size == 1:
             return self * (1.0/other)
         elif isinstance(other, oofun):
             if self.dtype != object:
@@ -1241,6 +1248,20 @@ class ooarray(ndarray):
         else:
             raise FuncDesignerException('unimplemented yet')
 
+    # TODO: check why it doesn't work with oofuns
+    def __radd__(self, other):
+        return self + other
+    
+    def __eq__(self, other):
+        r = self - other
+        if r.dtype != object: return all(r)
+        if r.size == 1: return asscalar(r)==0
+        
+        # TODO: rework it
+        return [Constraint(elem) for elem in r.tolist()]
+        #else: raise FuncDesignerException('unimplemented yet')
+        
+        
 # TODO: implement it!
 # TODO: check __mul__ and __div__ for oofun with size > 1
 
