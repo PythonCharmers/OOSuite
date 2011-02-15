@@ -156,7 +156,16 @@ class LineSegment(baseGeometryObject):
         self.points = [Start, End]
     
     __call__ = lambda self, *args, **kw: LineSegment(self.points[0](*args, **kw), self.points[1](*args, **kw))        
-        
+    
+    _length = lambda self: self.points[0].distance(self.points[1])
+    
+    def __getattr__(self, attr):
+        if attr == 'length':
+            self.length = self._length()
+            return self.length
+        else:
+            raise AttributeError('no such method %s for LineSegment' % attr)
+    
     def plot(self):
         if not pylabInstalled: 
             raise SpaceFuncsException('to plot you should have matplotlib installed')
