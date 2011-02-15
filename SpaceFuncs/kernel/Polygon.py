@@ -1,5 +1,5 @@
 from Polytope import Polytope
-from FuncDesigner import ooarray, sqrt, angle, abs
+from FuncDesigner import ooarray, sqrt, angle, abs, sum
 from numpy import arange
 from misc import SpaceFuncsException
 
