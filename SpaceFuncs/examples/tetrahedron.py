@@ -10,16 +10,3 @@ print('circum sphere center: ' + str(T.O)) # [ -4.88910658  20.73510972  17.5019
 print('circum sphere radius: ' + str(T.R)) # 19.797618861
 # alternatively you can use complete names:
 # T.volume,T.centroid, etc
-
-## Let's solve some parametrized problems
-#from FuncDesigner import *
-#from openopt import NLP, NLSP
-#
-## let's create parameterized triangle :
-#a,b,c, = oovars(3)
-#T = Tetrahedron((1,2,a),(2,b,4),(c,6.5,7))
-#
-## let's create an initial estimation to the problems below
-#startValues = {a:1, b:0.5, c:0.1} # you could mere set any, but sometimes a good estimation matters
-#
-#
