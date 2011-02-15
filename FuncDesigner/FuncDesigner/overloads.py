@@ -375,6 +375,8 @@ def min(inp,  *args,  **kwargs):
 #    r.discrete = True
 #    return r
 
+det3 = lambda a, b, c: a[0] * (b[1]*c[2] - b[2]*c[1]) - a[1] * (b[0]*c[2] - b[2]*c[0]) + a[2] * (b[0]*c[1] - b[1]*c[0]) 
+
 # TODO: move the func into fdmisc.py
 def errFunc(*args,  **kwargs): 
     # this function shouldn't be ever called, an FD kernel hack has been involved
