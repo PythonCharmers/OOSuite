@@ -120,7 +120,7 @@ class oofun:
             self.name = 'unnamed_oofun_' + str(oofun._unnamedFunNumber)
             oofun._unnamedFunNumber += 1
         
-        for key, item in kwargs.iteritems():
+        for key, item in kwargs.items():
             #print key
             #assert key in self.__allowedFields__ # TODO: make set comparison
             setattr(self, key, item)
@@ -1232,7 +1232,7 @@ class ooarray(ndarray):
                 return self.view(ndarray) + other
             else:
                 return ooarray([self[i] + other for i in range(self.size)])
-        elif isinstance(other, ooarray):
+        elif isinstance(other, ndarray):
             if self.dtype != object:
                 return self.view(ndarray) + other.view(ndarray)
             else:
