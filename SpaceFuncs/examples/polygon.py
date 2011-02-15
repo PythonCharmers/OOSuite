@@ -7,8 +7,8 @@ P = Polygon(parametrizedVerticesCoords)
 
 parameterValues = dict([(parametrizedVerticesCoords[i], (sin(2 * pi * i / nVertices), cos(2 * pi  * i  / nVertices))) for i in range(nVertices)])
 print(P.sides(parameterValues))
-print(P.P(parameterValues))# perimeter, 6.23735072453
-print(P.S(parameterValues))# 3.05052482307
+print(P.P(parameterValues))# perimeter: 6.23735072453
+print(P.S(parameterValues))# area: 3.05052482307
 areaPlusPerimeter = P.S + P.P
 
 print('for these params area + perimeter equals to ' + str(areaPlusPerimeter(parameterValues)))# 9.2878755476 for nVertices = 15
