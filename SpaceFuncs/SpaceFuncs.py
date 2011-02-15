@@ -4,3 +4,4 @@ for name in ['Triangle', 'Tetrahedron', 'Polygon', 'Polytope']:
     exec('from kernel.%s import %s' % (name, name))
 #from kernel.Triangle import Triangle
 from kernel.Plot import Plot
+from numpy import pi

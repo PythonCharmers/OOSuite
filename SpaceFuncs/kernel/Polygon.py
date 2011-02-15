@@ -22,7 +22,6 @@ table.update([(s, '_'+s) for s in others])
 class Polygon(Polytope):
     _AttributesDict = Polytope._AttributesDict.copy()
     def __init__(self, *args, **kw):
-        
         Polytope.__init__(self, *args, **kw)
         
     _sides = lambda self: ooarray([sqrt(sum((p1-p2)**2), attachConstraints=False) \
