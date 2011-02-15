@@ -13,8 +13,6 @@ class baseGeometryObject:
     def __getattr__(self, attr):
         if attr in self._AttributesDict:
             tmp = getattr(self, self._AttributesDict[attr])()
-#            if not isscalar(tmp) and type(attr) == ndarray and tmp.size == 1:
-#                tmp = asscalar(tmp)
             setattr(self, attr, tmp)
             return tmp
         else:

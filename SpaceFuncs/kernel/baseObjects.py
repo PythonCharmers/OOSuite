@@ -274,7 +274,7 @@ def _perpendicularToLine(point, line): #, **kw):
         return Line(point, direction=ooarray(line.direction[1], -line.direction[0]))
     ############################################
     projection = point.projection(line)
-    if projection.dtype != object and all(projection==point):
+    if projection.dtype != object and all(projection.view(ndarray)==point.view(ndarray)):
         if 'size' not in dir(point) + dir(line.basePoint) + dir(line.direction):
             s = '''
             The point belongs to the line, hence
@@ -285,6 +285,9 @@ def _perpendicularToLine(point, line): #, **kw):
             (elseware lots of perpendicular lines wrt the point and the line exist)
             '''
             pWarn(s)
+        else:
+            raise SpaceFuncsException('for space dimension > 2 you should have point outside of the line')
+        return Line(point, direction=ooarray(line.direction[1], -line.direction[0]))
     else:
         return Line(point, projection)
 
