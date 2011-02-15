@@ -1175,7 +1175,7 @@ class ooarray(ndarray):
     def __new__(self, *args, **kwargs):
         assert len(kwargs) == 0
         obj = asarray(args[0] if len(args) == 1 else args).view(self)
-        if obj.ndim != 1: raise FuncDesignerException('only 1-d ooarrays are implemented now')
+        #if obj.ndim != 1: raise FuncDesignerException('only 1-d ooarrays are implemented now')
         #if obj.dtype != object:obj = np.asfarray(obj) #TODO: FIXME !
         return obj
 
@@ -1187,7 +1187,7 @@ class ooarray(ndarray):
 
     def __mul__(self, other):
         if self.size == 1:
-            return ooarray(self[0]*other)
+            return ooarray(asscalar(self)*other)
         elif isscalar(other):
             return ooarray(self.view(ndarray)*other if self.dtype != object else [self[i]*other for i in range(self.size)])
         elif isinstance(other, oofun):
@@ -1202,7 +1202,7 @@ class ooarray(ndarray):
                 # and self.size != 1
                 return ooarray([self[i]*other[i] for i in range(self.size)])
         elif isinstance(other, ndarray):
-            return ooarray(self*other[0] if other.size == 1 else [self[i]*other[i] for i in range(other.size)])
+            return ooarray(self*asscalar(other) if other.size == 1 else [self[i]*other[i] for i in range(other.size)])
         else:
             raise SpaceFuncsException('bug in multiplication')
 
