@@ -139,8 +139,13 @@ def sum(inp, *args, **kwargs):
     
     # TODO: check for numpy.array of oofuns
     #condIterableOfOOFuns = type(inp) in (list, tuple) and any([isinstance(elem, oofun) for elem in inp])
-    #print '12345'
-    condIterableOfOOFuns = type(inp) in (list, tuple, ooarray) and any([isinstance(elem, oofun) for elem in (inp.tolist() if isinstance(inp, ooarray) else inp)])
+    
+    #print np.asscalar(inp).name
+    cond_ooarray = isinstance(inp, ooarray) and inp.dtype == object
+    if cond_ooarray and inp.size == 1: 
+        return np.asscalar(inp).sum()
+    condIterableOfOOFuns = type(inp) in (list, tuple) or cond_ooarray
+    #raise 0
     
     if not isinstance(inp, oofun) and not condIterableOfOOFuns: 
         return np.sum(inp, *args, **kwargs)
@@ -163,13 +168,17 @@ def sum(inp, *args, **kwargs):
             INP.append(elem)
 
         # TODO:  check for fixed inputs
-        f = lambda *args: r0 + sum(args)
+        f = lambda *args: r0 + np.sum(args)
 #        def f(*args):
 #            print args
 #            return np.sum(args)
         _inp = set(INP)
         #!!!!!!!!!!!!!!!!!! TODO: check INP for complex cases (not list of oovars)
         
+        if len(INP) == 0: 
+            INP = None
+            #print f(1)
+            #raise 0
         r = oofun(f, INP) 
         
         def getOrder(*args, **kwargs):

@@ -489,13 +489,11 @@ class oofun:
     """                                             getInput                                              """
     def _getInput(self, *args, **kwargs):
 #        self.inputOOVarTotalLength = 0
-        #return tuple([atleast_1d(item._getFuncCalcEngine(x)) if isinstance(item, oofun) else atleast_1d(item) for item in self.input])
         r = []
         for item in self.input:
             tmp = item._getFuncCalcEngine(*args, **kwargs) if isinstance(item, oofun) else item
             r.append(tmp if type(tmp) not in (list, tuple) else asfarray(tmp))
         return tuple(r)
-        #return tuple([asfarray(item._getFuncCalcEngine(*args, **kwargs) if isinstance(item, oofun) else item) for item in self.input])
 
     """                                                getDep                                             """
     def _getDep(self):
@@ -617,6 +615,7 @@ class oofun:
         Input = self._getInput(*args, **kwargs) 
         if self.args != ():
             Input += self.args
+
         tmp = self.fun(*Input)
         if isinstance(tmp, (list, tuple)):
             tmp = hstack(tmp)
@@ -628,12 +627,14 @@ class oofun:
         if type(x) == ooPoint: 
             self._point_id = x._id
         
-        if (type(x) == ooPoint or self.isCostly or self._isFixed):
+        if type(x) == ooPoint or self.isCostly or self._isFixed:
             self._f_val_prev = copy(tmp) 
             self._f_key_prev = dict([(elem, copy((x if isinstance(x, dict) else x.xf)[elem])) for elem in dep]) if self.isCostly else None
-            return copy(self._f_val_prev)
+            r =  copy(self._f_val_prev)
         else:
-            return tmp
+            r = tmp
+
+        return r
 
 
     """                                                getFunc                                             """
@@ -646,7 +647,7 @@ class oofun:
         # resultKeysType doesn't matter for the case isinstance(Vars, oovar)
         if Vars is not None and fixedVars is not None:
             raise FuncDesignerException('No more than one argument from "Vars" and "fixedVars" is allowed for the function')
-        assert type(Vars) != ndarray and type(fixedVars) != ndarray
+        #assert type(Vars) != ndarray and type(fixedVars) != ndarray
         if not isinstance(x, ooPoint): x = ooPoint(x)
         
         #TODO: remove cloned code
