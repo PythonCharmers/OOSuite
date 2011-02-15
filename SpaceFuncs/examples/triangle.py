@@ -1,10 +1,4 @@
 from SpaceFuncs import Triangle, Plot
-'''
-TODO: check initialization by single oovar
-#TODO: add oovars(..., size=...)
-TODO: add polygon perimeter
-TODO: lines,  planes from equations
-'''
 
 # Consider a triangle in 3D space
 T = Triangle((1, 2, 5), (2, 8, 4), (4, 6.5, 7))
