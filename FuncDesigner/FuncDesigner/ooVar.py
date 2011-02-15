@@ -104,15 +104,15 @@ class oovar(oofun):
 #        self.initialized = True
         
         
-def oovars(*args, **kwargs):
-    assert len(kwargs) ==0
+def oovars(*args, **kw):
+    
     if len(args) == 1:
         if isinstance(args[0], int):
-            return [oovar() for i in xrange(args[0])]
+            return [oovar(**kw) for i in xrange(args[0])]
         elif type(args[0]) in [list, tuple]:
-            return [oovar(name=args[0][i]) for i in xrange(len(args[0]))]
+            return [oovar(name=args[0][i], **kw) for i in xrange(len(args[0]))]
     else:
-        return [oovar(name=args[i]) for i in xrange(len(args))]
+        return [oovar(name=args[i], **kw) for i in xrange(len(args))]
 
 
 
