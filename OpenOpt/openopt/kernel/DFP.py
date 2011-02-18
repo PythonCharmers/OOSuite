@@ -66,6 +66,7 @@ class DFP(NonLinProblem):
         #p = NLP.NLP(lambda x: self.f(x), self.x0)
         #if self.userProvided.df: p.df = dff
         self.inspire(p, sameConstraints=True)
+        p.f = ff # to prefent overwriting
 
         def dfp_iterfcn(*args,  **kwargs):
             self.iterfcn(*args,  **kwargs)
