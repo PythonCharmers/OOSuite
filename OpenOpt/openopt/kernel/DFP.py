@@ -22,7 +22,7 @@ class DFP(NonLinProblem):
                 self.X = self.X.T
         NonLinProblem._Prepare(self)
         #if self.Y.ndim
-        
+
         if self.userProvided.df:
             assert len(self.user.df) == 1
             self.dfff = self.user.df[0]
@@ -32,7 +32,7 @@ class DFP(NonLinProblem):
                     #print asfarray(self.fff(x, self.X[i])-self.Y[i]), asfarray(self.dfff(x, self.X[i]))
                     r += dot(2.0 * asfarray(self.fff(x, self.X[i])-self.Y[i]), asfarray(self.dfff(x, self.X[i])))
                 return r        
-            self.df = dff
+            self.df = self.user.df = dff
 
     def __finalize__(self):
         NonLinProblem.__finalize__(self)
