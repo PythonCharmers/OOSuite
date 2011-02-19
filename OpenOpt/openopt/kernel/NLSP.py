@@ -29,12 +29,11 @@ class NLSP(NonLinProblem):
 
     def nlsp2nlp(self, solver, **solver_params):
         ff = lambda x: sum(asfarray(self.f(x))**2)
-        if self.userProvided.df:
-            dff = lambda x: dot(2*asfarray(self.f(x)), asfarray(self.df(x)))
-            p = NLP.NLP(ff, self.x0, df=dff)
-        else:
-            p = NLP.NLP(ff, self.x0)
+        p = NLP.NLP(ff, self.x0)
         self.inspire(p, sameConstraints=True)
+        if self.userProvided.df:
+            p.df = lambda x: dot(2*asfarray(self.f(x)), asfarray(self.df(x)))
+        p.f = ff
 
 
         def nlsp_iterfcn(*args,  **kwargs):
