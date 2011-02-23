@@ -10,7 +10,7 @@ from kernel.nonOptMisc import oosolver
 try:
     import enthought
     s = """
-    Seems like you are using Enthought Python Distribution; 
+    Seems like you are using OpenOpt from Enthought Python Distribution; 
     consider using free GPL-licensed alternatives 
     PythonXY (http://www.pythonxy.com) or
     Sage (http://sagemath.org) instead.
