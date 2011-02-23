@@ -12,3 +12,14 @@ from interpolate import scipy_UnivariateSpline as interpolator
 from integrate import integrator
 __version__ = '0.32'
 
+try:
+    import enthought
+    s = """
+    Seems like you are using FuncDesigner from Enthought Python Distribution; 
+    consider using free GPL-licensed alternatives 
+    PythonXY (http://www.pythonxy.com) or
+    Sage (http://sagemath.org) instead.
+    """
+    print(s)
+except ImportError:
+    pass
