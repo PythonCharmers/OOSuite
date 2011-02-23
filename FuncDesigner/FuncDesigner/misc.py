@@ -45,7 +45,6 @@ class diagonal:
         if self.isOnes:
             tmp = np.empty(self.size)
             tmp.fill(self.scalarMultiplier)
-            #if tmp.size > 1000: raise 0
             return np.diag(tmp)
         else:
             return np.diag(self.diag * self.scalarMultiplier)
@@ -57,7 +56,6 @@ class diagonal:
                 tmp.fill(self.scalarMultiplier)
             else:
                 tmp = self.diag*self.scalarMultiplier
-            #raise 0
             return SP.dia_matrix((tmp,0), shape=(self.size,self.size)) 
         else:
             return self.toarray()
@@ -129,9 +127,12 @@ class diagonal:
         return self.__mul__(item) if isscalar(item) else self.__mul__(item.T).T
     
     def __div__(self, other):
+        #TODO: check it
         if isinstance(other, np.ndarray) and other.size == 1: other = np.asscalar(other)
         if np.isscalar(other): return diagonal(self.diag, self.scalarMultiplier/other, isOnes = self.isOnes) 
-        else: return diagonal(self.diag/other, self.scalarMultiplier) 
+        else: 
+            # TODO: check it
+            return diagonal(self.diag/other, self.scalarMultiplier) 
 
 DiagonalType = type(diagonal(np.array(0)))
 

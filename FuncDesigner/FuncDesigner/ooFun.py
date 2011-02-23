@@ -1036,6 +1036,39 @@ class oofun:
             c._broadcast(func, *args, **kwargs)
         func(self)
     
+        
+    def uncertainty(self, point, deviations, actionOnAbsentDeviations='warning'):
+        ''' 
+        result = oofun.uncertainty(point, deviations, actionOnAbsentDeviations='warning')
+        point and deviations should be Python dicts of pairs (oovar, value_for_oovar)
+        actionOnAbsentDeviations = 
+        'error' (raise FuncDesigner exception) | 
+        'skip' (treat as fixed number with zero deviation) |
+        'warning' (print warning, treat as fixed number) 
+        
+        Sparse large-scale examples haven't been tested,
+        we could implement and test it properly on demand
+        '''
+        dep = self._getDep()
+        dev_keys = set(deviations.keys())
+        set_diff = dep.difference(dev_keys)
+        nAbsent = len(set_diff)
+        if actionOnAbsentDeviations != 'skip':
+            if len(set_diff) != 0:
+                if actionOnAbsentDeviations == 'warning':
+                    pWarn('''
+                    dict of deviations miss %d variables (oovars): %s;
+                    they will be treated as fixed numbers with zero deviations
+                    ''' % (nAbsent, list(set_diff)))
+                else:
+                    raise FuncDesignerError('dict of deviations miss %d variable(s) (oovars): %s' % (nAbsent, list(set_diff)))
+        
+        d = self.D(point, exactShape=True) if nAbsent == 0 else self.D(point, fixedVars = set_diff, exactShape=True)
+        tmp = [dot(val, (deviations[key] if isscalar(deviations[key]) else asarray(deviations[key]).reshape(-1, 1)))**2 for key, val in d.items()]
+        tmp = [asscalar(elem) if isinstance(elem, ndarray) and elem.size == 1 else elem for elem in tmp]
+        r = atleast_2d(hstack(tmp)).sum(1)
+        return r ** 0.5
+        
    
         """                                             End of class oofun                                             """
 
