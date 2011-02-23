@@ -1061,7 +1061,7 @@ class oofun:
                     they will be treated as fixed numbers with zero deviations
                     ''' % (nAbsent, list(set_diff)))
                 else:
-                    raise FuncDesignerError('dict of deviations miss %d variable(s) (oovars): %s' % (nAbsent, list(set_diff)))
+                    raise FuncDesignerException('dict of deviations miss %d variable(s) (oovars): %s' % (nAbsent, list(set_diff)))
         
         d = self.D(point, exactShape=True) if nAbsent == 0 else self.D(point, fixedVars = set_diff, exactShape=True)
         tmp = [dot(val, (deviations[key] if isscalar(deviations[key]) else asarray(deviations[key]).reshape(-1, 1)))**2 for key, val in d.items()]
