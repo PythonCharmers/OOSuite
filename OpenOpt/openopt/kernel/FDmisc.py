@@ -31,6 +31,8 @@ def setStartVectorAndTranslators(p):
         p.freeVars = freeVars
     else:
         freeVars = startPoint.keys()
+        
+    p._freeVarsList = freeVars # to use in a global solver from UkrOpt
     
     p._fixedVars = set(fixedVars) if fixedVars is not None else set()
     p._freeVars = set(freeVars) if freeVars is not None else set()
