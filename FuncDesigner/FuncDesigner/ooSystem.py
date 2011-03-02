@@ -166,7 +166,7 @@ class ooSystem:
         # TODO: solver autoselect
         #if p.iprint >= 0: p.disp('The optimization problem is  ' + p.probType)
         p._isFDmodel = lambda *args,  **kwargs: True
-        return p.solve()
+        return p.solve() if kwargs.get('manage', False) in (False, 0) else p.manage()
         
     def _getAllConstraints(self):
         if self._changed:

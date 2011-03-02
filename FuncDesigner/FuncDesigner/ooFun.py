@@ -1,13 +1,14 @@
 # created by Dmitrey
 
-from numpy import inf, asfarray, copy, all, any, empty, atleast_2d, zeros, dot, asarray, atleast_1d, empty, ones, ndarray, \
-where, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum, prod, nonzero, isnan, asscalar, zeros_like, ones_like
+from numpy import inf, asfarray, copy, all, any, empty, atleast_2d, zeros, dot, asarray, atleast_1d, empty, \
+ones, ndarray, where, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum, prod, nonzero,\
+isnan, asscalar, zeros_like, ones_like, amin, amax
 from numpy.linalg import norm
 from misc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scipyInstalled, \
 raise_except, DiagonalType
 from copy import deepcopy
 from ooPoint import ooPoint
-
+from Interval import Interval, ZeroCriticalPoints
 
 Copy = lambda arg: asscalar(arg) if type(arg)==ndarray and arg.size == 1 else arg.copy() if hasattr(arg, 'copy') else copy(arg)
 Len = lambda x: 1 if isscalar(x) else x.size if type(x)==ndarray else len(x)
@@ -70,6 +71,7 @@ class oofun:
     _lastDiffVarsID = 0
     _lastFuncVarsID = 0
     _lastOrderVarsID = 0
+    criticalPoints = None
 
     _usedIn = 0
     _level = 0
@@ -164,6 +166,21 @@ class oofun:
     def removeAttachedConstraints(self):
         self.attachedConstraints = set()    
     __repr__ = lambda self: self.name
+    
+    def _interval(self, domain):
+        criticalPointsFunc = self.criticalPoints
+        if len(self.input) == 1 and criticalPointsFunc is not None:
+            arg_infinum, arg_supremum = self.input[0]._interval(domain)
+            if not isscalar(arg_infinum) and arg_infinum.size > 1:
+                raise FuncDesignerException('not implemented for vectorized oovars yet')
+            tmp = self.fun(hstack([arg_infinum, arg_supremum] + ([] if criticalPointsFunc is False else criticalPointsFunc(arg_infinum, arg_supremum))))
+            return amin(tmp), amax(tmp)
+        else:
+            raise FuncDesignerException('interval calculations are unimplemented for the oofun yet')
+    
+    def interval(self, *args, **kwargs):
+        l, u = self._interval(*args, **kwargs)
+        return Interval(l, u)
         
     # overload "a+b"
     # @checkSizes
@@ -188,6 +205,13 @@ class oofun:
             r = oofun(lambda x, y: x+y, [self, other], d = (lambda x, y: aux_d(x, y), lambda x, y: aux_d(y, x)))
             r.discrete = self.discrete and other.discrete
             r.getOrder = lambda *args, **kwargs: max((self.getOrder(*args, **kwargs), other.getOrder(*args, **kwargs)))
+            
+            # TODO: move it outside the func, to prevent recreation each time
+            def interval(domain): 
+                domain1 = self._interval(domain)
+                domain2 = other._interval(domain)
+                return domain1[0] + domain2[0], domain1[1] + domain2[1]
+            r._interval = interval
         else:
             if isinstance(other,  ooarray): return other + self
             other = array(other, 'float')
@@ -204,6 +228,8 @@ class oofun:
             r._getFuncCalcEngine = lambda *args,  **kwargs: self._getFuncCalcEngine(*args,  **kwargs) + other
             r.discrete = self.discrete
             r.getOrder = self.getOrder
+            r.criticalPoints = False
+            #r._interval = lambda domain: (self._interval(domain)[0] + other, self._interval(domain)[1] + other)
             if (other.size == 1 or ('size' in self.__dict__ and self.size == other.size)): 
                 r._D = lambda *args,  **kwargs: self._D(*args,  **kwargs) 
                 
@@ -218,6 +244,11 @@ class oofun:
         r.getOrder = self.getOrder
         r._D = lambda *args, **kwargs: dict([(key, -value) for key, value in self._D(*args, **kwargs).items()])
         r.d = raise_except
+        r.criticalPoints = False
+        def _interval(domain):
+            r = self._interval(domain)
+            return (-r[1], -r[0])
+        r._interval = _interval
         return r
         
     # overload "a-b"
@@ -250,12 +281,28 @@ class oofun:
                 order1, order2 = self.getOrder(*args, **kwargs), other.getOrder(*args, **kwargs)
                 return order1 if order2 == 0 else inf
             r.getOrder = getOrder
+            def _interval(domain):
+                lb1, ub1 = self._interval(domain)
+                s1 = asarray(lb1).size
+                lb2, ub2 = other._interval(domain)
+                if lb2.size != 1: 
+                    raise FuncDesingerException('intervals for division over arrays is not implemented yet')
+                if lb2 < 0 < ub2:
+                    return (-inf*ones(s1), inf*ones(s1)) # TODO: rework it (requires changes in interval func engine)
+                if s1 > 1:
+                    tmp = vstack((lb1/lb2, lb1/ub2, ub1/lb2, ub1/ub2))
+                    return amin(tmp, 0), amax(tmp, 0)
+                else:
+                    tmp = (lb1/lb2, lb1/ub2, ub1/lb2, ub1/ub2)
+                    return amin(tmp), amax(tmp)
+            r._interval = _interval
         else:
             other = array(other,'float')
             r = oofun(lambda a: a/other, self, discrete = self.discrete)# TODO: involve sparsity if possible!
             r.getOrder = self.getOrder
             r._getFuncCalcEngine = lambda *args,  **kwargs: self._getFuncCalcEngine(*args,  **kwargs) / other
             r.d = lambda x: 1.0/other if (isscalar(x) or x.size == 1) else Diag(ones(x.size)/other)
+            r.criticalPoints = False
 #            if other.size == 1 or 'size' in self.__dict__ and self.size in (1, other.size):
             if other.size == 1:
                 r._D = lambda *args, **kwargs: dict([(key, value/other) for key, value in self._D(*args, **kwargs).items()])
@@ -270,6 +317,15 @@ class oofun:
         other = array(other, 'float') # TODO: sparse matrices handling!
         r = oofun(lambda x: other/x, self, discrete = self.discrete)
         r.d = lambda x: Diag(- other / x**2)
+        def criticalPoints(arg_infinum, arg_supremum):
+            assert other.size == 1, 'this case is unimplemented yet'
+            #r = self._interval(domain)
+            if arg_infinum < 0 < arg_supremum:
+                return [-inf, inf] # TODO: improve it, return (-inf,1/r[0]) and (1/r[1], inf) instead (requires changes in engine)
+            else:
+                r = (other / arg_supremum, other / arg_infinum)
+                return [amin(r), amax(r)]
+        r.criticalPoints = criticalPoints
         #r.isCostly = True
         def getOrder(*args, **kwargs):
             order = self.getOrder(*args, **kwargs)
@@ -303,10 +359,23 @@ class oofun:
             r = oofun(lambda x: x*other, self, discrete = self.discrete)
             r.getOrder = self.getOrder
             r._getFuncCalcEngine = lambda *args,  **kwargs: other * self._getFuncCalcEngine(*args,  **kwargs)
-            r.d = lambda x: aux_d(x, other)
+            r.criticalPoints = False
+
             if other.size == 1:
                 r._D = lambda *args, **kwargs: dict([(key, other*value) for key, value in self._D(*args, **kwargs).items()])
                 r.d = raise_except
+        isOtherOOFun = isinstance(other, oofun)
+        def interval(domain):
+            self_dom = self._interval(domain)
+            other_dom  = other._interval(domain) if isOtherOOFun else other
+            if isOtherOOFun:
+                t = vstack((self_dom[0] * other_dom[0], self_dom[1] * other_dom[0], \
+                            self_dom[0] * other_dom[1], self_dom[1] * other_dom[1]))# TODO: improve it
+            else:
+                t = vstack((self_dom[0] * other, self_dom[1] * other))# TODO: improve it
+            return amin(t, 0), amax(t, 0)
+                
+        r._interval = interval
         #r.isCostly = True
         return r
 
@@ -323,11 +392,14 @@ class oofun:
             f = lambda x: x ** other
             d = lambda x: d_x(x, other)
             input = self
+            criticalPoints = ZeroCriticalPoints
         else:
             f = lambda x, y: x ** y
             d = (d_x, d_y)
             input = [self, other]
-        r = oofun(f, input, d = d)
+            def criticalPoints(*args, **kwargs):
+                raise FuncDesignerException('interval analysis for pow(oofun,oofun) is unimplemented yet')
+        r = oofun(f, input, d = d, criticalPoints=criticalPoints)
         if isinstance(other, oofun) or (not isinstance(other, int) or (type(other) == ndarray and other.flatten()[0] != int)): 
             r.attach((self>0)('pow_domain_%d'%r._id, tol=-1e-7)) # TODO: if "other" is fixed oofun with integer value - omit this
         r.isCostly = True
@@ -341,7 +413,7 @@ class oofun:
         f = lambda x: other ** x
         #d = lambda x: Diag(asarray(other) **x * log(asarray(other)))
         d = lambda x: Diag(other **x * log(other)) 
-        r = oofun(f, self, d=d)
+        r = oofun(f, self, d=d, criticalPoints = False)
         r.isCostly = True
         return r
 

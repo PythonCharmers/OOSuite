@@ -1,8 +1,9 @@
 from ooFun import oofun
 import numpy as np
-from misc import FuncDesignerException, Diag, Eye
+from misc import FuncDesignerException, Diag, Eye, raise_except
 from ooFun import atleast_oofun, ooarray
 from ooPoint import ooPoint
+from Interval import TrigonometryCriticalPoints, ZeroCriticalPoints
 
 #class unary_oofun_overload:
 #    def __init__(self, *args, **kwargs):
@@ -22,43 +23,60 @@ from ooPoint import ooPoint
 #        return np.cos(x)
 #    return oofun(lambda x: np.sin(x), inp, d = d)
 
+
+
 def sin(inp):
     if not isinstance(inp, oofun): return np.sin(inp)
-    return oofun(np.sin, inp, d = lambda x: Diag(np.cos(x)))
+    return oofun(np.sin, inp, 
+                 d = lambda x: Diag(np.cos(x)), 
+                 criticalPoints = TrigonometryCriticalPoints)
+                 #_interval = lambda domain: ufuncInterval(inp, domain, np.sin, TrigonometryCriticalPoints))
 
 def cos(inp):
     if not isinstance(inp, oofun): return np.cos(inp)
-    return oofun(np.cos, inp, d = lambda x: Diag(-np.sin(x)))
+    #return oofun(np.cos, inp, d = lambda x: Diag(-np.sin(x)))
+    return oofun(np.cos, inp, 
+             d = lambda x: Diag(-np.sin(x)), 
+             criticalPoints = TrigonometryCriticalPoints)
+             #_interval = lambda domain: ufuncInterval(inp, domain, np.cos, TrigonometryCriticalPoints))
 
 def tan(inp):
     if not isinstance(inp, oofun): return np.tan(inp)
-    return oofun(np.tan, inp, d = lambda x: Diag(1.0 / np.cos(x) ** 2))
+    # TODO: move it outside of tan definition
+    def interval(arg_inf, arg_sup):
+        raise 'interval for tan is unimplemented yet'
+    r = oofun(np.tan, inp, d = lambda x: Diag(1.0 / np.cos(x) ** 2), interval = interval)
+    return r
 
 # TODO: cotan?
 
 def arcsin(inp):
     if not isinstance(inp, oofun): return np.arcsin(inp)
     r = oofun(np.arcsin, inp, d = lambda x: Diag(1.0 / np.sqrt(1.0 - x**2)))
+    r.criticalPoints = False
     r.attach((inp>-1)('arcsin_domain_lower_bound_%d' % r._id, tol=-1e-7), (inp<1)('arcsin_domain_upper_bound_%d' % r._id, tol=-1e-7))
     return r
 
 def arccos(inp):
     if not isinstance(inp, oofun): return np.arccos(inp)
     r = oofun(np.arccos, inp, d = lambda x: Diag(-1.0 / np.sqrt(1.0 - x**2)))
+    r.criticalPoints = False
     r.attach((inp>-1)('arccos_domain_lower_bound_%d' % r._id, tol=-1e-7), (inp<1)('arccos_domain_upper_bound_%d' % r._id, tol=-1e-7))
     return r
 
 def arctan(inp):
     if not isinstance(inp, oofun): return np.arctan(inp)
-    return oofun(np.arctan, inp, d = lambda x: Diag(1.0 / (1.0 + x**2)))
+    return oofun(np.arctan, inp, 
+                 d = lambda x: Diag(1.0 / (1.0 + x**2)), 
+                 criticalPoints = False)
 
 def sinh(inp):
     if not isinstance(inp, oofun): return np.sinh(inp)
-    return oofun(np.sinh, inp, d = lambda x: Diag(np.cosh(x)))
+    return oofun(np.sinh, inp, d = lambda x: Diag(np.cosh(x)), criticalPoints = False)
 
 def cosh(inp):
     if not isinstance(inp, oofun): return np.cosh(inp)
-    return oofun(np.cosh, inp, d = lambda x: Diag(np.sinh(x)))
+    return oofun(np.cosh, inp, d = lambda x: Diag(np.sinh(x)), criticalPoints=ZeroCriticalPoints)
 
 def angle(inp1, inp2):
     # returns angle between 2 vectors
@@ -70,34 +88,34 @@ def angle(inp1, inp2):
 
 def exp(inp):
     if not isinstance(inp, oofun): return np.exp(inp)
-    return oofun(np.exp, inp, d = lambda x: Diag(np.exp(x)))
+    return oofun(np.exp, inp, d = lambda x: Diag(np.exp(x)), criticalPoints = False)
 
 def sqrt(inp, attachConstraints = True):
     if not isinstance(inp, oofun): 
         return np.sqrt(inp)
-    r = oofun(np.sqrt, inp, d = lambda x: Diag(0.5 / np.sqrt(x)))
+    r = oofun(np.sqrt, inp, d = lambda x: Diag(0.5 / np.sqrt(x)), criticalPoints = False)
     if attachConstraints: r.attach((inp>0)('sqrt_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
 
 def abs(inp):
     if not isinstance(inp, oofun): return np.abs(inp)
-    return oofun(np.abs, inp, d = lambda x: Diag(np.sign(x)))    
+    return oofun(np.abs, inp, d = lambda x: Diag(np.sign(x)), criticalPoints = ZeroCriticalPoints)
 
 def log(inp):
     if not isinstance(inp, oofun): return np.log(inp)
-    r = oofun(np.log, inp, d = lambda x: Diag(1.0/x))
+    r = oofun(np.log, inp, d = lambda x: Diag(1.0/x), criticalPoints = False)
     r.attach((inp>1e-300)('log_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
     
 def log10(inp):
     if not isinstance(inp, oofun): return np.log10(inp)
-    r = oofun(np.log10, inp, d = lambda x: Diag(0.43429448190325176/x))# 1 / (x * log_e(10))
+    r = oofun(np.log10, inp, d = lambda x: Diag(0.43429448190325176/x), criticalPoints = False)# 1 / (x * log_e(10))
     r.attach((inp>1e-300)('log10_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
 
 def log2(inp):
     if not isinstance(inp, oofun): return np.log2(inp)
-    r = oofun(np.log2, inp, d = lambda x: Diag(1.4426950408889634/x))# 1 / (x * log_e(2))
+    r = oofun(np.log2, inp, d = lambda x: Diag(1.4426950408889634/x), criticalPoints = False)# 1 / (x * log_e(2))
     r.attach((inp>1e-300)('log2_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
 
@@ -129,6 +147,20 @@ def cross(a, b):
    
     r = oofun(lambda x, y: np.cross(x, y), [a, b], d=(lambda x, y: -aux_d(x, y), lambda x, y: aux_d(y, x)))
     r.getOrder = lambda *args, **kwargs: (inp1.getOrder(*args, **kwargs) if isinstance(inp1, oofun) else 0) + (inp2.getOrder(*args, **kwargs) if isinstance(inp2, oofun) else 0)
+    return r
+
+def ceil(inp):
+    if not isinstance(inp, oofun): return np.ceil(inp)
+    r = oofun(lambda x: np.ceil(x), inp)
+    r._D = lambda *args, **kwargs: raise_except('derivative for FD ceil is unimplemented yet')
+    r.criticalPoints = False#lambda arg_infinum, arg_supremum: [np.ceil(arg_supremum)]
+    return r
+
+def floor(inp):
+    if not isinstance(inp, oofun): return np.floor(inp)
+    r = oofun(lambda x: np.floor(x), inp)
+    r._D = lambda *args, **kwargs: raise_except('derivative for FD floor is unimplemented yet')
+    r.criticalPoints = False#lambda arg_infinum, arg_supremum: [np.floor(arg_infinum)]
     return r
 
 def sum(inp, *args, **kwargs):
