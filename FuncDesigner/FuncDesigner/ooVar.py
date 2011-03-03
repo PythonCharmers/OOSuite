@@ -120,6 +120,10 @@ def oovars(*args, **kw):
             return [oovar(**kw) for i in xrange(args[0])]
         elif type(args[0]) in [list, tuple]:
             return [oovar(name=args[0][i], **kw) for i in xrange(len(args[0]))]
+        elif type(args[0]) == str:
+            return [oovar(name=s, **kw) for s in args[0].split()]
+        else:
+            raise FuncDesignerException('incorrect args number for oovars constructor')
     else:
         return [oovar(name=args[i], **kw) for i in xrange(len(args))]
 
