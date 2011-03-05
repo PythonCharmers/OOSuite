@@ -177,7 +177,7 @@ class de(baseSolver):
             pop = old_pop*const_v + pop*cross_v
             
             #CHECK CONSTRAINTS
-            pop = _correct_box_constraints(lb,ub,pop, p.contol / 2.0)
+            pop = _correct_box_constraints(lb,ub,pop)
             best, vals, constr_vals = _eval_pop(pop, p)
             
             #SELECTION
@@ -246,25 +246,25 @@ def _eval_pop(pop, p):
     return best, vals, constr_vals
    
     
-def _correct_box_constraints(lb, ub, pop, contol):
+def _correct_box_constraints(lb, ub, pop):
     diff_lb = pop - lb
-    check_lb = diff_lb < -contol 
+    check_lb = diff_lb < 0.0
     scale = 1.0
     while np.any(check_lb):
         check_lb = check_lb*1
         pop = pop - (1+scale)*check_lb*diff_lb
         diff_lb = pop - lb
-        check_lb = diff_lb < -contol 
+        check_lb = diff_lb < 0.0 
         scale /= 2
 
     diff_ub = pop - ub
-    check_ub = diff_ub > contol 
+    check_ub = diff_ub > 0.0 
     scale = 1.0
     while np.any(check_ub):
         check_ub = check_ub*1
         pop = pop - (1+scale)*check_ub*diff_ub
         diff_ub = pop - ub
-        check_ub = diff_ub > contol 
+        check_ub = diff_ub > 0.0 
         scale /= 2
 
     return pop
