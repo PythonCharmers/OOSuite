@@ -41,6 +41,7 @@ def setStartVectorAndTranslators(p):
     # point2vector = lambda point: atleast_1d(hstack([asfarray(point[oov]) for oov in freeVars]))
     
     p._optVarSizes = dict([(oov, asarray(startPoint[oov]).size) for oov in freeVars])
+    sizes = p._optVarSizes
     point2vector = lambda point: atleast_1d(hstack([(point[oov] if oov in point else zeros(sizes[oov])) for oov in p._optVarSizes]))
     # 2nd case can trigger from objective/constraints defined over some of opt oovars only
         

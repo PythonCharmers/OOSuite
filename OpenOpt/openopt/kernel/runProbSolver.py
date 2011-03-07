@@ -266,46 +266,10 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     if not p.storeIterPoints: delattr(p.iterValues, 'x')
 
     r = OpenOptResult(p)
-    r.elapsed = dict()
-    r.elapsed['solver_time'] = round(100.0*(time() - p.timeStart))/100.0
-    r.elapsed['solver_cputime'] = clock() - p.cpuTimeStart
-
-
-    for fn in ('ff', 'istop', 'duals', 'isFeasible', 'msg', 'stopcase', 'iterValues',  'special', 'extras'):
-        if hasattr(p, fn):  setattr(r, fn, getattr(p, fn))
-
-    if hasattr(p.solver, 'innerState'):
-        r.extras['innerState'] = p.solver.innerState
-    #r.xf = copy.deepcopy(p.xf)
-    r.xf = p.xf
-    r.rf = asscalar(asarray(p.rf))
-    r.ff = asscalar(asarray(r.ff))
-
-    r.solverInfo = dict()
-    for fn in ('homepage',  'alg',  'authors',  'license',  'info', 'name'):
-        r.solverInfo[fn] =  getattr(p.solver,  '__' + fn + '__')
-
 
     #TODO: add scaling handling!!!!!!!
 #    for fn in ('df', 'dc', 'dh', 'd2f', 'd2c', 'd2h'):
 #        if hasattr(p, '_' + fn): setattr(r, fn, getattr(p, '_'+fn))
-
-    if p.plot:
-        #for df in p.graphics.drawFuncs: df(p)    #TODO: include time spent here to (/cpu)timeElapsedForPlotting
-        r.elapsed['plot_time'] = round(100*p.timeElapsedForPlotting[-1])/100 # seconds
-        r.elapsed['plot_cputime'] = p.cpuTimeElapsedForPlotting[-1]
-    else:
-        r.elapsed['plot_time'] = 0
-        r.elapsed['plot_cputime'] = 0
-
-    r.elapsed['solver_time'] -= r.elapsed['plot_time']
-    r.elapsed['solver_cputime'] -= r.elapsed['plot_cputime']
-
-    r.evals = p.nEvals
-    for fn in r.evals.keys():
-        if type(r.evals[fn]) != int:
-            r.evals[fn] = round(r.evals[fn] *10) /10.0
-    r.evals['iter'] = p.iter
 
     p.invertObjFunc = False
     
@@ -360,9 +324,12 @@ class OpenOptResult:
     # TODO: implement it
     #extras = EmptyClass() # used for some optional output
     def __init__(self, p):
+        self.rf = asscalar(asarray(p.rf))
+        self.ff = asscalar(asarray(p.ff))
         if p.isFDmodel:
+            self.xf = dict([(v, asscalar(val) if isinstance(val, ndarray) and val.size ==1 else val) for v, val in p.xf.items()])
             if not hasattr(self, '_xf'):
-                self._xf = dict([(var.name, value) for var, value in p.xf.items()])
+                self._xf = dict([(v.name, asscalar(val) if isinstance(val, ndarray) and val.size ==1 else val) for v, val in p.xf.items()])
             def c(*args):
                 condIterable = len(args) == 1 and isinstance(args[0], (list, tuple))# may be tuple, list, oolist
                 Args = args[0] if condIterable else args
@@ -370,8 +337,38 @@ class OpenOptResult:
                 r = [asscalar(item) if type(item) in (ndarray, matrix) and item.size == 1 else item for item in r]
                 return r if condIterable else r if len(args) > 1 else r[0] # if len(args)==1 else r
             self.__call__ = c
+        else:
+            self.xf = p.xf
+
+        self.elapsed = dict()
+        self.elapsed['solver_time'] = round(100.0*(time() - p.timeStart))/100.0
+        self.elapsed['solver_cputime'] = clock() - p.cpuTimeStart
+
+        for fn in ('ff', 'istop', 'duals', 'isFeasible', 'msg', 'stopcase', 'iterValues',  'special', 'extras'):
+            if hasattr(p, fn):  setattr(self, fn, getattr(p, fn))
+
+        if hasattr(p.solver, 'innerState'):
+            self.extras['innerState'] = p.solver.innerState
+
+        self.solverInfo = dict()
+        for fn in ('homepage',  'alg',  'authors',  'license',  'info', 'name'):
+            self.solverInfo[fn] =  getattr(p.solver,  '__' + fn + '__')
 
             # note - it doesn't work for len(args)>1 for current Python ver  2.6
             #self.__getitem__ = c # = self.__call__
+            
+        if p.plot:
+            #for df in p.graphics.drawFuncs: df(p)    #TODO: include time spent here to (/cpu)timeElapsedForPlotting
+            self.elapsed['plot_time'] = round(100*p.timeElapsedForPlotting[-1])/100 # seconds
+            self.elapsed['plot_cputime'] = p.cpuTimeElapsedForPlotting[-1]
+        else:
+            self.elapsed['plot_time'] = 0
+            self.elapsed['plot_cputime'] = 0
 
+        self.elapsed['solver_time'] -= self.elapsed['plot_time']
+        self.elapsed['solver_cputime'] -= self.elapsed['plot_cputime']
+
+        self.evals = dict([(key, val if type(val) == int else round(val *10) /10.0) for key, val in p.nEvals.items()])
+        self.evals['iter'] = p.iter
+        
 class EmptyClass: pass
