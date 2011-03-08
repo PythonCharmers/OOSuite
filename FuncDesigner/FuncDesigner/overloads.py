@@ -29,6 +29,7 @@ def sin(inp):
     if not isinstance(inp, oofun): return np.sin(inp)
     return oofun(np.sin, inp, 
                  d = lambda x: Diag(np.cos(x)), 
+                 vectorized = True, 
                  criticalPoints = TrigonometryCriticalPoints)
                  #_interval = lambda domain: ufuncInterval(inp, domain, np.sin, TrigonometryCriticalPoints))
 
@@ -37,6 +38,7 @@ def cos(inp):
     #return oofun(np.cos, inp, d = lambda x: Diag(-np.sin(x)))
     return oofun(np.cos, inp, 
              d = lambda x: Diag(-np.sin(x)), 
+             vectorized = True, 
              criticalPoints = TrigonometryCriticalPoints)
              #_interval = lambda domain: ufuncInterval(inp, domain, np.cos, TrigonometryCriticalPoints))
 
@@ -45,21 +47,21 @@ def tan(inp):
     # TODO: move it outside of tan definition
     def interval(arg_inf, arg_sup):
         raise 'interval for tan is unimplemented yet'
-    r = oofun(np.tan, inp, d = lambda x: Diag(1.0 / np.cos(x) ** 2), interval = interval)
+    r = oofun(np.tan, inp, d = lambda x: Diag(1.0 / np.cos(x) ** 2), vectorized = True, interval = interval)
     return r
 
 # TODO: cotan?
 
 def arcsin(inp):
     if not isinstance(inp, oofun): return np.arcsin(inp)
-    r = oofun(np.arcsin, inp, d = lambda x: Diag(1.0 / np.sqrt(1.0 - x**2)))
+    r = oofun(np.arcsin, inp, d = lambda x: Diag(1.0 / np.sqrt(1.0 - x**2)), vectorized = True)
     r.criticalPoints = False
     r.attach((inp>-1)('arcsin_domain_lower_bound_%d' % r._id, tol=-1e-7), (inp<1)('arcsin_domain_upper_bound_%d' % r._id, tol=-1e-7))
     return r
 
 def arccos(inp):
     if not isinstance(inp, oofun): return np.arccos(inp)
-    r = oofun(np.arccos, inp, d = lambda x: Diag(-1.0 / np.sqrt(1.0 - x**2)))
+    r = oofun(np.arccos, inp, d = lambda x: Diag(-1.0 / np.sqrt(1.0 - x**2)), vectorized = True)
     r.criticalPoints = False
     r.attach((inp>-1)('arccos_domain_lower_bound_%d' % r._id, tol=-1e-7), (inp<1)('arccos_domain_upper_bound_%d' % r._id, tol=-1e-7))
     return r
@@ -68,15 +70,16 @@ def arctan(inp):
     if not isinstance(inp, oofun): return np.arctan(inp)
     return oofun(np.arctan, inp, 
                  d = lambda x: Diag(1.0 / (1.0 + x**2)), 
+                 vectorized = True, 
                  criticalPoints = False)
 
 def sinh(inp):
     if not isinstance(inp, oofun): return np.sinh(inp)
-    return oofun(np.sinh, inp, d = lambda x: Diag(np.cosh(x)), criticalPoints = False)
+    return oofun(np.sinh, inp, d = lambda x: Diag(np.cosh(x)), vectorized = True, criticalPoints = False)
 
 def cosh(inp):
     if not isinstance(inp, oofun): return np.cosh(inp)
-    return oofun(np.cosh, inp, d = lambda x: Diag(np.sinh(x)), criticalPoints=ZeroCriticalPoints)
+    return oofun(np.cosh, inp, d = lambda x: Diag(np.sinh(x)), vectorized = True, criticalPoints=ZeroCriticalPoints)
 
 def angle(inp1, inp2):
     # returns angle between 2 vectors
@@ -88,34 +91,34 @@ def angle(inp1, inp2):
 
 def exp(inp):
     if not isinstance(inp, oofun): return np.exp(inp)
-    return oofun(np.exp, inp, d = lambda x: Diag(np.exp(x)), criticalPoints = False)
+    return oofun(np.exp, inp, d = lambda x: Diag(np.exp(x)), vectorized = True, criticalPoints = False)
 
 def sqrt(inp, attachConstraints = True):
     if not isinstance(inp, oofun): 
         return np.sqrt(inp)
-    r = oofun(np.sqrt, inp, d = lambda x: Diag(0.5 / np.sqrt(x)), criticalPoints = False)
+    r = oofun(np.sqrt, inp, d = lambda x: Diag(0.5 / np.sqrt(x)), vectorized = True, criticalPoints = False)
     if attachConstraints: r.attach((inp>0)('sqrt_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
 
 def abs(inp):
     if not isinstance(inp, oofun): return np.abs(inp)
-    return oofun(np.abs, inp, d = lambda x: Diag(np.sign(x)), criticalPoints = ZeroCriticalPoints)
+    return oofun(np.abs, inp, d = lambda x: Diag(np.sign(x)), vectorized = True, criticalPoints = ZeroCriticalPoints)
 
 def log(inp):
     if not isinstance(inp, oofun): return np.log(inp)
-    r = oofun(np.log, inp, d = lambda x: Diag(1.0/x), criticalPoints = False)
+    r = oofun(np.log, inp, d = lambda x: Diag(1.0/x), vectorized = True, criticalPoints = False)
     r.attach((inp>1e-300)('log_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
     
 def log10(inp):
     if not isinstance(inp, oofun): return np.log10(inp)
-    r = oofun(np.log10, inp, d = lambda x: Diag(0.43429448190325176/x), criticalPoints = False)# 1 / (x * log_e(10))
+    r = oofun(np.log10, inp, d = lambda x: Diag(0.43429448190325176/x), vectorized = True, criticalPoints = False)# 1 / (x * log_e(10))
     r.attach((inp>1e-300)('log10_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
 
 def log2(inp):
     if not isinstance(inp, oofun): return np.log2(inp)
-    r = oofun(np.log2, inp, d = lambda x: Diag(1.4426950408889634/x), criticalPoints = False)# 1 / (x * log_e(2))
+    r = oofun(np.log2, inp, d = lambda x: Diag(1.4426950408889634/x), vectorized = True, criticalPoints = False)# 1 / (x * log_e(2))
     r.attach((inp>1e-300)('log2_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
 
@@ -151,33 +154,24 @@ def cross(a, b):
 
 def ceil(inp):
     if not isinstance(inp, oofun): return np.ceil(inp)
-    r = oofun(lambda x: np.ceil(x), inp)
+    r = oofun(lambda x: np.ceil(x), inp, vectorized = True)
     r._D = lambda *args, **kwargs: raise_except('derivative for FD ceil is unimplemented yet')
     r.criticalPoints = False#lambda arg_infinum, arg_supremum: [np.ceil(arg_supremum)]
     return r
 
 def floor(inp):
     if not isinstance(inp, oofun): return np.floor(inp)
-    r = oofun(lambda x: np.floor(x), inp)
+    r = oofun(lambda x: np.floor(x), inp, vectorized = True)
     r._D = lambda *args, **kwargs: raise_except('derivative for FD floor is unimplemented yet')
     r.criticalPoints = False#lambda arg_infinum, arg_supremum: [np.floor(arg_infinum)]
     return r
 
 def sum(inp, *args, **kwargs):
-    #raise 0
-    #return np.sum(inp, *args, **kwargs)
-#    from time import time
-#    t = time()
     
-    # TODO: check for numpy.array of oofuns
-    #condIterableOfOOFuns = type(inp) in (list, tuple) and any([isinstance(elem, oofun) for elem in inp])
-    
-    #print np.asscalar(inp).name
     cond_ooarray = isinstance(inp, ooarray) and inp.dtype == object
     if cond_ooarray and inp.size == 1: 
         return np.asscalar(inp).sum()
     condIterableOfOOFuns = type(inp) in (list, tuple) or cond_ooarray
-    #raise 0
     
     if not isinstance(inp, oofun) and not condIterableOfOOFuns: 
         return np.sum(inp, *args, **kwargs)
@@ -186,31 +180,27 @@ def sum(inp, *args, **kwargs):
 
     if condIterableOfOOFuns:
         d, INP, r0 = [], [], 0.0
-        j = -1
         for elem in inp: # TODO: mb use reduce() or something like that
             if not isinstance(elem, oofun): 
-                #r0 = r0 + elem # += is inappropriate because sizes may differ
-                
                 # not '+=' because size can be changed from 1 to another value
                 r0 = r0 + np.asfarray(elem) # so it doesn't work for different sizes
-                
                 continue
-                
-            j += 1
             INP.append(elem)
 
         # TODO:  check for fixed inputs
-        f = lambda *args: r0 + np.sum(args)
-#        def f(*args):
-#            print args
-#            return np.sum(args)
-        _inp = set(INP)
+        #f = lambda *args: r0 + np.sum(args)
+        def f(*args):
+            tmp = np.asarray(args)
+            return r0 + (tmp.sum(0) if tmp.ndim > 1 else tmp.sum())
+#            if np.asarray(args).size>12: raise 0
+#            return r0 + np.sum(args)
+#            
+
+        
         #!!!!!!!!!!!!!!!!!! TODO: check INP for complex cases (not list of oovars)
         
-        if len(INP) == 0: 
-            INP = None
-            #print f(1)
-            #raise 0
+#        if len(INP) == 0: 
+#            INP = None
         r = oofun(f, INP) 
         
         def getOrder(*args, **kwargs):
@@ -218,12 +208,23 @@ def sum(inp, *args, **kwargs):
             return np.max(orders)
         r.getOrder = getOrder
         
+        def interval(domain):
+            Arg_infinums, Arg_supremums = [], []
+            for inp in INP:
+                arg_inf, arg_sup = inp._interval(domain)
+                Arg_infinums.append(arg_inf)
+                Arg_supremums.append(arg_sup)
+            #raise 0
+            return r0+np.sum(np.vstack(Arg_infinums), 0), r0+np.sum(np.vstack(Arg_supremums), 0)
+        r._interval = interval
+        r.vectorized = True
+        
         def _D(point, fixedVarsScheduleID, Vars=None, fixedVars = None, useSparse = 'auto'):
             # TODO: handle involvePrevData
             # TODO: handle fixed vars
             r, keys = {}, set()
             
-            for elem in _inp:
+            for elem in INP:
                 if not elem.is_oovar and (elem.input is None or len(elem.input)==0 or elem.input[0] is None): 
                     continue # TODO: get rid if None, use [] instead
                 if elem.discrete: continue
@@ -383,7 +384,7 @@ def max(inp,  *args,  **kwargs):
             return r.input[ind]._D(point, *args, **kwargs) if isinstance(r.input[ind], oofun) else {}
         r._D = _D
     else:
-        raise FuncDesignerException('incorrect data type in FuncDesigner max')
+        return np.max(inp, *args, **kwargs)
     return r        
     
 def min(inp,  *args,  **kwargs): 
@@ -404,7 +405,7 @@ def min(inp,  *args,  **kwargs):
             return r.input[ind]._D(point, *args, **kwargs) if isinstance(r.input[ind], oofun) else {}
         r._D = _D
     else:
-        raise FuncDesignerException('incorrect data type in FuncDesigner min')
+        return np.min(inp, *args, **kwargs)
     return r        
     
 #def fixed_oofun(Val):

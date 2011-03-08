@@ -1,4 +1,5 @@
-from numpy import ndarray, asscalar, isscalar, hstack, amax, amin, floor, ceil, pi, arange
+from numpy import ndarray, asscalar, isscalar, hstack, amax, amin, floor, ceil, pi, \
+arange, copy as Copy, logical_and, where, asarray
 
 class Interval:
     def __init__(self, l, u):
@@ -12,30 +13,49 @@ class Interval:
 
 
 def ZeroCriticalPoints(arg_infinum, arg_supremum):
-    return [0.0] if arg_infinum < 0.0 < arg_supremum else []
+    if isscalar(arg_infinum):
+        return [0.0] if arg_infinum < 0.0 < arg_supremum else []
+    tmp = Copy(arg_infinum)
+    tmp[where(logical_and(arg_infinum < 0.0, arg_supremum > 0.0))] = 0.0
+    return [tmp]
 
 #def IntegerCriticalPoints(arg_infinum, arg_supremum):
 #    # TODO: check it for rounding errors
 #    return arange(ceil(arg_infinum), ceil(1.0+arg_supremum), dtype=float).tolist()
 
-def TrigonometryCriticalPoints(arg_infinum, arg_supremum):
+def TrigonometryCriticalPoints2(arg_infinum, arg_supremum):
     n1, n2 = int(floor(2 * arg_infinum / pi)), int(ceil(2 * arg_supremum / pi))
     # 6 instead of  5 for more safety, e.g. small numerical rounding effects
     return [i / 2.0 * pi for i in range(n1, amin((n1+6, n2))) if (arg_infinum < (i / 2.0) * pi <  arg_supremum)]
-    
-#def ufuncInterval(inp, domain, ufunc, criticalPointsFunc):
-#    #inp = OOfun.input[0]
-#    arg_infinum, arg_supremum = inp._interval(domain)
-#    if not isscalar(arg_infinum) and arg_infinum.size > 1:
-#        raise FuncDesignerException('not implemented for vectorized oovars yet')
-#    tmp = ufunc(hstack([arg_infinum, arg_supremum] + ([] if criticalPointsFunc is False else criticalPointsFunc(arg_infinum, arg_supremum))))
-#    return amin(tmp), amax(tmp)
 
-#def ufuncInterval(OOfun, domain):
-#    ufunc, criticalPointsFunc = OOfun.fun, OOfun.criticalPoints
-#    inp = OOfun.input[0]
-#    arg_infinum, arg_supremum = inp._interval(domain)
-#    if not isscalar(arg_infinum) and arg_infinum.size > 1:
-#        raise FuncDesignerException('not implemented for vectorized oovars yet')
-#    tmp = ufunc(hstack([arg_infinum, arg_supremum] + ([] if criticalPointsFunc is None else criticalPointsFunc(arg_infinum, arg_supremum))))
-#    return amin(tmp), amax(tmp)
+# TODO: split TrigonometryCriticalPoints into (pi/2) *(2k+1) and (pi/2) *(2k)
+def TrigonometryCriticalPoints(arg_infinum, arg_supremum):
+    # returns points with coords n * pi/2, arg_infinum <= n * pi/2<= arg_supremum,n -array of integers
+    arrN = asarray(floor(2 * arg_infinum / pi), int)
+    Tmp = []
+    for i in range(1, 6):
+        th = (arrN+i)*pi/2
+        ind = where(logical_and(arg_infinum < th,  th < arg_supremum))[0]
+        if ind.size == 0: break
+        tmp = arg_infinum.copy()
+        tmp[ind] = (arrN[ind]+i)*pi/2
+        Tmp.append(tmp)
+    return Tmp
+    # 6 instead of  5 for more safety, e.g. small numerical rounding effects
+    #return [i / 2.0 * pi for i in range(n1, amin((n1+6, n2))) if (arg_infinum < (i / 2.0) * pi <  arg_supremum)]
+
+#def halph_pi_x_2k_plus_one_points(arg_infinum, arg_supremum):
+#    n1 = asarray(floor(2 * arg_infinum / pi), int)
+#    Tmp = []
+#    for i in range(1, 7):
+#        if i% 2: continue
+#        ind = where(logical_and(arg_infinum < (n1+i)*pi/2,  (n1+i)*pi/2< arg_supremum))[0]
+#        if ind.size == 0: break
+#        tmp = arg_infinum.copy()
+#        #assert (n1+i)*pi/2 < 6.3
+#        tmp[ind] = (n1[ind]+i)*pi/2
+#        Tmp.append(tmp)
+#    #raise 0
+#    return Tmp
+#    
+

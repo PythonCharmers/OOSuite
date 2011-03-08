@@ -13,14 +13,19 @@ Len = lambda x: 1 if isscalar(x) else x.size if type(x)==ndarray else len(x)
 
 class ooPoint(dict):
     _id = 0
+    isMultiPoint = False
     def __init__(self, *args, **kwargs):
+        if kwargs.get('skipArrayCast', False): 
+            Asfarray = lambda arg: arg
+        else: 
+            Asfarray = lambda arg: asfarray(arg)
         if args:
             if not isinstance(args[0], dict):
-                items = [(key, asfarray(val) if not isscalar(val) else float(val)) for key, val in args[0]] 
+                items = [(key, Asfarray(val) if not isscalar(val) else float(val)) for key, val in args[0]] 
             else:
-                items = [(key, asfarray(val) if not isscalar(val) else float(val)) for key, val in args[0].items()] 
+                items = [(key, Asfarray(val) if not isscalar(val) else float(val)) for key, val in args[0].items()] 
         elif kwargs:
-            items = [(key, asfarray(val) if not isscalar(val) else float(val)) for key, val in kwargs.items()]
+            items = [(key, Asfarray(val) if not isscalar(val) else float(val)) for key, val in kwargs.items()]
         else:
             raise FuncDesignerException('incorrect oopoint constructor arguments')
             

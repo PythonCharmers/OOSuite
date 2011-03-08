@@ -2,7 +2,7 @@
 
 from numpy import inf, asfarray, copy, all, any, empty, atleast_2d, zeros, dot, asarray, atleast_1d, empty, \
 ones, ndarray, where, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum, prod, nonzero,\
-isnan, asscalar, zeros_like, ones_like, amin, amax
+isnan, asscalar, zeros_like, ones_like, amin, amax, logical_and, logical_or
 from numpy.linalg import norm
 from misc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scipyInstalled, \
 raise_except, DiagonalType
@@ -72,6 +72,7 @@ class oofun:
     _lastFuncVarsID = 0
     _lastOrderVarsID = 0
     criticalPoints = None
+    vectorized = False
 
     _usedIn = 0
     _level = 0
@@ -171,10 +172,13 @@ class oofun:
         criticalPointsFunc = self.criticalPoints
         if len(self.input) == 1 and criticalPointsFunc is not None:
             arg_infinum, arg_supremum = self.input[0]._interval(domain)
-            if not isscalar(arg_infinum) and arg_infinum.size > 1:
+            if (not isscalar(arg_infinum) and arg_infinum.size > 1) and not self.vectorized:
                 raise FuncDesignerException('not implemented for vectorized oovars yet')
-            tmp = self.fun(hstack([arg_infinum, arg_supremum] + ([] if criticalPointsFunc is False else criticalPointsFunc(arg_infinum, arg_supremum))))
-            return amin(tmp), amax(tmp)
+            tmp = [arg_infinum, arg_supremum]
+            if criticalPointsFunc is not False:
+                tmp += criticalPointsFunc(arg_infinum, arg_supremum)
+            Tmp = self.fun(vstack(tmp))
+            return amin(Tmp, 0), amax(Tmp, 0)
         else:
             raise FuncDesignerException('interval calculations are unimplemented for the oofun yet')
     
@@ -208,8 +212,7 @@ class oofun:
             
             # TODO: move it outside the func, to prevent recreation each time
             def interval(domain): 
-                domain1 = self._interval(domain)
-                domain2 = other._interval(domain)
+                domain1, domain2 = self._interval(domain), other._interval(domain)
                 return domain1[0] + domain2[0], domain1[1] + domain2[1]
             r._interval = interval
         else:
@@ -232,7 +235,7 @@ class oofun:
             #r._interval = lambda domain: (self._interval(domain)[0] + other, self._interval(domain)[1] + other)
             if (other.size == 1 or ('size' in self.__dict__ and self.size == other.size)): 
                 r._D = lambda *args,  **kwargs: self._D(*args,  **kwargs) 
-                
+        r.vectorized = True
         return r
     
     __radd__ = lambda self, other: self.__add__(other)
@@ -245,6 +248,7 @@ class oofun:
         r._D = lambda *args, **kwargs: dict([(key, -value) for key, value in self._D(*args, **kwargs).items()])
         r.d = raise_except
         r.criticalPoints = False
+        r.vectorized = True
         def _interval(domain):
             r = self._interval(domain)
             return (-r[1], -r[0])
@@ -281,21 +285,21 @@ class oofun:
                 order1, order2 = self.getOrder(*args, **kwargs), other.getOrder(*args, **kwargs)
                 return order1 if order2 == 0 else inf
             r.getOrder = getOrder
-            def _interval(domain):
+            def interval(domain):
                 lb1, ub1 = self._interval(domain)
-                s1 = asarray(lb1).size
                 lb2, ub2 = other._interval(domain)
-                if lb2.size != 1: 
-                    raise FuncDesingerException('intervals for division over arrays is not implemented yet')
-                if lb2 < 0 < ub2:
-                    return (-inf*ones(s1), inf*ones(s1)) # TODO: rework it (requires changes in interval func engine)
-                if s1 > 1:
-                    tmp = vstack((lb1/lb2, lb1/ub2, ub1/lb2, ub1/ub2))
-                    return amin(tmp, 0), amax(tmp, 0)
-                else:
-                    tmp = (lb1/lb2, lb1/ub2, ub1/lb2, ub1/ub2)
-                    return amin(tmp), amax(tmp)
-            r._interval = _interval
+                #ind1, ind2 = where(lb2==0)[0], where(ub2==0)[0]
+                lb2[lb2==0] = 1e-300 # then 0.0 / lb2 will be defined correctly and will not yield NaNs
+                ub2[ub2==0] = -1e-300# then 0.0 / ub2 will be defined correctly and will not yield NaNs
+                ind = where(logical_or(logical_and(lb1<0, ub1>0), logical_and(lb2<0, ub2>0)))[0]
+                tmp = vstack((lb1/lb2, lb1/ub2, ub1/lb2, ub1/ub2))
+                r1, r2 = amin(tmp, 0), amax(tmp, 0)
+                if ind.size != 0:
+                    r1[ind] = -inf
+                    r2[ind] = inf
+                return [r1, r2]
+
+            r._interval = interval
         else:
             other = array(other,'float')
             r = oofun(lambda a: a/other, self, discrete = self.discrete)# TODO: involve sparsity if possible!
@@ -310,6 +314,7 @@ class oofun:
             
         # r.discrete = self.discrete and (?)
         #r.isCostly = True
+        r.vectorized = True
         return r
 
     def __rdiv__(self, other):
@@ -317,20 +322,25 @@ class oofun:
         other = array(other, 'float') # TODO: sparse matrices handling!
         r = oofun(lambda x: other/x, self, discrete = self.discrete)
         r.d = lambda x: Diag(- other / x**2)
-        def criticalPoints(arg_infinum, arg_supremum):
+        def interval(domain):
+            arg_infinum, arg_supremum = self._interval(domain)
             assert other.size == 1, 'this case is unimplemented yet'
             #r = self._interval(domain)
-            if arg_infinum < 0 < arg_supremum:
-                return [-inf, inf] # TODO: improve it, return (-inf,1/r[0]) and (1/r[1], inf) instead (requires changes in engine)
-            else:
-                r = (other / arg_supremum, other / arg_infinum)
-                return [amin(r), amax(r)]
-        r.criticalPoints = criticalPoints
+            ind = where(logical_and(arg_infinum < 0,  0 < arg_supremum))[0]
+            r = vstack((other / arg_supremum, other / arg_infinum))
+            r1, r2 = amin(r, 0), amax(r, 0)
+            if ind.size != 0:
+                r1[ind] = -inf
+                r2[ind] = inf
+            return [r1, r2]
+            
+        r._interval = interval
         #r.isCostly = True
         def getOrder(*args, **kwargs):
             order = self.getOrder(*args, **kwargs)
             return 0 if order == 0 else inf
         r.getOrder = getOrder
+        r.vectorized = True
         return r
 
     # overload "a*b"
@@ -376,6 +386,7 @@ class oofun:
             return amin(t, 0), amax(t, 0)
                 
         r._interval = interval
+        r.vectorized = True
         #r.isCostly = True
         return r
 
@@ -403,6 +414,7 @@ class oofun:
         if isinstance(other, oofun) or (not isinstance(other, int) or (type(other) == ndarray and other.flatten()[0] != int)): 
             r.attach((self>0)('pow_domain_%d'%r._id, tol=-1e-7)) # TODO: if "other" is fixed oofun with integer value - omit this
         r.isCostly = True
+        r.vectorized = True
         return r
 
     def __rpow__(self, other):
@@ -415,6 +427,7 @@ class oofun:
         d = lambda x: Diag(other **x * log(other)) 
         r = oofun(f, self, d=d, criticalPoints = False)
         r.isCostly = True
+        r.vectorized = True
         return r
 
     def __xor__(self, other): raise FuncDesignerException('For power of oofuns use a**b, not a^b')
@@ -686,10 +699,15 @@ class oofun:
             self.args = (self.args, )
             
         Input = self._getInput(*args, **kwargs) 
-        if self.args != ():
-            Input += self.args
-
-        tmp = self.fun(*Input)
+        
+        if not x.isMultiPoint or self.vectorized:
+            if self.args != ():
+                Input += self.args
+            tmp = self.fun(*Input)
+        else:
+            inputs = zip(*[inp.tolist() for inp in Input])
+            tmp = [self.fun(inp if self.args == () else inp + self.args) for inp in inputs]
+                
         if isinstance(tmp, (list, tuple)):
             tmp = hstack(tmp)
         
@@ -740,7 +758,6 @@ class oofun:
                 fixedVars = set([fixedVars])
         r = self._D(x, fixedVarsScheduleID, Vars, fixedVars, useSparse = useSparse)
         r = dict([(key, (val if type(val)!=DiagonalType else val.resolve(useSparse))) for key, val in r.items()])
-        #raise 0
         if isinstance(Vars, oofun):
             if Vars.is_oovar:
                 return Vars(r)
