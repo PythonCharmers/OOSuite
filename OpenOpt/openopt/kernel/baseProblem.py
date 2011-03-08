@@ -363,12 +363,15 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             self.constraints.update(_getAllAttachedConstraints(C))
             
             """                                         handling constraints                                         """
+            StartPointVars = set(self._x0.keys())
             for c in self.constraints:
                 if not hasattr(c, 'isConstraint'): self.err('The type' + str(type(c)) + 'is inappropriate for problem constraints')
                 f, tol = c.oofun, c.tol
                 Name = f.name
                 
                 dep = set([f]) if f.is_oovar else f._getDep()
+                if not dep.issubset(StartPointVars):
+                    self.err('your start point has no enough variables to define constraint ' + c.name)
 
                 _lb, _ub = c.lb, c.ub
                 if tol < 0:
