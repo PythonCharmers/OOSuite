@@ -331,11 +331,18 @@ class OpenOptResult:
             if not hasattr(self, '_xf'):
                 self._xf = dict([(v.name, asscalar(val) if isinstance(val, ndarray) and val.size ==1 else val) for v, val in p.xf.items()])
             def c(*args):
-                condIterable = len(args) == 1 and isinstance(args[0], (list, tuple))# may be tuple, list, oolist
-                Args = args[0] if condIterable else args
-                r = [(self._xf[arg] if isinstance(arg,  str) else self.xf[arg]) for arg in Args]
-                r = [asscalar(item) if type(item) in (ndarray, matrix) and item.size == 1 else item for item in r]
-                return r if condIterable else r if len(args) > 1 else r[0] # if len(args)==1 else r
+                r = []
+                for arg in args:
+                    tmp = [(self._xf[elem] if isinstance(elem,  str) else self.xf[elem]) for elem in (arg.tolist() if isinstance(arg, ndarray) else arg if type(arg) in (tuple, list) else [arg])]
+                    tmp = [asscalar(item) if type(item) in (ndarray, matrix) and item.size == 1 else item for item in tmp]
+                    r.append(tmp)
+                return r[0] if len(args) == 1 else r
+                
+#                condIterable = len(args) == 1 and isinstance(args[0], (list, tuple))# may be tuple, list, oolist
+#                Args = args[0] if condIterable else args
+#                r = [(self._xf[arg] if isinstance(arg,  str) else self.xf[arg]) for arg in (Args.tolist() if isinstance(Args, ndarray) else Args)]
+#                r = [asscalar(item) if type(item) in (ndarray, matrix) and item.size == 1 else item for item in r]
+#                return r if condIterable else r if len(args) > 1 else r[0] # if len(args)==1 else r
             self.__call__ = c
         else:
             self.xf = p.xf
