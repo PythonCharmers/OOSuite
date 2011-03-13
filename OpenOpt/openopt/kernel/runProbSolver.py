@@ -336,7 +336,9 @@ class OpenOptResult:
                     tmp = [(self._xf[elem] if isinstance(elem,  str) else self.xf[elem]) for elem in (arg.tolist() if isinstance(arg, ndarray) else arg if type(arg) in (tuple, list) else [arg])]
                     tmp = [asscalar(item) if type(item) in (ndarray, matrix) and item.size == 1 else item for item in tmp]
                     r.append(tmp)
-                return r[0] if len(args) == 1 else r
+                r = r[0] if len(args) == 1 else r
+                if len(args) == 1 and type(r) in (list, tuple) and len(r) >1: r = asfarray(r)
+                return r
                 
 #                condIterable = len(args) == 1 and isinstance(args[0], (list, tuple))# may be tuple, list, oolist
 #                Args = args[0] if condIterable else args
