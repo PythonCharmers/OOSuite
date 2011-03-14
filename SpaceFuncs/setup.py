@@ -15,7 +15,7 @@ MAINTAINER_EMAIL    = 'dmitrey-at-openopt-dot-org',
 URL                 = 'http://openopt.org',
 LICENSE             = 'new BSD'
 
-from __init__ import __version__ as Ver
+from __version__ import __version__ as Ver
 
 DOWNLOAD_URL        = 'http://openopt.org/asdf.zip'
 
