@@ -59,7 +59,7 @@ class Point(ooarray, baseGeometryObject):
     __radd__ = __add__ = lambda self, other: Point(ooarray.__add__(self, other))
     __rmul__ = __mul__ = lambda self, other: Point(ooarray.__mul__(self, other))
     __div__ = lambda self, other: Point(ooarray.__div__(self, other))
-    __rdiv__ = lambda self, other: Ppoint(ooarray.__div__(other, self))
+    __rdiv__ = lambda self, other: Point(ooarray.__div__(other, self))
     
     def distance(self, *args, **kw):
         assert len(kw) == 0 and len(args) == 1
