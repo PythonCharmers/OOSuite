@@ -1,6 +1,6 @@
 # created by Dmitrey
 from numpy import isscalar, all, asfarray, ndarray, array, asscalar, asarray, pi, atleast_1d, asscalar
-from FuncDesigner import oofun, ooarray, dot, sum, sqrt, cross
+from FuncDesigner import oofun, ooarray, dot, sum, sqrt, cross, norm
 from misc import SpaceFuncsException, pWarn, SF_error
 from baseGeometryObject import baseGeometryObject
 
@@ -141,7 +141,7 @@ class Line(baseGeometryObject):
     #perpendicular = lambda self, point: _perpendicularToLine(point, self)
     
     def projection(self, obj):
-        assert type(obj) == Plane
+        assert isinstance(obj, Plane)
         
         # TODO: maybe involve normalization of direction norm?
         r = Line(self.basePoint.projection(obj), (self.basePoint+self.direction).projection(obj))
