@@ -334,10 +334,12 @@ class OpenOptResult:
                 r = []
                 for arg in args:
                     tmp = [(self._xf[elem] if isinstance(elem,  str) else self.xf[elem]) for elem in (arg.tolist() if isinstance(arg, ndarray) else arg if type(arg) in (tuple, list) else [arg])]
-                    tmp = [asscalar(item) if type(item) in (ndarray, matrix) and item.size == 1 else item for item in tmp]
-                    r.append(tmp)
+                    tmp = [asscalar(item) if type(item) in (ndarray, matrix) and item.size == 1 \
+                           #else item[0] if type(item) in (list, tuple) and len(item) == 0 \
+                           else item for item in tmp]
+                    r.append(tmp if type(tmp) not in (list, tuple) or len(tmp)!=1 else tmp[0])
                 r = r[0] if len(args) == 1 else r
-                if len(args) == 1 and type(r) in (list, tuple) and len(r) >1: r = asfarray(r)
+                if len(args) == 1 and type(r) in (list, tuple) and len(r) >1: r = asfarray(r, dtype = type(r[0]))
                 return r
                 
 #                condIterable = len(args) == 1 and isinstance(args[0], (list, tuple))# may be tuple, list, oolist
