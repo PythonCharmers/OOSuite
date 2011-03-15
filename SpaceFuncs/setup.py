@@ -17,7 +17,7 @@ LICENSE             = 'new BSD'
 
 from __version__ import __version__ as Ver
 
-DOWNLOAD_URL        = 'http://openopt.org/asdf.zip'
+DOWNLOAD_URL        = 'http://openopt.org/images/4/4e/SpaceFuncs.zip'
 
 try:
     import setuptools
