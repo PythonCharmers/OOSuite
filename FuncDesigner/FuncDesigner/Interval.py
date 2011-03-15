@@ -1,5 +1,5 @@
 from numpy import ndarray, asscalar, isscalar, hstack, amax, amin, floor, ceil, pi, \
-arange, copy as Copy, logical_and, where, asarray
+arange, copy as Copy, logical_and, where, asarray, any, atleast_1d
 
 class Interval:
     def __init__(self, l, u):
@@ -32,7 +32,7 @@ def ZeroCriticalPoints(arg_infinum, arg_supremum):
 # TODO: split TrigonometryCriticalPoints into (pi/2) *(2k+1) and (pi/2) *(2k)
 def TrigonometryCriticalPoints(arg_infinum, arg_supremum):
     # returns points with coords n * pi/2, arg_infinum <= n * pi/2<= arg_supremum,n -array of integers
-    arrN = asarray(floor(2 * arg_infinum / pi), int)
+    arrN = asarray(atleast_1d(floor(2 * arg_infinum / pi)), int)
     Tmp = []
     for i in range(1, 6):
         th = (arrN+i)*pi/2
@@ -40,7 +40,7 @@ def TrigonometryCriticalPoints(arg_infinum, arg_supremum):
         ind = logical_and(arg_infinum < th,  th < arg_supremum)
         #if ind.size == 0: break
         if not any(ind): break
-        tmp = arg_infinum.copy()
+        tmp = atleast_1d(Copy(arg_infinum))
         tmp[ind] = (arrN[ind]+i)*pi/2
         Tmp.append(tmp)
     return Tmp

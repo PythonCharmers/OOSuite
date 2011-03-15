@@ -97,7 +97,10 @@ class oofun:
     def __getattr__(self, attr):
         if attr == '__len__':
             raise AttributeError('using len(oofun) is not possible yet, try using oofun.size instead')
-        if attr != 'size': 
+        elif attr == 'isUncycled':
+            self._getDep()
+            return self.isUncycled
+        elif attr != 'size': 
             raise AttributeError('you are trying to obtain incorrect attribute "%s" for FuncDesigner oofun "%s"' %(attr, self.name))
         
         # to prevent creating of several oofuns binded to same oofun.size
@@ -614,19 +617,24 @@ class oofun:
             # NEW
             r_oovars = []
             r_oofuns = []
+            isUncycled = True
             for oofunInstance in self.input:
                 if not isinstance(oofunInstance, oofun): continue
                 if oofunInstance.is_oovar:
                     r_oovars.append(oofunInstance)
                     continue
+                
                 tmp = oofunInstance._getDep()
+                if not oofunInstance.isUncycled: isUncycled = False
                 if tmp is None or len(tmp)==0: continue # TODO: remove None, use [] instead
                 r_oofuns.append(tmp)
             r = set(r_oovars)
-            
+
             # Python 2.5 sel.update fails on empty input
             if len(r_oofuns)!=0: r.update(*r_oofuns)
-            
+            if len(r_oovars) + sum([len(elem) for elem in r_oofuns]) != len(r):
+                isUncycled = False
+            self.isUncycled = isUncycled            
             
             self.dep = r    
             # /NEW
@@ -1131,7 +1139,30 @@ class oofun:
         for c in self.attachedConstraints:
             c._broadcast(func, *args, **kwargs)
         func(self)
-    
+        
+#    def isUncycled(self):
+#        # TODO: speedup the function via omitting same oofuns
+#        # TODO: handle fixed variables
+#        deps = []
+#        oofuns = []
+#        dep_num = []
+#        for elem in self._getDep():
+#            if isinstance(elem, oofun):
+#                if elem.is_oovar:
+#                    deps.append(elem)
+#                    dep_num.append(1)
+#                else:
+#                    tmp = elem._getDep()
+#                    dep_num.append(len(tmp))
+#                    if tmp is not None:
+#                        deps.append(tmp)
+#                    oofuns.append(elem)
+#                    
+#        if any([not elem.isUncycled() for elem in oofuns]):
+#            return False
+#        r1 = set()
+#        r1.update(deps)
+#        return True if len(r1) == sum(dep_num) else False
         
     def uncertainty(self, point, deviations, actionOnAbsentDeviations='warning'):
         ''' 
