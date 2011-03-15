@@ -45,6 +45,7 @@ class autocreate:
 class baseProblem(oomatrix, residuals, ooTextOutput):
     isObjFunValueASingleNumber = True
     manage = GUI.manage # GUI func
+    #_useGUIManager = False # TODO: implement it
     prepared = False
     _baseProblemIsPrepared = False
     
@@ -61,7 +62,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
     TimeElapsed = 0.
     isFinished = False
     invertObjFunc = False # True for goal = 'max' or 'maximum'
-    nEvals = {}
+    
 
     lastPrintedIter = -1
     
@@ -95,6 +96,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
     userStop = False # becomes True is stopped by user
     
     useSparse = 'auto' # involve sparse matrices: 'auto' (autoselect, premature) | True | False
+    useAttachedConstraints = False
 
     x0 = None
     isFDmodel = False # OO kernel set it to True if oovars/oofuns are used
@@ -145,10 +147,11 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         self.warn = oowarn
         self.info = ooinfo
         self.hint = oohint
+        self.pWarn = ooPWarn
         self.disp = oodisp
         self.data4TextOutput = ['objFunVal', 'log10(maxResidual)']
+        self.nEvals = {}
         
-        self.pWarn = ooPWarn
         
         if hasattr(self, 'expectedArgs'): 
             if len(self.expectedArgs)<len(args):
@@ -309,6 +312,16 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     
             if not isinstance(self.x0, dict):
                 self.err('Unexpected start point type: Python dict expected, '+ str(type(self.x0)) + ' obtained')
+            
+            if not all([not isinstance(val, (list, tuple, ndarray)) or len(val) == 1 for val in self.x0.values()]):
+                tmp = []
+                for key, val in self.x0.items():
+                    if not isinstance(val, (list, tuple, array)):
+                        tmp.append((key, val))
+                    else:
+                        for i in range(len(val)):
+                            tmp.append((key[i], val[i]))
+                self.x0 = dict(tmp)
 
             if self.probType in ['LP', 'MILP'] and self.f.getOrder(self.freeVars, self.fixedVars) > 1:
                 self.err('for LP/MILP objective function has to be linear, while this one ("%s") is not' % self.f.name)
@@ -340,8 +353,6 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             # TODO: get rid of start c, h = None, use [] instead
             A, b, Aeq, beq = [], [], [], []
             
-            
-            
             if type(self.constraints) not in (list, tuple, set):
                 self.constraints = [self.constraints]
             oovD = self._oovarsIndDict
@@ -360,7 +371,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 else: # self.f is oofun
                     C.append(self.f)
             
-            self.constraints.update(_getAllAttachedConstraints(C))
+            if self.useAttachedConstraints: 
+                self.constraints.update(_getAllAttachedConstraints(C))
             
             """                                         handling constraints                                         """
             StartPointVars = set(self._x0.keys())

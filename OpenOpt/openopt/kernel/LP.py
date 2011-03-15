@@ -80,7 +80,8 @@ class LP(MatrixProblem):
         # for LP plot is via NLP
         p.show = self.show
         p.plot, self.plot = self.plot, 0
-
+        if self.isFDmodel:
+            p._x0 = self._x0 # may be used in interalg 
         r = p.solve(solver, **solver_params)
         self.xf, self.ff, self.rf = r.xf, r.ff, r.rf
 

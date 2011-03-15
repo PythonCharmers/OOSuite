@@ -11,11 +11,13 @@ from string import lower
 from baseProblem import ProbDefaults
 from baseSolver import baseSolver
 from nonOptMisc import getSolverFromStringName
-hasMultiprocessingModule = True
+
 try:
-    from multiprocessing import Pool
-except:
-    hasMultiprocessingModule = False
+    import setproctitle
+    hasSetproctitleModule = True
+except ImportError:
+    hasSetproctitleModule = False
+    
 #from openopt.kernel.ooMisc import __solverPaths__
 ConTolMultiplier = 0.8
 
@@ -202,7 +204,22 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
             nErr = check(p)
             if nErr: p.err("prob check results: " +str(nErr) + "ERRORS!")#however, I guess this line will be never reached.
             p.iterfcn(p.x0)
+            if hasSetproctitleModule:
+                try:
+                    originalName = setproctitle.getproctitle()
+                    s = 'OpenOpt-' + p.solver.__name__
+#                    if p.name != 'unnamed':
+                    s += '-' + p.name
+                    setproctitle.setproctitle(s)
+                except:
+                    originalName = None
+            else:
+                p.pWarn('''
+                please install setproctitle module 
+                (it's available via easy_install and Linux soft channels like apt-get)''')
             solver(p)
+            if hasSetproctitleModule and originalName is not None:
+                setproctitle.setproctitle(originalName)
 #    except killThread:
 #        if p.plot:
 #            print 'exiting pylab'
