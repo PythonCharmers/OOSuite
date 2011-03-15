@@ -16,17 +16,18 @@ def ZeroCriticalPoints(arg_infinum, arg_supremum):
     if isscalar(arg_infinum):
         return [0.0] if arg_infinum < 0.0 < arg_supremum else []
     tmp = Copy(arg_infinum)
-    tmp[where(logical_and(arg_infinum < 0.0, arg_supremum > 0.0))] = 0.0
+    #tmp[where(logical_and(arg_infinum < 0.0, arg_supremum > 0.0))] = 0.0
+    tmp[logical_and(arg_infinum < 0.0, arg_supremum > 0.0)] = 0.0
     return [tmp]
 
 #def IntegerCriticalPoints(arg_infinum, arg_supremum):
 #    # TODO: check it for rounding errors
 #    return arange(ceil(arg_infinum), ceil(1.0+arg_supremum), dtype=float).tolist()
 
-def TrigonometryCriticalPoints2(arg_infinum, arg_supremum):
-    n1, n2 = int(floor(2 * arg_infinum / pi)), int(ceil(2 * arg_supremum / pi))
-    # 6 instead of  5 for more safety, e.g. small numerical rounding effects
-    return [i / 2.0 * pi for i in range(n1, amin((n1+6, n2))) if (arg_infinum < (i / 2.0) * pi <  arg_supremum)]
+#def TrigonometryCriticalPoints2(arg_infinum, arg_supremum):
+#    n1, n2 = int(floor(2 * arg_infinum / pi)), int(ceil(2 * arg_supremum / pi))
+#    # 6 instead of  5 for more safety, e.g. small numerical rounding effects
+#    return [i / 2.0 * pi for i in range(n1, amin((n1+6, n2))) if (arg_infinum < (i / 2.0) * pi <  arg_supremum)]
 
 # TODO: split TrigonometryCriticalPoints into (pi/2) *(2k+1) and (pi/2) *(2k)
 def TrigonometryCriticalPoints(arg_infinum, arg_supremum):
@@ -35,8 +36,10 @@ def TrigonometryCriticalPoints(arg_infinum, arg_supremum):
     Tmp = []
     for i in range(1, 6):
         th = (arrN+i)*pi/2
-        ind = where(logical_and(arg_infinum < th,  th < arg_supremum))[0]
-        if ind.size == 0: break
+        #ind = where(logical_and(arg_infinum < th,  th < arg_supremum))[0]
+        ind = logical_and(arg_infinum < th,  th < arg_supremum)
+        #if ind.size == 0: break
+        if not any(ind): break
         tmp = arg_infinum.copy()
         tmp[ind] = (arrN[ind]+i)*pi/2
         Tmp.append(tmp)

@@ -2,7 +2,7 @@
 
 from numpy import nan, asarray, isfinite, empty, zeros, inf, any, array, prod, atleast_1d, asfarray, isscalar, ndarray
 from misc import FuncDesignerException, checkSizes
-from ooFun import oofun, Len
+from ooFun import oofun, Len, ooarray
 
 class oovar(oofun):
     is_oovar = True
@@ -117,15 +117,15 @@ def oovars(*args, **kw):
     
     if len(args) == 1:
         if isinstance(args[0], int):
-            return [oovar(**kw) for i in xrange(args[0])]
+            return ooarray([oovar(**kw) for i in xrange(args[0])])
         elif type(args[0]) in [list, tuple]:
-            return [oovar(name=args[0][i], **kw) for i in xrange(len(args[0]))]
+            return ooarray([oovar(name=args[0][i], **kw) for i in xrange(len(args[0]))])
         elif type(args[0]) == str:
-            return [oovar(name=s, **kw) for s in args[0].split()]
+            return ooarray([oovar(name=s, **kw) for s in args[0].split()])
         else:
             raise FuncDesignerException('incorrect args number for oovars constructor')
     else:
-        return [oovar(name=args[i], **kw) for i in xrange(len(args))]
+        return ooarray([oovar(name=args[i], **kw) for i in xrange(len(args))])
 
 
 

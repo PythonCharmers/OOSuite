@@ -289,8 +289,13 @@ class oofun:
                 lb1, ub1 = self._interval(domain)
                 lb2, ub2 = other._interval(domain)
                 #ind1, ind2 = where(lb2==0)[0], where(ub2==0)[0]
-                lb2[lb2==0] = 1e-300 # then 0.0 / lb2 will be defined correctly and will not yield NaNs
-                ub2[ub2==0] = -1e-300# then 0.0 / ub2 will be defined correctly and will not yield NaNs
+                
+                #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                th = 1e-150 # TODO: handle it more properly
+                #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                
+                lb2[logical_and(lb2>=0, lb2<=th)] = th # then 0.0 / lb2 will be defined correctly and will not yield NaNs
+                ub2[logical_and(ub2<=0, ub2>=-th)] = -th# then 0.0 / ub2 will be defined correctly and will not yield NaNs
                 ind = where(logical_or(logical_and(lb1<0, ub1>0), logical_and(lb2<0, ub2>0)))[0]
                 tmp = vstack((lb1/lb2, lb1/ub2, ub1/lb2, ub1/ub2))
                 r1, r2 = amin(tmp, 0), amax(tmp, 0)
@@ -374,6 +379,8 @@ class oofun:
             if other.size == 1:
                 r._D = lambda *args, **kwargs: dict([(key, other*value) for key, value in self._D(*args, **kwargs).items()])
                 r.d = raise_except
+            else:
+                r.d = lambda x: aux_d(x, other)
         isOtherOOFun = isinstance(other, oofun)
         def interval(domain):
             self_dom = self._interval(domain)
@@ -673,7 +680,7 @@ class oofun:
         
         dep = self._getDep()
         
-        CondSamePointByID = True if type(x) == ooPoint and self._point_id == x._id else False
+        CondSamePointByID = True if type(x) == ooPoint and not x.isMultiPoint and self._point_id == x._id else False
 
         fixedVarsScheduleID = kwargs.get('fixedVarsScheduleID', -1)
         fixedVars = kwargs.get('fixedVars', None)
@@ -700,7 +707,7 @@ class oofun:
             
         Input = self._getInput(*args, **kwargs) 
         
-        if not x.isMultiPoint or self.vectorized:
+        if not isinstance(x, ooPoint) or (not x.isMultiPoint or self.vectorized):
             if self.args != ():
                 Input += self.args
             tmp = self.fun(*Input)
@@ -718,7 +725,7 @@ class oofun:
         if type(x) == ooPoint: 
             self._point_id = x._id
         
-        if type(x) == ooPoint or self.isCostly or self._isFixed:
+        if (type(x) == ooPoint and not x.isMultiPoint) or self.isCostly or self._isFixed:
             self._f_val_prev = copy(tmp) 
             self._f_key_prev = dict([(elem, copy((x if isinstance(x, dict) else x.xf)[elem])) for elem in dep]) if self.isCostly else None
             r =  copy(self._f_val_prev)
@@ -1310,7 +1317,7 @@ class ooarray(ndarray):
 #        for i in range(self.size):
 #            Tmp = self[i](*args, **kwargs) 
 #            if asscalar(
-        tmp = [asscalar(self[i](*args, **kwargs)) if isinstance(self[i], oofun) else self[i] for i in range(self.size)]
+        tmp = [asscalar(asarray(self[i](*args, **kwargs)) if isinstance(self[i], oofun) else self[i]) for i in range(self.size)]
         return array(tmp, dtype=float).flatten()
 
     def __mul__(self, other):

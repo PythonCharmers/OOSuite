@@ -10,7 +10,7 @@ class ooSystem:
         self.items = set()
         self.constraints = set()
         self.nlpSolvers = ['ralg']
-        self.lpSolvers = ['glpk', 'lpSolve', 'cvxopt_lp', 'nlp:ipopt', 'nlp:algencan', 'nlp:scipy_slsqp', 'nlp:ralg']
+        self.lpSolvers = ['glpk', 'lpSolve', 'cvxopt_lp', 'cplex','pclp','nlp:ipopt', 'nlp:algencan', 'nlp:scipy_slsqp', 'nlp:ralg']
         for arg in args:
             if isinstance(arg, set):
                self.items.update(arg)
@@ -159,10 +159,19 @@ class ooSystem:
                     if ':' in solver:
                         pWarn('You have linear problem but no linear solver (lpSolve, glpk, cvxopt_lp) is installed; converter to NLP will be used.')
                     p.solver = solver
+                else:
+                    solverName = kwargs['solver']
+                    if type(solverName) != str:
+                        solverName = solverName.__name__
+                    if solverName not in self.lpSolvers: 
+                        solverName = 'nlp:' + solverName
+                        p.solver = solverName 
+                        p.warn('you are solving linear problem with non-linear solver')
             else:
                 p = openopt.NLP(*args, **kwargs)
                 if 'solver' not in kwargs:
                     p.solver = 'ralg'
+                
         # TODO: solver autoselect
         #if p.iprint >= 0: p.disp('The optimization problem is  ' + p.probType)
         p._isFDmodel = lambda *args,  **kwargs: True

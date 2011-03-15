@@ -26,7 +26,9 @@ from Interval import TrigonometryCriticalPoints, ZeroCriticalPoints
 
 
 def sin(inp):
-    if not isinstance(inp, oofun): return np.sin(inp)
+    if isinstance(inp, ooarray):
+        return ooarray([sin(elem) for elem in inp])
+    elif not isinstance(inp, oofun): return np.sin(inp)
     return oofun(np.sin, inp, 
                  d = lambda x: Diag(np.cos(x)), 
                  vectorized = True, 
@@ -34,7 +36,9 @@ def sin(inp):
                  #_interval = lambda domain: ufuncInterval(inp, domain, np.sin, TrigonometryCriticalPoints))
 
 def cos(inp):
-    if not isinstance(inp, oofun): return np.cos(inp)
+    if isinstance(inp, ooarray):
+        return ooarray([cos(elem) for elem in inp])
+    elif not isinstance(inp, oofun): return np.cos(inp)
     #return oofun(np.cos, inp, d = lambda x: Diag(-np.sin(x)))
     return oofun(np.cos, inp, 
              d = lambda x: Diag(-np.sin(x)), 
@@ -43,6 +47,8 @@ def cos(inp):
              #_interval = lambda domain: ufuncInterval(inp, domain, np.cos, TrigonometryCriticalPoints))
 
 def tan(inp):
+    if isinstance(inp, ooarray):
+        return ooarray([tan(elem) for elem in inp])
     if not isinstance(inp, oofun): return np.tan(inp)
     # TODO: move it outside of tan definition
     def interval(arg_inf, arg_sup):
@@ -53,13 +59,18 @@ def tan(inp):
 # TODO: cotan?
 
 def arcsin(inp):
-    if not isinstance(inp, oofun): return np.arcsin(inp)
+    if isinstance(inp, ooarray):
+        return ooarray([arcsin(elem) for elem in inp])
+    if not isinstance(inp, oofun): 
+        return np.arcsin(inp)
     r = oofun(np.arcsin, inp, d = lambda x: Diag(1.0 / np.sqrt(1.0 - x**2)), vectorized = True)
     r.criticalPoints = False
     r.attach((inp>-1)('arcsin_domain_lower_bound_%d' % r._id, tol=-1e-7), (inp<1)('arcsin_domain_upper_bound_%d' % r._id, tol=-1e-7))
     return r
 
 def arccos(inp):
+    if isinstance(inp, ooarray):
+        return ooarray([arccos(elem) for elem in inp])
     if not isinstance(inp, oofun): return np.arccos(inp)
     r = oofun(np.arccos, inp, d = lambda x: Diag(-1.0 / np.sqrt(1.0 - x**2)), vectorized = True)
     r.criticalPoints = False
@@ -67,6 +78,8 @@ def arccos(inp):
     return r
 
 def arctan(inp):
+    if isinstance(inp, ooarray):
+        return ooarray([arctan(elem) for elem in inp])    
     if not isinstance(inp, oofun): return np.arctan(inp)
     return oofun(np.arctan, inp, 
                  d = lambda x: Diag(1.0 / (1.0 + x**2)), 
@@ -74,10 +87,14 @@ def arctan(inp):
                  criticalPoints = False)
 
 def sinh(inp):
+    if isinstance(inp, ooarray):
+        return ooarray([sinh(elem) for elem in inp])        
     if not isinstance(inp, oofun): return np.sinh(inp)
     return oofun(np.sinh, inp, d = lambda x: Diag(np.cosh(x)), vectorized = True, criticalPoints = False)
 
 def cosh(inp):
+    if isinstance(inp, ooarray):
+        return ooarray([cosh(elem) for elem in inp])        
     if not isinstance(inp, oofun): return np.cosh(inp)
     return oofun(np.cosh, inp, d = lambda x: Diag(np.sinh(x)), vectorized = True, criticalPoints=ZeroCriticalPoints)
 
@@ -90,33 +107,45 @@ def angle(inp1, inp2):
     return arccos(sum(inp1*inp2)/sqrt(sum(inp1**2)*sum(inp2**2)))
 
 def exp(inp):
+    if isinstance(inp, ooarray):
+        return ooarray([exp(elem) for elem in inp])            
     if not isinstance(inp, oofun): return np.exp(inp)
     return oofun(np.exp, inp, d = lambda x: Diag(np.exp(x)), vectorized = True, criticalPoints = False)
 
 def sqrt(inp, attachConstraints = True):
-    if not isinstance(inp, oofun): 
+    if isinstance(inp, ooarray):
+        return ooarray([sqrt(elem) for elem in inp])
+    elif not isinstance(inp, oofun): 
         return np.sqrt(inp)
     r = oofun(np.sqrt, inp, d = lambda x: Diag(0.5 / np.sqrt(x)), vectorized = True, criticalPoints = False)
     if attachConstraints: r.attach((inp>0)('sqrt_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
 
 def abs(inp):
-    if not isinstance(inp, oofun): return np.abs(inp)
+    if isinstance(inp, ooarray):
+        return ooarray([abs(elem) for elem in inp])
+    elif not isinstance(inp, oofun): return np.abs(inp)
     return oofun(np.abs, inp, d = lambda x: Diag(np.sign(x)), vectorized = True, criticalPoints = ZeroCriticalPoints)
 
 def log(inp):
+    if isinstance(inp, ooarray):
+        return ooarray([log(elem) for elem in inp])    
     if not isinstance(inp, oofun): return np.log(inp)
     r = oofun(np.log, inp, d = lambda x: Diag(1.0/x), vectorized = True, criticalPoints = False)
     r.attach((inp>1e-300)('log_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
     
 def log10(inp):
+    if isinstance(inp, ooarray):
+        return ooarray([log10(elem) for elem in inp])    
     if not isinstance(inp, oofun): return np.log10(inp)
     r = oofun(np.log10, inp, d = lambda x: Diag(0.43429448190325176/x), vectorized = True, criticalPoints = False)# 1 / (x * log_e(10))
     r.attach((inp>1e-300)('log10_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
 
 def log2(inp):
+    if isinstance(inp, ooarray):
+        return ooarray([log2(elem) for elem in inp])    
     if not isinstance(inp, oofun): return np.log2(inp)
     r = oofun(np.log2, inp, d = lambda x: Diag(1.4426950408889634/x), vectorized = True, criticalPoints = False)# 1 / (x * log_e(2))
     r.attach((inp>1e-300)('log2_domain_zero_bound_%d' % r._id, tol=-1e-7))
@@ -153,6 +182,8 @@ def cross(a, b):
     return r
 
 def ceil(inp):
+    if isinstance(inp, ooarray):
+        return ooarray([ceil(elem) for elem in inp])        
     if not isinstance(inp, oofun): return np.ceil(inp)
     r = oofun(lambda x: np.ceil(x), inp, vectorized = True)
     r._D = lambda *args, **kwargs: raise_except('derivative for FD ceil is unimplemented yet')
@@ -160,6 +191,8 @@ def ceil(inp):
     return r
 
 def floor(inp):
+    if isinstance(inp, ooarray):
+        return ooarray([floor(elem) for elem in inp])        
     if not isinstance(inp, oofun): return np.floor(inp)
     r = oofun(lambda x: np.floor(x), inp, vectorized = True)
     r._D = lambda *args, **kwargs: raise_except('derivative for FD floor is unimplemented yet')
