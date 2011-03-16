@@ -1,5 +1,5 @@
 from FuncDesigner import *
-from openopt import oosolver, GLP
+from openopt import *
 
 a, b, c, d, e, f = oovars('a', 'b', 'c', 'd', 'e', 'f')
 
@@ -10,15 +10,14 @@ F = cos(5*a) + (a-0.9)**2 +exp(10*abs(a-0.1)) \
 
 #solver=oosolver('mlsl', iprint = 200, maxIter = 10000)
 #solver=oosolver('de', iprint=10, maxFunEvals = 10000, maxIter = 1500)
-#solver=oosolver('interalg', fStart = 5.175, maxIter = 1000)
-solver=oosolver('interalg', maxNodes = 15000, maxActiveNodes = 1500)
+#solver=oosolver('interalg', fStart = 5.175, maxIter = 1000,maxNodes = 15000, maxActiveNodes = 1500)
+solver='interalg'
 
 startPoint = {a:0.5, b:0.5, c:0.5, d:0.5, e:0.5, f:0.5}
 constraints = (a>0, a<1, b>0, b<1, c>0, c<1, d>0, d<1, e>0, e<1, f>0, f<1)
 p = GLP(F, startPoint, fTol = 5e-4, constraints = constraints)
 r = p.minimize(solver)
 print(r.xf)#{a: 0.100006103515625, b: 0.70000457763671875, c: 0.83860015869140625, d: 0.392822265625, e: 0.0001220703125, f: 0.62890625}
-print(r.extras)
 
 '''                                                    Some other objectives that were tried with interalg                                                    '''
 #F = cos(5*a) + (a-0.1)**2 + cos(10*b) + (b-0.2)**2 + cos(20*c) + (c-0.3)**2  + cos(40*d) + (d-0.4)**2 + exp(e/4) + cos(5*f)
