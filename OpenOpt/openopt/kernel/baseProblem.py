@@ -316,7 +316,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             if not all([not isinstance(val, (list, tuple, ndarray)) or len(val) == 1 for val in self.x0.values()]):
                 tmp = []
                 for key, val in self.x0.items():
-                    if not isinstance(val, (list, tuple, array)):
+                    if not isinstance(key, (list, tuple, ndarray)):
                         tmp.append((key, val))
                     else:
                         for i in range(len(val)):
