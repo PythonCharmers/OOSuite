@@ -26,7 +26,7 @@ from Interval import TrigonometryCriticalPoints, ZeroCriticalPoints
 
 
 def sin(inp):
-    if isinstance(inp, ooarray):
+    if isinstance(inp, ooarray) and inp.dtype == object:
         return ooarray([sin(elem) for elem in inp])
     elif not isinstance(inp, oofun): return np.sin(inp)
     return oofun(np.sin, inp, 
@@ -36,7 +36,7 @@ def sin(inp):
                  #_interval = lambda domain: ufuncInterval(inp, domain, np.sin, TrigonometryCriticalPoints))
 
 def cos(inp):
-    if isinstance(inp, ooarray):
+    if isinstance(inp, ooarray) and inp.dtype == object:
         return ooarray([cos(elem) for elem in inp])
     elif not isinstance(inp, oofun): return np.cos(inp)
     #return oofun(np.cos, inp, d = lambda x: Diag(-np.sin(x)))
@@ -47,7 +47,7 @@ def cos(inp):
              #_interval = lambda domain: ufuncInterval(inp, domain, np.cos, TrigonometryCriticalPoints))
 
 def tan(inp):
-    if isinstance(inp, ooarray):
+    if isinstance(inp, ooarray) and inp.dtype == object:
         return ooarray([tan(elem) for elem in inp])
     if not isinstance(inp, oofun): return np.tan(inp)
     # TODO: move it outside of tan definition
@@ -59,7 +59,7 @@ def tan(inp):
 # TODO: cotan?
 
 def arcsin(inp):
-    if isinstance(inp, ooarray):
+    if isinstance(inp, ooarray) and inp.dtype == object:
         return ooarray([arcsin(elem) for elem in inp])
     if not isinstance(inp, oofun): 
         return np.arcsin(inp)
@@ -69,7 +69,7 @@ def arcsin(inp):
     return r
 
 def arccos(inp):
-    if isinstance(inp, ooarray):
+    if isinstance(inp, ooarray) and inp.dtype == object:
         return ooarray([arccos(elem) for elem in inp])
     if not isinstance(inp, oofun): return np.arccos(inp)
     r = oofun(np.arccos, inp, d = lambda x: Diag(-1.0 / np.sqrt(1.0 - x**2)), vectorized = True)
@@ -78,7 +78,7 @@ def arccos(inp):
     return r
 
 def arctan(inp):
-    if isinstance(inp, ooarray):
+    if isinstance(inp, ooarray) and inp.dtype == object:
         return ooarray([arctan(elem) for elem in inp])    
     if not isinstance(inp, oofun): return np.arctan(inp)
     return oofun(np.arctan, inp, 
@@ -87,13 +87,13 @@ def arctan(inp):
                  criticalPoints = False)
 
 def sinh(inp):
-    if isinstance(inp, ooarray):
+    if isinstance(inp, ooarray) and inp.dtype == object:
         return ooarray([sinh(elem) for elem in inp])        
     if not isinstance(inp, oofun): return np.sinh(inp)
     return oofun(np.sinh, inp, d = lambda x: Diag(np.cosh(x)), vectorized = True, criticalPoints = False)
 
 def cosh(inp):
-    if isinstance(inp, ooarray):
+    if isinstance(inp, ooarray) and inp.dtype == object:
         return ooarray([cosh(elem) for elem in inp])        
     if not isinstance(inp, oofun): return np.cosh(inp)
     return oofun(np.cosh, inp, d = lambda x: Diag(np.sinh(x)), vectorized = True, criticalPoints=ZeroCriticalPoints)
@@ -113,7 +113,7 @@ def exp(inp):
     return oofun(np.exp, inp, d = lambda x: Diag(np.exp(x)), vectorized = True, criticalPoints = False)
 
 def sqrt(inp, attachConstraints = True):
-    if isinstance(inp, ooarray):
+    if isinstance(inp, ooarray) and inp.dtype == object:
         return ooarray([sqrt(elem) for elem in inp])
     elif not isinstance(inp, oofun): 
         return np.sqrt(inp)
@@ -122,13 +122,13 @@ def sqrt(inp, attachConstraints = True):
     return r
 
 def abs(inp):
-    if isinstance(inp, ooarray):
+    if isinstance(inp, ooarray) and inp.dtype == object:
         return ooarray([abs(elem) for elem in inp])
     elif not isinstance(inp, oofun): return np.abs(inp)
     return oofun(np.abs, inp, d = lambda x: Diag(np.sign(x)), vectorized = True, criticalPoints = ZeroCriticalPoints)
 
 def log(inp):
-    if isinstance(inp, ooarray):
+    if isinstance(inp, ooarray) and inp.dtype == object:
         return ooarray([log(elem) for elem in inp])    
     if not isinstance(inp, oofun): return np.log(inp)
     r = oofun(np.log, inp, d = lambda x: Diag(1.0/x), vectorized = True, criticalPoints = False)
@@ -136,7 +136,7 @@ def log(inp):
     return r
     
 def log10(inp):
-    if isinstance(inp, ooarray):
+    if isinstance(inp, ooarray) and inp.dtype == object:
         return ooarray([log10(elem) for elem in inp])    
     if not isinstance(inp, oofun): return np.log10(inp)
     r = oofun(np.log10, inp, d = lambda x: Diag(0.43429448190325176/x), vectorized = True, criticalPoints = False)# 1 / (x * log_e(10))
@@ -144,7 +144,7 @@ def log10(inp):
     return r
 
 def log2(inp):
-    if isinstance(inp, ooarray):
+    if isinstance(inp, ooarray) and inp.dtype == object:
         return ooarray([log2(elem) for elem in inp])    
     if not isinstance(inp, oofun): return np.log2(inp)
     r = oofun(np.log2, inp, d = lambda x: Diag(1.4426950408889634/x), vectorized = True, criticalPoints = False)# 1 / (x * log_e(2))
@@ -182,7 +182,7 @@ def cross(a, b):
     return r
 
 def ceil(inp):
-    if isinstance(inp, ooarray):
+    if isinstance(inp, ooarray) and inp.dtype == object:
         return ooarray([ceil(elem) for elem in inp])        
     if not isinstance(inp, oofun): return np.ceil(inp)
     r = oofun(lambda x: np.ceil(x), inp, vectorized = True)
@@ -191,7 +191,7 @@ def ceil(inp):
     return r
 
 def floor(inp):
-    if isinstance(inp, ooarray):
+    if isinstance(inp, ooarray) and inp.dtype == object:
         return ooarray([floor(elem) for elem in inp])        
     if not isinstance(inp, oofun): return np.floor(inp)
     r = oofun(lambda x: np.floor(x), inp, vectorized = True)
@@ -200,7 +200,9 @@ def floor(inp):
     return r
 
 def sum(inp, *args, **kwargs):
-    
+    if isinstance(inp, ooarray) and inp.dtype != object:
+        inp = inp.view(np.ndarray)
+        
     cond_ooarray = isinstance(inp, ooarray) and inp.dtype == object
     if cond_ooarray and inp.size == 1: 
         return np.asscalar(inp).sum()
