@@ -14,7 +14,9 @@ class scipy_fsolve(baseSolver):
 
     def __init__(self):pass
     def __solver__(self, p):
-        xf = fsolve(p.f, p.x0, fprime=p.df, xtol = p.xtol, maxfev = p.maxFunEvals, warning = (p.iprint>=0))
+        #xf = fsolve(p.f, p.x0, fprime=p.df, xtol = p.xtol, maxfev = p.maxFunEvals, warning = (p.iprint>=0))
+        # "warning" has been removed in latest scipy version
+        xf = fsolve(p.f, p.x0, fprime=p.df, xtol = p.xtol, maxfev = p.maxFunEvals)
         p.istop = 1000
         p.iterfcn(xf)
 
