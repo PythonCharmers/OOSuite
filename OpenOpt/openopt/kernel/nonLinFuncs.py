@@ -248,16 +248,8 @@ class nonLinFuncs:
 
         #TODO: patterns!
         nFuncs = getattr(p, 'n'+funcType)
-        if not getattr(p.userProvided, derivativesType) or p.isFDmodel:
-            #                                            x, IND, userFunctionType, ignorePrev, getDerivative
-            derivatives = p.wrapped_func(x, ind, funcType, True, True)
-            
-            if ind is None:
-                p.nEvals[derivativesType] -= 1
-            else:
-                p.nEvals[derivativesType] = p.nEvals[derivativesType] - float(len(ind)) / nFuncs
-        else:
-                
+        if hasattr(p.userProvided, derivativesType) and getattr(p.userProvided, derivativesType):
+               
             funcs = getattr(p.user, derivativesType)
             
             if ind is None or (nFuncs == 1 and p.functype[funcType] == 'single func'): 
@@ -294,11 +286,7 @@ class nonLinFuncs:
                 #agregate_counter += m
             #TODO: inline ind modification!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             
-            #raise 0
             derivatives = Vstack(derivatives) if any(isspmatrix(derivatives)) else vstack(derivatives)
-            
-            
-
             if ind is None:
                 p.nEvals[derivativesType] += 1
             else:
@@ -310,6 +298,20 @@ class nonLinFuncs:
                 if p.isObjFunValueASingleNumber: 
                     if not isinstance(derivatives, ndarray): derivatives = derivatives.toarray()
                     derivatives = derivatives.flatten()
+        
+        else:
+        #if not getattr(p.userProvided, derivativesType) or p.isFDmodel:
+            #                                            x, IND, userFunctionType, ignorePrev, getDerivative
+            derivatives = p.wrapped_func(x, ind, funcType, True, True)
+            
+            if ind is None:
+                p.nEvals[derivativesType] -= 1
+            else:
+                p.nEvals[derivativesType] = p.nEvals[derivativesType] - float(len(ind)) / nFuncs
+        #else:
+        
+        
+        
         
         if useSparse is False or not scipyInstalled or not hasattr(p, 'solver') or not p.solver._canHandleScipySparse: 
             # p can has no attr 'solver' if it is called from checkdf, checkdc, checkdh
