@@ -30,12 +30,14 @@ class ooPoint(dict):
             raise FuncDesignerException('incorrect oopoint constructor arguments')
             
         dict.__init__(self, items)
-        
-        for key, val in items:
-            #assert type(val) not in [list, ndarray] or type(val[0]) != int
-            if 'size' in key.__dict__ and type(key.size) == int and Len(val)  != key.size: 
-                s = 'incorrect size for oovar %s: %d is required, %d is obtained' % (self.name, self.size, Size)
-                raise FuncDesignerException(s)
+
+# TODO: fix it wrt ode2.py
+
+#        for key, val in items:
+#            #assert type(val) not in [list, ndarray] or type(val[0]) != int
+#            if 'size' in key.__dict__ and type(key.size) == int and Len(val)  != key.size: 
+#                s = 'incorrect size for oovar %s: %d is required, %d is obtained' % (key, self.size, Size)
+#                raise FuncDesignerException(s)
         
         ooPoint._id += 1
         self._id = ooPoint._id
