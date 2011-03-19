@@ -505,6 +505,7 @@ def GLP(*args, **kwargs):
         de (this is temporary name, will be changed till next OO release v. 0.22), license: BSD, requires finite lb <= x <= ub, can handle Ax<=b, c(x) <= 0. The solver is based on differential evolution and made by Stepan Hlushak.
         stogo and mlsl - can use derivatives; require http://openopt.org/nlopt installed
         isres - can handle any constraints; requires http://openopt.org/nlopt installed
+        interalg - exact optimum wrt required tolerance, see http://openopt.org/interalg for details
     """
     return CGLP(*args, **kwargs)
 
