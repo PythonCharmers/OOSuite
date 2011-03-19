@@ -136,9 +136,10 @@ def milpTransfer(originProb):
     def err(s): # to prevent text output
         raise OpenOptException(s)
     newProb.err = err
-    for fn in ['df', 'd2f']:
-        if hasattr(originProb, fn) and getattr(originProb.userProvided, fn):
+    for fn in ['df', 'd2f', 'c', 'dc', 'h', 'dh']:
+        if hasattr(originProb, fn) and getattr(originProb.userProvided, fn) or originProb.isFDmodel:
             setattr(newProb, fn, getattr(originProb, fn))
+    
     newProb.plot = 0
     newProb.iprint = -1
     newProb.nlpSolver = originProb.nlpSolver 
