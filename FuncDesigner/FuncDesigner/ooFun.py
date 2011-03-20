@@ -1412,6 +1412,12 @@ class ooarray(ndarray):
     def __radd__(self, other):
         return self + other
     
+    def __pow__(self, other):
+        if self.dtype == object:
+            return ooarray([elem**other for elem in self.tolist()])
+        else:
+            return self.view(ndarray)**other
+    
     def __eq__(self, other):
         r = self - other
         if r.dtype != object: return all(r)
