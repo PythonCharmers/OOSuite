@@ -291,20 +291,31 @@ class oofun:
             def interval(domain):
                 lb1, ub1 = self._interval(domain)
                 lb2, ub2 = other._interval(domain)
+                lb2, ub2 = asfarray(lb2), asfarray(ub2)
                 #ind1, ind2 = where(lb2==0)[0], where(ub2==0)[0]
                 
-                #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                th = 1e-150 # TODO: handle it more properly
-                #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#                #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#                th = 1e-150 # TODO: handle it more properly
+#                #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#                
+#                lb2[logical_and(lb2>=0, lb2<=th)] = th # then 0.0 / lb2 will be defined correctly and will not yield NaNs
+#                ub2[logical_and(ub2<=0, ub2>=-th)] = -th# then 0.0 / ub2 will be defined correctly and will not yield NaNs
                 
-                lb2[logical_and(lb2>=0, lb2<=th)] = th # then 0.0 / lb2 will be defined correctly and will not yield NaNs
-                ub2[logical_and(ub2<=0, ub2>=-th)] = -th# then 0.0 / ub2 will be defined correctly and will not yield NaNs
-                ind = where(logical_or(logical_and(lb1<0, ub1>0), logical_and(lb2<0, ub2>0)))[0]
+                
                 tmp = vstack((lb1/lb2, lb1/ub2, ub1/lb2, ub1/ub2))
                 r1, r2 = amin(tmp, 0), amax(tmp, 0)
-                if ind.size != 0:
-                    r1[ind] = -inf
-                    r2[ind] = inf
+                #ind = logical_or(logical_and(lb1<0, ub1>0), logical_and(lb2<0, ub2>0))
+                #ind_z = logical_and(lb2<0, ub2>0)
+                ind_z = logical_and(lb2 <= 0, ub2 >= 0)
+                
+                ind1 = logical_and(ind_z, lb1<=0)
+                r1[atleast_1d(ind1)] = -inf
+                
+                ind2 = logical_and(ind_z, ub1>=0)
+                r2[atleast_1d(ind2)] = inf
+                
+                
+                
                 return [r1, r2]
 
             r._interval = interval
@@ -333,13 +344,11 @@ class oofun:
         def interval(domain):
             arg_infinum, arg_supremum = self._interval(domain)
             assert other.size == 1, 'this case is unimplemented yet'
-            #r = self._interval(domain)
-            ind = where(logical_and(arg_infinum < 0,  0 < arg_supremum))[0]
             r = vstack((other / arg_supremum, other / arg_infinum))
             r1, r2 = amin(r, 0), amax(r, 0)
-            if ind.size != 0:
-                r1[ind] = -inf
-                r2[ind] = inf
+            ind = logical_and(arg_infinum < 0,  0 < arg_supremum)
+            r1[atleast_1d(ind)] = -inf
+            r2[atleast_1d(ind)] = inf
             return [r1, r2]
             
         r._interval = interval
