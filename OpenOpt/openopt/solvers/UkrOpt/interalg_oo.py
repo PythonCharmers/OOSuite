@@ -289,8 +289,9 @@ class interalg(baseSolver):
         if p.goal in ['max', 'maximum']: tmp = tmp[1], tmp[0]
         p.extras['extremumBounds'] = tmp
         if p.iprint >= 0:
-            s = 'Solution with required tolerance %0.1e \n is%s guarantied (obtained precision: %0.3e)\n, increase maxNodes (current value %d)' \
-                   %(fTol, '' if p.extras['isRequiredPrecisionReached'] else ' NOT', tmp[1]-tmp[0], self.maxNodes)
+            s = 'Solution with required tolerance %0.1e \n is%s guarantied (obtained precision: %0.3e)' \
+                   %(fTol, '' if p.extras['isRequiredPrecisionReached'] else ' NOT', tmp[1]-tmp[0])
+            if not p.extras['isRequiredPrecisionReached']: s += '\nincrease maxNodes (current value %d)' % self.maxNodes
             p.info(s)
 
 
