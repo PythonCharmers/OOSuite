@@ -418,17 +418,47 @@ class oofun:
                             lb1 * ub2, ub1 * ub2))# TODO: improve it
             else:
                 t = vstack((lb1 * other, ub1 * other))# TODO: improve it
-            tmp1, tmp2 = amin(t, 0), amax(t, 0)
+            t_min, t_max = amin(t, 0), amax(t, 0)
+            if isscalar(t_max):
+                t_min, t_max = atleast_1d(t_min), atleast_1d(t_max)
             
-            ind1 = logical_and(lb1 <= 0, ub1 >= 0)
-            tmp2[logical_and(ind1, isinf(ub2))] = inf
-            tmp2[logical_and(ind1, isinf(lb2))] = -inf
+#            lb1_less_0 = lb1 < 0
+#            lb1_eq_0 = lb1 == 0
+#            lb1_greater_0 = lb1 > 0
+#            
+#            ub1_less_0 = ub1 < 0
+#            ub1_eq_0 = ub1 == 0
+#            ub1_greater_0 = ub1 > 0
             
-            ind2 = logical_and(lb2 <= 0, ub2 >= 0)
-            tmp1[logical_and(ind2, isinf(ub1))] = inf
-            tmp1[logical_and(ind2, isinf(lb1))] = -inf
+            ind1_zero_minus = logical_and(lb1<0, ub1>=0)
+            ind1_zero_plus = logical_and(lb1<=0, ub1>0)
             
-            return tmp1, tmp2
+            ind2_zero_minus = logical_and(lb2<0, ub2>=0)
+            ind2_zero_plus = logical_and(lb2<=0, ub2>0)
+            
+            has_plus_inf_1 = logical_or(logical_and(ind1_zero_minus, lb2==-inf), logical_and(ind1_zero_plus, ub2==inf))
+            has_plus_inf_2 = logical_or(logical_and(ind2_zero_minus, lb1==-inf), logical_and(ind2_zero_plus, ub1==inf))
+            t_max[atleast_1d(logical_or(has_plus_inf_1, has_plus_inf_2))] = inf
+            t_max[atleast_1d(logical_or(logical_and(lb1==0, ub2==inf), logical_and(lb2==0, ub1==inf)))] = inf
+            t_max[atleast_1d(logical_or(logical_and(lb1==-inf, ub2==0), logical_and(lb2==-inf, ub1==0)))] = 0.0
+            
+            has_minus_inf_1 = logical_or(logical_and(ind1_zero_plus, lb2==-inf), logical_and(ind1_zero_minus, ub2==inf))
+            has_minus_inf_2 = logical_or(logical_and(ind2_zero_plus, lb1==-inf), logical_and(ind2_zero_minus, ub1==inf))
+            t_min[atleast_1d(logical_or(has_minus_inf_1, has_minus_inf_2))] = -inf
+            t_min[atleast_1d(logical_or(logical_and(lb1==0, ub2==inf), logical_and(lb2==0, ub1==inf)))] = 0.0
+            t_min[atleast_1d(logical_or(logical_and(lb1==-inf, ub2==0), logical_and(lb2==-inf, ub1==0)))] = -inf
+
+#            tmp2[atleast_1d(logical_and(logical_and(lb1<0, ub1>=0), lb2==-inf))] = inf
+#            tmp2[atleast_1d(logical_and(logical_and(lb1<=0, ub1>0), ub2==inf))] = inf
+#            
+#            tmp1[atleast_1d(logical_and(logical_and(lb1<0, ub1>=0), ub2==inf))] = -inf
+#            tmp1[atleast_1d(logical_and(logical_and(lb1<=0, ub1>0), ub2<0))] = -inf
+            
+            
+            assert not any(isnan(t_min)) and not any(isnan(t_max))
+            assert all(t_min < inf) and all(t_max > -inf)
+            
+            return t_min, t_max
                 
         r._interval = interval
         r.vectorized = True
