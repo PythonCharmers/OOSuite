@@ -21,14 +21,14 @@ class oovar(oofun):
             kwargs['name'] = name
         oofun.__init__(self, lambda *ARGS: None, *args, **kwargs)
     
-    def _interval(self, domain):
+    def _interval(self, domain, dtype = 'float'):
         tmp = domain.get(self, None)
         if tmp is None: return None
         if isinstance(tmp, ndarray) or isscalar(tmp):
             return tmp, tmp
         infinum, supremum = tmp
-        if type(infinum) in (list, tuple): infinum = array(infinum, 'float')
-        if type(supremum) in (list, tuple): supremum = array(supremum, 'float')
+        if type(infinum) in (list, tuple): infinum = array(infinum, dtype)
+        if type(supremum) in (list, tuple): supremum = array(supremum, dtype)
         return infinum, supremum
     
     def _getFuncCalcEngine(self, x, **kwargs):

@@ -243,10 +243,10 @@ def sum(inp, *args, **kwargs):
             return np.max(orders)
         r.getOrder = getOrder
         
-        def interval(domain):
+        def interval(domain, dtype):
             Arg_infinums, Arg_supremums = [], []
             for inp in INP:
-                arg_inf, arg_sup = inp._interval(domain)
+                arg_inf, arg_sup = inp._interval(domain, dtype)
                 Arg_infinums.append(arg_inf)
                 Arg_supremums.append(arg_sup)
             #raise 0

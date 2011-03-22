@@ -2,7 +2,7 @@
 
 from numpy import inf, asfarray, copy, all, any, empty, atleast_2d, zeros, dot, asarray, atleast_1d, empty, \
 ones, ndarray, where, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum, prod, nonzero,\
-isnan, asscalar, zeros_like, ones_like, amin, amax, logical_and, logical_or
+isnan, asscalar, zeros_like, ones_like, amin, amax, logical_and, logical_or, isinf, nanmin, nanmax
 from numpy.linalg import norm
 from misc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scipyInstalled, \
 raise_except, DiagonalType
@@ -171,22 +171,24 @@ class oofun:
         self.attachedConstraints = set()    
     __repr__ = lambda self: self.name
     
-    def _interval(self, domain):
+    def _interval(self, domain, dtype):
         criticalPointsFunc = self.criticalPoints
         if len(self.input) == 1 and criticalPointsFunc is not None:
-            arg_infinum, arg_supremum = self.input[0]._interval(domain)
+            arg_infinum, arg_supremum = self.input[0]._interval(domain, dtype)
             if (not isscalar(arg_infinum) and arg_infinum.size > 1) and not self.vectorized:
                 raise FuncDesignerException('not implemented for vectorized oovars yet')
             tmp = [arg_infinum, arg_supremum]
             if criticalPointsFunc is not False:
                 tmp += criticalPointsFunc(arg_infinum, arg_supremum)
             Tmp = self.fun(vstack(tmp))
+#            from numpy import isfinite
+#            assert not any(isnan(Tmp))
             return amin(Tmp, 0), amax(Tmp, 0)
         else:
             raise FuncDesignerException('interval calculations are unimplemented for the oofun yet')
     
-    def interval(self, *args, **kwargs):
-        l, u = self._interval(*args, **kwargs)
+    def interval(self, domain, dtype = float, *args, **kwargs):
+        l, u = self._interval(domain, dtype, *args, **kwargs)
         return Interval(l, u)
         
     # overload "a+b"
@@ -214,8 +216,8 @@ class oofun:
             r.getOrder = lambda *args, **kwargs: max((self.getOrder(*args, **kwargs), other.getOrder(*args, **kwargs)))
             
             # TODO: move it outside the func, to prevent recreation each time
-            def interval(domain): 
-                domain1, domain2 = self._interval(domain), other._interval(domain)
+            def interval(domain, dtype): 
+                domain1, domain2 = self._interval(domain, dtype), other._interval(domain, dtype)
                 return domain1[0] + domain2[0], domain1[1] + domain2[1]
             r._interval = interval
         else:
@@ -252,8 +254,8 @@ class oofun:
         r.d = raise_except
         r.criticalPoints = False
         r.vectorized = True
-        def _interval(domain):
-            r = self._interval(domain)
+        def _interval(domain, dtype):
+            r = self._interval(domain, dtype)
             return (-r[1], -r[0])
         r._interval = _interval
         return r
@@ -288,33 +290,39 @@ class oofun:
                 order1, order2 = self.getOrder(*args, **kwargs), other.getOrder(*args, **kwargs)
                 return order1 if order2 == 0 else inf
             r.getOrder = getOrder
-            def interval(domain):
-                lb1, ub1 = self._interval(domain)
-                lb2, ub2 = other._interval(domain)
-                lb2, ub2 = asfarray(lb2), asfarray(ub2)
+            def interval(domain, dtype):
+                lb1, ub1 = self._interval(domain, dtype)
+                lb2, ub2 = other._interval(domain, dtype)
+                lb2, ub2 = asarray(lb2, dtype), asarray(ub2, dtype)
                 #ind1, ind2 = where(lb2==0)[0], where(ub2==0)[0]
                 
-                #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                th = 1e-150 # TODO: handle it more properly
-                #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#                #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#                th = 1e-150 # TODO: handle it more properly
+#                #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#                
+#                lb2[logical_and(lb2>=0, lb2<=th)] = th # then 0.0 / lb2 will be defined correctly and will not yield NaNs
+#                ub2[logical_and(ub2<=0, ub2>=-th)] = -th# then 0.0 / ub2 will be defined correctly and will not yield NaNs
                 
-                lb2[logical_and(lb2>=0, lb2<=th)] = th # then 0.0 / lb2 will be defined correctly and will not yield NaNs
-                ub2[logical_and(ub2<=0, ub2>=-th)] = -th# then 0.0 / ub2 will be defined correctly and will not yield NaNs
-                
-                
+#                t1, t2, t3, t4 = lb1/lb2, lb1/ub2, ub1/lb2, ub1/ub2
+#                ind = lb2 <0 and ub2 >= 0
+#                t1[logical_and(ind, lb1] = 
                 tmp = vstack((lb1/lb2, lb1/ub2, ub1/lb2, ub1/ub2))
-                r1, r2 = amin(tmp, 0), amax(tmp, 0)
+                r1, r2 = nanmin(tmp, 0), nanmax(tmp, 0)
                 #ind = logical_or(logical_and(lb1<0, ub1>0), logical_and(lb2<0, ub2>0))
                 #ind_z = logical_and(lb2<0, ub2>0)
                 ind_z = logical_and(lb2 < 0, ub2 > 0)
                 
-                ind1 = logical_and(ind_z, lb1<=0)
-                r1[atleast_1d(ind1)] = -inf
+                ind = logical_or(logical_and(ind_z, lb1<=0), logical_and(lb2 == 0, lb1<0))
+                r1[atleast_1d(ind)] = -inf
                 
-                ind2 = logical_and(ind_z, ub1>=0)
-                r2[atleast_1d(ind2)] = inf
+                ind = logical_or(logical_and(ind_z, ub1>=0), logical_and(ub2 == 0, ub1>0))
+                r2[atleast_1d(ind)] = inf
+
+                ind = logical_and(lb2==0, lb1>=0)
+                r2[atleast_1d(ind)] = inf
                 
-                
+                ind = logical_and(ub2==0, ub1<=0)
+                r1[atleast_1d(ind)] = -inf
                 
                 return [r1, r2]
 
@@ -341,8 +349,8 @@ class oofun:
         other = array(other, 'float') # TODO: sparse matrices handling!
         r = oofun(lambda x: other/x, self, discrete = self.discrete)
         r.d = lambda x: Diag(- other / x**2)
-        def interval(domain):
-            arg_infinum, arg_supremum = self._interval(domain)
+        def interval(domain, dtype):
+            arg_infinum, arg_supremum = self._interval(domain, dtype)
             assert other.size == 1, 'this case is unimplemented yet'
             r = vstack((other / arg_supremum, other / arg_infinum))
             r1, r2 = amin(r, 0), amax(r, 0)
@@ -394,15 +402,26 @@ class oofun:
             else:
                 r.d = lambda x: aux_d(x, other)
         isOtherOOFun = isinstance(other, oofun)
-        def interval(domain):
-            self_dom = self._interval(domain)
-            other_dom  = other._interval(domain) if isOtherOOFun else other
+        def interval(domain, dtype):
+            lb1, ub1 = self._interval(domain, dtype)
+            lb2, ub2 = other._interval(domain, dtype) if isOtherOOFun else other, other
+            
             if isOtherOOFun:
-                t = vstack((self_dom[0] * other_dom[0], self_dom[1] * other_dom[0], \
-                            self_dom[0] * other_dom[1], self_dom[1] * other_dom[1]))# TODO: improve it
+                t = vstack((lb1 * lb2, ub1 * lb2, \
+                            lb1 * ub2, ub1 * ub2))# TODO: improve it
             else:
-                t = vstack((self_dom[0] * other, self_dom[1] * other))# TODO: improve it
-            return amin(t, 0), amax(t, 0)
+                t = vstack((lb1 * other, ub1 * other))# TODO: improve it
+            tmp1, tmp2 = amin(t, 0), amax(t, 0)
+            
+            ind1 = logical_and(lb1 <= 0, ub1 >= 0)
+            tmp2[logical_and(ind1, isinf(ub2))] = inf
+            tmp2[logical_and(ind1, isinf(lb2))] = -inf
+            
+            ind2 = logical_and(lb2 <= 0, ub2 >= 0)
+            tmp1[logical_and(ind2, isinf(ub1))] = inf
+            tmp1[logical_and(ind2, isinf(lb1))] = -inf
+            
+            return tmp1, tmp2
                 
         r._interval = interval
         r.vectorized = True
