@@ -1,5 +1,5 @@
 from numpy import isfinite, all, argmax, where, delete, array, asarray, inf, argmin, hstack, vstack, tile, arange, amin, \
-logical_and, float64, ceil, amax, inf, ndarray, isinf
+logical_and, float64, ceil, amax, inf, ndarray, isinf, any
 import numpy
 from numpy.linalg import norm, solve, LinAlgError
 from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X,  SMALL_DELTA_F, MAX_NON_SUCCESS
@@ -115,9 +115,7 @@ class interalg(baseSolver):
         m = 0
         #maxActive = 1
         #maxActiveNodes = self.maxActiveNodes 
-        if fd_obj.isUncycled: 
-            self.maxActiveNodes = 1
-            self.maxNodes = 1
+        
         b = array([]).reshape(0, n)
         v = array([]).reshape(0, n)
         z = array([]).reshape(0, 2*n)
@@ -189,7 +187,34 @@ class interalg(baseSolver):
                 ind = where(q[:, i] > th)[0]
                 if ind.size != 0:
                     e[:,i][ind] = centers[:,i][ind]
+            ################################################################
+            
+
+            #check
+#            rr = []
+#            for i in range(m):
+#                o_i, a_i = getIntervals(y[i].reshape(1, -1), e[i].reshape(1, -1))
+#                rr.append(norm(o_i-o[i]))
+#                rr.append(norm(a_i-a[i]))
+#            print 'max rr:', norm(rr, inf)
+            # check end
+            
+            if p.debug:
+                #raise 0
+                print('min esim: %e   max estim: %e' % (amin(o), amin(a)))
+            
+            # TODO: maybe recalculate o & a here?
+            
+            # CHANGES
+            # WORKS SLOWER
+#            o, a, bestCenter, bestCenterObjective = getIntervals(y, e)
+#            o, a = o.reshape(2*n, m).T, a.reshape(2*n, m).T
+            # CHANGES END
+            
+            '''                                                         remove some nodes                                                         '''
+            
             y, e, o, a = vstack((y, b)), vstack((e, v)), vstack((o, z)), vstack((a, l))
+            # TODO: is it really required? Mb next handling s / q with all fixed coords would make the job?
             setForRemoving = set()
             s, q = o[:, 0:n], o[:, n:2*n]
             for i in range(n):
@@ -197,19 +222,31 @@ class interalg(baseSolver):
                 if ind.size != 0:
                     setForRemoving.update(ind.tolist())
                     g = amin((g, amin(s[ind, i]), amin(q[ind, i])))
+            
             if len(setForRemoving) != 0:
+                
                 ind = array(list(setForRemoving))
                 s, q = delete(s, ind, 0), delete(q, ind, 0)
                 y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
+           
             if e.size == 0: 
+                #raise 0
                 k = False
                 p.istop = 1000
                 p.msg = 'optimal solution obtained'
                 break            
+            
+            
+            '''                                                     truncate nodes out of allowed number                                                     '''
+            
             m = e.shape[0]
             s, q = o[:, 0:n], o[:, n:2*n]
-            if m > self.maxNodes:
+            nCut = 1 if fd_obj.isUncycled and all(isfinite(a)) and all(isfinite(o)) else self.maxNodes
+            if m > nCut:
+                #p.warn('max number of nodes (parameter maxNodes = %d) exceeded, exact global optimum is not guaranteed' % self.maxNodes)
+                #j = ceil((currentDataMem - maxMem)/numBytes)
                 j = m - self.maxNodes
+                #print '!', j
                 tmp = where(q<s, q, s)
                 ind = argmax(tmp, 1)
                 values = tmp[arange(m),ind]
@@ -217,9 +254,14 @@ class interalg(baseSolver):
                 h = m-j-1
                 g = amin((values[h], g))
                 ind = ind[m-j:]
+                
+                #print 'removing', ind.size, ' elements'
                 s, q = delete(s, ind, 0), delete(q, ind, 0)
                 y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
+            
             m = y.shape[0]
+            
+            '''                                                     make some nodes inactive                                                     '''
             if m <= self.maxActiveNodes:
                 b = array([]).reshape(0, n)
                 v = array([]).reshape(0, n)
@@ -227,17 +269,48 @@ class interalg(baseSolver):
                 l = array([]).reshape(0, 2*n)
             else:
                 s, q = o[:, 0:n], o[:, n:2*n]
+#                a_modL, a_modU = a[:, 0:n], a[:, n:2*n]
+#                s = a_modL - s
+#                q = a_modU - q
                 tmp = where(q<s, q, s)
                 ind = argmax(tmp, 1)
                 values = tmp[arange(m),ind]
                 ind = values.argsort()
+                
+                # old
+#                ind = ind[maxActiveNodes:]
+#                b, v, z, l = y[ind], e[ind], o[ind], a[ind]
+#                y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
+                
+                # new
                 ind = ind[:m-self.maxActiveNodes]
                 y, e, o, a = y[ind], e[ind], o[ind], a[ind]
                 b, v, z, l = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
+
+                
+#                N1, N2 = nActivePoints[-2:]
+#                t2, t1 = p.iterTime[-1] - p.iterTime[-2], p.iterTime[-2] - p.iterTime[-3]
+#                c1 = (t2-t1)/(N2-N1) if N1!=N2 else numpy.nan
+#                c2 = t2 - c1* N2
+#                print N1, N2, c1*N1, c2
+                #IterTime = c1 * nPoints + c2
+#                c1 = (t_new - t_prev) / (N_new - N_prev)
+#                c2 = t_new - c1* N_new
+#                maxActive = amax((15, int(15*c2/c1)))
+                
+#                #print m, currIterActivePointsNum
+#                if (p.iterTime[-1] - p.iterTime[-2])/m > 1.2 * (p.iterTime[-2]-p.iterTime[-3]) /currIterActivePointsNum  and p.iterTime[-1]-p.iterTime[-2] > 0.01:
+#                    maxActive = amax((int(maxActive / 1.5), 1))
+#                else:
+#                    maxActive = amin((maxActive*2, m))
+#            else:
+#                maxActive = m
+            
             m = y.shape[0]
             nActiveNodes.append(m)
             nNodes.append(m + b.shape[0])
             w = arange(m)
+            
             Case = 1 # TODO: check other
             if Case == -3:
                 t = argmin(a, 1) % n
@@ -271,13 +344,17 @@ class interalg(baseSolver):
             elif Case == 5:
                 tmp = where(o[:, 0:n]<o[:, n:], o[:, 0:n], o[:, n:])
                 t = argmax(tmp, 1)
+                
             new_y, new_e = y.copy(), e.copy()
             a2 = 0.5 * (new_y[w, t] + new_e[w, t])
             new_y[w, t] = a2
             new_e[w, t] = a2
+            
             new_y = vstack((y, new_y))
             new_e = vstack((new_e, e))
+            
             e, y = new_e, new_y
+        
         ff = f(xRecord)
         p.iterfcn(xRecord, ff)
         p.extras['isRequiredPrecisionReached'] = True if ff - g < fTol and k is False else False
