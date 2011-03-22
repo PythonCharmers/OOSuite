@@ -404,7 +404,14 @@ class oofun:
         isOtherOOFun = isinstance(other, oofun)
         def interval(domain, dtype):
             lb1, ub1 = self._interval(domain, dtype)
-            lb2, ub2 = other._interval(domain, dtype) if isOtherOOFun else other, other
+            
+            # works incorrectly
+            #lb2, ub2 = other._interval(domain, dtype) if isOtherOOFun else other, other
+            
+            if isOtherOOFun:
+                lb2, ub2 = other._interval(domain, dtype)
+            else:
+                lb2, ub2 = other, other
             
             if isOtherOOFun:
                 t = vstack((lb1 * lb2, ub1 * lb2, \
