@@ -1,14 +1,14 @@
 from numpy import isfinite, all, argmax, where, delete, array, asarray, inf, argmin, hstack, vstack, tile, arange, amin, \
-logical_and, float64, ceil, amax, inf, ndarray
+logical_and, float64, ceil, amax, inf, ndarray, isinf
 import numpy
 from numpy.linalg import norm, solve, LinAlgError
-from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X,  SMALL_DELTA_F
+from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X,  SMALL_DELTA_F, MAX_NON_SUCCESS
 from openopt.kernel.baseSolver import *
 from openopt.kernel.Point import Point
 from FuncDesigner import ooPoint
 
 class interalg(baseSolver):
-    __name__ = 'interalg_0.15'
+    __name__ = 'interalg_0.17'
     __license__ = "BSD"
     __authors__ = "Dmitrey"
     __alg__ = ""
@@ -16,14 +16,20 @@ class interalg(baseSolver):
     iterfcnConnected = True
     fStart = None
     dataType = float64
+    #maxMem = '150MB'
     maxNodes = 15000
     maxActiveNodes = 1500
     __isIterPointAlwaysFeasible__ = lambda self, p: p.__isNoMoreThanBoxBounded__()
+    #_canHandleScipySparse = True
+
+    #lv default parameters
 
     def __init__(self): pass
     def __solver__(self, p):
         if not p.__isFiniteBoxBounded__(): 
             p.err('solver %s requires finite lb, ub: lb <= x <= ub' % self.__name__)
+#        if p.goal in ['max', 'maximum']:
+#            p.err('solver %s cannot handle maximization problems yet' % self.__name__)
         if p.fixedVars is not None:
             p.err('solver %s cannot handle FuncDesigner problems with some variables declared as fixed' % self.__name__)
         if p.probType in ('LP', 'MILP', 'MINLP'):
@@ -38,12 +44,14 @@ class interalg(baseSolver):
         
         p.kernelIterFuncs.pop(SMALL_DELTA_X)
         p.kernelIterFuncs.pop(SMALL_DELTA_F)
+        p.kernelIterFuncs.pop(MAX_NON_SUCCESS)
+        
         p.useMultiPoints = True
         
-        nN = []        
-        p.extras['nNodes'] = nN
-        nAn = []
-        p.extras['nActiveNodes'] = nAn
+        nNodes = []        
+        p.extras['nNodes'] = nNodes
+        nActiveNodes = []
+        p.extras['nActiveNodes'] = nActiveNodes
         
         dataType = self.dataType
         if type(dataType) == str:
@@ -59,154 +67,257 @@ class interalg(baseSolver):
         ooVars = p._freeVarsList
         
         fd_obj = p.user.f[0]
+        #raise 0
         if p.goal in ('max', 'maximum'):
+#            p.err("the solver %s can't handle maximization problems yet" % self.__name__)
             fd_obj = -fd_obj
 
         xRecord = 0.5 * (lb + ub)
 
         BestKnownMinValue = p.f(xRecord)    
         y = lb.reshape(1, -1)
-        u = ub.reshape(1, -1)
-        fRecord = inf
+        e = ub.reshape(1, -1)#[ub]
+        fr = inf
         
+        # TODO: maybe rework it, especially for constrained case
         fStart = self.fStart
 
         if fStart is not None and fStart < BestKnownMinValue: 
-            fRecord = fStart
+            fr = fStart
         tmp = fd_obj(p._x0)
-        if  tmp < fRecord:
-            fRecord = tmp
+        if  tmp < fr:
+            fr = tmp
         if p.fOpt is not None:
-            if p.fOpt > fRecord:
+            if p.fOpt > fr:
                 p.err('user-provided fOpt seems to be incorrect')
-            fRecord = p.fOpt
+            fr = p.fOpt
         
-        def getIntervals(y, u):
-            LB = [[] for i in range(n)]
-            UB = [[] for i in range(n)]
-
-            for i in range(n):
-                lb, ub = y[:, i], u[:, i]
-                center = 0.5 * (lb + ub) 
-                LB[i] = hstack((tile(lb, n), tile(lb, i), center, tile(lb, n-i-1)))
-                UB[i] = hstack((tile(ub, i), center, tile(ub, n-i-1), tile(ub, n)))
-
-            d = dict([(v, (LB[i], UB[i])) for i, v in enumerate(ooVars)])
-            
-            d = ooPoint(d, skipArrayCast = True)
-            d.isMultiPoint = True
-            TMP = fd_obj.interval(d)
-            
-            a = dict([(key, 0.5*(val[0]+val[1])) for key, val in d.items()])
-            a = ooPoint(a, skipArrayCast = True)
-            a.isMultiPoint = True
-            F = fd_obj(a)
-            bCInd = argmin(F)
-
-            bC = array([0.5*(val[0][bCInd]+val[1][bCInd]) for val in d.values()])
-            bCObjective = atleast_1d(F)[bCInd]
-            return asarray(TMP.lb), asarray(TMP.ub), bC, bCObjective
 
 
+#        if dataType==float64:
+#            numBytes = 8 
+#        elif self.dataType == 'float128':
+#            numBytes = 16
+#        else:
+#            p.err('unknown data type, should be float64 or float128')
+#        maxMem = self.maxMem
+#        if type(maxMem) == str:
+#            if maxMem.lower().endswith('kb'):
+#                maxMem = int(float(maxMem[:-2]) * 2 ** 10)
+#            elif maxMem.lower().endswith('mb'):
+#                maxMem = int(float(maxMem[:-2]) * 2 ** 20)
+#            elif maxMem.lower().endswith('gb'):
+#                maxMem = int(float(maxMem[:-2]) * 2 ** 30)
+#            elif maxMem.lower().endswith('tb'):
+#                maxMem = int(float(maxMem[:-2]) * 2 ** 40)
+#            else:
+#                p.err('incorrect max memory parameter value, should end with KB, MB, GB or TB')
         m = 0
-        maxActiveNodes = self.maxActiveNodes 
+        #maxActive = 1
+        #maxActiveNodes = self.maxActiveNodes 
         if fd_obj.isUncycled: 
-            maxActiveNodes = 1
-            maxNodes = 1
-        y_i = array([]).reshape(0, n)
-        u_i = array([]).reshape(0, n)
-        o_i = array([]).reshape(0, 2*n)
-        e_i = array([]).reshape(0, 2*n)
-        PointsLeft = True
-        cutLevel = inf
+            self.maxActiveNodes = 1
+            self.maxNodes = 1
+        b = array([]).reshape(0, n)
+        v = array([]).reshape(0, n)
+        z = array([]).reshape(0, 2*n)
+        l = array([]).reshape(0, 2*n)
+        k = True
+        g = inf
         
         for itn in range(p.maxIter+10):
-            o, e, bC, bCObjective = getIntervals(y, u)
-            xk, Min = bC, bCObjective
+            
+            o, a, bestCenter, bestCenterObjective = getIntervals(y, e, n, fd_obj, ooVars)
+            #currIterActivePointsNum = y.shape[0] / 2
+            
+            #print prevActivePointsNum
+           
+            # DEBUG
+            #assert not any(isnan(o)) and not any(isnan(a))
+            #from numpy import amax
+            #assert amin(a) < 1e100
+            #print amin(o), amax(o), amin(a), amax(a)
+            
+            # DEBUG END
+            
+            xk, Min = bestCenter, bestCenterObjective
+#            assert Min < amin(a)
+            
+            
             p.iterfcn(xk, Min)
-            if p.istop != 0 : return
+            if p.istop != 0 : break
+            
             if BestKnownMinValue > Min:
                 BestKnownMinValue = Min
-                xRecord = xk
-            if fRecord > BestKnownMinValue:
-                fRecord = BestKnownMinValue 
+                xRecord = xk# TODO: is copy required?
+            if fr > Min:
+                fr = Min
             if fTol is None:
                 fTol = 1e-7
                 p.warn('solver %s require p.fTol value (required objective function tolerance); 10^-7 will be used')
-            th = min((fRecord, BestKnownMinValue - fTol)) 
-            m = u.shape[0]
-            o, e = o.reshape(2*n, m).T, e.reshape(2*n, m).T
-            a = 0.5*(y + u)
-            o_modL, o_modU = o[:, 0:n], o[:, n:2*n]
+            assert fr < amin(a)
+            th = min((fr, BestKnownMinValue - fTol)) 
+            m = e.shape[0]
+            
+            o, a = o.reshape(2*n, m).T, a.reshape(2*n, m).T
+            
+           ################################################################
+            # todo: check is o separated correctly
+            
+            
+            # changes
+            # remove trailing data out of memory
+            #currentDataMem = numBytes * n * (n+m) # in bytes
+            #print '%0.4f' % (m/float(self.maxNodes))
+            #if currentDataMem > maxMem:
+                #if itn > 2: raise 0
+
+#            currentDataMem = numBytes * n * (n+m) # in bytes
+#            if currentDataMem > maxMem:
+#                ind = argmax(o, 1)
+#                
+            # changes end            
+            
+               
+            ################################################################
+            centers = 0.5*(y + e)
+            s, q = o[:, 0:n], o[:, n:2*n]
             for i in range(n):
-                ind = where(o_modL[:, i] > th)[0]
+                ind = where(s[:, i] > th)[0]
                 if ind.size != 0:
-                    y[:,i][ind] = a[:,i][ind]
-                ind = where(o_modU[:, i] > th)[0]
+                    y[:,i][ind] = centers[:,i][ind]
+                ind = where(q[:, i] > th)[0]
                 if ind.size != 0:
-                    u[:,i][ind] = a[:,i][ind]
-            y, u, o, e = vstack((y, y_i)), vstack((u, u_i)), vstack((o, o_i)), vstack((e, e_i))
+                    e[:,i][ind] = centers[:,i][ind]
+            y, e, o, a = vstack((y, b)), vstack((e, v)), vstack((o, z)), vstack((a, l))
             setForRemoving = set()
-            o_modL, o_modU = o[:, 0:n], o[:, n:2*n]
+            s, q = o[:, 0:n], o[:, n:2*n]
             for i in range(n):
-                ind = where(logical_and(o_modL[:, i] > th, o_modU[:, i] > th))[0]
+                ind = where(logical_and(s[:, i] > th, q[:, i] > th))[0]
                 if ind.size != 0:
                     setForRemoving.update(ind.tolist())
-                    cutLevel = amin((cutLevel, amin(o_modL[ind, i]), amin(o_modU[ind, i])))
+                    g = amin((g, amin(s[ind, i]), amin(q[ind, i])))
             if len(setForRemoving) != 0:
                 ind = array(list(setForRemoving))
-                o_modL, o_modU = delete(o_modL, ind, 0), delete(o_modU, ind, 0)
-                y, u, o, e = delete(y, ind, 0), delete(u, ind, 0), delete(o, ind, 0), delete(e, ind, 0)
-            if u.size == 0: 
-                PointsLeft = False
+                s, q = delete(s, ind, 0), delete(q, ind, 0)
+                y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
+            if e.size == 0: 
+                k = False
                 p.istop = 1000
                 p.msg = 'optimal solution obtained'
                 break            
-            m = u.shape[0]
-            o_modL, o_modU = o[:, 0:n], o[:, n:2*n]
+            m = e.shape[0]
+            s, q = o[:, 0:n], o[:, n:2*n]
             if m > self.maxNodes:
-                numOfElementsToBeRemoved = m - self.maxNodes
-                tmp = where(o_modU<o_modL, o_modU, o_modL)
+                j = m - self.maxNodes
+                tmp = where(q<s, q, s)
                 ind = argmax(tmp, 1)
                 values = tmp[arange(m),ind]
                 ind = values.argsort()
-                indCut = m-numOfElementsToBeRemoved-1
-                cutLevel = amin((values[indCut], cutLevel))
-                ind = ind[m-numOfElementsToBeRemoved:]
-                o_modL, o_modU = delete(o_modL, ind, 0), delete(o_modU, ind, 0)
-                y, u, o, e = delete(y, ind, 0), delete(u, ind, 0), delete(o, ind, 0), delete(e, ind, 0)
+                h = m-j-1
+                g = amin((values[h], g))
+                ind = ind[m-j:]
+                s, q = delete(s, ind, 0), delete(q, ind, 0)
+                y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
             m = y.shape[0]
-            if m > maxActiveNodes:
-                o_modL, o_modU = o[:, 0:n], o[:, n:2*n]
-                tmp = where(o_modU<o_modL, o_modU, o_modL)
+            if m <= self.maxActiveNodes:
+                b = array([]).reshape(0, n)
+                v = array([]).reshape(0, n)
+                z = array([]).reshape(0, 2*n)
+                l = array([]).reshape(0, 2*n)
+            else:
+                s, q = o[:, 0:n], o[:, n:2*n]
+                tmp = where(q<s, q, s)
                 ind = argmax(tmp, 1)
                 values = tmp[arange(m),ind]
                 ind = values.argsort()
-                ind = ind[maxActiveNodes:]
-                y_i, u_i, o_i, e_i = y[ind], u[ind], o[ind], e[ind]
-                y, u, o, e = delete(y, ind, 0), delete(u, ind, 0), delete(o, ind, 0), delete(e, ind, 0)
+                ind = ind[:m-self.maxActiveNodes]
+                y, e, o, a = y[ind], e[ind], o[ind], a[ind]
+                b, v, z, l = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
             m = y.shape[0]
-            nAn.append(m)
-            nN.append(m + y_i.shape[0])
-            am = arange(m)
-            bcfs = argmin(e, 1) % n
-            new_y, new_u = y.copy(), u.copy()
-            nC = 0.5 * (new_y[am, bcfs] + new_u[am, bcfs])
-            new_y[am, bcfs] = nC
-            new_u[am, bcfs] = nC
+            nActiveNodes.append(m)
+            nNodes.append(m + b.shape[0])
+            w = arange(m)
+            Case = 1 # TODO: check other
+            if Case == -3:
+                t = argmin(a, 1) % n
+            elif Case == -2:
+                t = asarray([itn % n]*m)
+            elif Case == -1:
+                tmp = a - o
+                tmp1, tmp2 = tmp[:, 0:n], tmp[:, n:2*n]
+                tmp = tmp1
+                ind = where(tmp2>tmp1)
+                tmp[ind] = tmp2[ind]
+                #tmp = tmp[:, 0:n] + tmp[:, n:2*n]
+                t = argmin(tmp, 1) 
+            elif Case == 0:
+                t = argmin(a - o, 1) % n
+            elif Case == 1:
+                t = argmin(a, 1) % n
+                ind = all(isinf(a), 1)
+                if any(ind):
+                    boxShapes = e[ind] - y[ind]
+                    t[ind] = argmax(boxShapes, 1)
+            elif Case == 2:
+                # WORST
+                t = argmax(o, 1) % n
+            elif Case == 3:
+                # WORST
+                t = argmin(o, 1) % n
+            elif Case == 4:
+                # WORST
+                t = argmax(a, 1) % n
+            elif Case == 5:
+                tmp = where(o[:, 0:n]<o[:, n:], o[:, 0:n], o[:, n:])
+                t = argmax(tmp, 1)
+            new_y, new_e = y.copy(), e.copy()
+            a2 = 0.5 * (new_y[w, t] + new_e[w, t])
+            new_y[w, t] = a2
+            new_e[w, t] = a2
             new_y = vstack((y, new_y))
-            new_u = vstack((new_u, u))
-            u, y = new_u, new_y
+            new_e = vstack((new_e, e))
+            e, y = new_e, new_y
         ff = f(xRecord)
         p.iterfcn(xRecord, ff)
-        p.extras['isRequiredPrecisionReached'] = True if ff - cutLevel < fTol and PointsLeft is False else False
+        p.extras['isRequiredPrecisionReached'] = True if ff - g < fTol and k is False else False
+        # TODO: simplify it
         if p.goal in ('max', 'maximum'):
-            cutLevel = -cutLevel
+            g = -g
             o = -o
-        tmp = [amin(hstack((ff, cutLevel, o.flatten()))), numpy.asscalar(array((ff if p.goal not in ['max', 'maximum'] else -ff)))]
+        tmp = [amin(hstack((ff, g, o.flatten()))), numpy.asscalar(array((ff if p.goal not in ['max', 'maximum'] else -ff)))]
         if p.goal in ['max', 'maximum']: tmp = tmp[1], tmp[0]
         p.extras['extremumBounds'] = tmp
         if p.iprint >= 0:
-            s = 'Solution with required tolerance %0.1e is%s guarantied (obtained precision: %0.3e)' \
-                   %(fTol, '' if p.extras['isRequiredPrecisionReached'] else ' NOT', tmp[1]-tmp[0])
+            s = 'Solution with required tolerance %0.1e \n is%s guarantied (obtained precision: %0.3e)\n, increase maxNodes (current value %d)' \
+                   %(fTol, '' if p.extras['isRequiredPrecisionReached'] else ' NOT', tmp[1]-tmp[0], self.maxNodes)
             p.info(s)
+
+
+def getIntervals(y, e, n, fd_obj, ooVars):
+    LB = [[] for i in range(n)]
+    UB = [[] for i in range(n)]
+
+    for i in range(n):
+        lb, ub = y[:, i], e[:, i]
+        center = 0.5 * (lb + ub) # TODO: make it before cycle start
+        LB[i] = hstack((tile(lb, n), tile(lb, i), center, tile(lb, n-i-1)))
+        UB[i] = hstack((tile(ub, i), center, tile(ub, n-i-1), tile(ub, n)))
+
+    domain = dict([(v, (LB[i], UB[i])) for i, v in enumerate(ooVars)])
+    
+    domain = ooPoint(domain, skipArrayCast = True)
+    domain.isMultiPoint = True
+    TMP = fd_obj.interval(domain)
+    
+    centers = dict([(key, 0.5*(val[0]+val[1])) for key, val in domain.items()])
+    centers = ooPoint(centers, skipArrayCast = True)
+    centers.isMultiPoint = True
+    F = fd_obj(centers)
+    bestCenterInd = argmin(F)
+    
+    # TODO: check it , maybe it can be improved
+    #bestCenter = centers[bestCenterInd]
+    bestCenter = array([0.5*(val[0][bestCenterInd]+val[1][bestCenterInd]) for val in domain.values()])
+    bestCenterObjective = atleast_1d(F)[bestCenterInd]
+    return asarray(TMP.lb), asarray(TMP.ub), bestCenter, bestCenterObjective
