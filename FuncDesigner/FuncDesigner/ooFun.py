@@ -479,21 +479,35 @@ class oofun:
         if not isinstance(other, oofun):
             if isscalar(other):
                 if type(other) == int: # TODO: handle numpy integer types
-                    other = float(other)
+                    other = asfarray(other)
+                else:
+                    other = asarray(other)# with same type, mb float128
             elif not isinstance(other, ndarray): 
                 other = asarray(other, 'float' if type(other) == int else type(other))
             
             f = lambda x: x ** other
             d = lambda x: d_x(x, other)
             input = self
-            
+            def interval(domain, dtype):
+                lb, ub = self._interval(domain, dtype)
+                Tmp = vstack((lb**other, ub**other))
+                t_min, t_max = nanmin(Tmp, 0), nanmax(Tmp, 0)
+                #lb2, ub2 = other._interval(domain, dtype) if isinstance(other, oofun) else other, other # TODO: improve it
+                ind = lb < 0.0
+                if any(ind):
+                    ind2 = logical_and(ind, other != asarray(other, int))
+                    t_min[atleast_1d(logical_and(ind2, ub >= 0))] = 0.0
+                    t_max[atleast_1d(logical_and(ind2, ub < 0))] = nan
+                return t_min, t_max
         else:
             f = lambda x, y: x ** y
             d = (d_x, d_y)
             input = [self, other]
-            
-        criticalPoints = ZeroCriticalPoints
-        r = oofun(f, input, d = d, criticalPoints=criticalPoints)
+            def interval(domain, dtype): 
+                raise FuncDesignerException('interval calculations for oofun ** oofun are unimplemented yet')
+        
+        #criticalPoints = ZeroCriticalPoints
+        r = oofun(f, input, d = d, _interval=interval)
         if isinstance(other, oofun) or (not isinstance(other, int) or (type(other) == ndarray and other.flatten()[0] != int)): 
             r.attach((self>0)('pow_domain_%d'%r._id, tol=-1e-7)) # TODO: if "other" is fixed oofun with integer value - omit this
         r.isCostly = True
