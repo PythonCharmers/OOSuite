@@ -417,7 +417,7 @@ class oofun:
             if isOtherOOFun:
                 lb2, ub2 = other._interval(domain, dtype)
             else:
-                lb2, ub2 = other, other
+                lb2, ub2 = other, other # TODO: improve it
             
             if isOtherOOFun:
                 t = vstack((lb1 * lb2, ub1 * lb2, \
@@ -425,16 +425,6 @@ class oofun:
             else:
                 t = vstack((lb1 * other, ub1 * other))# TODO: improve it
             t_min, t_max = nanmin(t, 0), nanmax(t, 0)
-            if isscalar(t_max):
-                t_min, t_max = atleast_1d(t_min), atleast_1d(t_max)
-            
-#            lb1_less_0 = lb1 < 0
-#            lb1_eq_0 = lb1 == 0
-#            lb1_greater_0 = lb1 > 0
-#            
-#            ub1_less_0 = ub1 < 0
-#            ub1_eq_0 = ub1 == 0
-#            ub1_greater_0 = ub1 > 0
             
             ind1_zero_minus = logical_and(lb1<0, ub1>=0)
             ind1_zero_plus = logical_and(lb1<=0, ub1>0)
@@ -487,17 +477,23 @@ class oofun:
         d_y = lambda x, y: x ** y * log(x) if (isscalar(y) or y.size == 1) else Diag(x ** y * log(x))
             
         if not isinstance(other, oofun):
-            if not isscalar(other): other = array(other)
+            if isscalar(other):
+                if type(other) == int: # TODO: handle numpy integer types
+                    other = float(other)
+            elif not isinstance(other, ndarray): 
+                other = asarray(other, 'float' if type(other) == int else type(other))
+            
             f = lambda x: x ** other
             d = lambda x: d_x(x, other)
             input = self
-            criticalPoints = ZeroCriticalPoints
+            #criticalPoints = ZeroCriticalPoints
         else:
             f = lambda x, y: x ** y
             d = (d_x, d_y)
             input = [self, other]
-            def criticalPoints(*args, **kwargs):
-                raise FuncDesignerException('interval analysis for pow(oofun,oofun) is unimplemented yet')
+            #def criticalPoints(*args, **kwargs):
+                #raise FuncDesignerException('interval analysis for pow(oofun,oofun) is unimplemented yet')
+        criticalPoints = None
         r = oofun(f, input, d = d, criticalPoints=criticalPoints)
         if isinstance(other, oofun) or (not isinstance(other, int) or (type(other) == ndarray and other.flatten()[0] != int)): 
             r.attach((self>0)('pow_domain_%d'%r._id, tol=-1e-7)) # TODO: if "other" is fixed oofun with integer value - omit this
@@ -508,13 +504,17 @@ class oofun:
     def __rpow__(self, other):
         assert not isinstance(other, oofun)# if failed - check __pow__implementation
         
-        if not isscalar(other) and type(other) != ndarray: other = asfarray(other)
+        if isscalar(other):
+            if type(other) == int: # TODO: handle numpy integer types
+                other = float(other)
+        elif not isinstance(other, ndarray): 
+            other = asarray(other, 'float' if type(other) == int else type(other))
         
         f = lambda x: other ** x
         #d = lambda x: Diag(asarray(other) **x * log(asarray(other)))
         d = lambda x: Diag(other **x * log(other)) 
         r = oofun(f, self, d=d, criticalPoints = False)
-        r.isCostly = True
+        #r.isCostly = True
         r.vectorized = True
         return r
 
