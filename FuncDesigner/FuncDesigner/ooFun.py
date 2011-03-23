@@ -455,8 +455,8 @@ class oofun:
 #            tmp1[atleast_1d(logical_and(logical_and(lb1<=0, ub1>0), ub2<0))] = -inf
             
             
-            assert not any(isnan(t_min)) and not any(isnan(t_max))
-            assert all(t_min < inf) and all(t_max > -inf)
+#            assert not any(isnan(t_min)) and not any(isnan(t_max))
+
             
             return t_min, t_max
                 
