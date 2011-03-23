@@ -323,7 +323,7 @@ class oofun:
                 
                 ind = logical_and(ub2==0, ub1<=0)
                 r1[atleast_1d(ind)] = -inf
-                
+                #assert not any(isnan(r1)) and not any(isnan(r2))
                 return [r1, r2]
 
             r._interval = interval
@@ -351,12 +351,18 @@ class oofun:
         r.d = lambda x: Diag(- other / x**2)
         def interval(domain, dtype):
             arg_infinum, arg_supremum = self._interval(domain, dtype)
-            assert other.size == 1, 'this case is unimplemented yet'
+            if other.size != 1: 
+                raise FuncDesignerException('this case for interval calculations is unimplemented yet')
             r = vstack((other / arg_supremum, other / arg_infinum))
             r1, r2 = amin(r, 0), amax(r, 0)
-            ind = logical_and(arg_infinum < 0,  0 < arg_supremum)
-            r1[atleast_1d(ind)] = -inf
-            r2[atleast_1d(ind)] = inf
+            ind_zero_minus = logical_and(arg_infinum<0, arg_supremum>=0)
+            r1[atleast_1d(logical_and(ind_zero_minus, other>0))] = -inf
+            r2[atleast_1d(logical_and(ind_zero_minus, other<0))] = inf
+            
+            ind_zero_plus = logical_and(arg_infinum<=0, arg_supremum>0)
+            r1[atleast_1d(logical_and(ind_zero_plus, other<0))] = -inf
+            r2[atleast_1d(logical_and(ind_zero_plus, other>0))] = inf
+
             return [r1, r2]
             
         r._interval = interval
