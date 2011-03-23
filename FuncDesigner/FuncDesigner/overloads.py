@@ -127,28 +127,40 @@ def abs(inp):
     elif not isinstance(inp, oofun): return np.abs(inp)
     return oofun(np.abs, inp, d = lambda x: Diag(np.sign(x)), vectorized = True, criticalPoints = ZeroCriticalPoints)
 
+def log_interval(logfunc, inp):
+    def interval(domain, dtype):
+        lb, ub = inp._interval(domain, dtype)
+        lb, ub = np.atleast_1d(lb), np.atleast_1d(ub)
+        t_min, t_max = logfunc(lb), logfunc(ub)
+        t_min[np.logical_and(lb <= 0, ub > 0)] = -np.inf
+        return t_min, t_max
+    return interval
+
 def log(inp):
     if isinstance(inp, ooarray) and inp.dtype == object:
         return ooarray([log(elem) for elem in inp])    
     if not isinstance(inp, oofun): return np.log(inp)
-    r = oofun(np.log, inp, d = lambda x: Diag(1.0/x), vectorized = True, criticalPoints = False)
+    r = oofun(np.log, inp, d = lambda x: Diag(1.0/x), vectorized = True)
     r.attach((inp>1e-300)('log_domain_zero_bound_%d' % r._id, tol=-1e-7))
+    r._interval = log_interval(np.log, inp)
     return r
     
 def log10(inp):
     if isinstance(inp, ooarray) and inp.dtype == object:
         return ooarray([log10(elem) for elem in inp])    
     if not isinstance(inp, oofun): return np.log10(inp)
-    r = oofun(np.log10, inp, d = lambda x: Diag(0.43429448190325176/x), vectorized = True, criticalPoints = False)# 1 / (x * log_e(10))
+    r = oofun(np.log10, inp, d = lambda x: Diag(0.43429448190325176/x), vectorized = True)# 1 / (x * log_e(10))
     r.attach((inp>1e-300)('log10_domain_zero_bound_%d' % r._id, tol=-1e-7))
+    r._interval = log_interval(np.log10, inp)
     return r
 
 def log2(inp):
     if isinstance(inp, ooarray) and inp.dtype == object:
         return ooarray([log2(elem) for elem in inp])    
     if not isinstance(inp, oofun): return np.log2(inp)
-    r = oofun(np.log2, inp, d = lambda x: Diag(1.4426950408889634/x), vectorized = True, criticalPoints = False)# 1 / (x * log_e(2))
+    r = oofun(np.log2, inp, d = lambda x: Diag(1.4426950408889634/x), vectorized = True)# 1 / (x * log_e(2))
     r.attach((inp>1e-300)('log2_domain_zero_bound_%d' % r._id, tol=-1e-7))
+    r._interval = log_interval(np.log2, inp)
     return r
 
 def dot(inp1, inp2):
