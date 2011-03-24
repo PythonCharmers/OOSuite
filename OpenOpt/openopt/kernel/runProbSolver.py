@@ -71,7 +71,7 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
                 setattr(p, key, value)
     p.isConverterInvolved = isConverter
 
-    old_err = seterr(invalid= 'ignore')
+    old_err = seterr(all= 'ignore')
     
     if 'debug' in kwargs.keys():
        p.debug =  kwargs['debug']
