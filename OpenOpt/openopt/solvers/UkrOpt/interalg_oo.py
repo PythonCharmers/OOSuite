@@ -298,8 +298,9 @@ class interalg(baseSolver):
                 
                 # new
                 ind = ind[:self.maxActiveNodes]
-                y, e, o, a = y[ind], e[ind], o[ind], a[ind]
                 b, v, z, l = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
+                y, e, o, a = y[ind], e[ind], o[ind], a[ind]
+                
 
                 
 #                N1, N2 = nActivePoints[-2:]
