@@ -1,5 +1,5 @@
 from numpy import isfinite, all, argmax, where, delete, array, asarray, inf, argmin, hstack, vstack, tile, arange, amin, \
-logical_and, float64, ceil, amax, inf, ndarray, isinf, any, logical_or
+logical_and, float64, ceil, amax, inf, ndarray, isinf, any, logical_or, nanargmin, nan, nanmin
 import numpy
 from numpy.linalg import norm, solve, LinAlgError
 from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X,  SMALL_DELTA_F, MAX_NON_SUCCESS
@@ -151,6 +151,8 @@ class interalg(baseSolver):
             if p.istop != 0 : 
                 break
             
+            #assert not isnan(BestKnownMinValue)
+            #print 'BestKnownMinValue:', BestKnownMinValue
             if BestKnownMinValue > Min:
                 BestKnownMinValue = Min
                 xRecord = xk# TODO: is copy required?
@@ -295,7 +297,7 @@ class interalg(baseSolver):
 #                y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
                 
                 # new
-                ind = ind[:m-self.maxActiveNodes]
+                ind = ind[:self.maxActiveNodes]
                 y, e, o, a = y[ind], e[ind], o[ind], a[ind]
                 b, v, z, l = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
 
@@ -375,7 +377,7 @@ class interalg(baseSolver):
         if p.goal in ('max', 'maximum'):
             g = -g
             o = -o
-        tmp = [amin(hstack((ff, g, o.flatten()))), numpy.asscalar(array((ff if p.goal not in ['max', 'maximum'] else -ff)))]
+        tmp = [nanmin(hstack((ff, g, o.flatten()))), numpy.asscalar(array((ff if p.goal not in ['max', 'maximum'] else -ff)))]
         if p.goal in ['max', 'maximum']: tmp = tmp[1], tmp[0]
         p.extras['extremumBounds'] = tmp
         if p.iprint >= 0:
@@ -404,9 +406,11 @@ def getIntervals(y, e, n, fd_obj, ooVars, dataType):
     centers = dict([(key, 0.5*(val[0]+val[1])) for key, val in domain.items()])
     centers = ooPoint(centers, skipArrayCast = True)
     centers.isMultiPoint = True
-    F = atleast_1d(fd_obj(centers))
-    F[atleast_1d(isnan(F))] = inf 
-    bestCenterInd = argmin(F)
+    F = fd_obj(centers)
+    bestCenterInd = nanargmin(F)
+    if bestCenterInd is nan:
+        bestCenterInd = 0
+        bestCenterObjective = inf
     
     # TODO: check it , maybe it can be improved
     #bestCenter = centers[bestCenterInd]
