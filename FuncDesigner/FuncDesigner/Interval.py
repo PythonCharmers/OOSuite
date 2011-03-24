@@ -1,5 +1,5 @@
 from numpy import ndarray, asscalar, isscalar, hstack, amax, amin, floor, ceil, pi, \
-arange, copy as Copy, logical_and, where, asarray, any, atleast_1d
+arange, copy as Copy, logical_and, where, asarray, any, atleast_1d, empty_like, nan, logical_not
 
 class Interval:
     def __init__(self, l, u):
@@ -62,3 +62,19 @@ def TrigonometryCriticalPoints(arg_infinum, arg_supremum):
 #    return Tmp
 #    
 
+def nonnegative_interval(inp, func, domain, dtype):
+    lb, ub = inp._interval(domain, dtype)
+    ind = lb < 0.0
+    if any(ind):
+        t_min, t_max = atleast_1d(empty_like(lb)), atleast_1d(empty_like(ub))
+        t_min.fill(nan)
+        t_max.fill(nan)
+        ind2 = ub >= 0
+        t_min[atleast_1d(logical_not(ind))] = func(lb)
+        t_min[atleast_1d(logical_and(ind2, ind))] = 0.0
+        t_max[atleast_1d(ind2)] = func(ub[ind2])
+        t_min, t_max = func(lb), func(ub)
+        t_min[atleast_1d(logical_and(lb < 0, ub > 0))] = 0.0
+    else:
+        t_min, t_max = func(lb), func(ub)
+    return t_min, t_max

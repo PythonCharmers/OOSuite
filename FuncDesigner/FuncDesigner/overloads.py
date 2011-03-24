@@ -3,7 +3,7 @@ import numpy as np
 from misc import FuncDesignerException, Diag, Eye, raise_except
 from ooFun import atleast_oofun, ooarray
 from ooPoint import ooPoint
-from Interval import TrigonometryCriticalPoints, ZeroCriticalPoints
+from Interval import TrigonometryCriticalPoints, ZeroCriticalPoints, nonnegative_interval
 from numpy import atleast_1d, logical_and, logical_not, empty_like
 
 #class unary_oofun_overload:
@@ -113,30 +113,14 @@ def exp(inp):
     if not isinstance(inp, oofun): return np.exp(inp)
     return oofun(np.exp, inp, d = lambda x: Diag(np.exp(x)), vectorized = True, criticalPoints = False)
 
-def sqrt_interval(inp, domain, dtype):
-    lb, ub = inp._interval(domain, dtype)
-    ind = lb < 0.0
-    if any(ind):
-        t_min, t_max = atleast_1d(empty_like(lb)), atleast_1d(empty_like(ub))
-        t_min.fill(np.nan)
-        t_max.fill(np.nan)
-        ind2 = ub >= 0
-        t_min[atleast_1d(logical_not(ind))] = np.sqrt(lb)
-        t_min[atleast_1d(logical_and(ind2, ind))] = 0.0
-        t_max[atleast_1d(ind2)] = np.sqrt(ub[ind2])
-        t_min, t_max = np.sqrt(lb), np.sqrt(ub)
-        t_min[atleast_1d(logical_and(lb < 0, ub > 0))] = 0.0
-    else:
-        t_min, t_max = np.sqrt(lb), np.sqrt(ub)
-    return t_min, t_max
-        
+       
 def sqrt(inp, attachConstraints = True):
     if isinstance(inp, ooarray) and inp.dtype == object:
         return ooarray([sqrt(elem) for elem in inp])
     elif not isinstance(inp, oofun): 
         return np.sqrt(inp)
     r = oofun(np.sqrt, inp, d = lambda x: Diag(0.5 / np.sqrt(x)), vectorized = True)
-    r._interval = lambda domain, dtype: sqrt_interval(inp, domain, dtype)
+    r._interval = lambda domain, dtype: nonnegative_interval(inp, np.sqrt, domain, dtype)
     if attachConstraints: r.attach((inp>0)('sqrt_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
 

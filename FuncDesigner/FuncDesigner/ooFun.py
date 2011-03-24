@@ -2,13 +2,13 @@
 
 from numpy import inf, asfarray, copy, all, any, empty, atleast_2d, zeros, dot, asarray, atleast_1d, empty, \
 ones, ndarray, where, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum, prod, nonzero,\
-isnan, asscalar, zeros_like, ones_like, amin, amax, logical_and, logical_or, isinf, nanmin, nanmax
+isnan, asscalar, zeros_like, ones_like, amin, amax, logical_and, logical_or, isinf, nanmin, nanmax, logical_not
 from numpy.linalg import norm
 from misc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scipyInstalled, \
 raise_except, DiagonalType
 from copy import deepcopy
 from ooPoint import ooPoint
-from Interval import Interval, ZeroCriticalPoints
+from Interval import Interval, ZeroCriticalPoints, nonnegative_interval
 
 Copy = lambda arg: asscalar(arg) if type(arg)==ndarray and arg.size == 1 else arg.copy() if hasattr(arg, 'copy') else copy(arg)
 Len = lambda x: 1 if isscalar(x) else x.size if type(x)==ndarray else len(x)
@@ -503,8 +503,20 @@ class oofun:
             f = lambda x, y: x ** y
             d = (d_x, d_y)
             input = [self, other]
+            #interval = lambda domain, dtype: nonnegative_interval(self, lambda x:, domain, dtype)
             def interval(domain, dtype): 
-                raise FuncDesignerException('interval calculations for oofun ** oofun are unimplemented yet')
+                # TODO: handle discrete cases
+                lb1, ub1 = self._interval(domain, dtype)
+                lb2, ub2 = other._interval(domain, dtype)
+                T = vstack((lb1 ** lb2, lb1** ub2, ub1**lb1, ub1**ub2))
+                t_min, t_max = nanmin(T, 0), nanmax(T, 0)
+                ind1 = lb1 < 0
+                ind2 = ub1 > 0
+                t_min[atleast_1d(logical_and(ind1, ind2))] = 0.0
+                t_max[atleast_1d(logical_and(ind1, logical_not(ind2)))] = nan
+                return t_min, t_max
+                
+                
         
         #criticalPoints = ZeroCriticalPoints
         r = oofun(f, input, d = d, _interval=interval)
