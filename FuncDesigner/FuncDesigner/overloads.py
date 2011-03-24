@@ -112,10 +112,14 @@ def exp(inp):
     if not isinstance(inp, oofun): return np.exp(inp)
     return oofun(np.exp, inp, d = lambda x: Diag(np.exp(x)), vectorized = True, criticalPoints = False)
 
-def sqrt_interval(inp):
+def sqrt_interval(inp, domain, dtype):
     lb, ub = inp._interval(domain, dtype)
-    t_min, t_max = np.sqrt(lb), np.sqrt(ub)
-    t_min[np.atleast_1d(np.logical_and(lb < 0, ub > 0))] = 0.0
+    ind = lb < 0.0
+    if any(ind):
+        t_min, t_max = np.sqrt(lb), np.sqrt(ub)
+        t_min[np.atleast_1d(np.logical_and(lb < 0, ub > 0))] = 0.0
+    else:
+        t_min, t_max = np.sqrt(lb), np.sqrt(ub)
     return t_min, t_max
         
 def sqrt(inp, attachConstraints = True):
@@ -123,7 +127,8 @@ def sqrt(inp, attachConstraints = True):
         return ooarray([sqrt(elem) for elem in inp])
     elif not isinstance(inp, oofun): 
         return np.sqrt(inp)
-    r = oofun(np.sqrt, inp, d = lambda x: Diag(0.5 / np.sqrt(x)), vectorized = True, _interval = sqrt_interval)
+    r = oofun(np.sqrt, inp, d = lambda x: Diag(0.5 / np.sqrt(x)), vectorized = True)
+    r._interval = lambda domain, dtype: sqrt_interval(inp, domain, dtype)
     if attachConstraints: r.attach((inp>0)('sqrt_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
 
@@ -136,8 +141,20 @@ def abs(inp):
 def log_interval(logfunc, inp):
     def interval(domain, dtype):
         lb, ub = inp._interval(domain, dtype)
-        t_min, t_max = logfunc(lb), logfunc(ub)
-        t_min[np.atleast_1d(np.logical_and(lb <= 0, ub > 0))] = -np.inf
+        
+        ind = lb <=0
+        if any(ind):
+            t_min, t_max = np.atleast_1d(np.empty_like(lb)), np.atleast_1d(np.empty_like(ub))
+            ind_dom = np.logical_not(ind)
+            t_min[ind_dom], t_max[ind_dom] = logfunc(lb[ind_dom]), logfunc(ub[ind_dom])
+            #t_min, t_max = np.asarray(t_min), np.asarray(t_max)
+            ind2 = ub>0
+            t_min[np.atleast_1d(np.logical_and(ind, ind2))] = -np.inf
+            ind_nan = np.logical_and(ind, np.logical_not(ind2))
+            t_min[np.atleast_1d(ind_nan)] = np.nan
+            t_max[np.atleast_1d(ind_nan)] = np.nan
+        else:
+            t_min, t_max = logfunc(lb), logfunc(ub)
         return t_min, t_max
     return interval
 

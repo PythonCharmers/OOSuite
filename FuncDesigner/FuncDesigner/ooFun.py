@@ -424,8 +424,8 @@ class oofun:
                             lb1 * ub2, ub1 * ub2))# TODO: improve it
             else:
                 t = vstack((lb1 * other, ub1 * other))# TODO: improve it
-            t_min, t_max = nanmin(t, 0), nanmax(t, 0)
-            
+            t_min, t_max = atleast_1d(nanmin(t, 0)), atleast_1d(nanmax(t, 0))
+            #assert isinstance(t_min, ndarray) and isinstance(t_max, ndarray), 'Please update numpy to more recent version'
             ind1_zero_minus = logical_and(lb1<0, ub1>=0)
             ind1_zero_plus = logical_and(lb1<=0, ub1>0)
             
