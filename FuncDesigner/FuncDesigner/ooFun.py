@@ -511,9 +511,10 @@ class oofun:
                 T = vstack((lb1 ** lb2, lb1** ub2, ub1**lb1, ub1**ub2))
                 t_min, t_max = nanmin(T, 0), nanmax(T, 0)
                 ind1 = lb1 < 0
-                ind2 = ub1 > 0
-                t_min[atleast_1d(logical_and(ind1, ind2))] = 0.0
-                t_max[atleast_1d(logical_and(ind1, logical_not(ind2)))] = nan
+                if any(ind1):
+                    ind2 = ub1 > 0
+                    t_min[atleast_1d(logical_and(ind1, ind2))] = 0.0
+                    t_max[atleast_1d(logical_and(ind1, logical_not(ind2)))] = nan
                 return t_min, t_max
                 
                 
