@@ -4,6 +4,7 @@ from misc import FuncDesignerException, Diag, Eye, raise_except
 from ooFun import atleast_oofun, ooarray
 from ooPoint import ooPoint
 from Interval import TrigonometryCriticalPoints, ZeroCriticalPoints
+from numpy import atleast_1d, logical_and, logical_not, empty_like
 
 #class unary_oofun_overload:
 #    def __init__(self, *args, **kwargs):
@@ -116,8 +117,15 @@ def sqrt_interval(inp, domain, dtype):
     lb, ub = inp._interval(domain, dtype)
     ind = lb < 0.0
     if any(ind):
+        t_min, t_max = atleast_1d(empty_like(lb)), atleast_1d(empty_like(ub))
+        t_min.fill(np.nan)
+        t_max.fill(np.nan)
+        ind2 = ub >= 0
+        t_min[atleast_1d(logical_not(ind))] = np.sqrt(lb)
+        t_min[atleast_1d(logical_and(ind2, ind))] = 0.0
+        t_max[atleast_1d(ind2)] = np.sqrt(ub[ind2])
         t_min, t_max = np.sqrt(lb), np.sqrt(ub)
-        t_min[np.atleast_1d(np.logical_and(lb < 0, ub > 0))] = 0.0
+        t_min[atleast_1d(logical_and(lb < 0, ub > 0))] = 0.0
     else:
         t_min, t_max = np.sqrt(lb), np.sqrt(ub)
     return t_min, t_max
@@ -144,15 +152,15 @@ def log_interval(logfunc, inp):
         
         ind = lb <=0
         if any(ind):
-            t_min, t_max = np.atleast_1d(np.empty_like(lb)), np.atleast_1d(np.empty_like(ub))
-            ind_dom = np.logical_not(ind)
+            t_min, t_max = atleast_1d(empty_like(lb)), atleast_1d(empty_like(ub))
+            ind_dom = logical_not(ind)
             t_min[ind_dom], t_max[ind_dom] = logfunc(lb[ind_dom]), logfunc(ub[ind_dom])
             #t_min, t_max = np.asarray(t_min), np.asarray(t_max)
             ind2 = ub>0
-            t_min[np.atleast_1d(np.logical_and(ind, ind2))] = -np.inf
-            ind_nan = np.logical_and(ind, np.logical_not(ind2))
-            t_min[np.atleast_1d(ind_nan)] = np.nan
-            t_max[np.atleast_1d(ind_nan)] = np.nan
+            t_min[atleast_1d(logical_and(ind, ind2))] = -np.inf
+            ind_nan = logical_and(ind, logical_not(ind2))
+            t_min[atleast_1d(ind_nan)] = np.nan
+            t_max[atleast_1d(ind_nan)] = np.nan
         else:
             t_min, t_max = logfunc(lb), logfunc(ub)
         return t_min, t_max
