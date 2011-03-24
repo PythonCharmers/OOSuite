@@ -1,7 +1,7 @@
 __docformat__ = "restructuredtext en"
 from time import time, clock
 from numpy import asfarray, copy, inf, nan, isfinite, ones, ndim, all, atleast_1d, any, isnan, \
-array_equiv, asscalar, asarray, where, ndarray, isscalar, matrix
+array_equiv, asscalar, asarray, where, ndarray, isscalar, matrix, seterr
 from setDefaultIterFuncs import stopcase,  SMALL_DELTA_X,  SMALL_DELTA_F
 from check import check
 import copy
@@ -71,7 +71,8 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
                 setattr(p, key, value)
     p.isConverterInvolved = isConverter
 
-
+    old_err = seterr(invalid= 'ignore')
+    
     if 'debug' in kwargs.keys():
        p.debug =  kwargs['debug']
     
@@ -196,6 +197,7 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
 
     p.extras = {}
 
+    
     try:
         if isConverter:
             # TODO: will R be somewhere used?
@@ -239,6 +241,8 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
 #        p.ff = p.objFuncMultiple2Single(p.fk)
 
         if p.istop == 0: p.istop = 1000
+    finally:
+        seterr(**old_err)
     ############################
     p.contol = p.primalConTol
 
