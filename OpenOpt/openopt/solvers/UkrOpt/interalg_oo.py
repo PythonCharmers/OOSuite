@@ -1,5 +1,5 @@
 from numpy import isfinite, all, argmax, where, delete, array, asarray, inf, argmin, hstack, vstack, tile, arange, amin, \
-logical_and, float64, ceil, amax, inf, ndarray, isinf, any
+logical_and, float64, ceil, amax, inf, ndarray, isinf, any, logical_or
 import numpy
 from numpy.linalg import norm, solve, LinAlgError
 from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X,  SMALL_DELTA_F, MAX_NON_SUCCESS
@@ -75,6 +75,8 @@ class interalg(baseSolver):
         xRecord = 0.5 * (lb + ub)
 
         BestKnownMinValue = p.f(xRecord)    
+        if isnan(BestKnownMinValue): 
+            BestKnownMinValue = inf
         y = lb.reshape(1, -1)
         e = ub.reshape(1, -1)#[ub]
         fr = inf
@@ -125,7 +127,11 @@ class interalg(baseSolver):
         
         for itn in range(p.maxIter+10):
             
-            o, a, bestCenter, bestCenterObjective = getIntervals(y, e, n, fd_obj, ooVars)
+            o, a, bestCenter, bestCenterObjective = getIntervals(y, e, n, fd_obj, ooVars, dataType)
+            if any(a<o):
+                p.pWarn('interval lower bound exceeds upper bound, it seems to be FuncDesigner kernel bug')
+            
+            
             #currIterActivePointsNum = y.shape[0] / 2
             
             #print prevActivePointsNum
@@ -141,9 +147,9 @@ class interalg(baseSolver):
             xk, Min = bestCenter, bestCenterObjective
 #            assert Min < amin(a)
             
-            
             p.iterfcn(xk, Min)
-            if p.istop != 0 : break
+            if p.istop != 0 : 
+                break
             
             if BestKnownMinValue > Min:
                 BestKnownMinValue = Min
@@ -153,11 +159,16 @@ class interalg(baseSolver):
             if fTol is None:
                 fTol = 1e-7
                 p.warn('solver %s require p.fTol value (required objective function tolerance); 10^-7 will be used')
-            assert fr < amin(a)
-            th = min((fr, BestKnownMinValue - fTol)) 
+            #assert fr <= amin(a)
+            fo = min((fr, BestKnownMinValue - fTol)) 
             m = e.shape[0]
             
             o, a = o.reshape(2*n, m).T, a.reshape(2*n, m).T
+            
+            '''                                                      remove lb=ub=nan nodes                                                      '''
+            ind = where(logical_and(all(isnan(o), 1), all(isnan(a), 1)))[0]
+            #print 'ind nan size:',  ind.size
+            y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
             
            ################################################################
             # todo: check is o separated correctly
@@ -181,10 +192,10 @@ class interalg(baseSolver):
             centers = 0.5*(y + e)
             s, q = o[:, 0:n], o[:, n:2*n]
             for i in range(n):
-                ind = where(s[:, i] > th)[0]
+                ind = where(s[:, i] > fo)[0]
                 if ind.size != 0:
                     y[:,i][ind] = centers[:,i][ind]
-                ind = where(q[:, i] > th)[0]
+                ind = where(q[:, i] > fo)[0]
                 if ind.size != 0:
                     e[:,i][ind] = centers[:,i][ind]
             ################################################################
@@ -218,7 +229,7 @@ class interalg(baseSolver):
             setForRemoving = set()
             s, q = o[:, 0:n], o[:, n:2*n]
             for i in range(n):
-                ind = where(logical_and(s[:, i] > th, q[:, i] > th))[0]
+                ind = where(logical_and(s[:, i] > fo, q[:, i] > fo))[0]
                 if ind.size != 0:
                     setForRemoving.update(ind.tolist())
                     g = amin((g, amin(s[ind, i]), amin(q[ind, i])))
@@ -245,7 +256,7 @@ class interalg(baseSolver):
             if m > nCut:
                 #p.warn('max number of nodes (parameter maxNodes = %d) exceeded, exact global optimum is not guaranteed' % self.maxNodes)
                 #j = ceil((currentDataMem - maxMem)/numBytes)
-                j = m - self.maxNodes
+                j = m - nCut
                 #print '!', j
                 tmp = where(q<s, q, s)
                 ind = argmax(tmp, 1)
@@ -272,6 +283,7 @@ class interalg(baseSolver):
 #                a_modL, a_modU = a[:, 0:n], a[:, n:2*n]
 #                s = a_modL - s
 #                q = a_modU - q
+
                 tmp = where(q<s, q, s)
                 ind = argmax(tmp, 1)
                 values = tmp[arange(m),ind]
@@ -328,7 +340,8 @@ class interalg(baseSolver):
                 t = argmin(a - o, 1) % n
             elif Case == 1:
                 t = argmin(a, 1) % n
-                ind = all(isinf(a), 1)
+                ind = logical_or(all(isinf(a), 1), all(isinf(o), 1))
+                #ind = all(isinf(a), 1)
                 if any(ind):
                     boxShapes = e[ind] - y[ind]
                     t[ind] = argmax(boxShapes, 1)
@@ -345,15 +358,15 @@ class interalg(baseSolver):
                 tmp = where(o[:, 0:n]<o[:, n:], o[:, 0:n], o[:, n:])
                 t = argmax(tmp, 1)
                 
-            new_y, new_e = y.copy(), e.copy()
-            a2 = 0.5 * (new_y[w, t] + new_e[w, t])
-            new_y[w, t] = a2
-            new_e[w, t] = a2
+            u, en = y.copy(), e.copy()
+            th = 0.5 * (u[w, t] + en[w, t])
+            u[w, t] = th
+            en[w, t] = th
             
-            new_y = vstack((y, new_y))
-            new_e = vstack((new_e, e))
+            u = vstack((y, u))
+            en = vstack((en, e))
             
-            e, y = new_e, new_y
+            e, y = en, u
         
         ff = f(xRecord)
         p.iterfcn(xRecord, ff)
@@ -372,7 +385,7 @@ class interalg(baseSolver):
             p.info(s)
 
 
-def getIntervals(y, e, n, fd_obj, ooVars):
+def getIntervals(y, e, n, fd_obj, ooVars, dataType):
     LB = [[] for i in range(n)]
     UB = [[] for i in range(n)]
 
@@ -386,12 +399,13 @@ def getIntervals(y, e, n, fd_obj, ooVars):
     
     domain = ooPoint(domain, skipArrayCast = True)
     domain.isMultiPoint = True
-    TMP = fd_obj.interval(domain)
+    TMP = fd_obj.interval(domain, dataType)
     
     centers = dict([(key, 0.5*(val[0]+val[1])) for key, val in domain.items()])
     centers = ooPoint(centers, skipArrayCast = True)
     centers.isMultiPoint = True
-    F = fd_obj(centers)
+    F = atleast_1d(fd_obj(centers))
+    F[atleast_1d(isnan(F))] = inf 
     bestCenterInd = argmin(F)
     
     # TODO: check it , maybe it can be improved
