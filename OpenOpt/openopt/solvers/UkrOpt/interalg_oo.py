@@ -170,7 +170,8 @@ class interalg(baseSolver):
             '''                                                      remove lb=ub=nan nodes                                                      '''
             ind = where(logical_and(all(isnan(o), 1), all(isnan(a), 1)))[0]
             #print 'ind nan size:',  ind.size
-            y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
+            if ind.size != 0:
+                y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
             
            ################################################################
             # todo: check is o separated correctly
@@ -237,9 +238,7 @@ class interalg(baseSolver):
                     g = amin((g, amin(s[ind, i]), amin(q[ind, i])))
             
             if len(setForRemoving) != 0:
-                
                 ind = array(list(setForRemoving))
-                s, q = delete(s, ind, 0), delete(q, ind, 0)
                 y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
            
             if e.size == 0: 
@@ -269,7 +268,6 @@ class interalg(baseSolver):
                 ind = ind[m-j:]
                 
                 #print 'removing', ind.size, ' elements'
-                s, q = delete(s, ind, 0), delete(q, ind, 0)
                 y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
             
             m = y.shape[0]
@@ -282,10 +280,6 @@ class interalg(baseSolver):
                 l = array([]).reshape(0, 2*n)
             else:
                 s, q = o[:, 0:n], o[:, n:2*n]
-#                a_modL, a_modU = a[:, 0:n], a[:, n:2*n]
-#                s = a_modL - s
-#                q = a_modU - q
-
                 tmp = where(q<s, q, s)
                 ind = argmax(tmp, 1)
                 values = tmp[arange(m),ind]
@@ -418,3 +412,18 @@ def getIntervals(y, e, n, fd_obj, ooVars, dataType):
     bestCenter = array([0.5*(val[0][bestCenterInd]+val[1][bestCenterInd]) for val in domain.values()])
     bestCenterObjective = atleast_1d(F)[bestCenterInd]
     return asarray(TMP.lb), asarray(TMP.ub), bestCenter, bestCenterObjective
+
+#def Delete(*args, **kwargs):
+#    return delete(*args, **kwargs)
+#
+#def Delete2(*args, **kwargs):
+#    return delete(*args, **kwargs)
+#    
+#def delete3(*args, **kwargs):
+#    return delete(*args, **kwargs)
+#
+#def delete4(*args, **kwargs):
+#    return delete(*args, **kwargs)
+#
+#def delete5(*args, **kwargs):
+#    return delete(*args, **kwargs)
