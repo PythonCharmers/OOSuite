@@ -17,7 +17,7 @@ class interalg(baseSolver):
     fStart = None
     dataType = float64
     #maxMem = '150MB'
-    maxNodes = 15000
+    maxNodes = 150000
     maxActiveNodes = 1500
     __isIterPointAlwaysFeasible__ = lambda self, p: p.__isNoMoreThanBoxBounded__()
     #_canHandleScipySparse = True
@@ -131,7 +131,7 @@ class interalg(baseSolver):
             if any(a<o):
                 p.pWarn('interval lower bound exceeds upper bound, it seems to be FuncDesigner kernel bug')
             
-            
+
             #currIterActivePointsNum = y.shape[0] / 2
             
             #print prevActivePointsNum
@@ -163,6 +163,13 @@ class interalg(baseSolver):
                 p.warn('solver %s require p.fTol value (required objective function tolerance); 10^-7 will be used')
             #assert fr <= amin(a)
             fo = min((fr, BestKnownMinValue - fTol)) 
+            if p.debug:
+                ind = nanargmin(a)
+                ll, uu = o[ind], a[ind]
+                print('before: min o_active: %0.9e    min a_active: %0.9e   th: %0.9e' % (ll, uu, fo))
+            
+            
+            
             m = e.shape[0]
             
             o, a = o.reshape(2*n, m).T, a.reshape(2*n, m).T
@@ -191,17 +198,17 @@ class interalg(baseSolver):
             # changes end            
             
                
-            ################################################################
-            centers = 0.5*(y + e)
-            s, q = o[:, 0:n], o[:, n:2*n]
-            for i in range(n):
-                ind = where(s[:, i] > fo)[0]
-                if ind.size != 0:
-                    y[:,i][ind] = centers[:,i][ind]
-                ind = where(q[:, i] > fo)[0]
-                if ind.size != 0:
-                    e[:,i][ind] = centers[:,i][ind]
-            ################################################################
+#            ################################################################
+#            centers = 0.5*(y + e)
+#            s, q = o[:, 0:n], o[:, n:2*n]
+#            for i in range(n):
+#                ind = where(s[:, i] > fo)[0]
+#                if ind.size != 0:
+#                    y[:,i][ind] = centers[:,i][ind]
+#                ind = where(q[:, i] > fo)[0]
+#                if ind.size != 0:
+#                    e[:,i][ind] = centers[:,i][ind]
+#            ################################################################
             
 
             #check
@@ -213,9 +220,9 @@ class interalg(baseSolver):
 #            print 'max rr:', norm(rr, inf)
             # check end
             
-            if p.debug:
-                #raise 0
-                print('min esim: %e   max estim: %e' % (amin(o), amin(a)))
+#            if p.debug:
+#                #raise 0
+#                print('min esim: %e   max estim: %e' % (amin(o), amin(a)))
             
             # TODO: maybe recalculate o & a here?
             
@@ -248,6 +255,12 @@ class interalg(baseSolver):
                 p.msg = 'optimal solution obtained'
                 break            
             
+            
+            if p.debug:
+                ind = nanargmin(a)
+                ll, uu = o.flatten()[ind], a.flatten()[ind]
+                print('after 1: min o_active: %0.9e    min a_active: %0.9e   th: %0.9e' % (ll, uu, fo))
+
             
             '''                                                     truncate nodes out of allowed number                                                     '''
             
@@ -296,7 +309,17 @@ class interalg(baseSolver):
                 y, e, o, a = y[ind], e[ind], o[ind], a[ind]
                 
 
-                
+            '''                                                     truncate some boxes                                                      '''
+            centers = 0.5*(y + e)
+            s, q = o[:, 0:n], o[:, n:2*n]
+            for i in range(n):
+                ind = s[:, i] > fo
+                if any(ind):
+                    y[:,i][ind] = centers[:,i][ind]
+                ind = q[:, i] > fo
+                if any(ind):
+                    e[:,i][ind] = centers[:,i][ind]
+             
 #                N1, N2 = nActivePoints[-2:]
 #                t2, t1 = p.iterTime[-1] - p.iterTime[-2], p.iterTime[-2] - p.iterTime[-3]
 #                c1 = (t2-t1)/(N2-N1) if N1!=N2 else numpy.nan
@@ -336,15 +359,42 @@ class interalg(baseSolver):
             elif Case == 0:
                 t = argmin(a - o, 1) % n
             elif Case == 1:
+#                a1, a2 = a[:, 0:n], a[:, n:]
+#                ind = a1 < a2
+#                a1[ind] = a2[ind]
+#                t = argmin(a1, 1)
+
                 t = argmin(a, 1) % n
-                ind = logical_or(all(isinf(a), 1), all(isinf(o), 1))
-                #ind = all(isinf(a), 1)
-                if any(ind):
-                    boxShapes = e[ind] - y[ind]
-                    t[ind] = argmax(boxShapes, 1)
+                if not all(isfinite(a)):
+                    # new
+#                    a1, a2 = a[:, 0:n], a[:, n:]
+#                    
+#                    #ind1, ind2 = isinf(a1), isinf(a2)
+#                    #ind_any_infinite = logical_or(ind1, ind2)
+#                    ind1, ind2 = isinf(a1), isinf(a2)
+#                    ind_any_infinite = logical_or(ind1, ind2)
+#                    
+#                    a_ = where(a1 < a2, a1, a2)
+#                    a_[ind_any_infinite] = inf
+#                    t = argmin(a_, 1) 
+#                    ind = isinf(a_[w, t])
+
+##                    #old
+                    ###t = argmin(a, 1) % n
+                    #ind = logical_or(all(isinf(a), 1), all(isinf(o), 1))
+                    ind = all(isinf(a), 1)
+                    #ind = all(isinf(a), 1)
+                    
+                    #print 'itn:', itn
+                    if any(ind):
+                        boxShapes = e[ind] - y[ind]
+                        t[ind] = argmax(boxShapes, 1)
+                        
             elif Case == 2:
-                # WORST
-                t = argmax(o, 1) % n
+                o1, o2 = o[:, 0:n], o[:, n:]
+                ind = o1 > o2
+                o1[ind] = o2[ind]                
+                t = argmax(o1, 1)
             elif Case == 3:
                 # WORST
                 t = argmin(o, 1) % n
