@@ -103,16 +103,18 @@ def LinConst2WholeRepr(p):
     """
     if p.A == None and p.Aeq == None:
         return
-
-    Awhole = Copy(p.Awhole) # maybe it's already present and not equal to None
-    p.Awhole = zeros([Len(p.b) + Len(p.beq) + Len(p.bwhole), p.n])
-    if Awhole.size>0: p.Awhole[:Len(p.bwhole)] = Awhole
-
-    p.Awhole[Len(p.bwhole):Len(p.bwhole)+Len(p.b)] = p.A
-    p.A = None
-    if p.Aeq.size: p.Awhole[Len(p.bwhole)+Len(p.b):] = p.Aeq
-    p.Aeq = None
-
+    
+    # new 
+    p.Awhole = Vstack([elem for elem in [p.Awhole, p.A, p.Aeq] if elem is not None])
+    
+    #old
+#    Awhole = Copy(p.Awhole) # maybe it's already present and not equal to None
+#    p.Awhole = zeros([Len(p.b) + Len(p.beq) + Len(p.bwhole), p.n])
+#    if Awhole.size>0: p.Awhole[:Len(p.bwhole)] = Awhole
+#    p.Awhole[Len(p.bwhole):Len(p.bwhole)+Len(p.b)] = p.A
+#    if p.Aeq.size: p.Awhole[Len(p.bwhole)+Len(p.b):] = p.Aeq
+    
+    p.A, p.Aeq = None, None
 
     bwhole = Copy(p.bwhole)
     p.bwhole = zeros(Len(p.b) + Len(p.beq) + Len(p.bwhole))
@@ -169,8 +171,11 @@ def WholeRepr2LinConst(p):
     p.dwhole = None
 
 def assignScript(p, dictOfParams):
-    for key in dictOfParams.keys():
-        setattr(p, key, dictOfParams[key])
+    for key, val in dictOfParams.items():
+        if key == 'manage': 
+            #p._useGUIManager = val
+            continue
+        setattr(p, key, val)
     
 def setNonLinFuncsNumber(p,  userFunctionType):
     # userFunctionType  should be 'f', 'c' or 'h'
@@ -215,9 +220,20 @@ def economyMult(M, V):
         r = dot(M[:,ind], V[ind])
         return r
 
+def Find(M):
+    if isinstance(M, np.ndarray): # numpy array or matrix
+        rows, cols = np.where(M)
+        vals = M[rows,cols]
+    else:
+        from scipy import sparse as sp
+        assert sp.isspmatrix(M)
+        rows, cols, vals = sp.find(M)
+    return rows.tolist(), cols.tolist(), vals.tolist()
+
+
 class isSolved:
     def __init__(self): pass
 class killThread:
     def __init__(self): pass
 
-   
+
