@@ -209,10 +209,13 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
             if hasSetproctitleModule:
                 try:
                     originalName = setproctitle.getproctitle()
-                    s = 'OpenOpt-' + p.solver.__name__
-#                    if p.name != 'unnamed':
-                    s += '-' + p.name
-                    setproctitle.setproctitle(s)
+                    if originalName.startswith('OpenOpt-'):
+                        originalName = None
+                    else:
+                        s = 'OpenOpt-' + p.solver.__name__
+                        # if p.name != 'unnamed':
+                        s += '-' + p.name
+                        setproctitle.setproctitle(s)
                 except:
                     originalName = None
             else:
