@@ -243,7 +243,9 @@ class interalg(baseSolver):
             ind = any(logical_and(s > fo, q > fo), 1)
             ind = where(ind)[0]
             if ind.size != 0:
+                g = amin((g, nanmin(s[ind]), nanmin(q[ind])))
                 y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
+                
            
             if e.size == 0: 
                 #raise 0
@@ -274,7 +276,7 @@ class interalg(baseSolver):
                 values = tmp[arange(m),ind]
                 ind = values.argsort()
                 h = m-j-1
-                g = amin((values[h], g))
+                g = nanmin((values[h], g))
                 ind = ind[m-j:]
                 y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
             
