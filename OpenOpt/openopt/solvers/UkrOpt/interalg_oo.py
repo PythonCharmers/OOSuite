@@ -44,7 +44,8 @@ class interalg(baseSolver):
         
         p.kernelIterFuncs.pop(SMALL_DELTA_X)
         p.kernelIterFuncs.pop(SMALL_DELTA_F)
-        p.kernelIterFuncs.pop(MAX_NON_SUCCESS)
+        if MAX_NON_SUCCESS in p.kernelIterFuncs: 
+            p.kernelIterFuncs.pop(MAX_NON_SUCCESS)
         
         p.useMultiPoints = True
         
@@ -63,6 +64,7 @@ class interalg(baseSolver):
 
         n = p.n
         f = p.f
+        C = p.constraints
         fTol = p.fTol
         ooVars = p._freeVarsList
         
@@ -174,7 +176,7 @@ class interalg(baseSolver):
             
             o, a = o.reshape(2*n, m).T, a.reshape(2*n, m).T
             
-            '''                                                      remove lb=ub=nan nodes                                                      '''
+            
             ind = where(logical_and(all(isnan(o), 1), all(isnan(a), 1)))[0]
             #print 'ind nan size:',  ind.size
             if ind.size != 0:
@@ -232,20 +234,15 @@ class interalg(baseSolver):
 #            o, a = o.reshape(2*n, m).T, a.reshape(2*n, m).T
             # CHANGES END
             
-            '''                                                         remove some nodes                                                         '''
+            
             
             y, e, o, a = vstack((y, b)), vstack((e, v)), vstack((o, z)), vstack((a, l))
             # TODO: is it really required? Mb next handling s / q with all fixed coords would make the job?
             setForRemoving = set()
             s, q = o[:, 0:n], o[:, n:2*n]
-            for i in range(n):
-                ind = where(logical_and(s[:, i] > fo, q[:, i] > fo))[0]
-                if ind.size != 0:
-                    setForRemoving.update(ind.tolist())
-                    g = amin((g, amin(s[ind, i]), amin(q[ind, i])))
-            
-            if len(setForRemoving) != 0:
-                ind = array(list(setForRemoving))
+            ind = any(logical_and(s > fo, q > fo), 1)
+            ind = where(ind)[0]
+            if ind.size != 0:
                 y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
            
             if e.size == 0: 
@@ -262,7 +259,7 @@ class interalg(baseSolver):
                 print('after 1: min o_active: %0.9e    min a_active: %0.9e   th: %0.9e' % (ll, uu, fo))
 
             
-            '''                                                     truncate nodes out of allowed number                                                     '''
+            
             
             m = e.shape[0]
             s, q = o[:, 0:n], o[:, n:2*n]
@@ -279,13 +276,11 @@ class interalg(baseSolver):
                 h = m-j-1
                 g = amin((values[h], g))
                 ind = ind[m-j:]
-                
-                #print 'removing', ind.size, ' elements'
                 y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
             
             m = y.shape[0]
             
-            '''                                                     make some nodes inactive                                                     '''
+            
             if m <= self.maxActiveNodes:
                 b = array([]).reshape(0, n)
                 v = array([]).reshape(0, n)
@@ -309,17 +304,16 @@ class interalg(baseSolver):
                 y, e, o, a = y[ind], e[ind], o[ind], a[ind]
                 
 
-            '''                                                     truncate some boxes                                                      '''
+            
             centers = 0.5*(y + e)
             s, q = o[:, 0:n], o[:, n:2*n]
-            for i in range(n):
-                ind = s[:, i] > fo
-                if any(ind):
-                    y[:,i][ind] = centers[:,i][ind]
-                ind = q[:, i] > fo
-                if any(ind):
-                    e[:,i][ind] = centers[:,i][ind]
-             
+            ind = s > fo
+            if any(ind):
+                y[ind] = centers[ind]
+            ind = q > fo
+            if any(ind):
+                e[ind] = centers[ind]
+            
 #                N1, N2 = nActivePoints[-2:]
 #                t2, t1 = p.iterTime[-1] - p.iterTime[-2], p.iterTime[-2] - p.iterTime[-3]
 #                c1 = (t2-t1)/(N2-N1) if N1!=N2 else numpy.nan
@@ -435,12 +429,15 @@ class interalg(baseSolver):
 def getIntervals(y, e, n, fd_obj, ooVars, dataType):
     LB = [[] for i in range(n)]
     UB = [[] for i in range(n)]
-
+    m = y.shape[0]
+    Centers = 0.5 * (y + e)
+    
+    # TODO: remove the cycle
+    #T1, T2 = tile(y, (1,2*n)), tile(e, (1,2*n))
     for i in range(n):
-        lb, ub = y[:, i], e[:, i]
-        center = 0.5 * (lb + ub) # TODO: make it before cycle start
-        LB[i] = hstack((tile(lb, n), tile(lb, i), center, tile(lb, n-i-1)))
-        UB[i] = hstack((tile(ub, i), center, tile(ub, n-i-1), tile(ub, n)))
+        t1, t2 = tile(y[:, i], 2*n), tile(e[:, i], 2*n)
+        t1[(n+i)*m:(n+i+1)*m] = t2[i*m:(i+1)*m] = Centers[:, i]
+        LB[i], UB[i] = t1, t2
 
     domain = dict([(v, (LB[i], UB[i])) for i, v in enumerate(ooVars)])
     
