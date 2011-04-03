@@ -1,5 +1,5 @@
 from numpy import isfinite, all, argmax, where, delete, array, asarray, inf, argmin, hstack, vstack, tile, arange, amin, \
-logical_and, float64, ceil, amax, inf, ndarray, isinf, any, logical_or, nanargmin, nan, nanmin
+logical_and, float64, ceil, amax, inf, ndarray, isinf, any, logical_or, nanargmin, nan, nanmin, nanargmax
 import numpy
 from numpy.linalg import norm, solve, LinAlgError
 from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X,  SMALL_DELTA_F, MAX_NON_SUCCESS
@@ -272,7 +272,7 @@ class interalg(baseSolver):
                 j = m - nCut
                 #print '!', j
                 tmp = where(q<s, q, s)
-                ind = argmax(tmp, 1)
+                ind = nanargmax(tmp, 1) 
                 values = tmp[arange(m),ind]
                 ind = values.argsort()
                 h = m-j-1
@@ -422,7 +422,7 @@ class interalg(baseSolver):
         if p.goal in ['max', 'maximum']: tmp = tmp[1], tmp[0]
         p.extras['extremumBounds'] = tmp
         if p.iprint >= 0:
-            s = 'Solution with required tolerance %0.1e \n is%s guarantied (obtained precision: %0.3e)' \
+            s = 'Solution with required tolerance %0.1e \n is%s guarantied (obtained precision: %0.1e)' \
                    %(fTol, '' if p.extras['isRequiredPrecisionReached'] else ' NOT', tmp[1]-tmp[0])
             if not p.extras['isRequiredPrecisionReached']: s += '\nincrease maxNodes (current value %d)' % self.maxNodes
             p.info(s)
@@ -435,12 +435,27 @@ def getIntervals(y, e, n, fd_obj, ooVars, dataType):
     Centers = 0.5 * (y + e)
     
     # TODO: remove the cycle
-    #T1, T2 = tile(y, (1,2*n)), tile(e, (1,2*n))
+    #T1, T2 = tile(y, (2*n,1)), tile(e, (2*n,1))
+    
     for i in range(n):
         t1, t2 = tile(y[:, i], 2*n), tile(e[:, i], 2*n)
+        #t1, t2 = T1[:, i], T2[:, i]
+        #T1[(n+i)*m:(n+i+1)*m, i] = T2[i*m:(i+1)*m, i] = Centers[:, i]
         t1[(n+i)*m:(n+i+1)*m] = t2[i*m:(i+1)*m] = Centers[:, i]
         LB[i], UB[i] = t1, t2
 
+####        LB[i], UB[i] = T1[:, i], T2[:, i]
+
+#    sh1, sh2, inds = [], [], []
+#    for i in range(n):
+#        sh1+= arange((n+i)*m, (n+i+1)*m).tolist()
+#        inds +=  [i]*m
+#        sh2 += arange(i*m, (i+1)*m).tolist()
+
+#    sh1, sh2, inds = asdf(m, n)
+#    asdf2(T1, T2, Centers, sh1, sh2, inds)
+    
+    #domain = dict([(v, (T1[:, i], T2[:, i])) for i, v in enumerate(ooVars)])
     domain = dict([(v, (LB[i], UB[i])) for i, v in enumerate(ooVars)])
     
     domain = ooPoint(domain, skipArrayCast = True)
@@ -461,6 +476,19 @@ def getIntervals(y, e, n, fd_obj, ooVars, dataType):
     bestCenter = array([0.5*(val[0][bestCenterInd]+val[1][bestCenterInd]) for val in domain.values()])
     bestCenterObjective = atleast_1d(F)[bestCenterInd]
     return asarray(TMP.lb), asarray(TMP.ub), bestCenter, bestCenterObjective
+
+#def asdf(m, n):
+#    sh1, sh2, inds = [], [], []
+#    for i in range(n):
+#        sh1+= arange((n+i)*m, (n+i+1)*m).tolist()
+#        inds +=  [i]*m
+#        sh2 += arange(i*m, (i+1)*m).tolist()
+#    return sh1, sh2, inds
+#
+#def asdf2(T1, T2, Centers, sh1, sh2, inds):
+#    T1[sh1, inds] = Centers.T.flatten()
+#    T2[sh2, inds] = Centers.T.flatten()
+
 
 #def Delete(*args, **kwargs):
 #    return delete(*args, **kwargs)
