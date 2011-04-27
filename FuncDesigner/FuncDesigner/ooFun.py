@@ -2,7 +2,7 @@
 
 from numpy import inf, asfarray, copy, all, any, empty, atleast_2d, zeros, dot, asarray, atleast_1d, empty, \
 ones, ndarray, where, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum, prod, nonzero,\
-isnan, asscalar, zeros_like, ones_like, amin, amax, logical_and, logical_or, isinf, nanmin, nanmax, logical_not
+isnan, asscalar, zeros_like, ones_like, amin, amax, logical_and, logical_or, isinf, nanmin, nanmax, logical_not, logical_xor
 from numpy.linalg import norm
 from misc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scipyInstalled, \
 raise_except, DiagonalType
@@ -308,22 +308,23 @@ class oofun:
 #                t1[logical_and(ind, lb1] = 
                 tmp = vstack((lb1/lb2, lb1/ub2, ub1/lb2, ub1/ub2))
                 r1, r2 = nanmin(tmp, 0), nanmax(tmp, 0)
-                #ind = logical_or(logical_and(lb1<0, ub1>0), logical_and(lb2<0, ub2>0))
-                #ind_z = logical_and(lb2<0, ub2>0)
-                ind_z = logical_and(lb2 < 0, ub2 > 0)
                 
-                ind = logical_or(logical_and(ind_z, lb1<=0), logical_and(lb2 == 0, lb1<0))
-                r1[atleast_1d(ind)] = -inf
-                
-                ind = logical_or(logical_and(ind_z, ub1>=0), logical_and(ub2 == 0, ub1>0))
-                r2[atleast_1d(ind)] = inf
+                ind = logical_or(lb1==0.0, ub1==0.0)
+                r1[atleast_1d(logical_and(ind, r1>0.0))] = 0.0
+                r2[atleast_1d(logical_and(ind, r2<0.0))] = 0.0
 
-                ind = logical_and(lb2==0, lb1>=0)
-                r2[atleast_1d(ind)] = inf
+                # adjust inf
+                ind1_zero_minus = logical_and(lb1<0, ub1>=0)
+                ind1_zero_plus = logical_and(lb1<=0, ub1>0)
                 
-                ind = logical_and(ub2==0, ub1<=0)
-                r1[atleast_1d(ind)] = -inf
+                ind2_zero_minus = logical_and(lb2<0, ub2>=0)
+                ind2_zero_plus = logical_and(lb2<=0, ub2>0)
+                
+                r1[atleast_1d(logical_or(logical_and(ind2_zero_minus, ub1>0), logical_and(ind2_zero_plus, lb1<0)))] = -inf
+                r2[atleast_1d(logical_or(logical_and(ind2_zero_minus, lb1<0), logical_and(ind2_zero_plus, ub1>0)))] = inf
+                
                 #assert not any(isnan(r1)) and not any(isnan(r2))
+                #assert all(r1 <= r2)
                 return [r1, r2]
 
             r._interval = interval
