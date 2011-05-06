@@ -50,7 +50,7 @@ def get_d1(fun, vars, diffInt=1.5e-8, pointVal = None, args=(), stencil = 3, var
     M = v_0.size
     r = []
     
-    for i in xrange(len(Vars)):
+    for i in range(len(Vars)):
         if varForDifferentiation is not None and i != varForDifferentiation: continue
         if not isscalar(Args[i]):
             Args[i] = asfarray(Args[i])
@@ -72,7 +72,7 @@ def get_d1(fun, vars, diffInt=1.5e-8, pointVal = None, args=(), stencil = 3, var
         #d1.fill(nan)
         
 
-        for j in xrange(S.size):
+        for j in range(S.size):
             di = float(asscalar(diff_int[j]))
             tmp = S[j] #if S.ndim > 0 else asscalar(S)
             di = diff_int[j]
@@ -188,8 +188,8 @@ def check_d1(fun, fun_d, vars, func_name='func', diffInt=1.5e-8, pointVal = None
     if len(Diff.shape) == 1:
         Diff = Diff.reshape(-1,1)
         log10_RD = log10_RD.reshape(-1,1)
-    for i in xrange(Diff.shape[0]):
-        for j in xrange(Diff.shape[1]):
+    for i in range(Diff.shape[0]):
+        for j in range(Diff.shape[1]):
             if abs(Diff[i,j]) < maxViolation: continue
             counter += 1
             k = Diff.shape[1]*i+j
