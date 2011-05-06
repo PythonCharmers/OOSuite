@@ -578,6 +578,9 @@ class gsubg(baseSolver):
 #                    hs *= 2.0
                 else:
                     hs = max((hs / 10.0,  p.xtol/2.0))
+                
+                #if koeffs is not None: hs = sum(koeffs)
+                
                 p.debugmsg('hs after: %0.1e' % hs)
                     #hs = max((p.xtol/100, 0.5*step_x))
                 #print 'step_x:', step_x, 'new_hs:', hs, 'prev_hs:', prev_hs, 'ls:', ls, 'nLSBackward:', nLSBackward

@@ -81,7 +81,7 @@ def getDirectionOptimPoint(p, func, x, direction, forwardMultiplier = 2.0, maxit
 
     prev_alpha, new_alpha = alpha_lb, min(alpha_lb+0.5, alpha_ub)
     prev_val = lsFunc(prev_alpha, *args)
-    for i in xrange(p.maxLineSearch):
+    for i in range(p.maxLineSearch):
         if lsFunc(new_alpha, *args)>prev_val or new_alpha==alpha_ub: break
         else:
             if i != 0: prev_alpha = min(alpha_lb, new_alpha)
@@ -159,7 +159,7 @@ def getBestPointAfterTurn(oldPoint, newPoint, altLinInEq=None, maxLS = 3, maxDel
         condNotBetter = lambda altPoint, prevPoint: not altPoint.betterThan(prevPoint, altLinInEq=altLinInEq)
         dType = 2
             
-    for ls in xrange(maxLS):
+    for ls in range(maxLS):
         altPoint, prevPoint = oldPoint.linePoint(0.5, altPoint), altPoint
         if sf is not None and sf(altPoint):
             p.debugmsg('Return by sf: ls = %d' % ls)

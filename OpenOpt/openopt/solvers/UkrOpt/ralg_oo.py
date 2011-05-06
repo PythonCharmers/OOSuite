@@ -1,6 +1,9 @@
 from numpy import diag, array, sqrt,  eye, ones, inf, any, copy, zeros, dot, where, all, tile, sum, nan, isfinite, float64, isnan, log10, \
 max, sign, array_equal, nonzero, ix_, arctan, pi, logical_not, logical_and, atleast_2d, matrix
 from numpy.linalg import norm, solve, LinAlgError
+from openopt.kernel.nonOptMisc import scipyAbsentMsg, scipyInstalled
+import openopt
+
 #try:
 #    from numpy.linalg import cond
 #except:
@@ -11,7 +14,7 @@ from openopt.kernel.baseSolver import *
 from openopt.kernel.Point import Point
 from openopt.kernel.ooMisc import economyMult, Len
 from openopt.kernel.setDefaultIterFuncs import *
-from UkrOptMisc import getBestPointAfterTurn
+from openopt.solvers.UkrOpt.UkrOptMisc import getBestPointAfterTurn
 
 class ralg(baseSolver):
     __name__ = 'ralg'
@@ -23,6 +26,7 @@ class ralg(baseSolver):
     _canHandleScipySparse = True
 
     #ralg default parameters
+    B = None # if provided it should be square matrix of shape nVars x nVars
     alp, h0, nh, q1, q2  = 2.0, 1.0, 3, 'default:0.9 for NLP, 1.0 for NSP', 1.1
     hmult = 0.5
     S = 0
@@ -39,6 +43,8 @@ class ralg(baseSolver):
     newLinEq = True
     new_bs = True
     skipPrevIterNaNsInDilation = True
+    innerState = None
+    penalties = False # True means for nonlinear equalities only
     #new_s = False
 
     def needRej(self, p, b, g, g_dilated):
@@ -53,7 +59,7 @@ class ralg(baseSolver):
     def __solver__(self, p):
 
         alp, h0, nh, q1, q2 = self.alp, self.h0, self.nh, self.q1, self.q2
-
+        
         if type(q1) == str:
             if p.probType== 'NLP' and p.isUC: q1 = 0.9
             else: q1 = 1.0
@@ -76,7 +82,7 @@ class ralg(baseSolver):
             p.beq = zeros(Len(p.beq) + nEQ)
             p.beq[:Len(beq)] = beq
             p.Aeq[:Len(beq)] = Aeq
-            for i in xrange(len(ind_box_eq)):
+            for i in range(len(ind_box_eq)):
                 p.Aeq[initLenBeq+i, ind_box_eq[i]] = 1
                 p.beq[initLenBeq+i] = p.lb[ind_box_eq[i]] # = p.ub[indEQ[i]], because they are the same
             p.nbeq += nEQ
@@ -115,10 +121,15 @@ class ralg(baseSolver):
                 #if nEQ != 0: restore lb, ub
                     
             
-        b = B0.copy()
+        b = B0.copy() if self.B is None else self.B
 #        B_f = diag(ones(n))
 #        B_constr = diag(ones(n))
         hs = asarray(h0, T)
+        
+        if self.innerState is not None:
+            hs = self.innerState['hs']
+            b = self.innerState['B']
+        
         ls_arr = []
         w = asarray(1.0/alp-1.0, T)
 
@@ -156,9 +167,87 @@ class ralg(baseSolver):
 #            asdf_0 = exactDirection * (0.2+scipy.rand(n))
 #            #asdf = asdf_0.copy()
 
+
+        fTol = p.fTol if p.fTol is not None else 15*p.ftol
+        
+        # CHANGES
+        if self.penalties:
+            oldVal = p.f(p.x0)
+            newVal = inf
+            x = p.x0
+            
+            #H,  DH = p.h, p.dh
+            if p.nh != 0:
+                #S = 1.0
+            
+                _Aeq = p.dh(x)
+                _beq = -p.h(x)
+                df = p.df(x)
+                if n>=150 and not scipyInstalled:
+                    p.pWarn(scipyAbsentMsg)
+                if n>100 and scipyInstalled:
+                    from scipy.sparse import eye as Eye # to prevent numpy.eye overwrite
+                    HH = Eye(n, n)
+                else:
+                    HH = eye(n)
+                qp = openopt.QP(H=HH, f=df, Aeq=_Aeq, beq=_beq)
+    #                print ('len(_beq): %d' % len(_beq))
+    #                assert len(_beq) != 0
+                QPsolver = openopt.oosolver('cvxopt_qp', iprint=-1)
+                if not QPsolver.isInstalled:
+                    #p.pWarn('to use ')
+                    S = None
+                else:
+                    r = qp.solve(QPsolver)
+                    #S = 2.0*abs(r.duals).sum() if r.istop > 0 else 0
+                    S = 10.0*sum(abs(r.duals)) if r.istop > 0 else None
+                
+                while any(p.h(x)) > p.contol:
+                    if S is not None:
+                        p2 = getattr(openopt, p.probType)(p.f, x)
+                        p.inspire(p2)
+                        p2.x0 = x
+                        p2.h = p2.dh = None
+                        p2.userProvided.h = p2.userProvided.dh = False
+                        p2.nh = 0
+                        p2.f = lambda *args, **kwargs: p.f(*args, **kwargs) + sum(abs(S * p.h(*args, **kwargs)))
+                        p2.df = lambda *args, **kwargs: p.df(*args, **kwargs) + dot(S * sign(p.h(*args, **kwargs)), p.dh(*args, **kwargs))
+                        #p2.iterfcn = p.iterfcn
+    #                    def df2(*args, **kwargs):
+    #                        r1 = p.df(*args, **kwargs)
+    #                        r2 = S * dot(p.dh(*args, **kwargs).reshape(-1, 1), sign(p.h(*args, **kwargs))).flatten()
+    #                        #raise 0
+    #                        return r1+r2
+    #                    #p2.df = lambda *args, **kwargs: p.df(*args, **kwargs) + S * dot(p.dh(x).reshape(-1, 1), sign(p.h(*args, **kwargs))).flatten()
+    #                    p2.df = df2
+    #                    #raise 0
+                        r2 = p2.solve(p.solver, iprint=10)
+                        if r2.stopcase >= 0:
+                            x = r2.xf
+                            p.solver.innerState = r2.extras['innerState']
+                            oldVal, newVal = newVal, r2.ff
+                        else:
+                            if r2.istop == IS_LINE_SEARCH_FAILED:
+                                # TODO: custom S as raising penalties
+                                pass
+                        
+                        if p.isFeas(p2.xk):
+                            p.xf = p.xk = p2.xk
+                            p.istop, p.msg = p2.istop, p2.msg
+                            return
+                        else:
+                            S *= 50
+                            #print('max residual:%0.2e'% r2.rf)
+                        
+                    else: # failed to solve QP
+                        break
+                    
+        #print 'b:', b, '\nhs:', hs
+        # CHANGES END
+
         """                           Ralg main cycle                                    """
 
-        for itn in xrange(1500000):
+        for itn in range(p.maxIter+10):
             doDilation = True
             lastPointOfSameType = None # to prevent possible bugs
             alp_addition = 0.0
@@ -195,7 +284,7 @@ class ralg(baseSolver):
 
             hs_cumsum = 0
             hs_start = hs
-            for ls in xrange(p.maxLineSearch):
+            for ls in range(p.maxLineSearch):
                 hs_mult = 1.0
                 if ls > 20:
                     hs_mult = 2.0
@@ -235,7 +324,7 @@ class ralg(baseSolver):
             hs /= hs_mult
             
             if ls == p.maxLineSearch-1:
-                p.istop,  p.msg = IS_LINE_SEARCH_FAILED,  'maxLineSearch (' + str(p.maxLineSearch) + ') has been exceeded'
+                p.istop,  p.msg = IS_LINE_SEARCH_FAILED,  'maxLineSearch (' + str(p.maxLineSearch) + ') has been exceeded, the problem seems to be unbounded'
                 restoreProb()
                 return
 
@@ -631,6 +720,7 @@ class ralg(baseSolver):
                 p.msg = 'X[k-1] and X[k] are same'
                 p.stopdict[SMALL_DELTA_X] = True
                 restoreProb()
+                self.innerState = {'B': b, 'hs': hs}
                 return
             
             s2 = 0
@@ -652,15 +742,16 @@ class ralg(baseSolver):
 #                    s2 = 0
                     
                 if not s2 and any(p.stopdict.values()):
-                    for key,  val in p.stopdict.iteritems():
+                    for key,  val in p.stopdict.items():
                         if val == True:
                             s2 = key
                             break
                 p.istop = s2
                 
-                for key,  val in p.stopdict.iteritems():
+                for key,  val in p.stopdict.items():
                     if key < 0 or key in set([FVAL_IS_ENOUGH, USER_DEMAND_STOP, BUTTON_ENOUGH_HAS_BEEN_PRESSED]):
                         p.iterfcn(bestPoint)
+                        self.innerState = {'B': b, 'hs': hs}
                         return
             """                                If stop required                                """
             
@@ -673,6 +764,7 @@ class ralg(baseSolver):
                     restoreProb()
                     p.iterfcn(bestPoint)
                     #p.istop, p.msg = istop, msg
+                    self.innerState = {'B': b, 'hs': hs}
                     return
 
 
@@ -708,7 +800,7 @@ class ralg(baseSolver):
         
         if hasattr(Aeq, 'tocsc'):Aeq = Aeq.tocsc()
         
-        for i in xrange(nLinEq):
+        for i in range(nLinEq):
             vec = Aeq[i]
             #raise 0
             if hasattr(vec, 'toarray'): vec = vec.toarray().flatten()

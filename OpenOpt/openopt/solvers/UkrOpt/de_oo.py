@@ -87,9 +87,9 @@ class de(baseSolver):
         
         Cr = self.crossoverRate
         
-        func = p.f
+        #func = p.f
         
-        constraints = lambda x: np.hstack((p.c(x), p._get_AX_Less_B_residuals(x)))
+        #constraints = lambda x: np.hstack((p.c(x), p._get_AX_Less_B_residuals(x)))
         
         #################################################
         np.random.seed()
@@ -121,7 +121,7 @@ class de(baseSolver):
         else:
             p.err('incorrect differenceFactorStrategy, should be "random" or "constant", got ' + str(self.differenceFactorStrategy))
         
-        for i in xrange(150000000):
+        for i in range(p.maxIter+10):
             
             old_pop = pop
             old_vals = vals
@@ -232,10 +232,12 @@ def _eval_pop(pop, p):
         
     if p.__isNoMoreThanBoxBounded__():
         #TODO: omit transpose
+        #print(type(vals))
+        #print(vals)
         best_i = vals.argmin()
         best = (best_i, vals[best_i], 0, pop[best_i])
     else:
-        for i in xrange(NP):
+        for i in range(NP):
             newPoint = p.point(pop[i])
             constr_vals[i] = newPoint.mr() + nanPenalty * newPoint.nNaNs()
             if i == 0 or newPoint.betterThan(bestPoint):
