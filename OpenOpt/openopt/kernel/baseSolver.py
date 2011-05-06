@@ -1,6 +1,6 @@
 __docformat__ = "restructuredtext en"
 from numpy import atleast_1d,  all, asarray, ndarray, copy, ravel, isnan, where
-from Point import Point
+from openopt.kernel.Point import Point
 
 class baseSolver:
     def __init__(self):pass

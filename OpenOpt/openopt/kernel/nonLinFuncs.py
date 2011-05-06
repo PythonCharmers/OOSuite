@@ -96,22 +96,22 @@ class nonLinFuncs:
                       p._pointDerivative2array(
                                                funcs[i].D(x, Vars = p.freeVars, useSparse=p.useSparse, fixedVarsScheduleID=p._FDVarsID, exactShape=True), 
                                                useSparse=p.useSparse, func=funcs[i], point=x)) \
-                      for i in xrange(len(funcs))]
+                      for i in range(len(funcs))]
                 else:
                     funcs2 = [(lambda x, i=i: \
                       p._pointDerivative2array(
                                                funcs[i].D(x, fixedVars = p.fixedVars, useSparse=p.useSparse, fixedVarsScheduleID=p._FDVarsID, exactShape=True), 
                                                useSparse=p.useSparse, func=funcs[i], point=x)) \
-                      for i in xrange(len(funcs))]
+                      for i in range(len(funcs))]
             else:
                 if p.freeVars is None or (p.fixedVars is not None and len(p.freeVars) < len(p.fixedVars)):
                     funcs2 = [(lambda x, i=i: \
                                funcs[i]._getFuncCalcEngine(x, Vars = p.freeVars, fixedVarsScheduleID=p._FDVarsID))\
-                      for i in xrange(len(funcs))]
+                      for i in range(len(funcs))]
                 else:
                     funcs2 = [(lambda x, i=i: \
                                funcs[i]._getFuncCalcEngine(x, fixedVars = p.fixedVars, fixedVarsScheduleID=p._FDVarsID))\
-                      for i in xrange(len(funcs))]
+                      for i in range(len(funcs))]
         else:
             funcs2 = funcs
             
@@ -136,13 +136,14 @@ class nonLinFuncs:
             #temporary, to be fixed
             assert userFunctionType == 'f' and p.isObjFunValueASingleNumber
             if p.isFDmodel:
-                X = [p._vector2point(x[i]) for i in xrange(nXvectors)]
+                X = [p._vector2point(x[i]) for i in range(nXvectors)]
             elif len(Args) == 0:
-                X = [x[i] for i in xrange(nXvectors)]
+                X = [x[i] for i in range(nXvectors)]
             else:
-                X = [((x[i],) + Args) for i in xrange(nXvectors)]
+                X = [((x[i],) + Args) for i in range(nXvectors)]
             
-            r = hstack([map(fun, X) for fun in Funcs]).reshape(1, -1)
+            #r = hstack([map(fun, X) for fun in Funcs]).reshape(1, -1)
+            r = hstack([[fun(xx) for xx in X] for fun in Funcs]).reshape(1, -1)
            
         elif not getDerivative:
             r = hstack([fun(*(X, )+Args) for fun in Funcs])
@@ -392,7 +393,7 @@ def getFuncsAndExtractIndexes(p, funcs, ind, userFunctionType):
     Funcs2 = []
     # TODO: try to get rid of cycles, use vectorization instead
     IndDict = {}
-    for i in xrange(indLenght):
+    for i in range(indLenght):
         
         if left_arr_indexes[i] != 0:
             num_of_funcs_before_arr_left_border = arr_of_indexes[left_arr_indexes[i]-1]
@@ -408,7 +409,7 @@ def getFuncsAndExtractIndexes(p, funcs, ind, userFunctionType):
     
     Funcs = []
 
-    for i in xrange(len(Funcs2)):
+    for i in range(len(Funcs2)):
         def f_aux(x, i=i): 
             r = Funcs2[i][0](x)
             # TODO: are other formats better?

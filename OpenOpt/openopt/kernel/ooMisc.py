@@ -231,9 +231,9 @@ def Find(M):
     return rows.tolist(), cols.tolist(), vals.tolist()
 
 
-class isSolved:
+class isSolved(BaseException):
     def __init__(self): pass
-class killThread:
+class killThread(BaseException):
     def __init__(self): pass
 
 

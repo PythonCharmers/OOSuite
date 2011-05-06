@@ -24,7 +24,7 @@ class Point:
         self.x = copy(x)
         for i, arg in enumerate(args):
             setattr(self, '_' + self.__expectedArgs__[i], args[i])
-        for name, val in kwargs.iteritems():
+        for name, val in kwargs.items():
             setattr(self, '_' + name, val)
         #assert self.x is not None
 

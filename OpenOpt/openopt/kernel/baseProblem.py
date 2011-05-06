@@ -6,10 +6,13 @@ from setDefaultIterFuncs import setDefaultIterFuncs, IS_MAX_FUN_EVALS_REACHED, d
 from nonLinFuncs import nonLinFuncs
 from residuals import residuals
 from ooIter import ooIter
-from Point import Point
+
+#from Point import Point currently lead to bug
+from openopt.kernel.Point import Point
+
 from iterPrint import ooTextOutput
 from ooMisc import setNonLinFuncsNumber, assignScript
-from nonOptMisc import isspmatrix, scipyInstalled, scipyAbsentMsg, csr_matrix, Vstack, Hstack
+from nonOptMisc import isspmatrix, scipyInstalled, scipyAbsentMsg, csr_matrix, Vstack, Hstack, EmptyClass
 from copy import copy as Copy
 try:
     from DerApproximator import check_d1
@@ -288,6 +291,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             self.err("You can't set useSparse=True without scipy installed")
         if self._isFDmodel():
             self.isFDmodel = True
+            self._FD = EmptyClass()
+            self._FD.nonBoxCons = []
             from FuncDesigner import _getAllAttachedConstraints, _getDiffVarsID
             self._FDVarsID = _getDiffVarsID()
 
@@ -474,6 +479,10 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     else: self.c.append(- f - _lb)
                 else:
                     self.err('inform OpenOpt developers of the bug')
+                    
+                if not f.is_oovar:
+                    self._FD.nonBoxCons.append((f, _lb, _ub))# f should be between _lb and _ub
+                    
             if len(b) != 0:
                 self.A, self.b = Vstack(A), Hstack(b)
                 if hasattr(self.b, 'toarray'): self.b = self.b.toarray()

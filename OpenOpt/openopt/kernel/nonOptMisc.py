@@ -1,4 +1,4 @@
-import string, os
+import os
 from oologfcn import OpenOptException
 from numpy import zeros, bmat, hstack, vstack, ndarray, copy, where, prod, asarray, atleast_1d, isscalar, atleast_2d, eye, diag
 try:
@@ -73,13 +73,13 @@ def Diag(x):
 
 ##################################################################
 solverPaths = {}
-for root, dirs, files in os.walk(string.join(__file__.split(os.sep)[:-2], os.sep)+os.sep+'solvers'):
+for root, dirs, files in os.walk(''.join([elem + os.sep for elem in __file__.split(os.sep)[:-2]+ ['solvers']])):
     rd = root.split(os.sep)
     if '.svn' in rd: continue
     rd = rd[rd.index('solvers')+1:]
     for file in files:
         if file.endswith('_oo.py'):
-            solverPaths[file[:-6]] = string.join(rd,'.') + '.'+file[:-3]
+            solverPaths[file[:-6]] = ''.join(rd+['.',file[:-3]])
             
 def getSolverFromStringName(p, solver_str):
     if solver_str not in solverPaths:
@@ -132,3 +132,5 @@ def oosolver(solverName, *args,  **kwargs):
 
 def Copy(arg): 
     return arg.copy() if isinstance(arg, ndarray) or isspmatrix(arg) else copy(arg)
+
+class EmptyClass: pass

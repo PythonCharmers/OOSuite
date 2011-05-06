@@ -59,7 +59,7 @@ def ooIter(p, *args,  **kwargs):
         #TODO: turn off xtol and ftol for artifically iterfcn funcs
 
         if not p.userStop and (not condEqualLastPoints or p.probType == 'GLP'):
-            for key, fun in p.kernelIterFuncs.iteritems():
+            for key, fun in p.kernelIterFuncs.items():
                 r =  fun(p)
                 if r is not False:
                     p.stopdict[key] = True

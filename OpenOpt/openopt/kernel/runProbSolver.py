@@ -7,10 +7,9 @@ from check import check
 import copy
 import os, string
 from ooMisc import isSolved, killThread
-from string import lower
-from baseProblem import ProbDefaults
+#from baseProblem import ProbDefaults
 from baseSolver import baseSolver
-from nonOptMisc import getSolverFromStringName
+from nonOptMisc import getSolverFromStringName, EmptyClass
 
 try:
     import setproctitle
@@ -54,7 +53,7 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     if type(solver_str_or_instance) is str and ':' in solver_str_or_instance:
         isConverter = True
         probTypeToConvert,  solverName = solver_str_or_instance.split(':', 1)
-        converterName = lower(p.probType)+'2'+probTypeToConvert
+        converterName = p.probType.lower()+'2'+probTypeToConvert
         converter = getattr(p, converterName)
         p.solver = getSolverFromStringName(p, solverName)
         solver_params = {}
@@ -81,7 +80,7 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
 #    setattr(p, p.solverName, EmptyClass())
     solver = p.solver.__solver__
 
-    for key, value in kwargs.iteritems():
+    for key, value in kwargs.items():
         if hasattr(p.solver, key):
             if isConverter:
                 solver_params[key] = value
@@ -406,4 +405,4 @@ class OpenOptResult:
         self.evals = dict([(key, val if type(val) == int else round(val *10) /10.0) for key, val in p.nEvals.items()])
         self.evals['iter'] = p.iter
         
-class EmptyClass: pass
+
