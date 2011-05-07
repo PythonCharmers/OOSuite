@@ -1,7 +1,7 @@
 # sometimes Tkinter is not installed
 TkinterIsInstalled = True
 try:
-    from Tkinter import Tk, Toplevel, Button, Label, Frame, StringVar, DISABLED, ACTIVE
+    from Tkinter import Tk, Toplevel, Button, Entry, Menubutton, Label, Frame, StringVar, DISABLED, ACTIVE
 except:
     TkinterIsInstalled = False
 
@@ -44,9 +44,23 @@ def manage(p, *args, **kwargs):
     # OpenOpt label
     Frame(root).pack(ipady=4)
     Label(root, text=' OpenOpt ' + ooversion + ' ').pack()
-    Label(root, text=' Problem: ' + p.name + ' ').pack()
     Label(root, text=' Solver: ' + (p.solver if isinstance(p.solver, str) else p.solver.__name__) + ' ').pack()
+    Label(root, text=' Problem: ' + p.name + ' ').pack()
+    #TODO: use Menubutton 
 
+
+    #Statistics
+#    stat = StringVar()
+#    stat.set('')
+#    Statistics = Button(root, textvariable = stat, command = lambda: invokeStatistics(p))
+
+#    cw = Entry(root)
+#
+#    
+#    b = Button(root, text = 'Evaluate!', command = lambda: invokeCommand(cw))
+#    cw.pack(fill='x', side='left')
+#    b.pack(side='right')
+        
     # Run
     t = StringVar()
     t.set("      Run      ")
@@ -55,6 +69,7 @@ def manage(p, *args, **kwargs):
     RunPause.pack(ipady=15)
     p.GUI_buttons['RunPause'] = RunPause
     p.statusTextVariable = t
+
 
     # Enough
     def invokeEnough():
@@ -153,3 +168,6 @@ def doCalculations(p):
                 pylab.close('all')
 
 
+#def invokeStatistics(p):
+def invokeCommand(cw):
+    exec(cw.get())
