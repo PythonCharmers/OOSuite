@@ -4,6 +4,7 @@ from numpy import asfarray, copy, inf, nan, isfinite, ones, ndim, all, atleast_1
 array_equiv, asscalar, asarray, where, ndarray, isscalar, matrix, seterr
 from setDefaultIterFuncs import stopcase,  SMALL_DELTA_X,  SMALL_DELTA_F
 from check import check
+from oologfcn import OpenOptException
 import copy
 import os, string
 from ooMisc import isSolved, killThread
@@ -346,32 +347,38 @@ def finalShow(p):
 class OpenOptResult: 
     # TODO: implement it
     #extras = EmptyClass() # used for some optional output
+    def __call__(self, *args):
+        if not self.isFDmodel:
+            raise OpenOptException('Is callable for FuncDesigner models only')
+        r = []
+        for arg in args:
+            tmp = [(self._xf[elem] if isinstance(elem,  str) else self.xf[elem]) for elem in (arg.tolist() if isinstance(arg, ndarray) else arg if type(arg) in (tuple, list) else [arg])]
+            tmp = [asscalar(item) if type(item) in (ndarray, matrix) and item.size == 1 \
+                   #else item[0] if type(item) in (list, tuple) and len(item) == 0 \
+                   else item for item in tmp]
+            r.append(tmp if type(tmp) not in (list, tuple) or len(tmp)!=1 else tmp[0])
+        r = r[0] if len(args) == 1 else r
+        if len(args) == 1 and type(r) in (list, tuple) and len(r) >1: r = asfarray(r, dtype = type(r[0]))
+        return r
+        
     def __init__(self, p):
         self.rf = asscalar(asarray(p.rf))
         self.ff = asscalar(asarray(p.ff))
+        self.isFDmodel = p.isFDmodel
         if p.isFDmodel:
             self.xf = dict([(v, asscalar(val) if isinstance(val, ndarray) and val.size ==1 else val) for v, val in p.xf.items()])
             if not hasattr(self, '_xf'):
                 self._xf = dict([(v.name, asscalar(val) if isinstance(val, ndarray) and val.size ==1 else val) for v, val in p.xf.items()])
-            def c(*args):
-                r = []
-                for arg in args:
-                    tmp = [(self._xf[elem] if isinstance(elem,  str) else self.xf[elem]) for elem in (arg.tolist() if isinstance(arg, ndarray) else arg if type(arg) in (tuple, list) else [arg])]
-                    tmp = [asscalar(item) if type(item) in (ndarray, matrix) and item.size == 1 \
-                           #else item[0] if type(item) in (list, tuple) and len(item) == 0 \
-                           else item for item in tmp]
-                    r.append(tmp if type(tmp) not in (list, tuple) or len(tmp)!=1 else tmp[0])
-                r = r[0] if len(args) == 1 else r
-                if len(args) == 1 and type(r) in (list, tuple) and len(r) >1: r = asfarray(r, dtype = type(r[0]))
-                return r
-                
+               
 #                condIterable = len(args) == 1 and isinstance(args[0], (list, tuple))# may be tuple, list, oolist
 #                Args = args[0] if condIterable else args
 #                r = [(self._xf[arg] if isinstance(arg,  str) else self.xf[arg]) for arg in (Args.tolist() if isinstance(Args, ndarray) else Args)]
 #                r = [asscalar(item) if type(item) in (ndarray, matrix) and item.size == 1 else item for item in r]
 #                return r if condIterable else r if len(args) > 1 else r[0] # if len(args)==1 else r
-            self.__call__ = c
+
+#self.__call__ = c
         else:
+            print('is not FDmodel')
             self.xf = p.xf
 
         self.elapsed = dict()
