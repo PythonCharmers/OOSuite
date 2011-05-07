@@ -369,16 +369,7 @@ class OpenOptResult:
             self.xf = dict([(v, asscalar(val) if isinstance(val, ndarray) and val.size ==1 else val) for v, val in p.xf.items()])
             if not hasattr(self, '_xf'):
                 self._xf = dict([(v.name, asscalar(val) if isinstance(val, ndarray) and val.size ==1 else val) for v, val in p.xf.items()])
-               
-#                condIterable = len(args) == 1 and isinstance(args[0], (list, tuple))# may be tuple, list, oolist
-#                Args = args[0] if condIterable else args
-#                r = [(self._xf[arg] if isinstance(arg,  str) else self.xf[arg]) for arg in (Args.tolist() if isinstance(Args, ndarray) else Args)]
-#                r = [asscalar(item) if type(item) in (ndarray, matrix) and item.size == 1 else item for item in r]
-#                return r if condIterable else r if len(args) > 1 else r[0] # if len(args)==1 else r
-
-#self.__call__ = c
         else:
-            print('is not FDmodel')
             self.xf = p.xf
 
         self.elapsed = dict()
