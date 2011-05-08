@@ -6,8 +6,8 @@ from numpy.linalg import norm, solve, LinAlgError
 from openopt.kernel.baseSolver import *
 from openopt.kernel.Point import Point
 from openopt.kernel.setDefaultIterFuncs import *
-from UkrOptMisc import getBestPointAfterTurn
-from PolytopProjection import PolytopProjection
+from openopt.solvers.UkrOpt.UkrOptMisc import getBestPointAfterTurn
+from openopt.solvers.UkrOpt.PolytopProjection import PolytopProjection
 
 class gsubg(baseSolver):
     __name__ = 'gsubg'
@@ -135,8 +135,9 @@ class gsubg(baseSolver):
         
         
         """                           gsubg main cycle                                    """
-
-        for itn in xrange(1500000):
+        itn = -1
+        while True:
+            itn += 1
             # TODO: change inactive data removing 
             # TODO: change inner cycle condition
             # TODO: improve 2 points obtained from backward line search
@@ -154,9 +155,9 @@ class gsubg(baseSolver):
                     sh = schedule = [bestPoint]
                     #x = iterStartPoint.x
                 else:
-                    sh = [point1, point2]
+                    sh = [point1, point2] if point1.betterThan(point2, altLinInEq=True, bestFeasiblePoint = bestFeasiblePoint) else [point2, point1]
                     #sh = [iterStartPoint, bestPointBeforeTurn, bestPointAfterTurn]
-                    sh.sort(cmp = lambda point1, point2: -1+2*int(point1.betterThan(point2, altLinInEq=True, bestFeasiblePoint = bestFeasiblePoint)))
+                    #sh.sort(cmp = lambda point1, point2: -1+2*int(point1.betterThan(point2, altLinInEq=True, bestFeasiblePoint = bestFeasiblePoint)))
                     iterStartPoint = sh[-1]
                     schedule = [point for point in sh if id(point.x) != id(points[-1])]
                     #x = iterStartPoint.x.copy()
@@ -427,7 +428,7 @@ class gsubg(baseSolver):
                 g1 = g1.flatten()
                 
                 hs_mult = 4.0
-                for ls in xrange(p.maxLineSearch):
+                for ls in range(p.maxLineSearch):
                     
 #                    if ls > 20:
 #                        hs_mult = 2.0
@@ -454,7 +455,7 @@ class gsubg(baseSolver):
                     #if not self.checkTurnByGradient:
                     
                     #TODO: create routine for modifying bestFeasiblePoint
-                    if newPoint.isFeas(False) and (bestFeasiblePoint is None or newPoint.f() > bestFeasiblePoint):
+                    if newPoint.isFeas(False) and (bestFeasiblePoint is None or newPoint.f() > bestFeasiblePoint.f()):
                         bestFeasiblePoint = newPoint
                             
                     if newPoint.betterThan(oldPoint, altLinInEq=True, bestFeasiblePoint = bestFeasiblePoint):
