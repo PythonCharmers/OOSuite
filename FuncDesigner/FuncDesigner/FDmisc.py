@@ -9,7 +9,7 @@ except:
     scipyInstalled = False
 
 
-class FuncDesignerException:
+class FuncDesignerException(BaseException):
     def __init__(self,  msg):
         self.msg = msg
     def __str__(self):

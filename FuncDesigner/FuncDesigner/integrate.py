@@ -1,6 +1,6 @@
 from ooFun import oofun, atleast_oofun
 import numpy as np
-from misc import FuncDesignerException
+from FDmisc import FuncDesignerException
 from translator import FuncDesignerTranslator
 from ooPoint import ooPoint as oopoint
 from ooVar import oovar

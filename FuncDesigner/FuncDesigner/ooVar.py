@@ -1,7 +1,7 @@
 # created by Dmitrey
 
 from numpy import nan, asarray, isfinite, empty, zeros, inf, any, array, prod, atleast_1d, asfarray, isscalar, ndarray
-from misc import FuncDesignerException, checkSizes
+from FDmisc import FuncDesignerException, checkSizes
 from ooFun import oofun, Len, ooarray
 
 class oovar(oofun):
@@ -11,6 +11,7 @@ class oovar(oofun):
     #fixed = False
     #initialized = False
     _unnamedVarNumber = 1#static variable for oovar class
+    __hash__ = oofun.__hash__
 
     def __init__(self, name=None, *args, **kwargs):
         if len(args) > 0: raise FuncDesignerException('incorrect args number for oovar constructor')
@@ -117,15 +118,15 @@ def oovars(*args, **kw):
     
     if len(args) == 1:
         if isinstance(args[0], int):
-            return ooarray([oovar(**kw) for i in xrange(args[0])])
+            return ooarray([oovar(**kw) for i in range(args[0])])
         elif type(args[0]) in [list, tuple]:
-            return ooarray([oovar(name=args[0][i], **kw) for i in xrange(len(args[0]))])
+            return ooarray([oovar(name=args[0][i], **kw) for i in range(len(args[0]))])
         elif type(args[0]) == str:
             return ooarray([oovar(name=s, **kw) for s in args[0].split()])
         else:
             raise FuncDesignerException('incorrect args number for oovars constructor')
     else:
-        return ooarray([oovar(name=args[i], **kw) for i in xrange(len(args))])
+        return ooarray([oovar(name=args[i], **kw) for i in range(len(args))])
 
 
 

@@ -1,4 +1,4 @@
-from misc import FuncDesignerException
+from FDmisc import FuncDesignerException
 from ooFun import oofun, BaseFDConstraint
 from numpy import nan, zeros, isscalar, inf
 

@@ -4,7 +4,7 @@ from numpy import inf, asfarray, copy, all, any, empty, atleast_2d, zeros, dot, 
 ones, ndarray, where, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum, prod, nonzero,\
 isnan, asscalar, zeros_like, ones_like, amin, amax, logical_and, logical_or, isinf, nanmin, nanmax, logical_not, logical_xor
 from numpy.linalg import norm
-from misc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scipyInstalled, \
+from FDmisc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scipyInstalled, \
 raise_except, DiagonalType
 from copy import deepcopy
 from ooPoint import ooPoint
@@ -550,13 +550,22 @@ class oofun:
     def __rxor__(self, other): raise FuncDesignerException('For power of oofuns use a**b, not a^b')
         
     def __getitem__(self, ind): # overload for oofun[ind]
-
-        if not hasattr(self, '_slicesIndexDict'):
-            self._slicesIndexDict = {}
-        if ind in self._slicesIndexDict:
-            return self._slicesIndexDict[ind]
-
-        if not isinstance(ind, oofun):
+        if isinstance(ind, oofun):# NOT IMPLEMENTED PROPERLY YET
+            self.pWarn('Slicing oofun by oofun IS NOT IMPLEMENTED PROPERLY YET')
+            f = lambda x, _ind: x[_ind]
+            def d(x, _ind):
+                r = zeros(x.shape)
+                r[_ind] = 1
+                return r
+        elif type(ind) != int:
+            # Python 3 slice
+            return self.__getslice__(ind.start, ind.stop)
+        else:
+            if not hasattr(self, '_slicesIndexDict'):
+                self._slicesIndexDict = {}
+            if ind in self._slicesIndexDict:
+                return self._slicesIndexDict[ind]
+                
             f = lambda x: x[ind]
             def d(x):
                 Xsize = Len(x)
@@ -568,13 +577,6 @@ class oofun:
                     if not scipyInstalled: self.pWarn(scipyAbsentMsg)
                     r = zeros_like(x)
                     r[ind] = 1
-                return r
-        else: # NOT IMPLEMENTED PROPERLY YET
-            self.pWarn('Slicing oofun by oofun IS NOT IMPLEMENTED PROPERLY YET')
-            f = lambda x, _ind: x[_ind]
-            def d(x, _ind):
-                r = zeros(x.shape)
-                r[_ind] = 1
                 return r
                 
         r = oofun(f, self, d = d, size = 1, getOrder = self.getOrder)
@@ -1301,8 +1303,11 @@ class oofun:
         r = atleast_2d(hstack(tmp)).sum(1)
         return r ** 0.5
         
-   
-        """                                             End of class oofun                                             """
+    # For Python 3:
+    __rtruediv__ = __rdiv__
+    __truediv__ = __div__
+    
+    """                                             End of class oofun                                             """
 
 # TODO: make it work for ooSystem as well
 def broadcast(func, oofuncs, *args, **kwargs):

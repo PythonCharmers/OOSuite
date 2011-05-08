@@ -1,6 +1,6 @@
 from ooFun import oofun
 import numpy as np
-from misc import FuncDesignerException, Diag, Eye, raise_except
+from FDmisc import FuncDesignerException, Diag, Eye, raise_except
 from ooFun import atleast_oofun, ooarray
 from ooPoint import ooPoint
 from Interval import TrigonometryCriticalPoints, ZeroCriticalPoints, nonnegative_interval

@@ -1,5 +1,5 @@
 from translator import FuncDesignerTranslator
-from misc import FuncDesignerException, Extras, _getDiffVarsID
+from FDmisc import FuncDesignerException, Extras, _getDiffVarsID
 from numpy import ndarray, hstack, vstack, isscalar, asarray, zeros
 from ooVar import oovar
 from ooFun import oofun, atleast_oofun

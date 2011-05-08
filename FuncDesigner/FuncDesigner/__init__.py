@@ -1,3 +1,7 @@
+import os, sys
+curr_dir = ''.join([elem + os.sep for elem in __file__.split(os.sep)[:-1]])
+sys.path += [curr_dir]
+
 from ooVar import oovar, oovars
 from ooFun import _getAllAttachedConstraints, broadcast, ooarray, ooFun as oofun
 from ooSystem import ooSystem as oosystem
@@ -7,7 +11,7 @@ from sle import sle
 from ode import ode
 from overloads import *
 #from overloads import _sum as sum
-from misc import FuncDesignerException, _getDiffVarsID
+from FDmisc import FuncDesignerException, _getDiffVarsID
 from interpolate import scipy_UnivariateSpline as interpolator
 from integrate import integrator
 __version__ = '0.33'

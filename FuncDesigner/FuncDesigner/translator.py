@@ -3,7 +3,7 @@
 from numpy import empty, hstack, vstack, asfarray, all, atleast_1d, cumsum, asarray, zeros,  ndarray, prod, ones, isscalar, nan, array_equal, copy, array
 #from nonOptMisc import scipyInstalled, Hstack, Vstack, Find, isspmatrix, SparseMatrixConstructor, DenseMatrixConstructor, Bmat
 
-from misc import FuncDesignerException
+from FDmisc import FuncDesignerException
 from ooPoint import ooPoint
 DenseMatrixConstructor = lambda shape: zeros(shape)
 isspmatrix = lambda *args: False

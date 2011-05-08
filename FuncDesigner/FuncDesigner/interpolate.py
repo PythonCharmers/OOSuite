@@ -1,6 +1,6 @@
 from ooFun import oofun
 import numpy as np
-from misc import FuncDesignerException
+from FDmisc import FuncDesignerException
 
 try:
     from scipy import interpolate
