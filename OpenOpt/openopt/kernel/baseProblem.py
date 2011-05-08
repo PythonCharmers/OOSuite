@@ -1,7 +1,7 @@
 __docformat__ = "restructuredtext en"
 from numpy import *
 from oologfcn import *
-from graphics import Graphics
+from oographics import Graphics
 from setDefaultIterFuncs import setDefaultIterFuncs, IS_MAX_FUN_EVALS_REACHED, denyingStopFuncs
 from nonLinFuncs import nonLinFuncs
 from residuals import residuals
@@ -23,7 +23,7 @@ except:
 ProbDefaults = {'diffInt': 1.5e-8,  'xtol': 1e-6,  'noise': 0}
 from runProbSolver import runProbSolver
 import GUI
-from FDmisc import setStartVectorAndTranslators
+from fdmisc import setStartVectorAndTranslators
 
 
 class user:
