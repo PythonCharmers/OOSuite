@@ -43,7 +43,7 @@ p = NLLSP(f, x0, df = df, xtol = 1.5e-8, ftol = 1.5e-8)
 p.checkdf()
 #r = p.solve('scipy_leastsq', plot=1, iprint = -1)
 #or using converter lsp2nlp:
-r = p.solve('nlp:ralg', plot=1)
+r = p.solve('nlp:ralg', iprint = 1, plot=1)
 #r = p.solve('nlp:ipopt',plot=1), r = p.solve('nlp:algencan'), r = p.solve('nlp:ralg'), etc
 #(some NLP solvers require additional installation)
 

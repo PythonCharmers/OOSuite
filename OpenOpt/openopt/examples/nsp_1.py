@@ -13,6 +13,7 @@ from openopt import NSP
 
 N = 75
 objFun = lambda x: sum(1.2 ** arange(len(x)) * abs(x))
+
 x0 = cos(1+asfarray(range(N)))
 
 p = NSP(objFun, x0, maxFunEvals = 1e7, xtol = 1e-8)
@@ -31,11 +32,6 @@ p.maxIter = 5000
 #OPTIONAL: user-supplied gradient/subgradient
 p.df = lambda x: 1.2 ** arange(len(x)) * sign(x)
 
-
-
-#p.plot = 1
-p.xlim = (inf,  5)
-p.ylim = (0, 5000000)
 r = p.solve('ralg') # ralg is name of a solver
-print 'x_opt:\n', r.xf
-print 'f_opt:', r.ff  # should print small positive number like 0.00056
+print('x_opt: %s' % r.xf)
+print('f_opt: %f' % r.ff)  # should print small positive number like 0.00056

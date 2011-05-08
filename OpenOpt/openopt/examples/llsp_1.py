@@ -7,7 +7,7 @@ M, N = 1500, 1000
 C = empty((M,N))
 d =  empty(M)
 
-for j in xrange(M):
+for j in range(M):
     d[j] = 1.5*N+80*sin(j)
     C[j] = 8*sin(4.0+arange(N)) + 15*cos(j)
     
@@ -24,6 +24,6 @@ for j in xrange(M):
 p = LLSP(C, d)
 r = p.solve('lsqr')
 
-print 'f_opt:', r.ff # 2398301.68347
+print('f_opt: %f' % r.ff) # 2398301.68347
 #print 'x_opt:', r.xf
 

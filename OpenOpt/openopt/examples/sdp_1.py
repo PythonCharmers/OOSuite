@@ -24,11 +24,11 @@ p = SDP([1, -1, 1], S = S, d = d)
 # and lb, ub for box-bound constraints lb <= x <= ub
 # see /examples/lp_1.py 
 
-r = p.solve('cvxopt_sdp', iprint = 0)
-#r = p.solve('dsdp', iprint = -1)
+#r = p.solve('cvxopt_sdp', iprint = 0)
+r = p.solve('dsdp', iprint = -1)
 
 f_opt, x_opt = r.ff, r.xf
-print 'x_opt:',  x_opt
-print 'f_opt:',  f_opt
+print('x_opt: %s' % x_opt)
+print('f_opt: %s' % f_opt)
 #x_opt: [-0.36766609  1.89832827 -0.88755043]
 #f_opt: -3.15354478797

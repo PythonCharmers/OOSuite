@@ -21,22 +21,9 @@ for i in xrange(5):
     b[i] = -150 + 80*sin(80*i)
 
 p = MILP(f=f, lb=lb, ub=ub, A=A, b=b, intVars=intVars, goal='min')
-#r = p.solve('lpSolve')
-r = p.solve('glpk')
+r = p.solve('lpSolve')
+#r = p.solve('glpk', iprint =-1)
 #r = p.solve('cplex')
-print 'f_opt:', r.ff # 25.801450769161505
-print 'x_opt:', r.xf # [ 15. 10.15072538 -1.5 -1.5 -1.  -1.5 -1.5 15.]
 
-"""
-if you have installed glpk+cvxopt 1.0 or later 
-(with BUILD_GLPK=1 in setup.py file) 
-you can handle MILP problems with binary constraints 
-(coords x from p.binVars should be in {0, 1}):
-
-p = MILP(f=f, lb=lb, ub=ub, A=A, b=b, intVars=intVars, binVars=[1])
-#intVars, binVars indexing from ZERO!
-r = p.solve('glpk') 
-
-print 'f_opt:', r.ff # 25.8014507692
-print 'x_opt:', r.xf # [ 15. 10.15072538  -1.5  -1.5  -1. -1.5  -1.5  15.]
-"""
+print('f_opt: %f' % r.ff) # 25.801450769161505
+print('x_opt: %s' % r.xf) # [ 15. 10.15072538 -1.5 -1.5 -1.  -1.5 -1.5 15.]

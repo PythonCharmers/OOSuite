@@ -25,7 +25,7 @@ QC = ((diag([1.0, 2.5, 3.0]), [0.1, 0.2, 0.3], -1000), (diag([2.0, 1.0, 3.0]), [
 p = QP(H, f, A = A, b = b, Aeq = [0, 1, -1], beq = 25.5, ub = [15,inf,inf], QC = QC, intVars = [0, 2])
 # or p = QP(H=diag([1,2,3]), f=[15,8,80], ...)
 
-r = p.solve('cplex', iprint = 0)
+r = p.solve('cplex', iprint = 0, plot=1)
 f_opt, x_opt = r.ff, r.xf
 # x_opt = array([ -2.99999999,   9.5       , -16.        ])
 # f_opt = -770.24999989134858

@@ -26,9 +26,8 @@ ub = [inf, -8, inf]
 p = LP(f, A=A, Aeq=Aeq, b=b, beq=beq, lb=lb, ub=ub)
 #or p = LP(f=f, A=A, Aeq=Aeq, b=b, beq=beq, lb=lb, ub=ub)
 
-r = p.solve('cvxopt_lp') # CVXOPT must be installed
-p.debug=1
-#r = p.solve('lpSolve') # lpsolve must be installed
+#r = p.solve('glpk') # CVXOPT must be installed
+r = p.solve('lpSolve') # lpsolve must be installed
 #search for max: r = p.solve('glpk', goal='max') # CVXOPT & glpk must be installed
 #r = p.solve('nlp:ralg', ftol=1e-7, xtol=1e-7, goal='min', plot=1) 
 

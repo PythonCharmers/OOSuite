@@ -35,13 +35,13 @@ p.maxFunEvals = 1e5
 p.iprint = 10
 
 #r = p.solve('scipy_fsolve')
-r = p.solve('nssolve')
+#r = p.solve('nssolve')
 #or using converter nlsp2nlp, try to minimize sum(f_i(x)^2):
-#r = p.solve('nlp:ralg', plot=1)
+r = p.solve('nlp:ralg', plot=1)
 
-print 'solution:', r.xf
-print 'max residual:', r.ff
+print('solution: %s' % r.xf)
+print('max residual: %e' % r.ff)
 ###############################
 #should print:
-#solution: [  1.           2.          55.50147021]
+#solution: [  1.           2.          55.50147021] (3rd coord may differ due to cos is periodic)
 #max residual: 2.72366951215e-09

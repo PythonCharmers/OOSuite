@@ -19,5 +19,5 @@ p.d2f = lambda x: diag(12*(x-M)**2)
 # or 
 # p = NLP(x0 = cos(arange(N)), f = lambda x: ((x-M)**4).sum(), df =  lambda x: 4*(x-M)**3, d2f = lambda x: diag(12*(x-M)**2))
 r = p.solve('scipy_ncg')
-print 'objfunc val:', r.ff # it should be a small positive like 5.23656378549e-08
+print('objfunc val: %e' % r.ff) # it should be a small positive like 5.23656378549e-08
 

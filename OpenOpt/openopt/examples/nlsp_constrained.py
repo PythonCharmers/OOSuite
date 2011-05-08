@@ -68,6 +68,7 @@ p.dc = lambda x: asfarray((0, 0, 2*(x[2]-146)))
 # using nlsp2nlp converter, try to minimize sum(f_i(x)^2):
 r = p.solve('nlp:ralg', xlabel='iter', iprint=10, plot=1)
 
-print 'solution:', r.xf
-print 'max residual:', r.ff
+print('solution: %s' % r.xf)
+print('max residual: %e' % r.ff)
+
 

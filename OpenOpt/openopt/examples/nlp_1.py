@@ -102,11 +102,13 @@ p.checkdc()
 p.checkdh()
 
 solver = 'ralg'
+#solver = 'algencan'
 #solver = 'ipopt'
 #solver = 'scipy_slsqp'
 
 # solve the problem
-r = p.solve(solver) # string argument is solver name
+
+r = p.solve(solver, plot=0) # string argument is solver name
 
 
 # r.xf and r.ff are optim point and optim objFun value
