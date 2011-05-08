@@ -103,14 +103,14 @@ def lsqr( m, n, aprod, b, damp, atol, btol, conlim, itnlim, show, wantvar = Fals
     else:
         var = None
     
-    if show:
-        print ' '
-        print 'LSQR            Least-squares solution of  Ax = b'
-        str1 = 'The matrix A has %8g rows  and %8g cols' % (m, n)
-        str2 = 'damp = %20.14e     wantvar = %-5s' % (damp, repr(wantvar))
-        str3 = 'atol = %8.2e                 conlim = %8.2e' % (atol, conlim)
-        str4 = 'btol = %8.2e                 itnlim = %8g' % (btol, itnlim)
-        print str1;   print str2;   print str3;   print str4;
+#    if show:
+#        print ' '
+#        print 'LSQR            Least-squares solution of  Ax = b'
+#        str1 = 'The matrix A has %8g rows  and %8g cols' % (m, n)
+#        str2 = 'damp = %20.14e     wantvar = %-5s' % (damp, repr(wantvar))
+#        str3 = 'atol = %8.2e                 conlim = %8.2e' % (atol, conlim)
+#        str4 = 'btol = %8.2e                 itnlim = %8g' % (btol, itnlim)
+#        print str1;   print str2;   print str3;   print str4;
         
     itn    = 0;   istop  = 0;   nstop  = 0
     ctol   = 0.0
@@ -134,7 +134,7 @@ def lsqr( m, n, aprod, b, damp, atol, btol, conlim, itnlim, show, wantvar = Fals
         
     arnorm = alfa * beta;
     if arnorm == 0:
-        print msg[0]
+        print(msg[0])
         return (x, istop, itn, r1norm, r2norm, anorm, acond, arnorm, xnorm, var)
 
     rhobar = alfa;		phibar = beta;		bnorm  = beta;
@@ -145,13 +145,13 @@ def lsqr( m, n, aprod, b, damp, atol, btol, conlim, itnlim, show, wantvar = Fals
     head2  = ' Compatible   LS      Norm A   Cond A'
     
     if show:
-        print ' '
-        print head1+head2
+#        print ' '
+#        print head1+head2
         test1  = 1.0;		test2  = alfa / beta
         str1   = '%6g %12.5e'     % (itn,   x[0])
         str2   = ' %10.3e %10.3e' % (r1norm, r2norm)
         str3   = '  %8.1e %8.1e'  % (test1,  test2)
-        print str1+str2+str3
+#        print str1+str2+str3
         
     # ------------------------------------------------------------------
     #     Main iteration loop.
@@ -286,7 +286,7 @@ def lsqr( m, n, aprod, b, damp, atol, btol, conlim, itnlim, show, wantvar = Fals
             str2 = ' %10.3e %10.3e' %(r1norm, r2norm )
             str3 = '  %8.1e %8.1e'  %( test1,  test2 )
             str4 = ' %8.1e %8.1e'   %( anorm,  acond )
-            print str1+str2+str3+str4
+#            print str1+str2+str3+str4
                 
         if istop > 0: break
         callback(x) # added for OpenOpt kernel
@@ -294,19 +294,19 @@ def lsqr( m, n, aprod, b, damp, atol, btol, conlim, itnlim, show, wantvar = Fals
     # End of iteration loop.
     # Print the stopping condition.
         
-    if show:
-        print ' '
-        print 'LSQR finished'
-        print msg[istop]
-        print ' '
-        str1 = 'istop =%8g   r1norm =%8.1e'   %(istop, r1norm )
-        str2 = 'anorm =%8.1e   arnorm =%8.1e' %(anorm, arnorm )
-        str3 = 'itn   =%8g   r2norm =%8.1e'   %(  itn, r2norm )
-        str4 = 'acond =%8.1e   xnorm  =%8.1e' %(acond, xnorm  )
-        str5 = '                  bnorm  =%8.1e'    % bnorm
-        print str1 + '   ' + str2
-        print str3 + '   ' + str4
-        print str5
-        print ' '
+#    if show:
+#        print ' '
+#        print 'LSQR finished'
+#        print msg[istop]
+#        print ' '
+#        str1 = 'istop =%8g   r1norm =%8.1e'   %(istop, r1norm )
+#        str2 = 'anorm =%8.1e   arnorm =%8.1e' %(anorm, arnorm )
+#        str3 = 'itn   =%8g   r2norm =%8.1e'   %(  itn, r2norm )
+#        str4 = 'acond =%8.1e   xnorm  =%8.1e' %(acond, xnorm  )
+#        str5 = '                  bnorm  =%8.1e'    % bnorm
+#        print str1 + '   ' + str2
+#        print str3 + '   ' + str4
+#        print str5
+#        print ' '
         
     return ( x, istop, itn, r1norm, r2norm, anorm, acond, arnorm, xnorm, var )

@@ -73,7 +73,7 @@ class galileo(baseSolver):
         P.prepPopulation()
         #for 50 epochs
 
-        for itn in xrange(p.maxIter+1):
+        for itn in range(p.maxIter+1):
           #evaluate each chromosomes
           P.evaluate()
           #apply selection
