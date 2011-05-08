@@ -1,6 +1,10 @@
 import os
 from oologfcn import OpenOptException
 from numpy import zeros, bmat, hstack, vstack, ndarray, copy, where, prod, asarray, atleast_1d, isscalar, atleast_2d, eye, diag
+import sys
+syspath = sys.path
+Sep = os.sep
+
 try:
     import scipy
     scipyInstalled = True
@@ -75,7 +79,7 @@ def Diag(x):
 solverPaths = {}
 for root, dirs, files in os.walk(''.join([elem + os.sep for elem in __file__.split(os.sep)[:-2]+ ['solvers']])):
     rd = root.split(os.sep)
-    if '.svn' in rd: continue
+    if '.svn' in rd or '__pycache__' in rd: continue
     rd = rd[rd.index('solvers')+1:]
     for file in files:
         if file.endswith('_oo.py'):
@@ -85,10 +89,10 @@ def getSolverFromStringName(p, solver_str):
     if solver_str not in solverPaths:
         p.err('incorrect solver is called, maybe the solver "' + solver_str +'" is not installed. Also, maybe you have forgotten to use "python setup.py install" after updating OpenOpt from subversion repository')
     if p.debug:
-        solverClass =  getattr(my_import('openopt.solvers.'+solverPaths[solver_str]), solver_str)
+        solverClass =  solver_import(solverPaths[solver_str], solver_str)
     else:
         try:
-            solverClass = getattr(my_import('openopt.solvers.'+solverPaths[solver_str]), solver_str)
+            solverClass = solver_import(solverPaths[solver_str], solver_str)
         except ImportError:
             p.err('incorrect solver is called, maybe the solver "' + solver_str +'" require its installation, check http://www.openopt.org/%s or try p._solve() for more details' % p.probType)
     r = solverClass()        
@@ -96,12 +100,18 @@ def getSolverFromStringName(p, solver_str):
     return r
 
 ##################################################################
-def my_import(name):
+importedSet = set()
+ooPath = ''.join(elem+Sep for elem in __file__.split(Sep)[:-3])
+def solver_import(solverPath, solverName):
+    if solverPath not in importedSet:
+        importedSet.add(solverPath)
+        syspath.append(ooPath+'openopt'+Sep + 'solvers'+''.join(Sep+elem for elem in solverPath.split('.')[:-1]))
+    name = 'openopt.solvers.' + solverPath
     mod = __import__(name)
     components = name.split('.')
     for comp in components[1:]:
         mod = getattr(mod, comp)
-    return mod
+    return getattr(mod, solverName)
 
 def oosolver(solverName, *args,  **kwargs):
     if args != ():
@@ -112,7 +122,7 @@ def oosolver(solverName, *args,  **kwargs):
             # currently it's used for to get filed isInstalled value
             # from ooSystem
             solverName = solverName.split(':')[1]
-        solverClass = getattr(my_import('openopt.solvers.'+solverPaths[solverName]), solverName)
+        solverClass = solver_import(solverPaths[solverName], solverName)
         solverClassInstance = solverClass()
         solverClassInstance.fieldsForProbInstance = {}
         for key, value in kwargs.iteritems():
