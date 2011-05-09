@@ -346,7 +346,13 @@ class oofun:
         return r
 
     def __rdiv__(self, other):
+        
+        # without the code it somehow doesn't fork in either Python3 or latest numpy
+        if isinstance(other, ooarray) and other.dtype == object:
+            return other.__div__(self)
+            
         assert not isinstance(other, oofun)
+       
         other = array(other, 'float') # TODO: sparse matrices handling!
         r = oofun(lambda x: other/x, self, discrete = self.discrete)
         r.d = lambda x: Diag(- other / x**2)
