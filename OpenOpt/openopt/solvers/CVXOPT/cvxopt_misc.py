@@ -45,10 +45,10 @@ def xBounds2cvxoptMatrix(p):
         p.b = zeros(Len(p.b) + nLB+nUB)
         p.b[:Len(b)] = b.flatten() # sometimes flatten is needed when called before runProbSolver(), from tests
         p.A[:Len(b)] = A
-        for i in  xrange(len(indLB)):
+        for i in  range(len(indLB)):
             p.A[initLenB+i, indLB[i]] = -1
             p.b[initLenB+i] = -p.lb[indLB[i]]
-        for i in  xrange(len(indUB)):
+        for i in  range(len(indUB)):
             p.A[initLenB+len(indLB)+i, indUB[i]] = 1
             p.b[initLenB+len(indLB)+i] = p.ub[indUB[i]]
 
@@ -58,7 +58,7 @@ def xBounds2cvxoptMatrix(p):
         p.beq = zeros(Len(p.beq) + nEQ)
         p.beq[:Len(beq)] = beq
         p.Aeq[:Len(beq)] = Aeq
-        for i in xrange(len(indEQ)):
+        for i in range(len(indEQ)):
             p.Aeq[initLenBeq+i, indEQ[i]] = 1
             p.beq[initLenBeq+i] = p.lb[indEQ[i]] # = p.ub[indEQ[i]], because they are the same
 

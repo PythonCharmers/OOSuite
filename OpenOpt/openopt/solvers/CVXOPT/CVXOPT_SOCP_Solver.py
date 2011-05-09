@@ -24,7 +24,7 @@ def CVXOPT_SOCP_Solver(p, solverName):
     
     Gq, hq = [], []
     C, d, q, s = p.C, p.d, p.q, p.s
-    for i in xrange(len(q)):
+    for i in range(len(q)):
         Gq.append(Matrix(vstack((-atleast_1d(q[i]),-atleast_1d(C[i])))))
         hq.append(matrix(hstack((atleast_1d(s[i]), atleast_1d(d[i]))), tc='d'))
 

@@ -65,8 +65,12 @@ class interalg(baseSolver):
         n = p.n
         f = p.f
         C = p.constraints
-        fTol = p.fTol
         ooVars = p._freeVarsList
+        
+        fTol = p.fTol
+        if fTol is None:
+            fTol = 1e-7
+            p.warn('solver %s require p.fTol value (required objective function tolerance); 10^-7 will be used')
         
         fd_obj = p.user.f[0]
         #raise 0
@@ -126,293 +130,72 @@ class interalg(baseSolver):
         l = array([]).reshape(0, 2*n)
         k = True
         g = inf
+        C = p._FD.nonBoxCons
         
         for itn in range(p.maxIter+10):
+            ip = formIntervalPoint(y, e, n, ooVars)
             
-            o, a, bestCenter, bestCenterObjective = getIntervals(y, e, n, fd_obj, ooVars, dataType)
-            if any(a<o):
-                p.pWarn('interval lower bound exceeds upper bound, it seems to be FuncDesigner kernel bug')
-            
-
-            #currIterActivePointsNum = y.shape[0] / 2
-            
-            #print prevActivePointsNum
-           
-            # DEBUG
-            #assert not any(isnan(o)) and not any(isnan(a))
-            #from numpy import amax
-            #assert amin(a) < 1e100
-            #print amin(o), amax(o), amin(a), amax(a)
-            
-            # DEBUG END
+#            for f, lb_, ub_ in C:
+#                TMP = f.interval(domain, dataType)
+#                lb, ub = asarray(TMP.lb, dtype=dataType), asarray(TMP.ub, dtype=dataType)
+                
+            o, a, bestCenter, bestCenterObjective = func8(ip, fd_obj, dataType)
+#            if any(a<o):
+#                p.pWarn('interval lower bound exceeds upper bound, it seems to be FuncDesigner kernel bug')
             
             xk, Min = bestCenter, bestCenterObjective
-#            assert Min < amin(a)
-            
+           
             p.iterfcn(xk, Min)
-            if p.istop != 0 : 
+            if p.istop != 0: 
                 break
             
-            #assert not isnan(BestKnownMinValue)
-            #print 'BestKnownMinValue:', BestKnownMinValue
             if BestKnownMinValue > Min:
                 BestKnownMinValue = Min
                 xRecord = xk# TODO: is copy required?
             if fr > Min:
                 fr = Min
-            if fTol is None:
-                fTol = 1e-7
-                p.warn('solver %s require p.fTol value (required objective function tolerance); 10^-7 will be used')
-            #assert fr <= amin(a)
+
             fo = min((fr, BestKnownMinValue - fTol)) 
-            if p.debug:
-                ind = nanargmin(a)
-                ll, uu = o[ind], a[ind]
-                print('before: min o_active: %0.9e    min a_active: %0.9e   th: %0.9e' % (ll, uu, fo))
-            
-            
             
             m = e.shape[0]
-            
             o, a = o.reshape(2*n, m).T, a.reshape(2*n, m).T
             
-            
-            ind = where(logical_and(all(isnan(o), 1), all(isnan(a), 1)))[0]
-            #print 'ind nan size:',  ind.size
-            if ind.size != 0:
-                y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
-            
-           ################################################################
-            # todo: check is o separated correctly
-            
-            
-            # changes
-            # remove trailing data out of memory
-            #currentDataMem = numBytes * n * (n+m) # in bytes
-            #print '%0.4f' % (m/float(self.maxNodes))
-            #if currentDataMem > maxMem:
-                #if itn > 2: raise 0
-
-#            currentDataMem = numBytes * n * (n+m) # in bytes
-#            if currentDataMem > maxMem:
-#                ind = argmax(o, 1)
-#                
-            # changes end            
-            
-               
-#            ################################################################
-#            centers = 0.5*(y + e)
-#            s, q = o[:, 0:n], o[:, n:2*n]
-#            for i in range(n):
-#                ind = where(s[:, i] > fo)[0]
-#                if ind.size != 0:
-#                    y[:,i][ind] = centers[:,i][ind]
-#                ind = where(q[:, i] > fo)[0]
-#                if ind.size != 0:
-#                    e[:,i][ind] = centers[:,i][ind]
-#            ################################################################
-            
-
-            #check
-#            rr = []
-#            for i in range(m):
-#                o_i, a_i = getIntervals(y[i].reshape(1, -1), e[i].reshape(1, -1))
-#                rr.append(norm(o_i-o[i]))
-#                rr.append(norm(a_i-a[i]))
-#            print 'max rr:', norm(rr, inf)
-            # check end
-            
-#            if p.debug:
-#                #raise 0
-#                print('min esim: %e   max estim: %e' % (amin(o), amin(a)))
-            
-            # TODO: maybe recalculate o & a here?
+            y, e, o, a = func7(y, e, o, a)
             
             # CHANGES
             # WORKS SLOWER
-#            o, a, bestCenter, bestCenterObjective = getIntervals(y, e)
+#            o, a, bestCenter, bestCenterObjective = func8(y, e)
 #            o, a = o.reshape(2*n, m).T, a.reshape(2*n, m).T
             # CHANGES END
             
-            
-            
             y, e, o, a = vstack((y, b)), vstack((e, v)), vstack((o, z)), vstack((a, l))
-            # TODO: is it really required? Mb next handling s / q with all fixed coords would make the job?
-            setForRemoving = set()
-            s, q = o[:, 0:n], o[:, n:2*n]
-            ind = any(logical_and(s > fo, q > fo), 1)
-            ind = where(ind)[0]
-            if ind.size != 0:
-                g = amin((g, nanmin(s[ind]), nanmin(q[ind])))
-                y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
-                
+            y, e, o, a, g = func6(y, e, o, a, n, fo, g)
            
-            if e.size == 0: 
-                #raise 0
+            if y.size == 0: 
                 k = False
-                p.istop = 1000
-                p.msg = 'optimal solution obtained'
+                p.istop, p.msg = 1000, 'optimal solution obtained'
                 break            
             
-            
-            if p.debug:
-                ind = nanargmin(a)
-                ll, uu = o.flatten()[ind], a.flatten()[ind]
-                print('after 1: min o_active: %0.9e    min a_active: %0.9e   th: %0.9e' % (ll, uu, fo))
-
-            
-            
-            
-            m = e.shape[0]
-            s, q = o[:, 0:n], o[:, n:2*n]
             nCut = 1 if fd_obj.isUncycled and all(isfinite(a)) and all(isfinite(o)) else self.maxNodes
-            if m > nCut:
-                #p.warn('max number of nodes (parameter maxNodes = %d) exceeded, exact global optimum is not guaranteed' % self.maxNodes)
-                #j = ceil((currentDataMem - maxMem)/numBytes)
-                j = m - nCut
-                #print '!', j
-                tmp = where(q<s, q, s)
-                ind = nanargmax(tmp, 1) 
-                values = tmp[arange(m),ind]
-                ind = values.argsort()
-                h = m-j-1
-                g = nanmin((values[h], g))
-                ind = ind[m-j:]
-                y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
+            y, e, o, a, g = func5(y, e, o, a , n, nCut, g)
             
-            m = y.shape[0]
-            
-            
-            if m <= self.maxActiveNodes:
-                b = array([]).reshape(0, n)
-                v = array([]).reshape(0, n)
-                z = array([]).reshape(0, 2*n)
-                l = array([]).reshape(0, 2*n)
-            else:
-                s, q = o[:, 0:n], o[:, n:2*n]
-                tmp = where(q<s, q, s)
-                ind = argmax(tmp, 1)
-                values = tmp[arange(m),ind]
-                ind = values.argsort()
-                
-                # old
-#                ind = ind[maxActiveNodes:]
-#                b, v, z, l = y[ind], e[ind], o[ind], a[ind]
-#                y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
-                
-                # new
-                ind = ind[:self.maxActiveNodes]
-                b, v, z, l = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
-                y, e, o, a = y[ind], e[ind], o[ind], a[ind]
-                
+            y, e, o, a, b, v, z, l =\
+            func3(y, e, o, a, n, self.maxActiveNodes)
 
-            
-            centers = 0.5*(y + e)
-            s, q = o[:, 0:n], o[:, n:2*n]
-            ind = s > fo
-            if any(ind):
-                y[ind] = centers[ind]
-            ind = q > fo
-            if any(ind):
-                e[ind] = centers[ind]
-            
-#                N1, N2 = nActivePoints[-2:]
-#                t2, t1 = p.iterTime[-1] - p.iterTime[-2], p.iterTime[-2] - p.iterTime[-3]
-#                c1 = (t2-t1)/(N2-N1) if N1!=N2 else numpy.nan
-#                c2 = t2 - c1* N2
-#                print N1, N2, c1*N1, c2
-                #IterTime = c1 * nPoints + c2
-#                c1 = (t_new - t_prev) / (N_new - N_prev)
-#                c2 = t_new - c1* N_new
-#                maxActive = amax((15, int(15*c2/c1)))
-                
-#                #print m, currIterActivePointsNum
-#                if (p.iterTime[-1] - p.iterTime[-2])/m > 1.2 * (p.iterTime[-2]-p.iterTime[-3]) /currIterActivePointsNum  and p.iterTime[-1]-p.iterTime[-2] > 0.01:
-#                    maxActive = amax((int(maxActive / 1.5), 1))
-#                else:
-#                    maxActive = amin((maxActive*2, m))
-#            else:
-#                maxActive = m
-            
             m = y.shape[0]
             nActiveNodes.append(m)
             nNodes.append(m + b.shape[0])
-            w = arange(m)
-            
-            Case = 1 # TODO: check other
-            if Case == -3:
-                t = argmin(a, 1) % n
-            elif Case == -2:
-                t = asarray([itn % n]*m)
-            elif Case == -1:
-                tmp = a - o
-                tmp1, tmp2 = tmp[:, 0:n], tmp[:, n:2*n]
-                tmp = tmp1
-                ind = where(tmp2>tmp1)
-                tmp[ind] = tmp2[ind]
-                #tmp = tmp[:, 0:n] + tmp[:, n:2*n]
-                t = argmin(tmp, 1) 
-            elif Case == 0:
-                t = argmin(a - o, 1) % n
-            elif Case == 1:
-#                a1, a2 = a[:, 0:n], a[:, n:]
-#                ind = a1 < a2
-#                a1[ind] = a2[ind]
-#                t = argmin(a1, 1)
 
-                t = argmin(a, 1) % n
-                if not all(isfinite(a)):
-                    # new
-#                    a1, a2 = a[:, 0:n], a[:, n:]
-#                    
-#                    #ind1, ind2 = isinf(a1), isinf(a2)
-#                    #ind_any_infinite = logical_or(ind1, ind2)
-#                    ind1, ind2 = isinf(a1), isinf(a2)
-#                    ind_any_infinite = logical_or(ind1, ind2)
-#                    
-#                    a_ = where(a1 < a2, a1, a2)
-#                    a_[ind_any_infinite] = inf
-#                    t = argmin(a_, 1) 
-#                    ind = isinf(a_[w, t])
-
-##                    #old
-                    ###t = argmin(a, 1) % n
-                    #ind = logical_or(all(isinf(a), 1), all(isinf(o), 1))
-                    ind = all(isinf(a), 1)
-                    #ind = all(isinf(a), 1)
-                    
-                    #print 'itn:', itn
-                    if any(ind):
-                        boxShapes = e[ind] - y[ind]
-                        t[ind] = argmax(boxShapes, 1)
-                        
-            elif Case == 2:
-                o1, o2 = o[:, 0:n], o[:, n:]
-                ind = o1 > o2
-                o1[ind] = o2[ind]                
-                t = argmax(o1, 1)
-            elif Case == 3:
-                # WORST
-                t = argmin(o, 1) % n
-            elif Case == 4:
-                # WORST
-                t = argmax(a, 1) % n
-            elif Case == 5:
-                tmp = where(o[:, 0:n]<o[:, n:], o[:, 0:n], o[:, n:])
-                t = argmax(tmp, 1)
-                
-            u, en = y.copy(), e.copy()
-            th = 0.5 * (u[w, t] + en[w, t])
-            u[w, t] = th
-            en[w, t] = th
+            y, e = func4(y, e, o, a, n, fo)
             
-            u = vstack((y, u))
-            en = vstack((en, e))
+            t = func1(y, e, o, a, n)
+            y, e = func2(y, e, t)
+            # End of main cycle
             
-            e, y = en, u
-        
         ff = f(xRecord)
         p.iterfcn(xRecord, ff)
+        if o.size != 0:
+            g = nanmin(nanmin(o), g)
         p.extras['isRequiredPrecisionReached'] = True if ff - g < fTol and k is False else False
         # TODO: simplify it
         if p.goal in ('max', 'maximum'):
@@ -427,8 +210,7 @@ class interalg(baseSolver):
             if not p.extras['isRequiredPrecisionReached']: s += '\nincrease maxNodes (current value %d)' % self.maxNodes
             p.info(s)
 
-
-def getIntervals(y, e, n, fd_obj, ooVars, dataType):
+def formIntervalPoint(y, e, n, ooVars):
     LB = [[] for i in range(n)]
     UB = [[] for i in range(n)]
     m = y.shape[0]
@@ -460,8 +242,13 @@ def getIntervals(y, e, n, fd_obj, ooVars, dataType):
     
     domain = ooPoint(domain, skipArrayCast = True)
     domain.isMultiPoint = True
+    return domain
+
+def func8(domain, fd_obj, dataType):
+
     TMP = fd_obj.interval(domain, dataType)
     
+    #TODO: remove 0.5*(val[0]+val[1]) from cycle
     centers = dict([(key, 0.5*(val[0]+val[1])) for key, val in domain.items()])
     centers = ooPoint(centers, skipArrayCast = True)
     centers.isMultiPoint = True
@@ -473,9 +260,185 @@ def getIntervals(y, e, n, fd_obj, ooVars, dataType):
     
     # TODO: check it , maybe it can be improved
     #bestCenter = centers[bestCenterInd]
-    bestCenter = array([0.5*(val[0][bestCenterInd]+val[1][bestCenterInd]) for val in domain.values()])
+    bestCenter = array([0.5*(val[0][bestCenterInd]+val[1][bestCenterInd]) for val in domain.values()], dtype=dataType)
     bestCenterObjective = atleast_1d(F)[bestCenterInd]
-    return asarray(TMP.lb), asarray(TMP.ub), bestCenter, bestCenterObjective
+    return asarray(TMP.lb, dtype=dataType), asarray(TMP.ub, dtype=dataType), bestCenter, bestCenterObjective
+
+def func7(y, e, o, a):
+    ind = where(logical_and(all(isnan(o), 1), all(isnan(a), 1)))[0]
+    #print 'ind nan size:',  ind.size
+    if ind.size != 0:
+        y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
+    return y, e, o, a 
+
+def func6(y, e, o, a, n, fo, g):
+    # TODO: is it really required? Mb next handling s / q with all fixed coords would make the job?
+    setForRemoving = set()
+    s, q = o[:, 0:n], o[:, n:2*n]
+    ind = any(logical_and(s > fo, q > fo), 1)
+    ind = where(ind)[0]
+    if ind.size != 0:
+        g = amin((g, nanmin(s[ind]), nanmin(q[ind])))
+        y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
+    return y, e, o, a, g
+
+def func5(y, e, o, a , n, nCut, g):
+    m = e.shape[0]
+    s, q = o[:, 0:n], o[:, n:2*n]
+    if m > nCut:
+        #p.warn('max number of nodes (parameter maxNodes = %d) exceeded, exact global optimum is not guaranteed' % self.maxNodes)
+        #j = ceil((currentDataMem - maxMem)/numBytes)
+        j = m - nCut
+        #print '!', j
+        tmp = where(q<s, q, s)
+        ind = nanargmax(tmp, 1) 
+        values = tmp[arange(m),ind]
+        ind = values.argsort()
+        h = m-j-1
+        g = nanmin((values[h], g))
+        ind = ind[m-j:]
+        y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
+    return y, e, o, a, g
+
+def func4(y, e, o, a, n, fo):
+    centers = 0.5*(y + e)
+    s, q = o[:, 0:n], o[:, n:2*n]
+    #ind = s > fo
+    ind = logical_or(s > fo, isnan(s)) # TODO: assert isnan(s) is same to isnan(a_modL)
+    if any(ind):
+        y[ind] = centers[ind]
+    #ind = q > fo
+    ind = logical_or(q > fo, isnan(q))# TODO: assert isnan(q) is same to isnan(a_modU)
+    if any(ind):
+        e[ind] = centers[ind]
+    return y, e
+
+def func3(y, e, o, a, n, maxActiveNodes):
+    m = y.shape[0]
+    if m <= maxActiveNodes:
+        b = array([]).reshape(0, n)
+        v = array([]).reshape(0, n)
+        z = array([]).reshape(0, 2*n)
+        l = array([]).reshape(0, 2*n)
+    else:
+        s, q = o[:, 0:n], o[:, n:2*n]
+        tmp = where(q<s, q, s)
+        ind = argmax(tmp, 1)
+        values = tmp[arange(m),ind]
+        ind = values.argsort()
+        
+        # old
+#                ind = ind[maxActiveNodes:]
+#                b, v, z, l = y[ind], e[ind], o[ind], a[ind]
+#                y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
+        
+        # new
+        ind = ind[:maxActiveNodes]
+        b, v, z, l = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
+        y, e, o, a = y[ind], e[ind], o[ind], a[ind]
+        
+    return y, e, o, a, b, v, z, l
+
+
+def func1(y, e, o, a, n):
+    Case = 1 # TODO: check other
+    if Case == -3:
+        t = argmin(a, 1) % n
+    elif Case == -2:
+        t = asarray([itn % n]*m)
+    elif Case == -1:
+        tmp = a - o
+        tmp1, tmp2 = tmp[:, 0:n], tmp[:, n:2*n]
+        tmp = tmp1
+        ind = where(tmp2>tmp1)
+        tmp[ind] = tmp2[ind]
+        #tmp = tmp[:, 0:n] + tmp[:, n:2*n]
+        t = argmin(tmp, 1) 
+    elif Case == 0:
+        t = argmin(a - o, 1) % n
+    elif Case == 1:
+#                a1, a2 = a[:, 0:n], a[:, n:]
+#                ind = a1 < a2
+#                a1[ind] = a2[ind]
+#                t = argmin(a1, 1)
+
+        t = argmin(a, 1) % n
+        if not all(isfinite(a)):
+            # new
+#                    a1, a2 = a[:, 0:n], a[:, n:]
+#                    
+#                    #ind1, ind2 = isinf(a1), isinf(a2)
+#                    #ind_any_infinite = logical_or(ind1, ind2)
+#                    ind1, ind2 = isinf(a1), isinf(a2)
+#                    ind_any_infinite = logical_or(ind1, ind2)
+#                    
+#                    a_ = where(a1 < a2, a1, a2)
+#                    a_[ind_any_infinite] = inf
+#                    t = argmin(a_, 1) 
+#                    ind = isinf(a_[w, t])
+
+##                    #old
+            ###t = argmin(a, 1) % n
+            #ind = logical_or(all(isinf(a), 1), all(isinf(o), 1))
+            ind = all(isinf(a), 1)
+            #ind = all(isinf(a), 1)
+            
+            #print 'itn:', itn
+            if any(ind):
+                boxShapes = e[ind] - y[ind]
+                t[ind] = argmax(boxShapes, 1)
+                
+    elif Case == 2:
+        o1, o2 = o[:, 0:n], o[:, n:]
+        ind = o1 > o2
+        o1[ind] = o2[ind]                
+        t = argmax(o1, 1)
+    elif Case == 3:
+        # WORST
+        t = argmin(o, 1) % n
+    elif Case == 4:
+        # WORST
+        t = argmax(a, 1) % n
+    elif Case == 5:
+        tmp = where(o[:, 0:n]<o[:, n:], o[:, 0:n], o[:, n:])
+        t = argmax(tmp, 1)
+    return t
+
+
+def func2(y, e, t):
+    u, en = y.copy(), e.copy()
+    m = y.shape[0]
+    w = arange(m)
+    th = 0.5 * (u[w, t] + en[w, t])
+    u[w, t] = th
+    en[w, t] = th
+    
+    u = vstack((y, u))
+    en = vstack((en, e))
+    
+    return u, en
+
+
+
+
+
+#                N1, N2 = nActivePoints[-2:]
+#                t2, t1 = p.iterTime[-1] - p.iterTime[-2], p.iterTime[-2] - p.iterTime[-3]
+#                c1 = (t2-t1)/(N2-N1) if N1!=N2 else numpy.nan
+#                c2 = t2 - c1* N2
+#                print N1, N2, c1*N1, c2
+                #IterTime = c1 * nPoints + c2
+#                c1 = (t_new - t_prev) / (N_new - N_prev)
+#                c2 = t_new - c1* N_new
+#                maxActive = amax((15, int(15*c2/c1)))
+                
+#                #print m, currIterActivePointsNum
+#                if (p.iterTime[-1] - p.iterTime[-2])/m > 1.2 * (p.iterTime[-2]-p.iterTime[-3]) /currIterActivePointsNum  and p.iterTime[-1]-p.iterTime[-2] > 0.01:
+#                    maxActive = amax((int(maxActive / 1.5), 1))
+#                else:
+#                    maxActive = amin((maxActive*2, m))
+#            else:
+#                maxActive = m
 
 #def asdf(m, n):
 #    sh1, sh2, inds = [], [], []

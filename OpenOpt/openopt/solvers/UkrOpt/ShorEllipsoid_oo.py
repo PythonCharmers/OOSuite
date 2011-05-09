@@ -68,7 +68,7 @@ class ShorEllipsoid(baseSolver):
         beta = multiplier_R - 1. / n
         alfa = 1. / beta
 
-        for k in xrange(p.maxIter):
+        for k in range(p.maxIter):
             BTG = p.matmult(B.T, g.reshape(-1,1))
             dzeta_k = (BTG / p.norm(BTG))
             hk = r*beta/n

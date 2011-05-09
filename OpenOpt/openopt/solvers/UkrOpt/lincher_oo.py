@@ -44,7 +44,7 @@ class lincher(baseSolver):
 
 ##        #handling box-bounded problems
 ##        if p.__isNoMoreThanBoxBounded__():
-##            for k in xrange(int(p.maxIter)):
+##            for k in range(int(p.maxIter)):
 ##
 ##        #end of handling box-bounded problems
         isBB = p.__isNoMoreThanBoxBounded__()

@@ -29,7 +29,7 @@ class scipy_lbfgsb(baseSolver):
             if isfinite(x): return x
             else: return None
 
-        for i in xrange(p.n): bounds.append((BOUND(p.lb[i]), BOUND(p.ub[i])))
+        for i in range(p.n): bounds.append((BOUND(p.lb[i]), BOUND(p.ub[i])))
 
         xf, ff, d = fmin_l_bfgs_b(p.f, p.x0, fprime=p.df,
                   approx_grad=0,  bounds=bounds,

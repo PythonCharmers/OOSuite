@@ -46,7 +46,6 @@ class toms587(baseSolver):
 #            bvls.bvls(key, a, b, bl, bu, xf,  w, act, zz,  istate, loopa)
         #lsei(w,me,ma,mg,n,prgopt,xf,rnorme,rnorml,mode,ws,ip,[mdw])
         #print w.flatten()
-        print me,ma,mg,n,prgopt,xf,rnorme,rnorml,mode,ws,ip
         lsei(w.flatten(),me,ma,mg,n,prgopt,xf,rnorme,rnorml,mode,ws,ip)
 
         #p.iter = loopa

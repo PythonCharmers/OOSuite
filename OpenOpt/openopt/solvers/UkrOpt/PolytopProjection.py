@@ -22,7 +22,7 @@ def PolytopProjection(data, T = 1.0, isProduct = False, solver = None):
 
     xtol = 1e-6
     if max(T) < 1e5*xtol: xtol = max(T)/1e5
-    r = p.solve(solver, ftol = 1e-16, xtol = xtol, maxIter = 10000)
+    r = p._solve(solver, ftol = 1e-16, xtol = xtol, maxIter = 10000)
     sol = r.xf
 
     if isProduct:

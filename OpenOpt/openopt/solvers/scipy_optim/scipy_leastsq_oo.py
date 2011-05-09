@@ -18,8 +18,6 @@ class scipy_leastsq(baseSolver):
         
         p.xk = p.x0.copy()
         p.fk = asfarray((p.f(p.x0)) ** 2).sum().flatten()
-        if p.iprint >= 0: print 'init sum of squares value:', p.fk[0]
-            
             
         p.iterfcn()
         if p.istop:

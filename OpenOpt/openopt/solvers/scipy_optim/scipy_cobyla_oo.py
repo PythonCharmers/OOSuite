@@ -31,7 +31,7 @@ class scipy_cobyla(baseSolver):
         det_arr = cumsum(array((p.cobyla.nc, p.cobyla.nh, p.b.size, p.beq.size, p.cobyla.nh, p.beq.size)))
 
         cons = []
-        for i in xrange(det_arr[-1]):
+        for i in range(det_arr[-1]):
             if i < det_arr[0]:
                 c = lambda x, i=i: - p.c(x)[i] # cobyla requires positive constraints!
             elif det_arr[0] <= i < det_arr[1]:

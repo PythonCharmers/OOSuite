@@ -23,7 +23,7 @@ class scipy_slsqp(baseSolver):
             p.lb[ind_inf] = -1e50
             ind_inf = where(p.ub==inf)[0]
             p.ub[ind_inf] = 1e50
-            for i in xrange(p.n):
+            for i in range(p.n):
                 bounds.append((p.lb[i], p.ub[i]))
         empty_arr = array(())
         empty_arr_n = array(()).reshape(0, p.n)

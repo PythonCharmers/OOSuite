@@ -119,9 +119,9 @@ def QPSparse(filename):
             if section == 'ROWS':  # being closed
                 # we know how many rows we have. Allocate lists of lists for A, Aeq
                 # Alist[n][colname] contains coeff for row n and col name colname in Aeq
-                Alist = [{} for i in xrange(acnt)] 
+                Alist = [{} for i in range(acnt)] 
                 # Aeqlist[n][colname] contains coeff for row n and col name colname in Aeq
-                Aeqlist = [{} for i in xrange(aeqcnt)]
+                Aeqlist = [{} for i in range(aeqcnt)]
             elif section == 'COLUMNS':  # being closed
                 # we know how any columns we have (colcnt). So we can now build Q, ub and lb
                 Q = zeros((colcnt,colcnt))
@@ -276,13 +276,13 @@ def QPSparse(filename):
     if acnt > 0:
         A = zeros((acnt, colcnt))
         b = zeros(acnt)
-        for rn in xrange(acnt):
+        for rn in range(acnt):
             for c in Alist[rn]:
                 A[rn, colnum[c]] = Alist[rn][c]
     if aeqcnt > 0:
         Aeq = zeros((aeqcnt, colcnt))
         beq = zeros(aeqcnt)
-        for rn in xrange(aeqcnt):
+        for rn in range(aeqcnt):
             for c in Aeqlist[rn]:
                 Aeq[rn, colnum[c]] = Aeqlist[rn][c]
         
@@ -350,32 +350,4 @@ def QPSparse(filename):
         
     return (pname, e, Q, A, b, Aeq, beq, lb, ub, c0)
 
-if __name__ == "__main__":
-    
-    import sys
-    
-    if len(sys.argv) <= 1:
-        print "usage: "+sys.argv[0]+" MPSfilename"
-        sys.exit()
-    pname, e, Q, A, b, Aeq, beq, lb, ub, c0 = QPSparse(sys.argv[1])
-    smallproblem = e.shape[0] <= 10
-    if smallproblem:    # print them only for small problems
-        print "Problem's name: ", pname
-        print "e:",e
-        print "Q:\n",Q
-        print "Aeq:\n",Aeq
-        print "beq:",beq
-        print "A:\n",A
-        print "b:",b
-        print "lb:",lb
-        print "ub:",ub
-        print "c0:",c0
-    else:
-        print "n variables:", e.shape[0]
-        if beq != None:
-            print "n eq constr:", beq.shape[0] 
-        if b != None:
-            print "n ineq cons:", b.shape[0]
-        if Q != None:
-            print "problem is quadratic."
-            
+

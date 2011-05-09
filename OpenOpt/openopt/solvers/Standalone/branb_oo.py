@@ -61,7 +61,7 @@ def fminconset(p_current, bestPoint, p):
     # check if all discrete constraints are satisfied
     x = curr_NLP_Point.x
     k = -1
-    for i in p.discreteVars.keys():#xrange(m):	# check x-vector
+    for i in p.discreteVars.keys():#range(m):	# check x-vector
         # TODO: replace it by "for i, val in dict.itervalues()"
         if not any(abs(x[i] - p.discreteVars[i]) < p.discrtol):
             k=i	# Violation of this set constraint.

@@ -145,7 +145,7 @@ def lp_engine(c, A, b):
 #    b = asarray(b)
 
     m,n = A.shape
-    for i in xrange(m):
+    for i in range(m):
         if b[i] < 0.0:
             A[i,:] = -A[i,:]
             b[i] = -b[i]
@@ -175,7 +175,7 @@ def lp_engine(c, A, b):
     else:
         sol = True
         j = -1
-        for i in xrange(n):
+        for i in range(n):
             j = j+1
             if H[m+1,j] > 1e-10:
                 H[:,j] = []
@@ -190,7 +190,7 @@ def lp_engine(c, A, b):
             if is_bounded:
                 optx = zeros(n+m);
                 n1,n2 = H.shape;
-                for i in xrange(m):
+                for i in range(m):
                     optx[basis[i]] = H[i,n2-1]
                 # optx(n+1:n+m,1) = []; % delete last m elements
                 optx = optx[0:n] 
@@ -251,7 +251,7 @@ def _simplex(H,basis,indx,s):
                 h1[ind] = tmp2
                 
                 #OLD
-#                for i in xrange(n1-s0):
+#                for i in range(n1-s0):
 #                    if H[i,jp] > 0:
 #                        h1[i] = H[i,n2-1]/H[i,jp]
                         
@@ -278,7 +278,7 @@ def _pivot(H,ip,jp):
         tmp2[ip, :] = 0
         H -= tmp2
         #OLD
-#        for i in xrange(n):
+#        for i in range(n):
 #            if i != ip:
 #                H[i,:] -= H[i,jp]*H[ip,:]
     return True

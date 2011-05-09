@@ -19,4 +19,4 @@ if __name__ == '__main__':
     b = -15
     Aeq, beq = None, None
     proj = pointProjection(x,  lb, ub, A, b, Aeq, beq)
-    print proj
+    print(proj)

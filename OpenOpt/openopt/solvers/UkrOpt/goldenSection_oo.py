@@ -41,7 +41,7 @@ class goldenSection(baseSolver):
         x1 = a+s1*(b-a)
         x2 = a+s2*(b-a)
         y1,  y2 = f(x1),  f(x2)
-        for i in xrange(p.maxIter):
+        for i in range(p.maxIter):
             p.xk,  p.fk = 0.5*(x1+x2), 0.5*(y1+y2)
             if y1 <= y2:
                 xmin,  ymin = x1,  y1

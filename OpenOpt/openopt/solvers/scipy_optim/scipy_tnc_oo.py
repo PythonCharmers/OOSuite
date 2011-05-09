@@ -18,7 +18,7 @@ class scipy_tnc(baseSolver):
     def __solver__(self, p):
         #WholeRepr2LinConst(p)#TODO: remove me
         bounds = []
-        for i in xrange(p.n): bounds.append((p.lb[i], p.ub[i]))
+        for i in range(p.n): bounds.append((p.lb[i], p.ub[i]))
         messages = 0#TODO: edit me
 
         maxfun=p.maxFunEvals
