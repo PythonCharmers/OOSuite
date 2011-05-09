@@ -1,4 +1,8 @@
 # created by Dmitrey
+import os,sys
+Sep = os.sep
+sfPath = ''.join(elem+Sep for elem in __file__.split(Sep)[:-1])
+sys.path.append(sfPath + 'kernel')
 from kernel.baseObjects import Point, Line, LineSegment, Plane,  Circle, skewLinesNearestPoints
 for name in ['Triangle', 'Tetrahedron', 'Polygon', 'Polytope']:
     exec('from kernel.%s import %s' % (name, name))
