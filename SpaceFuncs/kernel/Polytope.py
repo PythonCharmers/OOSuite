@@ -1,7 +1,7 @@
 from baseGeometryObject import baseGeometryObject
 from baseObjects import Point
 from numpy import ndarray
-from FuncDesigner import oofun
+from FuncDesigner import oofun, ooarray
 
 table = {'M':'centroid'}
 table = dict([(key, '_'+val) for key, val in table.items()] + [(val, '_'+val) for key, val in table.items()])
@@ -12,7 +12,7 @@ class Polytope(baseGeometryObject):
     def __init__(self, *args, **kw):
         baseGeometryObject.__init__(self, **kw)
         if len(args)==1:
-            assert type(args[0]) in (list, tuple, ndarray)
+            assert type(args[0]) in (list, tuple, ndarray, ooarray)
             self.vertices = [Point(arg) for arg in args[0]] 
         else:
             self.vertices = [args[i] if type(args[i]) == Point \
