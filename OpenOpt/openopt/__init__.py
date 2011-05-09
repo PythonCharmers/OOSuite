@@ -1,11 +1,21 @@
 #! /usr/bin/env python
 
+#from .ooVersionNumber import __version__
+
+import os, sys
+curr_dir = ''.join([elem + os.sep for elem in __file__.split(os.sep)[:-1]])
+sys.path += [curr_dir, curr_dir + 'kernel']
+
 from ooVersionNumber import __version__
 from oo import *
 
-from kernel.GUI import manage
-from kernel.oologfcn import OpenOptException
-from kernel.nonOptMisc import oosolver
+#from kernel.GUI import manage
+#from kernel.oologfcn import OpenOptException
+#from kernel.nonOptMisc import oosolver
+
+from GUI import manage
+from oologfcn import OpenOptException
+from nonOptMisc import oosolver
 
 try:
     import enthought

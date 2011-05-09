@@ -1,5 +1,27 @@
-__docformat__ = "restructuredtext en"
+import os,sys
+sys.path.append(os.getcwd()+os.sep+'kernel')
 
+from LP import LP as CLP
+from LCP import LCP as CLCP
+from SDP import SDP as CSDP
+from QP import QP as CQP
+from MILP import MILP as CMILP
+from NSP import NSP as CNSP
+from NLP import NLP as CNLP
+from MINLP import MINLP as CMINLP
+from NLSP import NLSP as CNLSP
+from NLLSP import NLLSP as CNLLSP
+from GLP import GLP as CGLP
+from SLE import SLE as CSLE
+from LLSP import LLSP as CLLSP
+from MMP import MMP as CMMP
+from LLAVP import LLAVP as CLLAVP
+from LUNP import LUNP as CLUNP
+from SOCP import SOCP as CSOCP
+from DFP import DFP as CDFP
+
+
+'''
 from kernel.LP import LP as CLP
 from kernel.LCP import LCP as CLCP
 from kernel.SDP import SDP as CSDP
@@ -18,6 +40,7 @@ from kernel.LLAVP import LLAVP as CLLAVP
 from kernel.LUNP import LUNP as CLUNP
 from kernel.SOCP import SOCP as CSOCP
 from kernel.DFP import DFP as CDFP
+'''
 
 def MILP(*args, **kwargs):
     """
