@@ -1,3 +1,8 @@
+'''
+An example of solving global optimization problem
+with guaranteed precision |f-f*| < fTol
+'''
+
 from FuncDesigner import *
 from openopt import *
 
