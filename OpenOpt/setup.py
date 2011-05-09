@@ -15,7 +15,8 @@ MAINTAINER_EMAIL    = 'dmitrey-at-openopt-dot-org',
 URL                 = 'http://openopt.org',
 LICENSE             = 'new BSD'
 
-from openopt.ooVersionNumber import __version__ as ooVer
+sys.path.append(os.getcwd() + os.sep + 'openopt')
+from ooVersionNumber import __version__ as ooVer
 openopt_version = ooVer
 
 DOWNLOAD_URL        = 'http://openopt.org/images/3/33/OpenOpt.zip'
@@ -28,15 +29,11 @@ except:
     raw_input()
     exit()
     
-import string, shutil
 from distutils.errors import DistutilsError
 #from numpy.distutils.system_info import system_info, NotFoundError, dict_append, so_ext
 from numpy.distutils.core import setup, Extension
-import os, sys
 
 DOC_FILES = []
-from shutil import copytree, rmtree
-
 
 def configuration(parent_package='',top_path=None, package_name=DISTNAME):
     if os.path.exists('MANIFEST'): os.remove('MANIFEST')
