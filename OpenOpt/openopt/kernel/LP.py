@@ -157,7 +157,7 @@ class LP(MatrixProblem):
                     Name = oov.name
                     names.append(Name)
                 else:
-                    tmp = [(oov.name + ('_%d' % (startIndex+j))) for j in xrange(Size)]
+                    tmp = [(oov.name + ('_%d' % (startIndex+j))) for j in range(Size)]
                     names += tmp
                     Name = tmp[-1]
                 if maxNameLength < len(Name):

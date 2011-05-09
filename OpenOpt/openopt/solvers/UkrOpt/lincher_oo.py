@@ -61,7 +61,7 @@ class lincher(baseSolver):
 
         #p.use_subproblem = 'LLSP'
 
-        for k in xrange(p.maxIter+4):
+        for k in range(p.maxIter+4):
             if isBB:
                 f0 = p.f(xk)
                 df = p.df(xk)
@@ -208,7 +208,7 @@ class lineSearchFunction(object):
     def gradient_numerical(self, x):
         g = zeros(self.p.n)
         f0 = self.__call__(x)
-        for i in xrange(self.p.n):
+        for i in range(self.p.n):
             x[i] += self.p.diffInt
             g[i] = self.__call__(x) - f0
             x[i] -= self.p.diffInt
@@ -305,7 +305,7 @@ def chLineSearch(p, x0, direction, N, isBB):
             print 'stage 2'
             K = 1.5
             lsF_prev = lsF_x0
-            for i in xrange(p.maxLineSearch):
+            for i in range(p.maxLineSearch):
                 lsF_new = lsF(x0 + K * direction*alpha)
                 newConstr = p.getMaxResidual(x0 + K * direction*alpha)
                 if lsF_new > lsF_prev or  newConstr > max(p.contol, iterValues.r0):
@@ -342,7 +342,7 @@ def chLineSearch(p, x0, direction, N, isBB):
         if alpha == 1.0 and not isBB:
             K = 1.5
             lsF_prev = lsF_x0
-            for i in xrange(p.maxLineSearch):
+            for i in range(p.maxLineSearch):
                 x_new = x0 + K * direction*alpha
 ##                ind_u, ind_l = x_new>p.ub, x_new<p.lb
 ##                x_new[ind_l] = p.lb[ind_l]
@@ -430,7 +430,7 @@ def chLineSearch(p, x0, direction, N, isBB):
             K = 1.5
             f_prev = f0
             allowedConstr = allowedConstr_start
-            for i in xrange(p.maxLineSearch):
+            for i in range(p.maxLineSearch):
                 x_new = x0 + K*direction*alpha
                 f_new = p.f(x_new)
                 if f_new > f_prev or p.getMaxResidual(x_new) > allowedConstr:# - K * alpha * C1:

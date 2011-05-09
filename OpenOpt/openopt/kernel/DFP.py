@@ -28,7 +28,7 @@ class DFP(NonLinProblem):
             self.dfff = self.user.df[0]
             def dff(x):
                 r = zeros(self.n)
-                for i in xrange(self.Y.shape[0]):
+                for i in range(self.Y.shape[0]):
                     #print asfarray(self.fff(x, self.X[i])-self.Y[i]), asfarray(self.dfff(x, self.X[i]))
                     r += dot(2.0 * asfarray(self.fff(x, self.X[i])-self.Y[i]), asfarray(self.dfff(x, self.X[i])))
                 return r        
@@ -46,7 +46,7 @@ class DFP(NonLinProblem):
         self.fff = self.f
         def ff(x):
             r = []
-            for i in xrange(self.Y.shape[0]):
+            for i in range(self.Y.shape[0]):
                 r.append(asfarray(self.fff(x, self.X[i])-self.Y[i])**2)
             return r
         self.f = ff

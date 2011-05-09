@@ -161,7 +161,7 @@ class Graphics:
             yy = array(p.iterValues.f[IND_start:])
             if isNewTrajectory: self.currMin = yy[0]
             k = 0
-            for j in xrange(IND_start, IND_start + len(yy)): #todo: min is slow in 1x1 comparison vs if-then-else
+            for j in range(IND_start, IND_start + len(yy)): #todo: min is slow in 1x1 comparison vs if-then-else
                 yy[k] = min(self.currMin, p.iterValues.f[j])
                 self.currMin = yy[k]
                 k += 1

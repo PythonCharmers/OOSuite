@@ -68,17 +68,6 @@ def xBounds2Matrix(p):
             
         p.beq = Hstack((p.beq, p.lb[indEQ]))
         
-
-#
-#        Aeq, beq = p.Aeq.copy(), p.beq.copy()
-#        p.Aeq = zeros([Len(p.beq) + nEQ, p.n])
-#        p.beq = zeros(Len(p.beq) + nEQ)
-#        p.beq[:Len(beq)] = beq
-#        p.Aeq[:Len(beq)] = Aeq
-#        for i in xrange(len(indEQ)):
-#            p.Aeq[initLenBeq+i, indEQ[i]] = 1
-#            p.beq[initLenBeq+i] = p.lb[indEQ[i]] # = p.ub[indEQ[i]], because they are the same
-
     p.lb = -inf*ones(p.n)
     p.ub = inf*ones(p.n)
 

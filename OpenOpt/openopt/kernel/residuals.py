@@ -111,7 +111,7 @@ class residuals:
     def _getMaxConstrGradient2(self, x):
         g = zeros(self.n)
         mr0 = self.getMaxResidual(x)
-        for j in xrange(self.n):
+        for j in range(self.n):
             x[j] += self.diffInt
             g[j] = self.getMaxResidual(x)-mr0
             x[j] -= self.diffInt
@@ -167,7 +167,7 @@ class residuals:
 
     def discreteConstraintsAreSatisfied(self, x):
         k = -1
-        for i in self.discreteVars.keys():#xrange(m):	# check x-vector
+        for i in self.discreteVars.keys():#range(m):	# check x-vector
             # TODO: replace it by "for i, val in dict.itervalues()"
             if not any(abs(x[i] - self.discreteVars[i]) < self.discrtol):
                 k=i	# Violation of this set constraint.
