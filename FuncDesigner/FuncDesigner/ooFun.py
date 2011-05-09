@@ -1191,7 +1191,7 @@ class oofun:
         self.disp('    diffInt = ' + str(self.diffInt)) # TODO: ADD other parameters: allowed epsilon, maxDiffLines etc
         self.disp('    |1 - info_user/info_numerical| < maxViolation = '+ str(self.maxViolation))        
         j = -1
-        for i in xrange(len(self.input)):#var in Vars:
+        for i in range(len(self.input)):#var in Vars:
             var = self.input[i]
             if len(self.input) > 1: self.disp('by input variable number ' + str(i) + ':')
             if isinstance(self.d, tuple) and self.d[i] is None:

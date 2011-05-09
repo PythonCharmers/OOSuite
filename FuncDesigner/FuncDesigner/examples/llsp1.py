@@ -15,7 +15,7 @@ startPoint = {a:0, b:0, c:0}
 # overdetermined system of 4 linear equations with 3 variables
 # you can use "for" cycle, operations of sum() eg 
 # startPoint = {a:[0,10], b:0, c:0} 
-# f = [sum(a) + i * b + 4 * sqrt(i) * c - 2 * i**2 for i in xrange(40)]
+# f = [sum(a) + i * b + 4 * sqrt(i) * c - 2 * i**2 for i in range(40)]
 f = [2*a+3*b-4*c+5, 2*a+13*b+15, a+4*b+4*c-25, 20*a+30*b-4*c+50]
  
 # alternatively, you can use the following vectorized form

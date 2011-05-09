@@ -29,7 +29,7 @@ solvers = [oosolver('amsg2p', gamma = 2.0)]
 Colors = ['r', 'k','b']
 lines = []
 R = {}
-for Tol_p in xrange(-10, -31, -1):
+for Tol_p in range(-10, -31, -1):
     #print('Tol = 10^%d' % Tol_p)
     for i, solver in enumerate(solvers):
         p = NSP(obj, startPoint, maxIter = 1700, name = 'Rzhevsky6 (nVars: ' + str(n)+')', maxTime = 300, maxFunEvals=1e7, color = Colors[i])

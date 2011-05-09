@@ -18,7 +18,7 @@ constraints = [x<1, x>-1, y<1, y>-1, z<1, z>-1, t<1, t>-1, x+2*y>-1.5,  sinh(x)+
 
 # add some more constraints via Python "for" cycle
 M = 10
-for i in xrange(M):
+for i in range(M):
     func = i*x+(M-i)*y+sinh(z)+cosh(t)
     constraints.append(func < i+1)
 

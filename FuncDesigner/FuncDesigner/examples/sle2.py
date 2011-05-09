@@ -18,7 +18,7 @@ f3 = a + a.size + 2*c.size # R^(2n+1) -> R; a.size and c.size will be resolved i
 f4 = c + range(4, 2*n+4) + f1 + 0.5*f2.sum() + 4*f3
 
 # We can use "for" cycle:
-for i in xrange(4):
+for i in range(4):
     f4 = 0.5*f4 + a + f1 + 1
 
 # Also, we could use matrix multiplication, eg f5 = dot(someMatrix, f4):
