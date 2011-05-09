@@ -14,7 +14,7 @@ MAINTAINER          = 'Dmitrey Kroshko',
 MAINTAINER_EMAIL    = 'dmitrey-at-openopt-dot-org',
 URL                 = 'http://openopt.org',
 LICENSE             = 'new BSD'
-
+sys.path.append(os.getcwd() + os.sep + 'FuncDesigner')
 from FuncDesigner import __version__ as Ver
 
 DOWNLOAD_URL        = 'http://openopt.org/images/a/a6/FuncDesigner.zip'
@@ -26,15 +26,11 @@ except:
     raw_input()
     exit()
 
-import string, shutil
 from distutils.errors import DistutilsError
 #from numpy.distutils.system_info import system_info, NotFoundError, dict_append, so_ext
 from numpy.distutils.core import setup, Extension
-import os, sys
 
 DOC_FILES = []
-from shutil import copytree, rmtree
-
 
 def configuration(parent_package='',top_path=None, package_name=DISTNAME):
     if os.path.exists('MANIFEST'): os.remove('MANIFEST')
