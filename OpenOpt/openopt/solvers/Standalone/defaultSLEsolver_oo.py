@@ -6,8 +6,11 @@ from openopt.kernel.nonOptMisc import scipyAbsentMsg, isspmatrix
 try:
     import scipy
     scipyInstalled = True
+    from scipy.sparse import linalg
 except:
     scipyInstalled = False
+    
+
 
 class defaultSLEsolver(baseSolver):
     __name__ = 'defaultSLEsolver'
@@ -33,13 +36,12 @@ class defaultSLEsolver(baseSolver):
         elif solver in self.sparseSolvers:
             useDense = False
         elif solver == 'autoselect':
-            if not scipyInstalled or not hasattr(scipy.sparse, 'linalg'):
+            if not scipyInstalled:
                 useDense = True
-                if isspmatrix(p.C) and prod(p.C.shape)>100000 and not hasattr(scipy.sparse, 'linalg'):
-                        s = """you use new version of scipy where scipy.sparse.linalg was moved to scikits.umfpack. 
-                        It is not ajusted with the version of our soft you are using yet. 
+                if isspmatrix(p.C) and prod(p.C.shape)>100000:
+                        s = """You have no scipy installed .
                         Thus the SLE will be solved as dense. 
-                        If sparsity is strongly required, you could use rendering (see FuncDesigner doc)"""
+                        """
                         p.pWarn(s)
                     
                 solver = self.defaultDenseSolver
