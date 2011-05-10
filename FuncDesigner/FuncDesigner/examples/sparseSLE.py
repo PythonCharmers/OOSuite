@@ -13,9 +13,9 @@ a, b, c = oovar(), oovar(size=N), oovar(size=2*N)
 f1 = a + sum(b*arange(5, N+5))
 f2 = a + 2*b + c.sum() 
 f3 = a + a.size + 2*c.size 
-f4 = c + range(4, 2*N+4) + 4*f3
+f4 = c + arange(4, 2*N+4) + 4*f3
 
-f = [a+f4+5, 2*a+b*range(10, N+10)+15, a+4*b.sum()+2*c.sum()-45]
+f = [a+f4+5, 2*a+b*arange(10, N+10)+15, a+4*b.sum()+2*c.sum()-45]
 # alternatively, you could pass equations:
 #f = [a+f4==-5, 2*a+b==-15, a==-4*b.sum()-2*c.sum()+45]
 linSys = sle(f)
