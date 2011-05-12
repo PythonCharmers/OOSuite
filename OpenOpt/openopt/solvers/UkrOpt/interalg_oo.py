@@ -1,5 +1,5 @@
 from numpy import isfinite, all, argmax, where, delete, array, asarray, inf, argmin, hstack, vstack, tile, arange, amin, \
-logical_and, float64, ceil, amax, inf, ndarray, isinf, any, logical_or, nanargmin, nan, nanmin, nanargmax
+logical_and, float64, ceil, amax, inf, ndarray, isinf, any, logical_or, nanargmin, nan, nanmin, nanargmax, take
 import numpy
 from numpy.linalg import norm, solve, LinAlgError
 from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X,  SMALL_DELTA_F, MAX_NON_SUCCESS
@@ -195,7 +195,7 @@ class interalg(baseSolver):
         ff = f(xRecord)
         p.iterfcn(xRecord, ff)
         if o.size != 0:
-            g = nanmin(nanmin(o), g)
+            g = nanmin([nanmin(o), g])
         p.extras['isRequiredPrecisionReached'] = True if ff - g < fTol and k is False else False
         # TODO: simplify it
         if p.goal in ('max', 'maximum'):
@@ -275,10 +275,11 @@ def func6(y, e, o, a, n, fo, g):
     # TODO: is it really required? Mb next handling s / q with all fixed coords would make the job?
     setForRemoving = set()
     s, q = o[:, 0:n], o[:, n:2*n]
-    ind = any(logical_and(s > fo, q > fo), 1)
+    ind0 = logical_and(s > fo, q > fo)
+    ind = any(ind0, 1)
     ind = where(ind)[0]
     if ind.size != 0:
-        g = amin((g, nanmin(s[ind]), nanmin(q[ind])))
+        g = nanmin((g, nanmin(s[ind0]), nanmin(q[ind0])))
         y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
     return y, e, o, a, g
 
@@ -286,6 +287,7 @@ def func5(y, e, o, a , n, nCut, g):
     m = e.shape[0]
     s, q = o[:, 0:n], o[:, n:2*n]
     if m > nCut:
+        #raise 0
         #p.warn('max number of nodes (parameter maxNodes = %d) exceeded, exact global optimum is not guaranteed' % self.maxNodes)
         #j = ceil((currentDataMem - maxMem)/numBytes)
         j = m - nCut
@@ -327,15 +329,28 @@ def func3(y, e, o, a, n, maxActiveNodes):
         values = tmp[arange(m),ind]
         ind = values.argsort()
         
+        i1, i2 = ind[:maxActiveNodes], ind[maxActiveNodes:]
         # old
-#                ind = ind[maxActiveNodes:]
+#                ind = i2
 #                b, v, z, l = y[ind], e[ind], o[ind], a[ind]
 #                y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
         
         # new
-        ind = ind[:maxActiveNodes]
-        b, v, z, l = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
-        y, e, o, a = y[ind], e[ind], o[ind], a[ind]
+        ind = i1
+        
+        i1.sort()
+        i2.sort()
+        
+        #OLD
+        #b, v, z, l = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
+#        y, e, o, a = y[ind], e[ind], o[ind], a[ind]
+        #NEW
+        y_tmp, e_tmp, o_tmp, a_tmp = y[ind].copy(), e[ind].copy(), o[ind].copy(), a[ind].copy()
+        b = take(y, i2, axis=0, out=y[:len(i2)])
+        v = take(e, i2, axis=0, out=e[:len(i2)])
+        z = take(o, i2, axis=0, out=o[:len(i2)])
+        l = take(a, i2, axis=0, out=a[:len(i2)])
+        y, e, o, a = y_tmp, e_tmp, o_tmp, a_tmp
         
     return y, e, o, a, b, v, z, l
 
