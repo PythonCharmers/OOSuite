@@ -22,7 +22,7 @@ class interalg(baseSolver):
     dataType = float64
     #maxMem = '150MB'
     maxNodes = 150000
-    maxActiveNodes = 150
+    maxActiveNodes = 1500
     __isIterPointAlwaysFeasible__ = lambda self, p: p.__isNoMoreThanBoxBounded__()
     #_canHandleScipySparse = True
 
