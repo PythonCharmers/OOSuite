@@ -2,7 +2,11 @@
 
 from numpy import inf, asfarray, copy, all, any, empty, atleast_2d, zeros, dot, asarray, atleast_1d, empty, \
 ones, ndarray, where, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum, prod, nonzero,\
-isnan, asscalar, zeros_like, ones_like, amin, amax, logical_and, logical_or, isinf, nanmin, nanmax, logical_not, logical_xor
+isnan, asscalar, zeros_like, ones_like, amin, amax, logical_and, logical_or, isinf, logical_not, logical_xor
+
+#from bottleneck import nanmin, nanmax
+from numpy import nanmin, nanmax
+
 from numpy.linalg import norm
 from FDmisc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scipyInstalled, \
 raise_except, DiagonalType
@@ -238,7 +242,7 @@ class oofun:
             r.getOrder = self.getOrder
             r.criticalPoints = False
             #r._interval = lambda domain: (self._interval(domain)[0] + other, self._interval(domain)[1] + other)
-            if isscalar(other) or other.size == 1 or ('size' in self.__dict__ and self.size == other.size): 
+            if isscalar(other) or asarray(other).size in (1, other.size): 
                 r._D = lambda *args,  **kwargs: self._D(*args,  **kwargs) 
         r.vectorized = True
         return r
@@ -409,14 +413,12 @@ class oofun:
             r._getFuncCalcEngine = lambda *args,  **kwargs: other * self._getFuncCalcEngine(*args,  **kwargs)
             r.criticalPoints = False
 
-            if isscalar(other) or other.size == 1:
+            if isscalar(other) or asarray(other).size == 1: 
                 r._D = lambda *args, **kwargs: dict([(key, other*value) for key, value in self._D(*args, **kwargs).items()])
                 r.d = raise_except
             else:
                 r.d = lambda x: aux_d(x, other)
         isOtherOOFun = isinstance(other, oofun)
-        
-        
         
         def interval(domain, dtype):
             lb1, ub1 = self._interval(domain, dtype)
@@ -428,6 +430,7 @@ class oofun:
             
             if isscalar(other):
                 t_min, t_max = (lb1 * other, ub1 * other) if other >= 0 else (ub1 * other, lb1 * other)
+                #t_min, t_max = asdf(lb1, ub1, other)#, ub1 * other) if other >= 0 else (ub1 * other, lb1 * other)
             else:
                 if isOtherOOFun:
                     t = vstack((lb1 * lb2, ub1 * lb2, \
@@ -1546,7 +1549,10 @@ class ooarray(ndarray):
         return [Constraint(elem) for elem in r.tolist()]
         #else: raise FuncDesignerException('unimplemented yet')
         
-        
+
+#def asdf(lb1, ub1, other):
+#    return (lb1 * other, ub1 * other) if other >= 0 else (ub1 * other, lb1 * other)
+
 # TODO: implement it!
 # TODO: check __mul__ and __div__ for oofun with size > 1
 
