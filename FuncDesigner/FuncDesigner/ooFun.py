@@ -222,7 +222,7 @@ class oofun:
             r._interval = interval
         else:
             if isinstance(other,  ooarray): return other + self
-            other = array(other, 'float')
+            if isinstance(other,  ndarray): other = other.copy() 
 #            if other.size == 1:
 #                #r = oofun(lambda *ARGS, **KWARGS: None, input = self.input)
 #                r = oofun(lambda a: a+other, self)
@@ -238,7 +238,7 @@ class oofun:
             r.getOrder = self.getOrder
             r.criticalPoints = False
             #r._interval = lambda domain: (self._interval(domain)[0] + other, self._interval(domain)[1] + other)
-            if (other.size == 1 or ('size' in self.__dict__ and self.size == other.size)): 
+            if isscalar(other) or other.size == 1 or ('size' in self.__dict__ and self.size == other.size): 
                 r._D = lambda *args,  **kwargs: self._D(*args,  **kwargs) 
         r.vectorized = True
         return r
@@ -329,7 +329,7 @@ class oofun:
 
             r._interval = interval
         else:
-            other = array(other,'float')
+            other = array(other,'float')# TODO: handle float128
             r = oofun(lambda a: a/other, self, discrete = self.discrete)# TODO: involve sparsity if possible!
             r.getOrder = self.getOrder
             r._getFuncCalcEngine = lambda *args,  **kwargs: self._getFuncCalcEngine(*args,  **kwargs) / other
@@ -403,35 +403,38 @@ class oofun:
             r.d = (lambda x, y: aux_d(x, y), lambda x, y: aux_d(y, x))
             r.getOrder = lambda *args, **kwargs: self.getOrder(*args, **kwargs) + other.getOrder(*args, **kwargs)
         else:
-            other = array(other, 'float')
+            if isinstance(other,  ndarray): other = other.copy()
             r = oofun(lambda x: x*other, self, discrete = self.discrete)
             r.getOrder = self.getOrder
             r._getFuncCalcEngine = lambda *args,  **kwargs: other * self._getFuncCalcEngine(*args,  **kwargs)
             r.criticalPoints = False
 
-            if other.size == 1:
+            if isscalar(other) or other.size == 1:
                 r._D = lambda *args, **kwargs: dict([(key, other*value) for key, value in self._D(*args, **kwargs).items()])
                 r.d = raise_except
             else:
                 r.d = lambda x: aux_d(x, other)
         isOtherOOFun = isinstance(other, oofun)
+        
+        
+        
         def interval(domain, dtype):
             lb1, ub1 = self._interval(domain, dtype)
-            
-            # works incorrectly
-            #lb2, ub2 = other._interval(domain, dtype) if isOtherOOFun else other, other
             
             if isOtherOOFun:
                 lb2, ub2 = other._interval(domain, dtype)
             else:
                 lb2, ub2 = other, other # TODO: improve it
             
-            if isOtherOOFun:
-                t = vstack((lb1 * lb2, ub1 * lb2, \
-                            lb1 * ub2, ub1 * ub2))# TODO: improve it
+            if isscalar(other):
+                t_min, t_max = (lb1 * other, ub1 * other) if other >= 0 else (ub1 * other, lb1 * other)
             else:
-                t = vstack((lb1 * other, ub1 * other))# TODO: improve it
-            t_min, t_max = atleast_1d(nanmin(t, 0)), atleast_1d(nanmax(t, 0))
+                if isOtherOOFun:
+                    t = vstack((lb1 * lb2, ub1 * lb2, \
+                                lb1 * ub2, ub1 * ub2))# TODO: improve it
+                else:
+                    t = vstack((lb1 * other, ub1 * other))# TODO: improve it
+                t_min, t_max = atleast_1d(nanmin(t, 0)), atleast_1d(nanmax(t, 0))
             #assert isinstance(t_min, ndarray) and isinstance(t_max, ndarray), 'Please update numpy to more recent version'
             ind1_zero_minus = logical_and(lb1<0, ub1>=0)
             ind1_zero_plus = logical_and(lb1<=0, ub1>0)
@@ -505,7 +508,6 @@ class oofun:
                     isNonInteger = other != asarray(other, int) # TODO: rational numbers?
                     t_max[atleast_1d(logical_and(logical_and(ind, isNonInteger), ub < 0))] = nan
                     t_min[atleast_1d(logical_and(logical_and(ind, logical_not(isNonInteger)), ub >= 0))] = 0.0
-                    
                 return t_min, t_max
         else:
             f = lambda x, y: x ** y
