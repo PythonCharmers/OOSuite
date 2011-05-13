@@ -1,5 +1,9 @@
 from numpy import isfinite, all, argmax, where, delete, array, asarray, inf, argmin, hstack, vstack, tile, arange, amin, \
-logical_and, float64, ceil, amax, inf, ndarray, isinf, any, logical_or, nanargmin, nan, nanmin, nanargmax, take
+logical_and, float64, ceil, amax, inf, ndarray, isinf, any, logical_or, nan, take
+
+#from bottleneck import nanargmin, nanargmax, nanmin
+from numpy import nanmin, nanargmin, nanargmin
+
 import numpy
 from numpy.linalg import norm, solve, LinAlgError
 from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X,  SMALL_DELTA_F, MAX_NON_SUCCESS
@@ -18,7 +22,7 @@ class interalg(baseSolver):
     dataType = float64
     #maxMem = '150MB'
     maxNodes = 150000
-    maxActiveNodes = 1500
+    maxActiveNodes = 150
     __isIterPointAlwaysFeasible__ = lambda self, p: p.__isNoMoreThanBoxBounded__()
     #_canHandleScipySparse = True
 
@@ -161,12 +165,6 @@ class interalg(baseSolver):
             o, a = o.reshape(2*n, m).T, a.reshape(2*n, m).T
             
             y, e, o, a = func7(y, e, o, a)
-            
-            # CHANGES
-            # WORKS SLOWER
-#            o, a, bestCenter, bestCenterObjective = func8(y, e)
-#            o, a = o.reshape(2*n, m).T, a.reshape(2*n, m).T
-            # CHANGES END
             
             y, e, o, a = vstack((y, b)), vstack((e, v)), vstack((o, z)), vstack((a, l))
             y, e, o, a, g = func6(y, e, o, a, n, fo, g)
@@ -343,7 +341,7 @@ def func3(y, e, o, a, n, maxActiveNodes):
         
         #OLD
         #b, v, z, l = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
-#        y, e, o, a = y[ind], e[ind], o[ind], a[ind]
+        #y, e, o, a = y[ind], e[ind], o[ind], a[ind]
         #NEW
         y_tmp, e_tmp, o_tmp, a_tmp = y[ind].copy(), e[ind].copy(), o[ind].copy(), a[ind].copy()
         b = take(y, i2, axis=0, out=y[:len(i2)])
