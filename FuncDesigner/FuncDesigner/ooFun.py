@@ -502,9 +502,10 @@ class oofun:
                 #lb2, ub2 = other._interval(domain, dtype) if isinstance(other, oofun) else other, other # TODO: improve it
                 ind = lb < 0.0
                 if any(ind):
-                    ind2 = logical_and(ind, other != asarray(other, int))
-                    t_min[atleast_1d(logical_and(ind2, ub >= 0))] = 0.0
-                    t_max[atleast_1d(logical_and(ind2, ub < 0))] = nan
+                    isNonInteger = other != asarray(other, int) # TODO: rational numbers?
+                    t_max[atleast_1d(logical_and(logical_and(ind, isNonInteger), ub < 0))] = nan
+                    t_min[atleast_1d(logical_and(logical_and(ind, logical_not(isNonInteger)), ub >= 0))] = 0.0
+                    
                 return t_min, t_max
         else:
             f = lambda x, y: x ** y
