@@ -253,7 +253,9 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     p.isFinished = True
     if not hasattr(p, 'xf') and not hasattr(p, 'xk'): p.xf = p.xk = ones(p.n)*nan
     if hasattr(p, 'xf') and (not hasattr(p, 'xk') or array_equiv(p.xk, p.x0)): p.xk = p.xf
-    if not hasattr(p,  'xf') or all(p.xf==nan): p.xf = p.xk
+    if not hasattr(p,  'xf') or all(isnan(p.xf)): p.xf = p.xk
+    if p.xf is nan: 
+        p.xf = p.xk = ones(p.n)*nan
     
     if p.isFeas(p.xf) and (not p.probType=='MINLP' or p.discreteConstraintsAreSatisfied(p.xf)):
         p.isFeasible = True
