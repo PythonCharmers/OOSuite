@@ -68,18 +68,19 @@ class pclp(baseSolver):
     def __init__(self): pass
 
     def __solver__(self, p):
+        xBounds2Matrix(p)
         n = p.n
         
-        #ind_unbounded = where(logical_and(isinf(p.lb), isinf(p.ub)))[0].copy()
+        ind_unbounded = where(logical_and(isinf(p.lb), isinf(p.ub)))[0].copy()
         
         # TODO: cleanup
-        ind_unbounded = where(p.lb!=0)[0]
-        ind_lb_0 = where(p.lb==0)[0]
-        p.lb[ind_lb_0] = -inf
+        #ind_unbounded = array([])#where(p.lb!=0)[0]
+#        ind_lb_0 = where(p.lb==0)[0]
+#        p.lb[ind_lb_0] = -inf
         #print 'ind_unbounded:', ind_unbounded
         n_unbounded = ind_unbounded.size
 
-        xBounds2Matrix(p)
+        
         
         # Cast linear inequality constraints into linear equality constraints using slack variables
         nLinInEq, nLinEq = p.b.size, p.beq.size
@@ -102,13 +103,15 @@ class pclp(baseSolver):
 #            _A = Hstack((p.A, Eye(nLinInEq)))
             
         _A = Hstack((p.A, Eye(nLinInEq), -p.A[:, ind_unbounded]))
+        
+
 #        if isspmatrix(_A): 
 #            _A = _A.A
         
         # add lin eq cons
         if nLinEq != 0:
             _A = Vstack((_A, Hstack((p.Aeq, SparseMatrixConstructor((nLinEq, nLinInEq)), -p.Aeq[:, ind_unbounded]))))
-        
+            
         if isspmatrix(_A): 
             _A = _A.tolil()
             #_A = _A.A
@@ -120,6 +123,7 @@ class pclp(baseSolver):
         #_b = hstack((p.b, [0]*n_unbounded, p.beq))
         
         _f = hstack((p.f, zeros(nLinInEq), -p.f[ind_unbounded]))
+        
         _b = hstack((p.b, p.beq))
         
         
@@ -175,12 +179,22 @@ def lp_engine(c, A, b):
     else:
         sol = True
         j = -1
-        for i in range(n):
-            j = j+1
-            if H[m+1,j] > 1e-10:
-                H[:,j] = []
-                indx[j] = []
-                j = j-1
+        
+        #NEW
+        tmp = H[m+1,:]
+        if type(tmp) != ndarray: tmp = tmp.A
+        ind = tmp > 1e-10
+        if any(ind):
+            j = where(logical_not(ind))[0]
+            H = H[:, j]
+            indx = indx[j]
+        #Old
+#        for i in range(n):
+#            j = j+1
+#            if H[m+1,j] > 1e-10:
+#                H[:,j] = []
+#                indx[j] = []
+#                j = j-1
         #H(m+2,:) = [] % delete last row
         H = H[0:m+1,:]
         if size(indx) > 0:
