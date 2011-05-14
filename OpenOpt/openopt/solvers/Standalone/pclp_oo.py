@@ -149,10 +149,15 @@ def lp_engine(c, A, b):
 #    b = asarray(b)
 
     m,n = A.shape
-    for i in range(m):
-        if b[i] < 0.0:
-            A[i,:] = -A[i,:]
-            b[i] = -b[i]
+    ind = b < 0
+    if any(ind):
+        b[ind] = -b[ind]
+        #A[ind, :] = -A[ind, :] doesn't work for sparse
+        if type(A) == ndarray:
+            A[ind, :] = -A[ind, :]
+        else:
+            for i in where(ind)[0]:
+                A[i,:] = -A[i,:]
             
     d = -A.sum(axis=0)
     if isinstance(d, matrix): d = d.A.flatten() # d may be dense matrix
@@ -182,7 +187,7 @@ def lp_engine(c, A, b):
         
         #NEW
         tmp = H[m+1,:]
-        if type(tmp) != ndarray: tmp = tmp.A
+        if type(tmp) != ndarray: tmp = tmp.A.flatten()
         ind = tmp > 1e-10
         if any(ind):
             j = where(logical_not(ind))[0]
@@ -200,10 +205,10 @@ def lp_engine(c, A, b):
         if size(indx) > 0:
         # Phase two
             #H, basis, is_bounded = _simplex(H,basis,indx,2);
-            is_bounded = _simplex(H,basis,indx,2);
+            is_bounded = _simplex(H,basis,indx,2)
             if is_bounded:
-                optx = zeros(n+m);
-                n1,n2 = H.shape;
+                optx = zeros(n+m)
+                n1,n2 = H.shape
                 for i in range(m):
                     optx[basis[i]] = H[i,n2-1]
                 # optx(n+1:n+m,1) = []; % delete last m elements
@@ -213,8 +218,8 @@ def lp_engine(c, A, b):
                 optx = []
                 zmin = -Inf
         else:
-            optx = zeros(n+m);
-            zmin = 0;
+            optx = zeros(n+m)
+            zmin = 0
     return (optx, zmin, is_bounded, sol, basis)  
 
 def _simplex(H,basis,indx,s):
@@ -237,7 +242,7 @@ def _simplex(H,basis,indx,s):
         #print 'new Iter'
         # [fm,jp] = min(H(n1,1:n2-1));
         q = H[n1-1, 0:n2-1] # last row, all columns but last
-        if isspmatrix(q): q = q.toarray().flatten()
+        if type(q) != ndarray: q = q.toarray().flatten()
         jp = argmin(q)
         fm = q[jp]
         if fm >= 0:
@@ -246,7 +251,7 @@ def _simplex(H,basis,indx,s):
         else:
             # [hm,ip] = max(H(1:n1-s0,jp));
             q = H[0:n1-s0,jp]
-            if isspmatrix(q): q = q.toarray().flatten()
+            if type(q) != ndarray: q = q.toarray().flatten()
             ip = argmax(q)
             hm = q[ip]
             if hm <= 0:
