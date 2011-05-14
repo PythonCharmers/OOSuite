@@ -29,7 +29,7 @@ def xBounds2Matrix(p):
     nLB, nUB, nEQ = Len(indLB), Len(indUB), Len(indEQ)
 
     if  nLB>0 or nUB>0:
-        if p.useSparse or (isspmatrix(p.A) or (scipyInstalled and nLB+nUB>=p.A.shape[0]) and p.useSparse is not False):
+        if p.useSparse is True or (isspmatrix(p.A) or (scipyInstalled and nLB+nUB>=p.A.shape[0]) and p.useSparse is not False):
             R1 = coo_matrix((-ones(nLB), (range(nLB), indLB)), shape=(nLB, p.n)) if nLB != 0 else zeros((0, p.n))
             R2 = coo_matrix((ones(nUB), (range(nUB), indUB)), shape=(nUB, p.n)) if nUB != 0 else zeros((0, p.n))
         else:
@@ -51,7 +51,7 @@ def xBounds2Matrix(p):
 
     if nEQ>0:
         
-        if p.useSparse or (isspmatrix(p.Aeq) or (scipyInstalled and nEQ>=p.Aeq.shape[0]) and p.useSparse is not False):
+        if p.useSparse is True or (isspmatrix(p.Aeq) or (scipyInstalled and nEQ>=p.Aeq.shape[0]) and p.useSparse is not False):
             R = coo_matrix(([1]*nEQ, (range(nEQ), indEQ)), shape=(nEQ, p.n))
         else:
             R = zeros((nEQ, p.n))
