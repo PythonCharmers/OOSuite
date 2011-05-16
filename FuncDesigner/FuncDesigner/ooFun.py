@@ -4,8 +4,10 @@ from numpy import inf, asfarray, copy, all, any, empty, atleast_2d, zeros, dot, 
 ones, ndarray, where, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum, prod, nonzero,\
 isnan, asscalar, zeros_like, ones_like, amin, amax, logical_and, logical_or, isinf, logical_not, logical_xor
 
-#from bottleneck import nanmin, nanmax
-from numpy import nanmin, nanmax
+try:
+    from bottleneck import nanmin, nanmax
+except ImportError:
+    from numpy import nanmin, nanmax
 
 from numpy.linalg import norm
 from FDmisc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scipyInstalled, \
@@ -187,7 +189,7 @@ class oofun:
             Tmp = self.fun(vstack(tmp))
 #            from numpy import isfinite
 #            assert not any(isnan(Tmp))
-            return amin(Tmp, 0), amax(Tmp, 0)
+            return nanmin(Tmp, 0), nanmax(Tmp, 0)
         else:
             raise FuncDesignerException('interval calculations are unimplemented for the oofun yet')
     
@@ -413,7 +415,7 @@ class oofun:
             r._getFuncCalcEngine = lambda *args,  **kwargs: other * self._getFuncCalcEngine(*args,  **kwargs)
             r.criticalPoints = False
 
-            if isscalar(other) or asarray(other).size == 1: 
+            if isscalar(other) or asarray(other).size == 1:  # other may be array-like
                 r._D = lambda *args, **kwargs: dict([(key, other*value) for key, value in self._D(*args, **kwargs).items()])
                 r.d = raise_except
             else:
@@ -439,41 +441,34 @@ class oofun:
                     t = vstack((lb1 * other, ub1 * other))# TODO: improve it
                 t_min, t_max = atleast_1d(nanmin(t, 0)), atleast_1d(nanmax(t, 0))
             #assert isinstance(t_min, ndarray) and isinstance(t_max, ndarray), 'Please update numpy to more recent version'
-            ind1_zero_minus = logical_and(lb1<0, ub1>=0)
-            ind1_zero_plus = logical_and(lb1<=0, ub1>0)
             
-            ind2_zero_minus = logical_and(lb2<0, ub2>=0)
-            ind2_zero_plus = logical_and(lb2<=0, ub2>0)
-            
-            has_plus_inf_1 = logical_or(logical_and(ind1_zero_minus, lb2==-inf), logical_and(ind1_zero_plus, ub2==inf))
-            has_plus_inf_2 = logical_or(logical_and(ind2_zero_minus, lb1==-inf), logical_and(ind2_zero_plus, ub1==inf))
-            
-            # !!!! lines with zero should be before lines with inf !!!!
-            ind = logical_or(logical_and(lb1==-inf, ub2==0), logical_and(lb2==-inf, ub1==0))
-            t_max[atleast_1d(logical_and(ind, t_max<0.0))] = 0.0
-            
-            t_max[atleast_1d(logical_or(has_plus_inf_1, has_plus_inf_2))] = inf
-            t_max[atleast_1d(logical_or(logical_and(lb1==0, ub2==inf), logical_and(lb2==0, ub1==inf)))] = inf
-            
-            has_minus_inf_1 = logical_or(logical_and(ind1_zero_plus, lb2==-inf), logical_and(ind1_zero_minus, ub2==inf))
-            has_minus_inf_2 = logical_or(logical_and(ind2_zero_plus, lb1==-inf), logical_and(ind2_zero_minus, ub1==inf))
-            # !!!! lines with zero should be before lines with -inf !!!!
-            t_min[atleast_1d(logical_or(logical_and(lb1==0, ub2==inf), logical_and(lb2==0, ub1==inf)))] = 0.0
-            t_min[atleast_1d(logical_or(logical_and(lb1==-inf, ub2==0), logical_and(lb2==-inf, ub1==0)))] = 0.0
-            
-            t_min[atleast_1d(logical_or(has_minus_inf_1, has_minus_inf_2))] = -inf
-            
-
-#            tmp2[atleast_1d(logical_and(logical_and(lb1<0, ub1>=0), lb2==-inf))] = inf
-#            tmp2[atleast_1d(logical_and(logical_and(lb1<=0, ub1>0), ub2==inf))] = inf
-#            
-#            tmp1[atleast_1d(logical_and(logical_and(lb1<0, ub1>=0), ub2==inf))] = -inf
-#            tmp1[atleast_1d(logical_and(logical_and(lb1<=0, ub1>0), ub2<0))] = -inf
-            
+            if any(isinf(lb1)) or any(isinf(lb2)) or any(isinf(ub1)) or any(isinf(ub2)):
+                ind1_zero_minus = logical_and(lb1<0, ub1>=0)
+                ind1_zero_plus = logical_and(lb1<=0, ub1>0)
+                
+                ind2_zero_minus = logical_and(lb2<0, ub2>=0)
+                ind2_zero_plus = logical_and(lb2<=0, ub2>0)
+                
+                has_plus_inf_1 = logical_or(logical_and(ind1_zero_minus, lb2==-inf), logical_and(ind1_zero_plus, ub2==inf))
+                has_plus_inf_2 = logical_or(logical_and(ind2_zero_minus, lb1==-inf), logical_and(ind2_zero_plus, ub1==inf))
+                
+                # !!!! lines with zero should be before lines with inf !!!!
+                ind = logical_or(logical_and(lb1==-inf, ub2==0), logical_and(lb2==-inf, ub1==0))
+                t_max[atleast_1d(logical_and(ind, t_max<0.0))] = 0.0
+                
+                t_max[atleast_1d(logical_or(has_plus_inf_1, has_plus_inf_2))] = inf
+                t_max[atleast_1d(logical_or(logical_and(lb1==0, ub2==inf), logical_and(lb2==0, ub1==inf)))] = inf
+                
+                has_minus_inf_1 = logical_or(logical_and(ind1_zero_plus, lb2==-inf), logical_and(ind1_zero_minus, ub2==inf))
+                has_minus_inf_2 = logical_or(logical_and(ind2_zero_plus, lb1==-inf), logical_and(ind2_zero_minus, ub1==inf))
+                # !!!! lines with zero should be before lines with -inf !!!!
+                t_min[atleast_1d(logical_or(logical_and(lb1==0, ub2==inf), logical_and(lb2==0, ub1==inf)))] = 0.0
+                t_min[atleast_1d(logical_or(logical_and(lb1==-inf, ub2==0), logical_and(lb2==-inf, ub1==0)))] = 0.0
+                
+                t_min[atleast_1d(logical_or(has_minus_inf_1, has_minus_inf_2))] = -inf
             
 #            assert not any(isnan(t_min)) and not any(isnan(t_max))
-
-            
+           
             return t_min, t_max
                 
         r._interval = interval
@@ -1477,6 +1472,7 @@ class ooarray(ndarray):
         if self.size == 1:
             return ooarray(asscalar(self)*other)
         elif isscalar(other):
+            # TODO: mb return mere ooarray(self.view(ndarray)*other) or other.view(ndarray)
             return ooarray(self.view(ndarray)*other if self.dtype != object else [self[i]*other for i in range(self.size)])
         elif isinstance(other, oofun):
             hasSize = 'size' in dir(other)
@@ -1490,6 +1486,7 @@ class ooarray(ndarray):
                 # and self.size != 1
                 return ooarray([self[i]*other[i] for i in range(self.size)])
         elif isinstance(other, ndarray):
+            # TODO: mb return mere ooarray(self.view(ndarray)*other)?or other.view(ndarray)
             return ooarray(self*asscalar(other) if other.size == 1 else [self[i]*other[i] for i in range(other.size)])
         else:
             raise SpaceFuncsException('bug in multiplication')
@@ -1497,7 +1494,7 @@ class ooarray(ndarray):
     def __div__(self, other):
         if self.size == 1:
             return asscalar(self)/other
-        elif isscalar(other) or isinstance(other, ndarray) and other.size == 1:
+        elif isscalar(other) or (isinstance(other, ndarray) and other.size in (1, self.size)):
             return self * (1.0/other)
         elif isinstance(other, oofun):
             if self.dtype != object:
@@ -1508,6 +1505,7 @@ class ooarray(ndarray):
             if self.dtype != object:
                 return self.view(ndarray) / other.view(ndarray)
             else:
+                # TODO: mb return mere ooarray(self.view(ndarray) / other)? or other.view(ndarray)
                 return ooarray([self[i] / other[i] for i in range(self.size)])
         else:
             raise FuncDesignerException('unimplemented yet')
@@ -1515,7 +1513,7 @@ class ooarray(ndarray):
     def __add__(self, other):
         if isinstance(other, list):
             other = ooarray(other)
-        if isscalar(other) or isinstance(other, ndarray) and other.size == 1:
+        if isscalar(other) or (isinstance(other, ndarray) and other.size in (1, self.size)):
             return ooarray(self.view(ndarray) + other)
         elif isinstance(other, oofun):
             if self.dtype != object:
@@ -1526,6 +1524,7 @@ class ooarray(ndarray):
             if self.dtype != object:
                 return self.view(ndarray) + other.view(ndarray)
             else:
+                # TODO: mb return mere ooarray(self.view(ndarray) + other) or ooarray(self.view(ndarray) + other.view(ndarray))?
                 return ooarray([self[i] + other[i] for i in range(self.size)])
         else:
             raise FuncDesignerException('unimplemented yet')
