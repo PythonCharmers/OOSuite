@@ -1,15 +1,19 @@
 from numpy import isfinite, all, argmax, where, delete, array, asarray, inf, argmin, hstack, vstack, tile, arange, amin, \
 logical_and, float64, ceil, amax, inf, ndarray, isinf, any, logical_or, nan, take
 
-#from bottleneck import nanargmin, nanargmax, nanmin
-from numpy import nanmin, nanargmin, nanargmin
-
 import numpy
 from numpy.linalg import norm, solve, LinAlgError
 from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X,  SMALL_DELTA_F, MAX_NON_SUCCESS
 from openopt.kernel.baseSolver import *
 from openopt.kernel.Point import Point
 from FuncDesigner import ooPoint
+
+
+try:
+    from bottleneck import nanargmin, nanargmax, nanmin
+    bottleneck_is_present = True
+except ImportError:
+    from numpy import nanmin, nanargmin, nanargmax
 
 class interalg(baseSolver):
     __name__ = 'interalg_0.17'
@@ -50,6 +54,12 @@ class interalg(baseSolver):
         p.kernelIterFuncs.pop(SMALL_DELTA_F)
         if MAX_NON_SUCCESS in p.kernelIterFuncs: 
             p.kernelIterFuncs.pop(MAX_NON_SUCCESS)
+        
+        if not bottleneck_is_present:
+                p.pWarn('''
+                installation of Python module "bottleneck" 
+                (available via easy_install, takes several minutes for compilation)
+                could speedup the solver %s''' % self.__name__)
         
         p.useMultiPoints = True
         
