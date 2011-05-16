@@ -1,5 +1,5 @@
 from numpy import isfinite, all, argmax, where, delete, array, asarray, inf, argmin, hstack, vstack, tile, arange, amin, \
-logical_and, float64, ceil, amax, inf, ndarray, isinf, any, logical_or, nan, take
+logical_and, float64, ceil, amax, inf, ndarray, isinf, any, logical_or, nan, take, logical_not
 
 import numpy
 from numpy.linalg import norm, solve, LinAlgError
@@ -14,6 +14,7 @@ try:
     bottleneck_is_present = True
 except ImportError:
     from numpy import nanmin, nanargmin, nanargmax
+    bottleneck_is_present = False
 
 class interalg(baseSolver):
     __name__ = 'interalg_0.17'
@@ -84,7 +85,7 @@ class interalg(baseSolver):
         fTol = p.fTol
         if fTol is None:
             fTol = 1e-7
-            p.warn('solver %s require p.fTol value (required objective function tolerance); 10^-7 will be used')
+            p.warn('solver %s require p.fTol value (required objective function tolerance); 10^-7 will be used' % self.__name__)
         
         fd_obj = p.user.f[0]
         #raise 0
@@ -262,7 +263,7 @@ def func8(domain, fd_obj, dataType):
     centers.isMultiPoint = True
     F = fd_obj(centers)
     bestCenterInd = nanargmin(F)
-    if bestCenterInd is nan:
+    if isnan(bestCenterInd):
         bestCenterInd = 0
         bestCenterObjective = inf
     
@@ -273,10 +274,17 @@ def func8(domain, fd_obj, dataType):
     return asarray(TMP.lb, dtype=dataType), asarray(TMP.ub, dtype=dataType), bestCenter, bestCenterObjective
 
 def func7(y, e, o, a):
-    ind = where(logical_and(all(isnan(o), 1), all(isnan(a), 1)))[0]
-    #print 'ind nan size:',  ind.size
-    if ind.size != 0:
-        y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
+    IND = logical_and(all(isnan(o), 1), all(isnan(a), 1))
+    #ind = where(IND)[0]
+    #if ind.size != 0:
+    #    y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
+    if any(IND):
+        j = where(logical_not(IND))[0]
+        lj = j.size
+        y = take(y, j, axis=0, out=y[:lj])
+        e = take(e, j, axis=0, out=e[:lj])
+        o = take(o, j, axis=0, out=o[:lj])
+        a = take(a, j, axis=0, out=a[:lj])
     return y, e, o, a 
 
 def func6(y, e, o, a, n, fo, g):
@@ -284,11 +292,22 @@ def func6(y, e, o, a, n, fo, g):
     setForRemoving = set()
     s, q = o[:, 0:n], o[:, n:2*n]
     ind0 = logical_and(s > fo, q > fo)
-    ind = any(ind0, 1)
-    ind = where(ind)[0]
+    ind1 = any(ind0, 1)
+    ind = where(ind1)[0]
     if ind.size != 0:
         g = nanmin((g, nanmin(s[ind0]), nanmin(q[ind0])))
-        y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
+        
+        #OLD
+        #y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
+        
+        #NEW
+        j = where(logical_not(ind1))[0]
+        lj = j.size
+        y = take(y, j, axis=0, out=y[:lj])
+        e = take(e, j, axis=0, out=e[:lj])
+        o = take(o, j, axis=0, out=o[:lj])
+        a = take(a, j, axis=0, out=a[:lj])
+        
     return y, e, o, a, g
 
 def func5(y, e, o, a , n, nCut, g):
@@ -306,8 +325,25 @@ def func5(y, e, o, a , n, nCut, g):
         ind = values.argsort()
         h = m-j-1
         g = nanmin((values[h], g))
-        ind = ind[m-j:]
-        y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
+        ind0 = ind
+        #OLD
+#        ind = ind0[m-j:]
+##        y0 = y.copy()
+##        e0 = e.copy()
+##        o0 = o.copy()
+##        a0 = a.copy()
+#        y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
+        #NEW
+        j = ind0[:-j]
+        lj = j.size
+#        assert all(y == take(y0, j, axis=0))
+#        assert all(e == take(e0, j, axis=0))
+#        assert all(o == take(o0, j, axis=0))
+#        assert all(a == take(a0, j, axis=0))
+        y = take(y, j, axis=0, out=y[:lj])
+        e = take(e, j, axis=0, out=e[:lj])
+        o = take(o, j, axis=0, out=o[:lj])
+        a = take(a, j, axis=0, out=a[:lj])
     return y, e, o, a, g
 
 def func4(y, e, o, a, n, fo):
@@ -353,7 +389,7 @@ def func3(y, e, o, a, n, maxActiveNodes):
         #b, v, z, l = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
         #y, e, o, a = y[ind], e[ind], o[ind], a[ind]
         #NEW
-        y_tmp, e_tmp, o_tmp, a_tmp = y[ind].copy(), e[ind].copy(), o[ind].copy(), a[ind].copy()
+        y_tmp, e_tmp, o_tmp, a_tmp = y[ind], e[ind], o[ind], a[ind]
         b = take(y, i2, axis=0, out=y[:len(i2)])
         v = take(e, i2, axis=0, out=e[:len(i2)])
         z = take(o, i2, axis=0, out=o[:len(i2)])
