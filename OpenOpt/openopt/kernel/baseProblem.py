@@ -293,7 +293,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             self.isFDmodel = True
             self._FD = EmptyClass()
             self._FD.nonBoxCons = []
-            from FuncDesigner import _getAllAttachedConstraints, _getDiffVarsID
+            from FuncDesigner import _getAllAttachedConstraints, _getDiffVarsID, ooarray
             self._FDVarsID = _getDiffVarsID()
 
             if self.probType in ['SLE', 'NLSP']:
@@ -316,7 +316,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     self.err('while using oovars providing lb, ub, A, Aeq for whole prob is forbidden, use for each oovar instead')
                     
             if not isinstance(self.x0, dict):
-                self.err('Unexpected start point type: Python dict expected, '+ str(type(self.x0)) + ' obtained')
+                self.err('Unexpected start point type: ooPoint or Python dict expected, '+ str(type(self.x0)) + ' obtained')
             
             if not all([not isinstance(val, (list, tuple, ndarray)) or len(val) == 1 for val in self.x0.values()]):
                 tmp = []
@@ -343,6 +343,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             self._D_kwargs = D_kwargs
             
             setStartVectorAndTranslators(self)
+            variableTolerancesDict = dict([(v, v.tol) for v in self._freeVars])
+            self.variableTolerances = self._point2vector(variableTolerancesDict)
             
             #Z = self._vector2point(zeros(self.n))
             if len(self._fixedVars) < len(self._freeVars):
@@ -381,107 +383,15 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             
             """                                         handling constraints                                         """
             StartPointVars = set(self._x0.keys())
+            handleConstraint_args = (StartPointVars, probtol, areFixed, oovD, A, b, Aeq, beq, Z, D_kwargs, LB, UB)
             for c in self.constraints:
-                if not hasattr(c, 'isConstraint'): self.err('The type' + str(type(c)) + 'is inappropriate for problem constraints')
-                f, tol = c.oofun, c.tol
-                Name = f.name
-                
-                dep = set([f]) if f.is_oovar else f._getDep()
-                if not dep.issubset(StartPointVars):
-                    self.err('your start point has no enough variables to define constraint ' + c.name)
-
-                _lb, _ub = c.lb, c.ub
-                if tol < 0:
-                    if any(_lb  == _ub):
-                        self.err("You can't use negative tolerance for the equality constraint " + c.name)
-                    elif any(_lb - tol >= _ub + tol):
-                        self.err("You can't use negative tolerance for so small gap in constraint" + c.name)
-
-                    Shift = (1.0+1e-13)*probtol 
-                    #######################
-                    # not inplace modification!!!!!!!!!!!!!
-                    _lb = _lb + Shift
-                    _ub = _ub - Shift
-                    #######################
-                
-                if tol != 0: self.useScaledResidualOutput = True
-                
-                if tol not in (0, probtol, -probtol):
-                    scaleFactor = abs(probtol / tol)
-                    f *= scaleFactor
-                    _lb, _ub = _lb * scaleFactor, _ub * scaleFactor
-
-                if areFixed(dep):
-                    # TODO: get rid of self.contol, use separate contols for each constraint
-                    Contol = tol if tol != 0 else self.contol
-                    if not c(self._x0, tol=Contol):
-                        s = """'constraint "%s" with all-fixed optimization variables it depends on is infeasible in start point, 
-                        hence the problem is infeasible, maybe you should change start point'""" % c.name
-                        self.err(s)
-                    # TODO: check doesn't constraint value exeed self.contol
-                    continue
-
-                if self.probType in ['LP', 'MILP', 'LLSP', 'LLAVP'] and f.getOrder(self.freeVars, self.fixedVars) > 1:
-                    self.err('for LP/MILP/LLSP/LLAVP all constraints have to be linear, while ' + f.name + ' is not')
-                
-                # TODO: simplify condition of box-bounded oovar detection
-                if f.is_oovar:
-                    if areFixed(dep):  
-                        if self.x0 is None: self.err('your problem has fixed oovar '+ Name + ' but no value for the one in start point is provided')
-                        continue
-                    
-                    inds = oovD[f]
-                    f_size = inds[1] - inds[0]
-
-                    if any(isfinite(_lb)):
-                        if _lb.size not in (f_size, 1): 
-                            self.err('incorrect size of lower box-bound constraint for %s: 1 or %d expected, %d obtained' % (Name, f_size, _lb.size))
-                        val = array(f_size*[_lb] if _lb.size < f_size else _lb)
-                        if f not in LB:
-                            LB[f] = val
-                        else:
-                            #max((val, LB[f])) doesn't work for arrays
-                            if val.size > 1 or LB[f].size > 1:
-                                LB[f][val > LB[f]] = val[val > LB[f]] if val.size > 1 else asscalar(val)
-                            else:
-                                LB[f] = max((val, LB[f]))
-
-                    if any(isfinite(_ub)):
-                        if _ub.size not in (f_size, 1): 
-                            self.err('incorrect size of upper box-bound constraint for %s: 1 or %d expected, %d obtained' % (Name, f_size, _ub.size))
-                        val = array(f_size*[_ub] if _ub.size < f_size else _ub)
-                        if f not in UB:
-                            UB[f] = val
-                        else:
-                            #min((val, UB[f])) doesn't work for arrays
-                            if val.size > 1 or LB[f].size > 1:
-                                UB[f][val < UB[f]] = val[val < UB[f]] if val.size > 1 else asscalar(val)
-                            else:
-                                UB[f] = min((val, UB[f]))
-                            
-                elif _lb == _ub:
-                    if f.getOrder(self.freeVars, self.fixedVars) < 2:
-                        Aeq.append(self._pointDerivative2array(f.D(Z, **D_kwargs)))      
-                        beq.append(-f(Z)+_lb)
-                    elif self.h is None: self.h = [f+_lb]
-                    else: self.h.append(f+_lb)
-                elif isfinite(_ub):
-                    if f.getOrder(self.freeVars, self.fixedVars) < 2:
-                        A.append(self._pointDerivative2array(f.D(Z, **D_kwargs)))                       
-                        b.append(-f(Z)+_ub)
-                    elif self.c is None: self.c = [f - _ub]
-                    else: self.c.append(f - _ub)
-                elif isfinite(_lb):
-                    if f.getOrder(self.freeVars, self.fixedVars) < 2:
-                        A.append(-self._pointDerivative2array(f.D(Z, **D_kwargs)))                       
-                        b.append(f(Z) - _lb)                        
-                    elif self.c is None: self.c = [- f - _lb]
-                    else: self.c.append(- f - _lb)
+                if isinstance(c, ooarray):
+                    for elem in c: 
+                        self.handleConstraint(elem, *handleConstraint_args) 
+                elif not hasattr(c, 'isConstraint'): 
+                    self.err('The type ' + str(type(c)) + ' is inappropriate for problem constraints')
                 else:
-                    self.err('inform OpenOpt developers of the bug')
-                    
-                if not f.is_oovar:
-                    self._FD.nonBoxCons.append((f, _lb, _ub))# f should be between _lb and _ub
+                    self.handleConstraint(c, *handleConstraint_args)
                     
             if len(b) != 0:
                 self.A, self.b = Vstack(A), Hstack(b)
@@ -543,6 +453,106 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             
         self._baseProblemIsPrepared = True
 
+    def handleConstraint(self, c, StartPointVars, probtol, areFixed, oovD, A, b, Aeq, beq, Z, D_kwargs, LB, UB):
+        f, tol = c.oofun, c.tol
+        Name = f.name
+        
+        dep = set([f]) if f.is_oovar else f._getDep()
+        if not dep.issubset(StartPointVars):
+            self.err('your start point has no enough variables to define constraint ' + c.name)
+
+        _lb, _ub = c.lb, c.ub
+        if tol < 0:
+            if any(_lb  == _ub):
+                self.err("You can't use negative tolerance for the equality constraint " + c.name)
+            elif any(_lb - tol >= _ub + tol):
+                self.err("You can't use negative tolerance for so small gap in constraint" + c.name)
+
+            Shift = (1.0+1e-13)*probtol 
+            #######################
+            # not inplace modification!!!!!!!!!!!!!
+            _lb = _lb + Shift
+            _ub = _ub - Shift
+            #######################
+        
+        if tol != 0: self.useScaledResidualOutput = True
+        
+        if tol not in (0, probtol, -probtol):
+            scaleFactor = abs(probtol / tol)
+            f *= scaleFactor
+            _lb, _ub = _lb * scaleFactor, _ub * scaleFactor
+
+        if areFixed(dep):
+            # TODO: get rid of self.contol, use separate contols for each constraint
+            Contol = tol if tol != 0 else self.contol
+            if not c(self._x0, tol=Contol):
+                s = """'constraint "%s" with all-fixed optimization variables it depends on is infeasible in start point, 
+                hence the problem is infeasible, maybe you should change start point'""" % c.name
+                self.err(s)
+            # TODO: check doesn't constraint value exeed self.contol
+            return
+
+        if self.probType in ['LP', 'MILP', 'LLSP', 'LLAVP'] and f.getOrder(self.freeVars, self.fixedVars) > 1:
+            self.err('for LP/MILP/LLSP/LLAVP all constraints have to be linear, while ' + f.name + ' is not')
+        
+        # TODO: simplify condition of box-bounded oovar detection
+        if f.is_oovar:
+            if areFixed(dep):  
+                if self.x0 is None or f not in self.x0: self.err('your problem has fixed oovar '+ Name + ' but no value for the one in start point is provided')
+                return
+            
+            inds = oovD[f]
+            f_size = inds[1] - inds[0]
+
+            if any(isfinite(_lb)):
+                if _lb.size not in (f_size, 1): 
+                    self.err('incorrect size of lower box-bound constraint for %s: 1 or %d expected, %d obtained' % (Name, f_size, _lb.size))
+                val = array(f_size*[_lb] if _lb.size < f_size else _lb)
+                if f not in LB:
+                    LB[f] = val
+                else:
+                    #max((val, LB[f])) doesn't work for arrays
+                    if val.size > 1 or LB[f].size > 1:
+                        LB[f][val > LB[f]] = val[val > LB[f]] if val.size > 1 else asscalar(val)
+                    else:
+                        LB[f] = max((val, LB[f]))
+
+            if any(isfinite(_ub)):
+                if _ub.size not in (f_size, 1): 
+                    self.err('incorrect size of upper box-bound constraint for %s: 1 or %d expected, %d obtained' % (Name, f_size, _ub.size))
+                val = array(f_size*[_ub] if _ub.size < f_size else _ub)
+                if f not in UB:
+                    UB[f] = val
+                else:
+                    #min((val, UB[f])) doesn't work for arrays
+                    if val.size > 1 or LB[f].size > 1:
+                        UB[f][val < UB[f]] = val[val < UB[f]] if val.size > 1 else asscalar(val)
+                    else:
+                        UB[f] = min((val, UB[f]))
+                    
+        elif _lb == _ub:
+            if f.getOrder(self.freeVars, self.fixedVars) < 2:
+                Aeq.append(self._pointDerivative2array(f.D(Z, **D_kwargs)))      
+                beq.append(-f(Z)+_lb)
+            elif self.h is None: self.h = [f+_lb]
+            else: self.h.append(f+_lb)
+        elif isfinite(_ub):
+            if f.getOrder(self.freeVars, self.fixedVars) < 2:
+                A.append(self._pointDerivative2array(f.D(Z, **D_kwargs)))                       
+                b.append(-f(Z)+_ub)
+            elif self.c is None: self.c = [f - _ub]
+            else: self.c.append(f - _ub)
+        elif isfinite(_lb):
+            if f.getOrder(self.freeVars, self.fixedVars) < 2:
+                A.append(-self._pointDerivative2array(f.D(Z, **D_kwargs)))                       
+                b.append(f(Z) - _lb)                        
+            elif self.c is None: self.c = [- f - _lb]
+            else: self.c.append(- f - _lb)
+        else:
+            self.err('inform OpenOpt developers of the bug')
+            
+        if not f.is_oovar:
+            self._FD.nonBoxCons.append((f, _lb, _ub))# f should be between _lb and _ub
 
 
 class MatrixProblem(baseProblem):
