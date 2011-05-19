@@ -52,7 +52,7 @@ except:
 class oofun:
     #TODO:
     #is_oovarSlice = False
-    
+    tol = 0.0
     d = None # derivative
     input = None#[] 
     #usedIn =  set()
@@ -187,8 +187,6 @@ class oofun:
             if criticalPointsFunc is not False:
                 tmp += criticalPointsFunc(arg_infinum, arg_supremum)
             Tmp = self.fun(vstack(tmp))
-#            from numpy import isfinite
-#            assert not any(isnan(Tmp))
             return nanmin(Tmp, 0), nanmax(Tmp, 0)
         else:
             raise FuncDesignerException('interval calculations are unimplemented for the oofun yet')
@@ -491,7 +489,7 @@ class oofun:
                 else:
                     other = asarray(other)# with same type, mb float128
             elif not isinstance(other, ndarray): 
-                other = asarray(other, 'float' if type(other) == int else type(other))
+                other = asarray(other, 'float' if type(other) == int else type(other)).copy()
             
             f = lambda x: x ** other
             d = lambda x: d_x(x, other)
@@ -505,7 +503,7 @@ class oofun:
                 if any(ind):
                     isNonInteger = other != asarray(other, int) # TODO: rational numbers?
                     t_max[atleast_1d(logical_and(logical_and(ind, isNonInteger), ub < 0))] = nan
-                    t_min[atleast_1d(logical_and(logical_and(ind, logical_not(isNonInteger)), ub >= 0))] = 0.0
+                    t_min[atleast_1d(logical_and(logical_and(ind, logical_not(isNonInteger)), logical_and(t_min>0, ub >= 0)))] = 0.0
                 return t_min, t_max
         else:
             f = lambda x, y: x ** y
@@ -789,7 +787,7 @@ class oofun:
                 self.name = args[0]
                 return self
         else:
-            for fn in ['name', 'size']:
+            for fn in ['name', 'size', 'tol']:
                 if fn in kwargs:
                     setattr(self, fn, kwargs[fn])
             return self
