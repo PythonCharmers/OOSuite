@@ -1,5 +1,5 @@
 from numpy import isfinite, all, argmax, where, delete, array, asarray, inf, argmin, hstack, vstack, tile, arange, amin, \
-logical_and, float64, ceil, amax, inf, ndarray, isinf, any, logical_or, nan, take, logical_not
+logical_and, float64, ceil, amax, inf, ndarray, isinf, any, logical_or, nan, take, logical_not, asanyarray, searchsorted
 
 import numpy
 from numpy.linalg import norm, solve, LinAlgError
@@ -8,6 +8,12 @@ from openopt.kernel.baseSolver import *
 from openopt.kernel.Point import Point
 from FuncDesigner import ooPoint
 
+hasHeapMerge = False
+try:
+    from heapq2 import merge
+    hasHeapMerge = True
+except ImportError:
+    pass
 
 try:
     from bottleneck import nanargmin, nanargmax, nanmin
@@ -29,6 +35,7 @@ class interalg(baseSolver):
     #maxMem = '150MB'
     maxNodes = 150000
     maxActiveNodes = 1500
+    useArrays4Store = False
     __isIterPointAlwaysFeasible__ = lambda self, p: p.__isNoMoreThanBoxBounded__()
     #_canHandleScipySparse = True
 
@@ -51,7 +58,17 @@ class interalg(baseSolver):
                 p.err('''
                 solver %s currently can handle only single-element variables, 
                 use oovars(n) instead of oovar(size=n)'''% self.__name__)
+
+        if not hasHeapMerge:
+            p.pWarn('''cannot import merge from heapq, 
+            maybe you using Python version prior to 2.6
+            useArrays4Store will be set to False
+            (this is slower and more unstable mode, 
+            maybe even buggy, out of maintanance)
+            ''')
+            self.useArrays4Store = True
         
+
         point = p.point
         
         p.kernelIterFuncs.pop(SMALL_DELTA_X)
@@ -153,6 +170,7 @@ class interalg(baseSolver):
         b = array([]).reshape(0, n)
         v = array([]).reshape(0, n)
         maxz = []
+        _in = []
         z = array([]).reshape(0, 2*n)
         l = array([]).reshape(0, 2*n)
         
@@ -162,9 +180,10 @@ class interalg(baseSolver):
         C = p._FD.nonBoxCons
         isOnlyBoxBounded = p.__isNoMoreThanBoxBounded__()
         varTols = p.variableTolerances
+        nCut = 1 if fd_obj.isUncycled and all(isfinite(a)) and all(isfinite(o)) and isOnlyBoxBounded else self.maxNodes
         
         for itn in range(p.maxIter+10):
-            ip = formIntervalPoint(y, e, n, ooVars)
+            ip = func10(y, e, n, ooVars)
             
 #            for f, lb_, ub_ in C:
 #                TMP = f.interval(domain, dataType)
@@ -196,39 +215,62 @@ class interalg(baseSolver):
             tmp = where(q<s, q, s)
             ind = nanargmax(tmp, 1)
             ar = tmp[arange(m),ind]
+
+            if self.useArrays4Store:
+                y, e, o, a, ar = \
+                vstack((y, b)), vstack((e, v)), vstack((o, z)), vstack((a, l)), hstack((ar, maxz))
+
+                y, e, o, a, ar, g = func6(y, e, o, a, ar, n, fo, g)
+                y, e, o, a, ar, g = func5(y, e, o, a, ar,  n, nCut, g)
+                y, e, o, a, ar, b, v, z, l, maxz =\
+                func3(y, e, o, a, ar, n, self.maxActiveNodes)
+                m = y.shape[0]
+                nActiveNodes.append(m)
+                nNodes.append(m + b.shape[0])
+                
+                
+            
+            
 #            ind = all(e-y <= varTols, 1)
 #            y_excluded += y[ind]
 #            e_excluded += e[ind]
 #            o_excluded += o[ind]
 #            a_excluded += a[ind]
-            OLD = 1
-            if OLD:
-                #assert o.shape[0] == len(ar)
-                y, e, o, a, ar = vstack((y, b)), vstack((e, v)), vstack((o, z)), vstack((a, l)), asarray(list(ar)+list(maxz))
-                #assert o.shape[0] == len(ar)
-                y, e, o, a, ar, g = func6(y, e, o, a, ar, n, fo, g)
-                #assert o.shape[0] == len(ar)
             else:
-                pass
-                #y, e, o, a = vstack((y, b)), vstack((e, v)), vstack((o, z)), vstack((a, l))
+                nodes = func11(y, e, o, a, ar)
+                nodes.sort()
+                an = list(merge(nodes, _in))
+                an, g = func9(an, n, fo, g)
+            
+
             # TODO: rework it
-            if len(y) == 0: 
+            if (self.useArrays4Store and y.size == 0) or (not self.useArrays4Store and len(an) == 0): 
+                if not self.useArrays4Store: 
+                    # For more safety against bugs
+                    an1 = []
+                    _in = []
                 k = False
                 p.istop, p.msg = 1000, 'optimal solution obtained'
                 break            
             
-            nCut = 1 if fd_obj.isUncycled and all(isfinite(a)) and all(isfinite(o)) and isOnlyBoxBounded else self.maxNodes
-            if OLD:
-                #assert o.shape[0] == len(ar)
-                y, e, o, a, ar, g = func5(y, e, o, a, ar,  n, nCut, g)
-                #assert o.shape[0] == len(ar)
-                y, e, o, a, ar, b, v, z, l, maxz =\
-                func3(y, e, o, a, ar, n, self.maxActiveNodes)
+            
+            
+            if not self.useArrays4Store:
+                an, g = func52(an, n, nCut, g)
+                
+                an1, _in = func32(an, n, self.maxActiveNodes)
 
-            m = y.shape[0]
-            nActiveNodes.append(m)
-            nNodes.append(m + b.shape[0])
+                m = len(an1)
+                nActiveNodes.append(m)
+                
+                nNodes.append(len(an1) + len(_in))
 
+                y, e, o, a = asanyarray([t.data[0] for t in an1]), \
+                asanyarray([t.data[1] for t in an1]), \
+                asanyarray([t.data[2] for t in an1]), \
+                asanyarray([t.data[3] for t in an1])
+            
+            # Changes end
             y, e = func4(y, e, o, a, n, fo)
             
             t = func1(y, e, o, a, n, varTols)
@@ -237,6 +279,8 @@ class interalg(baseSolver):
             
         ff = f(xRecord)
         p.iterfcn(xRecord, ff)
+        if not self.useArrays4Store:
+            o = asanyarray([t.data[2] for t in an])
         if o.size != 0:
             g = nanmin([nanmin(o), g])
         p.extras['isRequiredPrecisionReached'] = True if ff - g < fTol and k is False else False
@@ -253,7 +297,7 @@ class interalg(baseSolver):
             if not p.extras['isRequiredPrecisionReached']: s += '\nincrease maxNodes (current value %d)' % self.maxNodes
             p.info(s)
 
-def formIntervalPoint(y, e, n, ooVars):
+def func10(y, e, n, ooVars):
     LB = [[] for i in range(n)]
     UB = [[] for i in range(n)]
     m = y.shape[0]
@@ -341,15 +385,19 @@ def func6(y, e, o, a, ar, n, fo, g):
         ar = ar[j]
     return y, e, o, a, ar, g
 
+def func9(an, n, fo, g):
+    ar = [node.key for node in an]
+    ind = searchsorted(ar, fo, side='right')
+    if ind == len(ar):
+        return an, g
+    else:
+        g = nanmin((g, nanmin(ar[ind])))
+        return an[:ind], g
+
 def func5(y, e, o, a, ar, n, nCut, g):
-    
     m = e.shape[0]
     if m > nCut:
-        #raise 0
-        #p.warn('max number of nodes (parameter maxNodes = %d) exceeded, exact global optimum is not guaranteed' % self.maxNodes)
-        #j = ceil((currentDataMem - maxMem)/numBytes)
         j = m - nCut
-        #print '!', j
         
         # OLD
 #        s, q = o[:, 0:n], o[:, n:2*n]
@@ -385,6 +433,14 @@ def func5(y, e, o, a, ar, n, nCut, g):
         ar = ar[j]
     return y, e, o, a, ar, g
 
+def func52(an, n, nCut, g):
+    m = len(an)
+    if m > nCut:
+        ar = [node.key for node in an]
+        g = nanmin((ar[nCut], g))
+        an = an[:nCut]
+    return an, g
+
 def func4(y, e, o, a, n, fo):
     centers = 0.5*(y + e)
     s, q = o[:, 0:n], o[:, n:2*n]
@@ -405,7 +461,7 @@ def func3(y, e, o, a, ar, n, maxActiveNodes):
         v = array([]).reshape(0, n)
         z = array([]).reshape(0, 2*n)
         l = array([]).reshape(0, 2*n)
-        maxz = array([]).reshape(0, 2*n)
+        maxz = array([])
     else:
         #OLD
 #        s, q = o[:, 0:n], o[:, n:2*n]
@@ -443,6 +499,13 @@ def func3(y, e, o, a, ar, n, maxActiveNodes):
         
     return y, e, o, a, ar, b, v, z, l, maxz
 
+def func32(an, n, maxActiveNodes):
+    m = len(an)
+    if m > maxActiveNodes:
+        an1, _in = an[:maxActiveNodes], an[maxActiveNodes:]
+    else:
+        an1, _in = an, []
+    return an1, _in
 
 def func1(y, e, o, a, n, varTols):
     Case = 1 # TODO: check other
@@ -526,8 +589,19 @@ def func2(y, e, t):
     return u, en
 
 
-
-
+func11 = lambda y, e, o, a, ar: [si(ar[i], y[i], e[i], o[i], a[i]) for i in range(len(ar))]
+    
+class si:
+    def __init__(self, key, *data):
+        self.key = key
+        self.data = data
+    
+    __lt__ = lambda self, other: self.key < other.key
+    __le__ = lambda self, other: self.key <= other.key
+    __gt__ = lambda self, other: self.key > other.key
+    __ge__ = lambda self, other: self.key >= other.key
+    __eq__ = lambda self, other: self.key == other.key
+    
 
 #                N1, N2 = nActivePoints[-2:]
 #                t2, t1 = p.iterTime[-1] - p.iterTime[-2], p.iterTime[-2] - p.iterTime[-3]
