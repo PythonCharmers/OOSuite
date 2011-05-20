@@ -15,6 +15,7 @@ try:
 except ImportError:
     from numpy import nanmin, nanargmin, nanargmax
     bottleneck_is_present = False
+#from numpy import nanmin, nanargmin, nanargmax
 
 class interalg(baseSolver):
     __name__ = 'interalg_0.17'
@@ -51,6 +52,8 @@ class interalg(baseSolver):
                 solver %s currently can handle only single-element variables, 
                 use oovars(n) instead of oovar(size=n)'''% self.__name__)
         
+        point = p.point
+        
         p.kernelIterFuncs.pop(SMALL_DELTA_X)
         p.kernelIterFuncs.pop(SMALL_DELTA_F)
         if MAX_NON_SUCCESS in p.kernelIterFuncs: 
@@ -59,7 +62,8 @@ class interalg(baseSolver):
         if not bottleneck_is_present:
                 p.pWarn('''
                 installation of Python module "bottleneck" 
-                (available via easy_install, takes several minutes for compilation)
+                (http://berkeleyanalytics.com/bottleneck,
+                available via easy_install, takes several minutes for compilation)
                 could speedup the solver %s''' % self.__name__)
         
         p.useMultiPoints = True
@@ -86,34 +90,41 @@ class interalg(baseSolver):
         if fTol is None:
             fTol = 1e-7
             p.warn('solver %s require p.fTol value (required objective function tolerance); 10^-7 will be used' % self.__name__)
-        
-        fd_obj = p.user.f[0]
-        #raise 0
-        if p.goal in ('max', 'maximum'):
-#            p.err("the solver %s can't handle maximization problems yet" % self.__name__)
-            fd_obj = -fd_obj
 
         xRecord = 0.5 * (lb + ub)
 
-        BestKnownMinValue = p.f(xRecord)    
-        if isnan(BestKnownMinValue): 
-            BestKnownMinValue = inf
+        CurrentBestKnownPointsMinValue = inf
+            
         y = lb.reshape(1, -1)
-        e = ub.reshape(1, -1)#[ub]
+        e = ub.reshape(1, -1)
         fr = inf
+
+        fd_obj = p.user.f[0]
+        if p.fOpt is not None:  fOpt = p.fOpt
+        if p.goal in ('max', 'maximum'):
+            fd_obj = -fd_obj
+            if p.fOpt is not None:
+                fOpt = -p.fOpt
+
         
         # TODO: maybe rework it, especially for constrained case
         fStart = self.fStart
 
-        if fStart is not None and fStart < BestKnownMinValue: 
+        if fStart is not None and fStart < CurrentBestKnownPointsMinValue: 
             fr = fStart
+            
+        for X0 in [point(xRecord), point(p.x0)]:
+            if X0.isFeas(altLinInEq=False) and X0.f() < CurrentBestKnownPointsMinValue:
+                CurrentBestKnownPointsMinValue = X0.f()
+            
         tmp = fd_obj(p._x0)
         if  tmp < fr:
             fr = tmp
+            
         if p.fOpt is not None:
-            if p.fOpt > fr:
-                p.err('user-provided fOpt seems to be incorrect')
-            fr = p.fOpt
+            if fOpt > fr:
+                p.warn('user-provided fOpt seems to be incorrect, ')
+            fr = fOpt
         
 
 
@@ -141,11 +152,16 @@ class interalg(baseSolver):
         
         b = array([]).reshape(0, n)
         v = array([]).reshape(0, n)
+        maxz = []
         z = array([]).reshape(0, 2*n)
         l = array([]).reshape(0, 2*n)
+        
+        y_excluded, e_excluded, o_excluded, a_excluded = [], [], [], []
         k = True
         g = inf
         C = p._FD.nonBoxCons
+        isOnlyBoxBounded = p.__isNoMoreThanBoxBounded__()
+        varTols = p.variableTolerances
         
         for itn in range(p.maxIter+10):
             ip = formIntervalPoint(y, e, n, ooVars)
@@ -155,8 +171,8 @@ class interalg(baseSolver):
 #                lb, ub = asarray(TMP.lb, dtype=dataType), asarray(TMP.ub, dtype=dataType)
                 
             o, a, bestCenter, bestCenterObjective = func8(ip, fd_obj, dataType)
-#            if any(a<o):
-#                p.pWarn('interval lower bound exceeds upper bound, it seems to be FuncDesigner kernel bug')
+            
+            if p.debug and any(a<o):  p.warn('interval lower bound exceeds upper bound, it seems to be FuncDesigner kernel bug')
             
             xk, Min = bestCenter, bestCenterObjective
            
@@ -164,32 +180,50 @@ class interalg(baseSolver):
             if p.istop != 0: 
                 break
             
-            if BestKnownMinValue > Min:
-                BestKnownMinValue = Min
+            if CurrentBestKnownPointsMinValue > Min:
+                CurrentBestKnownPointsMinValue = Min
                 xRecord = xk# TODO: is copy required?
             if fr > Min:
                 fr = Min
 
-            fo = min((fr, BestKnownMinValue - fTol)) 
+            fo = min((fr, CurrentBestKnownPointsMinValue - fTol)) 
             
             m = e.shape[0]
             o, a = o.reshape(2*n, m).T, a.reshape(2*n, m).T
             
             y, e, o, a = func7(y, e, o, a)
-            
-            y, e, o, a = vstack((y, b)), vstack((e, v)), vstack((o, z)), vstack((a, l))
-            y, e, o, a, g = func6(y, e, o, a, n, fo, g)
-           
-            if y.size == 0: 
+            s, q = o[:, 0:n], o[:, n:2*n]
+            tmp = where(q<s, q, s)
+            ind = nanargmax(tmp, 1)
+            ar = tmp[arange(m),ind]
+#            ind = all(e-y <= varTols, 1)
+#            y_excluded += y[ind]
+#            e_excluded += e[ind]
+#            o_excluded += o[ind]
+#            a_excluded += a[ind]
+            OLD = 1
+            if OLD:
+                #assert o.shape[0] == len(ar)
+                y, e, o, a, ar = vstack((y, b)), vstack((e, v)), vstack((o, z)), vstack((a, l)), asarray(list(ar)+list(maxz))
+                #assert o.shape[0] == len(ar)
+                y, e, o, a, ar, g = func6(y, e, o, a, ar, n, fo, g)
+                #assert o.shape[0] == len(ar)
+            else:
+                pass
+                #y, e, o, a = vstack((y, b)), vstack((e, v)), vstack((o, z)), vstack((a, l))
+            # TODO: rework it
+            if len(y) == 0: 
                 k = False
                 p.istop, p.msg = 1000, 'optimal solution obtained'
                 break            
             
-            nCut = 1 if fd_obj.isUncycled and all(isfinite(a)) and all(isfinite(o)) else self.maxNodes
-            y, e, o, a, g = func5(y, e, o, a , n, nCut, g)
-            
-            y, e, o, a, b, v, z, l =\
-            func3(y, e, o, a, n, self.maxActiveNodes)
+            nCut = 1 if fd_obj.isUncycled and all(isfinite(a)) and all(isfinite(o)) and isOnlyBoxBounded else self.maxNodes
+            if OLD:
+                #assert o.shape[0] == len(ar)
+                y, e, o, a, ar, g = func5(y, e, o, a, ar,  n, nCut, g)
+                #assert o.shape[0] == len(ar)
+                y, e, o, a, ar, b, v, z, l, maxz =\
+                func3(y, e, o, a, ar, n, self.maxActiveNodes)
 
             m = y.shape[0]
             nActiveNodes.append(m)
@@ -197,7 +231,7 @@ class interalg(baseSolver):
 
             y, e = func4(y, e, o, a, n, fo)
             
-            t = func1(y, e, o, a, n)
+            t = func1(y, e, o, a, n, varTols)
             y, e = func2(y, e, t)
             # End of main cycle
             
@@ -271,6 +305,7 @@ def func8(domain, fd_obj, dataType):
     #bestCenter = centers[bestCenterInd]
     bestCenter = array([0.5*(val[0][bestCenterInd]+val[1][bestCenterInd]) for val in domain.values()], dtype=dataType)
     bestCenterObjective = atleast_1d(F)[bestCenterInd]
+    #assert TMP.lb.dtype == dataType
     return asarray(TMP.lb, dtype=dataType), asarray(TMP.ub, dtype=dataType), bestCenter, bestCenterObjective
 
 def func7(y, e, o, a):
@@ -287,17 +322,13 @@ def func7(y, e, o, a):
         a = take(a, j, axis=0, out=a[:lj])
     return y, e, o, a 
 
-def func6(y, e, o, a, n, fo, g):
-    # TODO: is it really required? Mb next handling s / q with all fixed coords would make the job?
-    setForRemoving = set()
-    s, q = o[:, 0:n], o[:, n:2*n]
-    ind0 = logical_and(s > fo, q > fo)
-    ind1 = any(ind0, 1)
-    ind = where(ind1)[0]
-    if ind.size != 0:
-        g = nanmin((g, nanmin(s[ind0]), nanmin(q[ind0])))
+def func6(y, e, o, a, ar, n, fo, g):
+    ind1 = ar > fo
+    if any(ind1):
+        g = nanmin((g, nanmin(ar[ind1])))
         
         #OLD
+        #ind = where(ind1)[0]
         #y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
         
         #NEW
@@ -307,24 +338,31 @@ def func6(y, e, o, a, n, fo, g):
         e = take(e, j, axis=0, out=e[:lj])
         o = take(o, j, axis=0, out=o[:lj])
         a = take(a, j, axis=0, out=a[:lj])
-        
-    return y, e, o, a, g
+        ar = ar[j]
+    return y, e, o, a, ar, g
 
-def func5(y, e, o, a , n, nCut, g):
+def func5(y, e, o, a, ar, n, nCut, g):
+    
     m = e.shape[0]
-    s, q = o[:, 0:n], o[:, n:2*n]
     if m > nCut:
         #raise 0
         #p.warn('max number of nodes (parameter maxNodes = %d) exceeded, exact global optimum is not guaranteed' % self.maxNodes)
         #j = ceil((currentDataMem - maxMem)/numBytes)
         j = m - nCut
         #print '!', j
-        tmp = where(q<s, q, s)
-        ind = nanargmax(tmp, 1) 
-        values = tmp[arange(m),ind]
-        ind = values.argsort()
+        
+        # OLD
+#        s, q = o[:, 0:n], o[:, n:2*n]
+#        tmp = where(q<s, q, s)
+#        ind = nanargmax(tmp, 1)
+#        values = tmp[arange(m),ind]
+#        ind = values.argsort()
+        
+        # NEW
+        ind = ar.argsort()
+        
         h = m-j-1
-        g = nanmin((values[h], g))
+        g = nanmin((ar[h], g))
         ind0 = ind
         #OLD
 #        ind = ind0[m-j:]
@@ -344,7 +382,8 @@ def func5(y, e, o, a , n, nCut, g):
         e = take(e, j, axis=0, out=e[:lj])
         o = take(o, j, axis=0, out=o[:lj])
         a = take(a, j, axis=0, out=a[:lj])
-    return y, e, o, a, g
+        ar = ar[j]
+    return y, e, o, a, ar, g
 
 def func4(y, e, o, a, n, fo):
     centers = 0.5*(y + e)
@@ -359,19 +398,24 @@ def func4(y, e, o, a, n, fo):
         e[ind] = centers[ind]
     return y, e
 
-def func3(y, e, o, a, n, maxActiveNodes):
+def func3(y, e, o, a, ar, n, maxActiveNodes):
     m = y.shape[0]
     if m <= maxActiveNodes:
         b = array([]).reshape(0, n)
         v = array([]).reshape(0, n)
         z = array([]).reshape(0, 2*n)
         l = array([]).reshape(0, 2*n)
+        maxz = array([]).reshape(0, 2*n)
     else:
-        s, q = o[:, 0:n], o[:, n:2*n]
-        tmp = where(q<s, q, s)
-        ind = argmax(tmp, 1)
-        values = tmp[arange(m),ind]
-        ind = values.argsort()
+        #OLD
+#        s, q = o[:, 0:n], o[:, n:2*n]
+#        tmp = where(q<s, q, s)
+#        ind = nanargmax(tmp, 1)
+#        values = tmp[arange(m),ind]
+#        ind = values.argsort()
+        #NEW
+        ind = ar.argsort()
+        #assert all(ind == ind2)
         
         i1, i2 = ind[:maxActiveNodes], ind[maxActiveNodes:]
         # old
@@ -389,17 +433,18 @@ def func3(y, e, o, a, n, maxActiveNodes):
         #b, v, z, l = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
         #y, e, o, a = y[ind], e[ind], o[ind], a[ind]
         #NEW
-        y_tmp, e_tmp, o_tmp, a_tmp = y[ind], e[ind], o[ind], a[ind]
+        y_tmp, e_tmp, o_tmp, a_tmp, ar_tmp = y[ind], e[ind], o[ind], a[ind], ar[ind]
         b = take(y, i2, axis=0, out=y[:len(i2)])
         v = take(e, i2, axis=0, out=e[:len(i2)])
         z = take(o, i2, axis=0, out=o[:len(i2)])
         l = take(a, i2, axis=0, out=a[:len(i2)])
-        y, e, o, a = y_tmp, e_tmp, o_tmp, a_tmp
+        maxz = ar[i2]
+        y, e, o, a, ar = y_tmp, e_tmp, o_tmp, a_tmp, ar_tmp
         
-    return y, e, o, a, b, v, z, l
+    return y, e, o, a, ar, b, v, z, l, maxz
 
 
-def func1(y, e, o, a, n):
+def func1(y, e, o, a, n, varTols):
     Case = 1 # TODO: check other
     if Case == -3:
         t = argmin(a, 1) % n
@@ -421,8 +466,11 @@ def func1(y, e, o, a, n):
 #                a1[ind] = a2[ind]
 #                t = argmin(a1, 1)
 
-        t = argmin(a, 1) % n
-        if not all(isfinite(a)):
+        a = a.copy() # to remain it unchanged in higher stack level funcs
+        a[e-y<varTols] = nan
+        
+        t = nanargmin(a, 1) % n
+        if any(isinf(a)):
             # new
 #                    a1, a2 = a[:, 0:n], a[:, n:]
 #                    
@@ -433,7 +481,7 @@ def func1(y, e, o, a, n):
 #                    
 #                    a_ = where(a1 < a2, a1, a2)
 #                    a_[ind_any_infinite] = inf
-#                    t = argmin(a_, 1) 
+#                    t = nanargmin(a_, 1) 
 #                    ind = isinf(a_[w, t])
 
 ##                    #old
