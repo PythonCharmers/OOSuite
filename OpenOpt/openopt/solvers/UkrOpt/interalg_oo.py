@@ -10,7 +10,7 @@ from FuncDesigner import ooPoint
 
 hasHeapMerge = False
 try:
-    from heapq2 import merge
+    from heapq import merge
     hasHeapMerge = True
 except ImportError:
     pass
