@@ -1,4 +1,4 @@
-from numpy import isfinite, all, argmax, where, delete, array, asarray, inf, argmin, hstack, vstack, tile, arange, amin, \
+from numpy import isfinite, all, argmax, where, delete, array, asarray, inf, argmin, hstack, vstack, arange, amin, \
 logical_and, float64, ceil, amax, inf, ndarray, isinf, any, logical_or, nan, take, logical_not, asanyarray, searchsorted
 
 import numpy
@@ -6,7 +6,7 @@ from numpy.linalg import norm, solve, LinAlgError
 from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X,  SMALL_DELTA_F, MAX_NON_SUCCESS
 from openopt.kernel.baseSolver import *
 from openopt.kernel.Point import Point
-from FuncDesigner import ooPoint
+from openopt.solvers.UkrOpt.interalgMisc import *
 
 hasHeapMerge = False
 try:
@@ -168,11 +168,11 @@ class interalg(baseSolver):
         #maxActiveNodes = self.maxActiveNodes 
         
         b = array([]).reshape(0, n)
-        v = array([]).reshape(0, n)
-        maxz = []
+        e_inactive = array([]).reshape(0, n)
+        maxo_inactive = []
         _in = []
-        z = array([]).reshape(0, 2*n)
-        l = array([]).reshape(0, 2*n)
+        o_inactive = array([]).reshape(0, 2*n)
+        a_inactive = array([]).reshape(0, 2*n)
         
         y_excluded, e_excluded, o_excluded, a_excluded = [], [], [], []
         k = True
@@ -209,35 +209,32 @@ class interalg(baseSolver):
             
             m = e.shape[0]
             o, a = o.reshape(2*n, m).T, a.reshape(2*n, m).T
-            
             y, e, o, a = func7(y, e, o, a)
-            s, q = o[:, 0:n], o[:, n:2*n]
-            tmp = where(q<s, q, s)
+            m = e.shape[0]
+            o_modL, o_modU = o[:, 0:n], o[:, n:2*n]
+            tmp = where(o_modU<o_modL, o_modU, o_modL)
             ind = nanargmax(tmp, 1)
-            ar = tmp[arange(m),ind]
+            maxo = tmp[arange(m),ind]
 
             if self.useArrays4Store:
-                y, e, o, a, ar = \
-                vstack((y, b)), vstack((e, v)), vstack((o, z)), vstack((a, l)), hstack((ar, maxz))
+                y, e, o, a, maxo = \
+                vstack((y, b)), vstack((e, e_inactive)), vstack((o, o_inactive)), vstack((a, a_inactive)), hstack((maxo, maxo_inactive))
 
-                y, e, o, a, ar, g = func6(y, e, o, a, ar, n, fo, g)
-                y, e, o, a, ar, g = func5(y, e, o, a, ar,  n, nCut, g)
-                y, e, o, a, ar, b, v, z, l, maxz =\
-                func3(y, e, o, a, ar, n, self.maxActiveNodes)
+                y, e, o, a, maxo, g = func6(y, e, o, a, maxo, n, fo, g)
+                y, e, o, a, maxo, g = func5(y, e, o, a, maxo,  n, nCut, g)
+                y, e, o, a, maxo, b, e_inactive, o_inactive, a_inactive, maxo_inactive =\
+                func3(y, e, o, a, maxo, n, self.maxActiveNodes)
                 m = y.shape[0]
                 nActiveNodes.append(m)
                 nNodes.append(m + b.shape[0])
-                
-                
-            
-            
+
 #            ind = all(e-y <= varTols, 1)
 #            y_excluded += y[ind]
 #            e_excluded += e[ind]
 #            o_excluded += o[ind]
 #            a_excluded += a[ind]
             else:
-                nodes = func11(y, e, o, a, ar)
+                nodes = func11(y, e, o, a, maxo)
                 nodes.sort()
                 an = list(merge(nodes, _in))
                 an, g = func9(an, n, fo, g)
@@ -245,7 +242,7 @@ class interalg(baseSolver):
 
             # TODO: rework it
             if (self.useArrays4Store and y.size == 0) or (not self.useArrays4Store and len(an) == 0): 
-                if not self.useArrays4Store: 
+                if len(an) == 0 and not self.useArrays4Store: 
                     # For more safety against bugs
                     an1 = []
                     _in = []
@@ -270,7 +267,6 @@ class interalg(baseSolver):
                 asanyarray([t.data[2] for t in an1]), \
                 asanyarray([t.data[3] for t in an1])
             
-            # Changes end
             y, e = func4(y, e, o, a, n, fo)
             
             t = func1(y, e, o, a, n, varTols)
@@ -297,354 +293,8 @@ class interalg(baseSolver):
             if not p.extras['isRequiredPrecisionReached']: s += '\nincrease maxNodes (current value %d)' % self.maxNodes
             p.info(s)
 
-def func10(y, e, n, ooVars):
-    LB = [[] for i in range(n)]
-    UB = [[] for i in range(n)]
-    m = y.shape[0]
-    Centers = 0.5 * (y + e)
-    
-    # TODO: remove the cycle
-    #T1, T2 = tile(y, (2*n,1)), tile(e, (2*n,1))
-    
-    for i in range(n):
-        t1, t2 = tile(y[:, i], 2*n), tile(e[:, i], 2*n)
-        #t1, t2 = T1[:, i], T2[:, i]
-        #T1[(n+i)*m:(n+i+1)*m, i] = T2[i*m:(i+1)*m, i] = Centers[:, i]
-        t1[(n+i)*m:(n+i+1)*m] = t2[i*m:(i+1)*m] = Centers[:, i]
-        LB[i], UB[i] = t1, t2
 
-####        LB[i], UB[i] = T1[:, i], T2[:, i]
-
-#    sh1, sh2, inds = [], [], []
-#    for i in range(n):
-#        sh1+= arange((n+i)*m, (n+i+1)*m).tolist()
-#        inds +=  [i]*m
-#        sh2 += arange(i*m, (i+1)*m).tolist()
-
-#    sh1, sh2, inds = asdf(m, n)
-#    asdf2(T1, T2, Centers, sh1, sh2, inds)
-    
-    #domain = dict([(v, (T1[:, i], T2[:, i])) for i, v in enumerate(ooVars)])
-    domain = dict([(v, (LB[i], UB[i])) for i, v in enumerate(ooVars)])
-    
-    domain = ooPoint(domain, skipArrayCast = True)
-    domain.isMultiPoint = True
-    return domain
-
-def func8(domain, fd_obj, dataType):
-
-    TMP = fd_obj.interval(domain, dataType)
-    
-    #TODO: remove 0.5*(val[0]+val[1]) from cycle
-    centers = dict([(key, 0.5*(val[0]+val[1])) for key, val in domain.items()])
-    centers = ooPoint(centers, skipArrayCast = True)
-    centers.isMultiPoint = True
-    F = fd_obj(centers)
-    bestCenterInd = nanargmin(F)
-    if isnan(bestCenterInd):
-        bestCenterInd = 0
-        bestCenterObjective = inf
-    
-    # TODO: check it , maybe it can be improved
-    #bestCenter = centers[bestCenterInd]
-    bestCenter = array([0.5*(val[0][bestCenterInd]+val[1][bestCenterInd]) for val in domain.values()], dtype=dataType)
-    bestCenterObjective = atleast_1d(F)[bestCenterInd]
-    #assert TMP.lb.dtype == dataType
-    return asarray(TMP.lb, dtype=dataType), asarray(TMP.ub, dtype=dataType), bestCenter, bestCenterObjective
-
-def func7(y, e, o, a):
-    IND = logical_and(all(isnan(o), 1), all(isnan(a), 1))
-    #ind = where(IND)[0]
-    #if ind.size != 0:
-    #    y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
-    if any(IND):
-        j = where(logical_not(IND))[0]
-        lj = j.size
-        y = take(y, j, axis=0, out=y[:lj])
-        e = take(e, j, axis=0, out=e[:lj])
-        o = take(o, j, axis=0, out=o[:lj])
-        a = take(a, j, axis=0, out=a[:lj])
-    return y, e, o, a 
-
-def func6(y, e, o, a, ar, n, fo, g):
-    ind1 = ar > fo
-    if any(ind1):
-        g = nanmin((g, nanmin(ar[ind1])))
-        
-        #OLD
-        #ind = where(ind1)[0]
-        #y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
-        
-        #NEW
-        j = where(logical_not(ind1))[0]
-        lj = j.size
-        y = take(y, j, axis=0, out=y[:lj])
-        e = take(e, j, axis=0, out=e[:lj])
-        o = take(o, j, axis=0, out=o[:lj])
-        a = take(a, j, axis=0, out=a[:lj])
-        ar = ar[j]
-    return y, e, o, a, ar, g
-
-def func9(an, n, fo, g):
-    ar = [node.key for node in an]
-    ind = searchsorted(ar, fo, side='right')
-    if ind == len(ar):
-        return an, g
-    else:
-        g = nanmin((g, nanmin(ar[ind])))
-        return an[:ind], g
-
-def func5(y, e, o, a, ar, n, nCut, g):
-    m = e.shape[0]
-    if m > nCut:
-        j = m - nCut
-        
-        # OLD
-#        s, q = o[:, 0:n], o[:, n:2*n]
-#        tmp = where(q<s, q, s)
-#        ind = nanargmax(tmp, 1)
-#        values = tmp[arange(m),ind]
-#        ind = values.argsort()
-        
-        # NEW
-        ind = ar.argsort()
-        
-        h = m-j-1
-        g = nanmin((ar[h], g))
-        ind0 = ind
-        #OLD
-#        ind = ind0[m-j:]
-##        y0 = y.copy()
-##        e0 = e.copy()
-##        o0 = o.copy()
-##        a0 = a.copy()
-#        y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
-        #NEW
-        j = ind0[:-j]
-        lj = j.size
-#        assert all(y == take(y0, j, axis=0))
-#        assert all(e == take(e0, j, axis=0))
-#        assert all(o == take(o0, j, axis=0))
-#        assert all(a == take(a0, j, axis=0))
-        y = take(y, j, axis=0, out=y[:lj])
-        e = take(e, j, axis=0, out=e[:lj])
-        o = take(o, j, axis=0, out=o[:lj])
-        a = take(a, j, axis=0, out=a[:lj])
-        ar = ar[j]
-    return y, e, o, a, ar, g
-
-def func52(an, n, nCut, g):
-    m = len(an)
-    if m > nCut:
-        ar = [node.key for node in an]
-        g = nanmin((ar[nCut], g))
-        an = an[:nCut]
-    return an, g
-
-def func4(y, e, o, a, n, fo):
-    centers = 0.5*(y + e)
-    s, q = o[:, 0:n], o[:, n:2*n]
-    #ind = s > fo
-    ind = logical_or(s > fo, isnan(s)) # TODO: assert isnan(s) is same to isnan(a_modL)
-    if any(ind):
-        y[ind] = centers[ind]
-    #ind = q > fo
-    ind = logical_or(q > fo, isnan(q))# TODO: assert isnan(q) is same to isnan(a_modU)
-    if any(ind):
-        e[ind] = centers[ind]
-    return y, e
-
-def func3(y, e, o, a, ar, n, maxActiveNodes):
-    m = y.shape[0]
-    if m <= maxActiveNodes:
-        b = array([]).reshape(0, n)
-        v = array([]).reshape(0, n)
-        z = array([]).reshape(0, 2*n)
-        l = array([]).reshape(0, 2*n)
-        maxz = array([])
-    else:
-        #OLD
-#        s, q = o[:, 0:n], o[:, n:2*n]
-#        tmp = where(q<s, q, s)
-#        ind = nanargmax(tmp, 1)
-#        values = tmp[arange(m),ind]
-#        ind = values.argsort()
-        #NEW
-        ind = ar.argsort()
-        #assert all(ind == ind2)
-        
-        i1, i2 = ind[:maxActiveNodes], ind[maxActiveNodes:]
-        # old
-#                ind = i2
-#                b, v, z, l = y[ind], e[ind], o[ind], a[ind]
-#                y, e, o, a = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
-        
-        # new
-        ind = i1
-        
-        i1.sort()
-        i2.sort()
-        
-        #OLD
-        #b, v, z, l = delete(y, ind, 0), delete(e, ind, 0), delete(o, ind, 0), delete(a, ind, 0)
-        #y, e, o, a = y[ind], e[ind], o[ind], a[ind]
-        #NEW
-        y_tmp, e_tmp, o_tmp, a_tmp, ar_tmp = y[ind], e[ind], o[ind], a[ind], ar[ind]
-        b = take(y, i2, axis=0, out=y[:len(i2)])
-        v = take(e, i2, axis=0, out=e[:len(i2)])
-        z = take(o, i2, axis=0, out=o[:len(i2)])
-        l = take(a, i2, axis=0, out=a[:len(i2)])
-        maxz = ar[i2]
-        y, e, o, a, ar = y_tmp, e_tmp, o_tmp, a_tmp, ar_tmp
-        
-    return y, e, o, a, ar, b, v, z, l, maxz
-
-def func32(an, n, maxActiveNodes):
-    m = len(an)
-    if m > maxActiveNodes:
-        an1, _in = an[:maxActiveNodes], an[maxActiveNodes:]
-    else:
-        an1, _in = an, []
-    return an1, _in
-
-def func1(y, e, o, a, n, varTols):
-    Case = 1 # TODO: check other
-    if Case == -3:
-        t = argmin(a, 1) % n
-    elif Case == -2:
-        t = asarray([itn % n]*m)
-    elif Case == -1:
-        tmp = a - o
-        tmp1, tmp2 = tmp[:, 0:n], tmp[:, n:2*n]
-        tmp = tmp1
-        ind = where(tmp2>tmp1)
-        tmp[ind] = tmp2[ind]
-        #tmp = tmp[:, 0:n] + tmp[:, n:2*n]
-        t = argmin(tmp, 1) 
-    elif Case == 0:
-        t = argmin(a - o, 1) % n
-    elif Case == 1:
-#                a1, a2 = a[:, 0:n], a[:, n:]
-#                ind = a1 < a2
-#                a1[ind] = a2[ind]
-#                t = argmin(a1, 1)
-
-        a = a.copy() # to remain it unchanged in higher stack level funcs
-        a[e-y<varTols] = nan
-        
-        t = nanargmin(a, 1) % n
-        if any(isinf(a)):
-            # new
-#                    a1, a2 = a[:, 0:n], a[:, n:]
-#                    
-#                    #ind1, ind2 = isinf(a1), isinf(a2)
-#                    #ind_any_infinite = logical_or(ind1, ind2)
-#                    ind1, ind2 = isinf(a1), isinf(a2)
-#                    ind_any_infinite = logical_or(ind1, ind2)
-#                    
-#                    a_ = where(a1 < a2, a1, a2)
-#                    a_[ind_any_infinite] = inf
-#                    t = nanargmin(a_, 1) 
-#                    ind = isinf(a_[w, t])
-
-##                    #old
-            ###t = argmin(a, 1) % n
-            #ind = logical_or(all(isinf(a), 1), all(isinf(o), 1))
-            ind = all(isinf(a), 1)
-            #ind = all(isinf(a), 1)
-            
-            #print 'itn:', itn
-            if any(ind):
-                boxShapes = e[ind] - y[ind]
-                t[ind] = argmax(boxShapes, 1)
-                
-    elif Case == 2:
-        o1, o2 = o[:, 0:n], o[:, n:]
-        ind = o1 > o2
-        o1[ind] = o2[ind]                
-        t = argmax(o1, 1)
-    elif Case == 3:
-        # WORST
-        t = argmin(o, 1) % n
-    elif Case == 4:
-        # WORST
-        t = argmax(a, 1) % n
-    elif Case == 5:
-        tmp = where(o[:, 0:n]<o[:, n:], o[:, 0:n], o[:, n:])
-        t = argmax(tmp, 1)
-    return t
-
-
-def func2(y, e, t):
-    u, en = y.copy(), e.copy()
-    m = y.shape[0]
-    w = arange(m)
-    th = 0.5 * (u[w, t] + en[w, t])
-    u[w, t] = th
-    en[w, t] = th
-    
-    u = vstack((y, u))
-    en = vstack((en, e))
-    
-    return u, en
-
-
-func11 = lambda y, e, o, a, ar: [si(ar[i], y[i], e[i], o[i], a[i]) for i in range(len(ar))]
-    
-class si:
-    def __init__(self, key, *data):
-        self.key = key
-        self.data = data
-    
-    __lt__ = lambda self, other: self.key < other.key
-    __le__ = lambda self, other: self.key <= other.key
-    __gt__ = lambda self, other: self.key > other.key
-    __ge__ = lambda self, other: self.key >= other.key
-    __eq__ = lambda self, other: self.key == other.key
     
 
-#                N1, N2 = nActivePoints[-2:]
-#                t2, t1 = p.iterTime[-1] - p.iterTime[-2], p.iterTime[-2] - p.iterTime[-3]
-#                c1 = (t2-t1)/(N2-N1) if N1!=N2 else numpy.nan
-#                c2 = t2 - c1* N2
-#                print N1, N2, c1*N1, c2
-                #IterTime = c1 * nPoints + c2
-#                c1 = (t_new - t_prev) / (N_new - N_prev)
-#                c2 = t_new - c1* N_new
-#                maxActive = amax((15, int(15*c2/c1)))
-                
-#                #print m, currIterActivePointsNum
-#                if (p.iterTime[-1] - p.iterTime[-2])/m > 1.2 * (p.iterTime[-2]-p.iterTime[-3]) /currIterActivePointsNum  and p.iterTime[-1]-p.iterTime[-2] > 0.01:
-#                    maxActive = amax((int(maxActive / 1.5), 1))
-#                else:
-#                    maxActive = amin((maxActive*2, m))
-#            else:
-#                maxActive = m
+    
 
-#def asdf(m, n):
-#    sh1, sh2, inds = [], [], []
-#    for i in range(n):
-#        sh1+= arange((n+i)*m, (n+i+1)*m).tolist()
-#        inds +=  [i]*m
-#        sh2 += arange(i*m, (i+1)*m).tolist()
-#    return sh1, sh2, inds
-#
-#def asdf2(T1, T2, Centers, sh1, sh2, inds):
-#    T1[sh1, inds] = Centers.T.flatten()
-#    T2[sh2, inds] = Centers.T.flatten()
-
-
-#def Delete(*args, **kwargs):
-#    return delete(*args, **kwargs)
-#
-#def Delete2(*args, **kwargs):
-#    return delete(*args, **kwargs)
-#    
-#def delete3(*args, **kwargs):
-#    return delete(*args, **kwargs)
-#
-#def delete4(*args, **kwargs):
-#    return delete(*args, **kwargs)
-#
-#def delete5(*args, **kwargs):
-#    return delete(*args, **kwargs)
