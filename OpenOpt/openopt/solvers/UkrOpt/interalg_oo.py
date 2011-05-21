@@ -1,5 +1,6 @@
 from numpy import isfinite, all, argmax, where, delete, array, asarray, inf, argmin, hstack, vstack, arange, amin, \
-logical_and, float64, ceil, amax, inf, ndarray, isinf, any, logical_or, nan, take, logical_not, asanyarray, searchsorted
+logical_and, float64, ceil, amax, inf, ndarray, isinf, any, logical_or, nan, take, logical_not, asanyarray, searchsorted, \
+logical_xor
 
 import numpy
 from numpy.linalg import norm, solve, LinAlgError
@@ -14,17 +15,17 @@ try:
     hasHeapMerge = True
 except ImportError:
     pass
-
+    
+bottleneck_is_present = False
 try:
     from bottleneck import nanargmin, nanargmax, nanmin
     bottleneck_is_present = True
 except ImportError:
     from numpy import nanmin, nanargmin, nanargmax
-    bottleneck_is_present = False
-#from numpy import nanmin, nanargmin, nanargmax
+
 
 class interalg(baseSolver):
-    __name__ = 'interalg_0.17'
+    __name__ = 'interalg_0.21'
     __license__ = "BSD"
     __authors__ = "Dmitrey"
     __alg__ = ""
@@ -36,6 +37,7 @@ class interalg(baseSolver):
     maxNodes = 150000
     maxActiveNodes = 1500
     useArrays4Store = False
+    allSolutions = False
     __isIterPointAlwaysFeasible__ = lambda self, p: p.__isNoMoreThanBoxBounded__()
     #_canHandleScipySparse = True
 
@@ -83,6 +85,7 @@ class interalg(baseSolver):
                 available via easy_install, takes several minutes for compilation)
                 could speedup the solver %s''' % self.__name__)
         
+        # TODO: handle it in other level
         p.useMultiPoints = True
         
         nNodes = []        
@@ -180,7 +183,7 @@ class interalg(baseSolver):
         C = p._FD.nonBoxCons
         isOnlyBoxBounded = p.__isNoMoreThanBoxBounded__()
         varTols = p.variableTolerances
-        nCut = 1 if fd_obj.isUncycled and all(isfinite(a)) and all(isfinite(o)) and isOnlyBoxBounded else self.maxNodes
+        
         
         for itn in range(p.maxIter+10):
             ip = func10(y, e, n, ooVars)
@@ -192,6 +195,8 @@ class interalg(baseSolver):
             o, a, bestCenter, bestCenterObjective = func8(ip, fd_obj, dataType)
             
             if p.debug and any(a<o):  p.warn('interval lower bound exceeds upper bound, it seems to be FuncDesigner kernel bug')
+            if p.debug and any(logical_xor(isnan(o), isnan(a))):
+                p.err('bug in FuncDesigner intervals engine')
             
             xk, Min = bestCenter, bestCenterObjective
            
@@ -205,7 +210,7 @@ class interalg(baseSolver):
             if fr > Min:
                 fr = Min
 
-            fo = min((fr, CurrentBestKnownPointsMinValue - fTol)) 
+            fo = min((fr, CurrentBestKnownPointsMinValue - (0.0 if self.allSolutions else fTol))) 
             
             m = e.shape[0]
             o, a = o.reshape(2*n, m).T, a.reshape(2*n, m).T
@@ -221,6 +226,7 @@ class interalg(baseSolver):
                 vstack((y, b)), vstack((e, e_inactive)), vstack((o, o_inactive)), vstack((a, a_inactive)), hstack((maxo, maxo_inactive))
 
                 y, e, o, a, maxo, g = func6(y, e, o, a, maxo, n, fo, g)
+                nCut = 1 if fd_obj.isUncycled and all(isfinite(a)) and all(isfinite(o)) and isOnlyBoxBounded else self.maxNodes
                 y, e, o, a, maxo, g = func5(y, e, o, a, maxo,  n, nCut, g)
                 y, e, o, a, maxo, b, e_inactive, o_inactive, a_inactive, maxo_inactive =\
                 func3(y, e, o, a, maxo, n, self.maxActiveNodes)
@@ -253,6 +259,7 @@ class interalg(baseSolver):
             
             
             if not self.useArrays4Store:
+                nCut = 1 if fd_obj.isUncycled and all(isfinite(a)) and all(isfinite(o)) and isOnlyBoxBounded else self.maxNodes
                 an, g = func52(an, n, nCut, g)
                 
                 an1, _in = func32(an, n, self.maxActiveNodes)

@@ -1,5 +1,5 @@
 from numpy import tile, isnan, array, atleast_1d, asarray, logical_and, all, searchsorted, logical_or, any, nan, isinf, \
-arange, vstack, inf, where, logical_not, take
+arange, vstack, inf, where, logical_not, take, argmax, argmin
 from FuncDesigner import ooPoint
 
 try:
