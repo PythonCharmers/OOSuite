@@ -1,5 +1,10 @@
 from numpy import ndarray, asscalar, isscalar, hstack, amax, amin, floor, ceil, pi, \
-arange, copy as Copy, logical_and, where, asarray, any, atleast_1d, empty_like, nan, logical_not
+arange, copy as Copy, logical_and, where, asarray, any, atleast_1d, empty_like, nan, logical_not, vstack
+
+try:
+    from bottleneck import nanmin, nanmax
+except ImportError:
+    from numpy import nanmin, nanmax
 
 class Interval:
     def __init__(self, l, u):
@@ -61,6 +66,27 @@ def TrigonometryCriticalPoints(arg_infinum, arg_supremum):
 #    #raise 0
 #    return Tmp
 #    
+
+def ZeroCriticalPointsInterval(inp, func):
+    def interval(domain, dtype):
+        lb, ub = inp._interval(domain, dtype)
+        ind1, ind2 = lb < 0.0, ub > 0.0
+        ind = logical_and(ind1, ind2)
+        tmp = vstack((lb, ub))
+        TMP = func(tmp)
+        t_min, t_max = atleast_1d(nanmin(TMP, 0)), atleast_1d(nanmax(TMP, 0))
+        if any(ind):
+            F0 = func(0.0)
+            t_min[atleast_1d(logical_and(ind, t_min > F0))] = F0
+            t_max[atleast_1d(logical_and(ind, t_max < F0))] = F0
+        return  t_min, t_max
+    return interval
+#    if isscalar(arg_infinum):
+#        return [0.0] if arg_infinum < 0.0 < arg_supremum else []
+#    tmp = Copy(arg_infinum)
+#    #tmp[where(logical_and(arg_infinum < 0.0, arg_supremum > 0.0))] = 0.0
+#    tmp[atleast_1d(logical_and(arg_infinum < 0.0, arg_supremum > 0.0))] = 0.0
+#    return [tmp]
 
 def nonnegative_interval(inp, func, domain, dtype):
     lb, ub = inp._interval(domain, dtype)

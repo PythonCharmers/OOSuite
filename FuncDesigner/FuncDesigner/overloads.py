@@ -3,7 +3,7 @@ import numpy as np
 from FDmisc import FuncDesignerException, Diag, Eye, raise_except
 from ooFun import atleast_oofun, ooarray
 from ooPoint import ooPoint
-from Interval import TrigonometryCriticalPoints, ZeroCriticalPoints, nonnegative_interval
+from Interval import TrigonometryCriticalPoints, ZeroCriticalPoints, nonnegative_interval, ZeroCriticalPointsInterval
 from numpy import atleast_1d, logical_and, logical_not, empty_like
 
 #class unary_oofun_overload:
@@ -97,7 +97,7 @@ def cosh(inp):
     if isinstance(inp, ooarray) and inp.dtype == object:
         return ooarray([cosh(elem) for elem in inp])        
     if not isinstance(inp, oofun): return np.cosh(inp)
-    return oofun(np.cosh, inp, d = lambda x: Diag(np.sinh(x)), vectorized = True, criticalPoints=ZeroCriticalPoints)
+    return oofun(np.cosh, inp, d = lambda x: Diag(np.sinh(x)), vectorized = True, _interval=ZeroCriticalPointsInterval(inp, np.cosh))
 
 def angle(inp1, inp2):
     # returns angle between 2 vectors
@@ -128,7 +128,9 @@ def abs(inp):
     if isinstance(inp, ooarray) and inp.dtype == object:
         return ooarray([abs(elem) for elem in inp])
     elif not isinstance(inp, oofun): return np.abs(inp)
-    return oofun(np.abs, inp, d = lambda x: Diag(np.sign(x)), vectorized = True, criticalPoints = ZeroCriticalPoints)
+    
+    return oofun(np.abs, inp, d = lambda x: Diag(np.sign(x)), vectorized = True, _interval = ZeroCriticalPointsInterval(inp, np.abs))
+    #return oofun(np.abs, inp, d = lambda x: Diag(np.sign(x)), vectorized = True, criticalPoints = ZeroCriticalPoints)
 
 def log_interval(logfunc, inp):
     def interval(domain, dtype):

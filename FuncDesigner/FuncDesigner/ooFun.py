@@ -15,7 +15,7 @@ from FDmisc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scip
 raise_except, DiagonalType
 from copy import deepcopy
 from ooPoint import ooPoint
-from Interval import Interval, ZeroCriticalPoints, nonnegative_interval
+from Interval import Interval
 
 Copy = lambda arg: asscalar(arg) if type(arg)==ndarray and arg.size == 1 else arg.copy() if hasattr(arg, 'copy') else copy(arg)
 Len = lambda x: 1 if isscalar(x) else x.size if type(x)==ndarray else len(x)
@@ -188,6 +188,7 @@ class oofun:
             if criticalPointsFunc is not False:
                 tmp += criticalPointsFunc(arg_infinum, arg_supremum)
             Tmp = self.fun(vstack(tmp))
+            #Tmp = self.fun(array(tmp))
             return nanmin(Tmp, 0), nanmax(Tmp, 0)
         else:
             raise FuncDesignerException('interval calculations are unimplemented for the oofun yet')
@@ -518,15 +519,13 @@ class oofun:
                 T = vstack((lb1 ** lb2, lb1** ub2, ub1**lb1, ub1**ub2))
                 t_min, t_max = nanmin(T, 0), nanmax(T, 0)
                 ind1 = lb1 < 0
+                # TODO: check it, especially with integer "other"
                 if any(ind1):
                     ind2 = ub1 > 0
                     t_min[atleast_1d(logical_and(ind1, ind2))] = 0.0
                     t_max[atleast_1d(logical_and(ind1, logical_not(ind2)))] = nan
                 return t_min, t_max
                 
-                
-        
-        #criticalPoints = ZeroCriticalPoints
         r = oofun(f, input, d = d, _interval=interval)
         if isinstance(other, oofun) or (not isinstance(other, int) or (type(other) == ndarray and other.flatten()[0] != int)): 
             r.attach((self>0)('pow_domain_%d'%r._id, tol=-1e-7)) # TODO: if "other" is fixed oofun with integer value - omit this
