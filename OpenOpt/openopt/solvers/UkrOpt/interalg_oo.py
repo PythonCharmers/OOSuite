@@ -216,7 +216,7 @@ class interalg(baseSolver):
             # TODO: use sorted(..., key = lambda obj:obj.key) instead?
             an = sorted(chain(nodes, _in))
             
-            an, g = func9(an, n, fo, g)
+            an, g = func9(an, fo, g)
 
 
             # TODO: rework it
@@ -230,9 +230,9 @@ class interalg(baseSolver):
                 break            
 
             nCut = 1 if fd_obj.isUncycled and all(isfinite(a)) and all(isfinite(o)) and isOnlyBoxBounded else self.maxNodes
-            an, g = func5(an, n, nCut, g)
+            an, g = func5(an, nCut, g)
             
-            an1, _in = func3(an, n, self.maxActiveNodes)
+            an1, _in = func3(an, self.maxActiveNodes)
 
             m = len(an1)
             nActiveNodes.append(m)
@@ -245,7 +245,6 @@ class interalg(baseSolver):
             asanyarray([t.data[3] for t in an1])
             
             y, e = func4(y, e, o, a, n, fo)
-            
             t = func1(y, e, o, a, n, varTols)
             y, e = func2(y, e, t)
             # End of main cycle

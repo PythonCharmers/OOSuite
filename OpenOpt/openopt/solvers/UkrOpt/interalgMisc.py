@@ -3,9 +3,9 @@ arange, vstack, inf, where, logical_not, take
 from FuncDesigner import ooPoint
 
 try:
-    from bottleneck import nanargmin, nanmin
+    from bottleneck import nanargmin, nanmin, nanargmax
 except ImportError:
-    from numpy import nanmin, nanargmin
+    from numpy import nanmin, nanargmin, nanargmax
 
 
     
@@ -75,7 +75,7 @@ def func7(y, e, o, a):
         a = take(a, j, axis=0, out=a[:lj])
     return y, e, o, a 
 
-def func9(an, n, fo, g):
+def func9(an, fo, g):
     maxo = [node.key for node in an]
     ind = searchsorted(maxo, fo, side='right')
     if ind == len(maxo):
@@ -85,7 +85,7 @@ def func9(an, n, fo, g):
         return an[:ind], g
 
 
-def func5(an, n, nCut, g):
+def func5(an, nCut, g):
     m = len(an)
     if m > nCut:
         maxo = [node.key for node in an]
@@ -104,7 +104,7 @@ def func4(y, e, o, a, n, fo):
         e[ind] = centers[ind]
     return y, e
 
-def func3(an, n, maxActiveNodes):
+def func3(an, maxActiveNodes):
     m = len(an)
     if m > maxActiveNodes:
         an1, _in = an[:maxActiveNodes], an[maxActiveNodes:]
@@ -158,7 +158,7 @@ def func1(y, e, o, a, n, varTols):
             ind = all(isinf(a), 1)
             if any(ind):
                 boxShapes = e[ind] - y[ind]
-                t[ind] = argmax(boxShapes, 1)
+                t[ind] = nanargmax(boxShapes, 1)
                 
     elif Case == 2:
         o1, o2 = o[:, 0:n], o[:, n:]
