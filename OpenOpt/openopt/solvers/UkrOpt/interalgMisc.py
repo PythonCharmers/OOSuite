@@ -1,5 +1,5 @@
 from numpy import tile, isnan, array, atleast_1d, asarray, logical_and, all, searchsorted, logical_or, any, nan, isinf, \
-arange, vstack, inf, where, logical_not, take, argmax, argmin
+arange, vstack, inf, where, logical_not, take
 from FuncDesigner import ooPoint
 
 try:
@@ -83,6 +83,7 @@ def func9(an, n, fo, g):
     else:
         g = nanmin((g, nanmin(maxo[ind])))
         return an[:ind], g
+
 
 def func5(an, n, nCut, g):
     m = len(an)
@@ -191,7 +192,6 @@ def func2(y, e, t):
 
 
 func11 = lambda y, e, o, a, maxo: [si(maxo[i], y[i], e[i], o[i], a[i]) for i in range(len(maxo))]
-
 
 class si:
     def __init__(self, key, *data):
