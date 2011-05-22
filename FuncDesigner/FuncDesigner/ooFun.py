@@ -521,9 +521,10 @@ class oofun:
                 ind1 = lb1 < 0
                 # TODO: check it, especially with integer "other"
                 if any(ind1):
-                    ind2 = ub1 > 0
-                    t_min[atleast_1d(logical_and(ind1, ind2))] = 0.0
+                    ind2 = ub1 >= 0
+                    t_min[atleast_1d(logical_and(logical_and(ind1, ind2), logical_and(t_min > 0.0, ub2 > 0.0)))] = 0.0
                     t_max[atleast_1d(logical_and(ind1, logical_not(ind2)))] = nan
+                    t_min[atleast_1d(logical_and(ind1, logical_not(ind2)))] = nan
                 return t_min, t_max
                 
         r = oofun(f, input, d = d, _interval=interval)
