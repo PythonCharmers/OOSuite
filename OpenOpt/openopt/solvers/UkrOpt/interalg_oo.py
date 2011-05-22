@@ -1,21 +1,15 @@
+import numpy
 from numpy import isfinite, all, argmax, where, delete, array, asarray, inf, argmin, hstack, vstack, arange, amin, \
 logical_and, float64, ceil, amax, inf, ndarray, isinf, any, logical_or, nan, take, logical_not, asanyarray, searchsorted, \
 logical_xor
-
-import numpy
 from numpy.linalg import norm, solve, LinAlgError
+from itertools import chain
 from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X,  SMALL_DELTA_F, MAX_NON_SUCCESS
 from openopt.kernel.baseSolver import *
 from openopt.kernel.Point import Point
 from openopt.solvers.UkrOpt.interalgMisc import *
 
-hasHeapMerge = False
-try:
-    from heapq import merge
-    hasHeapMerge = True
-except ImportError:
-    pass
-    
+   
 bottleneck_is_present = False
 try:
     from bottleneck import nanargmin, nanargmax, nanmin
@@ -36,7 +30,6 @@ class interalg(baseSolver):
     #maxMem = '150MB'
     maxNodes = 150000
     maxActiveNodes = 1500
-    useArrays4Store = False
     allSolutions = False
     __isIterPointAlwaysFeasible__ = lambda self, p: p.__isNoMoreThanBoxBounded__()
     #_canHandleScipySparse = True
@@ -60,16 +53,6 @@ class interalg(baseSolver):
                 p.err('''
                 solver %s currently can handle only single-element variables, 
                 use oovars(n) instead of oovar(size=n)'''% self.__name__)
-
-        if not hasHeapMerge:
-            p.pWarn('''cannot import merge from heapq, 
-            maybe you using Python version prior to 2.6
-            useArrays4Store will be set to False
-            (this is slower and more unstable mode, 
-            maybe even buggy, out of maintanance)
-            ''')
-            self.useArrays4Store = True
-        
 
         point = p.point
         
@@ -115,9 +98,9 @@ class interalg(baseSolver):
 
         CurrentBestKnownPointsMinValue = inf
             
-        y = lb.reshape(1, -1)
-        e = ub.reshape(1, -1)
-        fr = inf
+        Lx = lb.reshape(1, -1)
+        Ux = ub.reshape(1, -1)
+        fRecord = inf
 
         fd_obj = p.user.f[0]
         if p.fOpt is not None:  fOpt = p.fOpt
@@ -131,20 +114,20 @@ class interalg(baseSolver):
         fStart = self.fStart
 
         if fStart is not None and fStart < CurrentBestKnownPointsMinValue: 
-            fr = fStart
+            fRecord = fStart
             
         for X0 in [point(xRecord), point(p.x0)]:
             if X0.isFeas(altLinInEq=False) and X0.f() < CurrentBestKnownPointsMinValue:
                 CurrentBestKnownPointsMinValue = X0.f()
             
         tmp = fd_obj(p._x0)
-        if  tmp < fr:
-            fr = tmp
+        if  tmp < fRecord:
+            fRecord = tmp
             
         if p.fOpt is not None:
-            if fOpt > fr:
+            if fOpt > fRecord:
                 p.warn('user-provided fOpt seems to be incorrect, ')
-            fr = fOpt
+            fRecord = fOpt
         
 
 
@@ -170,32 +153,32 @@ class interalg(baseSolver):
         #maxActive = 1
         #maxActiveNodes = self.maxActiveNodes 
         
-        b = array([]).reshape(0, n)
-        e_inactive = array([]).reshape(0, n)
-        maxo_inactive = []
-        _in = []
-        o_inactive = array([]).reshape(0, 2*n)
-        a_inactive = array([]).reshape(0, 2*n)
+        Lx_inactive = array([]).reshape(0, n)
+        Ux_inactive = array([]).reshape(0, n)
+        maxLf_inactive = []
+        inactiveNodes = []
+        Lf_inactive = array([]).reshape(0, 2*n)
+        Uf_inactive = array([]).reshape(0, 2*n)
         
-        y_excluded, e_excluded, o_excluded, a_excluded = [], [], [], []
-        k = True
-        g = inf
+        Lx_excluded, Ux_excluded, Lf_excluded, Uf_excluded = [], [], [], []
+        PointsLeft = True
+        cutLevel = inf
         C = p._FD.nonBoxCons
         isOnlyBoxBounded = p.__isNoMoreThanBoxBounded__()
         varTols = p.variableTolerances
         
         
         for itn in range(p.maxIter+10):
-            ip = func10(y, e, n, ooVars)
+            ip = formIntervalPoint(Lx, Ux, n, ooVars)
             
 #            for f, lb_, ub_ in C:
 #                TMP = f.interval(domain, dataType)
 #                lb, ub = asarray(TMP.lb, dtype=dataType), asarray(TMP.ub, dtype=dataType)
                 
-            o, a, bestCenter, bestCenterObjective = func8(ip, fd_obj, dataType)
+            Lf, Uf, bestCenter, bestCenterObjective = getIntervals(ip, fd_obj, dataType)
             
-            if p.debug and any(a<o):  p.warn('interval lower bound exceeds upper bound, it seems to be FuncDesigner kernel bug')
-            if p.debug and any(logical_xor(isnan(o), isnan(a))):
+            if p.debug and any(Uf<Lf):  p.warn('interval lower bound exceeds upper bound, it seems to be FuncDesigner kernel bug')
+            if p.debug and any(logical_xor(isnan(Lf), isnan(Uf))):
                 p.err('bug in FuncDesigner intervals engine')
             
             xk, Min = bestCenter, bestCenterObjective
@@ -207,91 +190,78 @@ class interalg(baseSolver):
             if CurrentBestKnownPointsMinValue > Min:
                 CurrentBestKnownPointsMinValue = Min
                 xRecord = xk# TODO: is copy required?
-            if fr > Min:
-                fr = Min
+            if fRecord > Min:
+                fRecord = Min
 
-            fo = min((fr, CurrentBestKnownPointsMinValue - (0.0 if self.allSolutions else fTol))) 
+            threshold = min((fRecord, CurrentBestKnownPointsMinValue - (0.0 if self.allSolutions else fTol))) 
             
-            m = e.shape[0]
-            o, a = o.reshape(2*n, m).T, a.reshape(2*n, m).T
-            y, e, o, a = func7(y, e, o, a)
-            m = e.shape[0]
-            o_modL, o_modU = o[:, 0:n], o[:, n:2*n]
-            tmp = where(o_modU<o_modL, o_modU, o_modL)
+            m = Ux.shape[0]
+            Lf, Uf = Lf.reshape(2*n, m).T, Uf.reshape(2*n, m).T
+            Lx, Ux, Lf, Uf = remove_NaN_nodes(Lx, Ux, Lf, Uf)
+            m = Ux.shape[0]
+            Lf_modL, Lf_modU = Lf[:, 0:n], Lf[:, n:2*n]
+            tmp = where(Lf_modU<Lf_modL, Lf_modU, Lf_modL)
             ind = nanargmax(tmp, 1)
-            maxo = tmp[arange(m),ind]
+            maxLf = tmp[arange(m),ind]
 
-            if self.useArrays4Store:
-                y, e, o, a, maxo = \
-                vstack((y, b)), vstack((e, e_inactive)), vstack((o, o_inactive)), vstack((a, a_inactive)), hstack((maxo, maxo_inactive))
 
-                y, e, o, a, maxo, g = func6(y, e, o, a, maxo, n, fo, g)
-                nCut = 1 if fd_obj.isUncycled and all(isfinite(a)) and all(isfinite(o)) and isOnlyBoxBounded else self.maxNodes
-                y, e, o, a, maxo, g = func5(y, e, o, a, maxo,  n, nCut, g)
-                y, e, o, a, maxo, b, e_inactive, o_inactive, a_inactive, maxo_inactive =\
-                func3(y, e, o, a, maxo, n, self.maxActiveNodes)
-                m = y.shape[0]
-                nActiveNodes.append(m)
-                nNodes.append(m + b.shape[0])
+#            ind = all(Ux-Lx <= varTols, 1)
+#            Lx_excluded += Lx[ind]
+#            Ux_excluded += Ux[ind]
+#            Lf_excluded += Lf[ind]
+#            Uf_excluded += Uf[ind]
 
-#            ind = all(e-y <= varTols, 1)
-#            y_excluded += y[ind]
-#            e_excluded += e[ind]
-#            o_excluded += o[ind]
-#            a_excluded += a[ind]
-            else:
-                nodes = func11(y, e, o, a, maxo)
-                nodes.sort()
-                an = list(merge(nodes, _in))
-                an, g = func9(an, n, fo, g)
+            nodes = formNodes(Lx, Ux, Lf, Uf, maxLf)
             
+            # TODO: use sorted(..., key = lambda obj:obj.key) instead?
+            AllNodes = sorted(chain(nodes, inactiveNodes))
+            
+            AllNodes, cutLevel = removeSomeNodes(AllNodes, n, threshold, cutLevel)
+
 
             # TODO: rework it
-            if (self.useArrays4Store and y.size == 0) or (not self.useArrays4Store and len(an) == 0): 
-                if len(an) == 0 and not self.useArrays4Store: 
-                    # For more safety against bugs
-                    an1 = []
-                    _in = []
-                k = False
+            if len(AllNodes) == 0: 
+                # For more safety against bugs
+                activeNodes = []
+                inactiveNodes = []
+                
+                PointsLeft = False
                 p.istop, p.msg = 1000, 'optimal solution obtained'
                 break            
-            
-            
-            
-            if not self.useArrays4Store:
-                nCut = 1 if fd_obj.isUncycled and all(isfinite(a)) and all(isfinite(o)) and isOnlyBoxBounded else self.maxNodes
-                an, g = func52(an, n, nCut, g)
-                
-                an1, _in = func32(an, n, self.maxActiveNodes)
 
-                m = len(an1)
-                nActiveNodes.append(m)
-                
-                nNodes.append(len(an1) + len(_in))
+            nCut = 1 if fd_obj.isUncycled and all(isfinite(Uf)) and all(isfinite(Lf)) and isOnlyBoxBounded else self.maxNodes
+            AllNodes, cutLevel = TruncateOutOfAllowedNumberNodes(AllNodes, n, nCut, cutLevel)
+            
+            activeNodes, inactiveNodes = makeSomeNodesInactive(AllNodes, n, self.maxActiveNodes)
 
-                y, e, o, a = asanyarray([t.data[0] for t in an1]), \
-                asanyarray([t.data[1] for t in an1]), \
-                asanyarray([t.data[2] for t in an1]), \
-                asanyarray([t.data[3] for t in an1])
+            m = len(activeNodes)
+            nActiveNodes.append(m)
             
-            y, e = func4(y, e, o, a, n, fo)
+            nNodes.append(len(activeNodes) + len(inactiveNodes))
+
+            Lx, Ux, Lf, Uf = asanyarray([t.data[0] for t in activeNodes]), \
+            asanyarray([t.data[1] for t in activeNodes]), \
+            asanyarray([t.data[2] for t in activeNodes]), \
+            asanyarray([t.data[3] for t in activeNodes])
             
-            t = func1(y, e, o, a, n, varTols)
-            y, e = func2(y, e, t)
+            Lx, Ux = TruncateSomeBoxes(Lx, Ux, Lf, Uf, n, threshold)
+            
+            bestCoordsForSplitting = getBestCoordsForSplitting(Lx, Ux, Lf, Uf, n, varTols)
+            Lx, Ux = formNewBoxes(Lx, Ux, bestCoordsForSplitting)
             # End of main cycle
             
         ff = f(xRecord)
         p.iterfcn(xRecord, ff)
-        if not self.useArrays4Store:
-            o = asanyarray([t.data[2] for t in an])
-        if o.size != 0:
-            g = nanmin([nanmin(o), g])
-        p.extras['isRequiredPrecisionReached'] = True if ff - g < fTol and k is False else False
+        
+        Lf = asarray([t.data[2] for t in AllNodes])
+        if Lf.size != 0:
+            cutLevel = nanmin([nanmin(Lf), cutLevel])
+        p.extras['isRequiredPrecisionReached'] = True if ff - cutLevel < fTol and PointsLeft is False else False
         # TODO: simplify it
         if p.goal in ('max', 'maximum'):
-            g = -g
-            o = -o
-        tmp = [nanmin(hstack((ff, g, o.flatten()))), numpy.asscalar(array((ff if p.goal not in ['max', 'maximum'] else -ff)))]
+            cutLevel = -cutLevel
+            Lf = -Lf
+        tmp = [nanmin(hstack((ff, cutLevel, Lf.flatten()))), numpy.asscalar(array((ff if p.goal not in ['max', 'maximum'] else -ff)))]
         if p.goal in ['max', 'maximum']: tmp = tmp[1], tmp[0]
         p.extras['extremumBounds'] = tmp
         if p.iprint >= 0:

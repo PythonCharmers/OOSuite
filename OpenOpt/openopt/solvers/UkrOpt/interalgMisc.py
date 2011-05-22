@@ -75,19 +75,6 @@ def func7(y, e, o, a):
         a = take(a, j, axis=0, out=a[:lj])
     return y, e, o, a 
 
-def func6(y, e, o, a, maxo, n, fo, g):
-    ind1 = maxo > fo
-    if any(ind1):
-        g = nanmin((g, nanmin(maxo[ind1])))
-        j = where(logical_not(ind1))[0]
-        lj = j.size
-        y = take(y, j, axis=0, out=y[:lj])
-        e = take(e, j, axis=0, out=e[:lj])
-        o = take(o, j, axis=0, out=o[:lj])
-        a = take(a, j, axis=0, out=a[:lj])
-        maxo = maxo[j]
-    return y, e, o, a, maxo, g
-
 def func9(an, n, fo, g):
     maxo = [node.key for node in an]
     ind = searchsorted(maxo, fo, side='right')
@@ -97,24 +84,7 @@ def func9(an, n, fo, g):
         g = nanmin((g, nanmin(maxo[ind])))
         return an[:ind], g
 
-def func5(y, e, o, a, maxo, n, nCut, g):
-    m = e.shape[0]
-    if m > nCut:
-        j = m - nCut
-        ind = maxo.argsort()
-        h = m-j-1
-        g = nanmin((maxo[h], g))
-        ind0 = ind
-        j = ind0[:-j]
-        lj = j.size
-        y = take(y, j, axis=0, out=y[:lj])
-        e = take(e, j, axis=0, out=e[:lj])
-        o = take(o, j, axis=0, out=o[:lj])
-        a = take(a, j, axis=0, out=a[:lj])
-        maxo = maxo[j]
-    return y, e, o, a, maxo, g
-
-def func52(an, n, nCut, g):
+def func5(an, n, nCut, g):
     m = len(an)
     if m > nCut:
         maxo = [node.key for node in an]
@@ -133,31 +103,7 @@ def func4(y, e, o, a, n, fo):
         e[ind] = centers[ind]
     return y, e
 
-def func3(y, e, o, a, maxo, n, maxActiveNodes):
-    m = y.shape[0]
-    if m <= maxActiveNodes:
-        b = array([]).reshape(0, n)
-        e_inactive = array([]).reshape(0, n)
-        o_inactive = array([]).reshape(0, 2*n)
-        a_inactive = array([]).reshape(0, 2*n)
-        maxo_inactive = array([])
-    else:
-        ind = maxo.argsort()
-        i1, i2 = ind[:maxActiveNodes], ind[maxActiveNodes:]
-        ind = i1
-        i1.sort()
-        i2.sort()
-        y_tmp, e_tmp, o_tmp, a_tmp, maxo_tmp = y[ind], e[ind], o[ind], a[ind], maxo[ind]
-        b = take(y, i2, axis=0, out=y[:len(i2)])
-        e_inactive = take(e, i2, axis=0, out=e[:len(i2)])
-        o_inactive = take(o, i2, axis=0, out=o[:len(i2)])
-        a_inactive = take(a, i2, axis=0, out=a[:len(i2)])
-        maxo_inactive = maxo[i2]
-        y, e, o, a, maxo = y_tmp, e_tmp, o_tmp, a_tmp, maxo_tmp
-        
-    return y, e, o, a, maxo, b, e_inactive, o_inactive, a_inactive, maxo_inactive
-
-def func32(an, n, maxActiveNodes):
+def func3(an, n, maxActiveNodes):
     m = len(an)
     if m > maxActiveNodes:
         an1, _in = an[:maxActiveNodes], an[maxActiveNodes:]
@@ -245,6 +191,7 @@ def func2(y, e, t):
 
 
 func11 = lambda y, e, o, a, maxo: [si(maxo[i], y[i], e[i], o[i], a[i]) for i in range(len(maxo))]
+
 
 class si:
     def __init__(self, key, *data):
