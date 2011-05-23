@@ -1,5 +1,5 @@
 from numpy import tile, isnan, array, atleast_1d, asarray, logical_and, all, searchsorted, logical_or, any, nan, isinf, \
-arange, vstack, inf, where, logical_not, take
+arange, vstack, inf, where, logical_not, take, argmax, argmin
 from FuncDesigner import ooPoint
 
 try:
@@ -9,10 +9,11 @@ except ImportError:
 
 
     
-def func10(y, e, n, ooVars):
+def func10(y, e, ooVars):
+    m, n = y.shape
     LB = [[] for i in range(n)]
     UB = [[] for i in range(n)]
-    m = y.shape[0]
+
     Centers = 0.5 * (y + e)
     
     # TODO: remove the cycle
@@ -134,8 +135,8 @@ def func1(y, e, o, a, n, varTols):
 #                a1[ind] = a2[ind]
 #                t = argmin(a1, 1)
 
-        a = a.copy() # to remain it unchanged in higher stack level funcs
-        a[e-y<varTols] = nan
+        #a = a.copy() # to remain it unchanged in higher stack level funcs
+        #a[e-y<varTols] = nan
         
         t = nanargmin(a, 1) % n
         if any(isinf(a)):
@@ -158,7 +159,7 @@ def func1(y, e, o, a, n, varTols):
             ind = all(isinf(a), 1)
             if any(ind):
                 boxShapes = e[ind] - y[ind]
-                t[ind] = nanargmax(boxShapes, 1)
+                t[ind] = nanargmax(boxShapes, 1) # ordinary numpy.argmax can be used as well
                 
     elif Case == 2:
         o1, o2 = o[:, 0:n], o[:, n:]

@@ -8,7 +8,7 @@ from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X,  SMALL_DELTA_F, MA
 from openopt.kernel.baseSolver import *
 from openopt.kernel.Point import Point
 from openopt.solvers.UkrOpt.interalgMisc import *
-
+from FuncDesigner import sum as fd_sum, abs as fd_abs
    
 bottleneck_is_present = False
 try:
@@ -32,9 +32,7 @@ class interalg(baseSolver):
     maxActiveNodes = 1500
     allSolutions = False
     __isIterPointAlwaysFeasible__ = lambda self, p: p.__isNoMoreThanBoxBounded__()
-    #_canHandleScipySparse = True
-
-    #lv default parameters
+    _requiresFiniteBoxBounds = True
 
     def __init__(self): pass
     def __solver__(self, p):
@@ -85,49 +83,64 @@ class interalg(baseSolver):
         lb, ub = asarray(p.lb, dataType), asarray(p.ub, dataType)
 
         n = p.n
-        f = p.f
         C = p.constraints
         ooVars = p._freeVarsList
         
-        fTol = p.fTol
-        if fTol is None:
-            fTol = 1e-7
-            p.warn('solver %s require p.fTol value (required objective function tolerance); 10^-7 will be used' % self.__name__)
+        if p.probType == 'NLSP':
+            fTol = p.ftol
+            if p.fTol is not None:
+                p.warn('''
+                for nonlinear system fTol is ignored, ftol valueis used instead
+                also, you can modify each personal tolerance for equation, e.g. 
+                equations = [(sin(x)+cos(y)=-0.5)(tol = 0.001), ...]
+                ''')
+        else:
+            fTol = p.fTol
+            if fTol is None:
+                fTol = 1e-7
+                p.warn('solver %s require p.fTol value (required objective function tolerance); 10^-7 will be used' % self.__name__)
 
         xRecord = 0.5 * (lb + ub)
 
         CurrentBestKnownPointsMinValue = inf
-            
+        
         y = lb.reshape(1, -1)
         e = ub.reshape(1, -1)
         fr = inf
 
-        fd_obj = p.user.f[0]
-        if p.fOpt is not None:  fOpt = p.fOpt
-        if p.goal in ('max', 'maximum'):
-            fd_obj = -fd_obj
-            if p.fOpt is not None:
-                fOpt = -p.fOpt
-
-        
         # TODO: maybe rework it, especially for constrained case
         fStart = self.fStart
+        
+        # TODO: remove it after proper NLSP handling implementation
+        if p.probType == 'NLSP':
+            fr = 0.0
+            eqs = [fd_abs(elem) for elem in p.user.f]
+            fd_obj = fd_sum(eqs)
+        else:
+            fd_obj = p.user.f[0]
+            
+            if p.fOpt is not None:  fOpt = p.fOpt
+            if p.goal in ('max', 'maximum'):
+                fd_obj = -fd_obj
+                if p.fOpt is not None:
+                    fOpt = -p.fOpt
+            
+                
+            if fStart is not None and fStart < CurrentBestKnownPointsMinValue: 
+                fr = fStart
+                
+            for X0 in [point(xRecord), point(p.x0)]:
+                if X0.isFeas(altLinInEq=False) and X0.f() < CurrentBestKnownPointsMinValue:
+                    CurrentBestKnownPointsMinValue = X0.f()
 
-        if fStart is not None and fStart < CurrentBestKnownPointsMinValue: 
-            fr = fStart
-            
-        for X0 in [point(xRecord), point(p.x0)]:
-            if X0.isFeas(altLinInEq=False) and X0.f() < CurrentBestKnownPointsMinValue:
-                CurrentBestKnownPointsMinValue = X0.f()
-            
-        tmp = fd_obj(p._x0)
-        if  tmp < fr:
-            fr = tmp
-            
-        if p.fOpt is not None:
-            if fOpt > fr:
-                p.warn('user-provided fOpt seems to be incorrect, ')
-            fr = fOpt
+            tmp = fd_obj(p._x0)
+            if  tmp < fr:
+                fr = tmp
+                
+            if p.fOpt is not None:
+                if fOpt > fr:
+                    p.warn('user-provided fOpt seems to be incorrect, ')
+                fr = fOpt
         
 
 
@@ -152,13 +165,8 @@ class interalg(baseSolver):
         m = 0
         #maxActive = 1
         #maxActiveNodes = self.maxActiveNodes 
-        
-        b = array([]).reshape(0, n)
-        e_inactive = array([]).reshape(0, n)
-        maxo_inactive = []
+
         _in = []
-        o_inactive = array([]).reshape(0, 2*n)
-        a_inactive = array([]).reshape(0, 2*n)
         
         y_excluded, e_excluded, o_excluded, a_excluded = [], [], [], []
         k = True
@@ -166,18 +174,20 @@ class interalg(baseSolver):
         C = p._FD.nonBoxCons
         isOnlyBoxBounded = p.__isNoMoreThanBoxBounded__()
         varTols = p.variableTolerances
+        peak_nodes_number = 0
         
         
         for itn in range(p.maxIter+10):
-            ip = func10(y, e, n, ooVars)
+            ip = func10(y, e, ooVars)
             
 #            for f, lb_, ub_ in C:
 #                TMP = f.interval(domain, dataType)
 #                lb, ub = asarray(TMP.lb, dtype=dataType), asarray(TMP.ub, dtype=dataType)
                 
             o, a, bestCenter, bestCenterObjective = func8(ip, fd_obj, dataType)
-            
-            if p.debug and any(a<o):  p.warn('interval lower bound exceeds upper bound, it seems to be FuncDesigner kernel bug')
+            #print nanmin(o), nanmin(a)
+            if p.debug and any(a + 1e-15 < o):  
+                p.warn('interval lower bound exceeds upper bound, it seems to be FuncDesigner kernel bug')
             if p.debug and any(logical_xor(isnan(o), isnan(a))):
                 p.err('bug in FuncDesigner intervals engine')
             
@@ -230,6 +240,7 @@ class interalg(baseSolver):
                 break            
 
             nCut = 1 if fd_obj.isUncycled and all(isfinite(a)) and all(isfinite(o)) and isOnlyBoxBounded else self.maxNodes
+            peak_nodes_number = max((len(an), peak_nodes_number))
             an, g = func5(an, nCut, g)
             
             an1, _in = func3(an, self.maxActiveNodes)
@@ -249,8 +260,9 @@ class interalg(baseSolver):
             y, e = func2(y, e, t)
             # End of main cycle
             
-        ff = f(xRecord)
-        p.iterfcn(xRecord, ff)
+        
+        p.iterfcn(xRecord)
+        ff = p.fk # ff may be not assigned yet
         
         o = asarray([t.data[2] for t in an])
         if o.size != 0:
@@ -266,7 +278,7 @@ class interalg(baseSolver):
         if p.iprint >= 0:
             s = 'Solution with required tolerance %0.1e \n is%s guarantied (obtained precision: %0.1e)' \
                    %(fTol, '' if p.extras['isRequiredPrecisionReached'] else ' NOT', tmp[1]-tmp[0])
-            if not p.extras['isRequiredPrecisionReached']: s += '\nincrease maxNodes (current value %d)' % self.maxNodes
+            if not p.extras['isRequiredPrecisionReached'] and peak_nodes_number == self.maxNodes: s += '\nincrease maxNodes (current value %d)' % self.maxNodes
             p.info(s)
 
 
