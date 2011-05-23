@@ -15,6 +15,7 @@ class de(baseSolver):
     __homepage__ = ''
     __isIterPointAlwaysFeasible__ = lambda self, p: p.__isNoMoreThanBoxBounded__()
     __optionalDataThatCanBeHandled__ = ['lb', 'ub', 'A', 'b', 'c']
+    _requiresFiniteBoxBounds = True
     
     """Strategy for selecting base vector.
     'random' - random base vector.
