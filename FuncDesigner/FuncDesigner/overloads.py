@@ -135,20 +135,11 @@ def abs(inp):
 def log_interval(logfunc, inp):
     def interval(domain, dtype):
         lb, ub = inp._interval(domain, dtype)
-        
-        ind = lb <=0
+        t_min, t_max = logfunc(lb), logfunc(ub)
+        ind = lb < 0
         if any(ind):
-            t_min, t_max = atleast_1d(empty_like(lb)), atleast_1d(empty_like(ub))
-            ind_dom = logical_not(ind)
-            t_min[ind_dom], t_max[ind_dom] = logfunc(lb[ind_dom]), logfunc(ub[ind_dom])
-            #t_min, t_max = np.asarray(t_min), np.asarray(t_max)
             ind2 = ub>0
             t_min[atleast_1d(logical_and(ind, ind2))] = -np.inf
-            ind_nan = logical_and(ind, logical_not(ind2))
-            t_min[atleast_1d(ind_nan)] = np.nan
-            t_max[atleast_1d(ind_nan)] = np.nan
-        else:
-            t_min, t_max = logfunc(lb), logfunc(ub)
         return t_min, t_max
     return interval
 
