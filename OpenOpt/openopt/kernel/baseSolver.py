@@ -12,6 +12,7 @@ class baseSolver:
     __homepage__ = 'Undefined. Use web search'
     __info__ = 'None'
     _requiresBestPointDetection = False
+    _requiresFiniteBoxBounds = False
 
     """__cannotHandleExceptions__  is
     True for ipopt and mb some others,

@@ -1,7 +1,7 @@
 __docformat__ = "restructuredtext en"
 from time import time, clock
 from numpy import asfarray, copy, inf, nan, isfinite, ones, ndim, all, atleast_1d, any, isnan, \
-array_equiv, asscalar, asarray, where, ndarray, isscalar, matrix, seterr
+array_equiv, asscalar, asarray, where, ndarray, isscalar, matrix, seterr, isinf
 from setDefaultIterFuncs import stopcase,  SMALL_DELTA_X,  SMALL_DELTA_F
 from check import check
 from oologfcn import OpenOptException
@@ -75,10 +75,7 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     
     if 'debug' in kwargs.keys():
        p.debug =  kwargs['debug']
-    
-    #p.solver = solverClass()
-#    p.solverName = p.solver.__name__
-#    setattr(p, p.solverName, EmptyClass())
+
     solver = p.solver.__solver__
 
     for key, value in kwargs.items():
@@ -121,6 +118,12 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     if p.graphics.xlabel == 'nf': p.iterValues.nf = [] # iter ObjFunc evaluation number
 
     p._Prepare()
+    
+    if p.solver._requiresFiniteBoxBounds:
+        ind1, ind2 = isinf(p.lb), isinf(p.ub)
+        p.lb[ind1] = p.implicitBounds[0] if asarray(p.implicitBounds[0]).size == 1 else p.implicitBounds[0][ind1]
+        p.ub[ind2] = p.implicitBounds[1] if asarray(p.implicitBounds[1]).size == 1 else p.implicitBounds[0][ind2]
+    
     for fn in ['FunEvals', 'Iter', 'Time', 'CPUTime']:
         if hasattr(p,'min'+fn) and hasattr(p,'max'+fn) and getattr(p,'max'+fn) < getattr(p,'min'+fn):
             p.warn('min' + fn + ' (' + str(getattr(p,'min'+fn)) +') exceeds ' + 'max' + fn + '(' + str(getattr(p,'max'+fn)) +'), setting latter to former')

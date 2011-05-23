@@ -142,6 +142,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
     # so it may be ignored with some solvers not closely connected to OO kernel
 
     fOpt = None # optimal value, if known
+    implicitBounds = inf
     
 
     def __init__(self, *args, **kwargs):
@@ -679,6 +680,9 @@ class NonLinProblem(baseProblem, nonLinFuncs, Args):
 
     def _Prepare(self):
         baseProblem._prepare(self)
+        if asarray(self.implicitBounds).size == 1:
+            self.implicitBounds = [-self.implicitBounds, self.implicitBounds]
+            self.implicitBounds.sort()# for more safety, maybe user-provided value is negative
         if hasattr(self, 'solver'):
             if not self.solver.iterfcnConnected:
                 if self.solver.funcForIterFcnConnection == 'f':
