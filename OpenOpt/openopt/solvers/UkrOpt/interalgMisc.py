@@ -113,7 +113,8 @@ def func3(an, maxActiveNodes):
         an1, _in = an, []
     return an1, _in
 
-def func1(y, e, o, a, n, varTols):
+def func1(y, e, o, a, varTols):
+    m, n = y.shape
     Case = 1 # TODO: check other
     if Case == -3:
         t = argmin(a, 1) % n
@@ -137,29 +138,15 @@ def func1(y, e, o, a, n, varTols):
 
         #a = a.copy() # to remain it unchanged in higher stack level funcs
         #a[e-y<varTols] = nan
-        
-        t = nanargmin(a, 1) % n
-        if any(isinf(a)):
-            # new
-#                    a1, a2 = a[:, 0:n], a[:, n:]
-#                    
-#                    #ind1, ind2 = isinf(a1), isinf(a2)
-#                    #ind_any_infinite = logical_or(ind1, ind2)
-#                    ind1, ind2 = isinf(a1), isinf(a2)
-#                    ind_any_infinite = logical_or(ind1, ind2)
-#                    
-#                    a_ = where(a1 < a2, a1, a2)
-#                    a_[ind_any_infinite] = inf
-#                    t = nanargmin(a_, 1) 
-#                    ind = isinf(a_[w, t])
-
-##                    #old
-            ###t = argmin(a, 1) % n
-            #ind = logical_or(all(isinf(a), 1), all(isinf(o), 1))
-            ind = all(isinf(a), 1)
-            if any(ind):
-                boxShapes = e[ind] - y[ind]
-                t[ind] = nanargmax(boxShapes, 1) # ordinary numpy.argmax can be used as well
+        IND = nanargmin(a, 1)
+        t = IND % n
+        tmp = a[(arange(m), IND)].reshape(-1, 1).copy()
+        a[:, IND] = nan
+        ind = logical_or(any(a == tmp, 1), all(isinf(a), 1))
+        if any(ind):
+            boxShapes = e[ind] - y[ind]
+            t[ind] = nanargmax(boxShapes, 1) # ordinary numpy.argmax can be used as well
+        a[:, IND] = tmp
                 
     elif Case == 2:
         o1, o2 = o[:, 0:n], o[:, n:]

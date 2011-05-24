@@ -256,11 +256,10 @@ class interalg(baseSolver):
             asanyarray([t.data[3] for t in an1])
             
             y, e = func4(y, e, o, a, n, fo)
-            t = func1(y, e, o, a, n, varTols)
+            t = func1(y, e, o, a, varTols)
             y, e = func2(y, e, t)
             # End of main cycle
             
-        
         p.iterfcn(xRecord)
         ff = p.fk # ff may be not assigned yet
         
