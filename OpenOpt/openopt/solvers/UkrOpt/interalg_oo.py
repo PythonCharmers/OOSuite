@@ -29,7 +29,7 @@ class interalg(baseSolver):
     dataType = float64
     #maxMem = '150MB'
     maxNodes = 150000
-    maxActiveNodes = 1500
+    mn = 1500
     allSolutions = False
     __isIterPointAlwaysFeasible__ = lambda self, p: p.__isNoMoreThanBoxBounded__()
     _requiresFiniteBoxBounds = True
@@ -84,7 +84,7 @@ class interalg(baseSolver):
 
         n = p.n
         C = p.constraints
-        ooVars = p._freeVarsList
+        vv = p._freeVarsList
         
         if p.probType == 'NLSP':
             fTol = p.ftol
@@ -104,45 +104,45 @@ class interalg(baseSolver):
 
         xRecord = 0.5 * (lb + ub)
 
-        CurrentBestKnownPointsMinValue = inf
+        CBKPMV = inf
         
         y = lb.reshape(1, -1)
         e = ub.reshape(1, -1)
-        fr = inf
+        frc = inf
 
         # TODO: maybe rework it, especially for constrained case
         fStart = self.fStart
         
         # TODO: remove it after proper NLSP handling implementation
         if p.probType == 'NLSP':
-            fr = 0.0
+            frc = 0.0
             eqs = [fd_abs(elem) for elem in p.user.f]
-            fd_obj = fd_sum(eqs)
+            asdf1 = fd_sum(eqs)
         else:
-            fd_obj = p.user.f[0]
+            asdf1 = p.user.f[0]
             
             if p.fOpt is not None:  fOpt = p.fOpt
             if p.goal in ('max', 'maximum'):
-                fd_obj = -fd_obj
+                asdf1 = -asdf1
                 if p.fOpt is not None:
                     fOpt = -p.fOpt
             
                 
-            if fStart is not None and fStart < CurrentBestKnownPointsMinValue: 
-                fr = fStart
+            if fStart is not None and fStart < CBKPMV: 
+                frc = fStart
                 
             for X0 in [point(xRecord), point(p.x0)]:
-                if X0.isFeas(altLinInEq=False) and X0.f() < CurrentBestKnownPointsMinValue:
-                    CurrentBestKnownPointsMinValue = X0.f()
+                if X0.isFeas(altLinInEq=False) and X0.f() < CBKPMV:
+                    CBKPMV = X0.f()
 
-            tmp = fd_obj(p._x0)
-            if  tmp < fr:
-                fr = tmp
+            tmp = asdf1(p._x0)
+            if  tmp < frc:
+                frc = tmp
                 
             if p.fOpt is not None:
-                if fOpt > fr:
+                if fOpt > frc:
                     p.warn('user-provided fOpt seems to be incorrect, ')
-                fr = fOpt
+                frc = fOpt
         
 
 
@@ -166,7 +166,7 @@ class interalg(baseSolver):
 #                p.err('incorrect max memory parameter value, should end with KB, MB, GB or TB')
         m = 0
         #maxActive = 1
-        #maxActiveNodes = self.maxActiveNodes 
+        #mn = self.mn 
 
         _in = []
         
@@ -176,17 +176,17 @@ class interalg(baseSolver):
         C = p._FD.nonBoxCons
         isOnlyBoxBounded = p.__isNoMoreThanBoxBounded__()
         varTols = p.variableTolerances
-        peak_nodes_number = 0
+        pnc = 0
         
         
         for itn in range(p.maxIter+10):
-            ip = func10(y, e, ooVars)
+            ip = func10(y, e, vv)
             
 #            for f, lb_, ub_ in C:
 #                TMP = f.interval(domain, dataType)
 #                lb, ub = asarray(TMP.lb, dtype=dataType), asarray(TMP.ub, dtype=dataType)
                 
-            o, a, bestCenter, bestCenterObjective = func8(ip, fd_obj, dataType)
+            o, a, bestCenter, bestCenterObjective = func8(ip, asdf1, dataType)
             #print nanmin(o), nanmin(a)
             if p.debug and any(a + 1e-15 < o):  
                 p.warn('interval lower bound exceeds upper bound, it seems to be FuncDesigner kernel bug')
@@ -199,22 +199,22 @@ class interalg(baseSolver):
             if p.istop != 0: 
                 break
             
-            if CurrentBestKnownPointsMinValue > Min:
-                CurrentBestKnownPointsMinValue = Min
+            if CBKPMV > Min:
+                CBKPMV = Min
                 xRecord = xk# TODO: is copy required?
-            if fr > Min:
-                fr = Min
+            if frc > Min:
+                frc = Min
 
-            fo = min((fr, CurrentBestKnownPointsMinValue - (0.0 if self.allSolutions else fTol))) 
+            fo = min((frc, CBKPMV - (0.0 if self.allSolutions else fTol))) 
             
             m = e.shape[0]
             o, a = o.reshape(2*n, m).T, a.reshape(2*n, m).T
             y, e, o, a = func7(y, e, o, a)
             m = e.shape[0]
-            o_modL, o_modU = o[:, 0:n], o[:, n:2*n]
-            tmp = where(o_modU<o_modL, o_modU, o_modL)
+            s, q = o[:, 0:n], o[:, n:2*n]
+            tmp = where(q<s, q, s)
             ind = nanargmax(tmp, 1)
-            maxo = tmp[arange(m),ind]
+            ar = tmp[arange(m),ind]
 
 
 #            ind = all(e-y <= varTols, 1)
@@ -223,7 +223,7 @@ class interalg(baseSolver):
 #            o_excluded += o[ind]
 #            a_excluded += a[ind]
 
-            nodes = func11(y, e, o, a, maxo)
+            nodes = func11(y, e, o, a, ar)
             
             # TODO: use sorted(..., key = lambda obj:obj.key) instead?
             an = sorted(chain(nodes, _in))
@@ -241,11 +241,11 @@ class interalg(baseSolver):
                 p.istop, p.msg = 1000, 'optimal solution obtained'
                 break            
 
-            nCut = 1 if fd_obj.isUncycled and all(isfinite(a)) and all(isfinite(o)) and isOnlyBoxBounded else self.maxNodes
-            peak_nodes_number = max((len(an), peak_nodes_number))
-            an, g = func5(an, nCut, g)
+            nn = 1 if asdf1.isUncycled and all(isfinite(a)) and all(isfinite(o)) and isOnlyBoxBounded else self.maxNodes
+            pnc = max((len(an), pnc))
+            an, g = func5(an, nn, g)
             
-            an1, _in = func3(an, self.maxActiveNodes)
+            an1, _in = func3(an, self.mn)
 
             m = len(an1)
             nActiveNodes.append(m)
@@ -279,7 +279,7 @@ class interalg(baseSolver):
         if p.iprint >= 0:
             s = 'Solution with required tolerance %0.1e \n is%s guarantied (obtained precision: %0.1e)' \
                    %(fTol, '' if p.extras['isRequiredPrecisionReached'] else ' NOT', tmp[1]-tmp[0])
-            if not p.extras['isRequiredPrecisionReached'] and peak_nodes_number == self.maxNodes: s += '\nincrease maxNodes (current value %d)' % self.maxNodes
+            if not p.extras['isRequiredPrecisionReached'] and pnc == self.maxNodes: s += '\nincrease maxNodes (current value %d)' % self.maxNodes
             p.info(s)
 
 

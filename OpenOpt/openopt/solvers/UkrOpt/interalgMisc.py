@@ -9,7 +9,7 @@ except ImportError:
 
 
     
-def func10(y, e, ooVars):
+def func10(y, e, vv):
     m, n = y.shape
     LB = [[] for i in range(n)]
     UB = [[] for i in range(n)]
@@ -37,29 +37,29 @@ def func10(y, e, ooVars):
 #    sh1, sh2, inds = asdf(m, n)
 #    asdf2(T1, T2, Centers, sh1, sh2, inds)
     
-    #domain = dict([(v, (T1[:, i], T2[:, i])) for i, v in enumerate(ooVars)])
-    domain = dict([(v, (LB[i], UB[i])) for i, v in enumerate(ooVars)])
+    #domain = dict([(v, (T1[:, i], T2[:, i])) for i, v in enumerate(vv)])
+    domain = dict([(v, (LB[i], UB[i])) for i, v in enumerate(vv)])
     
     domain = ooPoint(domain, skipArrayCast = True)
     domain.isMultiPoint = True
     return domain
 
-def func8(domain, fd_obj, dataType):
+def func8(domain, asdf1, dataType):
 
-    TMP = fd_obj.interval(domain, dataType)
+    TMP = asdf1.interval(domain, dataType)
     
     #TODO: remove 0.5*(val[0]+val[1]) from cycle
-    centers = dict([(key, 0.5*(val[0]+val[1])) for key, val in domain.items()])
-    centers = ooPoint(centers, skipArrayCast = True)
-    centers.isMultiPoint = True
-    F = fd_obj(centers)
+    cs = dict([(key, 0.5*(val[0]+val[1])) for key, val in domain.items()])
+    cs = ooPoint(cs, skipArrayCast = True)
+    cs.isMultiPoint = True
+    F = asdf1(cs)
     bestCenterInd = nanargmin(F)
     if isnan(bestCenterInd):
         bestCenterInd = 0
         bestCenterObjective = inf
     
     # TODO: check it , maybe it can be improved
-    #bestCenter = centers[bestCenterInd]
+    #bestCenter = cs[bestCenterInd]
     bestCenter = array([0.5*(val[0][bestCenterInd]+val[1][bestCenterInd]) for val in domain.values()], dtype=dataType)
     bestCenterObjective = atleast_1d(F)[bestCenterInd]
     #assert TMP.lb.dtype == dataType
@@ -77,38 +77,38 @@ def func7(y, e, o, a):
     return y, e, o, a 
 
 def func9(an, fo, g):
-    maxo = [node.key for node in an]
-    ind = searchsorted(maxo, fo, side='right')
-    if ind == len(maxo):
+    ar = [node.key for node in an]
+    ind = searchsorted(ar, fo, side='right')
+    if ind == len(ar):
         return an, g
     else:
-        g = nanmin((g, nanmin(maxo[ind])))
+        g = nanmin((g, nanmin(ar[ind])))
         return an[:ind], g
 
 
-def func5(an, nCut, g):
+def func5(an, nn, g):
     m = len(an)
-    if m > nCut:
-        maxo = [node.key for node in an]
-        g = nanmin((maxo[nCut], g))
-        an = an[:nCut]
+    if m > nn:
+        ar = [node.key for node in an]
+        g = nanmin((ar[nn], g))
+        an = an[:nn]
     return an, g
 
 def func4(y, e, o, a, n, fo):
-    centers = 0.5*(y + e)
-    o_modL, o_modU = o[:, 0:n], o[:, n:2*n]
-    ind = logical_or(o_modL > fo, isnan(o_modL)) # TODO: assert isnan(o_modL) is same to isnan(a_modL)
+    cs = 0.5*(y + e)
+    s, q = o[:, 0:n], o[:, n:2*n]
+    ind = logical_or(s > fo, isnan(s)) # TODO: assert isnan(s) is same to isnan(a_modL)
     if any(ind):
-        y[ind] = centers[ind]
-    ind = logical_or(o_modU > fo, isnan(o_modU))# TODO: assert isnan(o_modU) is same to isnan(a_modU)
+        y[ind] = cs[ind]
+    ind = logical_or(q > fo, isnan(q))# TODO: assert isnan(q) is same to isnan(a_modU)
     if any(ind):
-        e[ind] = centers[ind]
+        e[ind] = cs[ind]
     return y, e
 
-def func3(an, maxActiveNodes):
+def func3(an, mn):
     m = len(an)
-    if m > maxActiveNodes:
-        an1, _in = an[:maxActiveNodes], an[maxActiveNodes:]
+    if m > mn:
+        an1, _in = an[:mn], an[mn:]
     else:
         an1, _in = an, []
     return an1, _in
@@ -144,8 +144,8 @@ def func1(y, e, o, a, varTols):
         a[:, IND] = nan
         ind = logical_or(any(a == tmp, 1), all(isinf(a), 1))
         if any(ind):
-            boxShapes = e[ind] - y[ind]
-            t[ind] = nanargmax(boxShapes, 1) # ordinary numpy.argmax can be used as well
+            bs = e[ind] - y[ind]
+            t[ind] = nanargmax(bs, 1) # ordinary numpy.argmax can be used as well
         a[:, IND] = tmp
                 
     elif Case == 2:
@@ -166,20 +166,20 @@ def func1(y, e, o, a, varTols):
 
 
 def func2(y, e, t):
-    new_y, new_e = y.copy(), e.copy()
+    new_y, en = y.copy(), e.copy()
     m = y.shape[0]
     w = arange(m)
-    th = 0.5 * (new_y[w, t] + new_e[w, t])
+    th = 0.5 * (new_y[w, t] + en[w, t])
     new_y[w, t] = th
-    new_e[w, t] = th
+    en[w, t] = th
     
     new_y = vstack((y, new_y))
-    new_e = vstack((new_e, e))
+    en = vstack((en, e))
     
-    return new_y, new_e
+    return new_y, en
 
 
-func11 = lambda y, e, o, a, maxo: [si(maxo[i], y[i], e[i], o[i], a[i]) for i in range(len(maxo))]
+func11 = lambda y, e, o, a, ar: [si(ar[i], y[i], e[i], o[i], a[i]) for i in range(len(ar))]
 
 class si:
     def __init__(self, key, *data):
