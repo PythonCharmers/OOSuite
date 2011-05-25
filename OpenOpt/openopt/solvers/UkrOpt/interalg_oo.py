@@ -3,7 +3,6 @@ from numpy import isfinite, all, argmax, where, delete, array, asarray, inf, arg
 logical_and, float64, ceil, amax, inf, ndarray, isinf, any, logical_or, nan, take, logical_not, asanyarray, searchsorted, \
 logical_xor
 from numpy.linalg import norm, solve, LinAlgError
-from itertools import chain
 from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X,  SMALL_DELTA_F, MAX_NON_SUCCESS
 from openopt.kernel.baseSolver import *
 from openopt.kernel.Point import Point
@@ -226,7 +225,8 @@ class interalg(baseSolver):
             nodes = func11(y, e, o, a, ar)
             
             # TODO: use sorted(..., key = lambda obj:obj.key) instead?
-            an = sorted(chain(nodes, _in))
+            # TODO: get rid of sorted, use get_n_min / get_n_max instead
+            an = sorted(nodes + _in)
             
             an, g = func9(an, fo, g)
 
