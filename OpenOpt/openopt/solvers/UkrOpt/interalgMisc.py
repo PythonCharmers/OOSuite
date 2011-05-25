@@ -1,5 +1,5 @@
 from numpy import tile, isnan, array, atleast_1d, asarray, logical_and, all, searchsorted, logical_or, any, nan, isinf, \
-arange, vstack, inf, where, logical_not, take, argmax, argmin
+arange, vstack, inf, where, logical_not, take, argmax, argmin, abs
 from FuncDesigner import ooPoint
 
 try:
@@ -142,7 +142,11 @@ def func1(y, e, o, a, varTols):
         t = IND % n
         tmp = a[(arange(m), IND)].reshape(-1, 1).copy()
         a[:, IND] = nan
-        ind = logical_or(any(a == tmp, 1), all(isinf(a), 1))
+        #ind = logical_or(any(a == tmp, 1), all(isinf(a), 1))
+        
+        # TODO: improve it, handle the number as solver parameter
+        ind = logical_or(any(a <= tmp+1e-5*abs(tmp), 1), all(isinf(a), 1))
+        
         if any(ind):
             bs = e[ind] - y[ind]
             t[ind] = nanargmax(bs, 1) # ordinary numpy.argmax can be used as well
