@@ -82,7 +82,7 @@ def func9(an, fo, g):
     if ind == len(ar):
         return an, g
     else:
-        g = nanmin((g, nanmin(ar[ind])))
+        g = nanmin((g, nanmin(atleast_1d(ar[ind]))))
         return an[:ind], g
 
 
