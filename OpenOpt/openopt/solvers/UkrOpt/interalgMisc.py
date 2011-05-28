@@ -3,11 +3,9 @@ arange, vstack, inf, where, logical_not, take, argmax, argmin, abs
 from FuncDesigner import ooPoint
 
 try:
-    from bottleneck import nanargmin, nanmin, nanargmax
+    from bottleneck import nanargmin, nanmin, nanargmax, nanmax
 except ImportError:
-    from numpy import nanmin, nanargmin, nanargmax
-
-
+    from numpy import nanmin, nanargmin, nanargmax, nanmax
     
 def func10(y, e, vv):
     m, n = y.shape
@@ -44,28 +42,31 @@ def func10(y, e, vv):
     domain.isMultiPoint = True
     return domain
 
-def func8(domain, asdf1, dataType):
+def func8(domain, func, dataType):
+    TMP = func.interval(domain, dataType)
+    #assert TMP.lb.dtype == dataType
+    return asarray(TMP.lb, dtype=dataType), asarray(TMP.ub, dtype=dataType)
 
-    TMP = asdf1.interval(domain, dataType)
-    
+def getCentersValues(domain, func, dataType):
     #TODO: remove 0.5*(val[0]+val[1]) from cycle
     cs = dict([(key, 0.5*(val[0]+val[1])) for key, val in domain.items()])
     cs = ooPoint(cs, skipArrayCast = True)
     cs.isMultiPoint = True
-    F = asdf1(cs)
-    bestCenterInd = nanargmin(F)
+    return atleast_1d(func(cs))
+
+def getBestCenterAndObjective(FuncVals, domain, dataType):
+    bestCenterInd = nanargmin(FuncVals)
     if isnan(bestCenterInd):
         bestCenterInd = 0
         bestCenterObjective = inf
     
     # TODO: check it , maybe it can be improved
     #bestCenter = cs[bestCenterInd]
-    bestCenter = array([0.5*(val[0][bestCenterInd]+val[1][bestCenterInd]) for val in domain.values()], dtype=dataType)
-    bestCenterObjective = atleast_1d(F)[bestCenterInd]
-    #assert TMP.lb.dtype == dataType
-    return asarray(TMP.lb, dtype=dataType), asarray(TMP.ub, dtype=dataType), bestCenter, bestCenterObjective
-
-def func7(y, e, o, a):
+    bestCenterCoords = array([0.5*(val[0][bestCenterInd]+val[1][bestCenterInd]) for val in domain.values()], dtype=dataType)
+    bestCenterObjective = atleast_1d(FuncVals)[bestCenterInd]
+    return bestCenterCoords, bestCenterObjective
+    
+def func7(y, e, o, a):#, FuncVals):
     IND = logical_and(all(isnan(o), 1), all(isnan(a), 1))
     if any(IND):
         j = where(logical_not(IND))[0]
@@ -74,7 +75,8 @@ def func7(y, e, o, a):
         e = take(e, j, axis=0, out=e[:lj])
         o = take(o, j, axis=0, out=o[:lj])
         a = take(a, j, axis=0, out=a[:lj])
-    return y, e, o, a 
+        #FuncVals = atleast_1d(FuncVals[j])
+    return y, e, o, a#, FuncVals
 
 def func9(an, fo, g):
     ar = [node.key for node in an]
@@ -113,7 +115,7 @@ def func3(an, mn):
         an1, _in = an, []
     return an1, _in
 
-def func1(y, e, o, a, varTols):
+def func1(y, e, o, a, varTols, CoordDivisionInd = None):
     m, n = y.shape
     Case = 1 # TODO: check other
     if Case == -3:
@@ -146,12 +148,14 @@ def func1(y, e, o, a, varTols):
         
         # TODO: improve it, handle the number as solver parameter
         ind = logical_or(any(a <= tmp+1e-5*abs(tmp), 1), all(isinf(a), 1))
+        if CoordDivisionInd is not None:
+            inf = logical_or(ind, CoordDivisionInd)
         
         if any(ind):
             bs = e[ind] - y[ind]
             t[ind] = nanargmax(bs, 1) # ordinary numpy.argmax can be used as well
         a[:, IND] = tmp
-                
+        
     elif Case == 2:
         o1, o2 = o[:, 0:n], o[:, n:]
         ind = o1 > o2
@@ -183,12 +187,23 @@ def func2(y, e, t):
     return new_y, en
 
 
-func11 = lambda y, e, o, a, ar: [si(ar[i], y[i], e[i], o[i], a[i]) for i in range(len(ar))]
+def func11(y, e, o, a, FCl = None, FCu = None): 
+    m, n = y.shape
+    s, q = o[:, 0:n], o[:, n:2*n]
+    Tmp = where(q<s, q, s)
+    Tmp = nanmax(Tmp, 1)
+    #ind = where(logical_not(isnan(Tmp)))[0]
+    if FCl is None:
+        return [si(Tmp[i], y[i], e[i], o[i], a[i]) for i in range(m)]
+    else:
+        return [si(Tmp[i], y[i], e[i], o[i], a[i], FCl[i], FCu[i]) for i in range(m)]
+    #return [si(nanmax(tmp[i]), y[i], e[i], o[i], a[i], F[i]) for i in ind]
 
 class si:
-    def __init__(self, key, *data):
-        self.key = key
-        self.data = data
+    fields = ['key', 'y', 'e', 'o', 'a', 'FCl', 'FCu']
+    def __init__(self, *args):
+        for i in range(len(args)):
+            setattr(self, self.fields[i], args[i])
     
     __lt__ = lambda self, other: self.key < other.key
     __le__ = lambda self, other: self.key <= other.key

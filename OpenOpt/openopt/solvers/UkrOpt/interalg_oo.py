@@ -68,10 +68,15 @@ class interalg(baseSolver):
         # TODO: handle it in other level
         p.useMultiPoints = True
         
+        allSolutions = self.allSolutions
+        
         nNodes = []        
         p.extras['nNodes'] = nNodes
         nActiveNodes = []
         p.extras['nActiveNodes'] = nActiveNodes
+        if allSolutions:
+            solutions = []
+            p.extras['solutions'] = solutions
         
         dataType = self.dataType
         if type(dataType) == str:
@@ -84,8 +89,10 @@ class interalg(baseSolver):
         n = p.n
         C = p.constraints
         vv = p._freeVarsList
-        
-        if p.probType == 'NLSP':
+        isSNLE = p.probType == 'NLSP'
+        if isSNLE:
+            if allSolutions:
+                assert p.__isNoMoreThanBoxBounded__(), 'unimplemented yet'
             fTol = p.ftol
             if p.fTol is not None:
                 fTol = min((p.ftol, p.fTol))
@@ -113,7 +120,7 @@ class interalg(baseSolver):
         fStart = self.fStart
         
         # TODO: remove it after proper NLSP handling implementation
-        if p.probType == 'NLSP':
+        if isSNLE:
             frc = 0.0
             eqs = [fd_abs(elem) for elem in p.user.f]
             asdf1 = fd_sum(eqs)
@@ -174,7 +181,21 @@ class interalg(baseSolver):
         g = inf
         C = p._FD.nonBoxCons
         isOnlyBoxBounded = p.__isNoMoreThanBoxBounded__()
+        
+        # TODO: hanlde fixed variables here
         varTols = p.variableTolerances
+        if allSolutions:
+            if p.probType != 'NLSP':
+                p.err('''
+                "search all solutions" mode is unimplemented
+                for the prob type %s yet''' % p.probType)
+            if any(varTols == 0):
+                p.err('''
+                for the mode "search all solutions" 
+                you have to provide all non-zero tolerances 
+                for each variable (oovar)
+                ''')
+            
         pnc = 0
         
         
@@ -185,15 +206,18 @@ class interalg(baseSolver):
 #                TMP = f.interval(domain, dataType)
 #                lb, ub = asarray(TMP.lb, dtype=dataType), asarray(TMP.ub, dtype=dataType)
                 
-            o, a, bestCenter, bestCenterObjective = func8(ip, asdf1, dataType)
-            #print nanmin(o), nanmin(a)
+            o, a = func8(ip, asdf1, dataType)
             if p.debug and any(a + 1e-15 < o):  
                 p.warn('interval lower bound exceeds upper bound, it seems to be FuncDesigner kernel bug')
             if p.debug and any(logical_xor(isnan(o), isnan(a))):
                 p.err('bug in FuncDesigner intervals engine')
+                
             
-            xk, Min = bestCenter, bestCenterObjective
-           
+            
+            FuncVals = getCentersValues(ip, asdf1, dataType) 
+
+            xk, Min = getBestCenterAndObjective(FuncVals, ip, dataType)
+            
             p.iterfcn(xk, Min)
             if p.istop != 0: 
                 break
@@ -204,25 +228,40 @@ class interalg(baseSolver):
             if frc > Min:
                 frc = Min
 
-            fo = min((frc, CBKPMV - (0.0 if self.allSolutions else fTol))) 
+            fo = min((frc, CBKPMV - (0.0 if allSolutions else fTol))) 
             
             m = e.shape[0]
             o, a = o.reshape(2*n, m).T, a.reshape(2*n, m).T
+            
             y, e, o, a = func7(y, e, o, a)
-            m = e.shape[0]
-            s, q = o[:, 0:n], o[:, n:2*n]
-            tmp = where(q<s, q, s)
-            ind = nanargmax(tmp, 1)
-            ar = tmp[arange(m),ind]
-
 
 #            ind = all(e-y <= varTols, 1)
 #            y_excluded += y[ind]
 #            e_excluded += e[ind]
 #            o_excluded += o[ind]
 #            a_excluded += a[ind]
-
-            nodes = func11(y, e, o, a, ar)
+            
+            if allSolutions:
+                F = FuncVals.reshape(2*n, m).T
+                FCl, FCu = F[:, :n], F[:, n:]
+                nodes = func11(y, e, o, a, FCl, FCu)
+#                if isSNLE:
+#                    assert p.__isNoMoreThanBoxBounded__(), 'unimplemented yet'
+#                    candidates_L, candidates_U =  FCl < fTol, FCu < fTol
+#                    
+#                    for s in solutions:
+#                        centerCoord = s.center
+#                        if                 
+            else:
+                nodes = func11(y, e, o, a)
+            
+            
+#                ind = Fl < fTol
+#                #tmp_solutions = nodes[ind]
+#                lxs, uxs = y[ind], e[ind]
+#                cs = 0.5*(lxs + uxs)
+##                for s in solutions:
+##                    pass
             
             # TODO: use sorted(..., key = lambda obj:obj.key) instead?
             # TODO: get rid of sorted, use get_n_min / get_n_max instead
@@ -252,10 +291,10 @@ class interalg(baseSolver):
             
             nNodes.append(len(an1) + len(_in))
 
-            y, e, o, a = asanyarray([t.data[0] for t in an1]), \
-            asanyarray([t.data[1] for t in an1]), \
-            asanyarray([t.data[2] for t in an1]), \
-            asanyarray([t.data[3] for t in an1])
+            y, e, o, a = asarray([t.y for t in an1]), \
+            asarray([t.e for t in an1]), \
+            asarray([t.o for t in an1]), \
+            asarray([t.a for t in an1])
             
             y, e = func4(y, e, o, a, n, fo)
             t = func1(y, e, o, a, varTols)
