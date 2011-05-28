@@ -65,6 +65,8 @@ class interalg(baseSolver):
                 available via easy_install, takes several minutes for compilation)
                 could speedup the solver %s''' % self.__name__)
         
+        n = p.n
+        
         # TODO: handle it in other level
         p.useMultiPoints = True
         
@@ -76,6 +78,7 @@ class interalg(baseSolver):
         p.extras['nActiveNodes'] = nActiveNodes
         if allSolutions:
             solutions = []
+            SolutionCoords = array([]).reshape(0, n)
             p.extras['solutions'] = solutions
         
         dataType = self.dataType
@@ -86,7 +89,7 @@ class interalg(baseSolver):
             dataType = getattr(numpy, dataType)
         lb, ub = asarray(p.lb, dataType), asarray(p.ub, dataType)
 
-        n = p.n
+        
         C = p.constraints
         vv = p._freeVarsList
         isSNLE = p.probType == 'NLSP'
@@ -212,8 +215,6 @@ class interalg(baseSolver):
             if p.debug and any(logical_xor(isnan(o), isnan(a))):
                 p.err('bug in FuncDesigner intervals engine')
                 
-            
-            
             FuncVals = getCentersValues(ip, asdf1, dataType) 
 
             xk, Min = getBestCenterAndObjective(FuncVals, ip, dataType)
@@ -231,9 +232,9 @@ class interalg(baseSolver):
             fo = min((frc, CBKPMV - (0.0 if allSolutions else fTol))) 
             
             m = e.shape[0]
-            o, a = o.reshape(2*n, m).T, a.reshape(2*n, m).T
+            o, a, FuncVals = o.reshape(2*n, m).T, a.reshape(2*n, m).T, FuncVals.reshape(2*n, m).T
             
-            y, e, o, a = func7(y, e, o, a)
+            y, e, o, a, FuncVals = func7(y, e, o, a, FuncVals)
 
 #            ind = all(e-y <= varTols, 1)
 #            y_excluded += y[ind]
@@ -242,16 +243,39 @@ class interalg(baseSolver):
 #            a_excluded += a[ind]
             
             if allSolutions:
-                F = FuncVals.reshape(2*n, m).T
-                FCl, FCu = F[:, :n], F[:, n:]
+                FCl, FCu = FuncVals[:, :n], FuncVals[:, n:]
+                if isSNLE:
+                    assert p.__isNoMoreThanBoxBounded__(), 'unimplemented yet'
+                    candidates_L, candidates_U =  where(FCl < fTol), where(FCu < fTol)
+                    Centers = 0.5 * (y + e)
+                    Diff = 0.5 * (e - y)
+                    candidates = []
+                    # L
+                    #Centers_modL = Centers[:, :n]
+                    cs_L = Centers[candidates_L[0]].copy()
+                    for I in range(len(candidates_L[0])):#TODO: rework it
+                        i, j = candidates_L[0][I], candidates_L[1][I]
+                        tmp = Centers[i].copy()
+                        tmp[j] -= 0.5*Diff[i, j]
+                        candidates.append(tmp)
+                    # U
+                    #Centers_modU = Centers[:, n:]
+                    cs_U = Centers[candidates_U[0]].copy()
+                    for I in range(len(candidates_U[0])):#TODO: rework it
+                        i, j = candidates_U[0][I], candidates_U[1][I]
+                        tmp = Centers[i].copy()
+                        tmp[j] += 0.5*Diff[i, j]
+                        candidates.append(tmp)
+                    
+                    #candidates = asarray(candidates, dataType)
+                    
+                    for c in candidates:
+                        ind = all(abs(c - SolutionCoords) < varTols, 1)
+                        if not any(ind): 
+                            solutions.append(c)
+                            SolutionCoords = asarray(solutions, dataType)
+                            
                 nodes = func11(y, e, o, a, FCl, FCu)
-#                if isSNLE:
-#                    assert p.__isNoMoreThanBoxBounded__(), 'unimplemented yet'
-#                    candidates_L, candidates_U =  FCl < fTol, FCu < fTol
-#                    
-#                    for s in solutions:
-#                        centerCoord = s.center
-#                        if                 
             else:
                 nodes = func11(y, e, o, a)
             
@@ -299,12 +323,22 @@ class interalg(baseSolver):
             y, e = func4(y, e, o, a, n, fo)
             t = func1(y, e, o, a, varTols)
             y, e = func2(y, e, t)
+            if allSolutions and len(solutions) != 0:
+                solutionCoordsL, solutionCoordsU = SolutionCoords - varTols, SolutionCoords + varTols
+                for i in range(len(solutions)):
+                    ind = logical_and(all(y >= solutionCoordsL[i], 1), all(e <= solutionCoordsU[i], 1))
+                    if any(ind):
+                        j = where(ind)
+                        y = delete(y, j, 0)
+                        e = delete(e, j, 0)
+                if y.size == 0: 
+                    break
             # End of main cycle
             
         p.iterfcn(xRecord)
         ff = p.fk # ff may be not assigned yet
         
-        o = asarray([t.data[2] for t in an])
+        o = asarray([t.o for t in an])
         if o.size != 0:
             g = nanmin([nanmin(o), g])
         p.extras['isRequiredPrecisionReached'] = True if ff - g < fTol and k is False else False

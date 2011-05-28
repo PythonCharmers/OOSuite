@@ -66,7 +66,7 @@ def getBestCenterAndObjective(FuncVals, domain, dataType):
     bestCenterObjective = atleast_1d(FuncVals)[bestCenterInd]
     return bestCenterCoords, bestCenterObjective
     
-def func7(y, e, o, a):#, FuncVals):
+def func7(y, e, o, a, FV):
     IND = logical_and(all(isnan(o), 1), all(isnan(a), 1))
     if any(IND):
         j = where(logical_not(IND))[0]
@@ -75,8 +75,8 @@ def func7(y, e, o, a):#, FuncVals):
         e = take(e, j, axis=0, out=e[:lj])
         o = take(o, j, axis=0, out=o[:lj])
         a = take(a, j, axis=0, out=a[:lj])
-        #FuncVals = atleast_1d(FuncVals[j])
-    return y, e, o, a#, FuncVals
+        FV = take(FV, j, axis=0, out=FV[:lj])
+    return y, e, o, a, FV
 
 def func9(an, fo, g):
     ar = [node.key for node in an]
