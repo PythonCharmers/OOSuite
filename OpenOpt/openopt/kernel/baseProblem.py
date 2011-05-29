@@ -304,7 +304,17 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 cond_cons = all(ConstraintTags) 
                 if not cond_all_oofuns_but_not_cons and not cond_cons:
                     raise OpenOptException('for FuncDesigner SLE/NLSP constructors args must be either all-equalities or all-oofuns')            
-                EQs = [((elem.oofun*(self.ftol/elem.tol) if elem.tol != 0 else elem.oofun) if elem.isConstraint else elem) for elem in equations]
+                if self.fTol is not None:
+                    fTol = min((self.ftol, self.fTol))
+                    p.warn('''
+                    both ftol and fTol are passed to the NLSP;
+                    minimal value of the pair will be used (%0.1e);
+                    also, you can modify each personal tolerance for equation, e.g. 
+                    equations = [(sin(x)+cos(y)=-0.5)(tol = 0.001), ...]
+                    ''' % fTol)
+                else:
+                    fTol = self.ftol
+                EQs = [((elem.oofun*(fTol/elem.tol) if elem.tol != 0 else elem.oofun) if elem.isConstraint else elem) for elem in equations]
                 if self.probType == 'SLE': self.C = EQs
                 elif self.probType == 'NLSP': self.f = EQs
                 else: raise OpenOptException('bug in OO kernel')

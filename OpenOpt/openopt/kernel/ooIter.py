@@ -44,7 +44,8 @@ def ooIter(p, *args,  **kwargs):
         p.iterCPUTime.append(clock() - p.cpuTimeStart)
         p.iterTime.append(p.currtime - p.timeStart)
 
-        if p.probType not in ('GLP', 'MILP') and ((p.iter == 1 and array_equal(p.xk,  p.x0)) or condEqualLastPoints):
+        # TODO: rework it
+        if p.probType not in ('GLP', 'MILP') and not p.solver.__name__.startswith('interalg') and ((p.iter == 1 and array_equal(p.xk,  p.x0)) or condEqualLastPoints):
             elems = [getattr(p.iterValues,  fn) for fn in dir(p.iterValues)] + [p.iterTime, p.iterCPUTime]#dir(p.iterValues)
             for elem in elems:
                 if type(elem) == list:
