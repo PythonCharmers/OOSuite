@@ -314,6 +314,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     ''' % fTol)
                 else:
                     fTol = self.ftol
+                self.fTol = self.ftol = fTol
                 EQs = [((elem.oofun*(fTol/elem.tol) if elem.tol != 0 else elem.oofun) if elem.isConstraint else elem) for elem in equations]
                 if self.probType == 'SLE': self.C = EQs
                 elif self.probType == 'NLSP': self.f = EQs
