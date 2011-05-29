@@ -97,14 +97,6 @@ class interalg(baseSolver):
             if allSolutions:
                 assert p.__isNoMoreThanBoxBounded__(), 'unimplemented yet'
             fTol = p.ftol
-            if p.fTol is not None:
-                fTol = min((p.ftol, p.fTol))
-                p.warn('''
-                both ftol and fTol are passed to the NLSP;
-                minimal value of the pair will be used (%0.1e);
-                also, you can modify each personal tolerance for equation, e.g. 
-                equations = [(sin(x)+cos(y)=-0.5)(tol = 0.001), ...]
-                ''' % fTol)
         else:
             fTol = p.fTol
             if fTol is None:
