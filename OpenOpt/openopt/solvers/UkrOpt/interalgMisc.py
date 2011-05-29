@@ -96,8 +96,9 @@ def func5(an, nn, g):
         an = an[:nn]
     return an, g
 
-def func4(y, e, o, a, n, fo):
+def func4(y, e, o, a, fo):
     cs = 0.5*(y + e)
+    n = y.shape[1]
     s, q = o[:, 0:n], o[:, n:2*n]
     ind = logical_or(s > fo, isnan(s)) # TODO: assert isnan(s) is same to isnan(a_modL)
     if any(ind):
@@ -107,7 +108,7 @@ def func4(y, e, o, a, n, fo):
         e[ind] = cs[ind]
     return y, e
 
-def func3(an, mn):
+def getSomeNodes(an, mn):
     m = len(an)
     if m > mn:
         an1, _in = an[:mn], an[mn:]
@@ -186,6 +187,44 @@ def func2(y, e, t):
     
     return new_y, en
 
+
+def splitNodes(an, mn, maxSolutions, solutions, SolutionCoords, varTols, fo):
+    _in = an
+    if SolutionCoords is not None:
+        solutionCoordsL, solutionCoordsU = SolutionCoords - varTols, SolutionCoords + varTols
+    y, e = [], []
+    N = 0
+    while True:
+        an1Candidates, _in = getSomeNodes(_in, mn)
+
+        yc, ec, oc, ac = asarray([t.y for t in an1Candidates]), \
+        asarray([t.e for t in an1Candidates]), \
+        asarray([t.o for t in an1Candidates]), \
+        asarray([t.a for t in an1Candidates])
+        
+        yc, ec = func4(yc, ec, oc, ac, fo)
+        t = func1(yc, ec, oc, ac, varTols)
+        yc, ec = func2(yc, ec, t)
+        
+        if maxSolutions == 1 or len(solutions) == 0: 
+            y, e = yc, ec
+            break
+        
+        for i in range(len(solutions)):
+            ind = logical_and(all(yc >= solutionCoordsL[i], 1), all(ec <= solutionCoordsU[i], 1))
+            if any(ind):
+                j = where(logical_not(ind))[0]
+                lj = j.size
+                yc = take(yc, j, axis=0, out=yc[:lj])
+                ec = take(ec, j, axis=0, out=ec[:lj])
+        y.append(yc)
+        e.append(ec)
+        N += yc.shape[0]
+        if len(_in) == 0 or N >= mn: 
+            y, e = vstack(y), vstack(e) 
+            break
+        
+    return y, e, _in
 
 def func11(y, e, o, a, FCl = None, FCu = None): 
     m, n = y.shape

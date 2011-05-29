@@ -29,7 +29,7 @@ class interalg(baseSolver):
     #maxMem = '150MB'
     maxNodes = 150000
     mn = 1500
-    allSolutions = False
+    maxSolutions = 1
     __isIterPointAlwaysFeasible__ = lambda self, p: p.__isNoMoreThanBoxBounded__()
     _requiresFiniteBoxBounds = True
 
@@ -70,16 +70,17 @@ class interalg(baseSolver):
         # TODO: handle it in other level
         p.useMultiPoints = True
         
-        allSolutions = self.allSolutions
+        maxSolutions = self.maxSolutions
+        if maxSolutions == 0: maxSolutions = 10**50
         
         nNodes = []        
         p.extras['nNodes'] = nNodes
         nActiveNodes = []
         p.extras['nActiveNodes'] = nActiveNodes
-        if allSolutions:
-            solutions = []
-            SolutionCoords = array([]).reshape(0, n)
-            p.extras['solutions'] = solutions
+
+        solutions = []
+        SolutionCoords = array([]).reshape(0, n)
+        
         
         dataType = self.dataType
         if type(dataType) == str:
@@ -93,15 +94,10 @@ class interalg(baseSolver):
         C = p.constraints
         vv = p._freeVarsList
         isSNLE = p.probType == 'NLSP'
-        if isSNLE:
-            if allSolutions:
-                assert p.__isNoMoreThanBoxBounded__(), 'unimplemented yet'
-            fTol = p.ftol
-        else:
-            fTol = p.fTol
-            if fTol is None:
-                fTol = 1e-7
-                p.warn('solver %s require p.fTol value (required objective function tolerance); 10^-7 will be used' % self.__name__)
+        fTol = p.fTol
+        if fTol is None:
+            fTol = 1e-7
+            p.warn('solver %s require p.fTol value (required objective function tolerance); 10^-7 will be used' % self.__name__)
 
         xRecord = 0.5 * (lb + ub)
 
@@ -141,9 +137,9 @@ class interalg(baseSolver):
                 frc = tmp
                 
             if p.fOpt is not None:
-                if fOpt > frc:
+                if p.fOpt > frc:
                     p.warn('user-provided fOpt seems to be incorrect, ')
-                frc = fOpt
+                frc = p.fOpt
         
 
 
@@ -167,7 +163,8 @@ class interalg(baseSolver):
 #                p.err('incorrect max memory parameter value, should end with KB, MB, GB or TB')
         m = 0
         #maxActive = 1
-        #mn = self.mn 
+        self.mn = int(self.mn )
+        self.maxNodes = int(self.maxNodes )
 
         _in = []
         
@@ -179,10 +176,10 @@ class interalg(baseSolver):
         
         # TODO: hanlde fixed variables here
         varTols = p.variableTolerances
-        if allSolutions:
+        if maxSolutions != 1:
             if p.probType != 'NLSP':
                 p.err('''
-                "search all solutions" mode is unimplemented
+                "search several solutions" mode is unimplemented
                 for the prob type %s yet''' % p.probType)
             if any(varTols == 0):
                 p.err('''
@@ -192,7 +189,7 @@ class interalg(baseSolver):
                 ''')
             
         pnc = 0
-        
+        an = []
         
         for itn in range(p.maxIter+10):
             ip = func10(y, e, vv)
@@ -212,16 +209,24 @@ class interalg(baseSolver):
             xk, Min = getBestCenterAndObjective(FuncVals, ip, dataType)
             
             p.iterfcn(xk, Min)
-            if p.istop != 0: 
-                break
-            
             if CBKPMV > Min:
                 CBKPMV = Min
                 xRecord = xk# TODO: is copy required?
             if frc > Min:
                 frc = Min
+            if p.istop != 0: 
+                break
+            if isSNLE and maxSolutions == 1 and Min <= fTol:
+                # TODO: rework it for nonlinear systems with non-bound constraints
+                p.istop, p.msg = 1000, 'required solution has been obtained'
+                break
+            
 
-            fo = min((frc, CBKPMV - (0.0 if allSolutions else fTol))) 
+            
+            if isSNLE:
+                fo = fTol / 16.0
+            else:
+                fo = min((frc, CBKPMV - (0.0 if maxSolutions == 1 else fTol))) 
             
             m = e.shape[0]
             o, a, FuncVals = o.reshape(2*n, m).T, a.reshape(2*n, m).T, FuncVals.reshape(2*n, m).T
@@ -234,7 +239,7 @@ class interalg(baseSolver):
 #            o_excluded += o[ind]
 #            a_excluded += a[ind]
             
-            if allSolutions:
+            if maxSolutions != 1:
                 FCl, FCu = FuncVals[:, :n], FuncVals[:, n:]
                 if isSNLE:
                     assert p.__isNoMoreThanBoxBounded__(), 'unimplemented yet'
@@ -243,7 +248,6 @@ class interalg(baseSolver):
                     Diff = 0.5 * (e - y)
                     candidates = []
                     # L
-                    #Centers_modL = Centers[:, :n]
                     cs_L = Centers[candidates_L[0]].copy()
                     for I in range(len(candidates_L[0])):#TODO: rework it
                         i, j = candidates_L[0][I], candidates_L[1][I]
@@ -251,7 +255,6 @@ class interalg(baseSolver):
                         tmp[j] -= 0.5*Diff[i, j]
                         candidates.append(tmp)
                     # U
-                    #Centers_modU = Centers[:, n:]
                     cs_U = Centers[candidates_U[0]].copy()
                     for I in range(len(candidates_U[0])):#TODO: rework it
                         i, j = candidates_U[0][I], candidates_U[1][I]
@@ -259,13 +262,18 @@ class interalg(baseSolver):
                         tmp[j] += 0.5*Diff[i, j]
                         candidates.append(tmp)
                     
-                    #candidates = asarray(candidates, dataType)
-                    
                     for c in candidates:
                         ind = all(abs(c - SolutionCoords) < varTols, 1)
                         if not any(ind): 
                             solutions.append(c)
                             SolutionCoords = asarray(solutions, dataType)
+                            
+                    if len(solutions) >= maxSolutions:
+                        k = False
+                        solutions = solutions[:maxSolutions]
+                        p.istop = 100
+                        p.msg = 'required number of solutions has been obtained'
+                        break
                             
                 nodes = func11(y, e, o, a, FCl, FCu)
             else:
@@ -287,44 +295,24 @@ class interalg(baseSolver):
 
 
             # TODO: rework it
-            if len(an) == 0: 
-                # For more safety against bugs
-                an1 = []
-                _in = []
-                
-                k = False
-                p.istop, p.msg = 1000, 'optimal solution obtained'
-                break            
+#            if len(an) == 0: 
+#                k = False
+#                p.istop, p.msg = 1000, 'optimal solution obtained'
+#                break            
 
             nn = 1 if asdf1.isUncycled and all(isfinite(a)) and all(isfinite(o)) and isOnlyBoxBounded else self.maxNodes
             pnc = max((len(an), pnc))
             an, g = func5(an, nn, g)
+            nNodes.append(len(an))
             
-            an1, _in = func3(an, self.mn)
+            y, e, _in = splitNodes(an, self.mn, maxSolutions, solutions, SolutionCoords, varTols, fo)
+            
+            if y.size == 0: 
 
-            m = len(an1)
-            nActiveNodes.append(m)
-            
-            nNodes.append(len(an1) + len(_in))
-
-            y, e, o, a = asarray([t.y for t in an1]), \
-            asarray([t.e for t in an1]), \
-            asarray([t.o for t in an1]), \
-            asarray([t.a for t in an1])
-            
-            y, e = func4(y, e, o, a, n, fo)
-            t = func1(y, e, o, a, varTols)
-            y, e = func2(y, e, t)
-            if allSolutions and len(solutions) != 0:
-                solutionCoordsL, solutionCoordsU = SolutionCoords - varTols, SolutionCoords + varTols
-                for i in range(len(solutions)):
-                    ind = logical_and(all(y >= solutionCoordsL[i], 1), all(e <= solutionCoordsU[i], 1))
-                    if any(ind):
-                        j = where(ind)
-                        y = delete(y, j, 0)
-                        e = delete(e, j, 0)
-                if y.size == 0: 
-                    break
+                k = False
+                p.istop, p.msg = 1001, 'optimal solutions obtained'
+                break
+            nActiveNodes.append(y.shape[1])
             # End of main cycle
             
         p.iterfcn(xRecord)
@@ -333,7 +321,8 @@ class interalg(baseSolver):
         o = asarray([t.o for t in an])
         if o.size != 0:
             g = nanmin([nanmin(o), g])
-        p.extras['isRequiredPrecisionReached'] = True if ff - g < fTol and k is False else False
+        p.extras['isRequiredPrecisionReached'] = \
+        True if ff - g < fTol and (k is False or isSNLE and maxSolutions==1) else False
         # TODO: simplify it
         if p.goal in ('max', 'maximum'):
             g = -g
@@ -341,6 +330,7 @@ class interalg(baseSolver):
         tmp = [nanmin(hstack((ff, g, o.flatten()))), numpy.asscalar(array((ff if p.goal not in ['max', 'maximum'] else -ff)))]
         if p.goal in ['max', 'maximum']: tmp = tmp[1], tmp[0]
         p.extras['extremumBounds'] = tmp
+        p.extras['solutions'] = solutions
         if p.iprint >= 0:
             s = 'Solution with required tolerance %0.1e \n is%s guarantied (obtained precision: %0.1e)' \
                    %(fTol, '' if p.extras['isRequiredPrecisionReached'] else ' NOT', tmp[1]-tmp[0])
