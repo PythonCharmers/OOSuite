@@ -70,8 +70,15 @@ def setStartVectorAndTranslators(p):
             return p._FDtranslator['prevVal']
             
         # without copy() ipopt and probably others can replace it by noise after closing
-        r = oopoint(startDictData + \
-                    [(oov, x[oovar_indexes[i]:oovar_indexes[i+1]]) for i, oov in enumerate(freeVars)])
+#        r = oopoint(startDictData + \
+#                    [(oov, x[oovar_indexes[i]:oovar_indexes[i+1]]) for i, oov in enumerate(freeVars)])
+        r = startDictData
+        tmp = [(oov, x[oovar_indexes[i]:oovar_indexes[i+1]] if oovar_indexes[i+1]-oovar_indexes[i]>1 else x[oovar_indexes[i]]) for i, oov in enumerate(freeVars)]
+#        for i, oov in enumerate(freeVars):
+#            #I, J = oovar_indexes[i], oovar_indexes[i+1]
+#            #r.append((oov, x[I] if J - I == 1 else x[I:J]))
+#            r.append((oov, x[oovar_indexes[i]:oovar_indexes[i+1]]))
+        r = oopoint(r+tmp)
         
         p._FDtranslator['prevVal'] = r 
         p._FDtranslator['prevX'] = copy(x)

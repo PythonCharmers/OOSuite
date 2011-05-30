@@ -5,6 +5,7 @@ array_equiv, asscalar, asarray, where, ndarray, isscalar, matrix, seterr, isinf
 from setDefaultIterFuncs import stopcase,  SMALL_DELTA_X,  SMALL_DELTA_F
 from check import check
 from oologfcn import OpenOptException
+from openopt import __version__ as version
 import copy
 import os, string
 from ooMisc import isSolved, killThread
@@ -97,6 +98,7 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     p.iterValues.r = [] # iter MaxResidual
     p.iterValues.rt = [] # iter MaxResidual Type: 'c', 'h', 'lb' etc
     p.iterValues.ri = [] # iter MaxResidual Index
+    p.solutions = [] # list of solutions, may contain several elements for interalg and mb other solvers
     if p._baseClassName == 'NonLin':p.iterValues.nNaNs = [] # number of constraints equal to numpy.nan
 
 
@@ -193,7 +195,7 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     # Start solving problem:
 
     if p.iprint >= 0:
-        p.disp('-'*50)
+        p.disp('\n' + '-'*25 + ' OpenOpt %s ' % version + '-'*25)
         s = 'solver: ' +  p.solver.__name__ +  '   problem: ' + p.name + '    type: %s' % p.probType
         if p.showGoal: s += '   goal: ' + p.goal
         p.disp(s)
@@ -376,6 +378,10 @@ class OpenOptResult:
                 self._xf = dict([(v.name, asscalar(val) if isinstance(val, ndarray) and val.size ==1 else val) for v, val in p.xf.items()])
         else:
             self.xf = p.xf
+        if len(p.solutions) == 0 and p.isFeas(p.xk): p.solutions = [p.xk]
+        # TODO: mb perform check on each solution for more safety?
+        # although it can slow down calculations for huge solutions number
+        self.solutions = p.solutions 
 
         self.elapsed = dict()
         self.elapsed['solver_time'] = round(100.0*(time() - p.timeStart))/100.0
