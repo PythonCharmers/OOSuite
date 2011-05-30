@@ -339,8 +339,11 @@ def finalTextOutput(p, r):
                 nNaNsMsg = ('%d constraints are equal to NaN, ' % nNaNs)
             p.disp('NO FEASIBLE SOLUTION is obtained (%s%s, objFunc = %0.8g)' % (nNaNsMsg,  rMsg, r.ff))
         else:
-            msg = "objFunValue: " + (p.finalObjFunTextFormat % r.ff)
-            if not p.isUC: msg += ' (feasible, %s)' % rMsg
+            if len(p.solutions) == 1:
+                msg = "objFunValue: " + (p.finalObjFunTextFormat % r.ff)
+                if not p.isUC: msg += ' (feasible, %s)' % rMsg
+            else:
+                msg = '%d solutions have been obtained' % len(p.solutions)
             p.disp(msg)
 
 ##################################################################
