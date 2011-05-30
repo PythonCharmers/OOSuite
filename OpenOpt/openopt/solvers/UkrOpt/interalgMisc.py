@@ -108,7 +108,7 @@ def func4(y, e, o, a, fo):
         e[ind] = cs[ind]
     return y, e
 
-def getSomeNodes(an, mn):
+def func3(an, mn):
     m = len(an)
     if m > mn:
         an1, _in = an[:mn], an[mn:]
@@ -188,14 +188,14 @@ def func2(y, e, t):
     return new_y, en
 
 
-def splitNodes(an, mn, maxSolutions, solutions, SolutionCoords, varTols, fo):
+def func12(an, mn, maxSolutions, solutions, SolutionCoords, varTols, fo):
     _in = an
     if SolutionCoords is not None:
         solutionCoordsL, solutionCoordsU = SolutionCoords - varTols, SolutionCoords + varTols
     y, e = [], []
     N = 0
     while True:
-        an1Candidates, _in = getSomeNodes(_in, mn)
+        an1Candidates, _in = func3(_in, mn)
 
         yc, ec, oc, ac = asarray([t.y for t in an1Candidates]), \
         asarray([t.e for t in an1Candidates]), \

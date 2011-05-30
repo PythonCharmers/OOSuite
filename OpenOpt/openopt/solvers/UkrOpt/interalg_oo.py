@@ -72,6 +72,13 @@ class interalg(baseSolver):
         
         maxSolutions = self.maxSolutions
         if maxSolutions == 0: maxSolutions = 10**50
+        if maxSolutions != 1 and p.fEnough != -inf:
+            p.warn('''
+            using the solver interalg with non-single solutions mode 
+            is not ajusted with fEnough stop criterium yet, it will be omitted
+            ''')
+            p.kernelIterFuncs.pop(FVAL_IS_ENOUGH)
+            
         
         nNodes = []        
         p.extras['nNodes'] = nNodes
@@ -207,22 +214,12 @@ class interalg(baseSolver):
             FuncVals = getCentersValues(ip, asdf1, dataType) 
 
             xk, Min = getBestCenterAndObjective(FuncVals, ip, dataType)
-            
-            p.iterfcn(xk, Min)
             if CBKPMV > Min:
                 CBKPMV = Min
                 xRecord = xk# TODO: is copy required?
             if frc > Min:
                 frc = Min
-            if p.istop != 0: 
-                break
-            if isSNLE and maxSolutions == 1 and Min <= fTol:
-                # TODO: rework it for nonlinear systems with non-bound constraints
-                p.istop, p.msg = 1000, 'required solution has been obtained'
-                break
-            
-
-            
+                
             if isSNLE:
                 fo = fTol / 16.0
             else:
@@ -274,11 +271,16 @@ class interalg(baseSolver):
                         p.istop = 100
                         p.msg = 'required number of solutions has been obtained'
                         break
-                            
-                nodes = func11(y, e, o, a, FCl, FCu)
-            else:
-                nodes = func11(y, e, o, a)
             
+            p.iterfcn(xk, Min)
+            if p.istop != 0: 
+                break
+            if isSNLE and maxSolutions == 1 and Min <= fTol:
+                # TODO: rework it for nonlinear systems with non-bound constraints
+                p.istop, p.msg = 1000, 'required solution has been obtained'
+                break
+
+            nodes = func11(y, e, o, a, FCl, FCu) if maxSolutions != 1 else func11(y, e, o, a)
             
 #                ind = Fl < fTol
 #                #tmp_solutions = nodes[ind]
@@ -305,10 +307,9 @@ class interalg(baseSolver):
             an, g = func5(an, nn, g)
             nNodes.append(len(an))
             
-            y, e, _in = splitNodes(an, self.mn, maxSolutions, solutions, SolutionCoords, varTols, fo)
+            y, e, _in = func12(an, self.mn, maxSolutions, solutions, SolutionCoords, varTols, fo)
             
             if y.size == 0: 
-
                 k = False
                 p.istop, p.msg = 1001, 'optimal solutions obtained'
                 break
@@ -330,7 +331,8 @@ class interalg(baseSolver):
         tmp = [nanmin(hstack((ff, g, o.flatten()))), numpy.asscalar(array((ff if p.goal not in ['max', 'maximum'] else -ff)))]
         if p.goal in ['max', 'maximum']: tmp = tmp[1], tmp[0]
         p.extras['extremumBounds'] = tmp
-        p.extras['solutions'] = solutions
+        
+        p.solutions = [p._vector2point(s) for s in solutions]
         if p.iprint >= 0:
             s = 'Solution with required tolerance %0.1e \n is%s guarantied (obtained precision: %0.1e)' \
                    %(fTol, '' if p.extras['isRequiredPrecisionReached'] else ' NOT', tmp[1]-tmp[0])
