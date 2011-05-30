@@ -221,7 +221,7 @@ class interalg(baseSolver):
                 frc = Min
                 
             if isSNLE:
-                fo = fTol / 16.0
+                fo = 0.0#fTol / 16.0
             else:
                 fo = min((frc, CBKPMV - (0.0 if maxSolutions == 1 else fTol))) 
             
