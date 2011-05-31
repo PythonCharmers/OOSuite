@@ -8,7 +8,8 @@ textOutputDict = {\
 'objFunVal': lambda p: p.iterObjFunTextFormat % (-p.fk if p.invertObjFunc else p.fk), \
 'log10(maxResidual)': lambda p: '%0.2f' % log10(p.rk+1e-100), \
 'log10(MaxResidual/ConTol)':lambda p: '%0.2f' % log10(max((p.rk/p.contol, 1e-100))), \
-'isFeasible': signOfFeasible
+'isFeasible': signOfFeasible, 
+'nSolutions': lambda p: '%d' % p._nObtainedSolutions
 }
 delimiter = '   '
 

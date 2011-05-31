@@ -134,6 +134,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
     freeVars = None
     
     istop = 0
+    
+    maxSolutions = 1 # used in interalg and mb other solvers
 
     fEnough = -inf # if value less than fEnough will be obtained
     # and all constraints no greater than contol

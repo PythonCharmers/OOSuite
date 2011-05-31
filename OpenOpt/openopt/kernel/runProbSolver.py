@@ -164,6 +164,9 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
         p.data4TextOutput[-1] = 'log10(MaxResidual/ConTol)'
 
     if p.showFeas and p.data4TextOutput[-1] != 'isFeasible': p.data4TextOutput.append('isFeasible')
+    if p.maxSolutions != 1:
+        p._nObtainedSolutions = 0
+        p.data4TextOutput.append('nSolutions')
 
     if not p.solver.iterfcnConnected:
         if SMALL_DELTA_X in p.kernelIterFuncs: p.kernelIterFuncs.pop(SMALL_DELTA_X)
