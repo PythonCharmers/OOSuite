@@ -29,7 +29,7 @@ class interalg(baseSolver):
     #maxMem = '150MB'
     maxNodes = 150000
     mn = 1500
-    maxSolutions = 1
+    
     __isIterPointAlwaysFeasible__ = lambda self, p: p.__isNoMoreThanBoxBounded__()
     _requiresFiniteBoxBounds = True
 
@@ -70,7 +70,7 @@ class interalg(baseSolver):
         # TODO: handle it in other level
         p.useMultiPoints = True
         
-        maxSolutions = self.maxSolutions
+        maxSolutions = p.maxSolutions
         if maxSolutions == 0: maxSolutions = 10**50
         if maxSolutions != 1 and p.fEnough != -inf:
             p.warn('''
@@ -265,12 +265,15 @@ class interalg(baseSolver):
                             solutions.append(c)
                             SolutionCoords = asarray(solutions, dataType)
                             
+                    p._nObtainedSolutions = len(solutions)
+                    
                     if len(solutions) >= maxSolutions:
                         k = False
                         solutions = solutions[:maxSolutions]
                         p.istop = 100
                         p.msg = 'required number of solutions has been obtained'
                         break
+                        
             
             p.iterfcn(xk, Min)
             if p.istop != 0: 
