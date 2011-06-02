@@ -171,6 +171,8 @@ class interalg(baseSolver):
         m = 0
         #maxActive = 1
         self.mn = int(self.mn )
+        if self.mn < 2:
+            p.warn('mn should be at least 2 while you have provided %d. Setting it to 2.' % self.mn)
         self.maxNodes = int(self.maxNodes )
 
         _in = []
@@ -223,7 +225,7 @@ class interalg(baseSolver):
             if isSNLE:
                 fo = 0.0#fTol / 16.0
             else:
-                fo = min((frc, CBKPMV - (0.0 if maxSolutions == 1 else fTol))) 
+                fo = min((frc, CBKPMV - (fTol if maxSolutions == 1 else 0.0))) 
             
             m = e.shape[0]
             o, a, FuncVals = o.reshape(2*n, m).T, a.reshape(2*n, m).T, FuncVals.reshape(2*n, m).T
@@ -309,13 +311,14 @@ class interalg(baseSolver):
             pnc = max((len(an), pnc))
             an, g = func5(an, nn, g)
             nNodes.append(len(an))
-            
-            y, e, _in = func12(an, self.mn, maxSolutions, solutions, SolutionCoords, varTols, fo)
-            
-            if y.size == 0: 
+
+            if len(an) == 0: 
                 k = False
                 p.istop, p.msg = 1001, 'optimal solutions obtained'
                 break
+
+            y, e, _in = func12(an, self.mn, maxSolutions, solutions, SolutionCoords, varTols, fo)
+            
             nActiveNodes.append(y.shape[1])
             # End of main cycle
             
