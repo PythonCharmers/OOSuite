@@ -145,17 +145,18 @@ def func1(y, e, o, a, varTols, CoordDivisionInd = None):
         t = IND % n
         tmp = a[(arange(m), IND)].reshape(-1, 1).copy()
         a[:, IND] = nan
+        
         #ind = logical_or(any(a == tmp, 1), all(isinf(a), 1))
         
         # TODO: improve it, handle the number as solver parameter
         ind = logical_or(any(a <= tmp+1e-5*abs(tmp), 1), all(isinf(a), 1))
         if CoordDivisionInd is not None:
-            inf = logical_or(ind, CoordDivisionInd)
+            ind = logical_or(ind, CoordDivisionInd)
         
         if any(ind):
             bs = e[ind] - y[ind]
             t[ind] = nanargmax(bs, 1) # ordinary numpy.argmax can be used as well
-        a[:, IND] = tmp
+        #a[:, IND] = tmp
         
     elif Case == 2:
         o1, o2 = o[:, 0:n], o[:, n:]
@@ -172,7 +173,7 @@ def func1(y, e, o, a, varTols, CoordDivisionInd = None):
         tmp = where(o[:, 0:n]<o[:, n:], o[:, 0:n], o[:, n:])
         t = argmax(tmp, 1)
     return t
-
+    
 
 def func2(y, e, t):
     new_y, en = y.copy(), e.copy()
