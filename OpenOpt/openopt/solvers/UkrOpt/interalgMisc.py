@@ -144,12 +144,13 @@ def func1(y, e, o, a, varTols, CoordDivisionInd = None):
         IND = nanargmin(a, 1)
         t = IND % n
         tmp = a[(arange(m), IND)].reshape(-1, 1).copy()
-        a[:, IND] = nan
+        #a[:, IND] = nan
+        a[(arange(m), IND)] = nan
         
         #ind = logical_or(any(a == tmp, 1), all(isinf(a), 1))
         
         # TODO: improve it, handle the number as solver parameter
-        ind = logical_or(any(a <= tmp+1e-5*abs(tmp), 1), all(isinf(a), 1))
+        ind = logical_or(any(a <= tmp+1e-10*abs(tmp), 1), all(isinf(a), 1))
         if CoordDivisionInd is not None:
             ind = logical_or(ind, CoordDivisionInd)
         
@@ -190,6 +191,8 @@ def func2(y, e, t):
 
 
 def func12(an, mn, maxSolutions, solutions, SolutionCoords, varTols, fo):
+    if len(an) == 0:
+        return [], [], []
     _in = an
     if SolutionCoords is not None:
         solutionCoordsL, solutionCoordsU = SolutionCoords - varTols, SolutionCoords + varTols

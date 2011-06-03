@@ -312,13 +312,12 @@ class interalg(baseSolver):
             an, g = func5(an, nn, g)
             nNodes.append(len(an))
 
-            if len(an) == 0: 
-                k = False
-                p.istop, p.msg = 1001, 'optimal solutions obtained'
-                break
-
             y, e, _in = func12(an, self.mn, maxSolutions, solutions, SolutionCoords, varTols, fo)
             
+            if len(y) == 0: 
+                k = False
+                p.istop, p.msg = 1001, 'optimal solutions obtained'
+                break            
             nActiveNodes.append(y.shape[1])
             # End of main cycle
             
