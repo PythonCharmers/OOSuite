@@ -242,8 +242,13 @@ class oofun:
             r._getFuncCalcEngine = lambda *args,  **kwargs: self._getFuncCalcEngine(*args,  **kwargs) + other
             r.discrete = self.discrete
             r.getOrder = self.getOrder
-            r.criticalPoints = False
-            #r._interval = lambda domain: (self._interval(domain)[0] + other, self._interval(domain)[1] + other)
+            
+            # TODO: move it ouside 
+            def interval(domain, dtype): 
+                lb, ub = self._interval(domain, dtype)
+                return lb + other, ub + other
+            r._interval = interval
+            
             if isscalar(other) or asarray(other).size in (1, other.size): 
                 r._D = lambda *args,  **kwargs: self._D(*args,  **kwargs) 
         r.vectorized = True
