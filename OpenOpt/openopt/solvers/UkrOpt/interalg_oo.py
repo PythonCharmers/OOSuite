@@ -1,7 +1,7 @@
 import numpy
 from numpy import isfinite, all, argmax, where, delete, array, asarray, inf, argmin, hstack, vstack, arange, amin, \
 logical_and, float64, ceil, amax, inf, ndarray, isinf, any, logical_or, nan, take, logical_not, asanyarray, searchsorted, \
-logical_xor
+logical_xor, ones_like
 from numpy.linalg import norm, solve, LinAlgError
 from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X,  SMALL_DELTA_F, MAX_NON_SUCCESS
 from openopt.kernel.baseSolver import *
@@ -200,6 +200,7 @@ class interalg(baseSolver):
         pnc = 0
         an = []
         
+        
         for itn in range(p.maxIter+10):
             ip = func10(y, e, vv)
             
@@ -229,8 +230,9 @@ class interalg(baseSolver):
             
             m = e.shape[0]
             o, a, FuncVals = o.reshape(2*n, m).T, a.reshape(2*n, m).T, FuncVals.reshape(2*n, m).T
-            
-            y, e, o, a, FuncVals = func7(y, e, o, a, FuncVals)
+            if itn == 0: 
+                _s = atleast_1d(inf)
+            y, e, o, a, FuncVals, _s = func7(y, e, o, a, FuncVals, _s)
 
 #            ind = all(e-y <= varTols, 1)
 #            y_excluded += y[ind]
@@ -284,8 +286,8 @@ class interalg(baseSolver):
                 # TODO: rework it for nonlinear systems with non-bound constraints
                 p.istop, p.msg = 1000, 'required solution has been obtained'
                 break
-
-            nodes = func11(y, e, o, a, FCl, FCu) if maxSolutions != 1 else func11(y, e, o, a)
+            
+            nodes = func11(y, e, o, a, _s, FCl, FCu) if maxSolutions != 1 else func11(y, e, o, a, _s)
             
 #                ind = Fl < fTol
 #                #tmp_solutions = nodes[ind]
@@ -311,14 +313,18 @@ class interalg(baseSolver):
             pnc = max((len(an), pnc))
             an, g = func5(an, nn, g)
             nNodes.append(len(an))
-
-            y, e, _in = func12(an, self.mn, maxSolutions, solutions, SolutionCoords, varTols, fo)
+            
+            y, e, _in, _s = \
+            func12(an, self.mn, maxSolutions, solutions, SolutionCoords, varTols, fo, _s)
             
             if len(y) == 0: 
                 k = False
-                p.istop, p.msg = 1001, 'optimal solutions obtained'
+                if len(solutions) > 1:
+                    p.istop, p.msg = 1001, 'optimal solutions obtained'
+                else:
+                    p.istop, p.msg = 1000, 'optimal solution obtained'
                 break            
-            nActiveNodes.append(y.shape[1])
+            nActiveNodes.append(y.shape[0]/2)
             # End of main cycle
             
         p.iterfcn(xRecord)

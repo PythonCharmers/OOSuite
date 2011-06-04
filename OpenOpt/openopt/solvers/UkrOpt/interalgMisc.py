@@ -1,5 +1,5 @@
 from numpy import tile, isnan, array, atleast_1d, asarray, logical_and, all, searchsorted, logical_or, any, nan, isinf, \
-arange, vstack, inf, where, logical_not, take, argmax, argmin, abs
+arange, vstack, inf, where, logical_not, take, argmax, argmin, abs, hstack
 from FuncDesigner import ooPoint
 
 try:
@@ -66,7 +66,7 @@ def getBestCenterAndObjective(FuncVals, domain, dataType):
     bestCenterObjective = atleast_1d(FuncVals)[bestCenterInd]
     return bestCenterCoords, bestCenterObjective
     
-def func7(y, e, o, a, FV):
+def func7(y, e, o, a, FV, _s):
     IND = logical_and(all(isnan(o), 1), all(isnan(a), 1))
     if any(IND):
         j = where(logical_not(IND))[0]
@@ -76,7 +76,8 @@ def func7(y, e, o, a, FV):
         o = take(o, j, axis=0, out=o[:lj])
         a = take(a, j, axis=0, out=a[:lj])
         FV = take(FV, j, axis=0, out=FV[:lj])
-    return y, e, o, a, FV
+        _s = _s[j]
+    return y, e, o, a, FV, _s
 
 def func9(an, fo, g):
     ar = [node.key for node in an]
@@ -116,65 +117,60 @@ def func3(an, mn):
         an1, _in = an, []
     return an1, _in
 
-def func1(y, e, o, a, varTols, CoordDivisionInd = None):
+def func1(y, e, o, a, varTols, _s_prev, CoordDivisionInd = None):
     m, n = y.shape
-    Case = 1 # TODO: check other
-    if Case == -3:
-        t = argmin(a, 1) % n
-    elif Case == -2:
-        t = asarray([itn % n]*m)
-    elif Case == -1:
-        tmp = a - o
-        tmp1, tmp2 = tmp[:, 0:n], tmp[:, n:2*n]
-        tmp = tmp1
-        ind = where(tmp2>tmp1)
-        tmp[ind] = tmp2[ind]
-        #tmp = tmp[:, 0:n] + tmp[:, n:2*n]
-        t = argmin(tmp, 1) 
-    elif Case == 0:
-        t = argmin(a - o, 1) % n
-    elif Case == 1:
-#                a1, a2 = a[:, 0:n], a[:, n:]
-#                ind = a1 < a2
-#                a1[ind] = a2[ind]
-#                t = argmin(a1, 1)
-
-        #a = a.copy() # to remain it unchanged in higher stack level funcs
-        #a[e-y<varTols] = nan
-        IND = nanargmin(a, 1)
-        t = IND % n
-        tmp = a[(arange(m), IND)].reshape(-1, 1).copy()
-        #a[:, IND] = nan
-        a[(arange(m), IND)] = nan
-        
-        #ind = logical_or(any(a == tmp, 1), all(isinf(a), 1))
-        
-        # TODO: improve it, handle the number as solver parameter
-        ind = logical_or(any(a <= tmp+1e-10*abs(tmp), 1), all(isinf(a), 1))
-        if CoordDivisionInd is not None:
-            ind = logical_or(ind, CoordDivisionInd)
-        
-        if any(ind):
-            bs = e[ind] - y[ind]
-            t[ind] = nanargmax(bs, 1) # ordinary numpy.argmax can be used as well
-        #a[:, IND] = tmp
-        
-    elif Case == 2:
-        o1, o2 = o[:, 0:n], o[:, n:]
-        ind = o1 > o2
-        o1[ind] = o2[ind]                
-        t = argmax(o1, 1)
-    elif Case == 3:
-        # WORST
-        t = argmin(o, 1) % n
-    elif Case == 4:
-        # WORST
-        t = argmax(a, 1) % n
-    elif Case == 5:
-        tmp = where(o[:, 0:n]<o[:, n:], o[:, 0:n], o[:, n:])
-        t = argmax(tmp, 1)
-    return t
+    #a = a.copy() # to remain it unchanged in higher stack level funcs
+    #a[e-y<varTols] = nan
+    _s = func13(o, a)
     
+    IND = nanargmin(a, 1)
+
+#    IND = nanargmin(o-a, 1)
+#    _s = (o-a)[(arange(m), IND)]
+    
+    #print '-'*10
+    
+    #assert all(_s_prev == _s) or all(_s_prev + 1e-10*abs(_s) >= _s  - 1e-15)
+    
+#    print _s_prev
+#    print _s
+    #print '='*10
+    
+    t = IND % n
+    
+#    tmp = a[(arange(m), IND)].reshape(-1, 1).copy()
+#    a[:, IND] = nan
+    
+    #a[(arange(m), IND)] = nan
+    #ind = logical_or(any(a == tmp, 1), all(isinf(a), 1))
+    # TODO: improve it, handle the number as solver parameter
+    
+    ind = logical_or(all(isinf(a), 1), _s_prev  <= _s+  _s_prev / 2.0 ** n)
+    
+    if CoordDivisionInd is not None:
+        ind = logical_or(ind, CoordDivisionInd)
+    
+    if any(ind):
+        bs = e[ind] - y[ind]
+        t[ind] = nanargmax(bs, 1) # ordinary numpy.argmax can be used as well
+    #a[:, IND] = tmp
+        
+    return t, _s
+    
+def func13(o, a): 
+    m, n = o.shape
+    n /= 2
+    case = 2
+    if case == 1:
+        U1, U2 = a[:, :n].copy(), a[:, n:] 
+        ind = U2>U1#TODO: mb use nanmax(concatenate((U1,U2),3),3) instead?
+        U1[ind] = U2[ind]
+        return nanmin(U1, 1)
+    elif case == 2:
+        L1, L2, U1, U2 = o[:, :n], o[:, n:], a[:, :n], a[:, n:] 
+        U = where(logical_or(U1<U2, isnan(U1)),  U2, U1)
+        L = where(logical_or(L2<L1, isnan(L1)), L2, L1)
+        return nanmin(U-L, 1)
 
 def func2(y, e, t):
     new_y, en = y.copy(), e.copy()
@@ -190,25 +186,28 @@ def func2(y, e, t):
     return new_y, en
 
 
-def func12(an, mn, maxSolutions, solutions, SolutionCoords, varTols, fo):
+def func12(an, mn, maxSolutions, solutions, SolutionCoords, varTols, fo, _s_prev):
     if len(an) == 0:
-        return [], [], []
+        return [], [], [], []
     _in = an
     if SolutionCoords is not None:
         solutionCoordsL, solutionCoordsU = SolutionCoords - varTols, SolutionCoords + varTols
-    y, e = [], []
+    y, e, S = [], [], []
     N = 0
+
     while True:
         an1Candidates, _in = func3(_in, mn)
 
-        yc, ec, oc, ac = asarray([t.y for t in an1Candidates]), \
+        yc, ec, oc, ac, SIc = asarray([t.y for t in an1Candidates]), \
         asarray([t.e for t in an1Candidates]), \
         asarray([t.o for t in an1Candidates]), \
-        asarray([t.a for t in an1Candidates])
+        asarray([t.a for t in an1Candidates]), \
+        asarray([t._s for t in an1Candidates])
         
         yc, ec = func4(yc, ec, oc, ac, fo)
-        t = func1(yc, ec, oc, ac, varTols)
+        t, _s = func1(yc, ec, oc, ac, varTols, SIc)
         yc, ec = func2(yc, ec, t)
+        _s = tile(_s, 2)
         
         if maxSolutions == 1 or len(solutions) == 0: 
             y, e = yc, ec
@@ -221,29 +220,27 @@ def func12(an, mn, maxSolutions, solutions, SolutionCoords, varTols, fo):
                 lj = j.size
                 yc = take(yc, j, axis=0, out=yc[:lj])
                 ec = take(ec, j, axis=0, out=ec[:lj])
+                _s = _s[j]
         y.append(yc)
         e.append(ec)
+        S.append(_s)
         N += yc.shape[0]
         if len(_in) == 0 or N >= mn: 
-            y, e = vstack(y), vstack(e) 
+            y, e, _s = vstack(y), vstack(e), hstack(S)
             break
-        
-    return y, e, _in
+    return y, e, _in, _s
 
-def func11(y, e, o, a, FCl = None, FCu = None): 
+def func11(y, e, o, a, _s, FCl = None, FCu = None): 
     m, n = y.shape
     s, q = o[:, 0:n], o[:, n:2*n]
-    Tmp = where(q<s, q, s)
-    Tmp = nanmax(Tmp, 1)
-    #ind = where(logical_not(isnan(Tmp)))[0]
+    Tmp = nanmax(where(q<s, q, s), 1)
     if FCl is None:
-        return [si(Tmp[i], y[i], e[i], o[i], a[i]) for i in range(m)]
+        return [si(Tmp[i], y[i], e[i], o[i], a[i], _s[i]) for i in range(m)]
     else:
-        return [si(Tmp[i], y[i], e[i], o[i], a[i], FCl[i], FCu[i]) for i in range(m)]
-    #return [si(nanmax(tmp[i]), y[i], e[i], o[i], a[i], F[i]) for i in ind]
+        return [si(Tmp[i], y[i], e[i], o[i], a[i], _s[i], FCl[i], FCu[i]) for i in range(m)]
 
 class si:
-    fields = ['key', 'y', 'e', 'o', 'a', 'FCl', 'FCu']
+    fields = ['key', 'y', 'e', 'o', 'a', '_s','FCl', 'FCu']
     def __init__(self, *args):
         for i in range(len(args)):
             setattr(self, self.fields[i], args[i])
