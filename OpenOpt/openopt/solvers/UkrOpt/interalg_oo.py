@@ -1,7 +1,7 @@
 import numpy
 from numpy import isfinite, all, argmax, where, delete, array, asarray, inf, argmin, hstack, vstack, arange, amin, \
 logical_and, float64, ceil, amax, inf, ndarray, isinf, any, logical_or, nan, take, logical_not, asanyarray, searchsorted, \
-logical_xor, ones_like
+logical_xor
 from numpy.linalg import norm, solve, LinAlgError
 from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X,  SMALL_DELTA_F, MAX_NON_SUCCESS
 from openopt.kernel.baseSolver import *
@@ -316,7 +316,7 @@ class interalg(baseSolver):
             
             y, e, _in, _s = \
             func12(an, self.mn, maxSolutions, solutions, SolutionCoords, varTols, fo, _s)
-            
+            nActiveNodes.append(0 if y == [] else y.shape[0]/2)
             if len(y) == 0: 
                 k = False
                 if len(solutions) > 1:
@@ -324,7 +324,7 @@ class interalg(baseSolver):
                 else:
                     p.istop, p.msg = 1000, 'optimal solution obtained'
                 break            
-            nActiveNodes.append(y.shape[0]/2)
+            
             # End of main cycle
             
         p.iterfcn(xRecord)
