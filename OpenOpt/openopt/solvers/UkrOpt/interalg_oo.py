@@ -28,7 +28,7 @@ class interalg(baseSolver):
     dataType = float64
     #maxMem = '150MB'
     maxNodes = 150000
-    mn = 1500
+    mn = 150
     
     __isIterPointAlwaysFeasible__ = lambda self, p: p.__isNoMoreThanBoxBounded__()
     _requiresFiniteBoxBounds = True
@@ -175,7 +175,7 @@ class interalg(baseSolver):
             p.warn('mn should be at least 2 while you have provided %d. Setting it to 2.' % self.mn)
         self.maxNodes = int(self.maxNodes )
 
-        _in = []
+        _in = []#array([], object)
         
         y_excluded, e_excluded, o_excluded, a_excluded = [], [], [], []
         k = True
@@ -296,9 +296,25 @@ class interalg(baseSolver):
 ##                for s in solutions:
 ##                    pass
             
-            # TODO: use sorted(..., key = lambda obj:obj.key) instead?
             # TODO: get rid of sorted, use get_n_min / get_n_max instead
-            an = sorted(nodes + _in)
+            an = sorted(nodes + _in, key = lambda obj: obj.key)
+            
+#            nodes.sort(key = lambda obj: obj.key)
+#            an = [nodes.pop(0) if len(nodes)!=0 and (len(_in)==0 or nodes[0].key< _in[0].key)\
+#                                                          else _in.pop(0) for i in range(len(nodes) + len(_in))]
+
+            #assert all([an[i] is an2[i] for i in range(len(an))])
+#            arr1 = [node.key for node in _in]
+#            arr2 = [node.key for node in nodes]
+#            from numpy import searchsorted, insert
+#            IND = searchsorted(arr1, arr2)
+#            if _in == []: _in = array([], object)
+#            an = insert(_in, IND, nodes)
+
+#            an = nodes + _in
+#            arr_n = array([node.key for node in an])
+#            I = arr_n.argsort()
+#            an = [an[i] for i in I]
             
             an, g = func9(an, fo, g)
 

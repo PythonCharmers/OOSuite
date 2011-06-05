@@ -245,8 +245,8 @@ class si:
         for i in range(len(args)):
             setattr(self, self.fields[i], args[i])
     
-    __lt__ = lambda self, other: self.key < other.key
-    __le__ = lambda self, other: self.key <= other.key
-    __gt__ = lambda self, other: self.key > other.key
-    __ge__ = lambda self, other: self.key >= other.key
-    __eq__ = lambda self, other: self.key == other.key
+#    __lt__ = lambda self, other: self.key < other.key
+#    __le__ = lambda self, other: self.key <= other.key
+#    __gt__ = lambda self, other: self.key > other.key
+#    __ge__ = lambda self, other: self.key >= other.key
+#    __eq__ = lambda self, other: self.key == other.key
