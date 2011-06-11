@@ -65,7 +65,10 @@ def setStartVectorAndTranslators(p):
     #vector2point = lambda x: oopoint(startDictData + [(oov, x[oovar_indexes[i]:oovar_indexes[i+1]]) for i, oov in enumerate(freeVars)])
     p._FDtranslator = {'prevX':nan}
     def vector2point(x): 
-        x = atleast_1d(asfarray(x)).copy()
+        x = asarray(x)
+        if not str(x.dtype).startswith('float'):
+            x = asfarray(x)
+        x = atleast_1d(x).copy()
         if array_equal(x, p._FDtranslator['prevX']):
             return p._FDtranslator['prevVal']
             
@@ -78,7 +81,7 @@ def setStartVectorAndTranslators(p):
 #            #I, J = oovar_indexes[i], oovar_indexes[i+1]
 #            #r.append((oov, x[I] if J - I == 1 else x[I:J]))
 #            r.append((oov, x[oovar_indexes[i]:oovar_indexes[i+1]]))
-        r = oopoint(r+tmp)
+        r = oopoint(r+tmp, skipArrayCast = True)
         
         p._FDtranslator['prevVal'] = r 
         p._FDtranslator['prevX'] = copy(x)

@@ -37,7 +37,9 @@ class nonLinFuncs:
         # this line had been added because some solvers pass tuple instead of
         # x being vector p.n x 1 or matrix X=[x1 x2 x3...xk], size(X)=[p.n, k]
         if not isspmatrix(x): 
-            x = asfarray(x)
+            x = asarray(x)
+            if not str(x.dtype).startswith('float'):
+                x = asfarray(x)
         else:
             if p.debug:
                 p.pWarn('[oo debug] sparse matrix x in nonlinfuncs.py has been encountered')

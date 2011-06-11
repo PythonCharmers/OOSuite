@@ -30,9 +30,9 @@ FAILED_WITH_UNIMPLEMENTED_OR_UNKNOWN_REASON = -1000
 def stopcase(arg):
     if hasattr(arg, 'istop'): istop = arg.istop
     else: istop = arg
-
+    
     if istop > 0: return 1
-    elif istop in [IS_MAX_ITER_REACHED, IS_MAX_CPU_TIME_REACHED, IS_MAX_TIME_REACHED, IS_MAX_FUN_EVALS_REACHED]: return 0
+    elif istop in [0, IS_MAX_ITER_REACHED, IS_MAX_CPU_TIME_REACHED, IS_MAX_TIME_REACHED, IS_MAX_FUN_EVALS_REACHED]: return 0
     else: return -1
 
 
