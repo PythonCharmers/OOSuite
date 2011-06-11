@@ -278,8 +278,8 @@ class interalg(baseSolver):
                     if len(solutions) >= maxSolutions:
                         k = False
                         solutions = solutions[:maxSolutions]
-                        p.istop = 100
-                        p.msg = 'required number of solutions has been obtained'
+                        p.istop = 0
+                        p.msg = 'user-defined maximal number of solutions (p.maxSolutions = %d) has been exeeded' % p.maxSolutions
                         break
                         
             
