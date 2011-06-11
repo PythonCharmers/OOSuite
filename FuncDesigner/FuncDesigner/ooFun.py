@@ -305,18 +305,7 @@ class oofun:
                 lb1, ub1 = self._interval(domain, dtype)
                 lb2, ub2 = other._interval(domain, dtype)
                 lb2, ub2 = asarray(lb2, dtype), asarray(ub2, dtype)
-                #ind1, ind2 = where(lb2==0)[0], where(ub2==0)[0]
-                
-#                #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#                th = 1e-150 # TODO: handle it more properly
-#                #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#                
-#                lb2[logical_and(lb2>=0, lb2<=th)] = th # then 0.0 / lb2 will be defined correctly and will not yield NaNs
-#                ub2[logical_and(ub2<=0, ub2>=-th)] = -th# then 0.0 / ub2 will be defined correctly and will not yield NaNs
-                
-#                t1, t2, t3, t4 = lb1/lb2, lb1/ub2, ub1/lb2, ub1/ub2
-#                ind = lb2 <0 and ub2 >= 0
-#                t1[logical_and(ind, lb1] = 
+
                 tmp = vstack((lb1/lb2, lb1/ub2, ub1/lb2, ub1/ub2))
                 r1, r2 = nanmin(tmp, 0), nanmax(tmp, 0)
                 
@@ -498,7 +487,7 @@ class oofun:
             elif not isinstance(other, ndarray): 
                 other = asarray(other, dtype='float' if type(other) == int else type(other)).copy()
             
-            f = lambda x: x ** other
+            f = lambda x: asarray(x) ** other
             d = lambda x: d_x(x, other)
             input = self
             def interval(domain, dtype):
@@ -513,7 +502,7 @@ class oofun:
                     t_min[atleast_1d(logical_and(logical_and(ind, logical_not(isNonInteger)), logical_and(t_min>0, ub >= 0)))] = 0.0
                 return t_min, t_max
         else:
-            f = lambda x, y: x ** y
+            f = lambda x, y: asarray(x) ** y
             d = (d_x, d_y)
             input = [self, other]
             #interval = lambda domain, dtype: nonnegative_interval(self, lambda x:, domain, dtype)
@@ -776,7 +765,7 @@ class oofun:
                     if isinstance(x, dict):
                         tmp = x.get(self, None)
                         if tmp is not None:
-                            return float(tmp) if isscalar(tmp) else asfarray(tmp)
+                            return float(tmp) if isscalar(tmp) and type(tmp)==int else asfarray(tmp)
                         elif self.name in x:
                             return asfarray(x[self.name])
                         else:

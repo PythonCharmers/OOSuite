@@ -19,13 +19,15 @@ class ooPoint(dict):
             Asfarray = lambda arg: arg
         else: 
             Asfarray = lambda arg: asfarray(arg)
+            
+        # TODO: remove float() after Python 3 migraion
         if args:
             if not isinstance(args[0], dict):
-                items = [(key, Asfarray(val) if not isscalar(val) else float(val)) for key, val in args[0]] 
+                items = [(key, Asfarray(val) if not isscalar(val) else float(val) if type(val) == int else val) for key, val in args[0]] 
             else:
-                items = [(key, Asfarray(val) if not isscalar(val) else float(val)) for key, val in args[0].items()] 
+                items = [(key, Asfarray(val) if not isscalar(val) else float(val) if type(val) == int else val) for key, val in args[0].items()] 
         elif kwargs:
-            items = [(key, Asfarray(val) if not isscalar(val) else float(val)) for key, val in kwargs.items()]
+            items = [(key, Asfarray(val) if not isscalar(val) else float(val) if type(val) == int else val) for key, val in kwargs.items()]
         else:
             raise FuncDesignerException('incorrect oopoint constructor arguments')
             
