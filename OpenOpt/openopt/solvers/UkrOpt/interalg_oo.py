@@ -86,7 +86,7 @@ class interalg(baseSolver):
         p.extras['nActiveNodes'] = nActiveNodes
 
         solutions = []
-        SolutionCoords = array([]).reshape(0, n)
+        r6 = array([]).reshape(0, n)
         
         
         dataType = self.dataType
@@ -171,8 +171,8 @@ class interalg(baseSolver):
         m = 0
         #maxActive = 1
         self.mn = int(self.mn )
-        if self.mn < 2:
-            p.warn('mn should be at least 2 while you have provided %d. Setting it to 2.' % self.mn)
+#        if self.mn < 2:
+#            p.warn('mn should be at least 2 while you have provided %d. Setting it to 2.' % self.mn)
         self.maxNodes = int(self.maxNodes )
 
         _in = []#array([], object)
@@ -205,8 +205,14 @@ class interalg(baseSolver):
             ip = func10(y, e, vv)
             
 #            for f, lb_, ub_ in C:
-#                TMP = f.interval(domain, dataType)
-#                lb, ub = asarray(TMP.lb, dtype=dataType), asarray(TMP.ub, dtype=dataType)
+#                o, a = func8(ip, asdf1, dataType)
+#                m = o.size/(2*n)
+#                o, a  = o.reshape(2*n, m).T, a.reshape(2*n, m).T
+#                lf1, lf2, uf1, uf2 = o[:, 0:n], o[:, n:2*n], a[:, 0:n], a[:, n:2*n]
+#                o, a = nanmax(where(lf1>lf2, lf2, lf1), 1), nanmin(where(uf1>uf2, uf1, uf2), 1)
+#                
+#                # TODO: add tol?
+#                ind = logical_or(a < _lb, o > _ub)
                 
             o, a = func8(ip, asdf1, dataType)
             if p.debug and any(a + 1e-15 < o):  
@@ -214,25 +220,23 @@ class interalg(baseSolver):
             if p.debug and any(logical_xor(isnan(o), isnan(a))):
                 p.err('bug in FuncDesigner intervals engine')
                 
-            FuncVals = getCentersValues(ip, asdf1, dataType) 
+            r3 = getr4Values(ip, asdf1, dataType) 
 
-            xk, Min = getBestCenterAndObjective(FuncVals, ip, dataType)
+            xk, Min = r2(r3, ip, dataType)
+            
             if CBKPMV > Min:
                 CBKPMV = Min
                 xRecord = xk# TODO: is copy required?
             if frc > Min:
                 frc = Min
-                
-            if isSNLE:
-                fo = 0.0#fTol / 16.0
-            else:
-                fo = min((frc, CBKPMV - (fTol if maxSolutions == 1 else 0.0))) 
+            
+            fo = 0.0 if isSNLE else min((frc, CBKPMV - (fTol if maxSolutions == 1 else 0.0))) 
             
             m = e.shape[0]
-            o, a, FuncVals = o.reshape(2*n, m).T, a.reshape(2*n, m).T, FuncVals.reshape(2*n, m).T
+            o, a, r3 = o.reshape(2*n, m).T, a.reshape(2*n, m).T, r3.reshape(2*n, m).T
             if itn == 0: 
-                _s = atleast_1d(inf)
-            y, e, o, a, FuncVals, _s = func7(y, e, o, a, FuncVals, _s)
+                _s = atleast_1d(nanmax(a))
+            y, e, o, a, r3, _s = func7(y, e, o, a, r3, _s)
 
 #            ind = all(e-y <= varTols, 1)
 #            y_excluded += y[ind]
@@ -241,33 +245,33 @@ class interalg(baseSolver):
 #            a_excluded += a[ind]
             
             if maxSolutions != 1:
-                FCl, FCu = FuncVals[:, :n], FuncVals[:, n:]
+                FCl, FCu = r3[:, :n], r3[:, n:]
                 if isSNLE:
                     assert p.__isNoMoreThanBoxBounded__(), 'unimplemented yet'
-                    candidates_L, candidates_U =  where(FCl < fTol), where(FCu < fTol)
-                    Centers = 0.5 * (y + e)
+                    r5_L, r5_U =  where(FCl < fTol), where(FCu < fTol)
+                    r4 = 0.5 * (y + e)
                     Diff = 0.5 * (e - y)
-                    candidates = []
+                    r5 = []
                     # L
-                    cs_L = Centers[candidates_L[0]].copy()
-                    for I in range(len(candidates_L[0])):#TODO: rework it
-                        i, j = candidates_L[0][I], candidates_L[1][I]
-                        tmp = Centers[i].copy()
+                    cs_L = r4[r5_L[0]].copy()
+                    for I in range(len(r5_L[0])):#TODO: rework it
+                        i, j = r5_L[0][I], r5_L[1][I]
+                        tmp = r4[i].copy()
                         tmp[j] -= 0.5*Diff[i, j]
-                        candidates.append(tmp)
+                        r5.append(tmp)
                     # U
-                    cs_U = Centers[candidates_U[0]].copy()
-                    for I in range(len(candidates_U[0])):#TODO: rework it
-                        i, j = candidates_U[0][I], candidates_U[1][I]
-                        tmp = Centers[i].copy()
+                    cs_U = r4[r5_U[0]].copy()
+                    for I in range(len(r5_U[0])):#TODO: rework it
+                        i, j = r5_U[0][I], r5_U[1][I]
+                        tmp = r4[i].copy()
                         tmp[j] += 0.5*Diff[i, j]
-                        candidates.append(tmp)
+                        r5.append(tmp)
                     
-                    for c in candidates:
-                        ind = all(abs(c - SolutionCoords) < varTols, 1)
+                    for c in r5:
+                        ind = all(abs(c - r6) < varTols, 1)
                         if not any(ind): 
                             solutions.append(c)
-                            SolutionCoords = asarray(solutions, dataType)
+                            r6 = asarray(solutions, dataType)
                             
                     p._nObtainedSolutions = len(solutions)
                     
@@ -307,9 +311,9 @@ class interalg(baseSolver):
 #            arr1 = [node.key for node in _in]
 #            arr2 = [node.key for node in nodes]
 #            from numpy import searchsorted, insert
-#            IND = searchsorted(arr1, arr2)
+#            r10 = searchsorted(arr1, arr2)
 #            if _in == []: _in = array([], object)
-#            an = insert(_in, IND, nodes)
+#            an = insert(_in, r10, nodes)
 
 #            an = nodes + _in
 #            arr_n = array([node.key for node in an])
@@ -331,9 +335,9 @@ class interalg(baseSolver):
             nNodes.append(len(an))
             
             y, e, _in, _s = \
-            func12(an, self.mn, maxSolutions, solutions, SolutionCoords, varTols, fo, _s)
-            nActiveNodes.append(0 if y == [] else y.shape[0]/2)
-            if len(y) == 0: 
+            func12(an, self.mn, maxSolutions, solutions, r6, varTols, fo, _s)
+            nActiveNodes.append(y.shape[0]/2)
+            if y.size == 0: 
                 k = False
                 if len(solutions) > 1:
                     p.istop, p.msg = 1001, 'optimal solutions obtained'
@@ -351,6 +355,9 @@ class interalg(baseSolver):
             g = nanmin([nanmin(o), g])
         p.extras['isRequiredPrecisionReached'] = \
         True if ff - g < fTol and (k is False or isSNLE and maxSolutions==1) else False
+        if not p.extras['isRequiredPrecisionReached'] and p.istop > 0:
+            p.istop = -1
+            p.msg = 'required precision is not guarantied'
         # TODO: simplify it
         if p.goal in ('max', 'maximum'):
             g = -g
