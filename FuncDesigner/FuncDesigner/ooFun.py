@@ -862,7 +862,7 @@ class oofun:
             raise FuncDesignerException('No more than one argument from "Vars" and "fixedVars" is allowed for the function')
         #assert type(Vars) != ndarray and type(fixedVars) != ndarray
         if not isinstance(x, ooPoint): x = ooPoint(x)
-        
+        initialVars = Vars
         #TODO: remove cloned code
         if Vars is not None:
             if type(Vars) in [list, tuple]:
@@ -880,34 +880,33 @@ class oofun:
                 fixedVars = set([fixedVars])
         r = self._D(x, fixedVarsScheduleID, Vars, fixedVars, useSparse = useSparse)
         r = dict([(key, (val if type(val)!=DiagonalType else val.resolve(useSparse))) for key, val in r.items()])
-        if isinstance(Vars, oofun):
-            if Vars.is_oovar:
-                return Vars(r)
-            else: 
-                # TODO: handle it with input of type list/tuple/etc as well
-                raise FuncDesignerException('Cannot perform differentiation by non-oovar input')
+        
+        is_oofun = isinstance(initialVars, oofun)
+        if is_oofun and not initialVars.is_oovar:
+            # TODO: handle it with input of type list/tuple/etc as well
+            raise FuncDesignerException('Cannot perform differentiation by non-oovar input')
+
+        if resultKeysType == 'names':
+            raise FuncDesignerException("""This possibility is out of date, 
+            if it is still present somewhere in FuncDesigner doc inform developers""")
+        elif resultKeysType == 'vars':
+            rr = {}
+            tmpDict = Vars if Vars is not None else x
+            #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! TODO: remove the cycle!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            
+            for oov, val in x.items():
+                #if not isinstance(oov not in r, bool): print oov not in r
+                if oov not in r or (fixedVars is not None and oov in fixedVars):
+                    continue
+                tmp = r[oov]
+                if useSparse == False and hasattr(tmp, 'toarray'): tmp = tmp.toarray()
+                if not exactShape and not isspmatrix(tmp) and not isscalar(tmp):
+                    if tmp.size == 1: tmp = asscalar(tmp)
+                    elif min(tmp.shape) == 1: tmp = tmp.flatten()
+                rr[oov] = tmp
+            return rr if not is_oofun else initialVars(rr)
         else:
-            if resultKeysType == 'names':
-                raise FuncDesignerException("""This possibility is out of date, 
-                if it is still present somewhere in FuncDesigner doc inform developers""")
-            elif resultKeysType == 'vars':
-                rr = {}
-                tmpDict = Vars if Vars is not None else x
-                #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! TODO: remove the cycle!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                
-                for oov, val in x.items():
-                    #if not isinstance(oov not in r, bool): print oov not in r
-                    if oov not in r or (fixedVars is not None and oov in fixedVars):
-                        continue
-                    tmp = r[oov]
-                    if useSparse == False and hasattr(tmp, 'toarray'): tmp = tmp.toarray()
-                    if not exactShape and not isspmatrix(tmp) and not isscalar(tmp):
-                        if tmp.size == 1: tmp = asscalar(tmp)
-                        elif min(tmp.shape) == 1: tmp = tmp.flatten()
-                    rr[oov] = tmp
-                return rr
-            else:
-                raise FuncDesignerException('Incorrect argument resultKeysType, should be "vars" or "names"')
+            raise FuncDesignerException('Incorrect argument resultKeysType, should be "vars" or "names"')
             
             
     def _D(self, x, fixedVarsScheduleID, Vars=None, fixedVars = None, useSparse = 'auto'):
