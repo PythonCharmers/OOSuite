@@ -449,6 +449,30 @@ def NLSP(*args, **kwargs):
         scipy_broyden3
         scipy_broyden_generalized
     """
+    r = CNLSP(*args, **kwargs)
+    r.pWarn('''
+    OpenOpt NLSP class had been renamed to SNLE 
+    (system of nonlinear equations), use "SNLE" instead of "NLSP"
+    ''')
+    return r
+    
+def SNLE(*args, **kwargs):
+    """
+    Solving systems of n non-linear equations with n variables
+    Parameters and usage: same as NLP
+    (see help(NLP) and /examples/nlsp_*.py)
+    Solvers available for now:
+        scipy_fsolve (can handle df);
+        converter to NLP. Example: r = p.solve('nlp:ipopt');
+        nssolve (primarily for non-smooth and noisy funcs; can handle all types of constraints and 1st derivatives df,dc,dh; splitting equations to Python list or tuple is recommended to speedup calculations)
+    (these ones below are very unstable and can't use user-supplied gradient - at least, for scipy 0.6.0)
+        scipy_anderson
+        scipy_anderson2
+        scipy_broyden1
+        scipy_broyden2
+        scipy_broyden3
+        scipy_broyden_generalized
+    """
     return CNLSP(*args, **kwargs)
 
 def NLLSP(*args, **kwargs):
