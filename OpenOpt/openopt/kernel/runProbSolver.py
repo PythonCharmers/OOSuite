@@ -193,7 +193,8 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     p.timeStart = time()
     p.cpuTimeStart = clock()
     
-    p.plotOnlyCurrentMinimum = p.__isNoMoreThanBoxBounded__()
+    if p.probType != 'MINLP':
+        p.plotOnlyCurrentMinimum = p.__isNoMoreThanBoxBounded__()
 
 
     ############################
