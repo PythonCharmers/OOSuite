@@ -1,5 +1,5 @@
 from numpy import tile, isnan, array, atleast_1d, asarray, logical_and, all, searchsorted, logical_or, any, nan, isinf, \
-arange, vstack, inf, where, logical_not, take, argmax, argmin, abs, hstack
+arange, vstack, inf, where, logical_not, take, argmax, argmin, abs, hstack, empty, insert, isfinite
 from FuncDesigner import ooPoint
 
 try:
@@ -47,23 +47,42 @@ def func8(domain, func, dataType):
     #assert TMP.lb.dtype == dataType
     return asarray(TMP.lb, dtype=dataType), asarray(TMP.ub, dtype=dataType)
 
-def getr4Values(domain, func, dataType):
+def getr4Values(domain, func, C, contol, dataType):
     #TODO: remove 0.5*(val[0]+val[1]) from cycle
     cs = dict([(key, 0.5*(val[0]+val[1])) for key, val in domain.items()])
     cs = ooPoint(cs, skipArrayCast = True)
     cs.isMultiPoint = True
-    return atleast_1d(func(cs))
+    
+    # TODO: improve it
+    m = domain.values()[0][0].size
+    
+    r15 = empty(m, bool)
+    r15.fill(True)
+    for f, r16, r17 in C:
+        c = f(cs)
+        ind = logical_and(c + contol > r16, c - contol < r17)
+        r15 = logical_and(r15, ind)
+    if not all(r15):
+        F = empty(m, dataType)
+        F.fill(nan)
+        cs = dict([(key, 0.5*(val[0][r15]+val[1][r15])) for key, val in domain.items()])
+        cs = ooPoint(cs, skipArrayCast = True)
+        cs.isMultiPoint = True
+        F[r15] = func(cs)
+        r = atleast_1d(F)
+    else:
+        r = atleast_1d(func(cs))
+    return r
 
 def r2(r3, domain, dataType):
-    bestCenterInd = nanargmin(r3)
-    if isnan(bestCenterInd):
-        bestCenterInd = 0
-        r8 = inf
+    r23 = nanargmin(r3)
+    if isnan(r23):
+        r23 = 0
     
     # TODO: check it , maybe it can be improved
-    #bestCenter = cs[bestCenterInd]
-    r7 = array([0.5*(val[0][bestCenterInd]+val[1][bestCenterInd]) for val in domain.values()], dtype=dataType)
-    r8 = atleast_1d(r3)[bestCenterInd]
+    #bestCenter = cs[r23]
+    r7 = array([0.5*(val[0][r23]+val[1][r23]) for val in domain.values()], dtype=dataType)
+    r8 = atleast_1d(r3)[r23] if not isnan(r23) else inf
     return r7, r8
     
 def func7(y, e, o, a, FV, _s):
@@ -109,12 +128,12 @@ def func4(y, e, o, a, fo):
         e[ind] = cs[ind]
     return y, e
 
-def func3(an, mn):
+def func3(an, maxActiveNodes):
     m = len(an)
-    if m > mn:
-        an1, _in = an[:mn], an[mn:]
+    if m > maxActiveNodes:
+        an1, _in = an[:maxActiveNodes], an[maxActiveNodes:]
     else:
-        an1, _in = an, []
+        an1, _in = an, array([], object)
     return an1, _in
 
 def func1(y, e, o, a, varTols, _s_prev, r9 = None):
@@ -213,17 +232,17 @@ def func2(y, e, t):
     return new_y, en
 
 
-def func12(an, mn, maxSolutions, solutions, r6, varTols, fo, _s_prev):
+def func12(an, maxActiveNodes, maxSolutions, solutions, r6, varTols, fo):
     if len(an) == 0:
         return array([]), array([]), array([]), array([])
     _in = an
-    if r6 is not None:
+    if r6.size != 0:
         r11, r12 = r6 - varTols, r6 + varTols
     y, e, S = [], [], []
     N = 0
 
     while True:
-        an1Candidates, _in = func3(_in, mn)
+        an1Candidates, _in = func3(_in, maxActiveNodes)
 
         yc, ec, oc, ac, SIc = asarray([t.y for t in an1Candidates]), \
         asarray([t.e for t in an1Candidates]), \
@@ -252,22 +271,121 @@ def func12(an, mn, maxSolutions, solutions, r6, varTols, fo, _s_prev):
         e.append(ec)
         S.append(_s)
         N += yc.shape[0]
-        if len(_in) == 0 or N >= mn: 
+        if len(_in) == 0 or N >= maxActiveNodes: 
             y, e, _s = vstack(y), vstack(e), hstack(S)
             break
     return y, e, _in, _s
 
-def func11(y, e, o, a, _s, FCl = None, FCu = None): 
+def r13(y, e, r3, fTol, varTols, solutions, r6):
+    n = r3.shape[1] / 2
+    r18, r19 = r3[:, :n], r3[:, n:]
+    r5_L, r5_U =  where(r18 < fTol), where(r19 < fTol)
+    r4 = 0.5 * (y + e)
+    r20 = 0.5 * (e - y)
+    r5 = []
+    # L
+    r21 = r4[r5_L[0]].copy()
+    for I in range(len(r5_L[0])):#TODO: rework it
+        i, j = r5_L[0][I], r5_L[1][I]
+        tmp = r4[i].copy()
+        tmp[j] -= 0.5*r20[i, j]
+        r5.append(tmp)
+    # U
+    r22 = r4[r5_U[0]].copy()
+    for I in range(len(r5_U[0])):#TODO: rework it
+        i, j = r5_U[0][I], r5_U[1][I]
+        tmp = r4[i].copy()
+        tmp[j] += 0.5*r20[i, j]
+        r5.append(tmp)
+    
+    for c in r5:
+        if len(solutions) == 0 or not any(all(abs(c - r6) < varTols, 1)): 
+            solutions.append(c)
+            r6 = asarray(solutions)
+            
+    return solutions, r6
+
+def r14(p, y, e, vv, asdf1, C, CBKPMV, itn, g, nNodes,  \
+                 frc, fTol, maxSolutions, varTols, solutions, r6, _in, dataType, isSNLE, \
+                 maxNodes, _s, xRecord):
+    ip = func10(y, e, vv)
+        
+    o, a = func8(ip, asdf1, dataType)
+    if p.debug and any(a + 1e-15 < o):  
+        p.warn('interval lower bound exceeds upper bound, it seems to be FuncDesigner kernel bug')
+    if p.debug and any(logical_xor(isnan(o), isnan(a))):
+        p.err('bug in FuncDesigner intervals engine')
+    
+    r3 = getr4Values(ip, asdf1, C, p.contol, dataType) 
+
+    xk, Min = r2(r3, ip, dataType)
+    
+    if CBKPMV > Min:
+        CBKPMV = Min
+        xRecord = xk# TODO: is copy required?
+    if frc > Min:
+        frc = Min
+    
+    fo = 0.0 if isSNLE else min((frc, CBKPMV - (fTol if maxSolutions == 1 else 0.0))) 
+    #print itn,  y.shape[0], fo
+    m, n = e.shape
+    o, a, r3 = o.reshape(2*n, m).T, a.reshape(2*n, m).T, r3.reshape(2*n, m).T
+    if itn == 0: 
+        _s = atleast_1d(nanmax(a))
+    y, e, o, a, r3, _s = func7(y, e, o, a, r3, _s)
+
+    nodes = func11(y, e, o, a, _s, r3) if maxSolutions != 1 else func11(y, e, o, a, _s)
+    nodes.sort(key = lambda obj: obj.key)
+
+    if len(_in) == 0:
+        an = nodes
+    else:
+        arr1 = [node.key for node in _in]
+        arr2 = [node.key for node in nodes]
+        r10 = searchsorted(arr1, arr2)
+        an = insert(_in, r10, nodes)
+    
+    if maxSolutions != 1:
+        solutions, r6 = r13(y, e, r3, fTol, varTols, solutions, r6)
+        
+        p._nObtainedSolutions = len(solutions)
+        if p._nObtainedSolutions > maxSolutions:
+            solutions = solutions[:maxSolutions]
+            p.istop = 0
+            p.msg = 'user-defined maximal number of solutions (p.maxSolutions = %d) has been exeeded' % p.maxSolutions
+            return an, g, fo, None, solutions, r6, xRecord, frc, CBKPMV
+                
+    
+    p.iterfcn(xk)
+    if p.istop != 0: 
+        return an, g, fo, None, solutions, r6, xRecord, frc, CBKPMV
+    if isSNLE and maxSolutions == 1 and Min <= fTol:
+        # TODO: rework it for nonlinear systems with non-bound constraints
+        p.istop, p.msg = 1000, 'required solution has been obtained'
+        return an, g, fo, None, solutions, r6, xRecord, frc, CBKPMV
+    
+    
+    an, g = func9(an, fo, g)
+
+    nn = 1 if asdf1.isUncycled and all(isfinite(a)) and all(isfinite(o)) and p._isOnlyBoxBounded else maxNodes
+    
+    an, g = func5(an, nn, g)
+    nNodes.append(len(an))
+    return an, g, fo, _s, solutions, r6, xRecord, frc, CBKPMV
+
+
+def func11(y, e, o, a, _s, r3 = None): 
     m, n = y.shape
     o_modL, o_modU = o[:, 0:n], o[:, n:2*n]
     Tmp = nanmax(where(o_modU<o_modL, o_modU, o_modL), 1)
-    if FCl is None:
+    if r3 is None:
         return [si(Tmp[i], y[i], e[i], o[i], a[i], _s[i]) for i in range(m)]
     else:
-        return [si(Tmp[i], y[i], e[i], o[i], a[i], _s[i], FCl[i], FCu[i]) for i in range(m)]
+        r18, r19 = r3[:, :n], r3[:, n:]
+        return [si(Tmp[i], y[i], e[i], o[i], a[i], _s[i], r18[i], r19[i]) for i in range(m)]
 
 class si:
-    fields = ['key', 'y', 'e', 'o', 'a', '_s','FCl', 'FCu']
+    fields = ['key', 'y', 'e', 'o', 'a', '_s','r18', 'r19']
     def __init__(self, *args):
         for i in range(len(args)):
             setattr(self, self.fields[i], args[i])
