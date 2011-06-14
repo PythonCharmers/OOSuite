@@ -499,7 +499,7 @@ class oofun:
                 if any(ind):
                     isNonInteger = other != asarray(other, int) # TODO: rational numbers?
                     t_max[atleast_1d(logical_and(logical_and(ind, isNonInteger), ub < 0))] = nan
-                    t_min[atleast_1d(logical_and(logical_and(ind, logical_not(isNonInteger)), logical_and(t_min>0, ub >= 0)))] = 0.0
+                    t_min[atleast_1d(logical_and(ind, logical_and(t_min>0, ub >= 0)))] = 0.0
                 return t_min, t_max
         else:
             f = lambda x, y: asarray(x) ** y
