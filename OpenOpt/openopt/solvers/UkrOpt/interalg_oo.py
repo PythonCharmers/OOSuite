@@ -16,6 +16,10 @@ try:
 except ImportError:
     from numpy import nanmin, nanargmin, nanargmax
 
+try:
+    from ii_engine import *
+except ImportError:
+    pass
 
 class interalg(baseSolver):
     __name__ = 'interalg_0.21'
@@ -29,6 +33,7 @@ class interalg(baseSolver):
     #maxMem = '150MB'
     maxNodes = 150000
     maxActiveNodes = 150
+    #_requiresBestPointDetection = True
     
     __isIterPointAlwaysFeasible__ = lambda self, p: p.__isNoMoreThanBoxBounded__()
     _requiresFiniteBoxBounds = True
@@ -36,16 +41,28 @@ class interalg(baseSolver):
     def __init__(self): pass
     def __solver__(self, p):
         if not p.__isFiniteBoxBounded__(): 
-            p.err('solver %s requires finite lb, ub: lb <= x <= ub' % self.__name__)
+            p.err('''
+            solver %s requires finite lb, ub: 
+            lb <= x <= ub 
+            (you can use "implicitBoounds")
+            ''' % self.__name__)
         if p.fixedVars is not None:
             p.err('solver %s cannot handle FuncDesigner problems with some variables declared as fixed' % self.__name__)
         if p.probType in ('LP', 'MILP', 'MINLP'):
             p.err("the solver can't handle problems of type " + p.probType)
         if not p.isFDmodel:
             p.err('solver %s can handle only FuncDesigner problems' % self.__name__)
+        
             
         isSNLE = p.probType == 'NLSP'
+        if not p.__isNoMoreThanBoxBounded__ and not isSNLE:
+            p.warn('handling constraints by the solver interalg is undone properly yet for all problems except of SNLE')
+        
         isIP = p.probType == 'IP'
+        if isIP:
+            pb = r14IP
+        else:
+            pb = r14
         
         for val in p._x0.values():
             if isinstance(val,  (list, tuple, ndarray)) and len(val) > 1:
@@ -93,21 +110,15 @@ class interalg(baseSolver):
         solutions = []
         r6 = array([]).reshape(0, n)
         
-        
         dataType = self.dataType
         if type(dataType) == str:
             if not hasattr(numpy, dataType):
                 p.pWarn('your architecture has no type "%s", float64 will be used instead')
                 dataType = 'float64'
             dataType = getattr(numpy, dataType)
-        if isIP:
-            pass
-            #lb = 
-        else:
-            lb, ub = asarray(p.lb, dataType), asarray(p.ub, dataType)
 
-        
-        C = p.constraints
+        lb, ub = asarray(p.lb, dataType), asarray(p.ub, dataType)
+
         vv = p._freeVarsList
         fTol = p.fTol
         if fTol is None:
@@ -130,6 +141,7 @@ class interalg(baseSolver):
             frc = 0.0
             eqs = [fd_abs(elem) for elem in p.user.f]
             asdf1 = fd_sum(eqs)
+            #C.update([elem == 0 for elem in p.user.f])
         else:
             asdf1 = p.user.f[0]
             
@@ -139,7 +151,6 @@ class interalg(baseSolver):
                 if p.fOpt is not None:
                     fOpt = -p.fOpt
             
-                
             if fStart is not None and fStart < CBKPMV: 
                 frc = fStart
                 
@@ -188,6 +199,8 @@ class interalg(baseSolver):
         
         g = inf
         C = p._FD.nonBoxCons
+#        if isSNLE:
+#            C += [(elem, 0, 0) for elem in p.user.f]
         p._isOnlyBoxBounded = p.__isNoMoreThanBoxBounded__()
         
         # TODO: hanlde fixed variables here
@@ -212,27 +225,52 @@ class interalg(baseSolver):
         for itn in range(p.maxIter+10):
             ip = func10(y, e, vv)
             m = e.shape[0]
-            r15 = empty(m, bool)
-            r15.fill(True)
-            for f, r16, r17 in C:
-                o, a = func8(ip, f, dataType)
-                m = o.size/(2*n)
-                o, a  = o.reshape(2*n, m).T, a.reshape(2*n, m).T
-                lf1, lf2, uf1, uf2 = o[:, 0:n], o[:, n:2*n], a[:, 0:n], a[:, n:2*n]
-                o, a = nanmin(where(logical_or(lf1>lf2, isnan(lf1)), lf2, lf1), 1), nanmax(where(logical_or(uf1>uf2, isnan(uf2)), uf1, uf2), 1)
-                
-                ind = logical_and(a + p.contol > r16, o - p.contol < r17)
-                r15 = logical_and(r15, ind)
-                
-            ind = where(logical_not(r15))[0]
-            # TODO: use "take" instead
-            y, e = delete(y, ind, 0), delete(e, ind, 0)
-
+            if len(C) != 0:
+                r15 = empty(m, bool)
+                r15.fill(True)
+                r4_L_ind = empty((m, n), bool)
+                r4_U_ind = empty((m, n), bool)
+                r4_L_ind.fill(False)
+                r4_U_ind.fill(False)
+                for f, r16, r17 in C:
+                    o, a = func8(ip, f, dataType)
+                    m = o.size/(2*n)
+                    o, a  = o.reshape(2*n, m).T, a.reshape(2*n, m).T
+                    lf1, lf2, uf1, uf2 = o[:, 0:n], o[:, n:2*n], a[:, 0:n], a[:, n:2*n]
+                    o_ = where(logical_or(lf1>lf2, isnan(lf1)), lf2, lf1)
+                    a_ = where(logical_or(uf1>uf2, isnan(uf2)), uf1, uf2)
+                    o, a = nanmin(o_, 1), nanmax(a_, 1)
+                    
+                    ind = logical_and(a >= r16 - p.contol, o  <= r17 + p.contol) if r16 != r17 else logical_and(a >= r16, o  <= r17)
+                    r15 = logical_and(r15, ind)
+                    
+    #                ind = logical_or(o_ > r17 + p.contol, isnan(o_)) 
+    #                if any(ind):
+    #                    r4_L_ind = logical_or(r4_L_ind, ind)
+    #                    
+    #                ind = logical_or(a_ < r16 - p.contol, isnan(a_)) 
+    #                if any(ind):
+    #                    r4_U_ind = logical_or(r4_U_ind, ind)
+    #            
+    #            cs = 0.5*(y + e)
+    #            ind = r4_L_ind
+    #            if any(ind):
+    #                y[ind] = cs[ind]
+    #            ind = r4_U_ind
+    #            if any(ind):
+    #                e[ind] = cs[ind]
+                    
+                ind = where(r15)[0]
+                lj = ind.size
+                # TODO: use "take" instead
+                y = take(y, ind, axis=0, out=y[:lj])
+                e = take(e, ind, axis=0, out=e[:lj])
+            
             if y.size != 0:
                 an, g, fo, _s, solutions, r6, xRecord, frc, CBKPMV = \
-                r14(p, y, e, vv, asdf1, C, CBKPMV, itn, g, \
+                pb(p, y, e, vv, asdf1, C, CBKPMV, itn, g, \
                              nNodes, frc, fTol, maxSolutions, varTols, solutions, r6, _in, \
-                             dataType, isSNLE, maxNodes, _s, xRecord)
+                             dataType, maxNodes, _s, xRecord)
                 if _s is None:
                     break
             else:
@@ -242,7 +280,7 @@ class interalg(baseSolver):
             pnc = max((len(an), pnc))
             
             y, e, _in, _s = \
-            func12(an, self.maxActiveNodes, maxSolutions, solutions, r6, varTols, fo)
+            func12(an, self.maxActiveNodes, maxSolutions, solutions, r6, varTols, fo, 2) # Case=2
             nActiveNodes.append(y.shape[0]/2)
             if y.size == 0: 
                 if len(solutions) > 1:
@@ -252,8 +290,8 @@ class interalg(baseSolver):
                 break            
             
             # End of main cycle
-            
-        p.iterfcn(xRecord)
+        if not isSNLE and p.point(xRecord).betterThan(p.point(p.xk)):
+            p.iterfcn(xRecord)
         ff = p.fk # ff may be not assigned yet
         
         isFeas = p.isFeas(p.xk)

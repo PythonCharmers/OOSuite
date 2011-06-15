@@ -1,5 +1,6 @@
 from numpy import tile, isnan, array, atleast_1d, asarray, logical_and, all, searchsorted, logical_or, any, nan, isinf, \
-arange, vstack, inf, where, logical_not, take, argmax, argmin, abs, hstack, empty, insert, isfinite
+arange, vstack, inf, where, logical_not, take, argmax, argmin, abs, hstack, empty, insert, isfinite, append, atleast_2d, \
+prod
 from FuncDesigner import ooPoint
 
 try:
@@ -117,6 +118,7 @@ def func5(an, nn, g):
     return an, g
 
 def func4(y, e, o, a, fo):
+    if fo is None: return # used in IP
     cs = 0.5*(y + e)
     n = y.shape[1]
     o_modL, o_modU = o[:, 0:n], o[:, n:2*n]
@@ -136,14 +138,14 @@ def func3(an, maxActiveNodes):
         an1, _in = an, array([], object)
     return an1, _in
 
-def func1(y, e, o, a, varTols, _s_prev, r9 = None):
+def func1(y, e, o, a, _s_prev, Case, r9 = None):
     m, n = y.shape
     w = arange(m)
     #a = a.copy() # to remain it unchanged in higher stack level funcs
     #a[e-y<varTols] = nan
     
     #1
-    _s = func13(o, a)
+    _s = func13(o, a, Case)
     
     #2
     #_s = nanmin(a, 1)
@@ -203,20 +205,24 @@ def func1(y, e, o, a, varTols, _s_prev, r9 = None):
         
     return t, _s
     
-def func13(o, a): 
+def func13(o, a, case = 2): 
     m, n = o.shape
     n /= 2
-    case = 2
     if case == 1:
         U1, U2 = a[:, :n].copy(), a[:, n:] 
         #TODO: mb use nanmax(concatenate((U1,U2),3),3) instead?
         U1 = where(logical_or(U1<U2, isnan(U1)),  U2, U1)
         return nanmin(U1, 1)
-    elif case == 2:
-        L1, L2, U1, U2 = o[:, :n], o[:, n:], a[:, :n], a[:, n:] 
+        
+    L1, L2, U1, U2 = o[:, :n], o[:, n:], a[:, :n], a[:, n:] 
+    if case == 2:
         U = where(logical_or(U1<U2, isnan(U1)),  U2, U1)
         L = where(logical_or(L2<L1, isnan(L1)), L2, L1)
         return nanmax(U-L, 1)
+    elif case == 'IP': # IP
+        return nanmax(U1-L1+U2-L2, 1)
+    else: 
+        raise('bug in interalg kernel')
 
 def func2(y, e, t):
     new_y, en = y.copy(), e.copy()
@@ -232,7 +238,7 @@ def func2(y, e, t):
     return new_y, en
 
 
-def func12(an, maxActiveNodes, maxSolutions, solutions, r6, varTols, fo):
+def func12(an, maxActiveNodes, maxSolutions, solutions, r6, varTols, fo, Case):
     if len(an) == 0:
         return array([]), array([]), array([]), array([])
     _in = an
@@ -251,7 +257,7 @@ def func12(an, maxActiveNodes, maxSolutions, solutions, r6, varTols, fo):
         asarray([t._s for t in an1Candidates])
         
         yc, ec = func4(yc, ec, oc, ac, fo)
-        t, _s = func1(yc, ec, oc, ac, varTols, SIc)
+        t, _s = func1(yc, ec, oc, ac, SIc, Case)
         yc, ec = func2(yc, ec, t)
         _s = tile(_s, 2)
         
@@ -259,6 +265,7 @@ def func12(an, maxActiveNodes, maxSolutions, solutions, r6, varTols, fo):
             y, e = yc, ec
             break
         
+        # TODO: change cycle variable if len(solutions) >> maxActiveNodes
         for i in range(len(solutions)):
             ind = logical_and(all(yc >= r11[i], 1), all(ec <= r12[i], 1))
             if any(ind):
@@ -274,6 +281,7 @@ def func12(an, maxActiveNodes, maxSolutions, solutions, r6, varTols, fo):
         if len(_in) == 0 or N >= maxActiveNodes: 
             y, e, _s = vstack(y), vstack(e), hstack(S)
             break
+        
     return y, e, _in, _s
 
 def r13(y, e, r3, fTol, varTols, solutions, r6):
@@ -301,13 +309,18 @@ def r13(y, e, r3, fTol, varTols, solutions, r6):
     for c in r5:
         if len(solutions) == 0 or not any(all(abs(c - r6) < varTols, 1)): 
             solutions.append(c)
-            r6 = asarray(solutions)
+            #r6 = asarray(solutions)
+            r6 = append(r6, c.reshape(1, -1), 0)
             
     return solutions, r6
 
 def r14(p, y, e, vv, asdf1, C, CBKPMV, itn, g, nNodes,  \
-                 frc, fTol, maxSolutions, varTols, solutions, r6, _in, dataType, isSNLE, \
-                 maxNodes, _s, xRecord):
+         frc, fTol, maxSolutions, varTols, solutions, r6, _in, dataType, \
+         maxNodes, _s, xRecord):
+
+    isSNLE = p.probType == 'NLSP'
+    isIP = p.probType == 'IP'
+    
     ip = func10(y, e, vv)
         
     o, a = func8(ip, asdf1, dataType)
@@ -327,12 +340,16 @@ def r14(p, y, e, vv, asdf1, C, CBKPMV, itn, g, nNodes,  \
         frc = Min
     
     fo = 0.0 if isSNLE else min((frc, CBKPMV - (fTol if maxSolutions == 1 else 0.0))) 
+    
     #print itn,  y.shape[0], fo
     m, n = e.shape
     o, a, r3 = o.reshape(2*n, m).T, a.reshape(2*n, m).T, r3.reshape(2*n, m).T
+    
     if itn == 0: 
-        _s = atleast_1d(nanmax(a))
+        _s = atleast_1d(nanmax(a-o))
     y, e, o, a, r3, _s = func7(y, e, o, a, r3, _s)
+    
+    #y, e = func4(y, e, o, a, fo)
 
     nodes = func11(y, e, o, a, _s, r3) if maxSolutions != 1 else func11(y, e, o, a, _s)
     nodes.sort(key = lambda obj: obj.key)
@@ -376,8 +393,16 @@ def r14(p, y, e, vv, asdf1, C, CBKPMV, itn, g, nNodes,  \
 
 def func11(y, e, o, a, _s, r3 = None): 
     m, n = y.shape
-    o_modL, o_modU = o[:, 0:n], o[:, n:2*n]
-    Tmp = nanmax(where(o_modU<o_modL, o_modU, o_modL), 1)
+   
+    if r3 == "IP":
+        #unimplemented yet
+        #pass
+        ind = nanargmin(a[:, 0:n]-o[:, 0:n]+a[:, n:]-o[:, n:],1)
+        tmp2 = 0.25*(a[:, ind]+o[:, ind]+a[:, n+ind]+o[:, n+ind])
+        Tmp = prod(e-y, 1) * tmp2
+    else:
+        o_modL, o_modU = o[:, 0:n], o[:, n:2*n]
+        Tmp = nanmax(where(o_modU<o_modL, o_modU, o_modL), 1)
     if r3 is None:
         return [si(Tmp[i], y[i], e[i], o[i], a[i], _s[i]) for i in range(m)]
     else:
