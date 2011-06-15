@@ -46,7 +46,7 @@ def TrigonometryCriticalPoints(arg_infinum, arg_supremum):
         #if ind.size == 0: break
         if not any(ind): break
         tmp = atleast_1d(Copy(arg_infinum))
-        tmp[atleast_1d(ind)] = (arrN[ind]+i)*pi/2
+        tmp[atleast_1d(ind)] = asarray((arrN[ind]+i)*pi/2, dtype = tmp.dtype)
         Tmp.append(tmp)
     return Tmp
     # 6 instead of  5 for more safety, e.g. small numerical rounding effects
