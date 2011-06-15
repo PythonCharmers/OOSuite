@@ -19,6 +19,7 @@ from LLAVP import LLAVP as CLLAVP
 from LUNP import LUNP as CLUNP
 from SOCP import SOCP as CSOCP
 from DFP import DFP as CDFP
+from IP import IP as CIP
 
 
 '''
@@ -489,6 +490,11 @@ def NLLSP(*args, **kwargs):
     """
     return CNLLSP(*args, **kwargs)
 
+def IP(*args, **kwargs):
+    """
+    Integrate a function f: R^n -> R over a given domain lb_i <= x_i <= ub_i
+    """
+    return CIP(*args, **kwargs)
 
 def SLE(*args, **kwargs):
     """
