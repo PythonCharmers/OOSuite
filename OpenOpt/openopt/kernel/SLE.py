@@ -13,7 +13,6 @@ except:
     scipyInstalled = False
 
 class SLE(MatrixProblem):
-    #__optionalData__ = ['damp', 'X', 'c']
     expectedArgs = ['C', 'd']# for FD it should be Cd and x0
     probType = 'SLE'
     goal = 'solution'

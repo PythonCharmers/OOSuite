@@ -9,7 +9,7 @@ class LUNP(MatrixProblem):
     goal = 'minimum'
     allowedGoals = ['minimum', 'min']
     showGoal = False
-    #__optionalData__ = ['damp', 'X', 'c']
+    _optionalData = []
     expectedArgs = ['C', 'd']
     def __init__(self, *args, **kwargs):
         MatrixProblem.__init__(self, *args, **kwargs)
