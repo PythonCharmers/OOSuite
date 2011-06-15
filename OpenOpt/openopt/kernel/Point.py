@@ -298,7 +298,8 @@ class Point:
             elif point2compareResidual > self.p.contol and point2compareResidual > mr: return True
         else: # got here means self_nNaNs = point2compare_nNaNs but not equal to 0
             if mr == 0 and point2compareResidual == 0: 
-                self.p.err('you should provide at least one active constraint in each point from R^n where some constraints are undefined')
+                if not self.p.solver.__name__.startswith('interalg'):
+                    self.p.err('you should provide at least one active constraint in each point from R^n where some constraints are undefined')
             return mr < point2compareResidual
 
         point2compareF_is_NaN = isnan(point2compare.f())
