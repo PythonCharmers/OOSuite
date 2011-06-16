@@ -22,7 +22,7 @@ This test runs ~ a minute on my AMD 3800+
 """
 noise = 1e-8
 
-from openopt import NLSP
+from openopt import SNLE
 from numpy import asfarray, zeros, cos, sin, arange, cosh, sinh, log10, ceil, floor, arange, inf, nanmin, nanmax
 from time import time
 from scipy import rand
@@ -79,7 +79,7 @@ print '---------- fsolve fails ----------'
 t = time()
 print 'N log10(MaxResidual) MaxResidual'
 for i in xrange(N):
-    p = NLSP(f, x0, ftol = desired_ftol - noise*len(x0), iprint = -1, maxFunEvals = int(1e7))
+    p = SNLE(f, x0, ftol = desired_ftol - noise*len(x0), iprint = -1, maxFunEvals = int(1e7))
     r = p.solve('scipy_fsolve')
     v = fvn(r.xf)
     fs.append(log10(v))
@@ -98,7 +98,7 @@ print '---------- nssolve fails ---------'
 nssolve_failed, ns = 0, []
 print 'N log10(MaxResidual) MaxResidual'
 for i in xrange(N):
-    p = NLSP(f, x0, ftol = desired_ftol - noise*len(x0), iprint = -1, maxFunEvals = int(1e7))
+    p = SNLE(f, x0, ftol = desired_ftol - noise*len(x0), iprint = -1, maxFunEvals = int(1e7))
     r = p.solve('nssolve')
     #r = p.solve('nlp:amsg2p')
     #r = p.solve('nlp:ralg')
