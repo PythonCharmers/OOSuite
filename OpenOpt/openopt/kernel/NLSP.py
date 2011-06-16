@@ -23,6 +23,8 @@ class NLSP(NonLinProblem):
     
     def __init__(self, *args, **kwargs):
         NonLinProblem.__init__(self, *args, **kwargs)
+        if 'is_oovar' in dir(self.f):
+            self.f = [self.f]
 
     def objFuncMultiple2Single(self, fv):
         return norm(atleast_1d(asfarray(fv)), inf)
