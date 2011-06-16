@@ -1,48 +1,70 @@
 from FuncDesigner import *
 from openopt import *
 
-a, b, c, d, e, f = oovars('a', 'b', 'c', 'd', 'e', 'f')
+x, y, z, u, v, t = oovars('x y z u v t')
 F =  [
-      (log(a+5)+cos(b) == 1.0)(tol=1e-10), 
-      (a**3 + c == -1.5)(tol=1e-5), 
-      d**3 + sqrt(abs(e)) == 0.5,#unassigned tol will be taken from p.ftol, default 10^-6
-      abs(f)**1.5 + abs(b)**0.1 == 10,
-      sinh(e)+arctan(c) == 4,  
-      c**15 == d + e
+      (log(x+5)+cos(y) == 1.0)(tol=1e-10), 
+      (x**3 + z == -1.5)(tol=1e-5), 
+      u**3 + sqrt(abs(v)) == 0.5,#unassigned tol will be taken from p.ftol, default 10^-6
+      abs(t)**1.5 + abs(y)**0.1 == 10,
+      sinh(v)+arctan(z) == 4,  
+      z**15 == u + v
       ]
 
-startPoint = {a:0.51, b:0.52, c:0.53, d:0.54, e:0.55, f:0.56} # doesn't matter for interalg, matters for other solvers
+startPoint = {x:0.51, y:0.52, z:0.53, u:0.54, v:0.55, t:0.56} # doesn't matter for interalg, matters for other solvers
 
-solver='interalg' # set it to scipy_fsolve to ensure that the solver cannot handle the system
-p = NLSP(F, startPoint, ftol = 1e-15)
+solver='interalg' # set it to scipy_fsolve to ensure that the solver cannot find any solution of the system
+p = SNLE(F, startPoint, ftol = 1e-10)
 # interalg requires finite box bounds on variables while scipy_fsolve cannot handle any constraints.
 # To set box bounds you can do either 
-#p.constraints = (a>-10, a<20, b>-20, b<10, c>-30, c<30, d>-32, d<32, e>-21, e<20, f>-10, f<10)
+#p.constraints = (x>-10, x<20, y>-20, y<10, z>-30, z<30, u>-32, u<32, v>-21, v<20, t>-10, t<10)
 # or
 p.implicitBounds=[-10, 10] # to affect all variables without assigned bounds
 
-r = p.solve(solver, iprint = 0)
-print(r(a, b, c, d, e, f))
+# you can add some constraints, e.g. p.constraints = t**2+y>10 or p.constraints = [sin(t)>0, y<0] or [sin(t+i) + y < 2*i for i in range(5)]
+
+# without ALL positive tolerances on ALL variables number of solutions is infinite
+x.tol = y.tol = z.tol = u.tol = v.tol = t.tol = 1e-5
+# alternatively, you could use x, y, z, u, v, t = oovars('x y z u v t', tol = 1e-5)
+# solutions s1 and s2 are equivalent if and only if |s1_variable[i]-s2_variable[i]| <= variable[i].tol for all variables
+r = p.solve(solver, dataType='float64', maxSolutions = 1000, maxActiveNodes = 150, iprint = 10)# also you can use 'all' or 0, but sometimes it can be out of memory
 '''
 solver: interalg_0.21   problem: unnamed    type: NLSP
  iter   objFunVal   
     0  8.644e+00 
-OpenOpt info: Solution with required tolerance 1.0e-15 
- is guarantied (obtained precision: 4.4e-16)
-   91  4.441e-16 
-istop: 1000 (optimal solution obtained)
-Solver:   Time Elapsed = 0.68 	CPU Time Elapsed = 0.66
-objFunValue: 4.4408921e-16 (feasible, MaxResidual = 0)
-[-1.3563248494740674, -4.415033438436291, 0.9951183825864978, -0.9557107106921257, 1.88493645609756, 4.2752850759741]
-solver: scipy_fsolve   problem: unnamed    type: NLSP
- iter   objFunVal   
-    0  8.644e+00 
-/usr/lib/python2.7/dist-packages/scipy/optimize/minpack.py:156: RuntimeWarning: The iteration is not making good progress, as measured by the 
-  improvement from the last ten iterations.
-  warnings.warn(msg, RuntimeWarning)
-    1  8.644e+00 
-istop: -101.0
-Solver:   Time Elapsed = 0.04 	CPU Time Elapsed = 0.04
-NO FEASIBLE SOLUTION is obtained (MaxResidual = 0, objFunc = 8.6442348)
-[0.51, 0.52, 0.53, 0.54, 0.55, 0.56]
+   10  3.943e+00 
+   20  2.248e+00 
+   30  8.349e-05 
+   40  9.681e-08 
+   50  4.327e-10 
+OpenOpt info: Solution with required tolerance 1.0e-10 
+ is guarantied (obtained precision: 3.9e-11)
+   56  3.904e-11 
+istop: 1001 (optimal solutions obtained)
+Solver:   Time Elapsed = 0.42 	CPU Time Elapsed = 0.42
+12 solutions have been obtained
 '''
+# r.solutions is Python dict with the obtained  solutions
+# Let's perform some analysis on them:
+from numpy import amin, amax
+SolutionsCoords = [(v,  [v(s) for s in r.solutions]) for v in (x, y, z, u, v, t)]
+SolutionsCoords.sort(key=lambda elem: amax(elem[1])-amin(elem[1]))
+for v, coords in SolutionsCoords:
+    print('variable %s is bounded in range of length %0.1e' % (v.name, amax(coords)-amin(coords)))
+'''
+variable v is bounded in range of length 0.0e+00
+variable z is bounded in range of length 4.5e-12
+variable u is bounded in range of length 9.1e-12
+variable x is bounded in range of length 2.0e-07
+variable t is bounded in range of length 8.6e+00
+variable y is bounded in range of length 1.6e+01
+'''
+# So only t and y differ essentially.
+# Let's plot them:
+S = dict(SolutionsCoords)
+from pylab import *
+scatter(S[t], S[y], marker = (5, 1, 0), s=75)
+xlabel('t'); ylabel('y')
+grid(1)
+show()
+
