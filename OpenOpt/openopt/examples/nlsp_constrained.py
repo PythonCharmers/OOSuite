@@ -16,7 +16,7 @@ and hence using h(x)=0 constraints is not 100% same
 to some additional f coords
 """
 
-from openopt import NLSP
+from openopt import SNLE
 from numpy import *
 
 # you can define f in several ways:
@@ -40,15 +40,14 @@ def df(x):
 x0 = [8,15, 80]
 
 #w/o gradient:
-#p = NLSP(f, x0)
+#p = SNLE(f, x0)
 
-p = NLSP(f, x0, df = df, maxFunEvals = 1e5, iprint = 10, plot=1, ftol = 1e-8, contol=1e-15)
+p = SNLE(f, x0, df = df, maxFunEvals = 1e5, iprint = 10, plot=1, ftol = 1e-8, contol=1e-15)
 
 #optional: user-supplied gradient check:
 #p.checkdf()
 
 #optional: graphical output, requires matplotlib installed
-#plot doesn't work correctly for constrained NLSP yet
 #p.plot = 1
 
 #set some constraints
@@ -59,13 +58,13 @@ p.lb[2], p.ub[2] = 145, 150
 p.c = lambda x: (x[2] - 146)**2-1.5
 # optional: gradient
 p.dc = lambda x: asfarray((0, 0, 2*(x[2]-146)))
-# also you could set it via p=NLSP(f, x0, ..., c = c, dc = dc)
+# also you could set it via p=SNLE(f, x0, ..., c = c, dc = dc)
 
 #optional: user-supplied dc check:
 #p.checkdc()
 
 #r = p.solve('nssolve', debug=0, maxIter=1e9)
-# using nlsp2nlp converter, try to minimize sum(f_i(x)^2):
+# using converter to nlp, try to minimize sum(f_i(x)^2):
 r = p.solve('nlp:ralg', xlabel='iter', iprint=10, plot=1)
 
 print('solution: %s' % r.xf)

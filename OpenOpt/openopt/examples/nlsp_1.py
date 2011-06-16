@@ -5,7 +5,7 @@ x[0]-0.5*x[1] = 0
 cos(x[2])+x[0]-1.5 = 0
 """
 
-from openopt import NLSP
+from openopt import SNLE
 from numpy import asfarray, zeros, cos, sin
 
 #f = lambda x: (x[0]**3+x[1]**3-9, x[0]-0.5*x[1], cos(x[2])+x[0]-1.5)
@@ -22,8 +22,8 @@ x0 = [8,15, 80]
 df = (lambda x: [3*x[0]**2, 3*x[1]**2,  0], lambda x: [1, -0.5,  0], lambda x:[1, 0, -sin(x[2])])
 
 #w/o gradient:
-#p = NLSP(f, x0)
-p = NLSP(f, x0, df = df)
+#p = SNLE(f, x0)
+p = SNLE(f, x0, df = df)
 
 #optional: user-supplied gradient check:
 #p.checkdf()
@@ -36,7 +36,7 @@ p.iprint = 10
 
 #r = p.solve('scipy_fsolve')
 #r = p.solve('nssolve')
-#or using converter nlsp2nlp, try to minimize sum(f_i(x)^2):
+#or using converter to nlp, try to minimize sum(f_i(x)^2):
 r = p.solve('nlp:ralg', plot=1)
 
 print('solution: %s' % r.xf)
