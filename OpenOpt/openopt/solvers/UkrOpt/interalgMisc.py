@@ -284,10 +284,10 @@ def func12(an, maxActiveNodes, maxSolutions, solutions, r6, varTols, fo, Case):
         
     return y, e, _in, _s
 
-def r13(y, e, r3, fTol, varTols, solutions, r6):
+def r13(y, e, o, a, r3, fTol, varTols, solutions, r6):
     n = r3.shape[1] / 2
     r18, r19 = r3[:, :n], r3[:, n:]
-    r5_L, r5_U =  where(r18 < fTol), where(r19 < fTol)
+    r5_L, r5_U =  where(logical_and(r18 < fTol, o[:, :n] == 0.0)), where(logical_and(r19 < fTol, o[:, n:] == 0.0))
     r4 = 0.5 * (y + e)
     r20 = 0.5 * (e - y)
     r5 = []
@@ -363,7 +363,7 @@ def r14(p, y, e, vv, asdf1, C, CBKPMV, itn, g, nNodes,  \
         an = insert(_in, r10, nodes)
     
     if maxSolutions != 1:
-        solutions, r6 = r13(y, e, r3, fTol, varTols, solutions, r6)
+        solutions, r6 = r13(y, e, o, a, r3, fTol, varTols, solutions, r6)
         
         p._nObtainedSolutions = len(solutions)
         if p._nObtainedSolutions > maxSolutions:
