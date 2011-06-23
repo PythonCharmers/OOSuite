@@ -17,17 +17,32 @@ from GUI import manage
 from oologfcn import OpenOptException
 from nonOptMisc import oosolver
 
+isE = False
 try:
     import enthought
+    isE = True
+except ImportError:
+    pass
+try:
+    import etsproxy
+    isE = True
+except ImportError:
+    pass
+try:
+    import chaco   
+    isE = True
+except ImportError:
+    pass
+
+if isE:
     s = """
-    Seems like you are using OpenOpt from Enthought Python Distribution; 
-    consider using free GPL-licensed alternatives 
+    Seems like you are using OpenOpt from Enthought Python Distribution;
+    consider using free GPL-licensed alternatives
     PythonXY (http://www.pythonxy.com) or
     Sage (http://sagemath.org) instead.
     """
     print(s)
-except ImportError:
-    pass
+
     
 #__all__ = filter(lambda s:not s.startswith('_'),dir())
 
