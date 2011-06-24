@@ -7,7 +7,9 @@ bounds_x = (-20, 10) # integral over whole (-inf, inf) is 1.0
 from FuncDesigner import *
 from openopt import IP
 x = oovar('x') 
-f = ff(x) # or mere f = exp(-x**2/(2*sigma)) / sqrt(2*pi*sigma)
+# f = ff(x) 
+# or mere 
+f = exp(-x**2/(2*sigma)) / sqrt(2*pi*sigma)
 
 domain = {x: bounds_x}
 p = IP(f, domain, ftol = 0.001)

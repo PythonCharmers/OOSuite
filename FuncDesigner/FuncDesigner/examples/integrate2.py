@@ -9,7 +9,9 @@ bounds_y = (-15, 5)
 from FuncDesigner import *
 from openopt import IP
 x, y = oovars('x y') 
-f = ff(y, x)
+#f = ff(y, x) 
+# or 
+f = (exp(-(x-0.1)**2/(2*sigma)) * exp(-(y+0.2)**2/(2*sigma))) / (2*pi*sigma)
 
 domain = {x: bounds_x, y: bounds_y}
 p = IP(f, domain, ftol = 5e-2)

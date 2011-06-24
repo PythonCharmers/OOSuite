@@ -14,7 +14,9 @@ bounds_z = (-0.2, 0.2)
 from FuncDesigner import *
 from openopt import IP
 x, y, z = oovars('x y z') 
-f = ff(z, y, x)
+# f = ff(z, y, x)
+# or 
+f = exp(-(x+0.15)**2/(2*sigma)) / sqrt(2*pi*sigma) + cos(y)*sin(z)*cos(2*x)
 
 domain = {x: bounds_x, y: bounds_y,  z: bounds_z}
 p = IP(f, domain, ftol = 0.05)
