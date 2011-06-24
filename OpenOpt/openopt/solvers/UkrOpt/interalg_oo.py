@@ -3,7 +3,7 @@ from numpy import isfinite, all, argmax, where, delete, array, asarray, inf, arg
 logical_and, float64, ceil, amax, inf, ndarray, isinf, any, logical_or, nan, take, logical_not, asanyarray, searchsorted, \
 logical_xor, empty
 from numpy.linalg import norm, solve, LinAlgError
-from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X,  SMALL_DELTA_F, MAX_NON_SUCCESS
+from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X,  SMALL_DELTA_F, MAX_NON_SUCCESS, IS_NAN_IN_X
 from openopt.kernel.baseSolver import *
 from openopt.kernel.Point import Point
 from openopt.solvers.UkrOpt.interalgMisc import *
@@ -35,7 +35,7 @@ class interalg(baseSolver):
     maxActiveNodes = 150
     #_requiresBestPointDetection = True
     
-    __isIterPointAlwaysFeasible__ = lambda self, p: p.__isNoMoreThanBoxBounded__()
+    __isIterPointAlwaysFeasible__ = lambda self, p: p.__isNoMoreThanBoxBounded__() #and p.probType != 'IP'
     _requiresFiniteBoxBounds = True
 
     def __init__(self): pass
@@ -61,6 +61,12 @@ class interalg(baseSolver):
         isIP = p.probType == 'IP'
         if isIP:
             pb = r14IP
+            p._F = asarray(0, self.dataType)
+            p._residual = 0.0
+            f_int = p.user.f[0].interval(p.domain)
+            p._r0 = prod(p.ub-p.lb) * (f_int.ub - f_int.lb)
+            p._volume = 0.0
+            p.kernelIterFuncs.pop(IS_NAN_IN_X)
         else:
             pb = r14
         
@@ -121,6 +127,16 @@ class interalg(baseSolver):
 
         vv = p._freeVarsList
         fTol = p.fTol
+        if isIP:
+            if p.ftol is None:
+                if fTol is not None:
+                    p.ftol = fTol
+                else:
+                    p.err('for intergration problems interalg requires user-supplied ftol (required precision)')
+            if fTol is None: fTol = p.ftol
+            elif fTol != p.ftol:
+                p.err('you have provided both ftol and fTol for intergation problem')
+
         if fTol is None:
             fTol = 1e-7
             p.warn('solver %s require p.fTol value (required objective function tolerance); 10^-7 will be used' % self.__name__)
@@ -275,12 +291,15 @@ class interalg(baseSolver):
                     break
             else:
                 an = _in
-                #fo = nan
                 fo = 0.0 if isSNLE else min((frc, CBKPMV - (fTol if maxSolutions == 1 else 0.0))) 
             pnc = max((len(an), pnc))
             
-            y, e, _in, _s = \
-            func12(an, self.maxActiveNodes, maxSolutions, solutions, r6, varTols, fo, 2) # Case=2
+            if isIP:
+                y, e, _in, _s = \
+                    func12(an, self.maxActiveNodes, maxSolutions, solutions, r6, varTols, inf, 'IP')# Case=3
+            else:
+                y, e, _in, _s = \
+                func12(an, self.maxActiveNodes, maxSolutions, solutions, r6, varTols, fo, 2) # Case=2
             nActiveNodes.append(y.shape[0]/2)
             if y.size == 0: 
                 if len(solutions) > 1:
@@ -290,11 +309,14 @@ class interalg(baseSolver):
                 break            
             
             # End of main cycle
-        if not isSNLE and p.point(xRecord).betterThan(p.point(p.xk)):
+        if not isSNLE and not isIP and p.point(xRecord).betterThan(p.point(p.xk)):
             p.iterfcn(xRecord)
         ff = p.fk # ff may be not assigned yet
-        
-        isFeas = p.isFeas(p.xk)
+        if isIP: 
+            p.xk = array([nan]*p.n)
+            p.rk = p._residual
+            p.fk = p._F
+        isFeas = p.isFeas(p.xk) if not isIP else p.rk < p.ftol
         if not isFeas and p.istop > 0:
             p.istop, p.msg = -1000, 'no feasible solution has been obtained'
         
@@ -315,9 +337,10 @@ class interalg(baseSolver):
             o = -o
         tmp = [nanmin(hstack((ff, g, o.flatten()))), numpy.asscalar(array((ff if p.goal not in ['max', 'maximum'] else -ff)))]
         if p.goal in ['max', 'maximum']: tmp = tmp[1], tmp[0]
-        p.extras['extremumBounds'] = tmp
+        p.extras['extremumBounds'] = tmp if not isIP else 'unimplemented for IP yet'
         
         p.solutions = [p._vector2point(s) for s in solutions]
+        if p.maxSolutions == 1: delattr(p, 'solutions')
         if p.iprint >= 0:
             s = 'Solution with required tolerance %0.1e \n is%s guarantied (obtained precision: %0.1e)' \
                    %(fTol, '' if p.extras['isRequiredPrecisionReached'] else ' NOT', tmp[1]-tmp[0])
