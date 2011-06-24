@@ -1,35 +1,28 @@
-"""
-Example of FuncDesigner functions integration
-Currently scipy.intergate.quad is used (Fortan library QUADPACK, (R^n->R^1 only),
-maybe in future higher order solvers will be connected,
-e.g. scipy.intergate dblquad, tplquad, quadrature, fixed_quad, trapz etc
-"""
+from numpy import pi, sqrt
+
+sigma = 1e-4
+ff = lambda x:  exp(-x**2/(2*sigma)) / sqrt(2*pi*sigma)
+bounds_x = (-20, 10) # integral over whole (-inf, inf) is 1.0
+
 from FuncDesigner import *
-a, b, c = oovars('a', 'b', 'c') 
-f1,  f2 = sin(a)+cosh(b), 2*b+3*c.sum()
-f3 = 2*a*b*prod(c) + f1*cos(f2)
+from openopt import IP
+x = oovar('x') 
+f = ff(x) # or mere f = exp(-x**2/(2*sigma)) / sqrt(2*pi*sigma)
 
-point1 = {a:1, b:2, c:[3, 4, 5]}
-point2 = {a: -10.4, b: 2.5,  c:[3.2, 4.8]}
+domain = {x: bounds_x}
+p = IP(f, domain, ftol = 0.001)
+r = p.solve('interalg', maxIter = 5000, maxNodes = 500000, maxActiveNodes = 150, plot=1)
+print('interalg result: %f' % p._F)
+'''interalg result: 1.000006 (usually solution, obtained by interalg, has real residual 10-100-1000 times less 
+than required tolerance, because interalg works with "most worst case" that extremely rarely occurs. 
+Unfortunately, real obtained residual cannot be revealed).
+Now let's ensure scipy.integrate quad fails to solve the problem and mere lies about obtained residual: '''
 
-# Usage:
-# myOOFun = integrator(integration_oofun, domain) 
-# where domain is tuple (integration_oovar, lower_bound,  upper_bound)
-
-domain = (b, -1, 1)
-f4 = integrator(f1+2*f2+3*f3, domain)
-print(f4(point1), f4(point2)) # Expected output: 147.383792876, 102.143425528
-
-#                               integral bounds can be oofuns as well:
-
-f5 = integrator(f1+2*f2+3*f3, (a, 10.4, f2+5*sin(f1)))
-print(f5(point1), f5(point2)) # Expected output: 404683.969794 107576.397664
-
-from numpy import inf
-f6 = integrator(1/(1+a**2+b**2+sum(c**2)), (a, 10+cos(f2+2*f3), inf))
-print(f6(point1), f6(point2)) # Expected output: 0.0847234400308 0.0905041349188
-
-f7 = integrator(f1+2*f2+3*sqrt(abs(f3)), (a, cos(f2+2*f3), f2+5*sin(f1)) )
-print(f7(point1), f7(point2)) # Expected output: 9336.70442146 5259.53130904
-
-
+from scipy.integrate import quad
+val, abserr = quad(ff, bounds_x[0], bounds_x[1])
+print('scipy.integrate quad value: %f   declared residual: %f' % (val, abserr)) 
+'''scipy.integrate quad value: 0.000000   declared residual: 0.000000
+While scipy quad fails already for sigma = 10^-4, interalg works perfectly even for sigma  = 10^-30:
+Solver:   Time Elapsed = 2.34 	CPU Time Elapsed = 2.28
+interalg result: 1.000066
+'''
