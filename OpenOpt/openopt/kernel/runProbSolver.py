@@ -194,7 +194,7 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     p.cpuTimeStart = clock()
     
     # TODO: move it into solver parameters
-    if p.probType != 'MINLP':
+    if p.probType not in ('MINLP', 'IP'):
         p.plotOnlyCurrentMinimum = p.__isNoMoreThanBoxBounded__()
 
 
@@ -217,7 +217,7 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
         else:
             nErr = check(p)
             if nErr: p.err("prob check results: " +str(nErr) + "ERRORS!")#however, I guess this line will be never reached.
-            p.iterfcn(p.x0)
+            if p.probType != 'IP': p.iterfcn(p.x0)
             if hasSetproctitleModule:
                 try:
                     originalName = setproctitle.getproctitle()
@@ -272,7 +272,9 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     if p.isFeas(p.xf) and (not p.probType=='MINLP' or p.discreteConstraintsAreSatisfied(p.xf)):
         p.isFeasible = True
     else: p.isFeasible = False
-    p.fk = p.objFunc(p.xk)
+    if p.probType == 'IP':
+        p.isFeasible = p.rk < p.ftol
+    if p.probType != 'IP': p.fk = p.objFunc(p.xk)
     if not hasattr(p,  'ff') or any(p.ff==nan): 
         p.iterfcn, tmp_iterfcn = lambda *args: None, p.iterfcn
         p.ff = p.objFunc(p.xf)
@@ -287,7 +289,7 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     #if not hasattr(p, 'xf'): p.xf = p.xk
     if type(p.xf) in (list, tuple) or isscalar(p.xf): p.xf = asarray(p.xf)
     p.xf = p.xf.flatten()
-    p.rf = p.getMaxResidual(p.xf)
+    p.rf = p.getMaxResidual(p.xf) if not p.probType == 'IP' else p.rk
 
     if not p.isFeasible and p.istop > 0: p.istop = -100-p.istop/1000.0
     p.stopcase = stopcase(p)
@@ -346,7 +348,7 @@ def finalTextOutput(p, r):
                 nNaNsMsg = ('%d constraints are equal to NaN, ' % nNaNs)
             p.disp('NO FEASIBLE SOLUTION is obtained (%s%s, objFunc = %0.8g)' % (nNaNsMsg,  rMsg, r.ff))
         else:
-            if len(p.solutions) == 1:
+            if p.maxSolutions == 1:
                 msg = "objFunValue: " + (p.finalObjFunTextFormat % r.ff)
                 if not p.isUC: msg += ' (feasible, %s)' % rMsg
             else:
@@ -388,16 +390,17 @@ class OpenOptResult:
                 self._xf = dict([(v.name, asscalar(val) if isinstance(val, ndarray) and val.size ==1 else val) for v, val in p.xf.items()])
         else:
             self.xf = p.xf
-        if len(p.solutions) == 0 and p.isFeas(p.xk): p.solutions = [p.xk]
+        #if len(p.solutions) == 0 and p.isFeas(p.xk): p.solutions = [p.xk]
+        
         # TODO: mb perform check on each solution for more safety?
         # although it can slow down calculations for huge solutions number
-        self.solutions = p.solutions 
+        #self.solutions = p.solutions 
 
         self.elapsed = dict()
         self.elapsed['solver_time'] = round(100.0*(time() - p.timeStart))/100.0
         self.elapsed['solver_cputime'] = clock() - p.cpuTimeStart
 
-        for fn in ('ff', 'istop', 'duals', 'isFeasible', 'msg', 'stopcase', 'iterValues',  'special', 'extras'):
+        for fn in ('ff', 'istop', 'duals', 'isFeasible', 'msg', 'stopcase', 'iterValues',  'special', 'extras', 'solutions'):
             if hasattr(p, fn):  setattr(self, fn, getattr(p, fn))
 
         if hasattr(p.solver, 'innerState'):

@@ -269,6 +269,7 @@ class Graphics:
             if isNewTrajectory:
                 p2 = pylab.plot([xx[0]], [yy2[0]], color = color, marker = self.specifierStart,  markersize = self.markerSize)
                 p3 = pylab.plot([xx[0], xx[0]+1e-50], [yy2[0], yy2[0]], color = color, markersize = self.markerSize)
+                p._p3 = p3
                 if p.legend == '': pylab.legend([p3[0]], [p.solver.__name__], shadow = True)
                 elif type(p.legend) in (tuple, list): pylab.legend([p3[0]], p.legend, shadow = True)
                 else: pylab.legend([p3[0]], [p.legend], shadow = True)
@@ -277,6 +278,7 @@ class Graphics:
                 pylab.plot(xx, ravel(yy2), color + specifier, marker = usualMarker, markersize = self.iterMarkerSize)
 
             if p.isFinished:
+                pylab.legend([p._p3[0]], [p.solver.__name__], shadow = True, loc=0)
                 #xMin, xMax = [], []
                 if p.istop<0:
                     if stopcase(p.istop) == 0: # maxTime, maxIter, maxCPUTime, maxFunEvals etc exeeded
@@ -317,6 +319,7 @@ class Graphics:
                         mew = self.markerEdgeWidth, mec = self.axMarkerEdgeColor, mfc = self.axFaceColor)
                     pylab.subplot(self.nSubPlots, 1, 1)
                     pylab.plot([xmax], [yy2[-1]],  color='w')
+                    
 
 
 

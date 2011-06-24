@@ -66,12 +66,16 @@ class baseSolver:
             elif 'rk' in kwargs.keys(): 
                 #p.pWarn('executing deprecated code, inform developers')
                 p.rk = kwargs['rk']
-
-            # TODO: MODIFY IT SOMEHOW to prevent possible recalculations
-        p.rk, p.rtk, p.rik = p.getMaxResidual(p.xk, True)
+            else:
+                p.rk, p.rtk, p.rik = p.getMaxResidual(p.xk, True)
+            
+        
         p.iterValues.r.append(ravel(p.rk)[0])
-        p.iterValues.rt.append(p.rtk)
-        p.iterValues.ri.append(p.rik)
+        if p.probType != 'IP':
+            # recalculations are not performed
+            p.rk, p.rtk, p.rik = p.getMaxResidual(p.xk, True)
+            p.iterValues.rt.append(p.rtk)
+            p.iterValues.ri.append(p.rik)
         if p._baseClassName == 'NonLin': p.iterValues.nNaNs.append(p.nNaNs)
 
         #TODO: handle kwargs correctly! (decodeIterFcnArgs)

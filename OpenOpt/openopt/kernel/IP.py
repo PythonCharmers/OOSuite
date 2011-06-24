@@ -11,6 +11,7 @@ class IP(NonLinProblem):
     showGoal = False
     _optionalData = []
     expectedArgs = ['f', 'domain']
+    ftol = None
     def __init__(self, *args, **kwargs):
         NonLinProblem.__init__(self, *args, **kwargs)
         f, domain = args[:2]
