@@ -18,21 +18,25 @@ __version__ = '0.34'
 
 isE = False
 try:
-    import enthought
-    isE = True
-except ImportError:
-    pass
-try:
     import etsproxy
     isE = True
 except ImportError:
     pass
 try:
-    import chaco
+    import chaco   
     isE = True
 except ImportError:
     pass
-
+try:
+    import xy
+    isE = False
+except ImportError:
+    pass
+try:
+    import enthought
+    isE = True
+except ImportError:
+    pass
 if isE:
     s = """
     Seems like you are using OpenOpt from Enthought Python Distribution;
