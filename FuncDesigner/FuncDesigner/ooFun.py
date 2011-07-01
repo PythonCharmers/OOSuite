@@ -423,8 +423,14 @@ class oofun:
                 lb2, ub2 = other._interval(domain, dtype)
             else:
                 lb2, ub2 = other, other # TODO: improve it
+                
+            # Changes
+            if all(lb2 >= 0) and all(lb1 >= 0):
+                t_min, t_max = atleast_1d(lb1 * lb2), atleast_1d(ub1 * ub2)
+            elif isscalar(other):
+            # changes end
             
-            if isscalar(other):
+            #if isscalar(other):
                 t_min, t_max = (lb1 * other, ub1 * other) if other >= 0 else (ub1 * other, lb1 * other)
                 #t_min, t_max = asdf(lb1, ub1, other)#, ub1 * other) if other >= 0 else (ub1 * other, lb1 * other)
             else:
@@ -1546,6 +1552,14 @@ class ooarray(ndarray):
     # TODO: check why it doesn't work with oofuns
     def __radd__(self, other):
         return self + other
+        
+    def __rmul__(self, other):
+        return self * other
+
+    # TODO : fix it
+#    def __rdiv__(self, other):
+#        return self * other
+    
     
     def __pow__(self, other):
         if self.dtype == object:
