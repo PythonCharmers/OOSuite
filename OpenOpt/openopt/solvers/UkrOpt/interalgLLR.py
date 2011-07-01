@@ -70,7 +70,7 @@ def getr4Values(domain, func, C, contol, dataType):
     cs.isMultiPoint = True
     
     # TODO: improve it
-    m = domain.values()[0][0].size
+    m = list(domain.values())[0][0].size
     
     r15 = empty(m, bool)
     r15.fill(True)

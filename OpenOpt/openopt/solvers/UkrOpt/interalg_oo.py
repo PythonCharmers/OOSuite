@@ -125,7 +125,8 @@ class interalg(baseSolver):
 
         lb, ub = asarray(p.lb, dataType), asarray(p.ub, dataType)
 
-        vv = p._freeVarsList
+        vv = list(p._freeVarsList)
+
         fTol = p.fTol
         if isIP:
             if p.ftol is None:
