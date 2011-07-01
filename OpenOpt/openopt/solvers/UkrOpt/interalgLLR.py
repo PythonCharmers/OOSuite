@@ -23,7 +23,21 @@ def func10(y, e, vv):
         #t1, t2 = T1[:, i], T2[:, i]
         #T1[(n+i)*m:(n+i+1)*m, i] = T2[i*m:(i+1)*m, i] = r4[:, i]
         t1[(n+i)*m:(n+i+1)*m] = t2[i*m:(i+1)*m] = r4[:, i]
+        
+        if vv[i].domain is bool:
+            tmp = t1[(n+i)*m:(n+i+1)*m]
+            tmp[tmp==0.5] = 1
+            tmp = t2[i*m:(i+1)*m]
+            tmp[tmp==0.5] = 0
+            
+#        if vv[i].domain is bool:
+#            t1[(n+i)*m:(n+i+1)*m] = 1
+#            t2[i*m:(i+1)*m] = 0
+#        else:
+#            t1[(n+i)*m:(n+i+1)*m] = t2[i*m:(i+1)*m] = r4[:, i]
+        
         LB[i], UB[i] = t1, t2
+
 
 ####        LB[i], UB[i] = T1[:, i], T2[:, i]
 
@@ -50,7 +64,8 @@ def func8(domain, func, dataType):
 
 def getr4Values(domain, func, C, contol, dataType):
     #TODO: remove 0.5*(val[0]+val[1]) from cycle
-    cs = dict([(key, 0.5*(val[0]+val[1])) for key, val in domain.items()])
+    #cs = dict([(key, 0.5*(val[0]+val[1])) for key, val in domain.items()])
+    cs = dict([(key, asarray(0.5*(val[0]+val[1]), dataType)) for key, val in domain.items()])
     cs = ooPoint(cs, skipArrayCast = True)
     cs.isMultiPoint = True
     
@@ -200,13 +215,27 @@ def func13(o, a, case = 2):
     else: 
         raise('bug in interalg kernel')
 
-def func2(y, e, t):
+def func2(y, e, t, vv):
     new_y, en = y.copy(), e.copy()
-    m = y.shape[0]
+    m, n = y.shape
     w = arange(m)
+    
+    # TODO: omit or imporove it for all-float problems    
     th = 0.5 * (new_y[w, t] + en[w, t])
-    new_y[w, t] = th
-    en[w, t] = th
+    BoolVars = [v.domain is bool for v in vv]
+    if any(BoolVars):
+        indBool = where(BoolVars)[0]
+        if len(indBool) != n:
+            new_y[w, t] = th
+            en[w, t] = th
+            new_y[indBool, t] = 1
+            en[indBool, t] = 0
+        else:
+            new_y[w, t] = 1
+            en[w, t] = 0
+    else:
+        new_y[w, t] = th
+        en[w, t] = th
     
     new_y = vstack((y, new_y))
     en = vstack((en, e))
@@ -214,7 +243,7 @@ def func2(y, e, t):
     return new_y, en
 
 
-def func12(an, maxActiveNodes, maxSolutions, solutions, r6, varTols, fo, Case):
+def func12(an, maxActiveNodes, maxSolutions, solutions, r6, vv, varTols, fo, Case):
     if len(an) == 0:
         return array([]), array([]), array([]), array([])
     _in = an
@@ -234,7 +263,7 @@ def func12(an, maxActiveNodes, maxSolutions, solutions, r6, varTols, fo, Case):
         
         yc, ec = func4(yc, ec, oc, ac, fo)
         t, _s = func1(yc, ec, oc, ac, SIc, Case)
-        yc, ec = func2(yc, ec, t)
+        yc, ec = func2(yc, ec, t, vv)
         _s = tile(_s, 2)
         
         if maxSolutions == 1 or len(solutions) == 0: 

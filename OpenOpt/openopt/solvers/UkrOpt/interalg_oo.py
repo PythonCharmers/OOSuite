@@ -296,10 +296,10 @@ class interalg(baseSolver):
             
             if isIP:
                 y, e, _in, _s = \
-                    func12(an, self.maxActiveNodes, maxSolutions, solutions, r6, varTols, inf, 'IP')# Case=3
+                    func12(an, self.maxActiveNodes, maxSolutions, solutions, r6, vv, varTols, inf, 'IP')# Case=3
             else:
                 y, e, _in, _s = \
-                func12(an, self.maxActiveNodes, maxSolutions, solutions, r6, varTols, fo, 2) # Case=2
+                func12(an, self.maxActiveNodes, maxSolutions, solutions, r6, vv, varTols, fo, 2) # Case=2
             nActiveNodes.append(y.shape[0]/2)
             if y.size == 0: 
                 if len(solutions) > 1:

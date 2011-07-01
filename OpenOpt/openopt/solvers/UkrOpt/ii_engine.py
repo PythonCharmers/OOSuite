@@ -1,4 +1,4 @@
-from interalgMisc import *
+from interalgLLR import *
 from numpy import inf, prod
 
 

@@ -1,6 +1,6 @@
 from numpy import tile, isnan, array, atleast_1d, asarray, logical_and, all, searchsorted, logical_or, any, nan, isinf, \
 arange, vstack, inf, where, logical_not, take, argmax, argmin, abs, hstack, empty, insert, isfinite, append, atleast_2d, \
-prod
+prod, logical_xor
 from interalgLLR import *
 
 try:
@@ -44,7 +44,6 @@ def r14(p, y, e, vv, asdf1, C, CBKPMV, itn, g, nNodes,  \
          maxNodes, _s, xRecord):
 
     isSNLE = p.probType == 'NLSP'
-    isIP = p.probType == 'IP'
     
     ip = func10(y, e, vv)
         
