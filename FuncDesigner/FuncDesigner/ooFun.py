@@ -424,15 +424,10 @@ class oofun:
             else:
                 lb2, ub2 = other, other # TODO: improve it
                 
-            # Changes
             if all(lb2 >= 0) and all(lb1 >= 0):
                 t_min, t_max = atleast_1d(lb1 * lb2), atleast_1d(ub1 * ub2)
             elif isscalar(other):
-            # changes end
-            
-            #if isscalar(other):
                 t_min, t_max = (lb1 * other, ub1 * other) if other >= 0 else (ub1 * other, lb1 * other)
-                #t_min, t_max = asdf(lb1, ub1, other)#, ub1 * other) if other >= 0 else (ub1 * other, lb1 * other)
             else:
                 if isOtherOOFun:
                     t = vstack((lb1 * lb2, ub1 * lb2, \
@@ -487,10 +482,12 @@ class oofun:
         if not isinstance(other, oofun):
             if isscalar(other):
                 if type(other) == int: # TODO: handle numpy integer types
-                    other = asarray(other, dtype='float')
+                    pass
+                    #other = asarray(other, dtype='float')
                 else:
                     other = asarray(other, dtype= type(other))# with same type, mb float128
             elif not isinstance(other, ndarray): 
+                # TODO: fix it wrt int32, int64 etc
                 other = asarray(other, dtype='float' if type(other) == int else type(other)).copy()
             
             f = lambda x: asarray(x) ** other
@@ -1446,9 +1443,7 @@ def atleast_oofun(arg):
 
 
 class ooarray(ndarray):
-    
     __array_priority__ = 25 # !!! it should exceed oofun.__array_priority__ !!!
-    _ooarray_id = 0
     def __new__(self, *args, **kwargs):
         assert len(kwargs) == 0
         obj = asarray(args[0] if len(args) == 1 else args).view(self)
@@ -1457,8 +1452,10 @@ class ooarray(ndarray):
         return obj
     
     def __init__(self, *args, **kw):
-        self._id = ooarray._ooarray_id
-        ooarray._ooarray_id += 1
+        self._id = oofun._id
+        oofun._id += 1
+    
+    __hash__ = lambda self: self._id
 
     expected_kwargs = ('tol', 'name')
     def __call__(self, *args, **kwargs):
