@@ -277,10 +277,9 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     if p.probType != 'IP': p.fk = p.objFunc(p.xk)
     if not hasattr(p,  'ff') or any(p.ff==nan): 
         p.iterfcn, tmp_iterfcn = lambda *args: None, p.iterfcn
-        p.ff = p.objFunc(p.xf)
+        p.ff = p.fk
         p.iterfcn = tmp_iterfcn
 
-    if not hasattr(p, 'fk'): p.fk = p.ff
     if p.invertObjFunc:  p.fk, p.ff = -p.fk, -p.ff
 
     if asfarray(p.ff).size > 1: p.ff = p.objFuncMultiple2Single(p.fk)
