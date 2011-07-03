@@ -1,3 +1,4 @@
+PythonSum = sum
 from ooFun import oofun
 import numpy as np
 from FDmisc import FuncDesignerException, Diag, Eye, raise_except
@@ -248,7 +249,8 @@ def sum(inp, *args, **kwargs):
         # TODO:  check for fixed inputs
         #f = lambda *args: r0 + np.sum(args)
         def f(*args):
-            return r0 + np.sum(args, 0)
+            #return r0 + np.sum(args, 0)
+            return r0 + PythonSum(args)
             #tmp = np.asarray(args)
             #return r0 + (tmp.sum(0) if tmp.ndim > 1 else tmp.sum())
             

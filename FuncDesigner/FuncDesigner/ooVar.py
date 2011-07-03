@@ -1,6 +1,6 @@
 # created by Dmitrey
 
-from numpy import nan, asarray, isfinite, empty, zeros, inf, any, array, prod, atleast_1d, asfarray, isscalar, ndarray
+from numpy import nan, asarray, isfinite, empty, zeros, inf, any, array, prod, atleast_1d, asfarray, isscalar, ndarray, int16, int32, int64
 from FDmisc import FuncDesignerException, checkSizes
 from ooFun import oofun, Len, ooarray
 
@@ -117,7 +117,7 @@ class oovar(oofun):
 def oovars(*args, **kw):
     
     if len(args) == 1:
-        if isinstance(args[0], int):
+        if type(args[0]) in (int, int16, int32, int64):
             return ooarray([oovar(**kw) for i in range(args[0])])
         elif type(args[0]) in [list, tuple]:
             return ooarray([oovar(name=args[0][i], **kw) for i in range(len(args[0]))])
