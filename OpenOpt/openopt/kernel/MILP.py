@@ -1,7 +1,7 @@
 from numpy import copy
 from ooMisc import assignScript
 from baseProblem import MatrixProblem
-from numpy import asarray, ones, inf, dot, nan, zeros, ceil, floor, argmax
+from numpy import asarray, ones, inf, dot, nan, zeros, ceil, floor, argmax, ndarray
 from setDefaultIterFuncs import SMALL_DELTA_X, SMALL_DELTA_F
 from LP import LP
 
@@ -21,7 +21,7 @@ class MILP(LP):
         self._milp_prepared = True
         LP._Prepare(self)
         r = []
-        if type(self.intVars) not in [list, tuple, set]:
+        if type(self.intVars) not in [list, tuple, set] and not isinstance(self.intVars, ndarray):
             self.intVars = [self.intVars]
         if self.isFDmodel:
             for iv in self.intVars:
