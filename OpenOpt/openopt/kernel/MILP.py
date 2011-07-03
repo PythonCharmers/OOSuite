@@ -37,14 +37,15 @@ class MILP(LP):
         if SMALL_DELTA_F in self.kernelIterFuncs: self.kernelIterFuncs.pop(SMALL_DELTA_F)
         def getMaxResidualWithIntegerConstraints(x, retAll = False):
             r, fname, ind = self.getMaxResidual2(x, True)
-            intV = x[self.intVars]
-            intDifference = abs(intV-intV.round())
-            intConstraintNumber = argmax(intDifference)
-            intConstraint = intDifference[intConstraintNumber]
-            #print 'intConstraint:', intConstraint
-            if intConstraint > r:
-                intConstraintNumber = self.intVars[intConstraintNumber]
-                r, fname, ind = intConstraint, 'int', intConstraintNumber 
+            if len(self.intVars) != 0:
+                intV = x[self.intVars]
+                intDifference = abs(intV-intV.round())
+                intConstraintNumber = argmax(intDifference)
+                intConstraint = intDifference[intConstraintNumber]
+                #print 'intConstraint:', intConstraint
+                if intConstraint > r:
+                    intConstraintNumber = self.intVars[intConstraintNumber]
+                    r, fname, ind = intConstraint, 'int', intConstraintNumber 
             if retAll:
                 return r, fname, ind
             else:
