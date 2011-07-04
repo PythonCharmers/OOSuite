@@ -298,6 +298,9 @@ def func12(an, maxActiveNodes, maxSolutions, solutions, r6, vv, varTols, fo, Cas
         
     return y, e, _in, _s
 
+fields = ['key', 'y', 'e', 'o', 'a', '_s','r18', 'r19']
+IP_fields = ['key', 'y', 'e', 'o', 'a', '_s','F', 'volume', 'volumeResidual']
+
 def func11(y, e, o, a, _s, r3 = None): 
     m, n = y.shape
     w = arange(m)
@@ -318,20 +321,16 @@ def func11(y, e, o, a, _s, r3 = None):
         Tmp = nanmax(where(o_modU<o_modL, o_modU, o_modL), 1)
         
     if r3 is None:
-        return [si(Tmp[i], y[i], e[i], o[i], a[i], _s[i]) for i in range(m)]
+        return [si(fields, Tmp[i], y[i], e[i], o[i], a[i], _s[i]) for i in range(m)]
     elif r3 == 'IP':
         F = 0.25 * (a[w, ind] + o[w, ind] + a[w, n+ind] + o[w, n+ind])
-        return [si(sup_inf_diff[i], y[i], e[i], o[i], a[i], _s[i], F[i], volume[i], volumeResidual[i], isIP=True) for i in range(m)]
+        return [si(IP_fields, sup_inf_diff[i], y[i], e[i], o[i], a[i], _s[i], F[i], volume[i], volumeResidual[i]) for i in range(m)]
     else:
         r18, r19 = r3[:, :n], r3[:, n:]
-        return [si(Tmp[i], y[i], e[i], o[i], a[i], _s[i], r18[i], r19[i]) for i in range(m)]
+        return [si(fields, Tmp[i], y[i], e[i], o[i], a[i], _s[i], r18[i], r19[i]) for i in range(m)]
 
 class si:
-    fields = ['key', 'y', 'e', 'o', 'a', '_s','r18', 'r19']
-    IP_fields = ['key', 'y', 'e', 'o', 'a', '_s','F', 'volume', 'volumeResidual']
-    def __init__(self, *args, **kwargs):
-        isIP = kwargs.get('isIP', False)
-        fields = self.fields if not isIP else self.IP_fields
-        for i in range(len(args)):
+    def __init__(self, fields, *args, **kwargs):
+        for i in range(len(fields)):
             setattr(self, fields[i], args[i])
     
