@@ -1,7 +1,8 @@
-from numpy import tile, isnan, array, atleast_1d, asarray, logical_and, all, searchsorted, logical_or, any, nan, isinf, \
+from numpy import tile, isnan, array, atleast_1d, asarray, logical_and, all, logical_or, any, nan, isinf, \
 arange, vstack, inf, where, logical_not, take, argmax, argmin, abs, hstack, empty, insert, isfinite, append, atleast_2d, \
-prod, sqrt
+prod, sqrt, int32, int64
 from FuncDesigner import ooPoint
+from bisect import bisect_right
 
 try:
     from bottleneck import nanargmin, nanmin, nanargmax, nanmax
@@ -13,7 +14,7 @@ def func10(y, e, vv):
     LB = [[] for i in range(n)]
     UB = [[] for i in range(n)]
 
-    r4 = 0.5 * (y + e)
+    r4 = (y + e) / 2
     
     # TODO: remove the cycle
     #T1, T2 = tile(y, (2*n,1)), tile(e, (2*n,1))
@@ -25,10 +26,13 @@ def func10(y, e, vv):
         t1[(n+i)*m:(n+i+1)*m] = t2[i*m:(i+1)*m] = r4[:, i]
         
         if vv[i].domain is bool:
+            indINQ = y[:, i] != e[:, i]
             tmp = t1[(n+i)*m:(n+i+1)*m]
-            tmp[tmp==0.5] = 1
+            #tmp[tmp==0.5] = 1
+            tmp[indINQ] = 1
             tmp = t2[i*m:(i+1)*m]
-            tmp[tmp==0.5] = 0
+            #tmp[tmp==0.5] = 0
+            tmp[indINQ] = 0
             
 #        if vv[i].domain is bool:
 #            t1[(n+i)*m:(n+i+1)*m] = 1
@@ -65,23 +69,24 @@ def func8(domain, func, dataType):
 def getr4Values(domain, func, C, contol, dataType):
     #TODO: remove 0.5*(val[0]+val[1]) from cycle
     #cs = dict([(key, 0.5*(val[0]+val[1])) for key, val in domain.items()])
-    cs = dict([(key, asarray(0.5*(val[0]+val[1]), dataType)) for key, val in domain.items()])
+    cs = dict([(key, asarray((val[0]+val[1])/2, dataType)) for key, val in domain.items()])
     cs = ooPoint(cs, skipArrayCast = True)
     cs.isMultiPoint = True
     
     # TODO: improve it
-    m = list(domain.values())[0][0].size
+    V = domain.values()
+    m = V[0][0].size if type(V) == list else next(iter(V))[0].size
     
     r15 = empty(m, bool)
     r15.fill(True)
     for f, r16, r17 in C:
         c = f(cs)
-        ind = logical_and(c + contol > r16, c - contol < r17)
+        ind = logical_and(c  >= r16 - contol, c <= r17 + contol)
         r15 = logical_and(r15, ind)
     if not all(r15):
         F = empty(m, dataType)
-        F.fill(nan)
-        cs = dict([(key, 0.5*(val[0][r15]+val[1][r15])) for key, val in domain.items()])
+        F.fill(2**31-2 if dataType in (int32, int64, int) else nan) 
+        cs = dict([(key, (val[0][r15]+val[1][r15])/2) for key, val in domain.items()])
         cs = ooPoint(cs, skipArrayCast = True)
         cs.isMultiPoint = True
         F[r15] = func(cs)
@@ -97,7 +102,9 @@ def r2(r3, domain, dataType):
     
     # TODO: check it , maybe it can be improved
     #bestCenter = cs[r23]
-    r7 = array([0.5*(val[0][r23]+val[1][r23]) for val in domain.values()], dtype=dataType)
+    r7 = array([(val[0][r23]+val[1][r23]) / 2 for val in domain.values()], dtype=dataType)
+#    assert all(array([0.5*(val[0][r23]+val[1][r23]) for val in domain.values()], dtype=dataType) == \
+#        array([0.5*(val[0][r23]+val[1][r23]) for val in domain.values()], dtype=dataType))
     r8 = atleast_1d(r3)[r23] if not isnan(r23) else inf
     return r7, r8
     
@@ -116,7 +123,8 @@ def func7(y, e, o, a, FV, _s):
 
 def func9(an, fo, g):
     maxo = [node.key for node in an]
-    ind = searchsorted(maxo, fo, side='right')
+    #ind = searchsorted(maxo, fo, side='right')
+    ind = bisect_right(maxo, fo)
     if ind == len(maxo):
         return an, g
     else:
@@ -134,7 +142,7 @@ def func5(an, nn, g):
 
 def func4(y, e, o, a, fo):
     if fo is None: return # used in IP
-    cs = 0.5*(y + e)
+    cs = (y + e)/2
     n = y.shape[1]
     o_modL, o_modU = o[:, 0:n], o[:, n:2*n]
     ind = logical_or(o_modL > fo, isnan(o_modL)) # TODO: assert isnan(o_modL) is same to isnan(a_modL)
@@ -191,6 +199,7 @@ def func1(y, e, o, a, _s_prev, Case, r9 = None):
         ind = logical_or(ind, r9)
     #ind.fill(True)
     if any(ind):
+        #if ind.size != 1: raise 0
         bs = e[ind] - y[ind]
         t[ind] = nanargmax(bs, 1) # ordinary numpy.argmax can be used as well
         
@@ -221,7 +230,7 @@ def func2(y, e, t, vv):
     w = arange(m)
     
     # TODO: omit or imporove it for all-float problems    
-    th = 0.5 * (new_y[w, t] + en[w, t])
+    th = (new_y[w, t] + en[w, t]) / 2
     BoolVars = [v.domain is bool for v in vv]
     if any(BoolVars):
         indBool = where(BoolVars)[0]

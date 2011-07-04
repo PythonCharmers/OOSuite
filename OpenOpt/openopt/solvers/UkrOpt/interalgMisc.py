@@ -97,7 +97,7 @@ def r14(p, y, e, vv, asdf1, C, CBKPMV, itn, g, nNodes,  \
             return an, g, fo, None, solutions, r6, xRecord, frc, CBKPMV
                 
     
-    p.iterfcn(xk)
+    p.iterfcn(xk, Min)
     if p.istop != 0: 
         return an, g, fo, None, solutions, r6, xRecord, frc, CBKPMV
     if isSNLE and maxSolutions == 1 and Min <= fTol:

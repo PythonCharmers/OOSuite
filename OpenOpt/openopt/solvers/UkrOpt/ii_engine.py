@@ -1,5 +1,5 @@
 from interalgLLR import *
-from numpy import inf, prod
+from numpy import inf, prod, searchsorted
 
 
 def r14IP(p, y, e, vv, asdf1, C, CBKPMV, itn, g, nNodes,  \
