@@ -341,8 +341,12 @@ class interalg(baseSolver):
         p.solutions = [p._vector2point(s) for s in solutions]
         if p.maxSolutions == 1: delattr(p, 'solutions')
         if p.iprint >= 0:
-            s = 'Solution with required tolerance %0.1e \n is%s guarantied (obtained precision: %0.1e)' \
-                   %(fTol, '' if p.extras['isRequiredPrecisionReached'] else ' NOT', tmp[1]-tmp[0])
+#            s = 'Solution with required tolerance %0.1e \n is%s guarantied (obtained precision: %0.1e)' \
+#                   %(fTol, '' if p.extras['isRequiredPrecisionReached'] else ' NOT', tmp[1]-tmp[0])
+            s = 'Solution with required tolerance %0.1e \n is%s guarantied' \
+            %(fTol, '' if p.extras['isRequiredPrecisionReached'] else ' NOT')
+            if not isIP and p.maxSolutions == 1:
+                s += '(obtained precision: %0.1e)' % (tmp[1]-tmp[0])
             if not p.extras['isRequiredPrecisionReached'] and pnc == self.maxNodes: s += '\nincrease maxNodes (current value %d)' % self.maxNodes
             p.info(s)
 

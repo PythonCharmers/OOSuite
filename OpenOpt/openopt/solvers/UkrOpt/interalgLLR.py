@@ -219,8 +219,8 @@ def func13(o, a, case = 2):
         U = where(logical_or(U1<U2, isnan(U1)),  U2, U1)
         L = where(logical_or(L2<L1, isnan(L1)), L2, L1)
         return nanmax(U-L, 1)
-    elif case == 'IP': # IP
-        return nanmax(U1-L1+U2-L2, 1)
+#    elif case == 'IP': # IP
+#        return nanmax(U1-L1+U2-L2, 1)
     else: 
         raise('bug in interalg kernel')
 
@@ -298,15 +298,16 @@ def func12(an, maxActiveNodes, maxSolutions, solutions, r6, vv, varTols, fo, Cas
         
     return y, e, _in, _s
 
-fields = ['key', 'y', 'e', 'o', 'a', '_s','r18', 'r19']
+Fields = ['key', 'y', 'e', 'o', 'a', '_s']
+FuncValFields = ['key', 'y', 'e', 'o', 'a', '_s','r18', 'r19']
 IP_fields = ['key', 'y', 'e', 'o', 'a', '_s','F', 'volume', 'volumeResidual']
 
 def func11(y, e, o, a, _s, r3 = None): 
     m, n = y.shape
     w = arange(m)
     if r3 == "IP":
+        # TODO: omit recalculation from func1
         ind = nanargmin(a[:, 0:n]-o[:, 0:n]+a[:, n:]-o[:, n:],1)
-        #tmp2 = 0.25*(a[:, ind]+o[:, ind]+a[:, n+ind]+o[:, n+ind])
         sup_inf_diff = a[w, ind]-o[w, ind]+a[w, n+ind]-o[w, n+ind]
         
         # DEBUG
@@ -315,19 +316,20 @@ def func11(y, e, o, a, _s, r3 = None):
         
         volume = prod(e-y, 1)
         volumeResidual = volume * sup_inf_diff
+#        initVolumeResidual = volume * 
 
     else:
         o_modL, o_modU = o[:, 0:n], o[:, n:2*n]
         Tmp = nanmax(where(o_modU<o_modL, o_modU, o_modL), 1)
         
     if r3 is None:
-        return [si(fields, Tmp[i], y[i], e[i], o[i], a[i], _s[i]) for i in range(m)]
+        return [si(Fields, Tmp[i], y[i], e[i], o[i], a[i], _s[i]) for i in range(m)]
     elif r3 == 'IP':
         F = 0.25 * (a[w, ind] + o[w, ind] + a[w, n+ind] + o[w, n+ind])
         return [si(IP_fields, sup_inf_diff[i], y[i], e[i], o[i], a[i], _s[i], F[i], volume[i], volumeResidual[i]) for i in range(m)]
     else:
         r18, r19 = r3[:, :n], r3[:, n:]
-        return [si(fields, Tmp[i], y[i], e[i], o[i], a[i], _s[i], r18[i], r19[i]) for i in range(m)]
+        return [si(FuncValFields, Tmp[i], y[i], e[i], o[i], a[i], _s[i], r18[i], r19[i]) for i in range(m)]
 
 class si:
     def __init__(self, fields, *args, **kwargs):
