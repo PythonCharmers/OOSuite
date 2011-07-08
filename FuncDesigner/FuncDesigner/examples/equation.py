@@ -3,7 +3,7 @@ from openopt import *
 
 x = oovar(tol=1e-3) # solutions x1 and x2 with |x1-x2| < tol will be considered as equivalent
 y = (1 + 1e-10 + sin(150*x)) * cos(10*x) ** 2
-equation = [y == 0] 
+equation = y == 0
 
 # we will search equation roots in the line segment [0,15]
 constraints = (x>0,  x<1.5) 
