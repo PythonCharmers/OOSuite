@@ -18,6 +18,12 @@ __version__ = '0.34'
 
 isE = False
 try:
+    import enthought
+    isE = True
+except ImportError:
+    pass
+try:
+    import envisage
     import mayavi
     isE = True
 except ImportError:
