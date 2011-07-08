@@ -20,6 +20,12 @@ from nonOptMisc import oosolver
 
 isE = False
 try:
+    import enthought
+    isE = True
+except ImportError:
+    pass
+try:
+    import envisage
     import mayavi
     isE = True
 except ImportError:
