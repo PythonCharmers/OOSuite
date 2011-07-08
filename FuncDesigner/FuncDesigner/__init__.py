@@ -18,12 +18,7 @@ __version__ = '0.34'
 
 isE = False
 try:
-    import etsproxy
-    isE = True
-except ImportError:
-    pass
-try:
-    import chaco   
+    import mayavi
     isE = True
 except ImportError:
     pass
@@ -32,17 +27,13 @@ try:
     isE = False
 except ImportError:
     pass
-try:
-    import enthought
-    isE = True
-except ImportError:
-    pass
+  
 if isE:
     s = """
-    Seems like you are using OpenOpt from Enthought Python Distribution;
+    Seems like you are using OpenOpt from 
+    commercial Enthought Python Distribution;
     consider using free GPL-licensed alternatives
     PythonXY (http://www.pythonxy.com) or
     Sage (http://sagemath.org) instead.
     """
     print(s)
-
