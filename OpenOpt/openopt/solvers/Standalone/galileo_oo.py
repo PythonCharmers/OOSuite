@@ -21,12 +21,11 @@ class galileo(baseSolver):
     crossoverRate = 1.0 # 1.0 means always
     mutationRate = 0.05 # not very often
     useInteger = False # use float by default
+    _requiresFiniteBoxBounds = True
 
 
     def __init__(self):pass
     def __solver__(self, p):
-
-        if not p.__isFiniteBoxBounded__(): p.err('this solver requires finite lb, ub: lb <= x <= ub')
 
         p.kernelIterFuncs.pop(SMALL_DELTA_X)
         p.kernelIterFuncs.pop(SMALL_DELTA_F)
