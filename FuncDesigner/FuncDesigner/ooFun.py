@@ -1,7 +1,7 @@
 # created by Dmitrey
 
 from numpy import inf, asfarray, copy, all, any, empty, atleast_2d, zeros, dot, asarray, atleast_1d, empty, \
-ones, ndarray, where, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum, prod, nonzero,\
+ones, ndarray, where, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum as npSum, prod, nonzero,\
 isnan, asscalar, zeros_like, ones_like, amin, amax, logical_and, logical_or, isinf, logical_not, logical_xor
 
 try:
@@ -249,7 +249,7 @@ class oofun:
                 return lb + other, ub + other
             r._interval = interval
             
-            if isscalar(other) or asarray(other).size in (1, other.size): 
+            if isscalar(other) or asarray(other).size == 1 or ('size' in self.__dict__ and self.size is asarray(other).size):
                 r._D = lambda *args,  **kwargs: self._D(*args,  **kwargs) 
         r.vectorized = True
         return r
@@ -627,10 +627,10 @@ class oofun:
         #raise FuncDesignerException('using len(obj) (where obj is oovar or oofun) is not possible (at least yet), use obj.size instead')
 
     def sum(self):
-        r = oofun(sum, self, getOrder = self.getOrder)
+        r = oofun(npSum, self, getOrder = self.getOrder)
         def d(x):
             if type(x) == ndarray and x.ndim > 1: raise FuncDesignerException('sum(x) is not implemented yet for arrays with ndim > 1')
-            return ones_like(x) 
+            return ones_like(x)
         r.d = d
         return r
     
