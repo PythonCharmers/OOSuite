@@ -8,6 +8,7 @@ class stogo(NLOPT_BASE):
     __alg__ = ""
     __optionalDataThatCanBeHandled__ = ['lb', 'ub']
     __isIterPointAlwaysFeasible__ = lambda self, p: True
+    _requiresFiniteBoxBounds = True
     #properTextOutput = True
     
     #TODO: check it!
@@ -19,7 +20,6 @@ class stogo(NLOPT_BASE):
     def __init__(self): pass
     def __solver__(self, p):
         #p.f_iter = 1
-        if not p.__isFiniteBoxBounded__(): p.err('this solver requires finite lb, ub: lb <= x <= ub')
         p.maxNonSuccess = 1e10
         p.maxIter = 1e10
         if isinf(p.maxTime):
