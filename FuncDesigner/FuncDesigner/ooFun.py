@@ -1481,7 +1481,7 @@ class ooarray(ndarray):
         if isinstance(args[0], str):
             self.name = args[0]
             return self
-        tmp = asarray([asscalar(asarray(self[i](*args, **kwargs)) if isinstance(self[i], oofun) else self[i]) for i in range(self.size)])
+        tmp = asarray([asscalar(asarray(self[i](*args, **kwargs))) if isinstance(self[i], oofun) else self[i] for i in range(self.size)])
         return array(tmp, dtype=float if type(tmp) != object else object).flatten()
 
     def __mul__(self, other):
