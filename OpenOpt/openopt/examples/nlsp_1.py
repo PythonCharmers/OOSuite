@@ -31,13 +31,10 @@ p = SNLE(f, x0, df = df)
 #optional: graphical output, requires matplotlib installed
 p.plot = 1
 
-p.maxFunEvals = 1e5
-p.iprint = 10
-
 #r = p.solve('scipy_fsolve')
-#r = p.solve('nssolve')
+r = p.solve('nssolve')
 #or using converter to nlp, try to minimize sum(f_i(x)^2):
-r = p.solve('nlp:ralg', plot=1)
+#r = p.solve('nlp:ralg')
 
 print('solution: %s' % r.xf)
 print('max residual: %e' % r.ff)
