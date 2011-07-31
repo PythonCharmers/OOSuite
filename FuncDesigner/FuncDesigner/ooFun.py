@@ -1492,7 +1492,18 @@ class ooarray(ndarray):
             return ooarray(self.view(ndarray)*other if self.dtype != object else [self[i]*other for i in range(self.size)])
         elif isinstance(other, oofun):
             hasSize = 'size' in dir(other)
-            if not hasSize: raise FuncDesignerException('to perform the operation oofun size should be known')
+            if not hasSize: 
+                print('''
+                FuncDesigner warning: 
+                to perform the operation 
+                (ooarray multiplication on oofun)
+                oofun size should be known.
+                Assuming oofun size is 1,
+                the value is ascribed to the oofun attributes.
+                Handling of the issue is intended to be 
+                enhanced in future.''')
+                other.size = 1
+                #raise FuncDesignerException('to perform the operation oofun size should be known')
             if other.size == 1:
                 if self.dtype == object:
                     return ooarray([self[i]*other for i in range(self.size)])
