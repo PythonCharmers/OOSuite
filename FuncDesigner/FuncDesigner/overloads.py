@@ -440,7 +440,10 @@ def max(inp,  *args,  **kwargs):
             df = inp.d(x)
             ind = np.argmax(x)
             return df[ind, :]
-        r = oofun(f, inp, d = d, size = 1)
+        def interval(domain, dtype):
+            tmp1, tmp2 = inp._interval(domain, dtype)
+            return np.max(np.vstack(tmp1), 0), np.max(np.vstack(tmp2), 0)
+        r = oofun(f, inp, d = d, size = 1, _interval = interval)
     elif type(inp) in (list, tuple, ooarray):
         f = lambda *args: np.max([arg for arg in args])
         def interval(domain, dtype):
@@ -477,6 +480,9 @@ def min(inp,  *args,  **kwargs):
             #df = inp.d(x) if type(inp.d) not in (list, tuple) else np.hstack([item(x) for item in inp.d])
             ind = np.argmin(x)
             return df[ind, :]
+        def interval(domain, dtype):
+            tmp1, tmp2 = inp._interval(domain, dtype)
+            return np.min(np.vstack(tmp1), 0), np.min(np.vstack(tmp2), 0)
         r = oofun(f, inp, d = d, size = 1, _interval = interval)
     elif type(inp) in (list, tuple, ooarray):
         f = lambda *args: np.min([arg for arg in args])
