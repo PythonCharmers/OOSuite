@@ -203,7 +203,8 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
 
     if p.iprint >= 0:
         p.disp('\n' + '-'*25 + ' OpenOpt %s ' % version + '-'*25)
-        s = 'solver: ' +  p.solver.__name__ +  '   problem: ' + p.name + '    type: %s' % p.probType
+        pt = p.probType if p.probType != 'NLSP' else 'SNLE'
+        s = 'solver: ' +  p.solver.__name__ +  '   problem: ' + p.name + '    type: %s' % pt
         if p.showGoal: s += '   goal: ' + p.goal
         p.disp(s)
 
