@@ -73,8 +73,8 @@ class de(baseSolver):
         
         if not p.__isFiniteBoxBounded__(): p.err('this solver requires finite lb, ub: lb <= x <= ub')
         
-        p.kernelIterFuncs.pop(SMALL_DELTA_X)
-        p.kernelIterFuncs.pop(SMALL_DELTA_F)
+        p.kernelIterFuncs.pop(SMALL_DELTA_X, None)
+        p.kernelIterFuncs.pop(SMALL_DELTA_F, None)
         
         lb, ub = p.lb, p.ub
         D = p.n#dimension
