@@ -284,6 +284,7 @@ def sum(inp, *args, **kwargs):
         def _D(point, fixedVarsScheduleID, Vars=None, fixedVars = None, useSparse = 'auto'):
             # TODO: handle involvePrevData
             # TODO: handle fixed vars
+            #print 'asdf'
             r, keys = {}, set()
             
             for elem in INP:
@@ -440,9 +441,22 @@ def max(inp,  *args,  **kwargs):
             ind = np.argmax(x)
             return df[ind, :]
         r = oofun(f, inp, d = d, size = 1)
-    elif type(inp) in (list, tuple):
+    elif type(inp) in (list, tuple, ooarray):
         f = lambda *args: np.max([arg for arg in args])
-        r = oofun(f, inp, size = 1)
+        def interval(domain, dtype):
+            arg_inf, arg_sup, tmp = [], [], -np.inf
+            for _inp in inp:
+                if isinstance(_inp, oofun):
+                    tmp1, tmp2 = _inp._interval(domain, dtype)
+                    arg_inf.append(tmp1)
+                    arg_sup.append(tmp2)
+                elif tmp < _inp:
+                    tmp = _inp
+            r1, r2 = np.max(np.vstack(arg_inf), 0), np.max(np.vstack(arg_sup), 0)
+            r1[r1<tmp] = tmp
+            r2[r2<tmp] = tmp
+            return r1, r2
+        r = oofun(f, inp, size = 1, _interval = interval)
         def _D(point, *args, **kwargs):
             ind = np.argmax([(s(point) if isinstance(s, oofun) else s) for s in r.input])
             return r.input[ind]._D(point, *args, **kwargs) if isinstance(r.input[ind], oofun) else {}
@@ -463,10 +477,26 @@ def min(inp,  *args,  **kwargs):
             #df = inp.d(x) if type(inp.d) not in (list, tuple) else np.hstack([item(x) for item in inp.d])
             ind = np.argmin(x)
             return df[ind, :]
-        r = oofun(f, inp, d = d, size = 1)
-    elif type(inp) in (list, tuple):
+        r = oofun(f, inp, d = d, size = 1, _interval = interval)
+    elif type(inp) in (list, tuple, ooarray):
         f = lambda *args: np.min([arg for arg in args])
-        r = oofun(f, inp, size = 1)
+        def interval(domain, dtype):
+            arg_inf, arg_sup = [], []
+            tmp = np.inf
+            for _inp in inp:
+                if isinstance(_inp, oofun):
+                    tmp1, tmp2 = _inp._interval(domain, dtype)
+                    arg_inf.append(tmp1)
+                    arg_sup.append(tmp2)
+                elif tmp > _inp:
+                    tmp = _inp
+            r1, r2 = np.min(np.vstack(arg_inf), 0), np.min(np.vstack(arg_sup), 0)
+            if np.isfinite(tmp):
+                r1[r1>tmp] = tmp
+                r2[r2>tmp] = tmp
+            return r1, r2
+            
+        r = oofun(f, inp, size = 1, _interval = interval)
         def _D(point, *args, **kwargs):
             ind = np.argmin([(s(point) if isinstance(s, oofun) else s) for s in r.input])
             return r.input[ind]._D(point, *args, **kwargs) if isinstance(r.input[ind], oofun) else {}
