@@ -403,7 +403,7 @@ class oofun:
             r.d = (lambda x, y: aux_d(x, y), lambda x, y: aux_d(y, x))
             r.getOrder = lambda *args, **kwargs: self.getOrder(*args, **kwargs) + other.getOrder(*args, **kwargs)
         else:
-            if isinstance(other,  ndarray): other = other.copy()
+            other = other.copy() if isinstance(other,  ndarray) else asarray(other)
             r = oofun(lambda x: x*other, self, discrete = self.discrete)
             r.getOrder = self.getOrder
             r._getFuncCalcEngine = lambda *args,  **kwargs: other * self._getFuncCalcEngine(*args,  **kwargs)
