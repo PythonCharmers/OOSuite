@@ -627,11 +627,13 @@ class oofun:
         #raise FuncDesignerException('using len(obj) (where obj is oovar or oofun) is not possible (at least yet), use obj.size instead')
 
     def sum(self):
-        r = oofun(npSum, self, getOrder = self.getOrder)
         def d(x):
             if type(x) == ndarray and x.ndim > 1: raise FuncDesignerException('sum(x) is not implemented yet for arrays with ndim > 1')
-            return ones_like(x)
-        r.d = d
+            return ones_like(x)        
+        def interval(domain, dtype):
+            lb, ub = self._interval(domain, dtype)
+            return npSum(lb), npSum(ub)
+        r = oofun(npSum, self, getOrder = self.getOrder, _interval = interval, d=d)
         return r
     
     def prod(self):
