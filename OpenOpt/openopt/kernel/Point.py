@@ -31,7 +31,7 @@ class Point:
     def f(self):
         if not hasattr(self, '_f'): 
             if self.p._baseClassName == 'NonLin':
-                self._f = self.p.f(self.x)
+                self._f = self.p.f(self.x) if self.p.isObjFunValueASingleNumber else self.p.F(self.x)
             else:
                 self._f = self.p.objFunc(self.x)
         return copy(self._f)
