@@ -295,6 +295,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         if self._isFDmodel():
             self.isFDmodel = True
             self._FD = EmptyClass()
+            self._FD.nonBoxConsWithTolShift = []
             self._FD.nonBoxCons = []
             from FuncDesigner import _getAllAttachedConstraints, _getDiffVarsID, ooarray
             self._FDVarsID = _getDiffVarsID()
@@ -469,13 +470,19 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
 
     def handleConstraint(self, c, StartPointVars, probtol, areFixed, oovD, A, b, Aeq, beq, Z, D_kwargs, LB, UB):
         f, tol = c.oofun, c.tol
+        _lb, _ub = c.lb, c.ub
+        f0, lb_0, ub_0 = f, _lb, _ub
         Name = f.name
         
         dep = set([f]) if f.is_oovar else f._getDep()
+        
+        if f.is_oovar and areFixed(dep):  
+            if self.x0 is None or f not in self.x0: self.err('your problem has fixed oovar '+ Name + ' but no value for the one in start point is provided')
+            return
+            
         if not dep.issubset(StartPointVars):
             self.err('your start point has no enough variables to define constraint ' + c.name)
 
-        _lb, _ub = c.lb, c.ub
         if tol < 0:
             if any(_lb  == _ub):
                 self.err("You can't use negative tolerance for the equality constraint " + c.name)
@@ -495,10 +502,11 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             scaleFactor = abs(probtol / tol)
             f *= scaleFactor
             _lb, _ub = _lb * scaleFactor, _ub * scaleFactor
-
+            
+        Contol = tol if tol != 0 else self.contol
         if areFixed(dep):
             # TODO: get rid of self.contol, use separate contols for each constraint
-            Contol = tol if tol != 0 else self.contol
+            
             if not c(self._x0, tol=Contol):
                 s = """'constraint "%s" with all-fixed optimization variables it depends on is infeasible in start point, 
                 hence the problem is infeasible, maybe you should change start point'""" % c.name
@@ -511,10 +519,6 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         
         # TODO: simplify condition of box-bounded oovar detection
         if f.is_oovar:
-            if areFixed(dep):  
-                if self.x0 is None or f not in self.x0: self.err('your problem has fixed oovar '+ Name + ' but no value for the one in start point is provided')
-                return
-            
             inds = oovD[f]
             f_size = inds[1] - inds[0]
 
@@ -566,7 +570,10 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             self.err('inform OpenOpt developers of the bug')
             
         if not f.is_oovar:
-            self._FD.nonBoxCons.append((f, _lb, _ub))# f should be between _lb and _ub
+            Contol = max((0, Contol))
+            # TODO: handle it more properly, especially  for lb, ub of array type
+            self._FD.nonBoxConsWithTolShift.append((f0, lb_0 - Contol, ub_0 + Contol))
+            self._FD.nonBoxCons.append((f0, lb_0, ub_0, Contol))
 
 
 class MatrixProblem(baseProblem):
