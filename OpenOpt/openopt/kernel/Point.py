@@ -30,7 +30,8 @@ class Point:
 
     def f(self):
         if not hasattr(self, '_f'): 
-            if self.p._baseClassName == 'NonLin':
+            # TODO: rework this: self.p.probType!='IP'
+            if self.p._baseClassName == 'NonLin' and self.p.probType!='IP':
                 self._f = self.p.f(self.x) if self.p.isObjFunValueASingleNumber else self.p.F(self.x)
             else:
                 self._f = self.p.objFunc(self.x)
