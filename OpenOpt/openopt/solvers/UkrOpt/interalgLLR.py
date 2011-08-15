@@ -1,8 +1,8 @@
 from numpy import tile, isnan, array, atleast_1d, asarray, logical_and, all, logical_or, any, nan, isinf, \
 arange, vstack, inf, where, logical_not, take, argmax, argmin, abs, hstack, empty, insert, isfinite, append, atleast_2d, \
-prod, sqrt, int32, int64
+prod, sqrt, int32, int64, log2, log
 from FuncDesigner import ooPoint
-from bisect import bisect_right
+from interalgT import *
 
 try:
     from bottleneck import nanargmin, nanmin, nanargmax, nanmax
@@ -28,10 +28,8 @@ def func10(y, e, vv):
         if vv[i].domain is bool:
             indINQ = y[:, i] != e[:, i]
             tmp = t1[(n+i)*m:(n+i+1)*m]
-            #tmp[tmp==0.5] = 1
             tmp[indINQ] = 1
             tmp = t2[i*m:(i+1)*m]
-            #tmp[tmp==0.5] = 0
             tmp[indINQ] = 0
             
 #        if vv[i].domain is bool:
@@ -66,94 +64,73 @@ def func8(domain, func, dataType):
     #assert TMP.lb.dtype == dataType
     return asarray(TMP.lb, dtype=dataType), asarray(TMP.ub, dtype=dataType)
 
-def getr4Values(domain, func, C, contol, dataType):
-    #TODO: remove 0.5*(val[0]+val[1]) from cycle
-    #cs = dict([(key, 0.5*(val[0]+val[1])) for key, val in domain.items()])
-    cs = dict([(key, asarray((val[0]+val[1])/2, dataType)) for key, val in domain.items()])
+def getr4Values(vv, y, e, tnlh, func, C, contol, dataType):
+    n = y.shape[1]
+    # TODO: rework it wrt nlh
+    #cs = dict([(key, asarray((val[0]+val[1])/2, dataType)) for key, val in domain.items()])
+    if tnlh is None:
+        cs = dict([(oovar, asarray((y[:, i]+e[:, i])/2, dataType)) for i, oovar in enumerate(vv)])
+    else:
+        tnlh = tnlh.copy()
+        tnlh[tnlh==0] = 1e-300
+        tnlh[atleast_1d(isnan(tnlh))] = inf #- check it!
+        tnlh_l_inv, tnlh_u_inv = 1.0 / tnlh[:, :n], 1.0 / tnlh[:, n:]
+        wr4 = (y * tnlh_l_inv + e * tnlh_u_inv) / (tnlh_l_inv + tnlh_u_inv)
+        ind = tnlh_l_inv == tnlh_u_inv # especially important for tnlh_l_inv == tnlh_u_inv = 0
+        wr4[ind] = (y[ind] + e[ind]) / 2
+        #tmp = y + (e-y) * (tnlh_u_inv-tnlh_l_inv) / (tnlh_l_inv + tnlh_u_inv)
+        #assert all(y <= wr4+1e-10) and all(wr4 <= e+1e-10)
+        cs = dict([(oovar, asarray(wr4[:, i], dataType)) for i, oovar in enumerate(vv)])
+        
+        #OLD
+        cs = dict([(oovar, asarray((y[:, i]+e[:, i])/2, dataType)) for i, oovar in enumerate(vv)])
+        wr4 = (y + e) / 2
+
+        
     cs = ooPoint(cs, skipArrayCast = True)
     cs.isMultiPoint = True
     
     # TODO: improve it
-    V = domain.values()
-    m = V[0][0].size if type(V) == list else next(iter(V))[0].size
-    
-    r15 = empty(m, bool)
-    r15.fill(True)
-    for f, r16, r17 in C:
-        c = f(cs)
-        ind = logical_and(c  >= r16 - contol, c <= r17 + contol)
-        r15 = logical_and(r15, ind)
-    if not all(r15):
+    #V = domain.values()
+    #m = V[0][0].size if type(V) == list else next(iter(V))[0].size
+    m = y.shape[0]
+    if len(C) != 0:
+        r15 = empty(m, bool)
+        r15.fill(True)
+        for f, r16, r17 in C:
+            c = f(cs)
+            ind = logical_and(c  >= r16, c <= r17) # here r16 and r17 are already shifted by required tolerance
+            r15 = logical_and(r15, ind)
+    else:
+        r15 = True
+    if not any(r15):
         F = empty(m, dataType)
         F.fill(2**31-2 if dataType in (int32, int64, int) else nan) 
-        cs = dict([(key, (val[0][r15]+val[1][r15])/2) for key, val in domain.items()])
+    elif all(r15):
+        F = func(cs)
+    else:
+        cs = dict([(oovar, (y[r15, i] + e[r15, i])/2) for i, oovar in enumerate(vv)])
         cs = ooPoint(cs, skipArrayCast = True)
         cs.isMultiPoint = True
-        F[r15] = func(cs)
-        r = atleast_1d(F)
-    else:
-        r = atleast_1d(func(cs))
-    return r
+        tmp = func(cs)
+        F = empty(m, dataType)
+        #F.fill(nanmax(tmp)+1) 
+        F.fill(2**31-15 if dataType in (int32, int64, int) else nan)
+        F[r15] = tmp
+    return atleast_1d(F), ((y+e) / 2 if tnlh is None else wr4)
 
-def r2(r3, domain, dataType):
-    r23 = nanargmin(r3)
+def r2(PointVals, PointCoords, dataType):
+    r23 = nanargmin(PointVals)
     if isnan(r23):
         r23 = 0
-    
     # TODO: check it , maybe it can be improved
     #bestCenter = cs[r23]
-    r7 = array([(val[0][r23]+val[1][r23]) / 2 for val in domain.values()], dtype=dataType)
-#    assert all(array([0.5*(val[0][r23]+val[1][r23]) for val in domain.values()], dtype=dataType) == \
-#        array([0.5*(val[0][r23]+val[1][r23]) for val in domain.values()], dtype=dataType))
-    r8 = atleast_1d(r3)[r23] if not isnan(r23) else inf
+    #r7 = array([(val[0][r23]+val[1][r23]) / 2 for val in domain.values()], dtype=dataType)
+    #r8 = atleast_1d(r3)[r23] if not isnan(r23) else inf
+    r7 = array(PointCoords[r23], dtype=dataType)
+    r8 = atleast_1d(PointVals)[r23] 
     return r7, r8
     
-def func7(y, e, o, a, FV, _s):
-    r10 = logical_and(all(isnan(o), 1), all(isnan(a), 1))
-    if any(r10):
-        j = where(logical_not(r10))[0]
-        lj = j.size
-        y = take(y, j, axis=0, out=y[:lj])
-        e = take(e, j, axis=0, out=e[:lj])
-        o = take(o, j, axis=0, out=o[:lj])
-        a = take(a, j, axis=0, out=a[:lj])
-        FV = take(FV, j, axis=0, out=FV[:lj])
-        _s = _s[j]
-    return y, e, o, a, FV, _s
-
-def func9(an, fo, g):
-    maxo = [node.key for node in an]
-    #ind = searchsorted(maxo, fo, side='right')
-    ind = bisect_right(maxo, fo)
-    if ind == len(maxo):
-        return an, g
-    else:
-        g = nanmin((g, nanmin(atleast_1d(maxo[ind]))))
-        return an[:ind], g
-
-
-def func5(an, nn, g):
-    m = len(an)
-    if m > nn:
-        maxo = [node.key for node in an]
-        g = nanmin((maxo[nn], g))
-        an = an[:nn]
-    return an, g
-
-def func4(y, e, o, a, fo):
-    if fo is None: return # used in IP
-    cs = (y + e)/2
-    n = y.shape[1]
-    o_modL, o_modU = o[:, 0:n], o[:, n:2*n]
-    ind = logical_or(o_modL > fo, isnan(o_modL)) # TODO: assert isnan(o_modL) is same to isnan(a_modL)
-    if any(ind):
-        y[ind] = cs[ind]
-    ind = logical_or(o_modU > fo, isnan(o_modU))# TODO: assert isnan(o_modU) is same to isnan(a_modU)
-    if any(ind):
-        e[ind] = cs[ind]
-    return y, e
-
-
 def func3(an, maxActiveNodes):
     m = len(an)
     if m > maxActiveNodes:
@@ -162,44 +139,68 @@ def func3(an, maxActiveNodes):
         an1, _in = an, array([], object)
     return an1, _in
 
-def func1(y, e, o, a, _s_prev, Case, r9 = None):
+def func1(tnlhf, tnlhf_curr, y, e, o, a, _s_prev, p, Case, r9 = None):
     m, n = y.shape
     w = arange(m)
-    
-    #1
-    #_s = func13(o, a, Case)
-    
-    #2
-    #_s = nanmin(a, 1)
-    
-    #3
-    #_s = nanmax(a, 1)
 
     if Case != 'IP':
-        _s = func13(o, a, Case)
-        t = nanargmin(a, 1) % n
-        d = nanmax([a[w, t] - o[w, t], 
-                a[w, n+t] - o[w, n+t]], 0)
+        if p.solver.dataHandling == 'sorted':
+            _s = func13(o, a, Case)
+            t = nanargmin(a, 1) % n
+            d = nanmax([a[w, t] - o[w, t], 
+                    a[w, n+t] - o[w, n+t]], 0)
+            
+            ## !!!! Don't replace it by (_s_prev /d- 1) to omit rounding errors ###
+            #ind = 2**(-n) >= (_s_prev - d)/asarray(d, 'float64')
+            
+            #NEW
+            ind = d  >= 2 ** (1/n) * _s_prev
+            ###################################################
+        elif p.solver.dataHandling == 'raw':
+            tnlh_1, tnlh_2 = tnlhf[:, 0:n], tnlhf[:, n:]
+            PointCoordsTNHLF_max =  where(logical_or(tnlh_1 < tnlh_2, isnan(tnlh_1)), tnlh_2, tnlh_1)
+            TNHLF_min =  where(logical_or(tnlh_1 > tnlh_2, isnan(tnlh_1)), tnlh_2, tnlh_1)
+            _s = nanmin(TNHLF_min, 1)
+            
+            tnlh_curr_1, tnlh_curr_2 = tnlhf_curr[:, 0:n], tnlhf_curr[:, n:]
+            TNHL_curr_min =  where(logical_or(tnlh_curr_1 < tnlh_curr_2, isnan(tnlh_curr_2)), tnlh_curr_1, tnlh_curr_2)
+            #1
+            t = nanargmin(TNHL_curr_min, 1)
+            
+            
+            #2
+            #t = nanargmin(tnlhf, 1) % n
+            #3
+            #t = nanargmin(a, 1) % n
+            
+            d = nanmin(vstack(([tnlhf[w, t], tnlhf[w, n+t]])), 0)
+            
+            #OLD
+            #!#!#!#! Don't replace it by _s_prev - d <= ... to omit inf-inf = nan !#!#!#
+            #ind = _s_prev  <= d + ((2**-n / log(2)) if n > 15 else log2(1+2**-n)) 
+            #ind = _s_prev - d <= ((2**-n / log(2)) if n > 15 else log2(1+2**-n)) 
+            
+            #NEW
+            ind = _s_prev  <= d + 1.0/n
+            
+            #print _s_prev - d
+            ###################################################
+            #d = ((tnlh[w, t]* tnlh[w, n+t])**0.5)
+        else:
+            assert 0
     else:
         tmp = a[:, 0:n]-o[:, 0:n]+a[:, n:]-o[:, n:]
         _s = nanmax(tmp, 1)
         t = nanargmin(tmp,1)
         d = tmp[w, t]
+        ind = 2**(-n) >= (_s_prev - d)/asarray(d, 'float64')
     
-
-    ind = d * (1.0 + max((1e-15, 2 ** (-n)))) >= _s_prev
-    
-    #print _s_prev, '\n', _s
-#    print nanmax(_s_prev), nanmax(_s)
-#    print '\n'
-#    print '2:', nanmax(_s / _s_prev), nanmax(_s), nanmax(_s_prev)
-#    print '3:', nanmin(nanmax(U1-L1, 1))
+    #ind = d * (1.0 + max((1e-15, 2 ** (-n)))) >= _s_prev
     
     if r9 is not None:
         ind = logical_or(ind, r9)
-    #ind.fill(True)
     if any(ind):
-        #if ind.size != 1: raise 0
+        #print('ind length: %d' % len(where(ind)[0]))
         bs = e[ind] - y[ind]
         t[ind] = nanargmax(bs, 1) # ordinary numpy.argmax can be used as well
         
@@ -252,7 +253,7 @@ def func2(y, e, t, vv):
     return new_y, en
 
 
-def func12(an, maxActiveNodes, maxSolutions, solutions, r6, vv, varTols, fo, Case):
+def func12(an, maxActiveNodes, p, solutions, r6, vv, varTols, fo, Case):
     if len(an) == 0:
         return array([]), array([]), array([]), array([])
     _in = an
@@ -260,7 +261,8 @@ def func12(an, maxActiveNodes, maxSolutions, solutions, r6, vv, varTols, fo, Cas
         r11, r12 = r6 - varTols, r6 + varTols
     y, e, S = [], [], []
     N = 0
-
+    maxSolutions = p.maxSolutions
+    
     while True:
         an1Candidates, _in = func3(_in, maxActiveNodes)
 
@@ -270,8 +272,15 @@ def func12(an, maxActiveNodes, maxSolutions, solutions, r6, vv, varTols, fo, Cas
         asarray([t.a for t in an1Candidates]), \
         asarray([t._s for t in an1Candidates])
         
-        yc, ec = func4(yc, ec, oc, ac, fo)
-        t, _s = func1(yc, ec, oc, ac, SIc, Case)
+        
+        
+        tnlhf = asarray([t.tnlhf for t in an1Candidates]) if p.solver.dataHandling == 'raw' else None
+        tnlhf_curr = asarray([t.tnlh_curr for t in an1Candidates]) if p.solver.dataHandling == 'raw' else None
+        
+        if p.probType != 'IP': 
+            nlhc = asarray([t.nlhc for t in an1Candidates])
+            yc, ec = func4(yc, ec, oc, ac, nlhc, fo)
+        t, _s = func1(tnlhf, tnlhf_curr, yc, ec, oc, ac, SIc, p, Case)
         yc, ec = func2(yc, ec, t, vv)
         _s = tile(_s, 2)
         
@@ -298,17 +307,17 @@ def func12(an, maxActiveNodes, maxSolutions, solutions, r6, vv, varTols, fo, Cas
         
     return y, e, _in, _s
 
-Fields = ['key', 'y', 'e', 'o', 'a', '_s']
-FuncValFields = ['key', 'y', 'e', 'o', 'a', '_s','r18', 'r19']
+Fields = ['key', 'y', 'e', 'nlhf','nlhc', 'o', 'a', '_s']
+#FuncValFields = ['key', 'y', 'e', 'nlhf','nlhc', 'o', 'a', '_s','r18', 'r19']
 IP_fields = ['key', 'y', 'e', 'o', 'a', '_s','F', 'volume', 'volumeResidual']
 
-def func11(y, e, o, a, _s, r3 = None): 
+def func11(y, e, nlhc, o, a, _s, p): 
     m, n = y.shape
-    w = arange(m)
-    if r3 == "IP":
+    if p.probType == "IP":
+        w = arange(m)
         # TODO: omit recalculation from func1
-        ind = nanargmin(a[:, 0:n]-o[:, 0:n]+a[:, n:]-o[:, n:],1)
-        sup_inf_diff = a[w, ind]-o[w, ind]+a[w, n+ind]-o[w, n+ind]
+        ind = nanargmin(a[:, 0:n] - o[:, 0:n] + a[:, n:] - o[:, n:], 1)
+        sup_inf_diff = a[w, ind] - o[w, ind] + a[w, n+ind] - o[w, n+ind]
         
         # DEBUG
         #tmp3 = nanmin(a[:, 0:n]-o[:, 0:n]+a[:, n:]-o[:, n:],1)
@@ -321,15 +330,22 @@ def func11(y, e, o, a, _s, r3 = None):
     else:
         o_modL, o_modU = o[:, 0:n], o[:, n:2*n]
         Tmp = nanmax(where(o_modU<o_modL, o_modU, o_modL), 1)
-        
-    if r3 is None:
-        return [si(Fields, Tmp[i], y[i], e[i], o[i], a[i], _s[i]) for i in range(m)]
-    elif r3 == 'IP':
+#        a_modL, a_modU = a[:, 0:n], a[:, n:2*n]
+#        uu = nanmax(where(logical_or(a_modU>a_modL, isnan(a_modU)), a_modU, a_modL), 1)
+#        ll = nanmin(where(logical_or(o_modU>o_modL, isnan(o_modU)), o_modL, o_modU), 1)
+#        nlhf = log2(uu-ll)
+        nlhf = log2(a-o)
+
+    if p.probType == 'IP':
         F = 0.25 * (a[w, ind] + o[w, ind] + a[w, n+ind] + o[w, n+ind])
         return [si(IP_fields, sup_inf_diff[i], y[i], e[i], o[i], a[i], _s[i], F[i], volume[i], volumeResidual[i]) for i in range(m)]
     else:
-        r18, r19 = r3[:, :n], r3[:, n:]
-        return [si(FuncValFields, Tmp[i], y[i], e[i], o[i], a[i], _s[i], r18[i], r19[i]) for i in range(m)]
+        assert p.probType in ('GLP', 'NLP', 'NSP', 'SNLE', 'NLSP')
+        return [si(Fields, Tmp[i], y[i], e[i], nlhf[i], nlhc[i] if nlhc is not None else None, o[i], a[i], _s[i]) for i in range(m)]
+    
+#    else:
+#        r18, r19 = r3[:, :n], r3[:, n:]
+#        return [si(FuncValFields, Tmp[i], y[i], e[i], nlhf[i], nlhc[i] if nlhc is not None else None, o[i], a[i], _s[i], r18[i], r19[i]) for i in range(m)]
 
 class si:
     def __init__(self, fields, *args, **kwargs):

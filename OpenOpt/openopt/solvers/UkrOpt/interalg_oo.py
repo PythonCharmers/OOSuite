@@ -7,8 +7,9 @@ from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X,  SMALL_DELTA_F, MA
 from openopt.kernel.baseSolver import *
 from openopt.kernel.Point import Point
 from openopt.solvers.UkrOpt.interalgMisc import *
-from FuncDesigner import sum as fd_sum, abs as fd_abs
+from FuncDesigner import sum as fd_sum, abs as fd_abs, max as fd_max
 from ii_engine import *
+from interalgCons import processConstraints
 
 bottleneck_is_present = False
 try:
@@ -31,7 +32,8 @@ class interalg(baseSolver):
     #maxMem = '150MB'
     maxNodes = 150000
     maxActiveNodes = 150
-    #_requiresBestPointDetection = True
+    dataHandling = 'auto'
+    _requiresBestPointDetection = True
     
     __isIterPointAlwaysFeasible__ = lambda self, p: p.__isNoMoreThanBoxBounded__() #and p.probType != 'IP'
     _requiresFiniteBoxBounds = True
@@ -51,7 +53,8 @@ class interalg(baseSolver):
         if not p.isFDmodel:
             p.err('solver %s can handle only FuncDesigner problems' % self.__name__)
         
-            
+        isOpt = p.probType in ['NLP', 'NSP', 'GLP']
+        
         isSNLE = p.probType == 'NLSP'
         if not p.__isNoMoreThanBoxBounded__ and not isSNLE:
             p.warn('handling constraints by the solver interalg is undone properly yet for all problems except of SNLE')
@@ -76,10 +79,9 @@ class interalg(baseSolver):
 
         point = p.point
         
-        p.kernelIterFuncs.pop(SMALL_DELTA_X)
-        p.kernelIterFuncs.pop(SMALL_DELTA_F)
-        if MAX_NON_SUCCESS in p.kernelIterFuncs: 
-            p.kernelIterFuncs.pop(MAX_NON_SUCCESS)
+        p.kernelIterFuncs.pop(SMALL_DELTA_X, None)
+        p.kernelIterFuncs.pop(SMALL_DELTA_F, None)
+        p.kernelIterFuncs.pop(MAX_NON_SUCCESS, None)
         
         if not bottleneck_is_present:
                 p.pWarn('''
@@ -88,8 +90,8 @@ class interalg(baseSolver):
                 available via easy_install, takes several minutes for compilation)
                 could speedup the solver %s''' % self.__name__)
         
-        if isSNLE and not p.__isNoMoreThanBoxBounded__():
-           p.err('constrained systems of equations are unimplemented yet')
+#        if isSNLE and not p.__isNoMoreThanBoxBounded__():
+#           p.err('constrained systems of equations are unimplemented yet')
         
         n = p.n
         
@@ -156,6 +158,8 @@ class interalg(baseSolver):
             frc = 0.0
             eqs = [fd_abs(elem) for elem in p.user.f]
             asdf1 = fd_sum(eqs)
+            
+            # TODO: check it, for reducing calculations
             #C.update([elem == 0 for elem in p.user.f])
         else:
             asdf1 = p.user.f[0]
@@ -183,8 +187,14 @@ class interalg(baseSolver):
                     p.warn('user-provided fOpt seems to be incorrect, ')
                 frc = p.fOpt
         
+        if self.dataHandling == 'auto':
+            self.dataHandling = 'sorted' if isIP or (p.__isNoMoreThanBoxBounded__() and n < 50) else 'raw'
 
-
+        if self.dataHandling == 'raw' and isSNLE:
+            p.pWarn('''
+                this interalg data handling approach ("%s") 
+                is unimplemented for SNLE yet, dropping to "sorted"'''%self.dataHandling)
+            self.dataHandling ='sorted'
 #        if dataType==float64:
 #            numBytes = 8 
 #        elif self.dataType == 'float128':
@@ -203,19 +213,36 @@ class interalg(baseSolver):
 #                maxMem = int(float(maxMem[:-2]) * 2 ** 40)
 #            else:
 #                p.err('incorrect max memory parameter value, should end with KB, MB, GB or TB')
-        m = 0
-        #maxActive = 1
-        self.maxActiveNodes = int(self.maxActiveNodes )
+
+        self.maxActiveNodes = int(self.maxActiveNodes)
 #        if self.maxActiveNodes < 2:
 #            p.warn('maxActiveNodes should be at least 2 while you have provided %d. Setting it to 2.' % self.maxActiveNodes)
-        self.maxNodes = int(self.maxNodes )
+        self.maxNodes = int(self.maxNodes)
 
         _in = array([], object)
         
         g = inf
-        C = p._FD.nonBoxCons
-#        if isSNLE:
-#            C += [(elem, 0, 0) for elem in p.user.f]
+        C = p._FD.nonBoxConsWithTolShift
+        C0 = p._FD.nonBoxCons
+        if isOpt:
+            r = []
+            for (elem, lb, ub, tol) in C0:
+                if tol == 0: tol = p.contol
+                if lb == ub:
+                    r.append(fd_max((fd_abs(elem-lb)-tol, 0)) * (fTol/tol))
+                elif lb == -inf:
+                    r.append(fd_max((0, elem-ub-tol)) * (fTol/tol))
+                elif ub == inf:
+                    r.append(fd_max((0, lb-elem-tol)) * (fTol/tol))
+                else:
+                    p.err('finite box constraints are unimplemented for interalg yet')
+            #p._cons_obj = 1e100 * fd_sum(r) if len(r) != 0 else None
+            p._cons_obj = fd_sum(r) if len(r) != 0 else None
+        if isSNLE:
+            p._cons_obj = None # TODO: check it!
+            C += [(elem, -(elem.tol if elem.tol != 0 else p.ftol), (elem.tol if elem.tol != 0 else p.ftol)) for elem in p.user.f]
+            C0 += [(elem, 0, 0, (elem.tol if elem.tol != 0 else p.ftol)) for elem in p.user.f]
+        
         p._isOnlyBoxBounded = p.__isNoMoreThanBoxBounded__()
         
         # TODO: hanlde fixed variables here
@@ -238,52 +265,16 @@ class interalg(baseSolver):
         _s = nan
         
         for itn in range(p.maxIter+10):
-            ip = func10(y, e, vv)
-            m = e.shape[0]
-            if len(C) != 0:
-                r15 = empty(m, bool)
-                r15.fill(True)
-                r4_L_ind = empty((m, n), bool)
-                r4_U_ind = empty((m, n), bool)
-                r4_L_ind.fill(False)
-                r4_U_ind.fill(False)
-                for f, r16, r17 in C:
-                    o, a = func8(ip, f, dataType)
-                    m = o.size/(2*n)
-                    o, a  = o.reshape(2*n, m).T, a.reshape(2*n, m).T
-                    lf1, lf2, uf1, uf2 = o[:, 0:n], o[:, n:2*n], a[:, 0:n], a[:, n:2*n]
-                    o_ = where(logical_or(lf1>lf2, isnan(lf1)), lf2, lf1)
-                    a_ = where(logical_or(uf1>uf2, isnan(uf2)), uf1, uf2)
-                    o, a = nanmin(o_, 1), nanmax(a_, 1)
-                    
-                    ind = logical_and(a >= r16 - p.contol, o  <= r17 + p.contol) if r16 != r17 else logical_and(a >= r16, o  <= r17)
-                    r15 = logical_and(r15, ind)
-                    
-    #                ind = logical_or(o_ > r17 + p.contol, isnan(o_)) 
-    #                if any(ind):
-    #                    r4_L_ind = logical_or(r4_L_ind, ind)
-    #                    
-    #                ind = logical_or(a_ < r16 - p.contol, isnan(a_)) 
-    #                if any(ind):
-    #                    r4_U_ind = logical_or(r4_U_ind, ind)
-    #            
-    #            cs = 0.5*(y + e)
-    #            ind = r4_L_ind
-    #            if any(ind):
-    #                y[ind] = cs[ind]
-    #            ind = r4_U_ind
-    #            if any(ind):
-    #                e[ind] = cs[ind]
-                    
-                ind = where(r15)[0]
-                lj = ind.size
-                # TODO: use "take" instead
-                y = take(y, ind, axis=0, out=y[:lj])
-                e = take(e, ind, axis=0, out=e[:lj])
+            if len(C0) != 0: 
+                ip = func10(y, e, vv)
+                m = e.shape[0]
+                y, e, nlhc = processConstraints(C0, y, e, ip, m, p, dataType)
+            else:
+                nlhc = None
             
             if y.size != 0:
                 an, g, fo, _s, solutions, r6, xRecord, frc, CBKPMV = \
-                pb(p, y, e, vv, asdf1, C, CBKPMV, itn, g, \
+                pb(p, nlhc, y, e, vv, asdf1, C, CBKPMV, itn, g, \
                              nNodes, frc, fTol, maxSolutions, varTols, solutions, r6, _in, \
                              dataType, maxNodes, _s, xRecord)
                 if _s is None:
@@ -295,27 +286,29 @@ class interalg(baseSolver):
             
             if isIP:
                 y, e, _in, _s = \
-                    func12(an, self.maxActiveNodes, maxSolutions, solutions, r6, vv, varTols, inf, 'IP')# Case=3
+                    func12(an, self.maxActiveNodes, p, solutions, r6, vv, varTols, inf, 'IP')# Case=3
             else:
                 y, e, _in, _s = \
-                func12(an, self.maxActiveNodes, maxSolutions, solutions, r6, vv, varTols, fo, 2) # Case=2
+                func12(an, self.maxActiveNodes, p, solutions, r6, vv, varTols, fo, 2) # Case=2
             nActiveNodes.append(y.shape[0]/2)
             if y.size == 0: 
                 if len(solutions) > 1:
-                    p.istop, p.msg = 1001, 'solutions are obtained'
+                    p.istop, p.msg = 1001, 'all solutions have been obtained'
                 else:
-                    p.istop, p.msg = 1000, 'solution is obtained'
+                    p.istop, p.msg = 1000, 'solution has been obtained'
                 break            
+            ############# End of main cycle ###############
             
-            # End of main cycle
         if not isSNLE and not isIP and p.point(xRecord).betterThan(p.point(p.xk)):
             p.iterfcn(xRecord)
         ff = p.fk # ff may be not assigned yet
+#        ff = p._bestPoint.f()
+#        p.xk = p._bestPoint.x
         if isIP: 
             p.xk = array([nan]*p.n)
             p.rk = p._residual
             p.fk = p._F
-        isFeas = p.isFeas(p.xk) if not isIP else p.rk < p.ftol
+        isFeas = p.isFeas(p.xk) if not isIP else p.rk < fTol
         if not isFeas and p.istop > 0:
             p.istop, p.msg = -1000, 'no feasible solution has been obtained'
         
