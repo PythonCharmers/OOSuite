@@ -72,7 +72,7 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType):
         cs = dict([(oovar, asarray((y[:, i]+e[:, i])/2, dataType)) for i, oovar in enumerate(vv)])
     else:
         tnlh = tnlh.copy()
-        tnlh[tnlh==0] = 1e-300
+        tnlh[atleast_1d(tnlh==0)] = 1e-300
         tnlh[atleast_1d(isnan(tnlh))] = inf #- check it!
         tnlh_l_inv, tnlh_u_inv = 1.0 / tnlh[:, :n], 1.0 / tnlh[:, n:]
         wr4 = (y * tnlh_l_inv + e * tnlh_u_inv) / (tnlh_l_inv + tnlh_u_inv)
@@ -83,8 +83,8 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType):
         cs = dict([(oovar, asarray(wr4[:, i], dataType)) for i, oovar in enumerate(vv)])
         
         #OLD
-        cs = dict([(oovar, asarray((y[:, i]+e[:, i])/2, dataType)) for i, oovar in enumerate(vv)])
-        wr4 = (y + e) / 2
+#        cs = dict([(oovar, asarray((y[:, i]+e[:, i])/2, dataType)) for i, oovar in enumerate(vv)])
+#        wr4 = (y + e) / 2
 
         
     cs = ooPoint(cs, skipArrayCast = True)
