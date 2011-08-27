@@ -25,10 +25,26 @@ def scipy_UnivariateSpline(*args, **kwargs):
             return us.__call__(x, 1)
         def f(x):
             x = np.asfarray(x)
-            if x.size != 1:
-                raise FuncDesignerException('for scipy_UnivariateSpline input should be oovar/oofun with output size = 1,other cases not implemented yet')            
+            #if x.size != 1:
+                #raise FuncDesignerException('for scipy_UnivariateSpline input should be oovar/oofun with output size = 1,other cases not implemented yet')            
             return us.__call__(x)
-        return oofun(f, INP, d = d, isCostly=True)
+        r = oofun(f, INP, d = d, isCostly=True)
+        diffX, diffY = np.diff(args[0]), np.diff(args[1])
+        if len(args) >= 5:
+            k = args[4]
+        elif 'k' in kwargs:
+            k = kwargs['k']
+        else:
+            k = 3 # default for UnivariateSpline
+        if (all(diffX >= 0) or all(diffX <= 0)) and (all(diffY >= 0) or all(diffY <= 0)) and k in (1, 3):
+            r.criticalPoints = False
+        else:
+            def _interval(*args, **kw):
+                raise FuncDesignerException('''
+                Currently interval calculations are implemented for 
+                sorted monotone splines with order 1 or 3 only''')
+            r._interval = _interval
+        return r
         # TODO: check does isCostly = True better than False for small-scale, medium-scale, large-scale
     return makeOutput
 
