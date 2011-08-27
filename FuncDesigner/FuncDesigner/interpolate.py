@@ -20,15 +20,15 @@ def scipy_UnivariateSpline(*args, **kwargs):
             raise FuncDesignerException('for scipy_UnivariateSpline input should be oovar/oofun,other cases not implemented yet')
         def d(x):
             x = np.asfarray(x)
-            if x.size != 1:
-                raise FuncDesignerException('for scipy_UnivariateSpline input should be oovar/oofun with output size = 1,other cases not implemented yet')
+            #if x.size != 1:
+                #raise FuncDesignerException('for scipy_UnivariateSpline input should be oovar/oofun with output size = 1,other cases not implemented yet')
             return us.__call__(x, 1)
         def f(x):
             x = np.asfarray(x)
             #if x.size != 1:
                 #raise FuncDesignerException('for scipy_UnivariateSpline input should be oovar/oofun with output size = 1,other cases not implemented yet')            
             return us.__call__(x)
-        r = oofun(f, INP, d = d, isCostly=True)
+        r = oofun(f, INP, d = d, isCostly=True, vectorized=True)
         diffX, diffY = np.diff(args[0]), np.diff(args[1])
         if len(args) >= 5:
             k = args[4]
