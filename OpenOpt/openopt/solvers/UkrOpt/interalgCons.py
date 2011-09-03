@@ -1,4 +1,4 @@
-from numpy import empty, where, logical_and, take, logical_or, isnan, zeros, log2, isfinite, int8, int16, int32, int64, inf, isinf
+from numpy import empty, where, logical_and, take, logical_or, isnan, zeros, log2, isfinite, int8, int16, int32, int64, inf, isinf, asfarray
 from interalgLLR import func8
 
 try:
@@ -6,14 +6,14 @@ try:
 except ImportError:
     from numpy import nanmin, nanargmin, nanargmax, nanmax
     
-def processConstraints(C, y, e, ip, m, p, dataType):
+def processConstraints(C0, y, e, ip, m, p, dataType):
     n = p.n
     r15 = empty(m, bool)
     nlh = zeros((m, 2*n))
     r15.fill(True)
 
     # here tol is unused 
-    for i, (f, r16, r17, tol) in enumerate(C):
+    for i, (f, r16, r17, tol) in enumerate(C0):
         o, a = func8(ip, f, dataType)
         m = o.size/(2*n)
         o, a  = o.reshape(2*n, m).T, a.reshape(2*n, m).T
@@ -28,10 +28,22 @@ def processConstraints(C, y, e, ip, m, p, dataType):
         if dataType in [int8, int16, int32, int64, int]:
             aor20 = asfarray(aor20)
         if r16 == r17:
-            # TODO: for non-exact interval quality increase nlh while moving from 0.5*(e-y)
-            nlh[r16 > a] = inf
-            nlh[r17 < o] = inf
+            val = r17
+            a_t,  o_t = a.copy(), o.copy()
+            if dataType in [int8, int16, int32, int64, int]:
+                a_t,  o_t = asfarray(a_t), asfarray(o_t)
+            a_t[a_t > val + tol] = val + tol
+            o_t[o_t < val - tol] = val - tol
+            r24 = a_t - o_t
+            tmp = r24 / aor20
+            tmp[r24 == 0.0] = 1.0 # may be encountered if a == o, especially for integer probs
+            nlh -= log2(tmp)
             #nlh += log2(aor20)# TODO: mb use other
+            #nlh -= log2(a-r17) + log2(r16-o)
+            #nlh += log2((a-r17)/ aor20) + log2((r16-o)/ aor20)
+            # TODO: for non-exact interval quality increase nlh while moving from 0.5*(e-y)
+            nlh[val > a] = inf
+            nlh[val < o] = inf
         elif isfinite(r16) and not isfinite(r17):
             tmp = (r16 - o) / aor20
             
