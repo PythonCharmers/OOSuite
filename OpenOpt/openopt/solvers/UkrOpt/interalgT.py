@@ -103,6 +103,9 @@ def func4(y, e, o, a, nlhc, fo):
     if any(ind):
         y[ind] = cs[ind]
         # Changes
+#        ind = logical_and(ind, logical_not(isnan(a[:, n:2*n])))
+##        ii = len(where(ind)[0])
+##        if ii != 0: print ii
 #        a[:, 0:n][ind] = a[:, n:2*n][ind]
 #        o[:, 0:n][ind] = o[:, n:2*n][ind]
     ind = logical_or(o_modU > fo, isnan(o_modU)) # TODO: assert isnan(o_modU) is same to isnan(a_modU)
@@ -111,6 +114,9 @@ def func4(y, e, o, a, nlhc, fo):
     if any(ind):
         e[ind] = cs[ind]
         # Changes
+#        ind = logical_and(ind, logical_not(isnan(a[:, n:])))
+##        ii = len(where(ind)[0])
+##        if ii != 0: print ii
 #        a[:, n:2*n][ind] = a[:, 0:n][ind]
 #        o[:, n:2*n][ind] = o[:, 0:n][ind]
     return y, e

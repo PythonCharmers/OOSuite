@@ -36,7 +36,7 @@ def processConstraints(C, y, e, ip, m, p, dataType):
             tmp = (r16 - o) / aor20
             
             tmp[r16 > a] = 0
-            tmp[isinf(a)] = 1
+            tmp[isinf(a)] = 1 # (to prevent inf/inf=nan); TODO: rework it
             tmp[r16 <= o] = 1
             
             nlh -= log2(tmp)
@@ -44,7 +44,7 @@ def processConstraints(C, y, e, ip, m, p, dataType):
             tmp = (a - r17) / aor20
             
             tmp[r17 < o] = 0
-            tmp[isinf(o)] = 1
+            tmp[isinf(o)] = 1 # (to prevent inf/inf=nan);TODO: rework it
             tmp[r17 >= a] = 1
             
             nlh -= log2(tmp) 

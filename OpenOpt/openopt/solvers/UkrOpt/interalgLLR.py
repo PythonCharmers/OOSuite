@@ -72,14 +72,12 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType):
         cs = dict([(oovar, asarray((y[:, i]+e[:, i])/2, dataType)) for i, oovar in enumerate(vv)])
     else:
         tnlh = tnlh.copy()
-        tnlh[atleast_1d(tnlh==0)] = 1e-300
+        tnlh[atleast_1d(tnlh<1e-300)] = 1e-300 # to prevent division by zero
         tnlh[atleast_1d(isnan(tnlh))] = inf #- check it!
         tnlh_l_inv, tnlh_u_inv = 1.0 / tnlh[:, :n], 1.0 / tnlh[:, n:]
         wr4 = (y * tnlh_l_inv + e * tnlh_u_inv) / (tnlh_l_inv + tnlh_u_inv)
         ind = tnlh_l_inv == tnlh_u_inv # especially important for tnlh_l_inv == tnlh_u_inv = 0
         wr4[ind] = (y[ind] + e[ind]) / 2
-        #tmp = y + (e-y) * (tnlh_u_inv-tnlh_l_inv) / (tnlh_l_inv + tnlh_u_inv)
-        #assert all(y <= wr4+1e-10) and all(wr4 <= e+1e-10)
         cs = dict([(oovar, asarray(wr4[:, i], dataType)) for i, oovar in enumerate(vv)])
         
         #OLD

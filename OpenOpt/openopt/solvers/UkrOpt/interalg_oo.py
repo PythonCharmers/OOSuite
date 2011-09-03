@@ -188,31 +188,25 @@ class interalg(baseSolver):
                 frc = p.fOpt
         
         if self.dataHandling == 'auto':
-            self.dataHandling = 'sorted' if isIP or (p.__isNoMoreThanBoxBounded__() and n < 50) else 'raw'
+            if isIP:
+                self.dataHandling = 'sorted'
+            else:
+                M = 0
+                domain = dict([(v, [p.lb[i], p.ub[i]]) for i,  v in enumerate(vv)])
+                for func in [p.user.f[0]] + [Elem[0] for Elem in p._FD.nonBoxCons]:
+                    r = func.interval(domain, self.dataType)
+                    M = max((M, max(atleast_1d(abs(r.lb)))))
+                    M = max((M, max(atleast_1d(abs(r.ub)))))
+                self.dataHandling = 'raw' if M < 1e5 else 'sorted'
+                #print M
+                    
+            #self.dataHandling = 'sorted' if isIP or (p.__isNoMoreThanBoxBounded__() and n < 50) else 'raw'
 
         if self.dataHandling == 'raw' and isSNLE:
             p.pWarn('''
                 this interalg data handling approach ("%s") 
                 is unimplemented for SNLE yet, dropping to "sorted"'''%self.dataHandling)
             self.dataHandling ='sorted'
-#        if dataType==float64:
-#            numBytes = 8 
-#        elif self.dataType == 'float128':
-#            numBytes = 16
-#        else:
-#            p.err('unknown data type, should be float64 or float128')
-#        maxMem = self.maxMem
-#        if type(maxMem) == str:
-#            if maxMem.lower().endswith('kb'):
-#                maxMem = int(float(maxMem[:-2]) * 2 ** 10)
-#            elif maxMem.lower().endswith('mb'):
-#                maxMem = int(float(maxMem[:-2]) * 2 ** 20)
-#            elif maxMem.lower().endswith('gb'):
-#                maxMem = int(float(maxMem[:-2]) * 2 ** 30)
-#            elif maxMem.lower().endswith('tb'):
-#                maxMem = int(float(maxMem[:-2]) * 2 ** 40)
-#            else:
-#                p.err('incorrect max memory parameter value, should end with KB, MB, GB or TB')
 
         self.maxActiveNodes = int(self.maxActiveNodes)
 #        if self.maxActiveNodes < 2:

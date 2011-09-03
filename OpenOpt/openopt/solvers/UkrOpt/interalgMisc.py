@@ -65,13 +65,16 @@ def r14(p, nlhc, y, e, vv, asdf1, C, CBKPMV, itn, g, nNodes,  \
     
     
         #NEW
-        tmp = a.copy()
         tnlh_fixed_local = tnlh_fixed[:len(nodes)]
+        
+        tmp = a.copy()
         
         tmp[tmp>fo_prev] = fo_prev
         #tnlh_curr = tnlh_fixed - log2(fo - o2)
         tnlh_curr = tnlh_fixed_local - log2(tmp - o)
         
+        # TODO: use it instead of code above
+        #tnlh_curr = tnlh_fixed_local - log2(where() - o)
     else:
         tnlh_curr = None
     
