@@ -160,7 +160,7 @@ def r14(p, nlhc, y, e, vv, asdf1, C, CBKPMV, itn, g, nNodes,  \
     
     an, g = func9(an, fo, g, p)
 
-    nn = 1 if asdf1.isUncycled and all(isfinite(a)) and all(isfinite(o)) and p._isOnlyBoxBounded else maxNodes
+    nn = 1 if asdf1.isUncycled and all(isfinite(o)) and p._isOnlyBoxBounded else maxNodes
     
     an, g = func5(an, nn, g, p)
     nNodes.append(len(an))

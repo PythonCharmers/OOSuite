@@ -196,12 +196,13 @@ class interalg(baseSolver):
             # handles 'auto' as well
             self.dataHandling ='sorted'
 
+        domain = dict([(v, [p.lb[i], p.ub[i]]) for i,  v in enumerate(vv)])
+        
         if self.dataHandling == 'auto':
             if isIP:
                 self.dataHandling = 'sorted'
             else:
                 M = 0
-                domain = dict([(v, [p.lb[i], p.ub[i]]) for i,  v in enumerate(vv)])
                 for func in [p.user.f[0]] + [Elem[0] for Elem in p._FD.nonBoxCons]:
                     r = func.interval(domain, self.dataType)
                     M = max((M, max(atleast_1d(abs(r.lb)))))
@@ -210,8 +211,12 @@ class interalg(baseSolver):
                 #print M
                     
             #self.dataHandling = 'sorted' if isIP or (p.__isNoMoreThanBoxBounded__() and n < 50) else 'raw'
-
-
+            
+        p._isOnlyBoxBounded = p.__isNoMoreThanBoxBounded__() 
+        if asdf1.isUncycled and p._isOnlyBoxBounded and all(isfinite(p.user.f[0].interval(domain).lb)):
+            #maxNodes = 1
+            self.dataHandling = 'sorted'
+            
 
         self.maxActiveNodes = int(self.maxActiveNodes)
 #        if self.maxActiveNodes < 2:
@@ -242,7 +247,7 @@ class interalg(baseSolver):
             C += [(elem, -(elem.tol if elem.tol != 0 else p.ftol), (elem.tol if elem.tol != 0 else p.ftol)) for elem in p.user.f]
             C0 += [(elem, 0, 0, (elem.tol if elem.tol != 0 else p.ftol)) for elem in p.user.f]
         
-        p._isOnlyBoxBounded = p.__isNoMoreThanBoxBounded__()
+        
         
         # TODO: hanlde fixed variables here
         varTols = p.variableTolerances
