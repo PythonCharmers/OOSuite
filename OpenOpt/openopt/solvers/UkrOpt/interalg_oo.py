@@ -186,7 +186,13 @@ class interalg(baseSolver):
                 if p.fOpt > frc:
                     p.warn('user-provided fOpt seems to be incorrect, ')
                 frc = p.fOpt
-        
+
+        if self.dataHandling == 'raw' and isSNLE:
+            p.pWarn('''
+                this interalg data handling approach ("%s") 
+                is unimplemented for SNLE yet, dropping to "sorted"'''%self.dataHandling)
+            self.dataHandling ='sorted'
+
         if self.dataHandling == 'auto':
             if isIP:
                 self.dataHandling = 'sorted'
@@ -202,11 +208,7 @@ class interalg(baseSolver):
                     
             #self.dataHandling = 'sorted' if isIP or (p.__isNoMoreThanBoxBounded__() and n < 50) else 'raw'
 
-        if self.dataHandling == 'raw' and isSNLE:
-            p.pWarn('''
-                this interalg data handling approach ("%s") 
-                is unimplemented for SNLE yet, dropping to "sorted"'''%self.dataHandling)
-            self.dataHandling ='sorted'
+
 
         self.maxActiveNodes = int(self.maxActiveNodes)
 #        if self.maxActiveNodes < 2:
