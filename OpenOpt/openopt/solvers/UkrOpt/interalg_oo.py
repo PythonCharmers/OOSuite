@@ -187,10 +187,13 @@ class interalg(baseSolver):
                     p.warn('user-provided fOpt seems to be incorrect, ')
                 frc = p.fOpt
 
-        if self.dataHandling == 'raw' and isSNLE:
-            p.pWarn('''
-                this interalg data handling approach ("%s") 
-                is unimplemented for SNLE yet, dropping to "sorted"'''%self.dataHandling)
+        if isSNLE:
+            if self.dataHandling == 'raw':
+                p.pWarn('''
+                    this interalg data handling approach ("%s") 
+                    is unimplemented for SNLE yet, dropping to "sorted"'''%self.dataHandling)
+            
+            # handles 'auto' as well
             self.dataHandling ='sorted'
 
         if self.dataHandling == 'auto':
