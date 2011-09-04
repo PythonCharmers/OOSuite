@@ -64,7 +64,7 @@ def func8(domain, func, dataType):
     #assert TMP.lb.dtype == dataType
     return asarray(TMP.lb, dtype=dataType), asarray(TMP.ub, dtype=dataType)
 
-def getr4Values(vv, y, e, tnlh, func, C, contol, dataType):
+def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p):
     n = y.shape[1]
     # TODO: rework it wrt nlh
     #cs = dict([(key, asarray((val[0]+val[1])/2, dataType)) for key, val in domain.items()])
@@ -107,14 +107,14 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType):
     elif all(r15):
         F = func(cs)
     else:
-        cs = dict([(oovar, (y[r15, i] + e[r15, i])/2) for i, oovar in enumerate(vv)])
-        cs = ooPoint(cs, skipArrayCast = True)
+        #cs = dict([(oovar, (y[r15, i] + e[r15, i])/2) for i, oovar in enumerate(vv)])
+        #cs = ooPoint(cs, skipArrayCast = True)
         cs.isMultiPoint = True
         tmp = func(cs)
         F = empty(m, dataType)
         #F.fill(nanmax(tmp)+1) 
         F.fill(2**31-15 if dataType in (int32, int64, int) else nan)
-        F[r15] = tmp
+        F[r15] = tmp[r15]
     return atleast_1d(F), ((y+e) / 2 if tnlh is None else wr4)
 
 def r2(PointVals, PointCoords, dataType):

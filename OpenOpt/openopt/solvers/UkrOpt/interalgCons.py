@@ -37,7 +37,7 @@ def processConstraints(C0, y, e, ip, m, p, dataType):
             r24 = a_t - o_t
             tmp = r24 / aor20
             tmp[r24 == 0.0] = 1.0 # may be encountered if a == o, especially for integer probs
-            tmp[tmp<1e-300] = 1e-300 # TODO: improve it
+            #tmp[tmp<1e-300] = 1e-300 # TODO: improve it
             nlh -= log2(tmp)
             #nlh += log2(aor20)# TODO: mb use other
             #nlh -= log2(a-r17) + log2(r16-o)
@@ -48,6 +48,7 @@ def processConstraints(C0, y, e, ip, m, p, dataType):
         elif isfinite(r16) and not isfinite(r17):
             #OLD
             tmp = (r16 - o) / aor20
+            ##tmp = (a - r16) / aor20
             #NEW
 #            o_t[o_t < r16 - tol] = r16 - tol
 #            #ind = a_t>o
@@ -55,19 +56,20 @@ def processConstraints(C0, y, e, ip, m, p, dataType):
 #            #o_t[o_t < r16 - tol] = r16 - tol
 #            r24 = a - o_t
 #            tmp = r24 / aor20
-#            #tmp = (a - r16) / aor20
+            #tmp = (a - r16) / aor20f
             
-            tmp[tmp<1e-300] = 1e-300 # TODO: improve it
+            #tmp[tmp<1e-300] = 1e-300 # TODO: improve it
             
             tmp[r16 > a] = 0
             tmp[isinf(a)] = 1 # (to prevent inf/inf=nan); TODO: rework it
-            tmp[r16 - tol <= o] = 1
+            #tmp[r16 - tol <= o] = 1
+            tmp[r16 <= o] = 1
             
             nlh -= log2(tmp)
         elif isfinite(r17) and not isfinite(r16):
             #OLD
             tmp = (a - r17) / aor20
-            
+            ##tmp = (r17-o) / aor20
             #NEW
 #            a_t[a_t > r17 + tol] = r17 + tol
 #            
@@ -81,7 +83,8 @@ def processConstraints(C0, y, e, ip, m, p, dataType):
             
             tmp[r17 < o] = 0
             tmp[isinf(o)] = 1 # (to prevent inf/inf=nan);TODO: rework it
-            tmp[r17+tol >= a] = 1
+            #tmp[r17+tol >= a] = 1
+            tmp[r17 >= a] = 1
             
             nlh -= log2(tmp) 
         else:
