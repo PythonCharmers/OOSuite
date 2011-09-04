@@ -87,7 +87,10 @@ for root, dirs, files in os.walk(''.join([elem + os.sep for elem in __file__.spl
             
 def getSolverFromStringName(p, solver_str):
     if solver_str not in solverPaths:
-        p.err('incorrect solver is called, maybe the solver "' + solver_str +'" is not installed. Also, maybe you have forgotten to use "python setup.py install" after updating OpenOpt from subversion repository')
+        p.err('''
+        incorrect solver is called, maybe the solver "%s" is misspelled 
+        or requires special installation and is not installed, 
+        check http://openopt.org/%s''' % (solver_str, p.probType))
     if p.debug:
         solverClass =  solver_import(solverPaths[solver_str], solver_str)
     else:
