@@ -89,7 +89,7 @@ def r14(p, nlhc, y, e, vv, asdf1, C, CBKPMV, itn, g, nNodes,  \
     
     if CBKPMV > Min:
         CBKPMV = Min
-        xRecord = xk# TODO: is copy required?
+        xRecord = xk.copy()# TODO: is copy required?
     if frc > Min:
         frc = Min
     
@@ -101,6 +101,12 @@ def r14(p, nlhc, y, e, vv, asdf1, C, CBKPMV, itn, g, nNodes,  \
         tmp[tmp>fo] = fo
         #tnlh_curr = tnlh_fixed - log2(fo - o2)
         tnlh_curr = tnlh_fixed - log2(tmp - o2)
+        
+        r10 = where(nanmax(tmp - o2, 1) < 0)
+        if any(r10):
+            mino = [node.key for node in an]
+            mmlf = nanmin(asarray(mino)[r10])
+            g = min((g, mmlf))
         
         # TODO: optimize it, don't recalculate for whole stored arrays
         ind = where(a2==inf)[0]

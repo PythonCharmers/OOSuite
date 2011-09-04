@@ -303,8 +303,13 @@ class interalg(baseSolver):
                 break            
             ############# End of main cycle ###############
             
-        if not isSNLE and not isIP and p.point(xRecord).betterThan(p.point(p.xk)):
-            p.iterfcn(xRecord)
+        if not isSNLE and not isIP:
+            if p._bestPoint.betterThan(p.point(p.xk)):
+                p.iterfcn(p._bestPoint)
+            else:
+                p.iterfcn(p.xk)
+            
+            
         ff = p.fk # ff may be not assigned yet
 #        ff = p._bestPoint.f()
 #        p.xk = p._bestPoint.x
@@ -312,6 +317,7 @@ class interalg(baseSolver):
             p.xk = array([nan]*p.n)
             p.rk = p._residual
             p.fk = p._F
+            
         isFeas = p.isFeas(p.xk) if not isIP else p.rk < fTol
         if not isFeas and p.istop > 0:
             p.istop, p.msg = -1000, 'no feasible solution has been obtained'
