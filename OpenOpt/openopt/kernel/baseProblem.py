@@ -498,6 +498,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         
         if tol != 0: self.useScaledResidualOutput = True
         
+        # TODO: omit it for interalg
         if tol not in (0, probtol, -probtol):
             scaleFactor = abs(probtol / tol)
             f *= scaleFactor
@@ -572,9 +573,11 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         if not f.is_oovar:
             Contol = max((0, Contol))
             # TODO: handle it more properly, especially  for lb, ub of array type
-            self._FD.nonBoxConsWithTolShift.append((f0, lb_0 - Contol, ub_0 + Contol))
-            self._FD.nonBoxCons.append((f0, lb_0, ub_0, Contol))
-
+            # FIXME: name of f0 vs f
+#            self._FD.nonBoxConsWithTolShift.append((f0, lb_0 - Contol, ub_0 + Contol))
+#            self._FD.nonBoxCons.append((f0, lb_0, ub_0, Contol))
+            self._FD.nonBoxConsWithTolShift.append((f, _lb - Contol, _ub + Contol))
+            self._FD.nonBoxCons.append((f, _lb, _ub, Contol))
 
 class MatrixProblem(baseProblem):
     _baseClassName = 'Matrix'
