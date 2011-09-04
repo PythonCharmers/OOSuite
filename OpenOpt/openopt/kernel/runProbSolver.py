@@ -188,7 +188,7 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
 #    p.ff = nan
     #todo : add scaling, etc
     p.primalConTol = p.contol
-    p.contol *= ConTolMultiplier
+    if not p.solver.__name__.startswith('interalg'): p.contol *= ConTolMultiplier
 
     p.timeStart = time()
     p.cpuTimeStart = clock()
