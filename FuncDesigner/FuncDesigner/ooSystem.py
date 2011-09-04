@@ -1,5 +1,5 @@
 from FDmisc import FuncDesignerException, pWarn
-from ooFun import oofun, BaseFDConstraint, _getAllAttachedConstraints
+from ooFun import oofun, BaseFDConstraint, _getAllAttachedConstraints, ooarray
 from ooPoint import ooPoint
 from numpy import isnan, ndarray, isfinite, asscalar, all, asarray, atleast_1d, array_equal
 from sle import sle
@@ -50,8 +50,12 @@ class ooSystem:
         else:
             Args = args
         for elem in Args:
-            if not isinstance(elem, BaseFDConstraint): raise('ooSystem operation &= expects only FuncDesigner constraints')
-        self.constraints.update(set(Args))
+            if isinstance(elem, (ooarray, list, tuple)):
+                for tmp_elem in elem: self.__iand__(tmp_elem) 
+            else:
+                if not isinstance(elem, BaseFDConstraint): raise FuncDesignerException('ooSystem operation &= expects only FuncDesigner constraints')
+                #self.constraints.update(set(Args))
+                self.constraints.add(elem)
         return self
     
         

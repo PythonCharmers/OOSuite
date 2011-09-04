@@ -142,10 +142,10 @@ def log_interval(logfunc, inp):
         if np.any(ind):
             ind2 = ub>0
             t_min[atleast_1d(logical_and(ind, ind2))] = -np.inf
-        ind = ub == 0
+        ind = atleast_1d(ub == 0)
         if np.any(ind):
-            t_max[atleast_1d(ind)] = np.nan
-            t_min[atleast_1d(ind)] = np.nan
+            t_max[ind] = np.nan
+            t_min[ind] = np.nan
         return t_min, t_max
     return interval
 
