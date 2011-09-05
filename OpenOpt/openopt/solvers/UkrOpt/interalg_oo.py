@@ -349,7 +349,7 @@ class interalg(baseSolver):
             s = 'Solution with required tolerance %0.1e \n is%s guarantied' \
             %(fTol, '' if p.extras['isRequiredPrecisionReached'] else ' NOT')
             if not isIP and p.maxSolutions == 1:
-                s += '(obtained precision: %0.1e)' % (tmp[1]-tmp[0])
+                s += ' (obtained precision: %0.1e)' % (tmp[1]-tmp[0])
             if not p.extras['isRequiredPrecisionReached'] and pnc == self.maxNodes: s += '\nincrease maxNodes (current value %d)' % self.maxNodes
             p.info(s)
 

@@ -103,7 +103,6 @@ def r14(p, nlhc, y, e, vv, asdf1, C, CBKPMV, itn, g, nNodes,  \
         tnlh_curr = tnlh_fixed - log2(tmp - o2)
         
         r10 = where(nanmax(tmp - o2, 1) < 0)
-#        print p.iter
         if any(r10):
             mino = [node.key for node in an]
             mmlf = nanmin(asarray(mino)[r10])

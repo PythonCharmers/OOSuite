@@ -12,7 +12,6 @@ def processConstraints(C0, y, e, ip, m, p, dataType):
     nlh = zeros((m, 2*n))
     r15.fill(True)
 
-    # here tol is unused 
     for i, (f, r16, r17, tol) in enumerate(C0):
         o, a = func8(ip, f, dataType)
         m = o.size/(2*n)
@@ -47,7 +46,7 @@ def processConstraints(C0, y, e, ip, m, p, dataType):
             nlh[val < o] = inf
         elif isfinite(r16) and not isfinite(r17):
             #OLD
-            tmp = (r16 - o) / aor20
+            tmp = (r16 - o + tol) / aor20
             ##tmp = (a - r16) / aor20
             #NEW
 #            o_t[o_t < r16 - tol] = r16 - tol
@@ -58,7 +57,8 @@ def processConstraints(C0, y, e, ip, m, p, dataType):
 #            tmp = r24 / aor20
             #tmp = (a - r16) / aor20f
             
-            #tmp[tmp<1e-300] = 1e-300 # TODO: improve it
+            tmp[tmp<1e-300] = 1e-300 # TODO: improve it
+            tmp[tmp>1.0] = 1.0
             
             tmp[r16 > a] = 0
             tmp[isinf(a)] = 1 # (to prevent inf/inf=nan); TODO: rework it
@@ -68,7 +68,7 @@ def processConstraints(C0, y, e, ip, m, p, dataType):
             nlh -= log2(tmp)
         elif isfinite(r17) and not isfinite(r16):
             #OLD
-            tmp = (a - r17) / aor20
+            tmp = (a - r17+tol) / aor20
             ##tmp = (r17-o) / aor20
             #NEW
 #            a_t[a_t > r17 + tol] = r17 + tol
@@ -79,7 +79,9 @@ def processConstraints(C0, y, e, ip, m, p, dataType):
 #            tmp = r24 / aor20
             
             tmp[tmp<1e-300] = 1e-300 # TODO: improve it
-            
+            tmp[tmp>1.0] = 1.0
+#            from numpy import ones_like
+#            tmp = 0.5*ones_like(tmp)
             
             tmp[r17 < o] = 0
             tmp[isinf(o)] = 1 # (to prevent inf/inf=nan);TODO: rework it
