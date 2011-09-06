@@ -346,7 +346,7 @@ def finalTextOutput(p, r):
                 nNaNsMsg = '1 constraint is equal to NaN, '
             else:
                 nNaNsMsg = ('%d constraints are equal to NaN, ' % nNaNs)
-            p.disp('NO FEASIBLE SOLUTION is obtained (%s%s, objFunc = %0.8g)' % (nNaNsMsg,  rMsg, r.ff))
+            p.disp('NO FEASIBLE SOLUTION has been obtained (%s%s, objFunc = %0.8g)' % (nNaNsMsg,  rMsg, r.ff))
         else:
             if p.maxSolutions == 1:
                 msg = "objFunValue: " + (p.finalObjFunTextFormat % r.ff)
