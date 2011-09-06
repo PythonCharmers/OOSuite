@@ -13,6 +13,7 @@ def processConstraints(C0, y, e, ip, m, p, dataType):
     r15.fill(True)
 
     for i, (f, r16, r17, tol) in enumerate(C0):
+        if p.solver.dataHandling == 'sorted': tol = 0
         o, a = func8(ip, f, dataType)
         m = o.size/(2*n)
         o, a  = o.reshape(2*n, m).T, a.reshape(2*n, m).T
