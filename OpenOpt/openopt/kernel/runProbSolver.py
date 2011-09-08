@@ -42,7 +42,7 @@ ConTolMultiplier = 0.8
 def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     #p = copy.deepcopy(p_, memo=None, _nil=[])
     p = p_
-    if args is not (): p.err('unexpected args for p.solve()')
+    if len(args) != 0: p.err('unexpected args for p.solve()')
     if hasattr(p, 'was_involved'): p.err("""You can't run same prob instance for twice. 
     Please reassign prob struct. 
     You can avoid it via using FuncDesigner oosystem.""")
