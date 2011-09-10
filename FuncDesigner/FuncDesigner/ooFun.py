@@ -280,7 +280,8 @@ class oofun:
         if isinstance(other, oofun):
             r = oofun(lambda x, y: x/y, [self, other])
             def aux_dx(x, y):
-                x, y, = asfarray(x), asfarray(y) 
+                # TODO: handle float128
+                y = asfarray(y) 
                 Xsize, Ysize = x.size, y.size
                 if Xsize != 1:
                     assert Xsize == Ysize or Ysize == 1, 'incorrect size for oofun devision'
@@ -290,6 +291,8 @@ class oofun:
                     r = Diag(r)
                 return r                
             def aux_dy(x, y):
+                # TODO: handle float128
+                x = asfarray(x)
                 Xsize, Ysize = Len(x), Len(y)
                 r = -x / y**2
                 if Ysize != 1:
