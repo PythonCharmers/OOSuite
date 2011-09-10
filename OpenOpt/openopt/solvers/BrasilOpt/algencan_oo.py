@@ -14,6 +14,7 @@ class algencan(baseSolver):
     __info__ = "please pay more attention to gtol param, it's the only one ALGENCAN positive stop criterium, xtol and ftol are unused"
     __optionalDataThatCanBeHandled__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'c', 'h']
     __isIterPointAlwaysFeasible__ = lambda self, p: p.__isNoMoreThanBoxBounded__()
+    __cannotHandleExceptions__ = True
 
     def __init__(self): pass
     def __solver__(self, p):
