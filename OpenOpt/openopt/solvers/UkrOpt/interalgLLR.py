@@ -153,7 +153,8 @@ def func1(tnlhf, tnlhf_curr, y, e, o, a, _s_prev, p, Case, r9 = None):
             #ind = 2**(-n) >= (_s_prev - d)/asarray(d, 'float64')
             
             #NEW
-            ind = d  >= 2 ** (1/n) * _s_prev
+            ind = d  >=  _s_prev / 2 ** (1.0e-12/n)
+            #ind.fill(False)
             ###################################################
         elif p.solver.dataHandling == 'raw':
             tnlh_1, tnlh_2 = tnlhf[:, 0:n], tnlhf[:, n:]
@@ -187,17 +188,25 @@ def func1(tnlhf, tnlhf_curr, y, e, o, a, _s_prev, p, Case, r9 = None):
             #d = ((tnlh[w, t]* tnlh[w, n+t])**0.5)
         else:
             assert 0
-    else:
+    else: # IP
         tmp = a[:, 0:n]-o[:, 0:n]+a[:, n:]-o[:, n:]
-        _s = nanmax(tmp, 1)
+        #_s = nanmax(tmp, 1)
+        _s = 0.5*nanmin(tmp, 1)
         t = nanargmin(tmp,1)
-        d = tmp[w, t]
-        ind = 2**(-n) >= (_s_prev - d)/asarray(d, 'float64')
+        #d = tmp[w, t]
+        ind = 2**(-n) >= (_s_prev - _s)/asarray(_s, 'float64')
+        #ind = _s  >= 2 ** (1.0/n) * _s_prev
+        
+#        if p.debug: 
+#            assert all(_s_prev >= _s)
+        #print len(where(ind)[0]), len(d)
+        #ind = d  >= 2 ** (1.0/n) * _s_prev
     
     #ind = d * (1.0 + max((1e-15, 2 ** (-n)))) >= _s_prev
     
     if r9 is not None:
         ind = logical_or(ind, r9)
+    
     if any(ind):
         #print('ind length: %d' % len(where(ind)[0]))
         bs = e[ind] - y[ind]
@@ -280,9 +289,34 @@ def func12(an, maxActiveNodes, p, solutions, r6, vv, varTols, fo, Case):
             nlhc = asarray([t.nlhc for t in an1Candidates])
             yc, ec = func4(yc, ec, oc, ac, nlhc, fo)
         t, _s = func1(tnlhf, tnlhf_curr, yc, ec, oc, ac, SIc, p, Case)
-        yc, ec = func2(yc, ec, t, vv)
-        _s = tile(_s, 2)
         
+        # OLD
+        #_s = tile(_s, 2)
+        
+        # NEW
+        if p.probType != 'IP': 
+            _s = tile(_s, 2)
+        else:
+            m, n = yc.shape
+            #w = arange(m)
+            #t = nanargmin(ac[:, :n]-oc[:, :n] + ac[:, n:] - oc[:, n:], 1) 
+            #tmp = nanmax([ac[:, :n] - oc[:, :n], 
+            #        ac[:, n:] - oc[:, n:]], 0)
+#            tmp = ac[:, :n] - oc[:, :n] + ac[:, n:] - oc[:, n:]
+#            tmp = nanmin(tmp, 1)
+##            tmp = ac[w, t] - oc[w, t] + \
+##                    ac[w, n+t] - oc[w, n+t]
+#            _s = tile(2*tmp, 2)
+            oc_modL, oc_modU = oc[:, :n], oc[:, n:]
+            ac_modL, ac_modU = ac[:, :n], ac[:, n:]
+            # TODO: handle nans
+            mino = where(oc_modL < oc_modU, oc_modL, oc_modU)
+            maxa = where(ac_modL < ac_modU, ac_modU, ac_modL)
+            _s = nanmin(maxa - mino, 1)
+            _s = tile(_s, 2)
+
+        yc, ec = func2(yc, ec, t, vv)
+
         if maxSolutions == 1 or len(solutions) == 0: 
             y, e = yc, ec
             break
@@ -316,8 +350,8 @@ def func11(y, e, nlhc, o, a, _s, p):
         w = arange(m)
         # TODO: omit recalculation from func1
         ind = nanargmin(a[:, 0:n] - o[:, 0:n] + a[:, n:] - o[:, n:], 1)
-        sup_inf_diff = a[w, ind] - o[w, ind] + a[w, n+ind] - o[w, n+ind]
-        
+        sup_inf_diff = 0.5*(a[w, ind] - o[w, ind] + a[w, n+ind] - o[w, n+ind])
+        #sup_inf_diff = -sup_inf_diff
         # DEBUG
         #tmp3 = nanmin(a[:, 0:n]-o[:, 0:n]+a[:, n:]-o[:, n:],1)
         #assert all(tmp2==tmp3)

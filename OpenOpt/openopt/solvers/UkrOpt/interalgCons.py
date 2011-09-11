@@ -27,6 +27,7 @@ def processConstraints(C0, y, e, ip, m, p, dataType):
         aor20 = a - o
         if dataType in [int8, int16, int32, int64, int]:
             aor20 = asfarray(aor20)
+        #aor20[aor20 > 1e200] = 1e200
         a_t,  o_t = a.copy(), o.copy()
         if dataType in [int8, int16, int32, int64, int]:
             a_t,  o_t = asfarray(a_t), asfarray(o_t)
@@ -37,7 +38,7 @@ def processConstraints(C0, y, e, ip, m, p, dataType):
             r24 = a_t - o_t
             tmp = r24 / aor20
             tmp[r24 == 0.0] = 1.0 # may be encountered if a == o, especially for integer probs
-            #tmp[tmp<1e-300] = 1e-300 # TODO: improve it
+            tmp[tmp<1e-300] = 1e-300 # TODO: improve it
             nlh -= log2(tmp)
             #nlh += log2(aor20)# TODO: mb use other
             #nlh -= log2(a-r17) + log2(r16-o)
@@ -48,7 +49,7 @@ def processConstraints(C0, y, e, ip, m, p, dataType):
         elif isfinite(r16) and not isfinite(r17):
             #OLD
             tmp = (r16 - o + tol) / aor20
-            ##tmp = (a - r16) / aor20
+            #tmp = (a - r16) / aor20
             #NEW
 #            o_t[o_t < r16 - tol] = r16 - tol
 #            #ind = a_t>o
@@ -70,7 +71,7 @@ def processConstraints(C0, y, e, ip, m, p, dataType):
         elif isfinite(r17) and not isfinite(r16):
             #OLD
             tmp = (a - r17+tol) / aor20
-            ##tmp = (r17-o) / aor20
+            #tmp = (r17-o) / aor20
             #NEW
 #            a_t[a_t > r17 + tol] = r17 + tol
 #            
