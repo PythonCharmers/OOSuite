@@ -1,6 +1,6 @@
 from numpy import pi
 sigma = 1e-5
-ff = lambda z, y, x:  exp(-(x+0.15)**2/(2*sigma)) / sqrt(2*pi*sigma) + cos(y)*sin(z)*cos(2*x)
+ff = lambda z, y, x:  exp(-(x+0.15)**2/(2*sigma)) / sqrt(2*pi*sigma) #+ cos(y)*sin(z)*cos(2*x)
 '''Pay attention: 1st part is positive,
 for 2nd part sin(z) = -sin(-z) and thus integraion over z = (-val, val)
 must yield zero, hence result has to be positive, 
@@ -20,14 +20,12 @@ f = exp(-(x+0.15)**2/(2*sigma)) / sqrt(2*pi*sigma) + cos(y)*sin(z)*cos(2*x)
 
 domain = {x: bounds_x, y: bounds_y,  z: bounds_z}
 p = IP(f, domain, ftol = 0.05)
-r = p.solve('interalg', maxIter = 5000, maxNodes = 500000, maxActiveNodes = 150, iprint = 500)
+r = p.solve('interalg', maxIter = 50000, maxActiveNodes = 150, maxNodes = 500000, iprint = 100)
 print('interalg result: %f' % p._F)
-''' Solver:   Time Elapsed = 4.22 	CPU Time Elapsed = 4.22
-interalg result: 0.240028 (usually solution, obtained by interalg, has real residual 10-100-1000 times less 
+''' Solver:   Time Elapsed = 0.3 	CPU Time Elapsed = 0.27
+interalg result: 0.240028 (usually solution, obtained by interalg, has real residual 10-100 times less 
 than required tolerance, because interalg works with "most worst case" that extremely rarely occurs. 
 Unfortunately, real obtained residual cannot be revealed).
-For "classic mode" (with some exclusive interalg ideas turned off) 
-interval method integration gathered result for more than 1 min time elapsed is only 0.000009
 Now let's ensure scipy.integrate tplquad fails to solve the problem and mere lies about obtained residual:'''
 
 from scipy.integrate import tplquad
