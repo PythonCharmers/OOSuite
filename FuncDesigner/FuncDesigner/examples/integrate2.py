@@ -22,7 +22,7 @@ p = IP(f, domain, ftol = 5e-2)
 r = p.solve('interalg', maxIter = 15000, maxNodes = 500000, maxActiveNodes = 150, iprint = 100)
 print('interalg result: %f' % p._F)
 '''
-Solver:   Time Elapsed = 0.72 	CPU Time Elapsed = 0.7
+Solver:   Time Elapsed = 3.29 	CPU Time Elapsed = 3.29
 interalg result: 1.007690 (usually solution, obtained by interalg, has real residual 10-100 times less 
 than required tolerance, because interalg works with "most worst case" that extremely rarely occurs. 
 Unfortunately, real obtained residual cannot be revealed).
@@ -34,5 +34,5 @@ val, abserr = dblquad(ff, bounds_x[0], bounds_x[1], lambda y: bounds_y[0], lambd
 print('scipy.integrate dblquad value: %f   declared residual: %f' % (val, abserr)) 
 ''' scipy.integrate dblquad value: 0.000000   declared residual: 0.000000
 While scipy dblquad fails already for sigma = 10^-4, interalg works perfectly even for sigma  = 10^-14:
-Solver:   Time Elapsed = 121.15 	CPU Time Elapsed = 119.89
-interalg result: 1.003149 '''
+Solver:   Time Elapsed = 43.34 	CPU Time Elapsed = 43.0
+interalg result: 1.007253'''
