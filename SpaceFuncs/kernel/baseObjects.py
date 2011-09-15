@@ -212,8 +212,10 @@ class Circle(baseGeometryObject):
         
         self.plotCenter = True
         self.color = kw.get('color', 'k')
+        #self.expected_kwargs |= set(('linewidth', 'linestyle', 'edgecolor', 'fill', 'transparency', 'facecolor'))
 
-    __call__ = lambda self, *args, **kw: Circle(self.center(*args, **kw), self.radius(*args, **kw))
+    #__call__ = lambda self, *args, **kw: Circle(self.center(*args, **kw), self.radius(*args, **kw) if not isscalar(self.radius) else self.radius)
+    __call__ = lambda self, *args, **kw: Circle(self.center, self.radius)
 
     def __getattr__(self, attr):
         if attr in ('S', 'area'): r = self._area() 

@@ -10,7 +10,7 @@ except ImportError:
 def Plot(*args, **kw):
     if not pylabInstalled: 
         raise SpaceFuncsException('to plot you should have matplotlib installed')
-    for arg in args: arg.plot()
+    for arg in args: arg.plot(**kw)
     pylab.axis('equal')
     pylab.draw()
     if kw.get('grid') not in ('off', False, 0):
