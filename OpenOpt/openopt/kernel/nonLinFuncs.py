@@ -38,37 +38,37 @@ class nonLinFuncs:
         # x being vector p.n x 1 or matrix X=[x1 x2 x3...xk], size(X)=[p.n, k]
         if not isspmatrix(x): 
             x = asarray(x)
-            if not str(x.dtype).startswith('float'):
-                x = asfarray(x)
+#            if not str(x.dtype).startswith('float'):
+#                x = asfarray(x)
         else:
             if p.debug:
                 p.pWarn('[oo debug] sparse matrix x in nonlinfuncs.py has been encountered')
         
-        if not ignorePrev: 
-            prevKey = p.prevVal[userFunctionType]['key']
-        else:
-            prevKey = None
-            
-        # TODO: move it into runprobsolver or baseproblem
-        if p.prevVal[userFunctionType]['val'] is None:
-            p.prevVal[userFunctionType]['val'] = zeros(getattr(p, 'n'+userFunctionType))
-
-        if prevKey is not None and p.iter > 0 and array_equal(x,  prevKey) and ind is None and not ignorePrev:
-            #TODO: add counter of the situations
-            if not getDerivative:
-                r = copy(p.prevVal[userFunctionType]['val'])
-                #if p.debug: assert array_equal(r,  p.wrapped_func(x, IND, userFunctionType, True, getDerivative))
-                if ind is not None: r = r[ind]
-                
-                if userFunctionType == 'f':
-                    if p.isObjFunValueASingleNumber: r = r.sum(0)
-                    if p.invertObjFunc: r = -r
-                    if  p.solver.funcForIterFcnConnection=='f' and any(isnan(x)):
-                        p.nEvals['f'] += 1
-
-                        if p.nEvals['f']%p.f_iter == 0:
-                            p.iterfcn(x, fk = r)
-                return r
+#        if not ignorePrev: 
+#            prevKey = p.prevVal[userFunctionType]['key']
+#        else:
+#            prevKey = None
+#            
+#        # TODO: move it into runprobsolver or baseproblem
+#        if p.prevVal[userFunctionType]['val'] is None:
+#            p.prevVal[userFunctionType]['val'] = zeros(getattr(p, 'n'+userFunctionType))
+#
+#        if prevKey is not None and p.iter > 0 and array_equal(x,  prevKey) and ind is None and not ignorePrev:
+#            #TODO: add counter of the situations
+#            if not getDerivative:
+#                r = copy(p.prevVal[userFunctionType]['val'])
+#                #if p.debug: assert array_equal(r,  p.wrapped_func(x, IND, userFunctionType, True, getDerivative))
+#                if ind is not None: r = r[ind]
+#                
+#                if userFunctionType == 'f':
+#                    if p.isObjFunValueASingleNumber: r = r.sum(0)
+#                    if p.invertObjFunc: r = -r
+#                    if  p.solver.funcForIterFcnConnection=='f' and any(isnan(x)):
+#                        p.nEvals['f'] += 1
+#
+#                        if p.nEvals['f']%p.f_iter == 0:
+#                            p.iterfcn(x, fk = r)
+#                return r
 
         args = getattr(p.args, userFunctionType)
 
@@ -149,16 +149,17 @@ class nonLinFuncs:
            
         elif not getDerivative:
             r = hstack([fun(*(X, )+Args) for fun in Funcs])
-            if not ignorePrev and ind is None:
-                p.prevVal[userFunctionType]['key'] = copy(x_0)
-                p.prevVal[userFunctionType]['val'] = r.copy()                
+#            if not ignorePrev and ind is None:
+#                p.prevVal[userFunctionType]['key'] = copy(x_0)
+#                p.prevVal[userFunctionType]['val'] = r.copy()                
         elif getDerivative and p.isFDmodel:
             rr = [fun(X) for fun in Funcs]
             r = Vstack(rr) if scipyInstalled and any([isspmatrix(elem) for elem in rr]) else vstack(rr)
             #assert prod(r.shape) != 177878
         else:
+            r = []
             if getDerivative:
-                r = zeros((nFuncsToObtain, p.n))
+                #r = zeros((nFuncsToObtain, p.n))
                 diffInt = p.diffInt
                 abs_x = abs(x)
                 finiteDiffNumbers = 1e-10 * abs_x
@@ -167,24 +168,42 @@ class nonLinFuncs:
                 else:
                     finiteDiffNumbers[finiteDiffNumbers < diffInt] = diffInt[finiteDiffNumbers < diffInt]
             else:
-                r = zeros((nFuncsToObtain, nXvectors))
+                #r = zeros((nFuncsToObtain, nXvectors))
+                r = []
             
             for index, fun in enumerate(Funcs):
-                v = ravel(fun(*((X,) + Args)))
-                if  (ind is None or funcs_num == 1) and not ignorePrev:
-                    #TODO: ADD COUNTER OF THE CASE
-                    if index == 0: p.prevVal[userFunctionType]['key'] = copy(x_0)
-                    p.prevVal[userFunctionType]['val'][agregate_counter:agregate_counter+v.size] = v.copy()                
-                r[agregate_counter:agregate_counter+v.size,0] = v
+                # OLD
+#                v = ravel(fun(*((X,) + Args)))
+#                if  (ind is None or funcs_num == 1) and not ignorePrev:
+#                    #TODO: ADD COUNTER OF THE CASE
+#                    if index == 0: p.prevVal[userFunctionType]['key'] = copy(x_0)
+#                    p.prevVal[userFunctionType]['val'][agregate_counter:agregate_counter+v.size] = v.copy()                
+#                r[agregate_counter:agregate_counter+v.size,0] = v
+                
+                #NEW
+                
+                if not getDerivative:
+                    r.append(fun(*((X,) + Args)))
+#                    v = r[-1]
+                    #r[agregate_counter:agregate_counter+v.size,0] = fun(*((X,) + Args))
+                    
+#                if (ind is None or funcs_num == 1) and not ignorePrev:
+#                    #TODO: ADD COUNTER OF THE CASE
+#                    if index == 0: p.prevVal[userFunctionType]['key'] = copy(x_0)
+#                    p.prevVal[userFunctionType]['val'][agregate_counter:agregate_counter+v.size] = v.copy()                
+                
+                
 
                 """                                                 getting derivatives                                                 """
                 if getDerivative:
                     func = lambda x: fun(*((x,) + Args))
                     d1 = get_d1(func, x, pointVal = None, diffInt = finiteDiffNumbers, stencil=p.JacobianApproximationStencil, exactShape=True)
-                    r[agregate_counter:agregate_counter+d1.size] = d1
+                    #r[agregate_counter:agregate_counter+d1.size] = d1
+                    r.append(d1)
+#                    v = r[-1]
                     
-                agregate_counter += atleast_1d(asarray(v)).shape[0]
-
+#                agregate_counter += atleast_1d(v).shape[0]
+            r = hstack(r) if not getDerivative else vstack(r)
         #if type(r) == matrix: r = r.A
             
         if userFunctionType == 'f' and p.isObjFunValueASingleNumber and prod(r.shape) > 1 and (type(r) == ndarray or min(r.shape) > 1): 
@@ -237,6 +256,8 @@ class nonLinFuncs:
 
         if p.istop == USER_DEMAND_EXIT:
             if p.solver.__cannotHandleExceptions__:
+#                if p.solver.__name__ == 'algencan':
+#                    return None
                 return nan
             else:
                 raise killThread
