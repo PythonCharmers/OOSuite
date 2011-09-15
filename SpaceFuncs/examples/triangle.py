@@ -18,7 +18,7 @@ print('angles: ' + str(T.angles)) # [ 0.66370155  1.1424067   1.33548441]
 
 # Let's solve some parametrized problems
 from FuncDesigner import *
-from openopt import NLP, NLSP
+from openopt import NLP, SNLE
 
 # let's create parameterized triangle :
 a,b,c = oovars(3)
@@ -30,8 +30,8 @@ startValues = {a:1, b:0.5, c:0.1} # you could mere set any, but sometimes a good
 # let's find an a,b,c values wrt r = 1.5 with required tolerance 10^-5, R = 4.2 and tol 10^-4, a+c == 2.5 wrt tol 10^-7
 # if no tol is provided, p.contol is used (default 10^-6)
 equations = [(T.r == 1.5)(tol=1e-5) , (T.R == 4.2)(tol=1e-4), (a+c == 2.5)(tol=1e-7)]
-prob = NLSP(equations, startValues)
-result = prob.solve('nssolve', iprint = -1) # nssolve is name of the solver involved
+prob = SNLE(equations, startValues)
+result = prob.solve('nssolve', iprint = 0) # nssolve is name of the solver involved
 print('\nsolution has%s been found' % ('' if result.stopcase > 0 else ' not'))
 print('values:' + str(result(a, b, c))) # [1.5773327492140974, -1.2582702179532217, 0.92266725078590239]
 print('triangle sides: '+str(T.sides(result))) # [8.387574299361475, 7.0470774415247455, 4.1815836020856336]
@@ -40,13 +40,13 @@ print('orthocenter of the triangle: ' + str(T.H(result))) # [ 0.90789867  2.1500
 # let's find minimum inscribed radius subjected to the constraints a<1.5, a>-1, b<0, a+2*c<4,  log(1-b)<2] : 
 objective = T.r
 prob = NLP(objective, startValues, constraints = [a<1.5, a>-1, b<0, a+2*c<4,  log(1-b)<2])
-result1 = prob.minimize('ralg', iprint = -1) # ralg is name of the solver involved, see http://openopt.org/ralg for details
+result1 = prob.minimize('ralg', iprint = 0) # ralg is name of the solver involved, see http://openopt.org/ralg for details
 print('\nminimal inscribed radius: %0.3f' % T.r(result1)) #  1.321
 print('optimal values:' + str(result1(a, b, c))) # [1.4999968332804028, 2.7938728907900973e-07, 0.62272481283890913]
 
 #let's find minimum outscribed radius subjected to the constraints a<1.5, a>-1, b<0, a+2*c<4,  log(1-b)<2] : 
 prob = NLP(T.R, startValues, constraints = (a<1.5, a>-1, b<0, (a+2*c<4)(tol=1e-7),  log(1-b)<2))
-result2 = prob.minimize('ralg', iprint = -1) 
+result2 = prob.minimize('ralg', iprint = 0) 
 print('\nminimal outscribed radius: %0.3f' % T.R(result2)) # 3.681
 print('optimal values:' + str(result2(a, b, c))) # [1.499999901863762, -1.7546960034401648e-06, 1.2499958739399943]
 
