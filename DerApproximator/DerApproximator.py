@@ -1,7 +1,7 @@
 """finite-difference derivatives approximation"""
 
 from numpy import atleast_1d, atleast_2d, isfinite, ndarray, nan, empty, where, ndarray, log10, hstack, floor, ceil, \
-argmax, asscalar, abs, isscalar, asfarray, asarray, isnan, array
+argmax, asscalar, abs, isscalar, asfarray, asarray, isnan, array, all
 
 class DerApproximatorException:
     def __init__(self,  msg):
@@ -85,13 +85,30 @@ def get_d1(fun, vars, diffInt=1.5e-8, pointVal = None, args=(), stencil = 3, var
             # not Args[i][j] -= di, because it can change primeval Args[i][j] value 
             # and check for key == same value will be failed
             
-            has_nonfinite = not all(isfinite(v_right.flatten()))
-            if stencil >= 2 or has_nonfinite:
+            has_nonfinite_right = not all(isfinite(v_right))
+            if stencil >= 2 or has_nonfinite_right:
                 S[j] -= di
                 v_left = atleast_1d(fun(*Args))
                 S[j] = tmp
-                if has_nonfinite:
-                    d1[:, agregate_counter] = (v_0-v_left) / di
+                has_nonfinite_left = not all(isfinite(v_left))
+                
+                if has_nonfinite_right:
+                    if stencil == 1:
+                        d1[:, agregate_counter] = (v_0-v_left) / di
+                    else:
+                        S[j] -= di2
+                        v_subleft = atleast_1d(fun(*Args))
+                        S[j] = tmp
+                        d1[:, agregate_counter] = (3*v_0+v_left-4*v_subleft) / di
+                elif has_nonfinite_left:
+                    if stencil == 1:
+                        d1[:, agregate_counter] = (v_right - v_0) / di
+                    else:
+                        S[j] += di2
+                        v_subright = atleast_1d(fun(*Args))
+                        S[j] = tmp
+                        d1[:, agregate_counter] = (4*v_subright-3*v_0-v_right) / di
+                    
                 elif stencil == 2:
                     d1[:, agregate_counter] = (v_right-v_left) / (2.0 * di)
                 else:
@@ -171,7 +188,7 @@ def check_d1(fun, fun_d, vars, func_name='func', diffInt=1.5e-8, pointVal = None
     if info_numerical.ndim > 1: useDoubleColumn = True
     else: useDoubleColumn = False
 
-    cond_same = all(abs(Diff).flatten() <= maxViolation)
+    cond_same = all(abs(Diff) <= maxViolation)
     if not cond_same:
         ss = '    '
             
