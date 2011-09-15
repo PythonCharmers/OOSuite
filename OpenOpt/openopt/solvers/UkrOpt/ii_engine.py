@@ -65,7 +65,7 @@ def r14IP(p, nlh, y, e, vv, asdf1, C, CBKPMV, itn, g, nNodes,  \
         #print 'p._F:', p._F, 'delta:', sum(array([an[i].F for i in ind]) * array([an[i].volume for i in ind]))
         v = volumes[ind]
         p._F += sum(array([an[i].F for i in ind]) * v)
-        residuals = 0.5*(ao_diff[ind] * v)
+        residuals = ao_diff[ind] * v
         p._residual += residuals.sum()
         p._volume += v.sum()
         
@@ -76,7 +76,7 @@ def r14IP(p, nlh, y, e, vv, asdf1, C, CBKPMV, itn, g, nNodes,  \
     else:
         residuals = ao_diff * volumes
         p._residual = 0.5*sum(residuals) 
-        print 'sum(residuals): ',  sum(residuals) 
+        #print 'sum(residuals): ',  sum(residuals) 
         if p._residual < required_sigma:
             p._F = sum(array([node.F for node in an]) * v)
             an = []
