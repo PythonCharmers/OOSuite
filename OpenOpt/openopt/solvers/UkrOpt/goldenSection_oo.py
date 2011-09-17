@@ -1,6 +1,6 @@
 from openopt.kernel.baseSolver import baseSolver
-from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X, IS_MAX_ITER_REACHED
-from numpy import nan
+from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X, IS_MAX_ITER_REACHED, SMALL_DELTA_F
+from numpy import nan, diff
 
 class goldenSection(baseSolver):
     __name__ = 'goldenSection'
@@ -55,7 +55,10 @@ class goldenSection(baseSolver):
                 y1, y2 = y2,  f(x2)
             #TODO: handle fEnough criterium for min(y1, y2), not for 0.5*(y1+y2)
             if self.useOOiterfcn: p.iterfcn()
-            if -p.xtol < b - a < p.xtol: # p.iterfcn may be turned off
+            if i > 4 and max(p.iterValues.f[-4:]) < min(p.iterValues.f[-4:])  + p.ftol:
+                p.xf,  p.ff = xmin,  ymin
+                p.istop,  p.msg = SMALL_DELTA_F, '|| F[k] - F[k-1] || < ftol'
+            elif -p.xtol < b - a < p.xtol: # p.iterfcn may be turned off
                 p.xf,  p.ff = xmin,  ymin
 #                if self.solutionType == 'best':
 #                    p.xf,  p.ff = xmin,  ymin
