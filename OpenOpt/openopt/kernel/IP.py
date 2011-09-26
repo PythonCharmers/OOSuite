@@ -1,8 +1,5 @@
-from ooMisc import assignScript
 from baseProblem import NonLinProblem
-from numpy import asfarray, ones, inf, dot, nan, zeros, any, all, isfinite, eye, hstack, vstack, asarray, atleast_2d
-from numpy.linalg import norm
-import LP
+#from numpy.linalg import norm
 
 class IP(NonLinProblem):
     probType = 'IP'
@@ -14,7 +11,7 @@ class IP(NonLinProblem):
     ftol = None
     def __init__(self, *args, **kwargs):
         NonLinProblem.__init__(self, *args, **kwargs)
-        f, domain = args[:2]
+        domain = args[1]
         self.x0 = dict([(v, 0.5*(val[0]+val[1])) for v, val in domain.items()])
         self.constraints = [v>bounds[0] for v,  bounds in domain.items()] + [v<bounds[1] for v,  bounds in domain.items()]
         
