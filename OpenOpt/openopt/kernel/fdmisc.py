@@ -30,9 +30,10 @@ def setStartVectorAndTranslators(p):
         freeVars = list(set(startPoint.keys()).difference(set(fixedVars)))
         p.freeVars = freeVars
     else:
-        freeVars = startPoint.keys()
-        
-    p._freeVarsList = freeVars # to use in a global solver from UkrOpt
+        freeVars = list(startPoint.keys())
+    
+    # TODO: use ordered set instead
+    p._freeVarsList = freeVars # to use in interalg, a global solver from UkrOpt
     
     p._fixedVars = set(fixedVars) if fixedVars is not None else set()
     p._freeVars = set(freeVars) if freeVars is not None else set()
@@ -65,9 +66,9 @@ def setStartVectorAndTranslators(p):
     #vector2point = lambda x: oopoint(startDictData + [(oov, x[oovar_indexes[i]:oovar_indexes[i+1]]) for i, oov in enumerate(freeVars)])
     p._FDtranslator = {'prevX':nan}
     def vector2point(x): 
-        x = asarray(x)
-        if not str(x.dtype).startswith('float'):
-            x = asfarray(x)
+#        x = asarray(x)
+#        if not str(x.dtype).startswith('float'):
+#            x = asfarray(x)
         x = atleast_1d(x).copy()
         if array_equal(x, p._FDtranslator['prevX']):
             return p._FDtranslator['prevVal']
