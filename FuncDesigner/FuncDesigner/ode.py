@@ -11,7 +11,8 @@ class ode:
     _isInitialized = False
     solver = 'scipy_lsoda'
     
-    def __init__(self, equations, startPoint, timeVariable, timeArray, *args, **kwargs):
+    
+    def __init__(self, equations, startPoint, timeVariable, times, *args, **kwargs):
         if len(args) > 0:  FuncDesignerException('incorrect ode definition, too many args are obtained')
         
         if not isinstance(equations, dict):
@@ -27,11 +28,13 @@ class ode:
         if timeVariable in equations:
             raise FuncDesignerException("ode: differentiation of a variable by itself (time by time) is treated as a potential bug and thus is forbidden")
 
-        if not (isinstance(timeArray, list) or (isinstance(timeArray, ndarray) and timeArray.ndim == 1)): 
+        if not (isinstance(times, (list, tuple)) or (isinstance(times, ndarray) and times.ndim == 1)): 
             raise FuncDesignerException('4th argument of ode constructor should be Python list or numpy array of time values')
-        self.timeArray = timeArray
-
-        startPoint[timeVariable] = timeArray[0]
+        self.times = times
+        self._fd_func, self._startPoint, self._timeVariable, self._times, self._kwargs = equations, startPoint, timeVariable, times,  kwargs
+        
+        startPoint = dict([(key, val) for key, val in startPoint.items()])
+        startPoint[timeVariable] = times[0]
         y0 = []
         Funcs = []
         
@@ -63,6 +66,7 @@ class ode:
             return hstack([func(tmp) for func in Funcs])
         self.func = func
         
+        
         _FDVarsID = _getDiffVarsID()
         def derivative(y, t):
             tmp = dict(ooT.vector2point(y))
@@ -76,23 +80,50 @@ class ode:
         self.derivative = derivative
         self.Point4TranslatorAssignment = Point4TranslatorAssignment
         
-    def solve(self, *args): # mb for future implementation - add  some **kwargs here as well
+    def solve(self, solver='scipy_lsoda', *args, **kwargs): # mb for future implementation - add  some **kwargs here as well
         if len(args) > 0:
             raise FuncDesignerException('no args are currently available for the function ode::solve')
-        try:
-            from scipy import integrate
-        except:
-            raise FuncDesignerException('to solve ode you mush have scipy installed, see scipy.org')
-        y, infodict = integrate.odeint(self.func, self.y0, self.timeArray, Dfun = self.derivative, full_output=True)
-        resultDict = dict(self.ooT.vector2point(y.T))
-        
-        for key, value in resultDict.items():
-            if min(value.shape) == 1:
-                resultDict[key] = value.flatten()
-        r = FuncDesigner_ODE_Result(resultDict)
-        r.msg = infodict['message']
-        r.extras = Extras()
-        r.extras.infodict = infodict
+        solverName = solver if isinstance(solver, str) else solver.__name__
+        if solverName.startswith('interalg'):
+            try:
+                from openopt import ODE
+            except ImportError:
+                raise FuncDesignerException('You should have openopt insalled')
+            prob = ODE(self._fd_func, self._startPoint, self._timeVariable, self._times, **self._kwargs)
+            r = prob.solve(solver, **kwargs)
+            y_var = prob._x0.keys()[0]
+            res = 0.5 * (prob.extras[y_var]['infinums'] + prob.extras[y_var]['supremums'])
+            times = 0.5 * (prob.extras['startTimes'] + prob.extras['endTimes'])
+            if len(self._times) != 2:
+                from .interpolate import scipy_UnivariateSpline
+                if 'ftol' in kwargs.keys():
+                    s = self._kwargs['ftol']
+                elif 'fTol' in kwargs.keys():
+                    s = self._kwargs['fTol']
+                elif 'ftol' in self._kwargs.keys():
+                    s = self._kwargs['ftol']
+                elif 'fTol' in self._kwargs.keys():
+                    s = self._kwargs['fTol']
+                interp = scipy_UnivariateSpline(times, res, k=1, s=s) # maybe sqrt(s) instead?
+                times = self._times
+                res = interp(self._timeVariable)({self._timeVariable:times})
+            r.xf = {y_var:res, self._timeVariable: times}
+            r._xf = {y_var.name: res, self._timeVariable.name: times}
+        else:
+            if solver != 'scipy_lsoda': raise  FuncDesignerException('incorrect ODE solver')
+            try:
+                from scipy import integrate
+            except ImportError:
+                raise FuncDesignerException('to solve ode you mush have scipy installed, see http://openop.org/SciPy')
+            y, infodict = integrate.odeint(self.func, self.y0, self.times, Dfun = self.derivative, full_output=True)
+            resultDict = dict(self.ooT.vector2point(y.T))
+            
+            for key, value in resultDict.items():
+                if min(value.shape) == 1:
+                    resultDict[key] = value.flatten()
+            r = FuncDesigner_ODE_Result(resultDict)
+            r.msg = infodict['message']
+            r.extras = {'infodict': infodict}
         return r
         
 
