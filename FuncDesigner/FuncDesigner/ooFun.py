@@ -1464,14 +1464,14 @@ class ooarray(ndarray):
     
     __hash__ = lambda self: self._id
 
-    expected_kwargs = ('tol', 'name')
+    expected_kwargs = set(('tol', 'name'))
     def __call__(self, *args, **kwargs):
         #if self.dtype != object: return self.view(ndarray)
         
         # TODO: give different names for each element while assigning name to ooarray
         expected_kwargs = self.expected_kwargs
-        if not set(kwargs.keys()).issubset(expected_kwargs):
-            raise FuncDesignerException('Unexpected kwargs: should be in '+str(expected_kwargs)+' got: '+str(kwargs.keys()))
+        #if not set(kwargs.keys()).issubset(expected_kwargs):
+            #raise FuncDesignerException('Unexpected kwargs: should be in '+str(expected_kwargs)+' got: '+str(kwargs.keys()))
             
         for elem in expected_kwargs:
             if elem in kwargs:
