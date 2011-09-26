@@ -19,7 +19,7 @@ def func7(y, e, o, a, _s):
 
 def func9(an, fo, g, p):
     
-    #ind = searchsorted(maxo, fo, side='right')
+    #ind = searchsorted(ar, fo, side='right')
     if p.probType in ('NLSP', 'SNLE') and p.maxSolutions != 1:
         mino = atleast_1d([node.key for node in an])
         ind = mino > 0
@@ -94,10 +94,10 @@ def func4(y, e, o, a, nlhc, fo):
     if fo is None: return # used in IP
     cs = (y + e)/2
     n = y.shape[1]
-    o_modL, o_modU = o[:, 0:n], o[:, n:2*n]
+    s, q = o[:, 0:n], o[:, n:2*n]
     if nlhc[0] is not None:
         nlhc_modL, nlhc_modU = nlhc[:, 0:n], nlhc[:, n:2*n]
-    ind = logical_or(o_modL > fo, isnan(o_modL)) # TODO: assert isnan(o_modL) is same to isnan(a_modL)
+    ind = logical_or(s > fo, isnan(s)) # TODO: assert isnan(s) is same to isnan(a_modL)
     if nlhc[0] is not None:
         ind = logical_or(ind, logical_or(isnan(nlhc_modL), nlhc_modL == inf))
     if any(ind):
@@ -108,7 +108,7 @@ def func4(y, e, o, a, nlhc, fo):
 ##        if ii != 0: print ii
 #        a[:, 0:n][ind] = a[:, n:2*n][ind]
 #        o[:, 0:n][ind] = o[:, n:2*n][ind]
-    ind = logical_or(o_modU > fo, isnan(o_modU)) # TODO: assert isnan(o_modU) is same to isnan(a_modU)
+    ind = logical_or(q > fo, isnan(q)) # TODO: assert isnan(q) is same to isnan(a_modU)
     if nlhc[0] is not None:
         ind = logical_or(ind, logical_or(isnan(nlhc_modU), nlhc_modU == inf))
     if any(ind):

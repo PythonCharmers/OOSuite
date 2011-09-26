@@ -10,6 +10,7 @@ from openopt.solvers.UkrOpt.interalgMisc import *
 from FuncDesigner import sum as fd_sum, abs as fd_abs, max as fd_max
 from ii_engine import *
 from interalgCons import processConstraints
+from interalgODE import interalg_ODE_routine
 
 bottleneck_is_present = False
 try:
@@ -21,7 +22,7 @@ except ImportError:
 
 
 class interalg(baseSolver):
-    __name__ = 'interalg_0.21'
+    __name__ = 'interalg'
     __license__ = "BSD"
     __authors__ = "Dmitrey"
     __alg__ = ""
@@ -40,7 +41,12 @@ class interalg(baseSolver):
 
     def __init__(self): pass
     def __solver__(self, p):
-        if not p.__isFiniteBoxBounded__(): 
+        
+        isOpt = p.probType in ['NLP', 'NSP', 'GLP']
+        isODE = p.probType == 'ODE'
+        isSNLE = p.probType in ('NLSP', 'SNLE')
+        
+        if not p.__isFiniteBoxBounded__() and not isODE: 
             p.err('''
             solver %s requires finite lb, ub: 
             lb <= x <= ub 
@@ -53,9 +59,6 @@ class interalg(baseSolver):
         if not p.isFDmodel:
             p.err('solver %s can handle only FuncDesigner problems' % self.__name__)
         
-        isOpt = p.probType in ['NLP', 'NSP', 'GLP']
-        
-        isSNLE = p.probType == 'NLSP'
         if not p.__isNoMoreThanBoxBounded__ and not isSNLE:
             p.warn('handling constraints by the solver interalg is undone properly yet for all problems except of SNLE')
         
@@ -83,7 +86,7 @@ class interalg(baseSolver):
         p.kernelIterFuncs.pop(SMALL_DELTA_F, None)
         p.kernelIterFuncs.pop(MAX_NON_SUCCESS, None)
         
-        if not bottleneck_is_present:
+        if not bottleneck_is_present and not isODE:
                 p.pWarn('''
                 installation of Python module "bottleneck" 
                 (http://berkeleyanalytics.com/bottleneck,
@@ -128,15 +131,15 @@ class interalg(baseSolver):
         vv = list(p._freeVarsList)
 
         fTol = p.fTol
-        if isIP:
+        if isIP or isODE:
             if p.ftol is None:
                 if fTol is not None:
                     p.ftol = fTol
                 else:
-                    p.err('for intergration problems interalg requires user-supplied ftol (required precision)')
+                    p.err('interalg requires user-supplied ftol (required precision)')
             if fTol is None: fTol = p.ftol
             elif fTol != p.ftol:
-                p.err('you have provided both ftol and fTol for intergation problem')
+                p.err('you have provided both ftol and fTol')
 
         if fTol is None:
             fTol = 1e-7
@@ -161,7 +164,7 @@ class interalg(baseSolver):
             
             # TODO: check it, for reducing calculations
             #C.update([elem == 0 for elem in p.user.f])
-        else:
+        elif not isODE:
             asdf1 = p.user.f[0]
             
             if p.fOpt is not None:  fOpt = p.fOpt
@@ -199,7 +202,7 @@ class interalg(baseSolver):
         domain = dict([(v, [p.lb[i], p.ub[i]]) for i,  v in enumerate(vv)])
         
         if self.dataHandling == 'auto':
-            if isIP:
+            if isIP or isODE:
                 self.dataHandling = 'sorted'
             else:
                 M = 0
@@ -213,7 +216,7 @@ class interalg(baseSolver):
             #self.dataHandling = 'sorted' if isIP or (p.__isNoMoreThanBoxBounded__() and n < 50) else 'raw'
             
         p._isOnlyBoxBounded = p.__isNoMoreThanBoxBounded__() 
-        if asdf1.isUncycled and p._isOnlyBoxBounded and all(isfinite(p.user.f[0].interval(domain).lb)):
+        if isODE or (asdf1.isUncycled and p._isOnlyBoxBounded and all(isfinite(p.user.f[0].interval(domain).lb))):
             #maxNodes = 1
             self.dataHandling = 'sorted'
             
@@ -267,6 +270,10 @@ class interalg(baseSolver):
         an = []
         maxNodes = self.maxNodes
         _s = nan
+        
+        if isODE:
+            interalg_ODE_routine(p, self)
+            return
         
         for itn in range(p.maxIter+10):
             if len(C0) != 0: 

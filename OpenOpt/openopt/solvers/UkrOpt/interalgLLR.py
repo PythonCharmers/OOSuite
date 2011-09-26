@@ -234,31 +234,31 @@ def func13(o, a, case = 2):
         raise('bug in interalg kernel')
 
 def func2(y, e, t, vv):
-    new_y, en = y.copy(), e.copy()
+    new_y, new_e = y.copy(), e.copy()
     m, n = y.shape
     w = arange(m)
     
     # TODO: omit or imporove it for all-float problems    
-    th = (new_y[w, t] + en[w, t]) / 2
+    th = (new_y[w, t] + new_e[w, t]) / 2
     BoolVars = [v.domain is bool for v in vv]
     if any(BoolVars):
         indBool = where(BoolVars)[0]
         if len(indBool) != n:
             new_y[w, t] = th
-            en[w, t] = th
+            new_e[w, t] = th
             new_y[indBool, t] = 1
-            en[indBool, t] = 0
+            new_e[indBool, t] = 0
         else:
             new_y[w, t] = 1
-            en[w, t] = 0
+            new_e[w, t] = 0
     else:
         new_y[w, t] = th
-        en[w, t] = th
+        new_e[w, t] = th
     
     new_y = vstack((y, new_y))
-    en = vstack((en, e))
+    new_e = vstack((new_e, e))
     
-    return new_y, en
+    return new_y, new_e
 
 
 def func12(an, maxActiveNodes, p, solutions, r6, vv, varTols, fo, Case):
@@ -361,11 +361,11 @@ def func11(y, e, nlhc, o, a, _s, p):
 #        initVolumeResidual = volume * 
 
     else:
-        o_modL, o_modU = o[:, 0:n], o[:, n:2*n]
-        Tmp = nanmax(where(o_modU<o_modL, o_modU, o_modL), 1)
+        s, q = o[:, 0:n], o[:, n:2*n]
+        Tmp = nanmax(where(q<s, q, s), 1)
 #        a_modL, a_modU = a[:, 0:n], a[:, n:2*n]
 #        uu = nanmax(where(logical_or(a_modU>a_modL, isnan(a_modU)), a_modU, a_modL), 1)
-#        ll = nanmin(where(logical_or(o_modU>o_modL, isnan(o_modU)), o_modL, o_modU), 1)
+#        ll = nanmin(where(logical_or(q>s, isnan(q)), s, q), 1)
 #        nlhf = log2(uu-ll)
         nlhf = log2(a-o)
 

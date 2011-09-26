@@ -5,8 +5,8 @@ from numpy import inf, prod, searchsorted
 def r14IP(p, nlh, y, e, vv, asdf1, C, CBKPMV, itn, g, nNodes,  \
          frc, fTol, maxSolutions, varTols, solutions, r6, _in, dataType, \
          maxNodes, _s, xRecord):
-#    global ITER
-#    ITER = p.iter
+#    global Ir39R
+#    Ir39R = p.iter
     required_sigma = p.ftol
     
     m, n = y.shape
