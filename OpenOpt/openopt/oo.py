@@ -20,28 +20,7 @@ from LUNP import LUNP as CLUNP
 from SOCP import SOCP as CSOCP
 from DFP import DFP as CDFP
 from IP import IP as CIP
-
-
-'''
-from kernel.LP import LP as CLP
-from kernel.LCP import LCP as CLCP
-from kernel.SDP import SDP as CSDP
-from kernel.QP import QP as CQP
-from kernel.MILP import MILP as CMILP
-from kernel.NSP import NSP as CNSP
-from kernel.NLP import NLP as CNLP
-from kernel.MINLP import MINLP as CMINLP
-from kernel.NLSP import NLSP as CNLSP
-from kernel.NLLSP import NLLSP as CNLLSP
-from kernel.GLP import GLP as CGLP
-from kernel.SLE import SLE as CSLE
-from kernel.LLSP import LLSP as CLLSP
-from kernel.MMP import MMP as CMMP
-from kernel.LLAVP import LLAVP as CLLAVP
-from kernel.LUNP import LUNP as CLUNP
-from kernel.SOCP import SOCP as CSOCP
-from kernel.DFP import DFP as CDFP
-'''
+from ODE import ODE as CODE
 
 def MILP(*args, **kwargs):
     """
@@ -495,6 +474,12 @@ def IP(*args, **kwargs):
     Integrate a function f: R^n -> R over a given domain lb_i <= x_i <= ub_i
     """
     return CIP(*args, **kwargs)
+
+def ODE(*args, **kwargs):
+    """
+    Solve ODE dy/dt = f(y,t), y(0) = y0
+    """
+    return CODE(*args, **kwargs)
 
 def SLE(*args, **kwargs):
     """
