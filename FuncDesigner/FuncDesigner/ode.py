@@ -96,27 +96,27 @@ class ode:
             times = 0.5 * (prob.extras['startTimes'] + prob.extras['endTimes'])
             if len(self._times) != 2:
                 # old
-#                from .interpolate import scipy_UnivariateSpline
-#                if 'ftol' in kwargs.keys():
-#                    s = self._kwargs['ftol']
-#                elif 'fTol' in kwargs.keys():
-#                    s = self._kwargs['fTol']
-#                elif 'ftol' in self._kwargs.keys():
-#                    s = self._kwargs['ftol']
-#                elif 'fTol' in self._kwargs.keys():
-#                    s = self._kwargs['fTol']
-#                interp = scipy_UnivariateSpline(times, res, k=1, s=s**2) 
-#                times = self._times
-#                res = interp(self._timeVariable)({self._timeVariable:times})
+                from .interpolate import scipy_UnivariateSpline
+                if 'ftol' in kwargs.keys():
+                    s = self._kwargs['ftol']
+                elif 'fTol' in kwargs.keys():
+                    s = self._kwargs['fTol']
+                elif 'ftol' in self._kwargs.keys():
+                    s = self._kwargs['ftol']
+                elif 'fTol' in self._kwargs.keys():
+                    s = self._kwargs['fTol']
+                interp = scipy_UnivariateSpline(times, res, k=1, s=s**2) 
+                times = self._times
+                res = interp(self._timeVariable)({self._timeVariable:times})
 
                 # new
-                ind = searchsorted(prob.extras['startTimes'], self._times)
-                ind[ind==times.size] = times.size-1
-                tmp = res[ind]
-#                lti, rti = self._times - prob.extras['startTimes'][ind], prob.extras['endTimes'][ind] - self._times
-#                tmp = (lti * res[ind] + rti * res[ind]) / (lti + rti)
-#                tmp[logical_and(lti==0, rti==0)] = res[ind]
-                res = tmp
+#                ind = searchsorted(prob.extras['startTimes'], self._times)
+#                ind[ind==times.size] = times.size-1
+#                tmp = res[ind]
+##                lti, rti = self._times - prob.extras['startTimes'][ind], prob.extras['endTimes'][ind] - self._times
+##                tmp = (lti * res[ind] + rti * res[ind]) / (lti + rti)
+##                tmp[logical_and(lti==0, rti==0)] = res[ind]
+#                res = tmp
                 
             r.xf = {y_var:res, self._timeVariable: times}
             r._xf = {y_var.name: res, self._timeVariable.name: times}
