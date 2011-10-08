@@ -1512,7 +1512,7 @@ class ooarray(ndarray):
             if other.size == 1:
                 if self.dtype == object:
                     s = atleast_1d(self)
-                    return ooarray([self[i]*other for i in range(self.size)])
+                    return ooarray([s[i]*other for i in range(self.size)])
                 else:
                     return ooarray(self*other)
             else: # other.size > 1
