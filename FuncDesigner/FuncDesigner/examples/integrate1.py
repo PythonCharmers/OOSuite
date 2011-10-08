@@ -13,7 +13,7 @@ f = exp(-x**2/(2*sigma)) / sqrt(2*pi*sigma)
 
 domain = {x: bounds_x}
 p = IP(f, domain, ftol = 0.001)
-r = p.solve('interalg', maxIter = 5000, maxActiveNodes = 150, plot=1)
+r = p.solve('interalg', maxIter = 5000, maxActiveNodes = 150)
 print('interalg result: %f' % p._F)
 '''interalg result: 1.000006 (usually solution, obtained by interalg, has real residual 10-100 times less 
 than required tolerance, because interalg works with "most worst case" that extremely rarely occurs. 
