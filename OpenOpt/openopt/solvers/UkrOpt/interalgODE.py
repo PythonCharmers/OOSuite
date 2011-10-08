@@ -10,7 +10,7 @@ def interalg_ODE_routine(p, solver):
     if isODE:
         f, y0, t, r30, ftol = p.equations, p.x0, p.timeVariable, p.times, p.ftol
         assert len(f) == 1, 'multiple ODE equations are unimplemented for FuncDesigner yet'
-        f = f.values()[0]
+        f = list(f.values())[0]
     elif isIP:
         assert p.n == 1 and p.__isNoMoreThanBoxBounded__()
         f, y0, ftol = p.user.f[0], 0.0, p.ftol
