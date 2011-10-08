@@ -150,8 +150,6 @@ class FuncDesigner_ODE_Result:
         self.xf = resultDict
         if not hasattr(self, '_xf'):
             self._xf = dict([(var.name, value) for var, value in resultDict.items()])
-        def c(*args):
-            r = [(self._xf[arg] if isinstance(arg,  str) else self.xf[arg]) for arg in args]
-            return r[0] if len(args)==1 else r
-        self.__call__ = c
-    pass
+    def __call__(self, *args):
+        r = [(self._xf[arg] if isinstance(arg,  str) else self.xf[arg]) for arg in args]
+        return r[0] if len(args)==1 else r
