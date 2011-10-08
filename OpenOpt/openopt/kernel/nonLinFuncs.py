@@ -155,7 +155,6 @@ class nonLinFuncs:
         elif getDerivative and p.isFDmodel:
             rr = [fun(X) for fun in Funcs]
             r = Vstack(rr) if scipyInstalled and any([isspmatrix(elem) for elem in rr]) else vstack(rr)
-            #assert prod(r.shape) != 177878
         else:
             r = []
             if getDerivative:

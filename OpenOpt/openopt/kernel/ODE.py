@@ -15,10 +15,10 @@ class ODE(NonLinProblem):
         NonLinProblem.__init__(self, *args, **kwargs)
         domain, timeVariable, times = args[1:4]
         self.x0 = domain
-        if any(diff(times) < 0): self.err('''
-        currently required ODE times should be sorted 
-        in ascending order, other cases are unimplemented yet
-        ''')
+#        if any(diff(times) < 0): self.err('''
+#        currently required ODE times should be sorted 
+#        in ascending order, other cases are unimplemented yet
+#        ''')
         
         #self.constraints = [timeVariable > times[0], timeVariable < times[-1]]
         
