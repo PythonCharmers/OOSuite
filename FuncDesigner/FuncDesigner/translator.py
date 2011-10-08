@@ -31,7 +31,7 @@ class FuncDesignerTranslator:
         self._variables = Variables
         self.n = sum(self._sizeDict.values())
         
-        oovar_sizes = self._sizeDict.values() # FD: for opt oovars only
+        oovar_sizes = list(self._sizeDict.values()) # FD: for opt oovars only
         oovar_indexes = cumsum([0] + oovar_sizes)
 
         self.oovarsIndDict = dict([(v, (oovar_indexes[i], oovar_indexes[i+1])) for i, v in enumerate(Variables)])

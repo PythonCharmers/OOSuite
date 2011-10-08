@@ -91,12 +91,12 @@ class ode:
                 raise FuncDesignerException('You should have openopt insalled')
             prob = ODE(self._fd_func, self._startPoint, self._timeVariable, self._times, **self._kwargs)
             r = prob.solve(solver, **kwargs)
-            y_var = prob._x0.keys()[0]
+            y_var = list(prob._x0.keys())[0]
             res = 0.5 * (prob.extras[y_var]['infinums'] + prob.extras[y_var]['supremums'])
             times = 0.5 * (prob.extras['startTimes'] + prob.extras['endTimes'])
             if len(self._times) != 2:
                 # old
-                from .interpolate import scipy_UnivariateSpline
+                from scipy.interpolate import UnivariateSpline
                 if 'ftol' in kwargs.keys():
                     s = self._kwargs['ftol']
                 elif 'fTol' in kwargs.keys():
@@ -111,9 +111,9 @@ class ode:
                     times = times[::-1]
                     res = res[::-1]
                     
-                interp = scipy_UnivariateSpline(times, res, k=1, s=s**2) 
+                interp = UnivariateSpline(times, res, k=1, s=s**2) 
                 times = self._times
-                res = interp(self._timeVariable)({self._timeVariable:times})
+                res = interp(times)
 
                 # new
 #                ind = searchsorted(prob.extras['startTimes'], self._times, 'right')
