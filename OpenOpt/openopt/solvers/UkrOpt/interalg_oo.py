@@ -271,7 +271,7 @@ class interalg(baseSolver):
         maxNodes = self.maxNodes
         _s = nan
         
-        if isODE:
+        if isODE or (isIP and p.n == 1):
             interalg_ODE_routine(p, self)
             return
         
