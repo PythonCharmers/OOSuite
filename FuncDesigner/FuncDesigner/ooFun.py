@@ -1511,12 +1511,14 @@ class ooarray(ndarray):
                 #raise FuncDesignerException('to perform the operation oofun size should be known')
             if other.size == 1:
                 if self.dtype == object:
+                    s = atleast_1d(self)
                     return ooarray([self[i]*other for i in range(self.size)])
                 else:
                     return ooarray(self*other)
             else: # other.size > 1
                 # and self.size != 1
-                return ooarray([self[i]*other[i] for i in range(self.size)])
+                s, o = atleast_1d(self), atleast_1d(other)
+                return ooarray([s[i]*o[i] for i in range(self.size)])
         elif isinstance(other, ndarray):
             # TODO: mb return mere ooarray(self.view(ndarray)*other)?or other.view(ndarray)
             return ooarray(self*asscalar(other) if other.size == 1 else [self[i]*other[i] for i in range(other.size)])
@@ -1535,13 +1537,15 @@ class ooarray(ndarray):
             if self.dtype != object:
                 return self.view(ndarray) / other
             else:
-                return ooarray([self[i] / other for i in range(self.size)])
+                s = atleast_1d(self)
+                return ooarray([s[i] / other for i in range(self.size)])
         elif isinstance(other, ooarray):
             if self.dtype != object:
                 return self.view(ndarray) / other.view(ndarray)
             else:
                 # TODO: mb return mere ooarray(self.view(ndarray) / other)? or other.view(ndarray)
-                return ooarray([self[i] / other[i] for i in range(self.size)])
+                s, o = atleast_1d(self), atleast_1d(other)
+                return ooarray([s[i] / o[i] for i in range(self.size)])
         else:
             raise FuncDesignerException('unimplemented yet')
 
@@ -1554,7 +1558,8 @@ class ooarray(ndarray):
             if self.dtype != object:
                 return self.view(ndarray) + other
             else:
-                return ooarray([self[i] + other for i in range(self.size)])
+                s = atleast_1d(self)
+                return ooarray([s[i] + other for i in range(self.size)])
         elif isinstance(other, ndarray):
             if self.dtype != object:
                 return self.view(ndarray) + other.view(ndarray)
