@@ -21,7 +21,7 @@ def interalg_ODE_routine(p, solver):
     else:
         p.err('incorrect prob type for interalg ODE routine') 
     
-    eq_var = p._x0.keys()[0]
+    eq_var = list(p._x0.keys())[0]
 
     dataType = solver.dataType
     if type(ftol) == int: 
@@ -31,8 +31,8 @@ def interalg_ODE_routine(p, solver):
         p.err('length ot time array must be at least 2')    
 #    if any(r30[1:] < r30[:-1]):
 #        p.err('currently interalg can handle only time arrays sorted is ascending order')  
-    if any(r30 < 0):
-        p.err('currently interalg can handle only time arrays with positive values')  
+#    if any(r30 < 0):
+#        p.err('currently interalg can handle only time arrays with positive values')  
 #    if p.times[0] != 0:
 #        p.err('currently solver interalg requires times start from zero')  
     
