@@ -105,12 +105,18 @@ class ode:
                     s = self._kwargs['ftol']
                 elif 'fTol' in self._kwargs.keys():
                     s = self._kwargs['fTol']
+                    
+                # walkaround a bug with essential slowdown
+                if times[-1] < times[0]:
+                    times = times[::-1]
+                    res = res[::-1]
+                    
                 interp = scipy_UnivariateSpline(times, res, k=1, s=s**2) 
                 times = self._times
                 res = interp(self._timeVariable)({self._timeVariable:times})
 
                 # new
-#                ind = searchsorted(prob.extras['startTimes'], self._times)
+#                ind = searchsorted(prob.extras['startTimes'], self._times, 'right')
 #                ind[ind==times.size] = times.size-1
 #                tmp = res[ind]
 ##                lti, rti = self._times - prob.extras['startTimes'][ind], prob.extras['endTimes'][ind] - self._times
