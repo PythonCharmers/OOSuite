@@ -156,8 +156,10 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     #if p.probType not in ['LP', 'QP', 'MILP', 'LLSP']: p.objFunc(p.x0)
 
     p.isUC = p._isUnconstrained()
-    if p.solver.__isIterPointAlwaysFeasible__ is True or \
-    (not p.solver.__isIterPointAlwaysFeasible__ is False and p.solver.__isIterPointAlwaysFeasible__(p)):
+    
+    isIterPointAlwaysFeasible = p.solver.__isIterPointAlwaysFeasible__ if type(p.solver.__isIterPointAlwaysFeasible__) == bool \
+        else p.solver.__isIterPointAlwaysFeasible__(p)
+    if isIterPointAlwaysFeasible:
         assert p.data4TextOutput[-1] == 'log10(maxResidual)'
         p.data4TextOutput = p.data4TextOutput[:-1]
     elif p.useScaledResidualOutput:
@@ -263,7 +265,7 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     p.contol = p.primalConTol
 
     # Solving finished
-    p.isFinished = True
+    
     if not hasattr(p, 'xf') and not hasattr(p, 'xk'): p.xf = p.xk = ones(p.n)*nan
     if hasattr(p, 'xf') and (not hasattr(p, 'xk') or array_equiv(p.xk, p.x0)): p.xk = p.xf
     if not hasattr(p,  'xf') or all(isnan(p.xf)): p.xf = p.xk
@@ -273,6 +275,9 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     if p.isFeas(p.xf) and (not p.probType=='MINLP' or p.discreteConstraintsAreSatisfied(p.xf)):
         p.isFeasible = True
     else: p.isFeasible = False
+    
+    p.isFinished = True # After the feasibility check above!
+    
     if p.probType == 'IP':
         p.isFeasible = p.rk < p.ftol
     if p.probType != 'IP': p.fk = p.objFunc(p.xk)

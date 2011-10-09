@@ -80,8 +80,9 @@ class Graphics:
                 Y_LABELS = ['sum(residuals^2)']
             else:
                 Y_LABELS = ['objective function']
-
-            if not (p._isUnconstrained() or p.solver.__isIterPointAlwaysFeasible__(p)):
+            isIterPointAlwaysFeasible = p.solver.__isIterPointAlwaysFeasible__ if type(p.solver.__isIterPointAlwaysFeasible__) == bool \
+                else p.solver.__isIterPointAlwaysFeasible__(p)
+            if not (p._isUnconstrained() or isIterPointAlwaysFeasible):
                 self.isMaxConstraintSubplotRequired = True
                 if p.useScaledResidualOutput:
                     Y_LABELS.append('log10(MaxConstraint/ConTol)')
@@ -288,6 +289,7 @@ class Graphics:
                 else:
                     #if not hasattr(p, 'isFeasible'): p.isFeas()
                     if p.isFeasible:
+                    #if p.isFeas(p.xk)
                         if p.istop > 0:
                             s = self.specifierOK
                         else:# p.istop = 0
