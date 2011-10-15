@@ -181,7 +181,7 @@ class ipopt(baseSolver):
 
 
         try:
-            x, zl, zu, obj = nlp.solve(p.x0)
+            x, zl, zu, obj  = nlp.solve(p.x0)[:4]
             if p.point(p.xk).betterThan(p.point(x)):
                 obj = p.fk
                 p.xk = p.xk.copy() # for more safety
