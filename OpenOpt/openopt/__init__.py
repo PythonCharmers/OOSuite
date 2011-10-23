@@ -16,6 +16,7 @@ from oo import *
 from GUI import manage
 from oologfcn import OpenOptException
 from nonOptMisc import oosolver
+from mfa import MFA
 
 
 isE = False
