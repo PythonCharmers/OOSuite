@@ -1,5 +1,5 @@
+#!/usr/bin/env python
 
-#from FDmisc import FuncDesignerException
 #from __init__ import __version__ as fdversion
 from numpy import inf, copy, abs, all, floor, log10, asfarray, asscalar
 
