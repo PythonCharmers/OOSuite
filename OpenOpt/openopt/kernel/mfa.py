@@ -6,7 +6,7 @@ from numpy import inf, copy, abs, all, floor, log10, asfarray, asscalar
 TkinterIsInstalled = True
 try:
     from Tkinter import Tk, Toplevel, Button, Entry, Menubutton, Label, Frame, StringVar, DISABLED, ACTIVE, END, IntVar, \
-    Radiobutton, Canvas
+    Radiobutton, Canvas, Image, PhotoImage
     from tkFileDialog import asksaveasfilename, askopenfile
 except ImportError:
     TkinterIsInstalled = False
@@ -36,17 +36,26 @@ class MFA:
         Radiobutton(SessionSelectFrame, variable = var, text = 'Load', indicatoron=0,  \
                     command=lambda:self.load(SessionSelectFrame)).pack(side = 'top', fill='x', pady=5)
         root.mainloop()
+        try:
+            root.destroy()
+        except:
+            pass
     
-    def load(self, SessionSelectFrame):
-        file = askopenfile(defaultextension='.pck', initialdir = self.hd, filetypes = [('Python pickle files', '.pck')])
-        if file in (None, ''):
-            return
-        SessionSelectFrame.destroy()
-    
-    def create(self, n_=[], lb_=[], ub_=[], tol_=[], val_=[], cp_={}):
+    def create(self, S={}):
         root = self.root
-        self.NameEntriesList, self.LB_EntriesList, self.UB_EntriesList, self.TolEntriesList, self.ValueEntriesList = n_, lb_, ub_, tol_, val_
-        self.calculated_points = cp_
+        
+#        #BackgroundFile = Image(file='/home/dmitrey/tmp_i/Backgd01.jpg')
+#        bgfile = '/home/dmitrey/tmp_i/Backgd01.gif'
+#        #bgfile = '/home/dmitrey/IP.png'
+#        BackgroundFile = PhotoImage(file=bgfile)
+#        #RootFrame.create_image(0, 0, image=BackgroundFile)
+#        RootFrame = Canvas(root)#, image=BackgroundFile)
+#        RootFrame.create_image(0, 0, image=BackgroundFile)
+#        RootFrame.image = BackgroundFile
+        RootFrame.pack()
+        
+        self.NameEntriesList, self.LB_EntriesList, self.UB_EntriesList, self.TolEntriesList, self.ValueEntriesList = [], [], [], [], []
+        self.calculated_points = S.get('calculated_points', {})
 
         # Title
         #root.wm_title(' FuncDesigner ' + fdversion + ' Manager')
@@ -54,13 +63,13 @@ class MFA:
         C = Canvas(root)
         
         """                                              Buttons                                               """
-        Frame(root).pack(ipady=4)
+        Frame(RootFrame).pack(ipady=4)
         #Label(root, text=' FuncDesigner ' + fdversion + ' ').pack()
 
 
         #                                                   Upper Frame
-        UpperFrame = Frame(root)
-        UpperFrame.pack(side = 'top', expand=False, fill = 'x')
+        UpperFrame = Frame(RootFrame)
+        UpperFrame.pack(side = 'top', expand=True, fill = 'x')
         
         GoalSelectFrame = Frame(UpperFrame, relief = 'ridge', bd=2)
         GoalSelectText = StringVar(value = 'Goal:')
@@ -82,7 +91,7 @@ class MFA:
         self.ObTolEntry = ObTolEntry
             
         #                                                   Variables Frame
-        varsRoot = Frame(root)
+        varsRoot = Frame(RootFrame)
        
        
         #                                                    Lower frame
@@ -96,8 +105,9 @@ class MFA:
     #    PlotButton = Button(LowerFrame, text = 'Plot', command = lambda: Plot(C, self.prob))
     #    PlotButton.pack(side='left')
      
-        ObjValNum = IntVar()
-        ObjValNum.set(1)
+        ExperimentNumber = IntVar()
+        ExperimentNumber.set(1)
+        self.ExperimentNumber = ExperimentNumber
        
         ObjVal = StringVar()
         ObjEntry = Entry(LowerFrame, textvariable = ObjVal)
@@ -119,7 +129,7 @@ class MFA:
         
         
         #                                                    Commands Frame
-        CommandsRoot = Frame(root)
+        CommandsRoot = Frame(RootFrame)
         CommandsRoot.pack(side = 'right', expand = False, fill='y')
         
        
@@ -127,7 +137,7 @@ class MFA:
                         lambda: self.addVar(names, lbs, ubs, tols, currValues))
         AddVar.pack(side = 'top', fill='x')
 
-        Next = Button(CommandsRoot, text = 'Next', command = lambda: ObjValNum.set(ObjValNum.get()+1))
+        Next = Button(CommandsRoot, text = 'Next', command = lambda: ExperimentNumber.set(ExperimentNumber.get()+1))
         #Next.pack(side='bottom',  fill='x')
 
         names.pack(side = 'left', ipady=5)
@@ -148,12 +158,14 @@ class MFA:
                                           ObTolEntry.config(state=DISABLED), 
                                           ObjEntry.pack(side='right', ipady=4),
                                           NN_Label.pack(side='right'), \
-                                          self.startOptimization(root, varsRoot, AddVar, currValues, ValsColumnName, ObjEntry, ObjValNum, Next, NN, 
+                                          self.startOptimization(root, varsRoot, AddVar, currValues, ValsColumnName, ObjEntry, ExperimentNumber, Next, NN, 
                                                             goal.get(), float(ObTolEntry.get()), C)))
         Start.pack(side = 'bottom', fill='x')
+        self.Start = Start
         
-        if len(n_):
-            pass
+        if len(S) != 0:
+            for i in range(len(S['names'])):
+                self.addVar(names, lbs, ubs, tols, currValues, S['names'][i], S['lbs'][i], S['ubs'][i], S['tols'][i], S['values'][i])
         else:
             self.addVar(names, lbs, ubs, tols, currValues)
 #        for i in range(nVars):
@@ -161,8 +173,13 @@ class MFA:
         
         
 
-    def addVar(self, names, lbs, ubs, tols, currValues):
+    def addVar(self, names, lbs, ubs, tols, currValues, _name='', _lb='', _ub='', _tol='', _val=''):
         nameEntry, lb, ub, tol, valEntry = Entry(names), Entry(lbs), Entry(ubs), Entry(tols), Entry(currValues)
+        nameEntry.insert(0, _name)
+        lb.insert(0, _lb)
+        ub.insert(0, _ub)
+        tol.insert(0, _tol)
+        valEntry.insert(0, _val)
         self.NameEntriesList.append(nameEntry)
         self.LB_EntriesList.append(lb)
         self.UB_EntriesList.append(ub)
@@ -173,34 +190,9 @@ class MFA:
         ub.pack(side = 'top')
         tol.pack(side = 'top')
         valEntry.pack(side = 'top')
-        
-    def save_as(self, filename=None):
-        if filename is None:
-            filename = asksaveasfilename(defaultextension='.pck', initialdir = self.hd, filetypes = [('Python pickle files', '.pck')])
-        if filename in (None, ''):
-            return
-        self.filename = filename
-        names = [s.get() for s in self.NameEntriesList]
-        lbs = [s.get() for s in self.LB_EntriesList]
-        ubs = [s.get() for s in self.UB_EntriesList]
-        tols = [s.get() for s in self.TolEntriesList]
-        values = [s.get() for s in self.ValueEntriesList]
-        goal = self.goal.get()
-        ObjTol = self.ObTolEntry.get()
-        calculated_points = self.calculated_points
-        S = {'names':names, 'lbs':lbs, 'ubs':ubs, 'tols':tols, 'values':values, 'goal':goal, \
-        'ObjTol':ObjTol, 'calculated_points':calculated_points}
-        
-        # TODO: handle exceptions
-        file = open(filename, "w")
-        import pickle
-        pickle.dump(S, file)
-        file.close()
-        
-    save = lambda self: self.save_as(self.filename)
 
     def startOptimization(self, root, varsRoot, AddVar, currValues, \
-                          ValsColumnName, ObjEntry, ObjValNum, Next, NN, goal, objtol, C):
+                          ValsColumnName, ObjEntry, ExperimentNumber, Next, NN, goal, objtol, C):
         AddVar.destroy()
         ValsColumnName.set('Experiment parameters')
         n = len(self.NameEntriesList)
@@ -228,11 +220,12 @@ class MFA:
         p = NLP(objective, x0, lb = Lb * xtolScaleFactor / Tol, ub=Ub * xtolScaleFactor / Tol)
         self.prob = p
         #calculated_points = [(copy(x0), copy(float(ObjEntry.get())))
-        p.args = (Tol, self, ObjEntry, p, root, ObjValNum, Next, NN, objtol, C)
+        p.args = (Tol, self, ObjEntry, p, root, ExperimentNumber, Next, NN, objtol, C)
         #p.graphics.rate = -inf
         #p.f_iter = 2
-        p.solve('bobyqa', iprint = -1, goal = goal)#, plot=1, xlabel='nf')
+        p.solve('bobyqa', iprint = 1, goal = goal)#, plot=1, xlabel='nf')
         Next.config(state=DISABLED)
+        
         #print('Finished')
 
     def Plot(C, p):
@@ -243,8 +236,50 @@ class MFA:
     #        import pylab
     #        pylab.plot(p.iterValues.f)
     #        pylab.show()
+    
+    def load(self, SessionSelectFrame):
+        file = askopenfile(defaultextension='.pck', initialdir = self.hd, filetypes = [('Python pickle files', '.pck')])
+        if file in (None, ''):
+            return
+        SessionSelectFrame.destroy()
+        import pickle 
+        S = pickle.load(file)
+        
+        #S['goal']='max'
+        self.create(S)
+        self.ObTolEntry.insert(0, S['ObjTol'])
+        self.goal.set(S['goal'])
+        self.ExperimentNumber.set(len(self.calculated_points))
+        if len(S['calculated_points']) != 0: 
+            self.Start.invoke()
+        
+    
+    def save_as(self, filename=None):
+        if filename is None:
+            filename = asksaveasfilename(defaultextension='.pck', initialdir = self.hd, filetypes = [('Python pickle files', '.pck')])
+        if filename in (None, ''):
+            return
+        self.filename = filename
+        names = [s.get() for s in self.NameEntriesList]
+        lbs = [s.get() for s in self.LB_EntriesList]
+        ubs = [s.get() for s in self.UB_EntriesList]
+        tols = [s.get() for s in self.TolEntriesList]
+        values = [s.get() for s in self.ValueEntriesList]
+        goal = self.goal.get()
+        ObjTol = self.ObTolEntry.get()
+        calculated_points = self.calculated_points
+        S = {'names':names, 'lbs':lbs, 'ubs':ubs, 'tols':tols, 'values':values, 'goal':goal, \
+        'ObjTol':ObjTol, 'calculated_points':calculated_points}
+        
+        # TODO: handle exceptions
+        file = open(filename, "w")
+        import pickle
+        pickle.dump(S, file)
+        file.close()
+        
+    save = lambda self: self.save_as(self.filename)    
 
-def objective(x, Tol, mfa, ObjEntry, p, root, ObjValNum, Next, NN, objtol, C):
+def objective(x, Tol, mfa, ObjEntry, p, root, ExperimentNumber, Next, NN, objtol, C):
     Key = ''
     Values = []
     ValueEntriesList = mfa.ValueEntriesList
@@ -262,11 +297,10 @@ def objective(x, Tol, mfa, ObjEntry, p, root, ObjValNum, Next, NN, objtol, C):
     for i in range(x.size):
         ValueEntriesList[i].delete(0, END)
         ValueEntriesList[i].insert(0, Values[i])
-        
-    NN.set('Enter experiment %i result:' % int(ObjValNum.get()))
+    NN.set('Enter experiment %i result:' % int(len(calculated_points)+1))
     
     ObjEntry.delete(0, END)
-    root.wait_variable(ObjValNum)
+    root.wait_variable(ExperimentNumber)
     r = float(ObjEntry.get()) 
     
 #    from scipy import rand
