@@ -13,7 +13,7 @@ except ImportError:
 
 xtolScaleFactor = 1e-5
 
-class MFA:
+class mfa:
     filename = None # Python pickle file where to save results
     
     def startSession(self):
@@ -49,7 +49,7 @@ class MFA:
 #        #bgfile = '/home/dmitrey/IP.png'
 #        BackgroundFile = PhotoImage(file=bgfile)
 #        #RootFrame.create_image(0, 0, image=BackgroundFile)
-#        RootFrame = Canvas(root)#, image=BackgroundFile)
+        RootFrame = Canvas(root)#, image=BackgroundFile)
 #        RootFrame.create_image(0, 0, image=BackgroundFile)
 #        RootFrame.image = BackgroundFile
         RootFrame.pack()
@@ -319,7 +319,7 @@ def objective(x, Tol, mfa, ObjEntry, p, root, ExperimentNumber, Next, NN, objtol
 #        C.create_line(*rr, fill = 'blue')
     return r
     
-
+MFA = lambda: mfa().startSession()
 if __name__ == '__main__':
-    MFA().startSession()
+    MFA()
     
