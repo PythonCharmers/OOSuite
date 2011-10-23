@@ -76,16 +76,25 @@ def Diag(x):
 
 
 ##################################################################
-solverPaths = {}
-for root, dirs, files in os.walk(''.join([elem + os.sep for elem in __file__.split(os.sep)[:-2]+ ['solvers']])):
-    rd = root.split(os.sep)
-    if '.svn' in rd or '__pycache__' in rd: continue
-    rd = rd[rd.index('solvers')+1:]
-    for file in files:
-        if file.endswith('_oo.py'):
-            solverPaths[file[:-6]] = ''.join(rd+['.',file[:-3]])
-            
+def getSolverPaths():
+    solverPaths = {}
+    for root, dirs, files in os.walk(''.join([elem + os.sep for elem in __file__.split(os.sep)[:-2]+ ['solvers']])):
+        rd = root.split(os.sep)
+        if '.svn' in rd or '__pycache__' in rd: continue
+        rd = rd[rd.index('solvers')+1:]
+        for file in files:
+            if file.endswith('_oo.py'):
+                solverPaths[file[:-6]] = ''.join(rd+['.',file[:-3]])
+    return solverPaths
+
+#solverPaths = getSolverPaths()
+
 def getSolverFromStringName(p, solver_str):
+    if not hasattr(getSolverFromStringName, 'solverPaths'):
+        getSolverFromStringName.solverPaths = getSolverPaths()
+    solverPaths = getSolverFromStringName.solverPaths
+#    if len(solverPaths) == 0: # sometimes occures while using anova, I haven't found source of the bug, mb something with threading
+#        solverPaths = getSolverPaths()
     if solver_str not in solverPaths:
         p.err('''
         incorrect solver is called, maybe the solver "%s" is misspelled 
