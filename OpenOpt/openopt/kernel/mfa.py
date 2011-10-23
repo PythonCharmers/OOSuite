@@ -21,6 +21,15 @@ class mfa:
         Tkinter is not installed. 
         If you have Linux you could try using 
         "apt-get install python-tk"'''
+        try:
+            import nlopt
+        except ImportError:
+            print('''
+            To use OpenOpt multifactor analysis tool 
+            you should have nlopt with its Python API installed,
+            see http://openopt.org/nlopt''')
+            raw_input()
+            return
         import os
         hd = os.getenv("HOME")
         self.hd = hd
