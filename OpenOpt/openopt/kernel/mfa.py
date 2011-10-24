@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-#from __init__ import __version__ as fdversion
 from numpy import inf, copy, abs, all, floor, log10, asfarray, asscalar
 
 TkinterIsInstalled = True
@@ -35,7 +34,8 @@ class mfa:
         self.hd = hd
         root = Tk()
         self.root = root
-        root.wm_title(' OpenOpt multifactor analysis tool for experiment planning ')
+        from openopt import __version__ as oover
+        root.wm_title(' OpenOpt %s Multifactor analysis tool for experiment planning ' % oover)
         SessionSelectFrame = Frame(root)
         SessionSelectFrame.pack(side='top', padx=230, ipadx = 40, fill='x', expand=True)
         var = StringVar()
