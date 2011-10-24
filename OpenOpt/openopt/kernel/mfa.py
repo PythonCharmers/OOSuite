@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from numpy import inf, copy, abs, all, floor, log10, asfarray, asscalar
+from numpy import inf, copy, abs, all, floor, log10, asfarray, asscalar, argsort
 
 TkinterIsInstalled = True
 try:
@@ -192,7 +192,6 @@ class mfa:
         
         if len(S) != 0:
             for i in range(len(S['names'])):
-                print self.x0
                 tmp = S['values'][i] if self.x0 is None else self.x0.split(' ')[i]
                 self.addVar(names, lbs, ubs, tols, currValues, S['names'][i], S['lbs'][i], S['ubs'][i], S['tols'][i], tmp)
         else:
@@ -258,7 +257,23 @@ class mfa:
         if p.stopcase >= 0:
             self.ValsColumnName.set('Best parameters')
             NN.set('Best obtained objective value:')
-        Next.config(state=DISABLED)
+        #Next.config(state=DISABLED)
+        Next.destroy()
+        #reverse = True if goal == 'min' else False
+        
+        calculated_items = self.calculated_points.items()
+        vals = [calculated_items[i][1] for i in range(len(calculated_items))]
+        ind = argsort(vals)
+        j = ind[0] if goal == 'min' else ind[-1]
+        key, val = calculated_items[j]
+        text_coords = key.split(' ')
+        for i in range(len(self.ValueEntriesList)):
+            self.ValueEntriesList[i].delete(0, END)
+            self.ValueEntriesList[i].insert(0, text_coords[i])
+        ObjEntry.delete(0, END)
+        obj_tol = self.ObTolEntry.get()
+        val = float(val) * 1e4 * objtol
+        ObjEntry.insert(0, str(val))
         ObjEntry.config(state=DISABLED)
         #print('Finished')
 
