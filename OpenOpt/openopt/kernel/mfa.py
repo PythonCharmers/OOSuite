@@ -44,11 +44,12 @@ class mfa:
                     command=lambda: (SessionSelectFrame.destroy(), self.create())).pack(side = 'top', fill='x', pady=5)
         Radiobutton(SessionSelectFrame, variable = var, text = 'Load', indicatoron=0,  \
                     command=lambda:self.load(SessionSelectFrame)).pack(side = 'top', fill='x', pady=5)
+        
+        root.protocol("WM_DELETE_WINDOW", self.exit)
+
         root.mainloop()
-        try:
-            root.destroy()
-        except:
-            pass
+        self.exit()
+
     
     def create(self, S={}):
         root = self.root
@@ -287,6 +288,16 @@ class mfa:
         file.close()
         
     save = lambda self: self.save_as(self.filename)    
+    
+    def exit(self):
+        try:
+            self.root.quit()
+        except:
+            pass
+        try:
+            self.root.destroy()
+        except:
+            pass
 
 def objective(x, Tol, mfa, ObjEntry, p, root, ExperimentNumber, Next, NN, objtol, C):
     Key = ''
