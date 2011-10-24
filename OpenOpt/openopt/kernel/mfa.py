@@ -81,6 +81,13 @@ class mfa:
         UpperFrame = Frame(RootFrame)
         UpperFrame.pack(side = 'top', expand=True, fill = 'x')
         
+        ProjectNameFrame = Frame(UpperFrame)#, relief = 'ridge', bd=2)
+        Label(ProjectNameFrame,  text = 'Project name:').pack(side = 'left')
+        ProjectNameEntry = Entry(ProjectNameFrame)
+        ProjectNameEntry.pack(side = 'left')
+        self.ProjectNameEntry = ProjectNameEntry
+        ProjectNameFrame.pack(side = 'left')
+        
         GoalSelectFrame = Frame(UpperFrame, relief = 'ridge', bd=2)
         GoalSelectText = StringVar(value = 'Goal:')
         Label(GoalSelectFrame, textvariable = GoalSelectText).pack(side = 'left')
@@ -268,6 +275,7 @@ class mfa:
         #S['goal']='max'
         self.create(S)
         self.ObTolEntry.insert(0, S['ObjTol'])
+        self.ProjectNameEntry.insert(0, S.get('ProjectName', ''))
         self.goal.set(S['goal'])
         self.ExperimentNumber.set(len(self.calculated_points))
         if len(S['calculated_points']) != 0: 
@@ -288,8 +296,9 @@ class mfa:
         goal = self.goal.get()
         ObjTol = self.ObTolEntry.get()
         calculated_points = self.calculated_points
+        ProjectName = self.ProjectNameEntry.get()
         S = {'names':names, 'lbs':lbs, 'ubs':ubs, 'tols':tols, 'values':values, 'goal':goal, \
-        'ObjTol':ObjTol, 'calculated_points':calculated_points}
+        'ObjTol':ObjTol, 'calculated_points':calculated_points, 'ProjectName':ProjectName}
         
         # TODO: handle exceptions
         file = open(filename, "w")
