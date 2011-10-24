@@ -108,10 +108,16 @@ class mfa:
         LowerFrame = Frame(varsRoot)
         LowerFrame.pack(side = 'bottom', expand=True, fill = 'x')
 
+        from webbrowser import open_new_tab
+        About = Button(LowerFrame, text = 'About', command = lambda: open_new_tab('http://openopt.org/MultiFactorAnalysis'))
+        About.pack(side='left')
+        
         SaveButton = Button(LowerFrame, text = 'Save', command = self.save)
         SaveButton.pack(side='left', padx = 15)
         SaveAsButton = Button(LowerFrame, text = 'Save As ...', command = self.save)
         SaveAsButton.pack(side='left')
+        
+       
     #    PlotButton = Button(LowerFrame, text = 'Plot', command = lambda: Plot(C, self.prob))
     #    PlotButton.pack(side='left')
      
