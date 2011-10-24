@@ -136,6 +136,7 @@ class mfa:
         ValsColumnName = StringVar()
         ValsColumnName.set(' Initial Point ')
         Label(currValues, textvariable=ValsColumnName).pack(side = 'top')
+        self.ValsColumnName = ValsColumnName
         
         
         #                                                    Commands Frame
@@ -234,6 +235,9 @@ class mfa:
         #p.graphics.rate = -inf
         #p.f_iter = 2
         p.solve('bobyqa', iprint = 1, goal = goal)#, plot=1, xlabel='nf')
+        if p.stopcase >= 0:
+            self.ValsColumnName.set('Best parameters')
+            NN.set('Best obtained objective value:')
         Next.config(state=DISABLED)
         
         #print('Finished')
