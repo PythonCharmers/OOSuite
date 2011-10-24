@@ -6,7 +6,8 @@ TkinterIsInstalled = True
 try:
     from Tkinter import Tk, Toplevel, Button, Entry, Menubutton, Label, Frame, StringVar, DISABLED, ACTIVE, END, IntVar, \
     Radiobutton, Canvas, Image, PhotoImage
-    from tkFileDialog import asksaveasfilename, askopenfile
+    from tkFileDialog import asksaveasfilename, askopenfile 
+    from tkMessageBox import showerror
 except ImportError:
     TkinterIsInstalled = False
 
@@ -14,7 +15,7 @@ xtolScaleFactor = 1e-5
 
 class mfa:
     filename = None # Python pickle file where to save results
-    
+    x0 = None
     def startSession(self):
         assert TkinterIsInstalled, '''
         Tkinter is not installed. 
@@ -23,10 +24,12 @@ class mfa:
         try:
             import nlopt
         except ImportError:
-            print('''
+            s = '''
             To use OpenOpt multifactor analysis tool 
             you should have nlopt with its Python API installed,
-            see http://openopt.org/nlopt''')
+            see http://openopt.org/nlopt'''
+            print(s)
+            showerror('OpenOpt', s)
             raw_input()
             return
         import os
@@ -189,7 +192,9 @@ class mfa:
         
         if len(S) != 0:
             for i in range(len(S['names'])):
-                self.addVar(names, lbs, ubs, tols, currValues, S['names'][i], S['lbs'][i], S['ubs'][i], S['tols'][i], S['values'][i])
+                print self.x0
+                tmp = S['values'][i] if self.x0 is None else self.x0.split(' ')[i]
+                self.addVar(names, lbs, ubs, tols, currValues, S['names'][i], S['lbs'][i], S['ubs'][i], S['tols'][i], tmp)
         else:
             self.addVar(names, lbs, ubs, tols, currValues)
 #        for i in range(nVars):
@@ -240,19 +245,21 @@ class mfa:
             
         x0, Tol, Lb, Ub = asfarray(x0), asfarray(Tol), asfarray(Lb), asfarray(Ub)
         x0 *= xtolScaleFactor / Tol
-        from openopt import NLP
+        #self.x0 = copy(x0)
+        from openopt import NLP, oosolver
         p = NLP(objective, x0, lb = Lb * xtolScaleFactor / Tol, ub=Ub * xtolScaleFactor / Tol)
         self.prob = p
         #calculated_points = [(copy(x0), copy(float(ObjEntry.get())))
         p.args = (Tol, self, ObjEntry, p, root, ExperimentNumber, Next, NN, objtol, C)
         #p.graphics.rate = -inf
         #p.f_iter = 2
-        p.solve('bobyqa', iprint = 1, goal = goal)#, plot=1, xlabel='nf')
+        solver = oosolver('bobyqa', __cannotHandleExceptions__ = True)
+        p.solve(solver, iprint = 1, goal = goal)#, plot=1, xlabel='nf')
         if p.stopcase >= 0:
             self.ValsColumnName.set('Best parameters')
             NN.set('Best obtained objective value:')
         Next.config(state=DISABLED)
-        
+        ObjEntry.config(state=DISABLED)
         #print('Finished')
 
     def Plot(C, p):
@@ -273,7 +280,10 @@ class mfa:
         S = pickle.load(file)
         
         #S['goal']='max'
+        self.x0 = S.get('x0', None) # this line should be BEFORE self.create(S)
+        
         self.create(S)
+        
         self.ObTolEntry.insert(0, S['ObjTol'])
         self.ProjectNameEntry.insert(0, S.get('ProjectName', ''))
         self.goal.set(S['goal'])
@@ -298,7 +308,7 @@ class mfa:
         calculated_points = self.calculated_points
         ProjectName = self.ProjectNameEntry.get()
         S = {'names':names, 'lbs':lbs, 'ubs':ubs, 'tols':tols, 'values':values, 'goal':goal, \
-        'ObjTol':ObjTol, 'calculated_points':calculated_points, 'ProjectName':ProjectName}
+        'ObjTol':ObjTol, 'calculated_points':calculated_points, 'ProjectName':ProjectName, 'x0':self.x0}
         
         # TODO: handle exceptions
         file = open(filename, "w")
@@ -319,6 +329,7 @@ class mfa:
             pass
 
 def objective(x, Tol, mfa, ObjEntry, p, root, ExperimentNumber, Next, NN, objtol, C):
+    #print 'in objective', x
     Key = ''
     Values = []
     ValueEntriesList = mfa.ValueEntriesList
@@ -329,7 +340,9 @@ def objective(x, Tol, mfa, ObjEntry, p, root, ExperimentNumber, Next, NN, objtol
         key = Format % tmp
         Key += key + ' '
         Values.append(key)
-
+    #print calculated_points
+    #print Key
+    if mfa.x0 is None: mfa.x0 = Key
     if Key in calculated_points:
         return calculated_points[Key]
    
