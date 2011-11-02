@@ -16,6 +16,7 @@ xtolScaleFactor = 1e-5
 class mfa:
     filename = None # Python pickle file where to save results
     x0 = None
+    solved = False
     def startSession(self):
         assert TkinterIsInstalled, '''
         Tkinter is not installed. 
@@ -126,6 +127,10 @@ class mfa:
         SaveButton.pack(side='left', padx = 15)
         SaveAsButton = Button(LowerFrame, text = 'Save As ...', command = self.save)
         SaveAsButton.pack(side='left')
+        Write_xls_Button = Button(LowerFrame, text = 'Write xls report', command = self.write_xls_report)
+        Write_xls_Button.pack(side='left', padx = 15)
+        
+        
         
        
     #    PlotButton = Button(LowerFrame, text = 'Plot', command = lambda: Plot(C, self.prob))
@@ -137,6 +142,7 @@ class mfa:
        
         ObjVal = StringVar()
         ObjEntry = Entry(LowerFrame, textvariable = ObjVal)
+        self.ObjEntry = ObjEntry
 
         NN = StringVar(LowerFrame)
         NN_Label = Label(LowerFrame, textvariable = NN)
@@ -254,6 +260,7 @@ class mfa:
         #p.f_iter = 2
         solver = oosolver('bobyqa', __cannotHandleExceptions__ = True)
         p.solve(solver, iprint = 1, goal = goal)#, plot=1, xlabel='nf')
+        self.solved = True
         if p.stopcase >= 0:
             self.ValsColumnName.set('Best parameters')
             NN.set('Best obtained objective value:')
@@ -293,7 +300,8 @@ class mfa:
         SessionSelectFrame.destroy()
         import pickle 
         S = pickle.load(file)
-        
+        if type(S['calculated_points']) == dict: # for backward compatibility
+            S['calculated_points'] = S['calculated_points'].items()
         #S['goal']='max'
         self.x0 = S.get('x0', None) # this line should be BEFORE self.create(S)
         
@@ -311,6 +319,11 @@ class mfa:
         if filename is None:
             filename = asksaveasfilename(defaultextension='.pck', initialdir = self.hd, filetypes = [('Python pickle files', '.pck')])
         if filename in (None, ''):
+            return
+        if not self.solved and self.ObjEntry.get() != '':
+            s = 'For the sake of more safety and some other circumstances saving with non-empty objective entry is forbidden'
+            print(s)
+            showerror('OpenOpt', s)
             return
         self.filename = filename
         names = [s.get() for s in self.NameEntriesList]
@@ -332,6 +345,62 @@ class mfa:
         file.close()
         
     save = lambda self: self.save_as(self.filename)    
+    
+    def write_xls_report(self):
+        try:
+            import xlwt
+        except ImportError:
+            s = '''To create xls reports 
+            you should have xlwt installed, 
+            see http://www.python-excel.org/
+            you could use easy_install xlwt (with admin rights)
+            also, in Linux you could use 
+            [sudo] aptitude install python-xlwt
+            '''
+            print(s)
+            showerror('OpenOpt', s)
+            return
+            
+        xls_file = asksaveasfilename(defaultextension='.xls', initialdir = self.hd, filetypes = [('xls files', '.xls')])
+        if xls_file in (None, ''):
+            return
+            
+        wb = xlwt.Workbook()
+        ws = wb.add_sheet('OpenOpt factor analysis report')
+        ws.write(0, 0, 'Name')
+        ws.write(0, 1, self.ProjectNameEntry.get())
+        ws.write(1, 0, 'Goal')
+        ws.write(1, 1, self.goal.get())
+        ws.write(2, 0, 'Objective Tolerance')
+        ws.write(2, 1, self.ObTolEntry.get())
+        
+        names = [s.get() for s in self.NameEntriesList]
+        lbs = [s.get() for s in self.LB_EntriesList]
+        ubs = [s.get() for s in self.UB_EntriesList]
+        tols = [s.get() for s in self.TolEntriesList]
+        
+        ws.write(4, 0, 'Variable')
+        ws.write(5, 0, 'Lower Bound')
+        ws.write(6, 0, 'Upper Bound')
+        ws.write(7, 0, 'Tolerance')
+        for i in range(len(names)):
+            ws.write(4, i+1, names[i])
+            ws.write(5, i+1, float(lbs[i]))
+            ws.write(6, i+1, float(ubs[i]))
+            ws.write(7, i+1, float(tols[i]))
+        
+        
+        ws.write(9, 0, 'Exp number')
+        ws.write(9, len(names)+1, 'Objective')
+        # TODO: minor code cleanup
+        for i in range(len(self.calculated_points)):
+            key,  val = self.calculated_points[i]
+            ws.write(10+i, 0, i+1)
+            coords = key.split()
+            for j, coordVal in enumerate(coords):
+                ws.write(10+i, j+1, float(coordVal))
+            ws.write(10+i, len(coords)+1, float(val))
+        wb.save(xls_file)
     
     def exit(self):
         try:
@@ -358,8 +427,8 @@ def objective(x, Tol, mfa, ObjEntry, p, root, ExperimentNumber, Next, NN, objtol
     #print calculated_points
     #print Key
     if mfa.x0 is None: mfa.x0 = Key
-    if Key in calculated_points:
-        return calculated_points[Key]
+    if Key in dict(calculated_points): # TODO: rework it
+        return dict(calculated_points)[Key]
    
     for i in range(x.size):
         ValueEntriesList[i].delete(0, END)
@@ -374,7 +443,7 @@ def objective(x, Tol, mfa, ObjEntry, p, root, ExperimentNumber, Next, NN, objtol
 #    r = abs(x[0]* Tol[0] / xtolScaleFactor-0.13) + abs(x[1]* Tol[1] /xtolScaleFactor-0.15) #+ 0.0001 * rand(1)
 
     r *= 1e-4 / objtol
-    calculated_points[Key] = asscalar(copy(r)) # for more safety
+    calculated_points.append((Key, asscalar(copy(r)))) 
     
 #    rr = []
 #    for i, val in enumerate(p.iterValues.f):
