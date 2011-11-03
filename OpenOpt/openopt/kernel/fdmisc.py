@@ -1,5 +1,5 @@
 # Handling of FuncDesigner probs
-from numpy import empty, hstack, vstack, asfarray, all, atleast_1d, cumsum, asarray, zeros,  atleast_2d, ndarray, prod, ones, copy, nan, flatnonzero, array_equal
+from numpy import empty, isscalar, hstack, vstack, asfarray, all, atleast_1d, cumsum, asarray, zeros,  atleast_2d, ndarray, prod, ones, copy, nan, flatnonzero, array_equal
 from nonOptMisc import scipyInstalled, Hstack, Vstack, Find, isspmatrix, SparseMatrixConstructor, DenseMatrixConstructor, Bmat
 
 def setStartVectorAndTranslators(p):
@@ -101,7 +101,7 @@ def setStartVectorAndTranslators(p):
 
         if len(pointDerivarive) == 0: 
             if func is not None:
-                assert point is not None
+                #assert point is not None
                 funcLen = func(point).size
                 if useSparse is not False:
                     return SparseMatrixConstructor((funcLen, n))
@@ -123,10 +123,12 @@ def setStartVectorAndTranslators(p):
         
         # 1. Calculate number of zero/nonzero elements
         involveSparse = useSparse
+        #print useSparse, pointDerivarive.keys()
         if useSparse == 'auto':
             nTotal = n * funcLen#sum([prod(elem.shape) for elem in pointDerivarive.values()])
             nNonZero = sum([(elem.size if isspmatrix(elem) else len(flatnonzero(asarray(elem)))) for elem in pointDerivarive.values()])
             involveSparse = 4*nNonZero < nTotal and nTotal > 1000
+        #print involveSparse
         # 2. Create init result matrix
 #        if funcLen == 1:
 #            r = DenseMatrixConstructor(n)
@@ -161,23 +163,35 @@ def setStartVectorAndTranslators(p):
 #            else:
 #                r = DenseMatrixConstructor((n, funcLen))            
         # CHANGES END
-        
+        #print 'involveSparse:', involveSparse
         if involveSparse:# and newStyle:
             # USE STACK
             r2 = []
             hasSparse = False
+            zeros_start_ind = 0
+            zeros_end_ind = 0
             for i, var in enumerate(freeVars):
                 if var in pointDerivarive:#i.e. one of its keys
+                    
+                    if zeros_end_ind != zeros_start_ind:
+                        r2.append(SparseMatrixConstructor((funcLen, zeros_end_ind - zeros_start_ind)))
+                        zeros_start_ind = zeros_end_ind
+                    
                     tmp = pointDerivarive[var]
-                    if isspmatrix(tmp): hasSparse = True
-                    if isinstance(tmp, float) or (isinstance(tmp, ndarray) and tmp.shape == ()):
-                        tmp = atleast_1d(tmp)
+                    if isspmatrix(tmp): 
+                        hasSparse = True
+                    else:
+                        tmp = asarray(tmp) # else bug with scipy sparse hstack
                     if tmp.ndim < 2:
                         tmp = tmp.reshape(funcLen, prod(tmp.shape) // funcLen)
                     r2.append(tmp)
                 else:
-                    r2.append(SparseMatrixConstructor((funcLen, oovar_sizes[i])))
+                    zeros_end_ind  += oovar_sizes[i]
                     hasSparse = True
+                    
+            if zeros_end_ind != zeros_start_ind:
+                r2.append(SparseMatrixConstructor((funcLen, zeros_end_ind - zeros_start_ind)))
+                
             r3 = Hstack(r2) if hasSparse else hstack(r2)
             if isspmatrix(r3) and r3.nnz > 0.25 * prod(r3.shape): r3 = r3.A
             return r3
@@ -186,15 +200,19 @@ def setStartVectorAndTranslators(p):
             if funcLen == 1:
                 r = DenseMatrixConstructor(n)
             else:
-                r = SparseMatrixConstructor((funcLen, n))if involveSparse else DenseMatrixConstructor((funcLen, n)) 
+                r = SparseMatrixConstructor((funcLen, n)) if involveSparse else DenseMatrixConstructor((funcLen, n)) 
+                #r = DenseMatrixConstructor((funcLen, n)) 
             for key, val in pointDerivarive.items():
                 # TODO: remove indexes, do as above for sparse 
                 indexes = oovarsIndDict[key]
                 if not involveSparse and isspmatrix(val): val = val.A
+#                if isscalar(val) or prod(val.shape)==1:
+#                    r[indexes[0]] = val.flatten() if type(val) == ndarray else val
+#                el
                 if r.ndim == 1:
                     r[indexes[0]:indexes[1]] = val.flatten() if type(val) == ndarray else val
                 else:
-                    r[:, indexes[0]:indexes[1]] = val.reshape(funcLen, prod(val.shape)/funcLen)
+                    r[:, indexes[0]:indexes[1]] = val if val.shape[0] == r.shape[0] else val.reshape((funcLen, prod(val.shape)/funcLen))
             if useSparse is True and funcLen == 1: 
                 return SparseMatrixConstructor(r)
             elif r.ndim <= 1:

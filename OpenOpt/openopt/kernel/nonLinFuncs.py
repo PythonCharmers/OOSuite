@@ -212,6 +212,12 @@ class nonLinFuncs:
             if getDerivative and r.ndim > 1:
                 if min(r.shape) > 1:
                     p.err('incorrect shape of objective func derivative')
+                
+                # TODO: omit cast to dense array. Somewhere bug triggers?
+                if hasattr(r, 'toarray'):
+                    r=r.toarray()
+                #if not hasattr(r, 'flatten'): 
+                    #raise 0
                 r = r.flatten()
             
 #        if type(r) == matrix: 
