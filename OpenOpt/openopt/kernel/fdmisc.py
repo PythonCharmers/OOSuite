@@ -221,18 +221,30 @@ def setStartVectorAndTranslators(p):
                 r = r.toarray()
             return r
                 
-                
+
     def getPattern(oofuns):
         # oofuns is Python list of oofuns
-        # result is 1d-array, so we can omit using sparsity here and involve it in an upper stack level func
         assert isinstance(oofuns, list), 'oofuns should be Python list, inform developers of the bug'
         R = []
         for oof in oofuns:
             r = []
             dep = oof._getDep()
-            for oov in freeVars:
-                constructor = ones if oov in dep else SparseMatrixConstructor
-                r.append(constructor((1, asarray(startPoint[oov]).size)))
+            Depends = True if freeVars[0] in dep else False
+            ind_start = 0
+            ind_end = asarray(startPoint[freeVars[0]]).size
+            for oov in freeVars[1:]:
+                tmp = startPoint[oov]
+                depends = True if oov in dep else False
+                if Depends != depends:
+                    if ind_start != ind_end:
+                        constructor = ones if Depends else SparseMatrixConstructor
+                        r.append(constructor((1, ind_end-ind_start)))
+                    ind_start = ind_end
+                    Depends = depends
+                ind_end += len(tmp) if not isscalar(tmp) else 1
+            if ind_start != ind_end:
+                constructor = ones if Depends else SparseMatrixConstructor
+                r.append(constructor((1, ind_end-ind_start)))
             if any([isspmatrix(elem) for elem in r]):
                 rr = Hstack(r) if len(r) > 1 else r[0]
             elif len(r)>1:
