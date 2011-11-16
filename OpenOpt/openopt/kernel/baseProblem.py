@@ -477,7 +477,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         dep = set([f]) if f.is_oovar else f._getDep()
         
         if f.is_oovar and areFixed(dep):  
-            if self.x0 is None or f not in self.x0: self.err('your problem has fixed oovar '+ Name + ' but no value for the one in start point is provided')
+            if self._x0 is None or f not in self._x0: 
+                self.err('your problem has fixed oovar '+ Name + ' but no value for the one in start point is provided')
             return
             
         if not dep.issubset(StartPointVars):
