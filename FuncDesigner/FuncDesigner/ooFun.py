@@ -1553,21 +1553,26 @@ class ooarray(ndarray):
         if isinstance(other, list):
             other = ooarray(other)
         if isscalar(other) or (isinstance(other, ndarray) and other.size in (1, self.size)):
-            return ooarray(self.view(ndarray) + other)
+            r = ooarray(self.view(ndarray) + other)
         elif isinstance(other, oofun):
             if self.dtype != object:
-                return self.view(ndarray) + other
+                r = self.view(ndarray) + other
             else:
                 s = atleast_1d(self)
-                return ooarray([s[i] + other for i in range(self.size)])
+                r = ooarray([s[i] + other for i in range(self.size)])
         elif isinstance(other, ndarray):
             if self.dtype != object:
-                return self.view(ndarray) + other.view(ndarray)
+                r = self.view(ndarray) + other.view(ndarray)
+            elif self.size == 1:
+                r = other + asscalar(self) 
             else:
                 # TODO: mb return mere ooarray(self.view(ndarray) + other) or ooarray(self.view(ndarray) + other.view(ndarray))?
-                return ooarray([self[i] + other[i] for i in range(self.size)])
+                r = ooarray([self[i] + other[i] for i in range(self.size)])
         else:
             raise FuncDesignerException('unimplemented yet')
+        if isinstance(r, ndarray) and r.size == 1:
+            r = asscalar(r)
+        return r
 
     # TODO: check why it doesn't work with oofuns
     def __radd__(self, other):

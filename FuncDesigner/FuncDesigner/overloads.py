@@ -248,16 +248,9 @@ def sum(inp, *args, **kwargs):
 
         # TODO:  check for fixed inputs
         #f = lambda *args: r0 + np.sum(args)
-        def f(*args):
-            #return r0 + np.sum(args, 0)
-            return r0 + PythonSum(args)
+        f = lambda *args: r0 + PythonSum(args)
             #tmp = np.asarray(args)
             #return r0 + (tmp.sum(0) if tmp.ndim > 1 else tmp.sum())
-            
-#            if np.asarray(args).size>12: raise 0
-#            return r0 + np.sum(args)
-#            
-
         
         #!!!!!!!!!!!!!!!!!! TODO: check INP for complex cases (not list of oovars)
         
