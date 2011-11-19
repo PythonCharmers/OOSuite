@@ -96,21 +96,50 @@ class FuncDesignerTranslator:
         if useSparse is not False and newStyle:
             r2 = []
             hasSparse = False
+            zeros_start_ind = 0
+            zeros_end_ind = 0
             for i, var in enumerate(freeVars):
                 if var in pointDerivarive:#i.e. one of its keys
+                    
+                    if zeros_end_ind != zeros_start_ind:
+                        r2.append(SparseMatrixConstructor((funcLen, zeros_end_ind - zeros_start_ind)))
+                        zeros_start_ind = zeros_end_ind
+                    
                     tmp = pointDerivarive[var]
-                    if isspmatrix(tmp): hasSparse = True
-                    if isinstance(tmp, float) or (isinstance(tmp, ndarray) and tmp.shape == ()):
-                        tmp = atleast_1d(tmp)
+                    if isspmatrix(tmp): 
+                        hasSparse = True
+                    else:
+                        tmp = asarray(tmp) # else bug with scipy sparse hstack
                     if tmp.ndim < 2:
                         tmp = tmp.reshape(funcLen, prod(tmp.shape) // funcLen)
                     r2.append(tmp)
                 else:
-                    r2.append(SparseMatrixConstructor((funcLen, oovar_sizes[i])))
+                    zeros_end_ind  += oovar_sizes[i]
                     hasSparse = True
+                    
+            if zeros_end_ind != zeros_start_ind:
+                r2.append(SparseMatrixConstructor((funcLen, zeros_end_ind - zeros_start_ind)))
+                
             r3 = Hstack(r2) if hasSparse else hstack(r2)
             if isspmatrix(r3) and r3.nnz > 0.25 * prod(r3.shape): r3 = r3.A
-            return r3
+            return r3            
+#            r2 = []
+#            hasSparse = False
+#            for i, var in enumerate(freeVars):
+#                if var in pointDerivarive:#i.e. one of its keys
+#                    tmp = pointDerivarive[var]
+#                    if isspmatrix(tmp): hasSparse = True
+#                    if isinstance(tmp, float) or (isinstance(tmp, ndarray) and tmp.shape == ()):
+#                        tmp = atleast_1d(tmp)
+#                    if tmp.ndim < 2:
+#                        tmp = tmp.reshape(funcLen, prod(tmp.shape) // funcLen)
+#                    r2.append(tmp)
+#                else:
+#                    r2.append(SparseMatrixConstructor((funcLen, oovar_sizes[i])))
+#                    hasSparse = True
+#            r3 = Hstack(r2) if hasSparse else hstack(r2)
+#            if isspmatrix(r3) and r3.nnz > 0.25 * prod(r3.shape): r3 = r3.A
+#            return r3
         else:
             if funcLen == 1:
                 r = DenseMatrixConstructor(n)
