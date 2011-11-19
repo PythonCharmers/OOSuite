@@ -2,6 +2,12 @@
 from numpy import empty, isscalar, hstack, vstack, asfarray, all, atleast_1d, cumsum, asarray, zeros,  atleast_2d, ndarray, prod, ones, copy, nan, flatnonzero, array_equal
 from nonOptMisc import scipyInstalled, Hstack, Vstack, Find, isspmatrix, SparseMatrixConstructor, DenseMatrixConstructor, Bmat
 
+try:
+    # available since numpy 1.6.x
+    from numpy import count_nonzero
+except:
+    count_nonzero = lambda elem: len(flatnonzero(asarray(elem)))
+    
 def setStartVectorAndTranslators(p):
     startPoint = p.x0
     #assert all(asarray([atleast_1d(val).ndim for val in startPoint.values()]) == 1)
@@ -33,6 +39,8 @@ def setStartVectorAndTranslators(p):
         freeVars = list(startPoint.keys())
     
     # TODO: use ordered set instead
+    freeVars.sort(key=lambda elem: elem._id)
+#    fixedVars.sort()
     p._freeVarsList = freeVars # to use in interalg, a global solver from UkrOpt
     
     p._fixedVars = set(fixedVars) if fixedVars is not None else set()
@@ -90,7 +98,7 @@ def setStartVectorAndTranslators(p):
         return r
 
     oovarsIndDict = dict([(oov, (oovar_indexes[i], oovar_indexes[i+1])) for i, oov in enumerate(freeVars)])
-        
+
     def pointDerivative2array(pointDerivarive, useSparse = 'auto',  func=None, point=None): 
         
         # useSparse can be True, False, 'auto'
@@ -101,7 +109,6 @@ def setStartVectorAndTranslators(p):
 
         if len(pointDerivarive) == 0: 
             if func is not None:
-                #assert point is not None
                 funcLen = func(point).size
                 if useSparse is not False:
                     return SparseMatrixConstructor((funcLen, n))
@@ -123,76 +130,57 @@ def setStartVectorAndTranslators(p):
         
         # 1. Calculate number of zero/nonzero elements
         involveSparse = useSparse
-        #print useSparse, pointDerivarive.keys()
         if useSparse == 'auto':
             nTotal = n * funcLen#sum([prod(elem.shape) for elem in pointDerivarive.values()])
-            nNonZero = sum([(elem.size if isspmatrix(elem) else len(flatnonzero(asarray(elem)))) for elem in pointDerivarive.values()])
+            nNonZero = sum([(elem.size if isspmatrix(elem) else count_nonzero(elem)) for elem in pointDerivarive.values()])
             involveSparse = 4*nNonZero < nTotal and nTotal > 1000
-        #print involveSparse
-        # 2. Create init result matrix
-#        if funcLen == 1:
-#            r = DenseMatrixConstructor(n)
-#        # TODO: uncomment and implement!
-##        elif not involveSparse:
-##            r = DenseMatrixConstructor((n, funcLen))
-#        else:
-#            I, J, Vals = [], [], []
-#            for key, val in pointDerivarive.items():
-#                if isspmatrix(val):
-#                    _i, _j, _vals = Find(val)
-#                    I += _i
-#                    J += _j
-#                    Vals += _vals
-#                else:
-#                    _i, _j = nonzero(val)
-#                    
-#                    I += range(atleast_2d(val).shape[0]) * funcLen
-#                    J += range(funcLen) * (atleast_2d(val).shape[1])
-#                    Vals += val.flatten().tolist()
-#            r = SparseMatrixConstructor((Vals,  (I, J)), shape = (n, funcLen))
-#            return r
-#            
-                #r[indexes[0]:indexes[1], :] = val.T
-            #r = SparseMatrixConstructor((n, funcLen)) 
-        
-#        if funcLen == 1:
-#            r = DenseMatrixConstructor(n)
-#        else:
-#            if useSparse:
-#                r = SparseMatrixConstructor((n, funcLen))
-#            else:
-#                r = DenseMatrixConstructor((n, funcLen))            
-        # CHANGES END
-        #print 'involveSparse:', involveSparse
+
         if involveSparse:# and newStyle:
             # USE STACK
             r2 = []
             hasSparse = False
-            zeros_start_ind = 0
-            zeros_end_ind = 0
-            for i, var in enumerate(freeVars):
-                if var in pointDerivarive:#i.e. one of its keys
-                    
-                    if zeros_end_ind != zeros_start_ind:
-                        r2.append(SparseMatrixConstructor((funcLen, zeros_end_ind - zeros_start_ind)))
-                        zeros_start_ind = zeros_end_ind
-                    
-                    tmp = pointDerivarive[var]
-                    if isspmatrix(tmp): 
-                        hasSparse = True
+ 
+            if len(freeVars) > 5 * len(pointDerivarive):
+                ind_Z = 0
+                derivative_items = list(pointDerivarive.items())
+                derivative_items.sort(key=lambda elem: elem[0]._id)
+                for oov, val in derivative_items:
+                    ind_start, ind_end = oovarsIndDict[oov]
+                    if ind_start != ind_Z:
+                        r2.append(SparseMatrixConstructor((funcLen, ind_start - ind_Z)))
+                    if not isspmatrix(val): 
+                        val = asarray(val) # else bug with scipy sparse hstack
+                    r2.append(val)
+                    ind_Z = ind_end
+                if ind_Z != n:
+                    # assert ind_Z < n
+                    r2.append(SparseMatrixConstructor((funcLen, n - ind_Z)))
+            else:
+                zeros_start_ind = 0
+                zeros_end_ind = 0           
+                for i, var in enumerate(freeVars):
+                    if var in pointDerivarive:#i.e. one of its keys
+                        if zeros_end_ind != zeros_start_ind:
+                            r2.append(SparseMatrixConstructor((funcLen, zeros_end_ind - zeros_start_ind)))
+                            zeros_start_ind = zeros_end_ind
+                        
+                        tmp = pointDerivarive[var]
+                        if isspmatrix(tmp): 
+                            hasSparse = True
+                        else:
+                            tmp = asarray(tmp) # else bug with scipy sparse hstack
+                        if tmp.ndim < 2:
+                            tmp = tmp.reshape(funcLen, prod(tmp.shape) // funcLen)
+                        r2.append(tmp)
                     else:
-                        tmp = asarray(tmp) # else bug with scipy sparse hstack
-                    if tmp.ndim < 2:
-                        tmp = tmp.reshape(funcLen, prod(tmp.shape) // funcLen)
-                    r2.append(tmp)
-                else:
-                    zeros_end_ind  += oovar_sizes[i]
-                    hasSparse = True
+                        zeros_end_ind  += oovar_sizes[i]
+                        hasSparse = True
+                        
+                if zeros_end_ind != zeros_start_ind:
+                    r2.append(SparseMatrixConstructor((funcLen, zeros_end_ind - zeros_start_ind)))
                     
-            if zeros_end_ind != zeros_start_ind:
-                r2.append(SparseMatrixConstructor((funcLen, zeros_end_ind - zeros_start_ind)))
-                
-            r3 = Hstack(r2) if hasSparse else hstack(r2)
+            r3 = Hstack(r2) #if hasSparse else hstack(r2)
+            
             if isspmatrix(r3) and r3.nnz > 0.25 * prod(r3.shape): r3 = r3.A
             return r3
         else:
@@ -227,32 +215,48 @@ def setStartVectorAndTranslators(p):
         assert isinstance(oofuns, list), 'oofuns should be Python list, inform developers of the bug'
         R = []
         for oof in oofuns:
+            SIZE = asarray(oof(startPoint)).size
             r = []
             dep = oof._getDep()
-            Depends = True if freeVars[0] in dep else False
-            ind_start = 0
-            ind_end = asarray(startPoint[freeVars[0]]).size
-            for oov in freeVars[1:]:
-                tmp = startPoint[oov]
-                depends = True if oov in dep else False
-                if Depends != depends:
-                    if ind_start != ind_end:
-                        constructor = ones if Depends else SparseMatrixConstructor
-                        r.append(constructor((1, ind_end-ind_start)))
-                    ind_start = ind_end
-                    Depends = depends
-                ind_end += len(tmp) if not isscalar(tmp) else 1
-            if ind_start != ind_end:
-                constructor = ones if Depends else SparseMatrixConstructor
-                r.append(constructor((1, ind_end-ind_start)))
+            
+            # NEW
+            ind_Z = 0
+            vars = list(dep)
+            vars.sort(key=lambda elem: elem[0]._id)
+            for oov in vars:
+                ind_start, ind_end = oovarsIndDict[oov]
+                if ind_start != ind_Z:
+                    r.append(SparseMatrixConstructor((SIZE, ind_start - ind_Z)))
+                r.append(ones((SIZE, ind_end - ind_start)))
+                ind_Z = ind_end
+            if ind_Z != n:
+                # assert ind_Z < n
+                r.append(SparseMatrixConstructor((SIZE, n - ind_Z)))
+            
+            # OLD
+#            Depends = True if freeVars[0] in dep else False
+#            ind_start = 0
+#            ind_end = asarray(startPoint[freeVars[0]]).size
+#            for oov in freeVars[1:]:
+#                tmp = startPoint[oov]
+#                depends = True if oov in dep else False
+#                if Depends != depends:
+#                    if ind_start != ind_end:
+#                        constructor = ones if Depends else SparseMatrixConstructor
+#                        r.append(constructor((SIZE, ind_end-ind_start)))
+#                    ind_start = ind_end
+#                    Depends = depends
+#                ind_end += len(tmp) if not isscalar(tmp) else 1
+#            if ind_start != ind_end:
+#                constructor = ones if Depends else SparseMatrixConstructor
+#                r.append(constructor((SIZE, ind_end-ind_start)))
+                
             if any([isspmatrix(elem) for elem in r]):
                 rr = Hstack(r) if len(r) > 1 else r[0]
             elif len(r)>1:
                 rr = hstack(r)
             else:
                 rr = r[0]
-            SIZE = asarray(oof(startPoint)).size
-            if SIZE > 1:  rr = Vstack([rr]*SIZE)  if isspmatrix(rr) else vstack([rr]*SIZE)
             R.append(rr)
         result = Vstack(R) if any([isspmatrix(_r) for _r in R]) else vstack(R)
         
