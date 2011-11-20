@@ -11,6 +11,9 @@ a, b, c = oovars('a', 'b', 'c')
 point1 = {a:1, b: 0, c:[1, 2, 3]}
 
 mySpline = interpolator([1, 2, 3, 4], [1.001, 4, 9, 16.01])
+# Let's check our spline - they are implemented quite prematurely in scipy
+print('max residual in spline definition points: %e' % mySpline.residual())
+mySpline.plot()
 
 f = mySpline(a)
 
@@ -23,8 +26,10 @@ F = mySpline(a + f2 + 2*b + (c**2).sum())
 print(F(point1))
 print(F.D(point1))
 
+
 """
 Expected output:
+max residual in spline definition points: 2.220446e-16
 [ 1.001]
 {a: 2.0015000000000001}
 [ 329.61795391]
