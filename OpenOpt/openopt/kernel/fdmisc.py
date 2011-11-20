@@ -218,11 +218,13 @@ def setStartVectorAndTranslators(p):
             SIZE = asarray(oof(startPoint)).size
             r = []
             dep = oof._getDep()
+            if len(p._fixedVars) != 0:
+                dep = dep & p._freeVars if len(p._freeVars) < len(p._fixedVars) else dep.difference(p._fixedVars)
             
             # NEW
             ind_Z = 0
             vars = list(dep)
-            vars.sort(key=lambda elem: elem[0]._id)
+            vars.sort(key=lambda elem: elem._id)
             for oov in vars:
                 ind_start, ind_end = oovarsIndDict[oov]
                 if ind_start != ind_Z:
