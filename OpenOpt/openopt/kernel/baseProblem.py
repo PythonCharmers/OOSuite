@@ -346,7 +346,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             if self.probType in ['LP', 'MILP'] and self.f.getOrder(self.freeVars, self.fixedVars) > 1:
                 self.err('for LP/MILP objective function has to be linear, while this one ("%s") is not' % self.f.name)
 
-
+            setStartVectorAndTranslators(self)
+            
             if self.fixedVars is None or (self.freeVars is not None and len(self.freeVars)<len(self.fixedVars)):
                 D_kwargs = {'Vars':self.freeVars}
             else:
@@ -357,7 +358,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             
             self._D_kwargs = D_kwargs
             
-            setStartVectorAndTranslators(self)
+            
             variableTolerancesDict = dict([(v, v.tol) for v in self._freeVars])
             self.variableTolerances = self._point2vector(variableTolerancesDict)
             
