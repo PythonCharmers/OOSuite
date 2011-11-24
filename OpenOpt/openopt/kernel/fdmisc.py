@@ -18,7 +18,7 @@ def setStartVectorAndTranslators(p):
     fixedVars, freeVars = None, None
     
     if p.freeVars is not None:
-        if not isinstance(p.freeVars,  (list, tuple, ndarray)):
+        if not isinstance(p.freeVars,  (list, tuple, ndarray, set)):
             assert hasattr(p.freeVars, 'is_oovar')
             p.freeVars = [p.freeVars]
             freeVars = p.freeVars
@@ -27,7 +27,7 @@ def setStartVectorAndTranslators(p):
         fixedVars = list(set(startPoint.keys()).difference(set(freeVars)))
         p.fixedVars = fixedVars
     elif p.fixedVars is not None:
-        if not isinstance(p.fixedVars,  (list, tuple, ndarray)):
+        if not isinstance(p.fixedVars,  (list, tuple, ndarray, set)):
             assert hasattr(p.fixedVars, 'is_oovar')
             p.fixedVars = [p.fixedVars]
             fixedVars = p.fixedVars
