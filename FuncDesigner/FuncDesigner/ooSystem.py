@@ -124,11 +124,21 @@ class ooSystem:
             else: # Nonlinear equations system
                 f = kwargs['constraints']
                 ############################################
-                if not all([array_equal(c.lb, c.ub) for c in f]):
-                    raise FuncDesignerException('Solving constrained nonlinear systems is not implemented for oosystem yet, use SNLE constructor instead')
-                kwargs['constraints'] = ()
+                #cons = self._getAllConstraints()
+                
+                # OLD
+#                if not all([array_equal(c.lb, c.ub) for c in f]):
+#                    raise FuncDesignerException('Solving constrained nonlinear systems is not implemented for oosystem yet, use SNLE constructor instead')
+#                kwargs['constraints'] = ()
+                
+                # NEW
+                C,  F = [], []
+                for c in f:
+                    F.append(c) if array_equal(c.lb, c.ub) else C.append(c)
+                kwargs['constraints'] = C
+                f = F
                 ############################################
-                #raise 0
+                
                 p = openopt.SNLE(f, *args, **kwargs)
                 if 'nlpSolver' in kwargs:
                     p.solver = kwargs['nlpSolver']
