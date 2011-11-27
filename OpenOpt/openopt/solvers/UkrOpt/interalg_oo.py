@@ -147,18 +147,18 @@ class interalg(baseSolver):
 
         xRecord = 0.5 * (lb + ub)
 
-        CBKPMV = inf
+        r40 = inf
         
         y = lb.reshape(1, -1)
         e = ub.reshape(1, -1)
-        frc = inf
+        r41 = inf
 
         # TODO: maybe rework it, especially for constrained case
         fStart = self.fStart
         
         # TODO: remove it after proper SNLE handling implementation
         if isSNLE:
-            frc = 0.0
+            r41 = 0.0
             eqs = [fd_abs(elem) for elem in p.user.f]
             asdf1 = fd_sum(eqs)
             
@@ -173,22 +173,22 @@ class interalg(baseSolver):
                 if p.fOpt is not None:
                     fOpt = -p.fOpt
             
-            if fStart is not None and fStart < CBKPMV: 
-                frc = fStart
+            if fStart is not None and fStart < r40: 
+                r41 = fStart
                 
             for X0 in [point(xRecord), point(p.x0)]:
-                if X0.isFeas(altLinInEq=False) and X0.f() < CBKPMV:
-                    CBKPMV = X0.f()
+                if X0.isFeas(altLinInEq=False) and X0.f() < r40:
+                    r40 = X0.f()
 
             if p.isFeas(p.x0):
                 tmp = asdf1(p._x0)
-                if  tmp < frc:
-                    frc = tmp
+                if  tmp < r41:
+                    r41 = tmp
                 
             if p.fOpt is not None:
-                if p.fOpt > frc:
+                if p.fOpt > r41:
                     p.warn('user-provided fOpt seems to be incorrect, ')
-                frc = p.fOpt
+                r41 = p.fOpt
 
         if isSNLE:
             if self.dataHandling == 'raw':
@@ -284,15 +284,15 @@ class interalg(baseSolver):
                 nlhc = None
             
             if y.size != 0:
-                an, g, fo, _s, solutions, r6, xRecord, frc, CBKPMV = \
-                pb(p, nlhc, y, e, vv, asdf1, C, CBKPMV, itn, g, \
-                             nNodes, frc, fTol, maxSolutions, varTols, solutions, r6, _in, \
+                an, g, fo, _s, solutions, r6, xRecord, r41, r40 = \
+                pb(p, nlhc, y, e, vv, asdf1, C, r40, itn, g, \
+                             nNodes, r41, fTol, maxSolutions, varTols, solutions, r6, _in, \
                              dataType, maxNodes, _s, xRecord)
                 if _s is None:
                     break
             else:
                 an = _in
-                fo = 0.0 if isSNLE else min((frc, CBKPMV - (fTol if maxSolutions == 1 else 0.0))) 
+                fo = 0.0 if isSNLE else min((r41, r40 - (fTol if maxSolutions == 1 else 0.0))) 
             pnc = max((len(an), pnc))
             
             if isIP:

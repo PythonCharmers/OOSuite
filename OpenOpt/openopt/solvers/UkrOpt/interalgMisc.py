@@ -8,13 +8,13 @@ try:
 except ImportError:
     from numpy import nanmin, nanargmin, nanargmax, nanmax
     
-def r14(p, nlhc, y, e, vv, asdf1, C, CBKPMV, itn, g, nNodes,  \
-         frc, fTol, maxSolutions, varTols, solutions, r6, _in, dataType, \
+def r14(p, nlhc, y, e, vv, asdf1, C, r40, itn, g, nNodes,  \
+         r41, fTol, maxSolutions, varTols, solutions, r6, _in, dataType, \
          maxNodes, _s, xRecord):
 
     isSNLE = p.probType in ('NLSP', 'SNLE')
     
-    fo_prev = float(0 if isSNLE else min((frc, CBKPMV - (fTol if maxSolutions == 1 else 0))))
+    fo_prev = float(0 if isSNLE else min((r41, r40 - (fTol if maxSolutions == 1 else 0))))
     
     ip = func10(y, e, vv)
         
@@ -34,7 +34,7 @@ def r14(p, nlhc, y, e, vv, asdf1, C, CBKPMV, itn, g, nNodes,  \
         _s = atleast_1d(nanmax(a-o))
     y, e, o, a, _s = func7(y, e, o, a, _s)    
     if y.size == 0:
-        return _in, g, fo_prev, _s, solutions, r6, xRecord, frc, CBKPMV
+        return _in, g, fo_prev, _s, solutions, r6, xRecord, r41, r40
     
     nodes = func11(y, e, nlhc, o, a, _s, p)
     
@@ -87,13 +87,13 @@ def r14(p, nlhc, y, e, vv, asdf1, C, CBKPMV, itn, g, nNodes,  \
         xk = p.xk
         Min = nan
     
-    if CBKPMV > Min:
-        CBKPMV = Min
+    if r40 > Min:
+        r40 = Min
         xRecord = xk.copy()# TODO: is copy required?
-    if frc > Min:
-        frc = Min
+    if r41 > Min:
+        r41 = Min
     
-    fo = float(0 if isSNLE else min((frc, CBKPMV - (fTol if maxSolutions == 1 else 0))))
+    fo = float(0 if isSNLE else min((r41, r40 - (fTol if maxSolutions == 1 else 0))))
         
     if p.solver.dataHandling == 'raw':
         # TODO: check it with bool/integer variables
@@ -153,15 +153,16 @@ def r14(p, nlhc, y, e, vv, asdf1, C, CBKPMV, itn, g, nNodes,  \
             solutions = solutions[:maxSolutions]
             p.istop = 0
             p.msg = 'user-defined maximal number of solutions (p.maxSolutions = %d) has been exeeded' % p.maxSolutions
-            return an, g, fo, None, solutions, r6, xRecord, frc, CBKPMV
+            return an, g, fo, None, solutions, r6, xRecord, r41, r40
     
-    p.iterfcn(xk, Min)
+    #p.iterfcn(xk, Min)
+    p.iterfcn(xRecord, r40)
     if p.istop != 0: 
-        return an, g, fo, None, solutions, r6, xRecord, frc, CBKPMV
+        return an, g, fo, None, solutions, r6, xRecord, r41, r40
     if isSNLE and maxSolutions == 1 and Min <= fTol:
         # TODO: rework it for nonlinear systems with non-bound constraints
         p.istop, p.msg = 1000, 'required solution has been obtained'
-        return an, g, fo, None, solutions, r6, xRecord, frc, CBKPMV
+        return an, g, fo, None, solutions, r6, xRecord, r41, r40
     
     
     an, g = func9(an, fo, g, p)
@@ -170,7 +171,7 @@ def r14(p, nlhc, y, e, vv, asdf1, C, CBKPMV, itn, g, nNodes,  \
     
     an, g = func5(an, nn, g, p)
     nNodes.append(len(an))
-    return an, g, fo, _s, solutions, r6, xRecord, frc, CBKPMV
+    return an, g, fo, _s, solutions, r6, xRecord, r41, r40
 
 
 def r13(o, a, PointCoords, PointVals, fTol, varTols, solutions, r6):
