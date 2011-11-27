@@ -181,7 +181,7 @@ def r13(o, a, PointCoords, PointVals, fTol, varTols, solutions, r6):
     r5Ind =  where(logical_and(PointVals < fTol, nanmax(omin, 1) == 0.0))[0]
     
     r5 = []
-    for i in range(len(r5Ind)):#TODO: rework it
+    for i in r5Ind:#TODO: rework it
         r5.append(PointCoords[i])
     
     for c in r5:
