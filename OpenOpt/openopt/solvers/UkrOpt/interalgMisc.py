@@ -176,9 +176,12 @@ def r14(p, nlhc, y, e, vv, asdf1, C, r40, itn, g, nNodes,  \
 
 def r13(o, a, PointCoords, PointVals, fTol, varTols, solutions, r6):
     n = o.shape[1] / 2
-    L1, L2 = o[:, :n], o[:, n:]
-    omin = where(logical_or(L1 > L2, isnan(L1)), L2, L1)
-    r5Ind =  where(logical_and(PointVals < fTol, nanmax(omin, 1) == 0.0))[0]
+    
+    #L1, L2 = o[:, :n], o[:, n:]
+    #omin = where(logical_or(L1 > L2, isnan(L1)), L2, L1)
+    #r5Ind =  where(logical_and(PointVals < fTol, nanmax(omin, 1) == 0.0))[0]
+    
+    r5Ind =  where(PointVals < fTol)[0]
     
     r5 = []
     for i in r5Ind:#TODO: rework it
