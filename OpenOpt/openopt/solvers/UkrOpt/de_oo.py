@@ -14,7 +14,7 @@ class de(baseSolver):
     iterfcnConnected = True
     __homepage__ = ''
     __isIterPointAlwaysFeasible__ = lambda self, p: p.__isNoMoreThanBoxBounded__()
-    __optionalDataThatCanBeHandled__ = ['lb', 'ub', 'A', 'b', 'c']
+    __optionalDataThatCanBeHandled__ = ['lb', 'ub', 'A', 'b', 'Aeq','beq','c','h']
     _requiresFiniteBoxBounds = True
     
     """Strategy for selecting base vector.
