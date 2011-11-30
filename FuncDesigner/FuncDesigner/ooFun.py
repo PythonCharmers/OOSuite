@@ -1452,7 +1452,7 @@ def atleast_oofun(arg):
 class ooarray(ndarray):
     __array_priority__ = 25 # !!! it should exceed oofun.__array_priority__ !!!
     def __new__(self, *args, **kwargs):
-        assert len(kwargs) == 0
+        #assert len(kwargs) == 0
         obj = asarray(args[0] if len(args) == 1 else args).view(self)
         #if obj.ndim != 1: raise FuncDesignerException('only 1-d ooarrays are implemented now')
         #if obj.dtype != object:obj = np.asfarray(obj) #TODO: FIXME !
@@ -1481,13 +1481,17 @@ class ooarray(ndarray):
         
         if len(args) == 0:
            if len(kwargs) == 0: raise FuncDesignerException('You should provide at least one argument')
-           return self
+           #return self
            
-        if isinstance(args[0], str):
+        if len(args) != 0 and isinstance(args[0], str):
             self.name = args[0]
-            return self
+            #return self
         tmp = asarray([asscalar(asarray(self[i](*args, **kwargs))) if isinstance(self[i], oofun) else self[i] for i in range(self.size)])
-        return array(tmp, dtype=float if type(tmp) != object else object).flatten()
+        if tmp.dtype != object:
+            return array(tmp, dtype = float).flatten()
+        else:
+            return ooarray(tmp).flatten()
+        #return ooarray(tmp, dtype=float if tmp.dtype != object else object).flatten()
 
     def __mul__(self, other):
         if self.size == 1:

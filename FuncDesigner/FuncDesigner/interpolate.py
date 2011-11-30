@@ -35,7 +35,8 @@ class FuncDesignerSplineGenerator:
             x = np.asfarray(x)
             #if x.size != 1:
                 #raise FuncDesignerException('for scipy_UnivariateSpline input should be oovar/oofun with output size = 1,other cases not implemented yet')            
-            return us.__call__(x)            
+            tmp = us.__call__(x.flatten() if x.ndim > 1 else x)
+            return tmp if x.ndim <= 1 else tmp.reshape(x.shape)
         r = oofun(f, INP, d = d, isCostly=True, vectorized=True)
         diffX, diffY = np.diff(self._X), np.diff(self._Y)
         
@@ -77,8 +78,10 @@ class FuncDesignerSplineGenerator:
             print('You should have matplotlib installed')
             return
         pylab.scatter(self._X, self._Y, marker='o')
+       
         YY = self._un_sp.__call__(self._X)
         pylab.plot(self._X, YY)
+        
         pylab.grid('on')
         pylab.title('FuncDesigner spline checker')
         pylab.show()
