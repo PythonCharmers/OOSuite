@@ -1037,8 +1037,9 @@ class oofun:
                             rr = rr.toarray() # I guess r[key] will hardly be all-zeros
                         elif hasattr(Val, 'toarray') and isinstance(rr, ndarray): # i.e. Val is sparse matrix
                             Val = Val.toarray()
+                            r[key] = Val
                         if type(rr) == type(Val) == ndarray and rr.size == Val.size: 
-                            Val += rr
+                            r[key] += rr
                         else: 
                             r[key] = Val + rr
                     else:
