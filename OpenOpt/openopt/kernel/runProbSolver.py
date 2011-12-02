@@ -123,6 +123,7 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     
     if p.solver._requiresFiniteBoxBounds:
         ind1, ind2 = isinf(p.lb), isinf(p.ub)
+        if isscalar(p.implicitBounds): p.implicitBounds = (-p.implicitBounds, p.implicitBounds) # may be from lp2nlp converter, thus omit nlp init code
         p.lb[ind1] = p.implicitBounds[0] if asarray(p.implicitBounds[0]).size == 1 else p.implicitBounds[0][ind1]
         p.ub[ind2] = p.implicitBounds[1] if asarray(p.implicitBounds[1]).size == 1 else p.implicitBounds[0][ind2]
     
