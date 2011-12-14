@@ -38,6 +38,7 @@ print('dimension of the SLE: %d' % linSys.n) # dimension of the SLE: 301
 r = linSys.eig(goal={'lm':4}, solver='arpack')
 # or goal={'largest magnitude':4}, with or without space inside, case-insensitive
 # for whole list of available goals see http://openopt.org/EIG
+
 print(r.eigenvalues)
 #[ -1.35516602e-05 -1.71948079e-05j  -6.93570858e-01 +0.00000000e+00j
 #   1.73033511e+00 +0.00000000e+00j   4.88614250e+06 +0.00000000e+00j]
@@ -45,3 +46,7 @@ print(r.eigenvalues)
 print(r.eigenvectors[0])
 #{a: (1.5254915493391314e-11-6.5463605815307811e-11j), b: array([  5.44424793e-07 -7.86615045e-07j, 2.49866501e-07 +1.42239402e-06j,...
 # c: array([ -1.41371978e-06 -1.14259649e-06j,1.62417813e-07 -8.00444176e-07j, ..., 5.24756666e-01 -4.13335624e-01j]}
+print(r.eigenvectors[-1][a])
+#(-0.10673471576669166+0j)
+print(type(r.eigenvectors[-1][a]))
+#<type 'numpy.complex128'>
