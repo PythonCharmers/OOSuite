@@ -78,3 +78,14 @@ class sle:
                     startPoint[oov] = 0
         self.startPoint = startPoint
         
+    def eig(self, *args, **kw):
+        from openopt import EIG
+        p = EIG(self.A, *args, **kw)
+        r = p.solve()
+        vectors = []
+        for i in range(len(p.eigenvalues)):
+            vectors.append(self.decode(p.eigenvectors[:, i]))
+        r.eigenvectors = vectors
+        return r
+        
+        
