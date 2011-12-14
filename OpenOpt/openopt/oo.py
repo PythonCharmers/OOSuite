@@ -3,6 +3,7 @@ sys.path.append(os.getcwd()+os.sep+'kernel')
 
 from LP import LP as CLP
 from LCP import LCP as CLCP
+from EIG import EIG as CEIG
 from SDP import SDP as CSDP
 from QP import QP as CQP
 from MILP import MILP as CMILP
@@ -133,6 +134,36 @@ def LCP(*args, **kwargs):
     """
     return CLCP(*args, **kwargs)
 
+def EIG(*args, **kwargs):
+    """
+    EIG: constructor for Eigenvalues Problem assignment
+    to solve standard eigenvalue problem:
+        find eigenvalues and eigenvectors of square matrix A:   
+            A x = lambda x
+    or general eigenvalue problem:
+        A x = lambda M x
+    
+    valid calls are:
+    p = EIG(M, q, <params as kwargs>)
+    p = EIG(M=M, q=q, <params as kwargs>)
+    See also: /examples/eig_*.py
+
+    :Parameters:
+    A, (optional) M: numpy array or scipy sparse matrix of size n x n
+
+    :Returns:
+    OpenOpt EIG class instance
+
+    Notes
+    -----
+    Solving of EIGs is performed via
+    r = p.solve(string_name_of_solver)
+    see http://openopt.org/EIG for more info
+    Solvers available for now:
+    arpack (license: BSD) 
+
+    """
+    return CEIG(*args, **kwargs)
 
 def SDP(*args, **kwargs):
     """
