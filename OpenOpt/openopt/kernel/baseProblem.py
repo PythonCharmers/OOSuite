@@ -192,12 +192,12 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         self.binVars = [] # for problems like MILP
         self.optionalData = []#string names of optional data like 'c', 'h', 'Aeq' etc
         
-        if 'min' in self.allowedGoals:
-            self.minimize = lambda *args, **kwargs: minimize(self, *args, **kwargs)
-
-        if 'max' in self.allowedGoals:
-            self.maximize = lambda *args, **kwargs: maximize(self, *args, **kwargs)
-            
+        if self.allowedGoals is not None: # None in EIG
+            if 'min' in self.allowedGoals:
+                self.minimize = lambda *args, **kwargs: minimize(self, *args, **kwargs)
+            if 'max' in self.allowedGoals:
+                self.maximize = lambda *args, **kwargs: maximize(self, *args, **kwargs)
+                
         assignScript(self, kwargs)
 
     def __finalize__(self):

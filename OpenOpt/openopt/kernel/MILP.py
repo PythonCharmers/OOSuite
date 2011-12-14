@@ -1,7 +1,5 @@
-from numpy import copy
-from ooMisc import assignScript
 from baseProblem import MatrixProblem
-from numpy import asarray, ones, inf, dot, nan, zeros, ceil, floor, argmax, ndarray
+from numpy import asarray, ones, inf, dot, nan, zeros, ceil, floor, argmax, ndarray, copy
 from setDefaultIterFuncs import SMALL_DELTA_X, SMALL_DELTA_F
 from LP import LP
 

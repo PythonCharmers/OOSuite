@@ -6,7 +6,8 @@ def check(p):
     """
     nErrors = 0
 
-    if not (p.goal in p.allowedGoals):
+    if p.allowedGoals is not None and p.goal is not None and p.goal not in p.allowedGoals:
+        # p.goal is None in EIG
         p.err('goal '+ p.goal+' is not available for the '+ p.probType + ' class (at least not implemented yet)')
 
     for fn in p._optionalData:

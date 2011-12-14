@@ -267,16 +267,18 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     p.contol = p.primalConTol
 
     # Solving finished
-    
-    if not hasattr(p, 'xf') and not hasattr(p, 'xk'): p.xf = p.xk = ones(p.n)*nan
-    if hasattr(p, 'xf') and (not hasattr(p, 'xk') or array_equiv(p.xk, p.x0)): p.xk = p.xf
-    if not hasattr(p,  'xf') or all(isnan(p.xf)): p.xf = p.xk
-    if p.xf is nan: 
-        p.xf = p.xk = ones(p.n)*nan
-    
-    if p.isFeas(p.xf) and (not p.probType=='MINLP' or p.discreteConstraintsAreSatisfied(p.xf)):
-        p.isFeasible = True
-    else: p.isFeasible = False
+    if p.probType != 'EIG':
+        if not hasattr(p, 'xf') and not hasattr(p, 'xk'): p.xf = p.xk = ones(p.n)*nan
+        if hasattr(p, 'xf') and (not hasattr(p, 'xk') or array_equiv(p.xk, p.x0)): p.xk = p.xf
+        if not hasattr(p,  'xf') or all(isnan(p.xf)): p.xf = p.xk
+        if p.xf is nan: 
+            p.xf = p.xk = ones(p.n)*nan
+        
+        if p.isFeas(p.xf) and (not p.probType=='MINLP' or p.discreteConstraintsAreSatisfied(p.xf)):
+            p.isFeasible = True
+        else: p.isFeasible = False
+    else:
+        p.isFeasible = True # check it!
     
     p.isFinished = True # After the feasibility check above!
     
@@ -391,6 +393,9 @@ class OpenOptResult:
         self.rf = asscalar(asarray(p.rf))
         self.ff = asscalar(asarray(p.ff))
         self.isFDmodel = p.isFDmodel
+        if p.probType == 'EIG':
+            self.eigenvalues, self.eigenvectors = p.eigenvalues, p.eigenvectors
+              
         if p.isFDmodel:
             self.xf = dict([(v, asscalar(val) if isinstance(val, ndarray) and val.size ==1 else val) for v, val in p.xf.items()])
             if not hasattr(self, '_xf'):
