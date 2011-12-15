@@ -5,7 +5,7 @@ descr   = """
 
 from os.path import join
 import os
-import sys, compileall
+import sys
 
 DISTNAME            = 'FuncDesigner'
 DESCRIPTION         = 'A python module for function design and automatic derivatives'
