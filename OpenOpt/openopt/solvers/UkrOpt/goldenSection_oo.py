@@ -1,6 +1,6 @@
 from openopt.kernel.baseSolver import baseSolver
 from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X, IS_MAX_ITER_REACHED, SMALL_DELTA_F
-from numpy import nan, diff
+from numpy import nan, diff, copy
 
 class goldenSection(baseSolver):
     __name__ = 'goldenSection'
@@ -22,7 +22,7 @@ class goldenSection(baseSolver):
         if p.n != 1: p.err('the solver ' + self.__name__ +' can handle singe-variable problems only')
         if not p.__isFiniteBoxBounded__(): p.err('the solver ' + self.__name__ +' requires finite lower and upper bounds')
         if SMALL_DELTA_X in p.kernelIterFuncs.keys(): p.kernelIterFuncs.pop(SMALL_DELTA_X)
-        a,  b,  f = p.lb,  p.ub,  p.f
+        a,  b,  f = copy(p.lb),  copy(p.ub),  p.f
         if self.rightBorderForLocalization is None: self.rightBorderForLocalization = p.ub
         if self.leftBorderForLocalization is None: self.leftBorderForLocalization = p.lb
 
