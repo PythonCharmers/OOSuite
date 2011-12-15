@@ -1457,11 +1457,15 @@ class ooarray(ndarray):
         obj = asarray(args[0] if len(args) == 1 else args).view(self)
         #if obj.ndim != 1: raise FuncDesignerException('only 1-d ooarrays are implemented now')
         #if obj.dtype != object:obj = np.asfarray(obj) #TODO: FIXME !
+
+        obj._id = oofun._id
+        self.name = 'unnamed_ooarray_%d' % obj._id
+        oofun._id += 1
+        
         return obj
     
     def __init__(self, *args, **kw):
-        self._id = oofun._id
-        oofun._id += 1
+        pass
     
     __hash__ = lambda self: self._id
 
@@ -1491,7 +1495,8 @@ class ooarray(ndarray):
         if tmp.dtype != object:
             return array(tmp, dtype = float).flatten()
         else:
-            return ooarray(tmp).flatten()
+            #tmp = tmp.flatten()
+            return ooarray(tmp)
         #return ooarray(tmp, dtype=float if tmp.dtype != object else object).flatten()
 
     def __mul__(self, other):
