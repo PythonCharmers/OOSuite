@@ -1,9 +1,19 @@
 # sometimes Tkinter is not installed
 TkinterIsInstalled = True
-try:
-    from Tkinter import Tk, Toplevel, Button, Entry, Menubutton, Label, Frame, StringVar, DISABLED, ACTIVE
-except:
-    TkinterIsInstalled = False
+import platform
+if platform.python_version()[0] == '2': 
+    # Python2
+    try:
+        from Tkinter import Tk, Toplevel, Button, Entry, Menubutton, Label, Frame, StringVar, DISABLED, ACTIVE
+    except:
+        TkinterIsInstalled = False
+else: 
+    # Python3
+    try:
+        from tkinter import Tk, Toplevel, Button, Entry, Menubutton, Label, Frame, StringVar, DISABLED, ACTIVE
+    except:
+        TkinterIsInstalled = False
+
 
 from threading import Thread
 from openopt import __version__ as ooversion
@@ -19,7 +29,7 @@ def manage(p, *args, **kwargs):
     p._kwargs = kwargs
 
     for arg in args:
-        if type(arg) == str or hasattr(arg, '__solver__'): p.solver = arg
+        if type(arg) == str or hasattr(arg, '__name__'): p.solver = arg
         elif arg in (0, 1, True, False): start = arg
         else: p.err('Incorrect argument for manage()')
 
