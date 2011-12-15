@@ -20,8 +20,4 @@ class baseGeometryObject:
     
     def _spaceDimension(self):
         raise SpaceFuncsException('this function should be overwritten by derived class')
-    
-#
-#def ChangeName(obj, newName):
-#    obj.name = newName
-#    return obj
+
