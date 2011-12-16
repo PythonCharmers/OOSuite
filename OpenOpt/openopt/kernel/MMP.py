@@ -66,5 +66,5 @@ class MMP(NonLinProblem):
         #xf = fsolve(self.f, self.x0, fprime=self.df, xtol = self.xtol, maxfev = self.maxFunEvals)
         xf = r2.xf[:-1]
         self.xk = self.xf = xf
-        self.fk = self.ff = asfarray(norm(self.f(xf), inf)).flatten()
+        self.fk = self.ff = max(self.f(xf))
 
