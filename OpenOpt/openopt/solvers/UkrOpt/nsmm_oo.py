@@ -1,4 +1,4 @@
-from numpy import asfarray, argmax, inf, log10
+from numpy import asfarray, argmax, inf, log10, max
 from numpy.linalg import norm
 from openopt.kernel.baseSolver import baseSolver
 from openopt import NSP
@@ -59,5 +59,5 @@ class nsmm(baseSolver):
         r2 = p2.solve('ralg')
         xf = r2.xf
         p.xk = p.xf = xf
-        p.fk = p.ff = asfarray(norm(p.f(xf), inf)).flatten()
+        p.fk = p.ff = max(p.f(xf))
         #p.istop is defined in iterfcn
