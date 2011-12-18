@@ -135,7 +135,8 @@ def abs(inp):
 
 def log_interval(logfunc, inp):
     def interval(domain, dtype):
-        lb, ub = inp._interval(domain, dtype)
+        lb_ub = inp._interval(domain, dtype)
+        lb, ub = lb_ub[0], lb_ub[1]
         t_min, t_max = atleast_1d(logfunc(lb)), atleast_1d(logfunc(ub))
         
         ind = lb < 0
@@ -146,7 +147,7 @@ def log_interval(logfunc, inp):
         if np.any(ind):
             t_max[ind] = np.nan
             t_min[ind] = np.nan
-        return t_min, t_max
+        return np.vstack((t_min, t_max))
     return interval
 
 def log(inp):
@@ -263,14 +264,24 @@ def sum(inp, *args, **kwargs):
             return np.max(orders)
         r.getOrder = getOrder
         
+        R0 = np.vstack((r0, r0))
         def interval(domain, dtype):
-            Arg_infinums, Arg_supremums = [], []
+            assert np.asarray(r0).ndim <= 1
+            r = R0.copy()
+            
+            #####################
+            # !!! don't use sum([inp._interval(domain, dtype) for ...]) here
+            # to reduce memory consumption
             for inp in INP:
-                arg_inf, arg_sup = inp._interval(domain, dtype)
-                Arg_infinums.append(arg_inf)
-                Arg_supremums.append(arg_sup)
-            #raise 0
-            return r0+np.sum(np.vstack(Arg_infinums), 0), r0+np.sum(np.vstack(Arg_supremums), 0)
+                arg_lb_ub = inp._interval(domain, dtype)
+                if r.shape == arg_lb_ub.shape:
+                    r += arg_lb_ub
+                else:
+                    r = r + arg_lb_ub
+            #####################
+            
+            return r
+            
         r._interval = interval
         r.vectorized = True
         
@@ -434,8 +445,9 @@ def max(inp,  *args,  **kwargs):
             ind = np.argmax(x)
             return df[ind, :]
         def interval(domain, dtype):
-            tmp1, tmp2 = inp._interval(domain, dtype)
-            return np.max(np.vstack(tmp1), 0), np.max(np.vstack(tmp2), 0)
+            lb_ub = inp._interval(domain, dtype)
+            tmp1, tmp2 = lb_ub[0], lb_ub[1]
+            return np.vstack((np.max(np.vstack(tmp1), 0), np.max(np.vstack(tmp2), 0)))
         r = oofun(f, inp, d = d, size = 1, _interval = interval)
     elif type(inp) in (list, tuple, ooarray):
         f = lambda *args: np.max([arg for arg in args])
@@ -443,7 +455,9 @@ def max(inp,  *args,  **kwargs):
             arg_inf, arg_sup, tmp = [], [], -np.inf
             for _inp in inp:
                 if isinstance(_inp, oofun):
-                    tmp1, tmp2 = _inp._interval(domain, dtype)
+                    #tmp1, tmp2 = _inp._interval(domain, dtype)
+                    lb_ub = _inp._interval(domain, dtype)
+                    tmp1, tmp2 = lb_ub[0], lb_ub[1]
                     arg_inf.append(tmp1)
                     arg_sup.append(tmp2)
                 elif tmp < _inp:
@@ -451,7 +465,7 @@ def max(inp,  *args,  **kwargs):
             r1, r2 = np.max(np.vstack(arg_inf), 0), np.max(np.vstack(arg_sup), 0)
             r1[r1<tmp] = tmp
             r2[r2<tmp] = tmp
-            return r1, r2
+            return np.vstack((r1, r2))
         r = oofun(f, inp, size = 1, _interval = interval)
         def _D(point, *args, **kwargs):
             ind = np.argmax([(s(point) if isinstance(s, oofun) else s) for s in r.input])
@@ -474,8 +488,9 @@ def min(inp,  *args,  **kwargs):
             ind = np.argmin(x)
             return df[ind, :]
         def interval(domain, dtype):
-            tmp1, tmp2 = inp._interval(domain, dtype)
-            return np.min(np.vstack(tmp1), 0), np.min(np.vstack(tmp2), 0)
+            lb_ub = inp._interval(domain, dtype)
+            tmp1, tmp2 = lb_ub[0], lb_ub[1]
+            return np.vstack((np.min(np.vstack(tmp1), 0), np.min(np.vstack(tmp2), 0)))
         r = oofun(f, inp, d = d, size = 1, _interval = interval)
     elif type(inp) in (list, tuple, ooarray):
         f = lambda *args: np.min([arg for arg in args])
@@ -484,7 +499,8 @@ def min(inp,  *args,  **kwargs):
             tmp = np.inf
             for _inp in inp:
                 if isinstance(_inp, oofun):
-                    tmp1, tmp2 = _inp._interval(domain, dtype)
+                    lb_ub = _inp._interval(domain, dtype)
+                    tmp1, tmp2 = lb_ub[0], lb_ub[1]
                     arg_inf.append(tmp1)
                     arg_sup.append(tmp2)
                 elif tmp > _inp:
@@ -493,7 +509,7 @@ def min(inp,  *args,  **kwargs):
             if np.isfinite(tmp):
                 r1[r1>tmp] = tmp
                 r2[r2>tmp] = tmp
-            return r1, r2
+            return np.vstack((r1, r2))
             
         r = oofun(f, inp, size = 1, _interval = interval)
         def _D(point, *args, **kwargs):

@@ -1,7 +1,7 @@
 # created by Dmitrey
 
 from numpy import nan, asarray, isfinite, empty, zeros, inf, any, array, prod, atleast_1d, \
-asfarray, isscalar, ndarray, int16, int32, int64, float64
+asfarray, isscalar, ndarray, int16, int32, int64, float64, tile, vstack
 from FDmisc import FuncDesignerException, checkSizes
 from ooFun import oofun, Len, ooarray
 
@@ -28,7 +28,7 @@ class oovar(oofun):
         if tmp is None: return None
         if isinstance(tmp, ndarray) or isscalar(tmp):
             tmp = asarray(tmp, dtype)
-            return tmp, tmp
+            return tile(tmp, (2, 1))
         infinum, supremum = tmp
         if type(infinum) in (list, tuple): 
             infinum = array(infinum, dtype)
@@ -38,7 +38,7 @@ class oovar(oofun):
             supremum = array(supremum, dtype)
         elif isscalar(supremum):
             supremum = dtype(supremum)
-        return infinum, supremum
+        return vstack((infinum, supremum))
     
     def _getFuncCalcEngine(self, x, **kwargs):
         if hasattr(x, 'xf'):return x.xf[self]

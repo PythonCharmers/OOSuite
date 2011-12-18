@@ -17,7 +17,8 @@ class Interval:
         return str(self)
 
 
-def ZeroCriticalPoints(arg_infinum, arg_supremum):
+def ZeroCriticalPoints(lb_ub):
+    arg_infinum, arg_supremum = lb_ub[0], lb_ub[1]
     if isscalar(arg_infinum):
         return [0.0] if arg_infinum < 0.0 < arg_supremum else []
     tmp = Copy(arg_infinum)
@@ -35,7 +36,8 @@ def ZeroCriticalPoints(arg_infinum, arg_supremum):
 #    return [i / 2.0 * pi for i in range(n1, amin((n1+6, n2))) if (arg_infinum < (i / 2.0) * pi <  arg_supremum)]
 
 # TODO: split TrigonometryCriticalPoints into (pi/2) *(2k+1) and (pi/2) *(2k)
-def TrigonometryCriticalPoints(arg_infinum, arg_supremum):
+def TrigonometryCriticalPoints(lb_ub):
+    arg_infinum, arg_supremum = lb_ub[0], lb_ub[1]
     # returns points with coords n * pi/2, arg_infinum <= n * pi/2<= arg_supremum,n -array of integers
     arrN = asarray(atleast_1d(floor(2 * arg_infinum / pi)), int)
     Tmp = []
@@ -69,7 +71,8 @@ def TrigonometryCriticalPoints(arg_infinum, arg_supremum):
 
 def ZeroCriticalPointsInterval(inp, func):
     def interval(domain, dtype):
-        lb, ub = inp._interval(domain, dtype)
+        lb_ub = inp._interval(domain, dtype)
+        lb, ub = lb_ub[0], lb_ub[1]
         ind1, ind2 = lb < 0.0, ub > 0.0
         ind = logical_and(ind1, ind2)
         tmp = vstack((lb, ub))
@@ -79,7 +82,7 @@ def ZeroCriticalPointsInterval(inp, func):
             F0 = func(0.0)
             t_min[atleast_1d(logical_and(ind, t_min > F0))] = F0
             t_max[atleast_1d(logical_and(ind, t_max < F0))] = F0
-        return  t_min, t_max
+        return  vstack((t_min, t_max))
     return interval
 #    if isscalar(arg_infinum):
 #        return [0.0] if arg_infinum < 0.0 < arg_supremum else []
@@ -89,7 +92,8 @@ def ZeroCriticalPointsInterval(inp, func):
 #    return [tmp]
 
 def nonnegative_interval(inp, func, domain, dtype):
-    lb, ub = inp._interval(domain, dtype)
+    lb_ub = inp._interval(domain, dtype)
+    lb, ub = lb_ub[0], lb_ub[1]
     ind = lb < 0.0
     if any(ind):
         t_min, t_max = atleast_1d(empty_like(lb)), atleast_1d(empty_like(ub))
@@ -103,4 +107,4 @@ def nonnegative_interval(inp, func, domain, dtype):
         t_min[atleast_1d(logical_and(lb < 0, ub > 0))] = 0.0
     else:
         t_min, t_max = func(lb), func(ub)
-    return t_min, t_max
+    return vstack((t_min, t_max))

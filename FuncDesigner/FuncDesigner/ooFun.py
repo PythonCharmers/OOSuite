@@ -2,7 +2,7 @@
 
 from numpy import inf, asfarray, copy, all, any, empty, atleast_2d, zeros, dot, asarray, atleast_1d, empty, \
 ones, ndarray, where, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum as npSum, prod, nonzero,\
-isnan, asscalar, zeros_like, ones_like, amin, amax, logical_and, logical_or, isinf, logical_not, logical_xor
+isnan, asscalar, zeros_like, ones_like, amin, amax, logical_and, logical_or, isinf, logical_not, logical_xor, flipud
 
 try:
     from bottleneck import nanmin, nanmax
@@ -138,7 +138,7 @@ class oofun:
             #assert key in self.__allowedFields__ # TODO: make set comparison
             setattr(self, key, item)
             
-        if isinstance(input, (tuple, list)): self.input = [(elem if isinstance(elem, oofun) else array(elem, 'float')) for elem in input]
+        if isinstance(input, (tuple, list)): self.input = [(elem if isinstance(elem, (oofun, ooarray)) else array(elem, 'float')) for elem in input]
         elif input is not None: self.input = [input]
         else: self.input = [None] # TODO: get rid of None, use input = [] instead
 
@@ -181,21 +181,22 @@ class oofun:
     def _interval(self, domain, dtype):
         criticalPointsFunc = self.criticalPoints
         if len(self.input) == 1 and criticalPointsFunc is not None:
-            arg_infinum, arg_supremum = self.input[0]._interval(domain, dtype)
+            arg_lb_ub = self.input[0]._interval(domain, dtype)
+            arg_infinum, arg_supremum = arg_lb_ub[0], arg_lb_ub[1]
             if (not isscalar(arg_infinum) and arg_infinum.size > 1) and not self.vectorized:
                 raise FuncDesignerException('not implemented for vectorized oovars yet')
-            tmp = [arg_infinum, arg_supremum]
+            tmp = [arg_lb_ub]
             if criticalPointsFunc is not False:
-                tmp += criticalPointsFunc(arg_infinum, arg_supremum)
+                tmp += criticalPointsFunc(arg_lb_ub)
             Tmp = self.fun(vstack(tmp))
             #Tmp = self.fun(array(tmp))
-            return nanmin(Tmp, 0), nanmax(Tmp, 0)
+            return vstack((nanmin(Tmp, 0), nanmax(Tmp, 0)))
         else:
             raise FuncDesignerException('interval calculations are unimplemented for the oofun yet')
     
     def interval(self, domain, dtype = float, *args, **kwargs):
-        l, u = self._interval(domain, dtype, *args, **kwargs)
-        return Interval(l, u)
+        lb_ub = self._interval(domain, dtype, *args, **kwargs)
+        return Interval(lb_ub[0], lb_ub[1])
         
     # overload "a+b"
     # @checkSizes
@@ -224,7 +225,8 @@ class oofun:
             # TODO: move it outside the func, to prevent recreation each time
             def interval(domain, dtype): 
                 domain1, domain2 = self._interval(domain, dtype), other._interval(domain, dtype)
-                return domain1[0] + domain2[0], domain1[1] + domain2[1]
+                #return domain1[0] + domain2[0], domain1[1] + domain2[1]
+                return domain1 + domain2
             r._interval = interval
         else:
             if isinstance(other,  ooarray): return other + self
@@ -243,10 +245,10 @@ class oofun:
             r.discrete = self.discrete
             r.getOrder = self.getOrder
             
-            # TODO: move it ouside 
+            # TODO: move it outside 
+            Other2 = vstack((other, other))
             def interval(domain, dtype): 
-                lb, ub = self._interval(domain, dtype)
-                return lb + other, ub + other
+                return self._interval(domain, dtype) + Other2
             r._interval = interval
             
             if isscalar(other) or asarray(other).size == 1 or ('size' in self.__dict__ and self.size is asarray(other).size):
@@ -267,7 +269,8 @@ class oofun:
         r.vectorized = True
         def _interval(domain, dtype):
             r = self._interval(domain, dtype)
-            return (-r[1], -r[0])
+            return -flipud(r)
+            #return (-r[1], -r[0])
         r._interval = _interval
         return r
         
@@ -305,8 +308,10 @@ class oofun:
                 return order1 if order2 == 0 else inf
             r.getOrder = getOrder
             def interval(domain, dtype):
-                lb1, ub1 = self._interval(domain, dtype)
-                lb2, ub2 = other._interval(domain, dtype)
+                lb1_ub1 = self._interval(domain, dtype)
+                lb1, ub1 = lb1_ub1[0], lb1_ub1[1]
+                lb2_ub2 = other._interval(domain, dtype)
+                lb2, ub2 = lb2_ub2[0], lb2_ub2[1]
                 lb2, ub2 = asarray(lb2, dtype), asarray(ub2, dtype)
 
                 tmp = vstack((lb1/lb2, lb1/ub2, ub1/lb2, ub1/ub2))
@@ -328,7 +333,7 @@ class oofun:
                 
                 #assert not any(isnan(r1)) and not any(isnan(r2))
                 #assert all(r1 <= r2)
-                return [r1, r2]
+                return vstack((r1, r2))
 
             r._interval = interval
         else:
@@ -360,7 +365,8 @@ class oofun:
         r = oofun(lambda x: other/x, self, discrete = self.discrete)
         r.d = lambda x: Diag(- other / x**2)
         def interval(domain, dtype):
-            arg_infinum, arg_supremum = self._interval(domain, dtype)
+            arg_lb_ub = self._interval(domain, dtype)
+            arg_infinum, arg_supremum = arg_lb_ub[0], arg_lb_ub[1]
             if other.size != 1: 
                 raise FuncDesignerException('this case for interval calculations is unimplemented yet')
             r = vstack((other / arg_supremum, other / arg_infinum))
@@ -373,7 +379,7 @@ class oofun:
             r1[atleast_1d(logical_and(ind_zero_plus, other<0))] = -inf
             r2[atleast_1d(logical_and(ind_zero_plus, other>0))] = inf
 
-            return [r1, r2]
+            return vstack((r1, r2))
             
         r._interval = interval
         #r.isCostly = True
@@ -420,10 +426,12 @@ class oofun:
         isOtherOOFun = isinstance(other, oofun)
         
         def interval(domain, dtype):
-            lb1, ub1 = self._interval(domain, dtype)
+            lb1_ub1 = self._interval(domain, dtype)
+            lb1, ub1 = lb1_ub1[0], lb1_ub1[1]
             
             if isOtherOOFun:
-                lb2, ub2 = other._interval(domain, dtype)
+                lb2_ub2 = other._interval(domain, dtype)
+                lb2, ub2 = lb2_ub2[0], lb2_ub2[1]
             else:
                 lb2, ub2 = other, other # TODO: improve it
                 
@@ -467,7 +475,7 @@ class oofun:
             
 #            assert not any(isnan(t_min)) and not any(isnan(t_max))
            
-            return t_min, t_max
+            return vstack((t_min, t_max))
                 
         r._interval = interval
         r.vectorized = True
@@ -477,11 +485,15 @@ class oofun:
     __rmul__ = lambda self, other: self.__mul__(other)
 
     def __pow__(self, other):
-        
+
+        if isinstance(other, ooarray):
+            return ooarray([self ** elem for elem in other])
+
         d_x = lambda x, y: y * x ** (y - 1) if (isscalar(x) or x.size == 1) else Diag(y * x ** (y - 1))
 
         d_y = lambda x, y: x ** y * log(x) if (isscalar(y) or y.size == 1) else Diag(x ** y * log(x))
-            
+        
+
         if not isinstance(other, oofun):
             if isscalar(other):
                 if type(other) == int: # TODO: handle numpy integer types
@@ -497,10 +509,14 @@ class oofun:
             d = lambda x: d_x(x, other)
             input = self
             def interval(domain, dtype):
-                lb, ub = self._interval(domain, dtype)
-                Tmp = vstack((lb**other, ub**other))
+                lb_ub = self._interval(domain, dtype)
+                
+                Tmp = lb_ub ** other
+                #Tmp = vstack((lb**other, ub**other))
+                
                 t_min, t_max = nanmin(Tmp, 0), nanmax(Tmp, 0)
                 #lb2, ub2 = other._interval(domain, dtype) if isinstance(other, oofun) else other, other # TODO: improve it
+                lb, ub = lb_ub[0], lb_ub[1]
                 ind = lb < 0.0
                 if any(ind):
                     isNonInteger = other != asarray(other, int) # TODO: rational numbers?
@@ -508,7 +524,7 @@ class oofun:
                     if any(ind_nan):
                         t_max[atleast_1d(ind_nan)] = nan
                     t_min[atleast_1d(logical_and(ind, logical_and(t_min>0, ub >= 0)))] = 0.0
-                return t_min, t_max
+                return vstack((t_min, t_max))
         else:
             f = lambda x, y: asarray(x) ** y
             d = (d_x, d_y)
@@ -516,8 +532,10 @@ class oofun:
             #interval = lambda domain, dtype: nonnegative_interval(self, lambda x:, domain, dtype)
             def interval(domain, dtype): 
                 # TODO: handle discrete cases
-                lb1, ub1 = self._interval(domain, dtype)
-                lb2, ub2 = other._interval(domain, dtype)
+                lb1_ub1 = self._interval(domain, dtype)
+                lb1, ub1 = lb1_ub1[0], lb1_ub1[1]
+                lb2_ub2 = other._interval(domain, dtype)
+                lb2, ub2 = lb2_ub2[0], lb2_ub2[1]
                 T = vstack((lb1 ** lb2, lb1** ub2, ub1**lb1, ub1**ub2))
                 t_min, t_max = nanmin(T, 0), nanmax(T, 0)
                 ind1 = lb1 < 0
@@ -527,7 +545,7 @@ class oofun:
                     t_min[atleast_1d(logical_and(logical_and(ind1, ind2), logical_and(t_min > 0.0, ub2 > 0.0)))] = 0.0
                     t_max[atleast_1d(logical_and(ind1, logical_not(ind2)))] = nan
                     t_min[atleast_1d(logical_and(ind1, logical_not(ind2)))] = nan
-                return t_min, t_max
+                return vstack((t_min, t_max))
                 
         r = oofun(f, input, d = d, _interval=interval)
         if isinstance(other, oofun) or (not isinstance(other, int) or (type(other) == ndarray and other.flatten()[0] != int)): 
@@ -634,8 +652,9 @@ class oofun:
             if type(x) == ndarray and x.ndim > 1: raise FuncDesignerException('sum(x) is not implemented yet for arrays with ndim > 1')
             return ones_like(x)        
         def interval(domain, dtype):
-            lb, ub = self._interval(domain, dtype)
-            return npSum(lb), npSum(ub)
+            lb_ub = self._interval(domain, dtype)
+            lb, ub = lb_ub[0], lb_ub[1]
+            return vstack((npSum(lb), npSum(ub)))
         r = oofun(npSum, self, getOrder = self.getOrder, _interval = interval, d=d)
         return r
     
