@@ -229,6 +229,7 @@ class oofun:
                 return domain1 + domain2
             r._interval = interval
         else:
+            if isscalar(other) and other == 0: return self # sometimes triggers from other parts of FD engine 
             if isinstance(other,  ooarray): return other + self
             if isinstance(other,  ndarray): other = other.copy() 
 #            if other.size == 1:
@@ -487,7 +488,10 @@ class oofun:
     def __pow__(self, other):
 
         if isinstance(other, ooarray):
-            return ooarray([self ** elem for elem in other])
+            if 'size' not in self.__dict__ or self.size is 1:
+                return ooarray([self ** other[i] for i in range(other.size)])
+            elif isscalar(self.size):# and is not 1
+                return ooarray([self[i] ** other[i] for i in range(other.size)])
 
         d_x = lambda x, y: y * x ** (y - 1) if (isscalar(x) or x.size == 1) else Diag(y * x ** (y - 1))
 
@@ -592,7 +596,7 @@ class oofun:
             if ind in self._slicesIndexDict:
                 return self._slicesIndexDict[ind]
                 
-            f = lambda x: x[ind]
+            f = lambda x: x[ind] 
             def d(x):
                 Xsize = Len(x)
                 condBigMatrix = Xsize > 100 
@@ -1616,10 +1620,13 @@ class ooarray(ndarray):
     
     
     def __pow__(self, other):
+        if isinstance(other, ndarray) and other.size > 1 and self.size > 1:
+            return ooarray([self[i]**other[i] for i in range(self.size)])
         if self.dtype == object:
             return ooarray([elem**other for elem in self.tolist()])
-        else:
-            return self.view(ndarray)**other
+            
+        # TODO: is this part of code trigger any time?
+        return self.view(ndarray)**other
     
     def __eq__(self, other):
         r = self - other
