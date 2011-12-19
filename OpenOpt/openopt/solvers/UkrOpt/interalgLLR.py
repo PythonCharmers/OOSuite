@@ -1,7 +1,7 @@
 from numpy import tile, isnan, array, atleast_1d, asarray, logical_and, all, logical_or, any, nan, isinf, \
 arange, vstack, inf, where, logical_not, take, argmax, argmin, abs, hstack, empty, insert, isfinite, append, atleast_2d, \
 prod, sqrt, int32, int64, log2, log
-from FuncDesigner import ooPoint
+from FuncDesigner import oopoint
 from interalgT import *
 
 try:
@@ -55,14 +55,14 @@ def func10(y, e, vv):
     #domain = dict([(v, (T1[:, i], T2[:, i])) for i, v in enumerate(vv)])
     domain = dict([(v, (LB[i], UB[i])) for i, v in enumerate(vv)])
     
-    domain = ooPoint(domain, skipArrayCast = True)
+    domain = oopoint(domain, skipArrayCast = True)
     domain.isMultiPoint = True
     return domain
 
 def func8(domain, func, dataType):
     TMP = func.interval(domain, dataType)
     #assert TMP.lb.dtype == dataType
-    return asarray(TMP.lb, dtype=dataType), asarray(TMP.ub, dtype=dataType)
+    return asarray(TMP.lb, dtype=dataType), asarray(TMP.ub, dtype=dataType), TMP.definiteRange
 
 def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p):
     n = y.shape[1]
@@ -86,7 +86,7 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p):
 #        wr4 = (y + e) / 2
 
         
-    cs = ooPoint(cs, skipArrayCast = True)
+    cs = oopoint(cs, skipArrayCast = True)
     cs.isMultiPoint = True
     
     # TODO: improve it

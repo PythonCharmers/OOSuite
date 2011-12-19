@@ -279,13 +279,13 @@ class interalg(baseSolver):
             if len(C0) != 0: 
                 ip = func10(y, e, vv)
                 m = e.shape[0]
-                y, e, nlhc = processConstraints(C0, y, e, ip, m, p, dataType)
+                y, e, nlhc, definiteRange = processConstraints(C0, y, e, ip, m, p, dataType)
             else:
-                nlhc = None
+                nlhc, definiteRange = None, True
             
             if y.size != 0:
                 an, g, fo, _s, solutions, r6, xRecord, r41, r40 = \
-                pb(p, nlhc, y, e, vv, asdf1, C, r40, itn, g, \
+                pb(p, nlhc, definiteRange, y, e, vv, asdf1, C, r40, itn, g, \
                              nNodes, r41, fTol, maxSolutions, varTols, solutions, r6, _in, \
                              dataType, maxNodes, _s, xRecord)
                 if _s is None:

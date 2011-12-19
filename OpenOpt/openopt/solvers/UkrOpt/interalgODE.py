@@ -1,8 +1,8 @@
 from numpy import asfarray, cumsum, diff, empty, hstack, asscalar, linspace, asarray, max, abs, floor, atleast_1d, where, \
-logical_not, argsort, logical_and, vstack, any, sum, array, nan
+logical_not, argsort, logical_and, vstack, any, sum, array, nan, all
 from numpy.linalg import norm
 from openopt import NLP
-from FuncDesigner import ooPoint
+from FuncDesigner import oopoint
 
 def interalg_ODE_routine(p, solver):
     isIP = p.probType == 'IP'
@@ -49,11 +49,15 @@ def interalg_ODE_routine(p, solver):
     # Main cycle
     for itn in range(p.maxIter+1):
         if r30[-1] > r30[0]:
-            mp = ooPoint({t: [r28, r29]}, skipArrayCast = True)
+            mp = oopoint({t: [r28, r29]}, skipArrayCast = True)
         else:
-            mp = ooPoint({t: [r29, r28]}, skipArrayCast = True)
+            mp = oopoint({t: [r29, r28]}, skipArrayCast = True)
         mp.isMultiPoint = True
         delta_y = f.interval(mp, dataType)
+        if not all(delta_y.definiteRange):
+            p.err('''
+            solving ODE with interalg is implemented for definite (real) range only, 
+            no NaN values in integrand are allowed''')
         # TODO: perform check on NaNs
         r34 = atleast_1d(delta_y.ub)
         r35 = atleast_1d(delta_y.lb)

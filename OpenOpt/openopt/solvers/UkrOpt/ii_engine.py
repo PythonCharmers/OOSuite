@@ -1,8 +1,8 @@
 from interalgLLR import *
-from numpy import inf, prod, searchsorted
+from numpy import inf, prod, searchsorted, all
 
 
-def r14IP(p, nlh, y, e, vv, asdf1, C, CBKPMV, itn, g, nNodes,  \
+def r14IP(p, nlhc, definiteRange, y, e, vv, asdf1, C, CBKPMV, itn, g, nNodes,  \
          frc, fTol, maxSolutions, varTols, solutions, r6, _in, dataType, \
          maxNodes, _s, xRecord):
 #    global Ir39R
@@ -13,7 +13,11 @@ def r14IP(p, nlh, y, e, vv, asdf1, C, CBKPMV, itn, g, nNodes,  \
     
     ip = func10(y, e, vv)
     
-    o, a = func8(ip, asdf1, dataType)
+    o, a, definiteRange = func8(ip, asdf1, dataType)
+    if not all(definiteRange):
+        p.err('''
+        numerical integration with interalg is implemented 
+        for definite (real) range only, no NaN values in integrand are allowed''')
 
     o, a = o.reshape(2*n, m).T, a.reshape(2*n, m).T
 

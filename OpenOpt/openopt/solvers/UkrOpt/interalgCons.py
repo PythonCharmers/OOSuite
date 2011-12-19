@@ -11,10 +11,11 @@ def processConstraints(C0, y, e, ip, m, p, dataType):
     r15 = empty(m, bool)
     nlh = zeros((m, 2*n))
     r15.fill(True)
-
+    DefiniteRange = True
     for i, (f, r16, r17, tol) in enumerate(C0):
         if p.solver.dataHandling == 'sorted': tol = 0
-        o, a = func8(ip, f, dataType)
+        o, a, definiteRange = func8(ip, f, dataType)
+        DefiniteRange = logical_and(DefiniteRange, definiteRange)
         m = o.size/(2*n)
         o, a  = o.reshape(2*n, m).T, a.reshape(2*n, m).T
         lf1, lf2, uf1, uf2 = o[:, 0:n], o[:, n:2*n], a[:, 0:n], a[:, n:2*n]
@@ -115,4 +116,4 @@ def processConstraints(C0, y, e, ip, m, p, dataType):
     y = take(y, ind, axis=0, out=y[:lj])
     e = take(e, ind, axis=0, out=e[:lj])
     nlh = take(nlh, ind, axis=0, out=nlh[:lj])
-    return y, e, nlh
+    return y, e, nlh, DefiniteRange

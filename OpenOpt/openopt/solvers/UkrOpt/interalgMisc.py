@@ -8,18 +8,31 @@ try:
 except ImportError:
     from numpy import nanmin, nanargmin, nanargmax, nanmax
     
-def r14(p, nlhc, y, e, vv, asdf1, C, r40, itn, g, nNodes,  \
+def r14(p, nlhc, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNodes,  \
          r41, fTol, maxSolutions, varTols, solutions, r6, _in, dataType, \
          maxNodes, _s, xRecord):
 
     isSNLE = p.probType in ('NLSP', 'SNLE')
     
-    fo_prev = float(0 if isSNLE else min((r41, r40 - (fTol if maxSolutions == 1 else 0))))
+    
     
     ip = func10(y, e, vv)
         
     #o, a = func8(ip, asdf1 + 1e10*p._cons_obj if p._cons_obj is not None else asdf1, dataType)
-    o, a = func8(ip, asdf1 + p._cons_obj if p._cons_obj is not None else asdf1, dataType)
+    o, a, definiteRange = func8(ip, asdf1 + p._cons_obj if p._cons_obj is not None else asdf1, dataType)
+    
+    if asdf1.isUncycled and nlhc is not None and not isSNLE:# for SNLE fo = 0
+        
+        # TODO: 
+        # handle constraints with restricted domain and matrix definiteRange
+        if all(definiteRange):
+            ind = logical_not(any(nlhc, 1))
+            if any(ind):
+                r41 = min((r41, nanmin(o[ind])))
+    
+    fo_prev = float(0 if isSNLE else min((r41, r40 - (fTol if maxSolutions == 1 else 0))))
+    
+    
     
     if p.debug and any(a + 1e-15 < o):  
         p.warn('interval lower bound exceeds upper bound, it seems to be FuncDesigner kernel bug')
