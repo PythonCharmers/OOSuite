@@ -7,10 +7,10 @@ except ImportError:
     from numpy import nanmin, nanmax
 
 class Interval:
-    def __init__(self, l, u):
+    def __init__(self, l, u, definiteRange):
         if isinstance(l, ndarray) and l.size == 1: l = asscalar(l)
         if isinstance(u, ndarray) and u.size == 1: u = asscalar(u)
-        self.lb, self.ub = l, u
+        self.lb, self.ub, self.definiteRange = l, u, definiteRange
     def __str__(self):
         return 'FuncDesigner interval with lower bound %s and upper bound %s' % (self.lb, self.ub)
     def __repr__(self):
@@ -71,7 +71,7 @@ def TrigonometryCriticalPoints(lb_ub):
 
 def ZeroCriticalPointsInterval(inp, func):
     def interval(domain, dtype):
-        lb_ub = inp._interval(domain, dtype)
+        lb_ub, definiteRange = inp._interval(domain, dtype)
         lb, ub = lb_ub[0], lb_ub[1]
         ind1, ind2 = lb < 0.0, ub > 0.0
         ind = logical_and(ind1, ind2)
@@ -82,7 +82,7 @@ def ZeroCriticalPointsInterval(inp, func):
             F0 = func(0.0)
             t_min[atleast_1d(logical_and(ind, t_min > F0))] = F0
             t_max[atleast_1d(logical_and(ind, t_max < F0))] = F0
-        return  vstack((t_min, t_max))
+        return  vstack((t_min, t_max)), definiteRange
     return interval
 #    if isscalar(arg_infinum):
 #        return [0.0] if arg_infinum < 0.0 < arg_supremum else []
@@ -92,7 +92,7 @@ def ZeroCriticalPointsInterval(inp, func):
 #    return [tmp]
 
 def nonnegative_interval(inp, func, domain, dtype):
-    lb_ub = inp._interval(domain, dtype)
+    lb_ub, definiteRange = inp._interval(domain, dtype)
     lb, ub = lb_ub[0], lb_ub[1]
     ind = lb < 0.0
     if any(ind):
@@ -107,4 +107,4 @@ def nonnegative_interval(inp, func, domain, dtype):
         t_min[atleast_1d(logical_and(lb < 0, ub > 0))] = 0.0
     else:
         t_min, t_max = func(lb), func(ub)
-    return vstack((t_min, t_max))
+    return vstack((t_min, t_max)), definiteRange

@@ -96,6 +96,8 @@ class oofun:
     #_c = 0.0
     __array_priority__ = 15# set it greater than 1 to prevent invoking numpy array __mul__ etc
     
+    hasDefiniteRange = True
+    
     pWarn = lambda self, msg: pWarn(msg)
     
     def disp(self, msg): 
@@ -181,7 +183,7 @@ class oofun:
     def _interval(self, domain, dtype):
         criticalPointsFunc = self.criticalPoints
         if len(self.input) == 1 and criticalPointsFunc is not None:
-            arg_lb_ub = self.input[0]._interval(domain, dtype)
+            arg_lb_ub, definiteRange = self.input[0]._interval(domain, dtype)
             arg_infinum, arg_supremum = arg_lb_ub[0], arg_lb_ub[1]
             if (not isscalar(arg_infinum) and arg_infinum.size > 1) and not self.vectorized:
                 raise FuncDesignerException('not implemented for vectorized oovars yet')
@@ -189,14 +191,20 @@ class oofun:
             if criticalPointsFunc is not False:
                 tmp += criticalPointsFunc(arg_lb_ub)
             Tmp = self.fun(vstack(tmp))
+            
+            if not self.hasDefiniteRange:
+                # TODO: rework it as matrix operations
+                definiteRange = False #logical_and(definiteRange, a)
+                
+            #indDefinite = all(isfinite)
             #Tmp = self.fun(array(tmp))
-            return vstack((nanmin(Tmp, 0), nanmax(Tmp, 0)))
+            return vstack((nanmin(Tmp, 0), nanmax(Tmp, 0))), definiteRange
         else:
             raise FuncDesignerException('interval calculations are unimplemented for the oofun yet')
     
     def interval(self, domain, dtype = float, *args, **kwargs):
-        lb_ub = self._interval(domain, dtype, *args, **kwargs)
-        return Interval(lb_ub[0], lb_ub[1])
+        lb_ub, definiteRange = self._interval(domain, dtype, *args, **kwargs)
+        return Interval(lb_ub[0], lb_ub[1], definiteRange)
         
     # overload "a+b"
     # @checkSizes
@@ -224,9 +232,10 @@ class oofun:
             
             # TODO: move it outside the func, to prevent recreation each time
             def interval(domain, dtype): 
-                domain1, domain2 = self._interval(domain, dtype), other._interval(domain, dtype)
+                domain1, definiteRange1 = self._interval(domain, dtype)
+                domain2, definiteRange2 = other._interval(domain, dtype)
                 #return domain1[0] + domain2[0], domain1[1] + domain2[1]
-                return domain1 + domain2
+                return domain1 + domain2, logical_and(definiteRange1, definiteRange2)
             r._interval = interval
         else:
             if isscalar(other) and other == 0: return self # sometimes triggers from other parts of FD engine 
@@ -249,7 +258,8 @@ class oofun:
             # TODO: move it outside 
             Other2 = vstack((other, other))
             def interval(domain, dtype): 
-                return self._interval(domain, dtype) + Other2
+                r, definiteRange = self._interval(domain, dtype)
+                return r + Other2, definiteRange
             r._interval = interval
             
             if isscalar(other) or asarray(other).size == 1 or ('size' in self.__dict__ and self.size is asarray(other).size):
@@ -269,8 +279,8 @@ class oofun:
         r.criticalPoints = False
         r.vectorized = True
         def _interval(domain, dtype):
-            r = self._interval(domain, dtype)
-            return -flipud(r)
+            r, definiteRange = self._interval(domain, dtype)
+            return -flipud(r), definiteRange
             #return (-r[1], -r[0])
         r._interval = _interval
         return r
@@ -309,9 +319,9 @@ class oofun:
                 return order1 if order2 == 0 else inf
             r.getOrder = getOrder
             def interval(domain, dtype):
-                lb1_ub1 = self._interval(domain, dtype)
+                lb1_ub1, definiteRange1 = self._interval(domain, dtype)
                 lb1, ub1 = lb1_ub1[0], lb1_ub1[1]
-                lb2_ub2 = other._interval(domain, dtype)
+                lb2_ub2, definiteRange2 = other._interval(domain, dtype)
                 lb2, ub2 = lb2_ub2[0], lb2_ub2[1]
                 lb2, ub2 = asarray(lb2, dtype), asarray(ub2, dtype)
 
@@ -334,7 +344,7 @@ class oofun:
                 
                 #assert not any(isnan(r1)) and not any(isnan(r2))
                 #assert all(r1 <= r2)
-                return vstack((r1, r2))
+                return vstack((r1, r2)), logical_and(definiteRange1, definiteRange2)
 
             r._interval = interval
         else:
@@ -366,7 +376,7 @@ class oofun:
         r = oofun(lambda x: other/x, self, discrete = self.discrete)
         r.d = lambda x: Diag(- other / x**2)
         def interval(domain, dtype):
-            arg_lb_ub = self._interval(domain, dtype)
+            arg_lb_ub, definiteRange = self._interval(domain, dtype)
             arg_infinum, arg_supremum = arg_lb_ub[0], arg_lb_ub[1]
             if other.size != 1: 
                 raise FuncDesignerException('this case for interval calculations is unimplemented yet')
@@ -380,7 +390,7 @@ class oofun:
             r1[atleast_1d(logical_and(ind_zero_plus, other<0))] = -inf
             r2[atleast_1d(logical_and(ind_zero_plus, other>0))] = inf
 
-            return vstack((r1, r2))
+            return vstack((r1, r2)), definiteRange
             
         r._interval = interval
         #r.isCostly = True
@@ -427,11 +437,12 @@ class oofun:
         isOtherOOFun = isinstance(other, oofun)
         
         def interval(domain, dtype):
-            lb1_ub1 = self._interval(domain, dtype)
+            lb1_ub1, definiteRange = self._interval(domain, dtype)
             lb1, ub1 = lb1_ub1[0], lb1_ub1[1]
             
             if isOtherOOFun:
-                lb2_ub2 = other._interval(domain, dtype)
+                lb2_ub2, definiteRange2 = other._interval(domain, dtype)
+                definiteRange = logical_and(definiteRange, definiteRange2)
                 lb2, ub2 = lb2_ub2[0], lb2_ub2[1]
             else:
                 lb2, ub2 = other, other # TODO: improve it
@@ -476,7 +487,7 @@ class oofun:
             
 #            assert not any(isnan(t_min)) and not any(isnan(t_max))
            
-            return vstack((t_min, t_max))
+            return vstack((t_min, t_max)), definiteRange
                 
         r._interval = interval
         r.vectorized = True
@@ -513,7 +524,7 @@ class oofun:
             d = lambda x: d_x(x, other)
             input = self
             def interval(domain, dtype):
-                lb_ub = self._interval(domain, dtype)
+                lb_ub, definiteRange = self._interval(domain, dtype)
                 
                 Tmp = lb_ub ** other
                 #Tmp = vstack((lb**other, ub**other))
@@ -524,11 +535,16 @@ class oofun:
                 ind = lb < 0.0
                 if any(ind):
                     isNonInteger = other != asarray(other, int) # TODO: rational numbers?
+                    
+                    # TODo: rework it properly, with matrix operations
+                    if any(isNonInteger):
+                        definiteRange = False
+                    
                     ind_nan = logical_and(logical_and(ind, isNonInteger), ub < 0)
                     if any(ind_nan):
                         t_max[atleast_1d(ind_nan)] = nan
                     t_min[atleast_1d(logical_and(ind, logical_and(t_min>0, ub >= 0)))] = 0.0
-                return vstack((t_min, t_max))
+                return vstack((t_min, t_max)), definiteRange
         else:
             f = lambda x, y: asarray(x) ** y
             d = (d_x, d_y)
@@ -536,20 +552,25 @@ class oofun:
             #interval = lambda domain, dtype: nonnegative_interval(self, lambda x:, domain, dtype)
             def interval(domain, dtype): 
                 # TODO: handle discrete cases
-                lb1_ub1 = self._interval(domain, dtype)
+                lb1_ub1, definiteRange1 = self._interval(domain, dtype)
                 lb1, ub1 = lb1_ub1[0], lb1_ub1[1]
-                lb2_ub2 = other._interval(domain, dtype)
+                lb2_ub2, definiteRange2 = other._interval(domain, dtype)
                 lb2, ub2 = lb2_ub2[0], lb2_ub2[1]
                 T = vstack((lb1 ** lb2, lb1** ub2, ub1**lb1, ub1**ub2))
                 t_min, t_max = nanmin(T, 0), nanmax(T, 0)
+                definiteRange = logical_and(definiteRange1, definiteRange2)
                 ind1 = lb1 < 0
                 # TODO: check it, especially with integer "other"
                 if any(ind1):
+                    
+                    # TODO: rework it with matrix operations
+                    definiteRange = False
+                    
                     ind2 = ub1 >= 0
                     t_min[atleast_1d(logical_and(logical_and(ind1, ind2), logical_and(t_min > 0.0, ub2 > 0.0)))] = 0.0
                     t_max[atleast_1d(logical_and(ind1, logical_not(ind2)))] = nan
                     t_min[atleast_1d(logical_and(ind1, logical_not(ind2)))] = nan
-                return vstack((t_min, t_max))
+                return vstack((t_min, t_max)), definiteRange
                 
         r = oofun(f, input, d = d, _interval=interval)
         if isinstance(other, oofun) or (not isinstance(other, int) or (type(other) == ndarray and other.flatten()[0] != int)): 
@@ -656,9 +677,9 @@ class oofun:
             if type(x) == ndarray and x.ndim > 1: raise FuncDesignerException('sum(x) is not implemented yet for arrays with ndim > 1')
             return ones_like(x)        
         def interval(domain, dtype):
-            lb_ub = self._interval(domain, dtype)
+            lb_ub, definiteRange = self._interval(domain, dtype)
             lb, ub = lb_ub[0], lb_ub[1]
-            return vstack((npSum(lb), npSum(ub)))
+            return vstack((npSum(lb), npSum(ub))), definiteRange
         r = oofun(npSum, self, getOrder = self.getOrder, _interval = interval, d=d)
         return r
     
@@ -913,7 +934,7 @@ class oofun:
                 fixedVars = set([fixedVars])
         r = self._D(x, fixedVarsScheduleID, Vars, fixedVars, useSparse = useSparse)
         r = dict([(key, (val if type(val)!=DiagonalType else val.resolve(useSparse))) for key, val in r.items()])
-        
+
         is_oofun = isinstance(initialVars, oofun)
         if is_oofun and not initialVars.is_oovar:
             # TODO: handle it with input of type list/tuple/etc as well

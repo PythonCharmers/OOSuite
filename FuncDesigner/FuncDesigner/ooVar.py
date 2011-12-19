@@ -28,7 +28,7 @@ class oovar(oofun):
         if tmp is None: return None
         if isinstance(tmp, ndarray) or isscalar(tmp):
             tmp = asarray(tmp, dtype)
-            return tile(tmp, (2, 1))
+            return tile(tmp, (2, 1)), True
         infinum, supremum = tmp
         if type(infinum) in (list, tuple): 
             infinum = array(infinum, dtype)
@@ -38,7 +38,7 @@ class oovar(oofun):
             supremum = array(supremum, dtype)
         elif isscalar(supremum):
             supremum = dtype(supremum)
-        return vstack((infinum, supremum))
+        return vstack((infinum, supremum)), True
     
     def _getFuncCalcEngine(self, x, **kwargs):
         if hasattr(x, 'xf'):return x.xf[self]

@@ -7,6 +7,8 @@ from ooPoint import ooPoint
 from Interval import TrigonometryCriticalPoints, ZeroCriticalPoints, nonnegative_interval, ZeroCriticalPointsInterval
 from numpy import atleast_1d, logical_and, logical_not, empty_like
 
+__all__ = []
+
 #class unary_oofun_overload:
 #    def __init__(self, *args, **kwargs):
 #        assert len(args) == 1 and len(kwargs) == 0
@@ -57,6 +59,8 @@ def tan(inp):
         raise 'interval for tan is unimplemented yet'
     r = oofun(np.tan, inp, d = lambda x: Diag(1.0 / np.cos(x) ** 2), vectorized = True, interval = interval)
     return r
+    
+__all__ += ['sin', 'cos', 'tan']
 
 # TODO: cotan?
 
@@ -65,7 +69,7 @@ def arcsin(inp):
         return ooarray([arcsin(elem) for elem in inp])
     if not isinstance(inp, oofun): 
         return np.arcsin(inp)
-    r = oofun(np.arcsin, inp, d = lambda x: Diag(1.0 / np.sqrt(1.0 - x**2)), vectorized = True)
+    r = oofun(np.arcsin, inp, d = lambda x: Diag(1.0 / np.sqrt(1.0 - x**2)), vectorized = True, hasDefiniteRange=False)
     r.criticalPoints = False
     r.attach((inp>-1)('arcsin_domain_lower_bound_%d' % r._id, tol=-1e-7), (inp<1)('arcsin_domain_upper_bound_%d' % r._id, tol=-1e-7))
     return r
@@ -74,7 +78,7 @@ def arccos(inp):
     if isinstance(inp, ooarray) and inp.dtype == object:
         return ooarray([arccos(elem) for elem in inp])
     if not isinstance(inp, oofun): return np.arccos(inp)
-    r = oofun(np.arccos, inp, d = lambda x: Diag(-1.0 / np.sqrt(1.0 - x**2)), vectorized = True)
+    r = oofun(np.arccos, inp, d = lambda x: Diag(-1.0 / np.sqrt(1.0 - x**2)), vectorized = True, hasDefiniteRange=False)
     r.criticalPoints = False
     r.attach((inp>-1)('arccos_domain_lower_bound_%d' % r._id, tol=-1e-7), (inp<1)('arccos_domain_upper_bound_%d' % r._id, tol=-1e-7))
     return r
@@ -88,6 +92,8 @@ def arctan(inp):
                  vectorized = True, 
                  criticalPoints = False)
 
+__all__ += ['arcsin', 'arccos', 'arctan']
+
 def sinh(inp):
     if isinstance(inp, ooarray) and inp.dtype == object:
         return ooarray([sinh(elem) for elem in inp])        
@@ -99,6 +105,8 @@ def cosh(inp):
         return ooarray([cosh(elem) for elem in inp])        
     if not isinstance(inp, oofun): return np.cosh(inp)
     return oofun(np.cosh, inp, d = lambda x: Diag(np.sinh(x)), vectorized = True, _interval=ZeroCriticalPointsInterval(inp, np.cosh))
+    
+__all__ += ['sinh', 'cosh']
 
 def angle(inp1, inp2):
     # returns angle between 2 vectors
@@ -120,10 +128,12 @@ def sqrt(inp, attachConstraints = True):
         return ooarray([sqrt(elem) for elem in inp])
     elif not isinstance(inp, oofun): 
         return np.sqrt(inp)
-    r = oofun(np.sqrt, inp, d = lambda x: Diag(0.5 / np.sqrt(x)), vectorized = True)
+    r = oofun(np.sqrt, inp, d = lambda x: Diag(0.5 / np.sqrt(x)), vectorized = True, hasDefiniteRange=False)
     r._interval = lambda domain, dtype: nonnegative_interval(inp, np.sqrt, domain, dtype)
     if attachConstraints: r.attach((inp>0)('sqrt_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
+
+__all__ += ['angle', 'exp', 'sqrt']
 
 def abs(inp):
     if isinstance(inp, ooarray) and inp.dtype == object:
@@ -133,9 +143,11 @@ def abs(inp):
     return oofun(np.abs, inp, d = lambda x: Diag(np.sign(x)), vectorized = True, _interval = ZeroCriticalPointsInterval(inp, np.abs))
     #return oofun(np.abs, inp, d = lambda x: Diag(np.sign(x)), vectorized = True, criticalPoints = ZeroCriticalPoints)
 
+__all__ += ['abs']
+
 def log_interval(logfunc, inp):
     def interval(domain, dtype):
-        lb_ub = inp._interval(domain, dtype)
+        lb_ub, definiteRange = inp._interval(domain, dtype)
         lb, ub = lb_ub[0], lb_ub[1]
         t_min, t_max = atleast_1d(logfunc(lb)), atleast_1d(logfunc(ub))
         
@@ -147,14 +159,18 @@ def log_interval(logfunc, inp):
         if np.any(ind):
             t_max[ind] = np.nan
             t_min[ind] = np.nan
-        return np.vstack((t_min, t_max))
+            
+        # TODO: rework it with matrix operations
+        definiteRange = False
+        
+        return np.vstack((t_min, t_max)), definiteRange
     return interval
 
 def log(inp):
     if isinstance(inp, ooarray) and inp.dtype == object:
         return ooarray([log(elem) for elem in inp])    
     if not isinstance(inp, oofun): return np.log(inp)
-    r = oofun(np.log, inp, d = lambda x: Diag(1.0/x), vectorized = True, _interval = log_interval(np.log, inp))
+    r = oofun(np.log, inp, d = lambda x: Diag(1.0/x), vectorized = True, _interval = log_interval(np.log, inp), hasDefiniteRange=False)
     r.attach((inp>1e-300)('log_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
 
@@ -163,7 +179,7 @@ def log10(inp):
     if isinstance(inp, ooarray) and inp.dtype == object:
         return ooarray([log10(elem) for elem in inp])    
     if not isinstance(inp, oofun): return np.log10(inp)
-    r = oofun(np.log10, inp, d = lambda x: Diag(INV_LOG_10 / x), vectorized = True, _interval = log_interval(np.log10, inp))
+    r = oofun(np.log10, inp, d = lambda x: Diag(INV_LOG_10 / x), vectorized = True, _interval = log_interval(np.log10, inp), hasDefiniteRange=False)
     r.attach((inp>1e-300)('log10_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
     
@@ -172,9 +188,11 @@ def log2(inp):
     if isinstance(inp, ooarray) and inp.dtype == object:
         return ooarray([log2(elem) for elem in inp])    
     if not isinstance(inp, oofun): return np.log2(inp)
-    r = oofun(np.log2, inp, d = lambda x: Diag(INV_LOG_2/x), vectorized = True, _interval = log_interval(np.log2, inp))
+    r = oofun(np.log2, inp, d = lambda x: Diag(INV_LOG_2/x), vectorized = True, _interval = log_interval(np.log2, inp), hasDefiniteRange=False)
     r.attach((inp>1e-300)('log2_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
+
+__all__ += ['log', 'log2', 'log10']
 
 def dot(inp1, inp2):
     if not isinstance(inp1, oofun) and not isinstance(inp2, oofun): return np.dot(inp1, inp2)
@@ -206,6 +224,8 @@ def cross(a, b):
     r.getOrder = lambda *args, **kwargs: (inp1.getOrder(*args, **kwargs) if isinstance(inp1, oofun) else 0) + (inp2.getOrder(*args, **kwargs) if isinstance(inp2, oofun) else 0)
     return r
 
+__all__ += ['dot', 'cross']
+
 def ceil(inp):
     if isinstance(inp, ooarray) and inp.dtype == object:
         return ooarray([ceil(elem) for elem in inp])        
@@ -223,6 +243,8 @@ def floor(inp):
     r._D = lambda *args, **kwargs: raise_except('derivative for FD floor is unimplemented yet')
     r.criticalPoints = False#lambda arg_infinum, arg_supremum: [np.floor(arg_infinum)]
     return r
+
+__all__ += ['ceil', 'floor']
 
 def sum(inp, *args, **kwargs):
     if isinstance(inp, ooarray) and inp.dtype != object:
@@ -272,15 +294,17 @@ def sum(inp, *args, **kwargs):
             #####################
             # !!! don't use sum([inp._interval(domain, dtype) for ...]) here
             # to reduce memory consumption
+            DefiniteRange = True
             for inp in INP:
-                arg_lb_ub = inp._interval(domain, dtype)
+                arg_lb_ub, definiteRange = inp._interval(domain, dtype)
+                DefiniteRange = logical_and(DefiniteRange, definiteRange)
                 if r.shape == arg_lb_ub.shape:
                     r += arg_lb_ub
                 else:
                     r = r + arg_lb_ub
             #####################
             
-            return r
+            return r, DefiniteRange
             
         r._interval = interval
         r.vectorized = True
@@ -350,8 +374,11 @@ def prod(inp, *args, **kwargs):
 def norm(*args, **kwargs):
     if len(kwargs) or len(args) > 1:
         return np.linalg.norm(*args, **kwargs)
-    return sqrt(sum(args[0]**2),  attachConstraints=False)
-    
+    r = sqrt(sum(args[0]**2),  attachConstraints=False)
+    r.hasDefiniteRange=True
+    return r
+
+__all__ += ['sum', 'prod', 'norm']
 
 #def stack(*args, **kwargs):
 #    assert len(kwargs) == 0 and len(args) != 0
@@ -430,6 +457,8 @@ def ifThenElse(condition, val1, val2, *args, **kwargs):
     else:
         raise FuncDesignerException('ifThenElse requires 1st argument (condition) to be either boolean or oofun, got %s instead' % type(condition))
 
+__all__ += ['size', 'ifThenElse']
+
 def decision(*args, **kwargs):
     pass
         
@@ -445,27 +474,28 @@ def max(inp,  *args,  **kwargs):
             ind = np.argmax(x)
             return df[ind, :]
         def interval(domain, dtype):
-            lb_ub = inp._interval(domain, dtype)
+            lb_ub, definiteRange = inp._interval(domain, dtype)
             tmp1, tmp2 = lb_ub[0], lb_ub[1]
-            return np.vstack((np.max(np.vstack(tmp1), 0), np.max(np.vstack(tmp2), 0)))
+            return np.vstack((np.max(np.vstack(tmp1), 0), np.max(np.vstack(tmp2), 0))), np.all(definiteRange, 0)
         r = oofun(f, inp, d = d, size = 1, _interval = interval)
     elif type(inp) in (list, tuple, ooarray):
         f = lambda *args: np.max([arg for arg in args])
         def interval(domain, dtype):
-            arg_inf, arg_sup, tmp = [], [], -np.inf
+            arg_inf, arg_sup, tmp, DefiniteRange = [], [], -np.inf, True
             for _inp in inp:
                 if isinstance(_inp, oofun):
                     #tmp1, tmp2 = _inp._interval(domain, dtype)
-                    lb_ub = _inp._interval(domain, dtype)
+                    lb_ub, definiteRange = _inp._interval(domain, dtype)
                     tmp1, tmp2 = lb_ub[0], lb_ub[1]
                     arg_inf.append(tmp1)
                     arg_sup.append(tmp2)
+                    DefiniteRange = logical_and(DefiniteRange, definiteRange)
                 elif tmp < _inp:
                     tmp = _inp
             r1, r2 = np.max(np.vstack(arg_inf), 0), np.max(np.vstack(arg_sup), 0)
             r1[r1<tmp] = tmp
             r2[r2<tmp] = tmp
-            return np.vstack((r1, r2))
+            return np.vstack((r1, r2)), DefiniteRange
         r = oofun(f, inp, size = 1, _interval = interval)
         def _D(point, *args, **kwargs):
             ind = np.argmax([(s(point) if isinstance(s, oofun) else s) for s in r.input])
@@ -488,28 +518,28 @@ def min(inp,  *args,  **kwargs):
             ind = np.argmin(x)
             return df[ind, :]
         def interval(domain, dtype):
-            lb_ub = inp._interval(domain, dtype)
+            lb_ub, definiteRange = inp._interval(domain, dtype)
             tmp1, tmp2 = lb_ub[0], lb_ub[1]
-            return np.vstack((np.min(np.vstack(tmp1), 0), np.min(np.vstack(tmp2), 0)))
+            return np.vstack((np.min(np.vstack(tmp1), 0), np.min(np.vstack(tmp2), 0))), np.all(definiteRange, 0)
         r = oofun(f, inp, d = d, size = 1, _interval = interval)
     elif type(inp) in (list, tuple, ooarray):
         f = lambda *args: np.min([arg for arg in args])
         def interval(domain, dtype):
-            arg_inf, arg_sup = [], []
-            tmp = np.inf
+            arg_inf, arg_sup, tmp, DefiniteRange = [], [], np.inf, True
             for _inp in inp:
                 if isinstance(_inp, oofun):
-                    lb_ub = _inp._interval(domain, dtype)
+                    lb_ub, definiteRange = _inp._interval(domain, dtype)
                     tmp1, tmp2 = lb_ub[0], lb_ub[1]
                     arg_inf.append(tmp1)
                     arg_sup.append(tmp2)
+                    DefiniteRange = logical_and(DefiniteRange, definiteRange)
                 elif tmp > _inp:
                     tmp = _inp
             r1, r2 = np.min(np.vstack(arg_inf), 0), np.min(np.vstack(arg_sup), 0)
             if np.isfinite(tmp):
                 r1[r1>tmp] = tmp
                 r2[r2>tmp] = tmp
-            return np.vstack((r1, r2))
+            return np.vstack((r1, r2)), DefiniteRange
             
         r = oofun(f, inp, size = 1, _interval = interval)
         def _D(point, *args, **kwargs):
@@ -519,7 +549,10 @@ def min(inp,  *args,  **kwargs):
     else:
         return np.min(inp, *args, **kwargs)
     return r        
-    
+
+
+__all__ += ['min', 'max']
+
 #def fixed_oofun(Val):
 #    val = np.asfarray(Val)
 #    f = lambda: Val
@@ -530,6 +563,8 @@ def min(inp,  *args,  **kwargs):
 #    return r
 
 det3 = lambda a, b, c: a[0] * (b[1]*c[2] - b[2]*c[1]) - a[1] * (b[0]*c[2] - b[2]*c[0]) + a[2] * (b[0]*c[1] - b[1]*c[0]) 
+
+__all__ += ['det3']
 
 # TODO: move the func into fdmisc.py
 def errFunc(*args,  **kwargs): 
