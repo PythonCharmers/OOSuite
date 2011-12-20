@@ -169,7 +169,7 @@ def log_interval(logfunc, inp):
             t_max[ind] = np.nan
             t_min[ind] = np.nan
             definiteRange = False
-        print definiteRange
+        #print definiteRange
         # TODO: rework definiteRange with matrix operations
         
         return np.vstack((t_min, t_max)), definiteRange
