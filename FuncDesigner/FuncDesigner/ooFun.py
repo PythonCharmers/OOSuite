@@ -561,7 +561,6 @@ class oofun:
             f = lambda x, y: asarray(x) ** y
             d = (d_x, d_y)
             input = [self, other]
-            #interval = lambda domain, dtype: nonnegative_interval(self, lambda x:, domain, dtype)
             def interval(domain, dtype): 
                 # TODO: handle discrete cases
                 lb1_ub1, definiteRange1 = self._interval(domain, dtype)

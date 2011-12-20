@@ -128,7 +128,7 @@ def sqrt(inp, attachConstraints = True):
         return ooarray([sqrt(elem) for elem in inp])
     elif not isinstance(inp, oofun): 
         return np.sqrt(inp)
-    r = oofun(np.sqrt, inp, d = lambda x: Diag(0.5 / np.sqrt(x)), vectorized = True, hasDefiniteRange=False)
+    r = oofun(np.sqrt, inp, d = lambda x: Diag(0.5 / np.sqrt(x)), vectorized = True)
     r._interval = lambda domain, dtype: nonnegative_interval(inp, np.sqrt, domain, dtype)
     if attachConstraints: r.attach((inp>0)('sqrt_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r

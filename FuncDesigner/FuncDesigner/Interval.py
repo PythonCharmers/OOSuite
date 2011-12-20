@@ -105,6 +105,10 @@ def nonnegative_interval(inp, func, domain, dtype):
         t_max[atleast_1d(ind2)] = func(ub[ind2])
         t_min, t_max = func(lb), func(ub)
         t_min[atleast_1d(logical_and(lb < 0, ub > 0))] = 0.0
+        
+        # TODO: rework it with matrix operations
+        definiteRange = False
+        
     else:
         t_min, t_max = func(lb), func(ub)
     return vstack((t_min, t_max)), definiteRange
