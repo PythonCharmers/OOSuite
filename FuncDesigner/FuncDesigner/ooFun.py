@@ -80,6 +80,7 @@ class oofun:
     _lastOrderVarsID = 0
     criticalPoints = None
     vectorized = False
+    getDefiniteRange = None
 
     _usedIn = 0
     _level = 0
@@ -192,10 +193,13 @@ class oofun:
                 tmp += criticalPointsFunc(arg_lb_ub)
             Tmp = self.fun(vstack(tmp))
             
+            if self.getDefiniteRange is not None:
+                definiteRange = logical_and(definiteRange, self.getDefiniteRange(arg_infinum, arg_supremum))
+            
             if not self.hasDefiniteRange:
                 # TODO: rework it as matrix operations
                 definiteRange = False #logical_and(definiteRange, a)
-                
+
             #indDefinite = all(isfinite)
             #Tmp = self.fun(array(tmp))
             return vstack((nanmin(Tmp, 0), nanmax(Tmp, 0))), definiteRange

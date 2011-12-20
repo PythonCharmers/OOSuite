@@ -91,24 +91,54 @@ def ZeroCriticalPointsInterval(inp, func):
 #    tmp[atleast_1d(logical_and(arg_infinum < 0.0, arg_supremum > 0.0))] = 0.0
 #    return [tmp]
 
-def nonnegative_interval(inp, func, domain, dtype):
+def nonnegative_interval(inp, func, domain, dtype, F0):
     lb_ub, definiteRange = inp._interval(domain, dtype)
     lb, ub = lb_ub[0], lb_ub[1]
+    
+    t_min_max = func(lb_ub)
+    
     ind = lb < 0.0
     if any(ind):
-        t_min, t_max = atleast_1d(empty_like(lb)), atleast_1d(empty_like(ub))
-        t_min.fill(nan)
-        t_max.fill(nan)
-        ind2 = ub >= 0
-        t_min[atleast_1d(logical_not(ind))] = func(lb)
-        t_min[atleast_1d(logical_and(ind2, ind))] = 0.0
-        t_max[atleast_1d(ind2)] = func(ub[ind2])
-        t_min, t_max = func(lb), func(ub)
-        t_min[atleast_1d(logical_and(lb < 0, ub > 0))] = 0.0
+        t_min_max[0][atleast_1d(logical_and(lb < 0, ub >= 0))] = F0
         
         # TODO: rework it with matrix operations
         definiteRange = False
         
-    else:
-        t_min, t_max = func(lb), func(ub)
+    return t_min_max, definiteRange
+
+def box_1_interval(inp, func, domain, dtype, F_l, F_u):
+    lb_ub, definiteRange = inp._interval(domain, dtype)
+    lb, ub = lb_ub[0], lb_ub[1]
+    t_min_max = func(lb_ub)
+    
+    ind = lb < -1
+    if any(ind):
+        t_min_max[0][atleast_1d(logical_and(lb < -1, ub >= -1))] = F_l
+        definiteRange = False
+        
+    ind = ub > 1
+    if any(ind):
+        t_min_max[0][atleast_1d(logical_and(lb < 1, ub >= 1))] = F_u
+        definiteRange = False
+        
+    return t_min_max, definiteRange
+        
+#    lb, ub = lb_ub[0], lb_ub[1]
+#    ind = lb < -1.0
+#    if any(ind):
+#        t_min, t_max = atleast_1d(empty_like(lb)), atleast_1d(empty_like(ub))
+#        t_min.fill(nan)
+#        t_max.fill(nan)
+#        ind2 = ub >= -1.0
+#        t_min[atleast_1d(logical_not(ind))] = func(lb)
+#        t_min[atleast_1d(logical_and(ind2, ind))] = 0.0
+#        t_max[atleast_1d(ind2)] = func(ub[ind2])
+#        t_min, t_max = func(lb), func(ub)
+#        t_min[atleast_1d(logical_and(lb < 0, ub > 0))] = 0.0
+#        
+#        # TODO: rework it with matrix operations
+#        definiteRange = False
+#        
+#    else:
+#        t_min, t_max = func(lb), func(ub)
     return vstack((t_min, t_max)), definiteRange

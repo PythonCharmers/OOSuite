@@ -4,7 +4,7 @@ import numpy as np
 from FDmisc import FuncDesignerException, Diag, Eye, raise_except
 from ooFun import atleast_oofun, ooarray
 from ooPoint import ooPoint
-from Interval import TrigonometryCriticalPoints, ZeroCriticalPoints, nonnegative_interval, ZeroCriticalPointsInterval
+from Interval import TrigonometryCriticalPoints, ZeroCriticalPoints, nonnegative_interval, ZeroCriticalPointsInterval, box_1_interval
 from numpy import atleast_1d, logical_and, logical_not, empty_like
 
 __all__ = []
@@ -64,13 +64,22 @@ __all__ += ['sin', 'cos', 'tan']
 
 # TODO: cotan?
 
+# TODO: rework it with matrix ops
+get_box1_DefiniteRange = lambda lb, ub: logical_and(np.all(lb >= -1.0), np.all(ub <= 1.0))
+
 def arcsin(inp):
     if isinstance(inp, ooarray) and inp.dtype == object:
         return ooarray([arcsin(elem) for elem in inp])
     if not isinstance(inp, oofun): 
         return np.arcsin(inp)
-    r = oofun(np.arcsin, inp, d = lambda x: Diag(1.0 / np.sqrt(1.0 - x**2)), vectorized = True, hasDefiniteRange=False)
-    r.criticalPoints = False
+    r = oofun(np.arcsin, inp, d = lambda x: Diag(1.0 / np.sqrt(1.0 - x**2)), vectorized = True)
+    
+    # TODO: rework it with matrix ops
+    r.getDefiniteRange = get_box1_DefiniteRange
+    
+    F_l, F_u = np.arcsin((-1, 1))
+    r._interval = lambda domain, dtype: box_1_interval(inp, np.arcsin, domain, dtype, F_l, F_u)
+    
     r.attach((inp>-1)('arcsin_domain_lower_bound_%d' % r._id, tol=-1e-7), (inp<1)('arcsin_domain_upper_bound_%d' % r._id, tol=-1e-7))
     return r
 
@@ -78,8 +87,10 @@ def arccos(inp):
     if isinstance(inp, ooarray) and inp.dtype == object:
         return ooarray([arccos(elem) for elem in inp])
     if not isinstance(inp, oofun): return np.arccos(inp)
-    r = oofun(np.arccos, inp, d = lambda x: Diag(-1.0 / np.sqrt(1.0 - x**2)), vectorized = True, hasDefiniteRange=False)
-    r.criticalPoints = False
+    r = oofun(np.arccos, inp, d = lambda x: Diag(-1.0 / np.sqrt(1.0 - x**2)), vectorized = True)
+    r.getDefiniteRange = get_box1_DefiniteRange
+    F_l, F_u = np.arccos((-1, 1))
+    r._interval = lambda domain, dtype: box_1_interval(inp, np.arccos, domain, dtype, F_l, F_u)
     r.attach((inp>-1)('arccos_domain_lower_bound_%d' % r._id, tol=-1e-7), (inp<1)('arccos_domain_upper_bound_%d' % r._id, tol=-1e-7))
     return r
 
@@ -129,7 +140,8 @@ def sqrt(inp, attachConstraints = True):
     elif not isinstance(inp, oofun): 
         return np.sqrt(inp)
     r = oofun(np.sqrt, inp, d = lambda x: Diag(0.5 / np.sqrt(x)), vectorized = True)
-    r._interval = lambda domain, dtype: nonnegative_interval(inp, np.sqrt, domain, dtype)
+    F0 = 0.0
+    r._interval = lambda domain, dtype: nonnegative_interval(inp, np.sqrt, domain, dtype, F0)
     if attachConstraints: r.attach((inp>0)('sqrt_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
 
