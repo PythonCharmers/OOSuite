@@ -73,13 +73,9 @@ def arcsin(inp):
     if not isinstance(inp, oofun): 
         return np.arcsin(inp)
     r = oofun(np.arcsin, inp, d = lambda x: Diag(1.0 / np.sqrt(1.0 - x**2)), vectorized = True)
-    
-    # TODO: rework it with matrix ops
     r.getDefiniteRange = get_box1_DefiniteRange
-    
     F_l, F_u = np.arcsin((-1, 1))
     r._interval = lambda domain, dtype: box_1_interval(inp, np.arcsin, domain, dtype, F_l, F_u)
-    
     r.attach((inp>-1)('arcsin_domain_lower_bound_%d' % r._id, tol=-1e-7), (inp<1)('arcsin_domain_upper_bound_%d' % r._id, tol=-1e-7))
     return r
 
@@ -167,13 +163,14 @@ def log_interval(logfunc, inp):
         if np.any(ind):
             ind2 = ub>0
             t_min[atleast_1d(logical_and(ind, ind2))] = -np.inf
+            definiteRange = False
         ind = atleast_1d(ub == 0)
         if np.any(ind):
             t_max[ind] = np.nan
             t_min[ind] = np.nan
-            
-        # TODO: rework it with matrix operations
-        definiteRange = False
+            definiteRange = False
+        print definiteRange
+        # TODO: rework definiteRange with matrix operations
         
         return np.vstack((t_min, t_max)), definiteRange
     return interval
@@ -182,7 +179,7 @@ def log(inp):
     if isinstance(inp, ooarray) and inp.dtype == object:
         return ooarray([log(elem) for elem in inp])    
     if not isinstance(inp, oofun): return np.log(inp)
-    r = oofun(np.log, inp, d = lambda x: Diag(1.0/x), vectorized = True, _interval = log_interval(np.log, inp), hasDefiniteRange=False)
+    r = oofun(np.log, inp, d = lambda x: Diag(1.0/x), vectorized = True, _interval = log_interval(np.log, inp))
     r.attach((inp>1e-300)('log_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
 
@@ -191,7 +188,7 @@ def log10(inp):
     if isinstance(inp, ooarray) and inp.dtype == object:
         return ooarray([log10(elem) for elem in inp])    
     if not isinstance(inp, oofun): return np.log10(inp)
-    r = oofun(np.log10, inp, d = lambda x: Diag(INV_LOG_10 / x), vectorized = True, _interval = log_interval(np.log10, inp), hasDefiniteRange=False)
+    r = oofun(np.log10, inp, d = lambda x: Diag(INV_LOG_10 / x), vectorized = True, _interval = log_interval(np.log10, inp))
     r.attach((inp>1e-300)('log10_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
     
@@ -200,7 +197,7 @@ def log2(inp):
     if isinstance(inp, ooarray) and inp.dtype == object:
         return ooarray([log2(elem) for elem in inp])    
     if not isinstance(inp, oofun): return np.log2(inp)
-    r = oofun(np.log2, inp, d = lambda x: Diag(INV_LOG_2/x), vectorized = True, _interval = log_interval(np.log2, inp), hasDefiniteRange=False)
+    r = oofun(np.log2, inp, d = lambda x: Diag(INV_LOG_2/x), vectorized = True, _interval = log_interval(np.log2, inp))
     r.attach((inp>1e-300)('log2_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
 
