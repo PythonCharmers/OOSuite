@@ -1,4 +1,5 @@
-from numpy import empty, where, logical_and, take, logical_or, isnan, zeros, log2, isfinite, int8, int16, int32, int64, inf, isinf, asfarray
+from numpy import empty, where, logical_and, logical_not, take, logical_or, isnan, zeros, log2, isfinite, \
+int8, int16, int32, int64, inf, isinf, asfarray
 from interalgLLR import func8
 
 try:
@@ -38,6 +39,8 @@ def processConstraints(C0, y, e, ip, m, p, dataType):
             o_t[o_t < val - tol] = val - tol
             r24 = a_t - o_t
             tmp = r24 / aor20
+            tmp[logical_or(isinf(o), isinf(a))] = 1e-10 #  (to prevent inf/inf=nan); TODO: rework it
+            
             tmp[r24 == 0.0] = 1.0 # may be encountered if a == o, especially for integer probs
             tmp[tmp<1e-300] = 1e-300 # TODO: improve it
             nlh -= log2(tmp)
@@ -50,6 +53,10 @@ def processConstraints(C0, y, e, ip, m, p, dataType):
         elif isfinite(r16) and not isfinite(r17):
             #OLD
             tmp = (r16 - o + tol) / aor20
+            
+            tmp[logical_and(isinf(o), logical_not(isinf(a)))] = 1e-10 # (to prevent inf/inf=nan); TODO: rework it
+            tmp[isinf(a)] = 1-1e-10 # (to prevent inf/inf=nan); TODO: rework it
+            
             #tmp = (a - r16) / aor20
             #NEW
 #            o_t[o_t < r16 - tol] = r16 - tol
@@ -64,14 +71,19 @@ def processConstraints(C0, y, e, ip, m, p, dataType):
             tmp[tmp>1.0] = 1.0
             
             tmp[r16 > a] = 0
-            tmp[isinf(a)] = 1 # (to prevent inf/inf=nan); TODO: rework it
+            
             #tmp[r16 - tol <= o] = 1
             tmp[r16 <= o] = 1
+            
             
             nlh -= log2(tmp)
         elif isfinite(r17) and not isfinite(r16):
             #OLD
             tmp = (a - r17+tol) / aor20
+            
+            tmp[isinf(o)] = 1-1e-10 # (to prevent inf/inf=nan);TODO: rework it
+            tmp[logical_and(isinf(a), logical_not(isinf(o)))] = 1e-10 # (to prevent inf/inf=nan); TODO: rework it
+            
             #tmp = (r17-o) / aor20
             #NEW
 #            a_t[a_t > r17 + tol] = r17 + tol
@@ -87,7 +99,7 @@ def processConstraints(C0, y, e, ip, m, p, dataType):
 #            tmp = 0.5*ones_like(tmp)
             
             tmp[r17 < o] = 0
-            tmp[isinf(o)] = 1 # (to prevent inf/inf=nan);TODO: rework it
+            
             #tmp[r17+tol >= a] = 1
             tmp[r17 >= a] = 1
             
@@ -113,7 +125,9 @@ def processConstraints(C0, y, e, ip, m, p, dataType):
         
     ind = where(r15)[0]
     lj = ind.size
-    y = take(y, ind, axis=0, out=y[:lj])
-    e = take(e, ind, axis=0, out=e[:lj])
-    nlh = take(nlh, ind, axis=0, out=nlh[:lj])
+    if lj != m:
+        y = take(y, ind, axis=0, out=y[:lj])
+        e = take(e, ind, axis=0, out=e[:lj])
+        nlh = take(nlh, ind, axis=0, out=nlh[:lj])
+#    if DefiniteRange == False: print DefiniteRange
     return y, e, nlh, DefiniteRange

@@ -1,5 +1,5 @@
 from numpy import tile, isnan, array, atleast_1d, asarray, logical_and, all, searchsorted, logical_or, any, nan, isinf, \
-arange, vstack, inf, where, logical_not, take, argmax, argmin, abs, hstack, empty, insert, isfinite, append, atleast_2d, \
+arange, vstack, inf, where, logical_not, take, argmax, argmin, min, abs, hstack, empty, insert, isfinite, append, atleast_2d, \
 prod, logical_xor, argsort, asfarray
 from interalgLLR import *
 
@@ -28,7 +28,9 @@ def r14(p, nlhc, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNodes,  \
         if all(definiteRange):
             ind = logical_not(any(nlhc, 1))
             if any(ind):
-                r41 = min((r41, nanmin(o[ind])))
+                tmp1 = asarray(nanmin(o[ind]))
+                if tmp1.size != 0:
+                    r41 = min((r41, tmp1))
     
     fo_prev = float(0 if isSNLE else min((r41, r40 - (fTol if maxSolutions == 1 else 0))))
     
