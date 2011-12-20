@@ -2,7 +2,7 @@
 
 from numpy import inf, asfarray, copy, all, any, empty, atleast_2d, zeros, dot, asarray, atleast_1d, empty, \
 ones, ndarray, where, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum as npSum, prod, nonzero,\
-isnan, asscalar, zeros_like, ones_like, amin, amax, logical_and, logical_or, isinf, logical_not, logical_xor, flipud
+isnan, asscalar, zeros_like, ones_like, amin, amax, logical_and, logical_or, isinf, logical_not, logical_xor, flipud, tile
 
 try:
     from bottleneck import nanmin, nanmax
@@ -13,7 +13,7 @@ except ImportError:
 from numpy.linalg import norm
 from FDmisc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scipyInstalled, \
 raise_except, DiagonalType
-from copy import deepcopy
+#from copy import deepcopy
 from ooPoint import ooPoint
 from Interval import Interval
 
@@ -256,7 +256,7 @@ class oofun:
             r.getOrder = self.getOrder
             
             # TODO: move it outside 
-            Other2 = vstack((other, other))
+            Other2 = tile(other, (2, 1))
             def interval(domain, dtype): 
                 r, definiteRange = self._interval(domain, dtype)
                 return r + Other2, definiteRange
@@ -299,10 +299,13 @@ class oofun:
                 Xsize, Ysize = x.size, y.size
                 if Xsize != 1:
                     assert Xsize == Ysize or Ysize == 1, 'incorrect size for oofun devision'
-                r = 1.0 / y
                 if Xsize != 1:
-                    if Ysize == 1: r = atleast_1d(r).tolist() * Xsize
-                    r = Diag(r)
+                    if Ysize == 1: 
+                        r = Diag(None, size=Xsize, scalarMultiplier = 1.0/y)
+                    else:
+                        r = Diag(1.0/y)
+                else:
+                    r = 1.0 / y
                 return r                
             def aux_dy(x, y):
                 # TODO: handle float128
@@ -352,7 +355,12 @@ class oofun:
             r = oofun(lambda a: a/other, self, discrete = self.discrete)# TODO: involve sparsity if possible!
             r.getOrder = self.getOrder
             r._getFuncCalcEngine = lambda *args,  **kwargs: self._getFuncCalcEngine(*args,  **kwargs) / other
-            r.d = lambda x: 1.0/other if (isscalar(x) or x.size == 1) else Diag(ones(x.size)/other)
+            #r.d = lambda x: 1.0/other if (isscalar(x) or x.size == 1) else Diag(ones(x.size)/other) if other.size > 1 \
+            #else Diag(None, size=x.size, scalarMultiplier=1.0/other)
+            r.d = lambda x: 1.0/other if (isscalar(x) or x.size == 1) else Diag(ones(x.size)/other) #if other.size > 1 \
+            #else Diag(None, size=x.size, scalarMultiplier=1.0/other)
+            # commented code is unreacheble, see r._D definition below for other.size == 1
+            
             r.criticalPoints = False
 #            if other.size == 1 or 'size' in self.__dict__ and self.size in (1, other.size):
             if other.size == 1:
@@ -374,7 +382,7 @@ class oofun:
        
         other = array(other, 'float') # TODO: sparse matrices handling!
         r = oofun(lambda x: other/x, self, discrete = self.discrete)
-        r.d = lambda x: Diag(- other / x**2)
+        r.d = lambda x: Diag((- other) / x**2)
         def interval(domain, dtype):
             arg_lb_ub, definiteRange = self._interval(domain, dtype)
             arg_infinum, arg_supremum = arg_lb_ub[0], arg_lb_ub[1]
@@ -410,9 +418,12 @@ class oofun:
             if Xsize == 1:
                 return Copy(y)
             elif Ysize == 1:
-                r = empty(Xsize)
-                r.fill(y)
-                return Diag(r)
+#                # OLD
+#                r = empty(Xsize)
+#                r.fill(y)
+#                return Diag(r)
+                # NEW
+                return Diag(None, scalarMultiplier = y, size = Xsize)
             elif Xsize == Ysize:
                 return Diag(y)
             else:
@@ -504,7 +515,8 @@ class oofun:
             elif isscalar(self.size):# and is not 1
                 return ooarray([self[i] ** other[i] for i in range(other.size)])
 
-        d_x = lambda x, y: y * x ** (y - 1) if (isscalar(x) or x.size == 1) else Diag(y * x ** (y - 1))
+        d_x = lambda x, y: \
+            (y * x ** (y - 1) if (isscalar(x) or x.size == 1) else Diag(y * x ** (y - 1))) if y is not 2 else Diag(2 * x)
 
         d_y = lambda x, y: x ** y * log(x) if (isscalar(y) or y.size == 1) else Diag(x ** y * log(x))
         
@@ -819,9 +831,11 @@ class oofun:
                     if isinstance(x, dict):
                         tmp = x.get(self, None)
                         if tmp is not None:
-                            return float(tmp) if isscalar(tmp) and type(tmp)==int else asfarray(tmp)
+                            # currently tmp hasn't to be sparse matrix, mb for future
+                            return float(tmp) if isscalar(tmp) and type(tmp)==int else asfarray(tmp) if not isspmatrix(tmp) else tmp
                         elif self.name in x:
-                            return asfarray(x[self.name])
+                            tmp = x[self.name]
+                            return float(tmp) if isscalar(tmp) and type(tmp)==int else asfarray(tmp) if not isspmatrix(tmp) else tmp
                         else:
                             s = 'for oovar ' + self.name + \
                             " the point involved doesn't contain neither name nor the oovar instance. Maybe you try to get function value or derivative in a point where value for an oovar is missing"
@@ -958,7 +972,7 @@ class oofun:
                     if tmp.size == 1: tmp = asscalar(tmp)
                     elif min(tmp.shape) == 1: tmp = tmp.flatten()
                 rr[oov] = tmp
-            return rr if not is_oofun else initialVars(rr)
+            return rr if not is_oofun else rr[initialVars]
         else:
             raise FuncDesignerException('Incorrect argument resultKeysType, should be "vars" or "names"')
             
@@ -1035,15 +1049,13 @@ class oofun:
                 t1 = derivativeSelf[ac]
                 
                 for key, val in elem_d.items():
-                    if type(t1) == DiagonalType or type(val) == DiagonalType:
+                    if type(t1) == DiagonalType and type(val) == DiagonalType:
+                        rr = t1 * val
+                    elif type(t1) == DiagonalType or type(val) == DiagonalType:
                         if isspmatrix(t1):
                             rr = t1._mul_sparse_matrix(val.resolve(True))
                         else:
                             rr = t1 *  val
-#                        if isscalar(t1) or isscalar(val) or (type(t1) == DiagonalType and type(val) == DiagonalType):
-#                            rr = t1 * val
-#                        else: # ndarray or sparse matrix is present
-                            
                     elif isscalar(val) or isscalar(t1) or prod(t1.shape)==1 or prod(val.shape)==1:
                         #rr = t1 * val
                         rr = (t1 if isscalar(t1) or prod(t1.shape)>1 else asscalar(t1) if type(t1)==ndarray else t1[0, 0]) \
@@ -1077,15 +1089,28 @@ class oofun:
                     
                     Val = r.get(key, None)
                     if Val is not None:
-                        if isinstance(Val, ndarray) and hasattr(rr, 'toarray'): # i.e. rr is sparse matrix
+                        if type(rr) == DiagonalType:
+                            if type(Val) == DiagonalType:
+                                
+                                Val = Val + rr # !!!! NOT inplace! (elseware will overwrite stored data used somewhere else)
+                                
+                            else:
+                                tmp  = rr.resolve(useSparse)
+                                if type(tmp) == ndarray and hasattr(Val, 'toarray'):
+                                    Val = Val.toarray()
+                                if type(tmp) == type(Val) == ndarray and Val.size >= tmp.size:
+                                    Val += tmp
+                                else: # may be problems with sparse matrices inline operation, which are badly done in scipy.sparse for now
+                                    Val = Val + tmp
+                        elif isinstance(Val, ndarray) and hasattr(rr, 'toarray'): # i.e. rr is sparse matrix
                             rr = rr.toarray() # I guess r[key] will hardly be all-zeros
                         elif hasattr(Val, 'toarray') and isinstance(rr, ndarray): # i.e. Val is sparse matrix
                             Val = Val.toarray()
-                            r[key] = Val
                         if type(rr) == type(Val) == ndarray and rr.size == Val.size: 
-                            r[key] += rr
+                            Val += rr
                         else: 
-                            r[key] = Val + rr
+                            Val = Val + rr
+                        r[key] = Val
                     else:
                         r[key] = rr
         
@@ -1176,6 +1201,11 @@ class oofun:
                 
                 #if not isinstance(tmp, ndarray) and not isscalar(tmp) and type(tmp) != DiagonalType:
                 if len(Input) == 1:
+#                    if type(tmp) == DiagonalType: 
+#                            # TODO: mb rework it
+#                            if Input[0].size > 150 and tmp.size > 150:
+#                                tmp = tmp.resolve(True).tocsc()
+#                            else: tmp =  tmp.resolve(False) 
                     derivativeSelf = [tmp]
                 else:
                     for i, inp in enumerate(Input):
@@ -1188,11 +1218,15 @@ class oofun:
                         elif isscalar(tmp):
                             TMP = tmp
                         elif type(tmp) == DiagonalType: 
-                            # TODO: mb rework it
-                            if inp.size > 150 and tmp.size > 150:
-                                tmp = tmp.resolve(True).tocsc()
-                            else: tmp =  tmp.resolve(False) 
-                            TMP = tmp[:, ac:ac+inp.size]
+                            if tmp.size == inp.size and ac == 0:
+                                TMP = tmp
+                            else:
+                                # print debug warning here
+                                # TODO: mb rework it
+                                if inp.size > 150 and tmp.size > 150:
+                                    tmp = tmp.resolve(True).tocsc()
+                                else: tmp =  tmp.resolve(False) 
+                                TMP = tmp[:, ac:ac+inp.size]
                         else: # scipy.sparse matrix
                             TMP = tmp.tocsc()[:, ac:ac+inp.size]
                         ac += Len(inp)

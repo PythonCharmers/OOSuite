@@ -8,6 +8,10 @@
 
 from FDmisc import FuncDesignerException
 from numpy import asfarray, ndarray, isscalar
+try:
+    from scipy.sparse import isspmatrix
+except ImportError:
+    isspmatrix = lambda *args, **kw: False
 
 Len = lambda x: 1 if isscalar(x) else x.size if type(x)==ndarray else len(x)
 
@@ -18,7 +22,7 @@ class ooPoint(dict):
         if kwargs.get('skipArrayCast', False): 
             Asfarray = lambda arg: arg
         else: 
-            Asfarray = lambda arg: asfarray(arg)
+            Asfarray = lambda arg: asfarray(arg) #if not isspmatrix(arg) else arg
             
         # TODO: remove float() after Python 3 migraion
         if args:

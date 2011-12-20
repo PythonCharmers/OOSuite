@@ -30,16 +30,18 @@ def pWarn(msg):
 
 
 class diagonal:
-    isOnes = True
+    isOnes = False
     __array_priority__ = 150000# set it greater than 1 to prevent invoking numpy array __mul__ etc
     
-    def __init__(self, arr, scalarMultiplier=1.0, isOnes = False, Copy=True):
+    def __init__(self, arr, scalarMultiplier=1.0, size=0):
         #assert arr.ndim <= 1
-        self.diag = arr.copy() if Copy else arr
+        self.diag = arr.copy() if arr is not None else arr # may be None, then n has to be provided
         self.scalarMultiplier = scalarMultiplier
-        self.size = arr.size
-        self.isOnes = isOnes
+        self.size = arr.size if size == 0 else size
+        if arr is None:
+            self.isOnes = True
         
+    copy = lambda self: diagonal(self.diag, scalarMultiplier = self.scalarMultiplier, size = self.size)
     
     def toarray(self):
         if self.isOnes:
@@ -60,14 +62,11 @@ class diagonal:
         else:
             return self.toarray()
 
-
-
-    
     def __add__(self, item):
         if type(item) == DiagonalType:
             # TODO: mb use other.diag.copy(), self.diag.copy() for more safety, especially for parallel computations?
             if self.isOnes and item.isOnes:
-                return diagonal(self.diag, self.scalarMultiplier + item.scalarMultiplier, isOnes = True)
+                return diagonal(None, self.scalarMultiplier + item.scalarMultiplier, size=self.size)
             else:
                 return diagonal(self.diag * self.scalarMultiplier + item.diag*item.scalarMultiplier)
         elif np.isscalar(item) or type(item) == np.ndarray:
@@ -80,12 +79,12 @@ class diagonal:
         return self.__add__(item)
     
     def __neg__(self):
-        return diagonal(self.diag, -self.scalarMultiplier, isOnes = self.isOnes, Copy=False)
+        return diagonal(self.diag, -self.scalarMultiplier, size=self.size)
     
     def __mul__(self, item): 
         #!!! PERFORMS MATRIX MULTIPLICATION!!!
         if np.isscalar(item):
-            return diagonal(self.diag, item*self.scalarMultiplier)
+            return diagonal(self.diag, item*self.scalarMultiplier, size=self.size)
         if type(item) == DiagonalType:#diagonal:
             scalarMultiplier = item.scalarMultiplier * self.scalarMultiplier
             if self.isOnes:
@@ -94,13 +93,15 @@ class diagonal:
                 diag = self.diag
             else:
                 diag = self.diag * item.diag
-            return diagonal(diag, scalarMultiplier, isOnes = item.isOnes and self.isOnes) 
+            return diagonal(diag, scalarMultiplier, size=self.size) 
         elif isinstance(item, np.ndarray):
             if item.size == 1:
-                return diagonal(self.diag, scalarMultiplier = np.asscalar(item)*self.scalarMultiplier, isOnes = self.isOnes)
+                return diagonal(self.diag, scalarMultiplier = np.asscalar(item)*self.scalarMultiplier, size=self.size)
             elif min(item.shape) == 1:
                 #TODO: assert item.ndim <= 2 
-                return (self.scalarMultiplier*self.diag*item.flatten()).reshape(item.shape)
+                r = self.scalarMultiplier*item.flatten()
+                if self.diag is not None: r *= self.diag
+                return r.reshape(item.shape)
             else:
                 # !!!!!!!!!! TODO:  rework it!!!!!!!!!!!
                 if self.size < 100 or not scipyInstalled:
@@ -110,7 +111,7 @@ class diagonal:
         else:
             #assert SP.isspmatrix(item)
             if np.prod(item.shape) == 1:
-                return diagonal(self.diag, scalarMultiplier = self.scalarMultiplier*item[0, 0])
+                return diagonal(self.diag, scalarMultiplier = self.scalarMultiplier*item[0, 0], size=self.size)
             else:
                 tmp = self.resolve(True)
                 if not SP.isspmatrix(tmp): # currently lil_matrix and K^ works very slow on sparse matrices
@@ -129,18 +130,19 @@ class diagonal:
     def __div__(self, other):
         #TODO: check it
         if isinstance(other, np.ndarray) and other.size == 1: other = np.asscalar(other)
-        if np.isscalar(other): return diagonal(self.diag, self.scalarMultiplier/other, isOnes = self.isOnes) 
+        if np.isscalar(other) or prod(other.shape)==1: 
+            return diagonal(self.diag, self.scalarMultiplier/other, size=self.size) 
         else: 
             # TODO: check it
-            return diagonal(self.diag/other, self.scalarMultiplier) 
+            return diagonal(self.diag/other if self.diag is not None else 1.0/other, self.scalarMultiplier, size=self.size) 
 
-DiagonalType = type(diagonal(np.array(0)))
+DiagonalType = type(diagonal(np.array([0, 0])))
 
-Eye = lambda n: 1.0 if n == 1 else diagonal(np.ones(n), isOnes = True, Copy = False)
+Eye = lambda n: 1.0 if n == 1 else diagonal(None, size=n)
 
-def Diag(x):
+def Diag(x, *args, **kw):
     if isscalar(x): return x
-    else: return diagonal(asfarray(x), Copy = False)
+    else: return diagonal(asfarray(x) if x is not None else x, *args,  **kw)
 
 class fixedVarsScheduleID:
     fixedVarsScheduleID = 0
