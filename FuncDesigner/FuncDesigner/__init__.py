@@ -43,3 +43,5 @@ if isE:
     Sage (http://sagemath.org) instead.
     """
     print(s)
+    
+del(isE, curr_dir, os, sys)
