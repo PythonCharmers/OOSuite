@@ -8,7 +8,31 @@ try:
     from bottleneck import nanargmin, nanmin, nanargmax, nanmax
 except ImportError:
     from numpy import nanmin, nanargmin, nanargmax, nanmax
-    
+
+def func82(y, e, vv, f, dataType):
+    domain = dict([(v, (y[:, i], e[:, i])) for i, v in enumerate(vv)])
+    r, r0 = f.iqg(domain, dataType)
+    dep = f._getDep()
+    o_l, o_u, a_l, a_u = [], [], [], []
+    definiteRange = True
+    for v in vv:
+        # !!!! TODO: rework and optimize it
+        if v in dep:
+            o_l.append(r[v][0].lb)
+            o_u.append(r[v][1].lb)
+            a_l.append(r[v][0].ub)
+            a_u.append(r[v][1].ub)
+            definiteRange = logical_and(definiteRange, r[v][0].definiteRange)
+            definiteRange = logical_and(definiteRange, r[v][1].definiteRange)
+        else:
+            o_l.append(r0.lb)
+            o_u.append(r0.lb)
+            a_l.append(r0.ub)
+            a_u.append(r0.ub)
+            definiteRange = logical_and(definiteRange, r0.definiteRange)
+        o, a = hstack(o_l+o_u), hstack(a_l+a_u)    
+    return o, a, definiteRange
+
 def func10(y, e, vv):
     m, n = y.shape
     LB = [[] for i in range(n)]

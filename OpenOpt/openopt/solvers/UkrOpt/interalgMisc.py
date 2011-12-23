@@ -7,7 +7,14 @@ try:
     from bottleneck import nanargmin, nanmin, nanargmax, nanmax
 except ImportError:
     from numpy import nanmin, nanargmin, nanargmax, nanmax
-    
+
+       
+#    o = hstack([r[v][0].lb for v in vv] + [r[v][1].lb for v in vv])
+#    a = hstack([r[v][0].ub for v in vv] + [r[v][1].ub for v in vv])
+#    definiteRange = hstack([r[v][0].definiteRange for v in vv] + [r[v][1].definiteRange for v in vv])
+#    # TODO: rework all(definiteRange)
+#    return o, a, all(definiteRange)
+
 def r14(p, nlhc, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNodes,  \
          r41, fTol, maxSolutions, varTols, solutions, r6, _in, dataType, \
          maxNodes, _s, xRecord):
@@ -15,11 +22,36 @@ def r14(p, nlhc, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNodes,  \
     isSNLE = p.probType in ('NLSP', 'SNLE')
     
     
-    
-    ip = func10(y, e, vv)
+    Case = p.solver.intervalObtaining
+    if Case == 1:
+        ip = func10(y, e, vv)
+        #o, a = func8(ip, asdf1 + 1e10*p._cons_obj if p._cons_obj is not None else asdf1, dataType)
+        o, a, definiteRange = func8(ip, asdf1 + p._cons_obj if p._cons_obj is not None else asdf1, dataType)
+    elif Case == 2:
+#        o2, a2, definiteRange2 = func82(y, e, vv, asdf1 + p._cons_obj if p._cons_obj is not None else asdf1, dataType)
+#        o, a, definiteRange = o2, a2, definiteRange2
+        f = asdf1 + p._cons_obj if p._cons_obj is not None else asdf1
+        o, a, definiteRange = func82(y, e, vv, f, dataType)
         
-    #o, a = func8(ip, asdf1 + 1e10*p._cons_obj if p._cons_obj is not None else asdf1, dataType)
-    o, a, definiteRange = func8(ip, asdf1 + p._cons_obj if p._cons_obj is not None else asdf1, dataType)
+
+#        o = hstack([r[v][0].lb for v in vv] + [r[v][1].lb for v in vv])
+#        a = hstack([r[v][0].ub for v in vv] + [r[v][1].ub for v in vv])
+        #definiteRange = hstack([r[v][0].definiteRange for v in vv] + [r[v][1].definiteRange for v in vv])
+        # TODO: rework all(definiteRange)
+        #return o, a, definiteRange#all(definiteRange)
+
+#    else:
+#        ip = func10(y, e, vv)
+#        #o, a = func8(ip, asdf1 + 1e10*p._cons_obj if p._cons_obj is not None else asdf1, dataType)
+#        o, a, definiteRange = func8(ip, asdf1 + p._cons_obj if p._cons_obj is not None else asdf1, dataType)
+#        o2, a2, definiteRange2 = func82(y, e, vv, asdf1 + p._cons_obj if p._cons_obj is not None else asdf1, dataType)
+#        print 'diff:',  max(abs(o-o2)), max(abs(a-a2))
+
+    #ss = o2.size/2
+    #print (o2, o, )
+    #print max(abs(o2[:ss]-o[:ss])), max(abs(a2[:ss]-a[:ss])), max(abs(o2[ss:]-o[ss:])), max(abs(a2[ss:]-a[ss:]))
+    #print max(abs(o2-o)), max(abs(a2-a))
+#        print o.shape, o2.shape, definiteRange.shape, definiteRange2.shape
     
     if asdf1.isUncycled and nlhc is not None and not isSNLE:# for SNLE fo = 0
         
@@ -29,8 +61,10 @@ def r14(p, nlhc, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNodes,  \
             ind = logical_not(any(nlhc, 1))
             if any(ind):
                 tmp1 = asarray(nanmin(o[ind]))
+                tmp1 += 1e-15*abs(tmp1) # to prevent some roundoff errors that yield completely incorrect output
                 if tmp1.size != 0:
-                    r41 = min((r41, tmp1))
+                    r41 = min((r41, tmp1)) 
+
     
     fo_prev = float(0 if isSNLE else min((r41, r40 - (fTol if maxSolutions == 1 else 0))))
     

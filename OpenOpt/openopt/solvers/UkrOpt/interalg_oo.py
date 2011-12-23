@@ -34,6 +34,7 @@ class interalg(baseSolver):
     maxNodes = 150000
     maxActiveNodes = 150
     dataHandling = 'auto'
+    intervalObtaining = 2
     _requiresBestPointDetection = True
     
     __isIterPointAlwaysFeasible__ = lambda self, p: p.__isNoMoreThanBoxBounded__() #and p.probType != 'IP'
@@ -277,9 +278,7 @@ class interalg(baseSolver):
         
         for itn in range(p.maxIter+10):
             if len(C0) != 0: 
-                ip = func10(y, e, vv)
-                m = e.shape[0]
-                y, e, nlhc, definiteRange = processConstraints(C0, y, e, ip, m, p, dataType)
+                y, e, nlhc, definiteRange = processConstraints(C0, y, e, p, dataType)
             else:
                 nlhc, definiteRange = None, True
             

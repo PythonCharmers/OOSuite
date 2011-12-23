@@ -1,23 +1,30 @@
 from numpy import empty, where, logical_and, logical_not, take, logical_or, isnan, zeros, log2, isfinite, \
 int8, int16, int32, int64, inf, isinf, asfarray
-from interalgLLR import func8
+from interalgLLR import func8, func82, func10
 
 try:
     from bottleneck import nanargmin, nanmin, nanargmax, nanmax
 except ImportError:
     from numpy import nanmin, nanargmin, nanargmax, nanmax
     
-def processConstraints(C0, y, e, ip, m, p, dataType):
+def processConstraints(C0, y, e, p, dataType):
     n = p.n
+    m = y.shape[0]
     r15 = empty(m, bool)
     nlh = zeros((m, 2*n))
     r15.fill(True)
     DefiniteRange = True
+    
+  
     for i, (f, r16, r17, tol) in enumerate(C0):
         if p.solver.dataHandling == 'sorted': tol = 0
-        o, a, definiteRange = func8(ip, f, dataType)
+        if p.solver.intervalObtaining == 1:
+            ip = func10(y, e, p._freeVarsList)
+            o, a, definiteRange = func8(ip, f, dataType)
+        else:
+            o, a, definiteRange = func82(y, e, p._freeVarsList, f, dataType)
+            
         DefiniteRange = logical_and(DefiniteRange, definiteRange)
-        m = o.size/(2*n)
         o, a  = o.reshape(2*n, m).T, a.reshape(2*n, m).T
         lf1, lf2, uf1, uf2 = o[:, 0:n], o[:, n:2*n], a[:, 0:n], a[:, n:2*n]
         o_ = where(logical_or(lf1>lf2, isnan(lf1)), lf2, lf1)
