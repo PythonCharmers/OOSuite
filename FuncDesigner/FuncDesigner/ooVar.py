@@ -23,10 +23,10 @@ class oovar(oofun):
             kwargs['name'] = name
         oofun.__init__(self, lambda *ARGS: None, *args, **kwargs)
     
-    def _interval(self, domain, dtype = float64):
+    def _interval_(self, domain, dtype = float64):
         tmp = domain.get(self, None)
         if tmp is None: return None
-        if isinstance(tmp, ndarray) or isscalar(tmp):
+        if isinstance(tmp, ndarray) or isscalar(tmp): # thus variable value is fixed for this calculation
             tmp = asarray(tmp, dtype)
             return tile(tmp, (2, 1)), True
         infinum, supremum = tmp
@@ -38,7 +38,17 @@ class oovar(oofun):
             supremum = array(supremum, dtype)
         elif isscalar(supremum):
             supremum = dtype(supremum)
+            
+#        if modificationVar is self:
+#            assert dtype in (float, float64),  'other types unimplemented yet'
+#            middle = 0.5 * (supremum+infinum)
+#            return (vstack((infinum, middle)), True), (vstack((middle, supremum)), True)
+
         return vstack((infinum, supremum)), True
+    
+    #def _interval_(self, domain, dtype):
+        #return self._interval()
+    #_interval_ = _interval
     
     def _getFuncCalcEngine(self, x, **kwargs):
         if hasattr(x, 'xf'):return x.xf[self]

@@ -18,7 +18,13 @@ Len = lambda x: 1 if isscalar(x) else x.size if type(x)==ndarray else len(x)
 class ooPoint(dict):
     _id = 0
     isMultiPoint = False
+    modificationVar = None # default: no modification variable
+    useSave = True
+    useAsMutable = False
+    
     def __init__(self, *args, **kwargs):
+        self.storedIntervals = {}
+        
         if kwargs.get('skipArrayCast', False): 
             Asfarray = lambda arg: arg
         else: 
@@ -49,5 +55,7 @@ class ooPoint(dict):
         self._id = ooPoint._id
     
     def __setitem__(self, *args, **kwargs):
-        raise FuncDesignerException('ooPoint must be immutable')
+        if not self.useAsMutable:
+            raise FuncDesignerException('ooPoint must be immutable')
+        dict.__setitem__(self, *args, **kwargs)
         

@@ -2,7 +2,7 @@
 
 from numpy import inf, asfarray, copy, all, any, empty, atleast_2d, zeros, dot, asarray, atleast_1d, empty, \
 ones, ndarray, where, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum as npSum, prod, nonzero,\
-isnan, asscalar, zeros_like, ones_like, amin, amax, logical_and, logical_or, isinf, logical_not, logical_xor, flipud, tile
+isnan, asscalar, zeros_like, ones_like, amin, amax, logical_and, logical_or, isinf, logical_not, logical_xor, flipud, tile, float64
 
 try:
     from bottleneck import nanmin, nanmax
@@ -181,7 +181,7 @@ class oofun:
         self.attachedConstraints = set()    
     __repr__ = lambda self: self.name
     
-    def _interval(self, domain, dtype):
+    def _interval_(self, domain, dtype):
         criticalPointsFunc = self.criticalPoints
         if len(self.input) == 1 and criticalPointsFunc is not None:
             arg_lb_ub, definiteRange = self.input[0]._interval(domain, dtype)
@@ -206,10 +206,90 @@ class oofun:
         else:
             raise FuncDesignerException('interval calculations are unimplemented for the oofun yet')
     
-    def interval(self, domain, dtype = float, *args, **kwargs):
-        lb_ub, definiteRange = self._interval(domain, dtype, *args, **kwargs)
-        return Interval(lb_ub[0], lb_ub[1], definiteRange)
+    def interval(self, domain, dtype = float, resetStoredIntervals = True):
+        if type(domain) != ooPoint:
+            domain = ooPoint(domain, skipArrayCast = True)
+        lb_ub, definiteRange = self._interval(domain, dtype) #if type(domain) != ooPoint else self._interval2(domain, dtype)
         
+        # TODO: MB GET RID OF IT?
+        if resetStoredIntervals:
+            domain.storedIntervals = {}
+        
+        return Interval(lb_ub[0], lb_ub[1], definiteRange)
+    
+    def _interval(self, domain, dtype):
+        
+        v = domain.modificationVar
+
+        if v is None or ((v not in self._getDep() or self.is_oovar) and self is not v): 
+            r = domain.storedIntervals.get(self, None)
+            if r is not None: 
+                return r
+        
+        if v is not None:
+            r = domain.localStoredIntervals.get(self, None)
+            if r is not None: 
+                return r
+       
+        r = self._interval_(domain, dtype)
+        if domain.useSave:
+            domain.storedIntervals[self] = r 
+        if v is not None:
+            domain.localStoredIntervals[self] = r
+        return r
+            
+    
+    def iqg(self, domain, dtype = float):
+        if type(domain) != ooPoint:
+            domain = ooPoint(domain, skipArrayCast=True)
+        domain.useSave = True
+        r0 = self.interval(domain, dtype, resetStoredIntervals = False)
+        domain.useAsMutable = True
+        
+        # TODO: get rid of useSave
+        domain.useSave = False
+        
+        r = {}
+        for i, v in enumerate(self._getDep()):
+            #print i, v
+            domain.modificationVar = v
+            r[v] = self._iqg(domain, dtype)
+            
+        # for more safety
+        domain.useSave = True
+        domain.useAsMutable = False
+        domain.modificationVar = None 
+        domain.storedIntervals = {}
+        
+        return r, r0
+    
+    def _iqg(self, domain, dtype):
+        dep = self._getDep()
+        v = domain.modificationVar
+        #v = modificationVar
+        if v not in dep:
+            tmp = domain.storedIntervals.get(self)
+            return tmp, tmp
+        
+        v_0 = domain[v]
+        lb, ub = v_0[0], v_0[1]
+        
+        assert dtype in (float, float64),  'other types unimplemented yet'
+        middle = 0.5 * (lb+ub)
+        
+        domain[v] = (v_0[0], middle)
+        domain.localStoredIntervals = {}
+        r_l = self.interval(domain, dtype, resetStoredIntervals = False)
+        #print 'r_l:', r_l
+        domain[v] = (middle, v_0[1])
+        domain.localStoredIntervals = {}
+        r_u = self.interval(domain, dtype, resetStoredIntervals = False)
+        #print 'r_u:', r_u
+        domain[v] = v_0
+        domain.localStoredIntervals = {}
+        return r_l, r_u
+            
+    
     # overload "a+b"
     # @checkSizes
     def __add__(self, other):
@@ -240,7 +320,7 @@ class oofun:
                 domain2, definiteRange2 = other._interval(domain, dtype)
                 #return domain1[0] + domain2[0], domain1[1] + domain2[1]
                 return domain1 + domain2, logical_and(definiteRange1, definiteRange2)
-            r._interval = interval
+            r._interval_ = interval
         else:
             if isscalar(other) and other == 0: return self # sometimes triggers from other parts of FD engine 
             if isinstance(other,  ooarray): return other + self
@@ -264,7 +344,7 @@ class oofun:
             def interval(domain, dtype): 
                 r, definiteRange = self._interval(domain, dtype)
                 return r + Other2, definiteRange
-            r._interval = interval
+            r._interval_ = interval
             
             if isscalar(other) or asarray(other).size == 1 or ('size' in self.__dict__ and self.size is asarray(other).size):
                 r._D = lambda *args,  **kwargs: self._D(*args,  **kwargs) 
@@ -286,7 +366,7 @@ class oofun:
             r, definiteRange = self._interval(domain, dtype)
             return -flipud(r), definiteRange
             #return (-r[1], -r[0])
-        r._interval = _interval
+        r._interval_ = _interval
         return r
         
     # overload "a-b"
@@ -353,7 +433,7 @@ class oofun:
                 #assert all(r1 <= r2)
                 return vstack((r1, r2)), logical_and(definiteRange1, definiteRange2)
 
-            r._interval = interval
+            r._interval_ = interval
         else:
             other = array(other,'float')# TODO: handle float128
             r = oofun(lambda a: a/other, self, discrete = self.discrete)# TODO: involve sparsity if possible!
@@ -404,7 +484,7 @@ class oofun:
 
             return vstack((r1, r2)), definiteRange
             
-        r._interval = interval
+        r._interval_ = interval
         #r.isCostly = True
         def getOrder(*args, **kwargs):
             order = self.getOrder(*args, **kwargs)
@@ -504,7 +584,7 @@ class oofun:
            
             return vstack((t_min, t_max)), definiteRange
                 
-        r._interval = interval
+        r._interval_ = interval
         r.vectorized = True
         #r.isCostly = True
         return r
@@ -587,7 +667,7 @@ class oofun:
                     t_min[atleast_1d(logical_and(ind1, logical_not(ind2)))] = nan
                 return vstack((t_min, t_max)), definiteRange
                 
-        r = oofun(f, input, d = d, _interval=interval)
+        r = oofun(f, input, d = d, _interval_=interval)
         if isinstance(other, oofun) or (not isinstance(other, int) or (type(other) == ndarray and other.flatten()[0] != int)): 
             r.attach((self>0)('pow_domain_%d'%r._id, tol=-1e-7)) # TODO: if "other" is fixed oofun with integer value - omit this
         r.isCostly = True
@@ -695,7 +775,7 @@ class oofun:
             lb_ub, definiteRange = self._interval(domain, dtype)
             lb, ub = lb_ub[0], lb_ub[1]
             return vstack((npSum(lb), npSum(ub))), definiteRange
-        r = oofun(npSum, self, getOrder = self.getOrder, _interval = interval, d=d)
+        r = oofun(npSum, self, getOrder = self.getOrder, _interval_ = interval, d=d)
         return r
     
     def prod(self):
@@ -752,6 +832,7 @@ class oofun:
     
     def eq(self, other):
         if other in (None, (), []): return False
+        if type(other) in (str, unicode): return False
         if self.is_oovar and not isinstance(other, oofun):
             raise FuncDesignerException('Constraints like this: "myOOVar = <some value>" are not implemented yet and are not recommended; for openopt use freeVars / fixedVars instead')
         r = Constraint(self - other, ub = 0.0, lb = 0.0) # do not perform check for other == 0, copy should be returned, not self!
