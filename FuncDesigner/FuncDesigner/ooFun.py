@@ -639,7 +639,19 @@ class oofun:
                     ind_nan = logical_and(logical_and(ind, isNonInteger), ub < 0)
                     if any(ind_nan):
                         t_max[atleast_1d(ind_nan)] = nan
-                    t_min[atleast_1d(logical_and(ind, logical_and(t_min>0, ub >= 0)))] = 0.0
+                    
+                    #1
+                    #t_min[atleast_1d(logical_and(ind, logical_and(t_min>0, ub >= 0)))] = 0.0
+                    
+                    #2
+                    if asarray(other).size == 1:
+                        IND = not isNonInteger
+                    else:
+                        ind2 = logical_not(isNonInteger)
+                        IND = other[ind2] % 2 == 0
+                    
+                    if any(IND):
+                        t_min[logical_and(IND, atleast_1d(logical_and(lb<0, ub >= 0)))] = 0.0
                 return vstack((t_min, t_max)), definiteRange
         else:
             f = lambda x, y: asarray(x) ** y
