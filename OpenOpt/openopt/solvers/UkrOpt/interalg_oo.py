@@ -9,7 +9,7 @@ from openopt.kernel.Point import Point
 from openopt.solvers.UkrOpt.interalgMisc import *
 from FuncDesigner import sum as fd_sum, abs as fd_abs, max as fd_max
 from ii_engine import *
-from interalgCons import processConstraints
+from interalgCons import processConstraints, processConstraints2
 from interalgODE import interalg_ODE_routine
 
 bottleneck_is_present = False
@@ -278,7 +278,32 @@ class interalg(baseSolver):
         
         for itn in range(p.maxIter+10):
             if len(C0) != 0: 
-                y, e, nlhc, definiteRange = processConstraints(C0, y, e, p, dataType)
+                
+                #!!!!!!  Debug
+#                y1, e1, nlhc1, definiteRange1 = processConstraints(C0, y, e, p, dataType)
+#                y2, e2, nlhc2, definiteRange2 = processConstraints2(C0, y, e, p, dataType)
+#                if not all(definiteRange1==definiteRange2):
+#                    pass
+#                if not amax(abs(y1-y2)) < 1e-10:
+#                    pass
+#                if not amax(abs(e1-e2)) < 1e-10:
+#                    pass
+#                ind_ = where(isfinite(nlhc1))
+#                if not amax(abs(nlhc1[ind_]-nlhc2[ind_])) < 1e-10:
+#                    pass
+                # Debug end
+                
+                Func = processConstraints if self.intervalObtaining == 1 else processConstraints2
+                y, e, nlhc, definiteRange = Func(C0, y, e, p, dataType)
+#                from numpy import sum, isfinite
+#                print p.iter,  len(nlhc[isfinite(nlhc)])#, y.shape, e.shape
+                
+#                # DEBUG
+#                y1, e1, nlhc1, definiteRange1 = processConstraints(C0, y, e, p, dataType)
+#                y2, e2, nlhc2, definiteRange2 = processConstraints2(C0, y, e, p, dataType)
+#                if amax(abs(nlhc1 - nlhc2)) > 1e-10:
+#                    print '!!!', amax(abs(nlhc1 - nlhc2))
+                
             else:
                 nlhc, definiteRange = None, True
             

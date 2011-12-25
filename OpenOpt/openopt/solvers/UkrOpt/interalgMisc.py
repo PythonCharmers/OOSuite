@@ -53,23 +53,6 @@ def r14(p, nlhc, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNodes,  \
     #print max(abs(o2-o)), max(abs(a2-a))
 #        print o.shape, o2.shape, definiteRange.shape, definiteRange2.shape
     
-    if asdf1.isUncycled and nlhc is not None and not isSNLE:# for SNLE fo = 0
-        
-        # TODO: 
-        # handle constraints with restricted domain and matrix definiteRange
-        if all(definiteRange):
-            ind = logical_not(any(nlhc, 1))
-            if any(ind):
-                tmp1 = asarray(nanmin(o[ind]))
-                tmp1 += 1e-15*abs(tmp1) # to prevent some roundoff errors that yield completely incorrect output
-                if tmp1.size != 0:
-                    r41 = min((r41, tmp1)) 
-
-    
-    fo_prev = float(0 if isSNLE else min((r41, r40 - (fTol if maxSolutions == 1 else 0))))
-    
-    
-    
     if p.debug and any(a + 1e-15 < o):  
         p.warn('interval lower bound exceeds upper bound, it seems to be FuncDesigner kernel bug')
     if p.debug and any(logical_xor(isnan(o), isnan(a))):
@@ -77,6 +60,23 @@ def r14(p, nlhc, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNodes,  \
     
     m, n = e.shape
     o, a = o.reshape(2*n, m).T, a.reshape(2*n, m).T
+    
+#    if asdf1.isUncycled and nlhc is not None and not isSNLE:# for SNLE fo = 0
+#        
+#        # TODO: 
+#        # handle constraints with restricted domain and matrix definiteRange
+#        
+#        if all(definiteRange):
+#            tmp1 = o[nlhc==0]
+#            if tmp1.size != 0:
+#                tmp1 = nanmin(tmp1)
+#                tmp1 += 1e-5*abs(tmp1)
+#                print tmp1
+#                r41 = nanmin((r41, tmp1)) 
+
+    
+    fo_prev = float(0 if isSNLE else min((r41, r40 - (fTol if maxSolutions == 1 else 0))))
+    
     
     if itn == 0: 
         # TODO: change for constrained probs

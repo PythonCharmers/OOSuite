@@ -12,7 +12,7 @@ except ImportError:
 def func82(y, e, vv, f, dataType):
     domain = dict([(v, (y[:, i], e[:, i])) for i, v in enumerate(vv)])
     r, r0 = f.iqg(domain, dataType)
-    dep = f._getDep()
+    dep = f._getDep() # TODO: Rework it for fixed vars
     o_l, o_u, a_l, a_u = [], [], [], []
     definiteRange = True
     for v in vv:
