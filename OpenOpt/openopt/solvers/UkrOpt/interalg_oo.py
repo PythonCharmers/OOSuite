@@ -245,7 +245,8 @@ class interalg(baseSolver):
                 else:
                     p.err('finite box constraints are unimplemented for interalg yet')
             #p._cons_obj = 1e100 * fd_sum(r) if len(r) != 0 else None
-            p._cons_obj = fd_sum(r) if len(r) != 0 else None
+            #p._cons_obj = fd_sum(r) if len(r) != 0 else None
+            p._cons_obj = None
         if isSNLE:
             p._cons_obj = None # TODO: check it!
             C += [(elem, -(elem.tol if elem.tol != 0 else p.ftol), (elem.tol if elem.tol != 0 else p.ftol)) for elem in p.user.f]

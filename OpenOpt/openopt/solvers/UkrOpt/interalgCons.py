@@ -55,8 +55,7 @@ def processConstraints(C0, y, e, p, dataType):
             tmp[val > a] = 0
             tmp[val < o] = 0
         elif isfinite(r16) and not isfinite(r17):
-            #OLD
-            tmp = (r16 - o + tol) / aor20
+            tmp = (a - r16 + tol) / aor20
             
             tmp[logical_and(isinf(o), logical_not(isinf(a)))] = 1e-10 # (to prevent inf/inf=nan); TODO: rework it
             tmp[isinf(a)] = 1-1e-10 # (to prevent inf/inf=nan); TODO: rework it
@@ -80,8 +79,7 @@ def processConstraints(C0, y, e, p, dataType):
             tmp[r16 <= o] = 1
 
         elif isfinite(r17) and not isfinite(r16):
-            #OLD
-            tmp = (a - r17+tol) / aor20
+            tmp = (r17-a+tol) / aor20
             
             tmp[isinf(o)] = 1-1e-10 # (to prevent inf/inf=nan);TODO: rework it
             tmp[logical_and(isinf(a), logical_not(isinf(o)))] = 1e-10 # (to prevent inf/inf=nan); TODO: rework it
@@ -250,7 +248,8 @@ def getTmp(o, a, r16, r17, tol, m, dataType):
         tmp[val < o] = 0
     elif isfinite(r16) and not isfinite(r17):
         #OLD
-        tmp = (r16 - o + tol) / aor20
+        #tmp = (r16 - o + tol) / aor20
+        tmp = (a - r16 + tol) / aor20
         
         tmp[logical_and(isinf(o), logical_not(isinf(a)))] = 1e-10 # (to prevent inf/inf=nan); TODO: rework it
         tmp[isinf(a)] = 1-1e-10 # (to prevent inf/inf=nan); TODO: rework it
@@ -275,7 +274,8 @@ def getTmp(o, a, r16, r17, tol, m, dataType):
         
     elif isfinite(r17) and not isfinite(r16):
         #OLD
-        tmp = (a - r17+tol) / aor20
+        #tmp = (a - r17+tol) / aor20
+        tmp = (r17-a+tol) / aor20
         
         tmp[isinf(o)] = 1-1e-10 # (to prevent inf/inf=nan);TODO: rework it
         tmp[logical_and(isinf(a), logical_not(isinf(o)))] = 1e-10 # (to prevent inf/inf=nan); TODO: rework it
