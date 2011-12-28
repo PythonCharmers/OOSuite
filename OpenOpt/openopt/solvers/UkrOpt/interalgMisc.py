@@ -74,7 +74,6 @@ def r14(p, nlhc, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNodes,  \
                 #print tmp1
                 r41 = nanmin((r41, tmp1)) 
 
-    
     fo_prev = float(0 if isSNLE else min((r41, r40 - (fTol if maxSolutions == 1 else 0))))
     
     
@@ -130,9 +129,9 @@ def r14(p, nlhc, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNodes,  \
     # TODO: don't calculate PointVals for zero-p regions
     PointVals, PointCoords = getr4Values(vv, y, e, tnlh_curr, asdf1, C, p.contol, dataType, p) 
 
-    if 1 or PointVals.size != 0:
+    if PointVals.size != 0:
         xk, Min = r2(PointVals, PointCoords, dataType)
-    else:# all points have been removed by func7
+    else: # all points have been removed by func7
         xk = p.xk
         Min = nan
     

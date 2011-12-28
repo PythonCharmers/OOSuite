@@ -95,11 +95,7 @@ def func4(y, e, o, a, nlhc, fo):
     cs = (y + e)/2
     n = y.shape[1]
     s, q = o[:, 0:n], o[:, n:2*n]
-    if nlhc[0] is not None:
-        nlhc_modL, nlhc_modU = nlhc[:, 0:n], nlhc[:, n:2*n]
     ind = logical_or(s > fo, isnan(s)) # TODO: assert isnan(s) is same to isnan(a_modL)
-    if nlhc[0] is not None:
-        ind = logical_or(ind, logical_or(isnan(nlhc_modL), nlhc_modL == inf))
     if any(ind):
         y[ind] = cs[ind]
         # Changes
@@ -109,8 +105,6 @@ def func4(y, e, o, a, nlhc, fo):
 #        a[:, 0:n][ind] = a[:, n:2*n][ind]
 #        o[:, 0:n][ind] = o[:, n:2*n][ind]
     ind = logical_or(q > fo, isnan(q)) # TODO: assert isnan(q) is same to isnan(a_modU)
-    if nlhc[0] is not None:
-        ind = logical_or(ind, logical_or(isnan(nlhc_modU), nlhc_modU == inf))
     if any(ind):
         e[ind] = cs[ind]
         # Changes
