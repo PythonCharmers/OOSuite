@@ -70,12 +70,15 @@ def r14(p, nlhc, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNodes,  \
             tmp1 = o[nlhc==0]
             if tmp1.size != 0:
                 tmp1 = nanmin(tmp1)
-                tmp1 += 1e-14*abs(tmp1)
-                #print tmp1
+                
+                ## to prevent roundoff issues ##
+                tmp1 += 1e-1*abs(tmp1)
+                if tmp1 == 0: tmp1 = 1e-300 
+                ######################
+                
                 r41 = nanmin((r41, tmp1)) 
 
     fo_prev = float(0 if isSNLE else min((r41, r40 - (fTol if maxSolutions == 1 else 0))))
-    
     
     if itn == 0: 
         # TODO: change for constrained probs
