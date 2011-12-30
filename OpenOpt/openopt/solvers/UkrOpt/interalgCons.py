@@ -192,16 +192,18 @@ def processConstraints2(C0, y, e, p, dataType):
             nlh = take(nlh, ind, axis=0, out=nlh[:lj])
             if asarray(DefiniteRange).size != 1: 
                 DefiniteRange = take(DefiniteRange, ind, axis=0, out=DefiniteRange[:lj])
-        
+                
         ind = logical_not(isfinite((nlh)))
         if any(ind):
             ind_l,  ind_u = ind[:, :ind.shape[1]/2], ind[:, ind.shape[1]/2:]
-            y[ind_l] = 0.5 * (y[ind_l] + e[ind_l])
-            e[ind_u] = 0.5 * (y[ind_u] + e[ind_u])
+            y[ind_l], e[ind_u] = 0.5 * (y[ind_l] + e[ind_l]), 0.5 * (y[ind_u] + e[ind_u])
+            
             nlh_l, nlh_u = nlh[:, nlh.shape[1]/2:], nlh[:, :nlh.shape[1]/2]
             
             # copy() is used bacause += and -= operators are involved on nlh in this cycle and probably some other computations
-            nlh_l[ind_u], nlh_u[ind_l] = nlh_u[ind_u].copy(), nlh_l[ind_l].copy()
+            #nlh_l[ind_u], nlh_u[ind_l] = nlh_u[ind_u].copy(), nlh_l[ind_l].copy()
+            tmp1, tmp2 = nlh_u[ind_u].copy(), nlh_l[ind_l].copy()
+            nlh_l[ind_u], nlh_u[ind_l] = tmp1, tmp2
             
         
     return y, e, nlh, DefiniteRange

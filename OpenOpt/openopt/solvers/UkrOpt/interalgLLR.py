@@ -232,7 +232,7 @@ def func1(tnlhf, tnlhf_curr, y, e, o, a, _s_prev, p, Case, r9 = None):
         ind = logical_or(ind, r9)
     
     if any(ind):
-        #print('ind length: %d' % len(where(ind)[0]))
+#        print('ind length: %d' % len(where(ind)[0]))
         bs = e[ind] - y[ind]
         t[ind] = nanargmax(bs, 1) # ordinary numpy.argmax can be used as well
         

@@ -72,7 +72,7 @@ def r14(p, nlhc, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNodes,  \
                 tmp1 = nanmin(tmp1)
                 
                 ## to prevent roundoff issues ##
-                tmp1 += 1e-1*abs(tmp1)
+                tmp1 += 1e-14*abs(tmp1)
                 if tmp1 == 0: tmp1 = 1e-300 
                 ######################
                 
