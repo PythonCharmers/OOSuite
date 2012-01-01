@@ -181,6 +181,7 @@ def func1(tnlhf, tnlhf_curr, y, e, o, a, _s_prev, p, Case, r9 = None):
             #ind.fill(False)
             ###################################################
         elif p.solver.dataHandling == 'raw':
+            #tnlhf = tnlhf_curr 
             tnlh_1, tnlh_2 = tnlhf[:, 0:n], tnlhf[:, n:]
             PointCoordsTNHLF_max =  where(logical_or(tnlh_1 < tnlh_2, isnan(tnlh_1)), tnlh_2, tnlh_1)
             TNHLF_min =  where(logical_or(tnlh_1 > tnlh_2, isnan(tnlh_1)), tnlh_2, tnlh_1)
@@ -191,21 +192,22 @@ def func1(tnlhf, tnlhf_curr, y, e, o, a, _s_prev, p, Case, r9 = None):
             #1
             t = nanargmin(TNHL_curr_min, 1)
             
-            
+            t = nanargmin(TNHLF_min, 1)
             #2
             #t = nanargmin(tnlhf, 1) % n
             #3
             #t = nanargmin(a, 1) % n
             
             d = nanmin(vstack(([tnlhf[w, t], tnlhf[w, n+t]])), 0)
-            
+            _s = d
+
             #OLD
             #!#!#!#! Don't replace it by _s_prev - d <= ... to omit inf-inf = nan !#!#!#
             #ind = _s_prev  <= d + ((2**-n / log(2)) if n > 15 else log2(1+2**-n)) 
             #ind = _s_prev - d <= ((2**-n / log(2)) if n > 15 else log2(1+2**-n)) 
             
             #NEW
-            ind = _s_prev  <= d + 1.0/n
+            ind = _s_prev  <= d + 1.0/n#(n*(1+p.nc+p.nh+p.nb+p.nbeq)) 
             
             #print _s_prev - d
             ###################################################
@@ -232,6 +234,9 @@ def func1(tnlhf, tnlhf_curr, y, e, o, a, _s_prev, p, Case, r9 = None):
         ind = logical_or(ind, r9)
     
     if any(ind):
+        r10 = where((_s_prev -d)*n <=  1.0)
+#        print _s_prev
+#        print ((_s_prev -d)*n)[r10]
 #        print('ind length: %d' % len(where(ind)[0]))
         bs = e[ind] - y[ind]
         t[ind] = nanargmax(bs, 1) # ordinary numpy.argmax can be used as well
@@ -392,6 +397,7 @@ def func11(y, e, nlhc, o, a, _s, p):
 #        ll = nanmin(where(logical_or(q>s, isnan(q)), s, q), 1)
 #        nlhf = log2(uu-ll)
         nlhf = log2(a-o)
+#        nlhf = hstack((nlhf[:, :nlhf.shape[1]/2], nlhf[:, nlhf.shape[1]/2:]))
 
     if p.probType == 'IP':
         F = 0.25 * (a[w, ind] + o[w, ind] + a[w, n+ind] + o[w, n+ind])

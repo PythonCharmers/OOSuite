@@ -140,14 +140,6 @@ def processConstraints2(C0, y, e, p, dataType):
         dep = f._getDep() # TODO: Rework it for fixed vars
         isSubset = len(dep) < n
         
-        #debug
-#        debug = 0
-#        if debug:
-#            ip = func10(y, e, p._freeVarsList)
-#            o2, a2, definiteRange = func8(ip, f, dataType)
-#            o2, a2  = o2.reshape(2*n, m).T, a2.reshape(2*n, m).T
-            #print 'o2.shape:', o2.shape
-        #debug end
         
         if isSubset:
             o, a = r0.lb, r0.ub
@@ -160,23 +152,14 @@ def processConstraints2(C0, y, e, p, dataType):
         for j, v in enumerate(p._freeVarsList):
             if v in dep:
                 o, a = vstack((r[v][0].lb, r[v][1].lb)), vstack((r[v][0].ub, r[v][1].ub))
-                #print '>!>', o.shape
                 
-#                if debug:
-#                    print o, o2[:, j]
-#                    if not max(abs(o-o2[:, j])) < 1e-10:
-#                        pass
-#                    if not max(abs(a-a2[:, j])) < 1e-10:
-#                        pass
                 # TODO: 1) FIX IT it for matrix definiteRange
                 # 2) seems like DefiniteRange = (True, True) for any variable is enough for whole range to be defined in the involved node
                 DefiniteRange = logical_and(DefiniteRange, r[v][0].definiteRange)
                 DefiniteRange = logical_and(DefiniteRange, r[v][1].definiteRange)
                 
                 tmp = log2(getTmp(o, a, r16, r17, tol, m, dataType))
-#                nlh[:, 2*j] -= tmp[:, tmp.shape[1]/2:].flatten()
-#                nlh[:, 2*j+1] -= tmp[:, :tmp.shape[1]/2].flatten()
-                
+               
                 nlh[:, n+j] -= tmp[:, tmp.shape[1]/2:].flatten()
                 nlh[:, j] -= tmp[:, :tmp.shape[1]/2].flatten()
             else:
@@ -201,11 +184,11 @@ def processConstraints2(C0, y, e, p, dataType):
             nlh_l, nlh_u = nlh[:, nlh.shape[1]/2:], nlh[:, :nlh.shape[1]/2]
             
             # copy() is used bacause += and -= operators are involved on nlh in this cycle and probably some other computations
-            #nlh_l[ind_u], nlh_u[ind_l] = nlh_u[ind_u].copy(), nlh_l[ind_l].copy()
-            tmp1, tmp2 = nlh_u[ind_u].copy(), nlh_l[ind_l].copy()
-            nlh_l[ind_u], nlh_u[ind_l] = tmp1, tmp2
+            nlh_l[ind_u], nlh_u[ind_l] = nlh_u[ind_u].copy(), nlh_l[ind_l].copy()
             
-        
+#    print nlh
+#    from numpy import diff
+#    print diff(nlh)
     return y, e, nlh, DefiniteRange
 
 def getTmp(o, a, r16, r17, tol, m, dataType):
@@ -260,7 +243,8 @@ def getTmp(o, a, r16, r17, tol, m, dataType):
         tmp[r16 <= o] = 1
         
     elif isfinite(r17) and not isfinite(r16):
-        tmp = (r17-a+tol) / aor20
+        tmp = (r17-o+tol) / aor20
+        #tmp = (r17-a+tol) / aor20
         
         tmp[isinf(o)] = 1-1e-10 # (to prevent inf/inf=nan);TODO: rework it
         tmp[logical_and(isinf(a), logical_not(isinf(o)))] = 1e-10 # (to prevent inf/inf=nan); TODO: rework it
