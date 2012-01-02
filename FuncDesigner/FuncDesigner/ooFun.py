@@ -3,7 +3,7 @@
 from numpy import inf, asfarray, copy, all, any, empty, atleast_2d, zeros, dot, asarray, atleast_1d, empty, \
 ones, ndarray, where, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum as npSum, prod, nonzero,\
 isnan, asscalar, zeros_like, ones_like, amin, amax, logical_and, logical_or, isinf, logical_not, logical_xor, flipud, tile, float64
-
+from traceback import extract_stack 
 try:
     from bottleneck import nanmin, nanmax
 except ImportError:
@@ -293,6 +293,23 @@ class oofun:
     # overload "a+b"
     # @checkSizes
     def __add__(self, other):
+        
+        stk = extract_stack() 
+#        import inspect
+#        tmp = inspect.stack()
+#        print('len(tmp):', len(tmp))
+        
+        if len(stk) >=3:
+            if stk[-3][2] == 'sum':
+                #numpy.sum?
+                pWarn('''
+                seems like you use numpy.sum() on FuncDesigner obects, 
+                using FuncDesigner.sum() instead is highly recommended''')
+            elif stk[-3][2] == '<module>' and stk[-3][3] is not None and 'sum(' in stk[-3][3]:
+                pWarn('''
+                seems like you use Python sum() on FuncDesigner obects, 
+                using FuncDesigner.sum() instead is highly recommended''')                
+        
         if not isinstance(other, (oofun, list, ndarray, tuple)) and not isscalar(other):
             raise FuncDesignerException('operation oofun_add is not implemented for the type ' + str(type(other)))
             
@@ -641,17 +658,17 @@ class oofun:
                         t_max[atleast_1d(ind_nan)] = nan
                     
                     #1
-                    #t_min[atleast_1d(logical_and(ind, logical_and(t_min>0, ub >= 0)))] = 0.0
+                    t_min[atleast_1d(logical_and(ind, logical_and(t_min>0, ub >= 0)))] = 0.0
                     
-                    #2
-                    if asarray(other).size == 1:
-                        IND = not isNonInteger
-                    else:
-                        ind2 = logical_not(isNonInteger)
-                        IND = other[ind2] % 2 == 0
-                    
-                    if any(IND):
-                        t_min[logical_and(IND, atleast_1d(logical_and(lb<0, ub >= 0)))] = 0.0
+#                    #2
+#                    if asarray(other).size == 1:
+#                        IND = not isNonInteger
+#                    else:
+#                        ind2 = logical_not(isNonInteger)
+#                        IND = other[ind2] % 2 == 0
+#                    
+#                    if any(IND):
+#                        t_min[logical_and(IND, atleast_1d(logical_and(lb<0, ub >= 0)))] = 0.0
                 return vstack((t_min, t_max)), definiteRange
         else:
             f = lambda x, y: asarray(x) ** y
