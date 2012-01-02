@@ -300,7 +300,7 @@ class oofun:
 #        tmp = inspect.stack()
 #        print('len(tmp):', len(tmp))
         
-        if len(stk) >=3 and not stk[-2][0].endswith('ooFun.py'):
+        if len(stk) >=3 and not stk[-2][0].endswith('ooFun.py') and not stk[-2][0].endswith('overloads.py'):
             if stk[-3][2] == 'sum':
                 #numpy.sum?
                 pWarn('''

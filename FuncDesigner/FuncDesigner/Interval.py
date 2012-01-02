@@ -82,6 +82,7 @@ def ZeroCriticalPointsInterval(inp, func):
             F0 = func(0.0)
             t_min[atleast_1d(logical_and(ind, t_min > F0))] = F0
             t_max[atleast_1d(logical_and(ind, t_max < F0))] = F0
+
         return  vstack((t_min, t_max)), definiteRange
     return interval
 #    if isscalar(arg_infinum):

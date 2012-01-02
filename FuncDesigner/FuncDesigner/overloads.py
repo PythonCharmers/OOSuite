@@ -302,21 +302,41 @@ def sum(inp, *args, **kwargs):
         def interval(domain, dtype):
            
             v = domain.modificationVar
-            #print 'v:', v
             if v is not None:
                 # self already must be in domain.storedSums
                 R, DefiniteRange = domain.storedSums[r][None]
+                if not np.all(np.isfinite(R)):
+                    R = R0.copy()
+                    DefiniteRange = True
+                    #####################
+                    # !!! don't use sum([inp._interval(domain, dtype) for ...]) here
+                    # to reduce memory consumption
+                    for inp in INP:
+                        arg_lb_ub, definiteRange = inp._interval(domain, dtype)
+                        DefiniteRange = logical_and(DefiniteRange, definiteRange)
+                        if R.shape == arg_lb_ub.shape:
+                            R += arg_lb_ub
+                        else:
+                            R = R + arg_lb_ub
+                    #####################
+                    return R, DefiniteRange
+
                 R=R.copy()
                 for inp in r.storedSumsFuncs[v]:
                     # TODO: mb rework definiteRange processing ?
                     arg_lb_ub, definiteRange = inp._interval(domain, dtype)
                     R += arg_lb_ub
                 R -= domain.storedSums[r][v]
+                
+                # To supress inf-inf=nan, however, it doesn't work properly yet, other code is used
+                R[arg_lb_ub == np.inf] = np.inf
+                R[arg_lb_ub == -np.inf] = -np.inf
+                
                 return R, definiteRange
             else:
                 domain.storedSums[r] = {}        
 
-            assert np.asarray(r0).ndim <= 1
+            #assert np.asarray(r0).ndim <= 1
             R = R0.copy()
 
             #####################
@@ -330,7 +350,7 @@ def sum(inp, *args, **kwargs):
                 for oov in Tmp:
                     tmp = domain.storedSums[r].get(oov, None)
                     if tmp is None:
-                        domain.storedSums[r][oov] = arg_lb_ub
+                        domain.storedSums[r][oov] = arg_lb_ub.copy()
                     else:
                         domain.storedSums[r][oov] += arg_lb_ub
                        
