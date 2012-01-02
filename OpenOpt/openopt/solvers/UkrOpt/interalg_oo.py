@@ -50,7 +50,7 @@ class interalg(baseSolver):
         isODE = p.probType == 'ODE'
         isSNLE = p.probType in ('NLSP', 'SNLE')
         if self.intervalObtaining == 'auto':
-            intervalObtaining=1 if isSNLE else 2
+            intervalObtaining=2 
         
         if not p.__isFiniteBoxBounded__() and not isODE: 
             p.err('''

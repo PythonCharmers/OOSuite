@@ -23,6 +23,7 @@ def r14(p, nlhc, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNodes,  \
     
     
     Case = p.solver.intervalObtaining
+
     if Case == 1:
         ip = func10(y, e, vv)
         #o, a = func8(ip, asdf1 + 1e10*p._cons_obj if p._cons_obj is not None else asdf1, dataType)
@@ -32,7 +33,24 @@ def r14(p, nlhc, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNodes,  \
 #        o, a, definiteRange = o2, a2, definiteRange2
         f = asdf1 + p._cons_obj if p._cons_obj is not None else asdf1
         o, a, definiteRange = func82(y, e, vv, f, dataType)
+    elif Case == 3:
+        # Used for debug
+        ip = func10(y, e, vv)
+        o, a, definiteRange = func8(ip, asdf1 + p._cons_obj if p._cons_obj is not None else asdf1, dataType)
         
+        f = asdf1 + p._cons_obj if p._cons_obj is not None else asdf1
+        o2, a2, definiteRange2 = func82(y, e, vv, f, dataType)
+        from numpy import allclose
+        lf, lf2 = o.copy(), o2.copy()
+        lf[isnan(lf)] = 0.123
+        lf2[isnan(lf2)] = 0.123
+        if not allclose(lf, lf2, atol=1e-10):
+            raise 0
+        uf, uf2 = a.copy(), a2.copy()
+        uf[isnan(uf)] = 0.123
+        uf2[isnan(uf2)] = 0.123
+        if not allclose(uf, uf2, atol=1e-10):
+            raise 0
 
 #        o = hstack([r[v][0].lb for v in vv] + [r[v][1].lb for v in vv])
 #        a = hstack([r[v][0].ub for v in vv] + [r[v][1].ub for v in vv])
