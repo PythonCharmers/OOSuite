@@ -278,17 +278,19 @@ def sum(inp, *args, **kwargs):
                 continue
             INP.append(elem)
 
+        f = lambda *args: r0 + PythonSum(args)
+        r = oofun(f, INP) 
+
+        r.storedSumsFuncs = {}
+        for inp in INP:
+            Dep = [inp] if elem.is_oovar else inp._getDep()
+            for v in Dep:
+                if v not in r.storedSumsFuncs:
+                    r.storedSumsFuncs[v] = set()
+                r.storedSumsFuncs[v].add(inp)
+                                
         # TODO:  check for fixed inputs
         #f = lambda *args: r0 + np.sum(args)
-        f = lambda *args: r0 + PythonSum(args)
-            #tmp = np.asarray(args)
-            #return r0 + (tmp.sum(0) if tmp.ndim > 1 else tmp.sum())
-        
-        #!!!!!!!!!!!!!!!!!! TODO: check INP for complex cases (not list of oovars)
-        
-#        if len(INP) == 0: 
-#            INP = None
-        r = oofun(f, INP) 
         
         def getOrder(*args, **kwargs):
             orders = [0]+[inp.getOrder(*args, **kwargs) for inp in INP]
@@ -296,24 +298,54 @@ def sum(inp, *args, **kwargs):
         r.getOrder = getOrder
         
         R0 = np.vstack((r0, r0))
+
         def interval(domain, dtype):
+           
+            v = domain.modificationVar
+            #print 'v:', v
+            if v is not None:
+                # self already must be in domain.storedSums
+                R, DefiniteRange = domain.storedSums[r][None]
+                R=R.copy()
+                for inp in r.storedSumsFuncs[v]:
+                    # TODO: mb rework definiteRange processing ?
+                    arg_lb_ub, definiteRange = inp._interval(domain, dtype)
+                    R += arg_lb_ub
+                R -= domain.storedSums[r][v]
+                return R, definiteRange
+            else:
+                domain.storedSums[r] = {}        
+
             assert np.asarray(r0).ndim <= 1
-            r = R0.copy()
-            
+            R = R0.copy()
+
             #####################
             # !!! don't use sum([inp._interval(domain, dtype) for ...]) here
             # to reduce memory consumption
             DefiniteRange = True
+            
             for inp in INP:
                 arg_lb_ub, definiteRange = inp._interval(domain, dtype)
+                Tmp = inp._getDep() if not inp.is_oovar else [inp]
+                for oov in Tmp:
+                    tmp = domain.storedSums[r].get(oov, None)
+                    if tmp is None:
+                        domain.storedSums[r][oov] = arg_lb_ub
+                    else:
+                        domain.storedSums[r][oov] += arg_lb_ub
+                       
+                
                 DefiniteRange = logical_and(DefiniteRange, definiteRange)
-                if r.shape == arg_lb_ub.shape:
-                    r += arg_lb_ub
+                if R.shape == arg_lb_ub.shape:
+                    R += arg_lb_ub
                 else:
-                    r = r + arg_lb_ub
+                    R = R + arg_lb_ub
             #####################
             
-            return r, DefiniteRange
+            if v is None:
+                domain.storedSums[r][None] = R, DefiniteRange
+                
+            return R, DefiniteRange
             
         r._interval_ = interval
         r.vectorized = True

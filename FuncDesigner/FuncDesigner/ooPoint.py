@@ -24,6 +24,7 @@ class ooPoint(dict):
     
     def __init__(self, *args, **kwargs):
         self.storedIntervals = {}
+        self.storedSums = {}
         
         if kwargs.get('skipArrayCast', False): 
             Asfarray = lambda arg: arg
