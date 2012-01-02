@@ -33,19 +33,24 @@ class interalg(baseSolver):
     #maxMem = '150MB'
     maxNodes = 150000
     maxActiveNodes = 150
-    dataHandling = 'auto'
-    intervalObtaining = 2
+    
+    
     _requiresBestPointDetection = True
     
     __isIterPointAlwaysFeasible__ = lambda self, p: p.__isNoMoreThanBoxBounded__() #and p.probType != 'IP'
     _requiresFiniteBoxBounds = True
 
-    def __init__(self): pass
+    def __init__(self): 
+        self.dataHandling = 'auto'
+        self.intervalObtaining = 'auto'
+        
     def __solver__(self, p):
         
         isOpt = p.probType in ['NLP', 'NSP', 'GLP']
         isODE = p.probType == 'ODE'
         isSNLE = p.probType in ('NLSP', 'SNLE')
+        if self.intervalObtaining == 'auto':
+            intervalObtaining=1 if isSNLE else 2
         
         if not p.__isFiniteBoxBounded__() and not isODE: 
             p.err('''

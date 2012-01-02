@@ -183,12 +183,16 @@ def func1(tnlhf, tnlhf_curr, y, e, o, a, _s_prev, p, Case, r9 = None):
         elif p.solver.dataHandling == 'raw':
             #tnlhf = tnlhf_curr 
             tnlh_1, tnlh_2 = tnlhf[:, 0:n], tnlhf[:, n:]
-            PointCoordsTNHLF_max =  where(logical_or(tnlh_1 < tnlh_2, isnan(tnlh_1)), tnlh_2, tnlh_1)
+            #PointCoordsTNHLF_max =  where(logical_or(tnlh_1 < tnlh_2, isnan(tnlh_1)), tnlh_2, tnlh_1)
             TNHLF_min =  where(logical_or(tnlh_1 > tnlh_2, isnan(tnlh_1)), tnlh_2, tnlh_1)
             _s = nanmin(TNHLF_min, 1)
             
+            
+            
             tnlh_curr_1, tnlh_curr_2 = tnlhf_curr[:, 0:n], tnlhf_curr[:, n:]
             TNHL_curr_min =  where(logical_or(tnlh_curr_1 < tnlh_curr_2, isnan(tnlh_curr_2)), tnlh_curr_1, tnlh_curr_2)
+            
+            
             #1
             t = nanargmin(TNHL_curr_min, 1)
             
