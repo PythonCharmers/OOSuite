@@ -299,7 +299,7 @@ class oofun:
 #        tmp = inspect.stack()
 #        print('len(tmp):', len(tmp))
         
-        if len(stk) >=3:
+        if len(stk) >=3 and not stk[-2][0].endswith('ooFun.py'):
             if stk[-3][2] == 'sum':
                 #numpy.sum?
                 pWarn('''
