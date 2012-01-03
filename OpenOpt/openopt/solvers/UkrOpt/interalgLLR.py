@@ -223,7 +223,6 @@ def func1(tnlhf, tnlhf_curr, y, e, o, a, _s_prev, p, Case, r9 = None):
         #_s = nanmax(tmp, 1)
         _s = 0.5*nanmin(tmp, 1)
         t = nanargmin(tmp,1)
-        #d = tmp[w, t]
         ind = 2**(-n) >= (_s_prev - _s)/asarray(_s, 'float64')
         #ind = _s  >= 2 ** (1.0/n) * _s_prev
         
@@ -238,7 +237,6 @@ def func1(tnlhf, tnlhf_curr, y, e, o, a, _s_prev, p, Case, r9 = None):
         ind = logical_or(ind, r9)
     
     if any(ind):
-        r10 = where((_s_prev -d)*n <=  1.0)
 #        print _s_prev
 #        print ((_s_prev -d)*n)[r10]
 #        print('ind length: %d' % len(where(ind)[0]))
