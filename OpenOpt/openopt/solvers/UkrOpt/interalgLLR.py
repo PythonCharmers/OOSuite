@@ -194,33 +194,33 @@ def func1(tnlhf, tnlhf_curr, residual, y, e, o, a, _s_prev, p, Case, r9 = None):
             else: Tmp = log2(a-o)
             #Tmp = tnlhf + log2(residual)
             tmp_1, tmp_2 = Tmp[:, 0:n], Tmp[:, n:]
+            Tmp1 = Tmp
             Tmp = where(logical_or(tmp_1 < tmp_2, isnan(tmp_1)), tmp_2, tmp_1)
-            _s = nanmin(Tmp, 1)
+#            _s = nanmin(Tmp, 1)
             
             
             tnlh_curr_1, tnlh_curr_2 = tnlhf_curr[:, 0:n], tnlhf_curr[:, n:]
             TNHL_curr_min =  where(logical_or(tnlh_curr_1 < tnlh_curr_2, isnan(tnlh_curr_2)), tnlh_curr_1, tnlh_curr_2)
             
-            
             #1
-#            t = nanargmin(TNHL_curr_min, 1)
+            t = nanargmin(TNHL_curr_min, 1)
             
 #            t = nanargmin(TNHLF_min, 1)
             
-            t = nanargmin(Tmp, 1)
-            
-            #2
-            #t = nanargmin(tnlhf, 1) % n
-            #3
-            #t = nanargmin(a, 1) % n
+#            t = nanargmin(Tmp, 1)
             
             # Prev
-            d = nanmin(vstack(([tnlhf[w, t], tnlhf[w, n+t]])), 0)
+            T = tnlhf
+#            if residual is not None and residual.dtype != object: 
+#                T +=  log2(residual) - log2(p.fTol)
+#            T = tnlhf_curr
+#            T = Tmp1
+            d = nanmin(vstack(([T[w, t], T[w, n+t]])), 0)
             
+#            d = nanmin(TNHL_curr_min, 1)
             # NEW
 #            d = _s
-            
-#            _s = d
+            _s = d
 
             #OLD
             #!#!#!#! Don't replace it by _s_prev - d <= ... to omit inf-inf = nan !#!#!#
