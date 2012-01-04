@@ -162,7 +162,7 @@ def func3(an, maxActiveNodes):
         an1, _in = an, array([], object)
     return an1, _in
 
-def func1(tnlhf, tnlhf_curr, y, e, o, a, _s_prev, p, Case, r9 = None):
+def func1(tnlhf, tnlhf_curr, residual, y, e, o, a, _s_prev, p, Case, r9 = None):
     m, n = y.shape
     w = arange(m)
 
@@ -185,8 +185,17 @@ def func1(tnlhf, tnlhf_curr, y, e, o, a, _s_prev, p, Case, r9 = None):
             tnlh_1, tnlh_2 = tnlhf[:, 0:n], tnlhf[:, n:]
             #PointCoordsTNHLF_max =  where(logical_or(tnlh_1 < tnlh_2, isnan(tnlh_1)), tnlh_2, tnlh_1)
             TNHLF_min =  where(logical_or(tnlh_1 > tnlh_2, isnan(tnlh_1)), tnlh_2, tnlh_1)
-            _s = nanmin(TNHLF_min, 1)
             
+            # Set _s
+            #1
+#            _s = nanmin(TNHLF_min, 1)
+            #2
+            if residual is not None and residual.dtype != object: Tmp =log2(a-o) +  log2(residual) - log2(p.fTol)
+            else: Tmp = log2(a-o)
+            #Tmp = tnlhf + log2(residual)
+            tmp_1, tmp_2 = Tmp[:, 0:n], Tmp[:, n:]
+            Tmp = where(logical_or(tmp_1 < tmp_2, isnan(tmp_1)), tmp_2, tmp_1)
+            _s = nanmin(Tmp, 1)
             
             
             tnlh_curr_1, tnlh_curr_2 = tnlhf_curr[:, 0:n], tnlhf_curr[:, n:]
@@ -194,16 +203,24 @@ def func1(tnlhf, tnlhf_curr, y, e, o, a, _s_prev, p, Case, r9 = None):
             
             
             #1
-            t = nanargmin(TNHL_curr_min, 1)
+#            t = nanargmin(TNHL_curr_min, 1)
             
-            t = nanargmin(TNHLF_min, 1)
+#            t = nanargmin(TNHLF_min, 1)
+            
+            t = nanargmin(Tmp, 1)
+            
             #2
             #t = nanargmin(tnlhf, 1) % n
             #3
             #t = nanargmin(a, 1) % n
             
+            # Prev
             d = nanmin(vstack(([tnlhf[w, t], tnlhf[w, n+t]])), 0)
-            _s = d
+            
+            # NEW
+#            d = _s
+            
+#            _s = d
 
             #OLD
             #!#!#!#! Don't replace it by _s_prev - d <= ... to omit inf-inf = nan !#!#!#
@@ -240,6 +257,7 @@ def func1(tnlhf, tnlhf_curr, y, e, o, a, _s_prev, p, Case, r9 = None):
 #        print _s_prev
 #        print ((_s_prev -d)*n)[r10]
 #        print('ind length: %d' % len(where(ind)[0]))
+#        print where(ind)[0].size
         bs = e[ind] - y[ind]
         t[ind] = nanargmax(bs, 1) # ordinary numpy.argmax can be used as well
         
@@ -318,8 +336,9 @@ def func12(an, maxActiveNodes, p, solutions, r6, vv, varTols, fo, Case):
         
         if p.probType != 'IP': 
             nlhc = asarray([t.nlhc for t in an1Candidates])
+            residual = asarray([t.residual for t in an1Candidates]) 
             yc, ec = func4(yc, ec, oc, ac, nlhc, fo)
-        t, _s = func1(tnlhf, tnlhf_curr, yc, ec, oc, ac, SIc, p, Case)
+        t, _s = func1(tnlhf, tnlhf_curr, residual, yc, ec, oc, ac, SIc, p, Case)
         
         # OLD
         #_s = tile(_s, 2)
@@ -329,18 +348,10 @@ def func12(an, maxActiveNodes, p, solutions, r6, vv, varTols, fo, Case):
             _s = tile(_s, 2)
         else:
             m, n = yc.shape
-            #w = arange(m)
-            #t = nanargmin(ac[:, :n]-oc[:, :n] + ac[:, n:] - oc[:, n:], 1) 
-            #tmp = nanmax([ac[:, :n] - oc[:, :n], 
-            #        ac[:, n:] - oc[:, n:]], 0)
-#            tmp = ac[:, :n] - oc[:, :n] + ac[:, n:] - oc[:, n:]
-#            tmp = nanmin(tmp, 1)
-##            tmp = ac[w, t] - oc[w, t] + \
-##                    ac[w, n+t] - oc[w, n+t]
-#            _s = tile(2*tmp, 2)
+
             oc_modL, oc_modU = oc[:, :n], oc[:, n:]
             ac_modL, ac_modU = ac[:, :n], ac[:, n:]
-            # TODO: handle nans
+#            # TODO: handle nans
             mino = where(oc_modL < oc_modU, oc_modL, oc_modU)
             maxa = where(ac_modL < ac_modU, ac_modU, ac_modL)
             _s = nanmin(maxa - mino, 1)
@@ -371,11 +382,11 @@ def func12(an, maxActiveNodes, p, solutions, r6, vv, varTols, fo, Case):
         
     return y, e, _in, _s
 
-Fields = ['key', 'y', 'e', 'nlhf','nlhc', 'o', 'a', '_s']
+Fields = ['key', 'y', 'e', 'nlhf','nlhc', 'residual','o', 'a', '_s']
 #FuncValFields = ['key', 'y', 'e', 'nlhf','nlhc', 'o', 'a', '_s','r18', 'r19']
 IP_fields = ['key', 'y', 'e', 'o', 'a', '_s','F', 'volume', 'volumeResidual']
 
-def func11(y, e, nlhc, o, a, _s, p): 
+def func11(y, e, nlhc, residual, o, a, _s, p): 
     m, n = y.shape
     if p.probType == "IP":
         w = arange(m)
@@ -406,7 +417,10 @@ def func11(y, e, nlhc, o, a, _s, p):
         return [si(IP_fields, sup_inf_diff[i], y[i], e[i], o[i], a[i], _s[i], F[i], volume[i], volumeResidual[i]) for i in range(m)]
     else:
         assert p.probType in ('GLP', 'NLP', 'NSP', 'SNLE', 'NLSP')
-        return [si(Fields, Tmp[i], y[i], e[i], nlhf[i], nlhc[i] if nlhc is not None else None, o[i], a[i], _s[i]) for i in range(m)]
+        return [si(Fields, Tmp[i], y[i], e[i], nlhf[i], 
+                          nlhc[i] if nlhc is not None else None, 
+                          residual[i] if residual is not None else None, 
+                          o[i], a[i], _s[i]) for i in range(m)]
     
 #    else:
 #        r18, r19 = r3[:, :n], r3[:, n:]

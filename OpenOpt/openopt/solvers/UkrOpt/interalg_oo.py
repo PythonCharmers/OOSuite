@@ -284,38 +284,14 @@ class interalg(baseSolver):
         
         for itn in range(p.maxIter+10):
             if len(C0) != 0: 
-                
-                #!!!!!!  Debug
-#                y1, e1, nlhc1, definiteRange1 = processConstraints(C0, y, e, p, dataType)
-#                y2, e2, nlhc2, definiteRange2 = processConstraints2(C0, y, e, p, dataType)
-#                if not all(definiteRange1==definiteRange2):
-#                    pass
-#                if not amax(abs(y1-y2)) < 1e-10:
-#                    pass
-#                if not amax(abs(e1-e2)) < 1e-10:
-#                    pass
-#                ind_ = where(isfinite(nlhc1))
-#                if not amax(abs(nlhc1[ind_]-nlhc2[ind_])) < 1e-10:
-#                    pass
-                # Debug end
-                
                 Func = processConstraints if self.intervalObtaining == 1 else processConstraints2
-                y, e, nlhc, definiteRange = Func(C0, y, e, p, dataType)
-#                from numpy import sum, isfinite
-#                print p.iter,  len(nlhc[isfinite(nlhc)])#, y.shape, e.shape
-                
-#                # DEBUG
-#                y1, e1, nlhc1, definiteRange1 = processConstraints(C0, y, e, p, dataType)
-#                y2, e2, nlhc2, definiteRange2 = processConstraints2(C0, y, e, p, dataType)
-#                if amax(abs(nlhc1 - nlhc2)) > 1e-10:
-#                    print '!!!', amax(abs(nlhc1 - nlhc2))
-                
+                y, e, nlhc, residual, definiteRange = Func(C0, y, e, p, dataType)
             else:
-                nlhc, definiteRange = None, True
+                nlhc, residual, definiteRange = None, None, True
             
             if y.size != 0:
                 an, g, fo, _s, solutions, r6, xRecord, r41, r40 = \
-                pb(p, nlhc, definiteRange, y, e, vv, asdf1, C, r40, itn, g, \
+                pb(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, \
                              nNodes, r41, fTol, maxSolutions, varTols, solutions, r6, _in, \
                              dataType, maxNodes, _s, xRecord)
                 if _s is None:

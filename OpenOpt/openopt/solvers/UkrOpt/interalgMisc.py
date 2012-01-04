@@ -15,7 +15,7 @@ except ImportError:
 #    # TODO: rework all(definiteRange)
 #    return o, a, all(definiteRange)
 
-def r14(p, nlhc, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNodes,  \
+def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNodes,  \
          r41, fTol, maxSolutions, varTols, solutions, r6, _in, dataType, \
          maxNodes, _s, xRecord):
 
@@ -51,25 +51,6 @@ def r14(p, nlhc, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNodes,  \
         uf2[isnan(uf2)] = 0.123
         if not allclose(uf, uf2, atol=1e-10):
             raise 0
-
-#        o = hstack([r[v][0].lb for v in vv] + [r[v][1].lb for v in vv])
-#        a = hstack([r[v][0].ub for v in vv] + [r[v][1].ub for v in vv])
-        #definiteRange = hstack([r[v][0].definiteRange for v in vv] + [r[v][1].definiteRange for v in vv])
-        # TODO: rework all(definiteRange)
-        #return o, a, definiteRange#all(definiteRange)
-
-#    else:
-#        ip = func10(y, e, vv)
-#        #o, a = func8(ip, asdf1 + 1e10*p._cons_obj if p._cons_obj is not None else asdf1, dataType)
-#        o, a, definiteRange = func8(ip, asdf1 + p._cons_obj if p._cons_obj is not None else asdf1, dataType)
-#        o2, a2, definiteRange2 = func82(y, e, vv, asdf1 + p._cons_obj if p._cons_obj is not None else asdf1, dataType)
-#        print 'diff:',  max(abs(o-o2)), max(abs(a-a2))
-
-    #ss = o2.size/2
-    #print (o2, o, )
-    #print max(abs(o2[:ss]-o[:ss])), max(abs(a2[:ss]-a[:ss])), max(abs(o2[ss:]-o[ss:])), max(abs(a2[ss:]-a[ss:]))
-    #print max(abs(o2-o)), max(abs(a2-a))
-#        print o.shape, o2.shape, definiteRange.shape, definiteRange2.shape
     
     if p.debug and any(a + 1e-15 < o):  
         p.warn('interval lower bound exceeds upper bound, it seems to be FuncDesigner kernel bug')
@@ -101,11 +82,11 @@ def r14(p, nlhc, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNodes,  \
     if itn == 0: 
         # TODO: change for constrained probs
         _s = atleast_1d(nanmax(a-o))
-    y, e, o, a, _s = func7(y, e, o, a, _s)    
+    y, e, o, a, _s, nlhc, residual = func7(y, e, o, a, _s, nlhc, residual)    
     if y.size == 0:
         return _in, g, fo_prev, _s, solutions, r6, xRecord, r41, r40
     
-    nodes = func11(y, e, nlhc, o, a, _s, p)
+    nodes = func11(y, e, nlhc, residual, o, a, _s, p)
     
     #y, e = func4(y, e, o, a, fo)
     
@@ -251,10 +232,8 @@ def r13(o, a, PointCoords, PointVals, fTol, varTols, solutions, r6):
     #r5Ind =  where(logical_and(PointVals < fTol, nanmax(omin, 1) == 0.0))[0]
     
     r5Ind =  where(PointVals < fTol)[0]
-    
-    r5 = []
-    for i in r5Ind:#TODO: rework it
-        r5.append(PointCoords[i])
+
+    r5 = PointCoords[r5Ind]
     
     for c in r5:
         if len(solutions) == 0 or not any(all(abs(c - r6) < varTols, 1)): 
@@ -263,31 +242,3 @@ def r13(o, a, PointCoords, PointVals, fTol, varTols, solutions, r6):
             r6 = append(r6, c.reshape(1, -1), 0)
             
     return solutions, r6
-
-#def r13(y, e, o, a, r3, fTol, varTols, solutions, r6):
-#    n = r3.shape[1] / 2
-#    r18, r19 = r3[:, :n], r3[:, n:]
-#    r5_L, r5_U =  where(logical_and(r18 < fTol, o[:, :n] == 0.0)), where(logical_and(r19 < fTol, o[:, n:] == 0.0))
-#    r4 = 0.5 * (y + e)
-#    r20 = 0.5 * (e - y)
-#    r5 = []
-#    # L
-#    for I in range(len(r5_L[0])):#TODO: rework it
-#        i, j = r5_L[0][I], r5_L[1][I]
-#        tmp = r4[i].copy()
-#        tmp[j] -= 0.5*r20[i, j]
-#        r5.append(tmp)
-#    # U
-#    for I in range(len(r5_U[0])):#TODO: rework it
-#        i, j = r5_U[0][I], r5_U[1][I]
-#        tmp = r4[i].copy()
-#        tmp[j] += 0.5*r20[i, j]
-#        r5.append(tmp)
-#    
-#    for c in r5:
-#        if len(solutions) == 0 or not any(all(abs(c - r6) < varTols, 1)): 
-#            solutions.append(c)
-#            #r6 = asarray(solutions)
-#            r6 = append(r6, c.reshape(1, -1), 0)
-#            
-#    return solutions, r6

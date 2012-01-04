@@ -5,7 +5,7 @@ try:
 except ImportError:
     from numpy import nanmin, nanargmin, nanargmax, nanmax
     
-def func7(y, e, o, a, _s):
+def func7(y, e, o, a, _s, nlhc, residual):
     r10 = logical_and(all(isnan(o), 1), all(isnan(a), 1))
     if any(r10):
         j = where(logical_not(r10))[0]
@@ -15,7 +15,11 @@ def func7(y, e, o, a, _s):
         o = take(o, j, axis=0, out=o[:lj])
         a = take(a, j, axis=0, out=a[:lj])
         _s = _s[j]
-    return y, e, o, a, _s
+        if nlhc is not None:
+            nlhc = take(nlhc, j, axis=0, out=nlhc[:lj])
+        if residual is not None:
+            residual = take(residual, j, axis=0, out=residual[:lj])
+    return y, e, o, a, _s, nlhc, residual
 
 def func9(an, fo, g, p):
     
