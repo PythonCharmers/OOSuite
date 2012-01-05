@@ -115,6 +115,40 @@ def cosh(inp):
     
 __all__ += ['sinh', 'cosh']
 
+def tanh(inp):
+    if isinstance(inp, ooarray) and inp.dtype == object:
+        return ooarray([tanh(elem) for elem in inp])        
+    if not isinstance(inp, oofun): return np.tanh(inp)
+    return oofun(np.tanh, inp, d = lambda x: Diag(1.0/np.cosh(x)**2), vectorized = True, criticalPoints = False)
+    
+def arctanh(inp):
+    if isinstance(inp, ooarray) and inp.dtype == object:
+        return ooarray([arctanh(elem) for elem in inp])        
+    if not isinstance(inp, oofun): return np.arctanh(inp)
+    r = oofun(np.arctanh, inp, d = lambda x: Diag(1.0/(1.0-x**2)), vectorized = True, criticalPoints = False)
+    r.getDefiniteRange = get_box1_DefiniteRange
+    r._interval_ = lambda domain, dtype: box_1_interval(inp, np.arctanh, domain, dtype, -np.inf, np.inf)
+    return r
+
+__all__ += ['tanh', 'arctanh']
+
+def arcsinh(inp):
+    if isinstance(inp, ooarray) and inp.dtype == object:
+        return ooarray([arcsinh(elem) for elem in inp])        
+    if not isinstance(inp, oofun): return np.arcsinh(inp)
+    return oofun(np.arcsinh, inp, d = lambda x: Diag(1.0/np.sqrt(1+x**2)), vectorized = True, criticalPoints = False)
+
+def arccosh(inp):
+    if isinstance(inp, ooarray) and inp.dtype == object:
+        return ooarray([arccosh(elem) for elem in inp])        
+    if not isinstance(inp, oofun): return np.arccosh(inp)
+    r = oofun(np.arccosh, inp, d = lambda x: Diag(1.0/np.sqrt(x**2-1.0)), vectorized = True)
+    F0, shift = 0.0, 1.0
+    r._interval_ = lambda domain, dtype: nonnegative_interval(inp, np.arccosh, domain, dtype, F0, shift)
+    return r
+
+__all__ += ['arcsinh', 'arccosh']
+
 def angle(inp1, inp2):
     # returns angle between 2 vectors
     # TODO: 
@@ -129,7 +163,7 @@ def exp(inp):
     if not isinstance(inp, oofun): return np.exp(inp)
     return oofun(np.exp, inp, d = lambda x: Diag(np.exp(x)), vectorized = True, criticalPoints = False)
 
-       
+    
 def sqrt(inp, attachConstraints = True):
     if isinstance(inp, ooarray) and inp.dtype == object:
         return ooarray([sqrt(elem) for elem in inp])

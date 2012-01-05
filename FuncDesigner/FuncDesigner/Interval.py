@@ -92,15 +92,15 @@ def ZeroCriticalPointsInterval(inp, func):
 #    tmp[atleast_1d(logical_and(arg_infinum < 0.0, arg_supremum > 0.0))] = 0.0
 #    return [tmp]
 
-def nonnegative_interval(inp, func, domain, dtype, F0):
+def nonnegative_interval(inp, func, domain, dtype, F0, shift = 0.0):
     lb_ub, definiteRange = inp._interval(domain, dtype)
     lb, ub = lb_ub[0], lb_ub[1]
     
     t_min_max = func(lb_ub)
-    
-    ind = lb < 0.0
+    th = shift # 0.0 + shift = shift
+    ind = lb < th
     if any(ind):
-        t_min_max[0][atleast_1d(logical_and(lb < 0, ub >= 0))] = F0
+        t_min_max[0][atleast_1d(logical_and(lb < th, ub >= th))] = F0
         
         # TODO: rework it with matrix operations
         definiteRange = False
