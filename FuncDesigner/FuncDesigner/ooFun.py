@@ -316,11 +316,11 @@ class oofun:
 #                pWarn('''
 #                seems like you use numpy.sum() on FuncDesigner obects, 
 #                using FuncDesigner.sum() instead is highly recommended''')
-
-            if stk[-3][2] == '<module>' and stk[-3][3] is not None and 'sum(' in stk[-3][3]:
-                pWarn('''
-                seems like you use Python sum() on FuncDesigner obects, 
-                using FuncDesigner.sum() instead is highly recommended''')                
+            for S in stk:
+                if S[2] == '<module>' and S[3] is not None and 'sum(' in S[3]:
+                    pWarn('''
+                    seems like you use Python sum() on FuncDesigner obects, 
+                    using FuncDesigner.sum() instead is highly recommended''')                
         
         if not isinstance(other, (oofun, list, ndarray, tuple)) and not isscalar(other):
             raise FuncDesignerException('operation oofun_add is not implemented for the type ' + str(type(other)))
