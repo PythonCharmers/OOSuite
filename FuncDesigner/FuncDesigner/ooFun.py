@@ -310,17 +310,13 @@ class oofun:
 #            elif frame.f_code is PythonSum.func_code:
 #                print("python sum!") 
         
-        if len(stk) >=3 and not stk[-2][0].endswith('ooFun.py') and not stk[-2][0].endswith('overloads.py'):
-#            if stk[-3][2] == 'sum':
-#                #numpy.sum?
+#
+#        for S in stk:
+#            if not S[0].endswith('ooFun.py') and not S[0].endswith('overloads.py') and \
+#            S[2] == '<module>' and S[3] is not None and 'sum(' in S[3]:
 #                pWarn('''
-#                seems like you use numpy.sum() on FuncDesigner obects, 
-#                using FuncDesigner.sum() instead is highly recommended''')
-            for S in stk:
-                if S[2] == '<module>' and S[3] is not None and 'sum(' in S[3]:
-                    pWarn('''
-                    seems like you use Python sum() on FuncDesigner obects, 
-                    using FuncDesigner.sum() instead is highly recommended''')                
+#                seems like you use Python sum() on FuncDesigner obects, 
+#                using FuncDesigner.sum() instead is highly recommended''')                
         
         if not isinstance(other, (oofun, list, ndarray, tuple)) and not isscalar(other):
             raise FuncDesignerException('operation oofun_add is not implemented for the type ' + str(type(other)))
