@@ -1,5 +1,5 @@
 # created by Dmitrey
-
+PythonSum = sum
 from numpy import inf, asfarray, copy, all, any, empty, atleast_2d, zeros, dot, asarray, atleast_1d, empty, \
 ones, ndarray, where, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum as npSum, prod, nonzero,\
 isnan, asscalar, zeros_like, ones_like, amin, amax, logical_and, logical_or, isinf, logical_not, logical_xor, flipud, tile, float64
@@ -16,6 +16,7 @@ raise_except, DiagonalType
 #from copy import deepcopy
 from ooPoint import ooPoint
 from Interval import Interval
+import inspect
 
 Copy = lambda arg: asscalar(arg) if type(arg)==ndarray and arg.size == 1 else arg.copy() if hasattr(arg, 'copy') else copy(arg)
 Len = lambda x: 1 if isscalar(x) else x.size if type(x)==ndarray else len(x)
@@ -299,14 +300,24 @@ class oofun:
 #        import inspect
 #        tmp = inspect.stack()
 #        print('len(tmp):', len(tmp))
-        
-        if len(stk) >=3 and not stk[-2][0].endswith('ooFun.py') and not stk[-2][0].endswith('overloads.py'):
-            if stk[-3][2] == 'sum':
-                #numpy.sum?
+        for frame_tuple in inspect.stack():
+            frame = frame_tuple[0]
+            if frame.f_code is npSum.func_code:
                 pWarn('''
                 seems like you use numpy.sum() on FuncDesigner obects, 
                 using FuncDesigner.sum() instead is highly recommended''')
-            elif stk[-3][2] == '<module>' and stk[-3][3] is not None and 'sum(' in stk[-3][3]:
+
+#            elif frame.f_code is PythonSum.func_code:
+#                print("python sum!") 
+        
+        if len(stk) >=3 and not stk[-2][0].endswith('ooFun.py') and not stk[-2][0].endswith('overloads.py'):
+#            if stk[-3][2] == 'sum':
+#                #numpy.sum?
+#                pWarn('''
+#                seems like you use numpy.sum() on FuncDesigner obects, 
+#                using FuncDesigner.sum() instead is highly recommended''')
+
+            if stk[-3][2] == '<module>' and stk[-3][3] is not None and 'sum(' in stk[-3][3]:
                 pWarn('''
                 seems like you use Python sum() on FuncDesigner obects, 
                 using FuncDesigner.sum() instead is highly recommended''')                
