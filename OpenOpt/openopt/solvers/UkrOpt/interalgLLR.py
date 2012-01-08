@@ -265,6 +265,7 @@ def func1(tnlhf, tnlhf_curr, residual, y, e, o, a, _s_prev, p, indT, Case):
         _s = 0.5*nanmin(tmp, 1)
         t = nanargmin(tmp,1)
         ind = 2**(-n) >= (_s_prev - _s)/asarray(_s, 'float64')
+        indD = None
         #ind = _s  >= 2 ** (1.0/n) * _s_prev
         
 #        if p.debug: 
@@ -362,6 +363,9 @@ def func12(an, maxActiveNodes, p, solutions, r6, vv, varTols, fo, Case):
             yc, ec, indT = func4(yc, ec, oc, ac, nlhc, fo)
             if indtc[0] is not None:
                 indT = logical_or(indT, indtc)
+        else:
+            residual = None
+            indT = None
         t, _s, indD = func1(tnlhf, tnlhf_curr, residual, yc, ec, oc, ac, SIc, p, indT, Case)
         
         NewD = 1
