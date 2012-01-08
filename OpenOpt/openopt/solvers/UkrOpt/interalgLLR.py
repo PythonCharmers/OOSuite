@@ -162,7 +162,7 @@ def func3(an, maxActiveNodes):
         an1, _in = an, array([], object)
     return an1, _in
 
-def func1(tnlhf, tnlhf_curr, residual, y, e, o, a, _s_prev, p, Case, r9 = None):
+def func1(tnlhf, tnlhf_curr, residual, y, e, o, a, _s_prev, p, indT, Case):
     m, n = y.shape
     w = arange(m)
 
@@ -178,28 +178,29 @@ def func1(tnlhf, tnlhf_curr, residual, y, e, o, a, _s_prev, p, Case, r9 = None):
             
             #NEW
             ind = d  >=  _s_prev / 2 ** (1.0e-12/n)
+            indD = empty(m, bool)
+            indD.fill(True)
             #ind.fill(False)
             ###################################################
         elif p.solver.dataHandling == 'raw':
-            #tnlhf = tnlhf_curr 
             tnlh_1, tnlh_2 = tnlhf[:, 0:n], tnlhf[:, n:]
-            #PointCoordsTNHLF_max =  where(logical_or(tnlh_1 < tnlh_2, isnan(tnlh_1)), tnlh_2, tnlh_1)
             TNHLF_min =  where(logical_or(tnlh_1 > tnlh_2, isnan(tnlh_1)), tnlh_2, tnlh_1)
             
             # Set _s
             #1
 #            _s = nanmin(TNHLF_min, 1)
             #2
-            if residual is not None and residual.dtype != object: Tmp =log2(a-o) +  log2(residual) - log2(p.fTol)
-            else: Tmp = log2(a-o)
+            if residual is not None and residual.dtype != object: Tmp = log2(a-o) +  log2(residual) - log2(p.fTol)
+            else: Tmp = log2(a-o) - log2(p.fTol)
             #Tmp = tnlhf + log2(residual)
             tmp_1, tmp_2 = Tmp[:, 0:n], Tmp[:, n:]
-            Tmp1 = Tmp
+            #Tmp1 = Tmp
             Tmp = where(logical_or(tmp_1 < tmp_2, isnan(tmp_1)), tmp_2, tmp_1)
-#            _s = nanmin(Tmp, 1)
+            _s = nanmin(Tmp, 1)
             
             
-            tnlh_curr_1, tnlh_curr_2 = tnlhf_curr[:, 0:n], tnlhf_curr[:, n:]
+            T = tnlhf_curr
+            tnlh_curr_1, tnlh_curr_2 = T[:, 0:n], T[:, n:]
             TNHL_curr_min =  where(logical_or(tnlh_curr_1 < tnlh_curr_2, isnan(tnlh_curr_2)), tnlh_curr_1, tnlh_curr_2)
             
             #1
@@ -209,15 +210,31 @@ def func1(tnlhf, tnlhf_curr, residual, y, e, o, a, _s_prev, p, Case, r9 = None):
             
 #            t = nanargmin(Tmp, 1)
             
+            #new
+#            ind = TNHLF_min.T > _s_prev - 1.0/n
+#            T = TNHL_curr_min.copy().T
+#            T[ind] = inf
+#            t = nanargmin(T, 0)
+            
             # Prev
-            T = tnlhf
+            if 1:
+                T = tnlhf
+                #T = log2(a-o) +  log2(residual) - log2(p.fTol)
+            else:
+                T = 2**tnlhf 
+                if residual is not None: T += residual
+                t1, t2 = T[:, 0:n], T[:, n:]
+                T2 = where(logical_or(t1 < t2, isnan(t2)), t1, t2)
+                t = nanargmin(T2, 1)
+#            T = log2(T)
+            
 #            if residual is not None and residual.dtype != object: 
 #                T +=  log2(residual) - log2(p.fTol)
 #            T = tnlhf_curr
 #            T = Tmp1
             d = nanmin(vstack(([T[w, t], T[w, n+t]])), 0)
+            #d = nanmin(Tmp, 1)
             
-#            d = nanmin(TNHL_curr_min, 1)
             # NEW
 #            d = _s
             _s = d
@@ -228,8 +245,15 @@ def func1(tnlhf, tnlhf_curr, residual, y, e, o, a, _s_prev, p, Case, r9 = None):
             #ind = _s_prev - d <= ((2**-n / log(2)) if n > 15 else log2(1+2**-n)) 
             
             #NEW
-            ind = _s_prev  <= d + 1.0/n#(n*(1+p.nc+p.nh+p.nb+p.nbeq)) 
+            if any(_s_prev < d):
+                pass
+            ind = _s_prev  <= d + 1.0/n
+            T = TNHL_curr_min
+            #ind2 = nanmin(TNHL_curr_min, 0)
             
+            indQ = d >= _s_prev - 1.0/n 
+            #indQ = logical_and(indQ, False)
+            indD = logical_or(indQ, logical_not(indT))
             #print _s_prev - d
             ###################################################
             #d = ((tnlh[w, t]* tnlh[w, n+t])**0.5)
@@ -249,10 +273,7 @@ def func1(tnlhf, tnlhf_curr, residual, y, e, o, a, _s_prev, p, Case, r9 = None):
         #ind = d  >= 2 ** (1.0/n) * _s_prev
     
     #ind = d * (1.0 + max((1e-15, 2 ** (-n)))) >= _s_prev
-    
-    if r9 is not None:
-        ind = logical_or(ind, r9)
-    
+   
     if any(ind):
 #        print _s_prev
 #        print ((_s_prev -d)*n)[r10]
@@ -261,7 +282,7 @@ def func1(tnlhf, tnlhf_curr, residual, y, e, o, a, _s_prev, p, Case, r9 = None):
         bs = e[ind] - y[ind]
         t[ind] = nanargmax(bs, 1) # ordinary numpy.argmax can be used as well
         
-    return t, _s
+    return t, _s, indD
     
 def func13(o, a, case = 2): 
     m, n = o.shape
@@ -336,16 +357,26 @@ def func12(an, maxActiveNodes, p, solutions, r6, vv, varTols, fo, Case):
         
         if p.probType != 'IP': 
             nlhc = asarray([t.nlhc for t in an1Candidates])
+            indtc = asarray([t.indtc for t in an1Candidates])
             residual = asarray([t.residual for t in an1Candidates]) 
-            yc, ec = func4(yc, ec, oc, ac, nlhc, fo)
-        t, _s = func1(tnlhf, tnlhf_curr, residual, yc, ec, oc, ac, SIc, p, Case)
+            yc, ec, indT = func4(yc, ec, oc, ac, nlhc, fo)
+            if indtc[0] is not None:
+                indT = logical_or(indT, indtc)
+        t, _s, indD = func1(tnlhf, tnlhf_curr, residual, yc, ec, oc, ac, SIc, p, indT, Case)
         
-        # OLD
-        #_s = tile(_s, 2)
-        
-        # NEW
+        NewD = 1
         if p.probType != 'IP': 
-            _s = tile(_s, 2)
+            # Prev
+            if not NewD:
+                _s = tile(_s, 2)
+            else:
+                # New
+                s4d = _s[indD]
+                sf = _s[logical_not(indD)]
+                _s = hstack((s4d, s4d, sf))
+                yf, ef = yc[logical_not(indD)], ec[logical_not(indD)]
+                yc, ec = yc[indD], ec[indD]
+                t = t[indD]
         else:
             m, n = yc.shape
 
@@ -356,9 +387,13 @@ def func12(an, maxActiveNodes, p, solutions, r6, vv, varTols, fo, Case):
             maxa = where(ac_modL < ac_modU, ac_modU, ac_modL)
             _s = nanmin(maxa - mino, 1)
             _s = tile(_s, 2)
+            indD = None
 
         yc, ec = func2(yc, ec, t, vv)
-
+        if NewD and p.probType != 'IP':
+            yc = vstack((yc, yf))
+            ec = vstack((ec, ef))
+            
         if maxSolutions == 1 or len(solutions) == 0: 
             y, e = yc, ec
             break
@@ -382,11 +417,11 @@ def func12(an, maxActiveNodes, p, solutions, r6, vv, varTols, fo, Case):
         
     return y, e, _in, _s
 
-Fields = ['key', 'y', 'e', 'nlhf','nlhc', 'residual','o', 'a', '_s']
+Fields = ['key', 'y', 'e', 'nlhf','nlhc', 'indtc','residual','o', 'a', '_s']
 #FuncValFields = ['key', 'y', 'e', 'nlhf','nlhc', 'o', 'a', '_s','r18', 'r19']
 IP_fields = ['key', 'y', 'e', 'o', 'a', '_s','F', 'volume', 'volumeResidual']
 
-def func11(y, e, nlhc, residual, o, a, _s, p): 
+def func11(y, e, nlhc, indTC, residual, o, a, _s, p): 
     m, n = y.shape
     if p.probType == "IP":
         w = arange(m)
@@ -409,7 +444,7 @@ def func11(y, e, nlhc, residual, o, a, _s, p):
 #        uu = nanmax(where(logical_or(a_modU>a_modL, isnan(a_modU)), a_modU, a_modL), 1)
 #        ll = nanmin(where(logical_or(q>s, isnan(q)), s, q), 1)
 #        nlhf = log2(uu-ll)
-        nlhf = log2(a-o)
+        nlhf = log2(a-o)#-log2(p.fTol)
 #        nlhf = hstack((nlhf[:, :nlhf.shape[1]/2], nlhf[:, nlhf.shape[1]/2:]))
 
     if p.probType == 'IP':
@@ -419,6 +454,7 @@ def func11(y, e, nlhc, residual, o, a, _s, p):
         assert p.probType in ('GLP', 'NLP', 'NSP', 'SNLE', 'NLSP')
         return [si(Fields, Tmp[i], y[i], e[i], nlhf[i], 
                           nlhc[i] if nlhc is not None else None, 
+                          indTC[i] if indTC is not None else None, 
                           residual[i] if residual is not None else None, 
                           o[i], a[i], _s[i]) for i in range(m)]
     

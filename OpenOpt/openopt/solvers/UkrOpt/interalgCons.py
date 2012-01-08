@@ -111,7 +111,7 @@ def processConstraints(C0, y, e, p, dataType):
         y = take(y, ind, axis=0, out=y[:lj])
         e = take(e, ind, axis=0, out=e[:lj])
         nlh = take(nlh, ind, axis=0, out=nlh[:lj])
-    return y, e, nlh, None, DefiniteRange
+    return y, e, nlh, None, DefiniteRange, None# indT ; todo: rework it!
 
 def processConstraints2(C0, y, e, p, dataType):
     n = p.n
@@ -120,11 +120,13 @@ def processConstraints2(C0, y, e, p, dataType):
     residual = zeros((m, 2*n))
     
     DefiniteRange = True
+    indT = empty(m, bool)
+    indT.fill(False)
     
     for f, lb, ub, tol in C0:
         
         m = y.shape[0] # is changed in the cycle
-        if m == 0: return y.reshape(0, n), e.reshape(0, n), nlh.reshape(0, 2*n), residual.reshape(0, 2*n), True
+        if m == 0: return y.reshape(0, n), e.reshape(0, n), nlh.reshape(0, 2*n), residual.reshape(0, 2*n), True, False
         
         if p.solver.dataHandling == 'sorted': tol = 0
         
@@ -167,18 +169,19 @@ def processConstraints2(C0, y, e, p, dataType):
                 residual[:, j] += res0[:, 0]
 
         ind = where(any(isfinite(nlh), 1))[0]
-        
         lj = ind.size
         if lj != m:
             y = take(y, ind, axis=0, out=y[:lj])
             e = take(e, ind, axis=0, out=e[:lj])
             nlh = take(nlh, ind, axis=0, out=nlh[:lj])
             residual = take(residual, ind, axis=0, out=residual[:lj])
+            indT = indT[ind]
             if asarray(DefiniteRange).size != 1: 
                 DefiniteRange = take(DefiniteRange, ind, axis=0, out=DefiniteRange[:lj])
                 
         ind = logical_not(isfinite((nlh)))
         if any(ind):
+            indT[any(ind, 1)] = True
             ind_l,  ind_u = ind[:, :ind.shape[1]/2], ind[:, ind.shape[1]/2:]
             y[ind_l], e[ind_u] = 0.5 * (y[ind_l] + e[ind_l]), 0.5 * (y[ind_u] + e[ind_u])
             
@@ -190,7 +193,7 @@ def processConstraints2(C0, y, e, p, dataType):
 #    print nlh
 #    from numpy import diff
 #    print diff(nlh)
-    return y, e, nlh, residual, DefiniteRange
+    return y, e, nlh, residual, DefiniteRange, indT
 
 def getTmp(o, a, lb, ub, tol, m, residual, dataType):
    

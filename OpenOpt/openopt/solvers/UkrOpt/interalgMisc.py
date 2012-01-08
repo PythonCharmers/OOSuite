@@ -17,7 +17,7 @@ except ImportError:
 
 def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNodes,  \
          r41, fTol, maxSolutions, varTols, solutions, r6, _in, dataType, \
-         maxNodes, _s, xRecord):
+         maxNodes, _s, indTC, xRecord):
 
     isSNLE = p.probType in ('NLSP', 'SNLE')
     
@@ -86,7 +86,7 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
     if y.size == 0:
         return _in, g, fo_prev, _s, solutions, r6, xRecord, r41, r40
     
-    nodes = func11(y, e, nlhc, residual, o, a, _s, p)
+    nodes = func11(y, e, nlhc, indTC, residual, o, a, _s, p)
     
     #y, e = func4(y, e, o, a, fo)
     
@@ -106,7 +106,10 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
         
         if nlhc is not None:
             #nlhf_fixed = log2(a2-o2)
+            #Prev
             for i, node in enumerate(nodes): node.tnlhf = node.nlhf + node.nlhc
+            #new
+            #for i, node in enumerate(nodes): node.tnlhf = node.nlhf + node.residual
         else:
             for i, node in enumerate(nodes): node.tnlhf = node.nlhf # TODO: improve it
             

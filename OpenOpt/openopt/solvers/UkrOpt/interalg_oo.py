@@ -50,7 +50,7 @@ class interalg(baseSolver):
         isODE = p.probType == 'ODE'
         isSNLE = p.probType in ('NLSP', 'SNLE')
         if self.intervalObtaining == 'auto':
-            intervalObtaining=2 
+            self.intervalObtaining=2 
         
         if not p.__isFiniteBoxBounded__() and not isODE: 
             p.err('''
@@ -285,15 +285,15 @@ class interalg(baseSolver):
         for itn in range(p.maxIter+10):
             if len(C0) != 0: 
                 Func = processConstraints if self.intervalObtaining == 1 else processConstraints2
-                y, e, nlhc, residual, definiteRange = Func(C0, y, e, p, dataType)
+                y, e, nlhc, residual, definiteRange, indT = Func(C0, y, e, p, dataType)
             else:
-                nlhc, residual, definiteRange = None, None, True
+                nlhc, residual, definiteRange, indT = None, None, True, None
             
             if y.size != 0:
                 an, g, fo, _s, solutions, r6, xRecord, r41, r40 = \
                 pb(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, \
                              nNodes, r41, fTol, maxSolutions, varTols, solutions, r6, _in, \
-                             dataType, maxNodes, _s, xRecord)
+                             dataType, maxNodes, _s, indT, xRecord)
                 if _s is None:
                     break
             else:

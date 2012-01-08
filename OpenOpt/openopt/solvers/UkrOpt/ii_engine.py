@@ -4,7 +4,7 @@ from numpy import inf, prod, searchsorted, all
 
 def r14IP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, CBKPMV, itn, g, nNodes,  \
          frc, fTol, maxSolutions, varTols, solutions, r6, _in, dataType, \
-         maxNodes, _s, xRecord):
+         maxNodes, _s, indTC, xRecord):
 
     required_sigma = p.ftol
     
@@ -29,7 +29,7 @@ def r14IP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, CBKPMV, itn, g, 
         #_s = atleast_1d(nanmax(a-o))
         _s = atleast_1d(inf)
         
-    nodes = func11(y, e, None, o, a, _s, p)
+    nodes = func11(y, e, None, indTC, o, a, _s, p)
 
     #OLD
 #    nodes.sort(key = lambda obj: obj.key)
