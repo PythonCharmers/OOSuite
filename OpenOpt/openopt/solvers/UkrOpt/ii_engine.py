@@ -6,7 +6,7 @@ def r14IP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, CBKPMV, itn, g, 
          frc, fTol, maxSolutions, varTols, solutions, r6, _in, dataType, \
          maxNodes, _s, indTC, xRecord):
 
-    required_sigma = p.ftol
+    required_sigma = p.ftol * 0.99 # to suppress roundoff effects
     
     m, n = y.shape
     
@@ -23,6 +23,7 @@ def r14IP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, CBKPMV, itn, g, 
         for definite (real) range only, no NaN values in integrand are allowed''')
 
     o, a = o.reshape(2*n, m).T, a.reshape(2*n, m).T
+    r42(o, a)
 
     if itn == 0: 
         # TODO: fix it
@@ -56,6 +57,7 @@ def r14IP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, CBKPMV, itn, g, 
         an = hstack((_in, nodes)).tolist()
     if 1: 
         an.sort(key = lambda obj: obj.key, reverse=False)
+        #an.sort(key = lambda obj: obj.minres, reverse=False)
     else:
         an.sort(key=lambda obj: obj.volumeResidual, reverse=False)
 

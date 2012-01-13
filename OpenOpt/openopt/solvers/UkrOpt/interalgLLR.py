@@ -9,6 +9,26 @@ try:
 except ImportError:
     from numpy import nanmin, nanargmin, nanargmax, nanmax
 
+def r42(o, a):
+    m, N = o.shape
+    n = N / 2
+    o_l, o_u = o[:, :n], o[:, n:]
+    a_l, a_u = a[:, :n], a[:, n:]
+    o_m = where(logical_or(o_l < o_u, isnan(o_u)), o_l, o_u)
+    a_m = where(logical_or(a_l < a_u, isnan(a_l)), a_u, a_l)
+    o_M = nanmax(o_m, 1)
+    a_M = nanmin(a_m, 1)
+    # TODO: make it matrix-vector componentwise
+    o_M = tile(o_M.reshape(m, 1), (1, 2*n))
+    ind = o < o_M
+    if any(ind):
+        o[ind] = o_M[ind]
+    a_M = tile(a_M.reshape(m, 1), (1, 2*n))        
+    ind = a > a_M
+    if any(ind):
+        a[ind] = a_M[ind]
+    
+
 def func82(y, e, vv, f, dataType):
     domain = dict([(v, (y[:, i], e[:, i])) for i, v in enumerate(vv)])
     r, r0 = f.iqg(domain, dataType)
@@ -178,6 +198,7 @@ def func1(tnlhf, tnlhf_curr, residual, y, e, o, a, _s_prev, p, indT, Case):
             
             #NEW
             ind = d  >=  _s_prev / 2 ** (1.0e-12/n)
+            #ind = d  >=  _s_prev / 2 ** (1.0/n)
             indD = empty(m, bool)
             indD.fill(True)
             #ind.fill(False)
@@ -260,12 +281,62 @@ def func1(tnlhf, tnlhf_curr, residual, y, e, o, a, _s_prev, p, indT, Case):
         else:
             assert 0
     else: # IP
+        oc_modL, oc_modU = o[:, :n], o[:, n:]
+        ac_modL, ac_modU = a[:, :n], a[:, n:]
+#            # TODO: handle nans
+        mino = where(oc_modL < oc_modU, oc_modL, oc_modU)
+        maxa = where(ac_modL < ac_modU, ac_modU, ac_modL)
+    
+        # Prev
         tmp = a[:, 0:n]-o[:, 0:n]+a[:, n:]-o[:, n:]
-        #_s = nanmax(tmp, 1)
-        _s = 0.5*nanmin(tmp, 1)
         t = nanargmin(tmp,1)
-        ind = 2**(-n) >= (_s_prev - _s)/asarray(_s, 'float64')
+        d = 0.5*tmp[w, t]
+        
+        
+        #New
+#        tmp = a - o
+#        t_ = nanargmin(tmp,1)
+#        t = t_% n
+#        d = tmp[w, t_]
+
+#        ind = 2**(-n) >= (_s_prev - d)/asarray(d, 'float64')
+        ind = 2**(1.0/n) * d >= _s_prev
+        #new
+#        ind = 2**(1.0/n) * d >= nanmax(maxa-mino, 1)
+        
+        #ind = 2**(-n) >= (_s_prev - _s)/asarray(_s, 'float64')
+    
+        #s2 = nanmin(maxa - mino, 1)
+        #print (abs(s2/_s))
+        
+        # Prev
+        _s = nanmin(maxa - mino, 1)
+        
+        # New
+        #_s = nanmax(maxa - mino, 1)
+#        _s = nanmax(a - o, 1)
+        
+        #ind = _s_prev  <= _s + ((2**-n / log(2)) if n > 15 else log2(1+2**-n)) 
+        indD = logical_not(ind)
+        indD = ind
         indD = None
+        #print len(where(indD)[0]), len(where(logical_not(indD))[0])
+        
+#        indD = None
+        
+        
+#        oc_modL, oc_modU = o[:, :n], o[:, n:]
+#        ac_modL, ac_modU = a[:, :n], a[:, n:]
+##            # TODO: handle nans
+#        mino = where(oc_modL < oc_modU, oc_modL, oc_modU)
+#        maxa = where(ac_modL < ac_modU, ac_modU, ac_modL)
+#        tmp = a[:, 0:n]-o[:, 0:n]+a[:, n:]-o[:, n:]
+#        t = nanargmin(tmp,1)
+#        _s = nanmin(maxa - mino, 1)
+#        ind = 2**(-n) >= (_s_prev - _s)/asarray(_s, 'float64')
+#        indD = None
+
+        
         #ind = _s  >= 2 ** (1.0/n) * _s_prev
         
 #        if p.debug: 
@@ -369,32 +440,18 @@ def func12(an, maxActiveNodes, p, solutions, r6, vv, varTols, fo, Case):
         t, _s, indD = func1(tnlhf, tnlhf_curr, residual, yc, ec, oc, ac, SIc, p, indT, Case)
         
         NewD = 1
-        if p.probType != 'IP': 
-            # Prev
-            if not NewD:
-                _s = tile(_s, 2)
-            else:
-                # New
-                s4d = _s[indD]
-                sf = _s[logical_not(indD)]
-                _s = hstack((s4d, s4d, sf))
-                yf, ef = yc[logical_not(indD)], ec[logical_not(indD)]
-                yc, ec = yc[indD], ec[indD]
-                t = t[indD]
+        if NewD and indD is not None: # and p.probType != 'IP':
+            s4d = _s[indD]
+            sf = _s[logical_not(indD)]
+            _s = hstack((s4d, s4d, sf))
+            yf, ef = yc[logical_not(indD)], ec[logical_not(indD)]
+            yc, ec = yc[indD], ec[indD]
+            t = t[indD]
         else:
-            m, n = yc.shape
-
-            oc_modL, oc_modU = oc[:, :n], oc[:, n:]
-            ac_modL, ac_modU = ac[:, :n], ac[:, n:]
-#            # TODO: handle nans
-            mino = where(oc_modL < oc_modU, oc_modL, oc_modU)
-            maxa = where(ac_modL < ac_modU, ac_modU, ac_modL)
-            _s = nanmin(maxa - mino, 1)
             _s = tile(_s, 2)
-            indD = None
 
         yc, ec = func2(yc, ec, t, vv)
-        if NewD and p.probType != 'IP':
+        if NewD and indD is not None:
             yc = vstack((yc, yf))
             ec = vstack((ec, ef))
             
@@ -423,7 +480,7 @@ def func12(an, maxActiveNodes, p, solutions, r6, vv, varTols, fo, Case):
 
 Fields = ['key', 'y', 'e', 'nlhf','nlhc', 'indtc','residual','o', 'a', '_s']
 #FuncValFields = ['key', 'y', 'e', 'nlhf','nlhc', 'o', 'a', '_s','r18', 'r19']
-IP_fields = ['key', 'y', 'e', 'o', 'a', '_s','F', 'volume', 'volumeResidual']
+IP_fields = ['key', 'minres','y', 'e', 'o', 'a', '_s','F', 'volume', 'volumeResidual']
 
 def func11(y, e, nlhc, indTC, residual, o, a, _s, p): 
     m, n = y.shape
@@ -432,6 +489,10 @@ def func11(y, e, nlhc, indTC, residual, o, a, _s, p):
         # TODO: omit recalculation from func1
         ind = nanargmin(a[:, 0:n] - o[:, 0:n] + a[:, n:] - o[:, n:], 1)
         sup_inf_diff = 0.5*(a[w, ind] - o[w, ind] + a[w, n+ind] - o[w, n+ind])
+        diffao = a - o
+        minres_ind = nanargmin(diffao, 1) % n 
+        minres = where(diffao[w, minres_ind] < diffao[w, n+minres_ind], \
+                       diffao[w, minres_ind], diffao[w, n+minres_ind])
         #sup_inf_diff = -sup_inf_diff
         # DEBUG
         #tmp3 = nanmin(a[:, 0:n]-o[:, 0:n]+a[:, n:]-o[:, n:],1)
@@ -453,7 +514,7 @@ def func11(y, e, nlhc, indTC, residual, o, a, _s, p):
 
     if p.probType == 'IP':
         F = 0.25 * (a[w, ind] + o[w, ind] + a[w, n+ind] + o[w, n+ind])
-        return [si(IP_fields, sup_inf_diff[i], y[i], e[i], o[i], a[i], _s[i], F[i], volume[i], volumeResidual[i]) for i in range(m)]
+        return [si(IP_fields, sup_inf_diff[i], minres[i], y[i], e[i], o[i], a[i], _s[i], F[i], volume[i], volumeResidual[i]) for i in range(m)]
     else:
         assert p.probType in ('GLP', 'NLP', 'NSP', 'SNLE', 'NLSP')
         return [si(Fields, Tmp[i], y[i], e[i], nlhf[i], 

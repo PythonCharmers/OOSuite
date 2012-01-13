@@ -60,7 +60,7 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
     m, n = e.shape
     o, a = o.reshape(2*n, m).T, a.reshape(2*n, m).T
     
-    if asdf1.isUncycled and nlhc is not None and not isSNLE:# for SNLE fo = 0
+    if asdf1.isUncycled and nlhc is not None and not isSNLE and not p.probType.startswith('MI'):# for SNLE fo = 0
         
         # TODO: 
         # handle constraints with restricted domain and matrix definiteRange
@@ -76,6 +76,9 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
                 ######################
                 
                 r41 = nanmin((r41, tmp1)) 
+    else:
+        pass
+#        r42(o, a)
 
     fo_prev = float(0 if isSNLE else min((r41, r40 - (fTol if maxSolutions == 1 else 0))))
     

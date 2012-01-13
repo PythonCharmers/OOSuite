@@ -23,6 +23,10 @@ def processConstraints(C0, y, e, p, dataType):
             
         DefiniteRange = logical_and(DefiniteRange, definiteRange)
         o, a  = o.reshape(2*n, m).T, a.reshape(2*n, m).T
+        
+        if not f.isUncycled:
+            r42(o, a)
+        
         lf1, lf2, uf1, uf2 = o[:, 0:n], o[:, n:2*n], a[:, 0:n], a[:, n:2*n]
         o_ = where(logical_or(lf1>lf2, isnan(lf1)), lf2, lf1)
         a_ = where(logical_or(uf1>uf2, isnan(uf2)), uf1, uf2)
