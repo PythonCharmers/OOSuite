@@ -2,7 +2,8 @@
 PythonSum = sum
 from numpy import inf, asfarray, copy, all, any, empty, atleast_2d, zeros, dot, asarray, atleast_1d, empty, \
 ones, ndarray, where, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum as npSum, prod, nonzero,\
-isnan, asscalar, zeros_like, ones_like, amin, amax, logical_and, logical_or, isinf, logical_not, logical_xor, flipud, tile, float64
+isnan, asscalar, zeros_like, ones_like, amin, amax, logical_and, logical_or, isinf, logical_not, logical_xor, flipud, \
+tile, float64
 from traceback import extract_stack 
 try:
     from bottleneck import nanmin, nanmax
@@ -253,9 +254,30 @@ class oofun:
         
         r = {}
         for i, v in enumerate(self._getDep()):
-            #print i, v
             domain.modificationVar = v
-            r[v] = self._iqg(domain, dtype)
+            r_l, r_u = self._iqg(domain, dtype)
+            r[v] = r_l, r_u
+            if not self.isUncycled:
+                lf1, lf2, uf1, uf2 = r_l.lb, r_u.lb, r_l.ub, r_u.ub
+                lf, uf = nanmin(vstack((lf1, lf2)), 0), nanmax(vstack((uf1, uf2)), 0)
+                if i == 0:
+                    L, U = lf.copy(), uf.copy()
+                else:
+                    L[L<lf] = lf[L<lf].copy()
+                    U[U>uf] = uf[U>uf].copy()
+        if not self.isUncycled:
+            for R in r.values():
+                r1, r2 = R
+                if type(r1.lb) != ndarray:
+                    r1.lb, r2.lb, r1.ub, r2.ub = atleast_1d(r1.lb), atleast_1d(r2.lb), atleast_1d(r1.ub), atleast_1d(r2.ub)
+                r1.lb[r1.lb < L] = L[r1.lb < L]
+                r2.lb[r2.lb < L] = L[r2.lb < L]
+                r1.ub[r1.ub > U] = U[r1.ub > U]
+                r2.ub[r2.ub > U] = U[r2.ub > U]
+            r0.lb, r0.ub = atleast_1d(r0.lb).copy(), atleast_1d(r0.ub).copy() # is it required?
+            r0.lb[r0.lb < L] = L[r0.lb < L]
+            r0.ub[r0.ub > U] = U[r0.ub > U]
+            
             
         # for more safety
         domain.useSave = True
