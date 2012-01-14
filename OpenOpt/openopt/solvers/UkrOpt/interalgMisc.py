@@ -66,7 +66,8 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
         # handle constraints with restricted domain and matrix definiteRange
         
         if all(definiteRange):
-            tmp1 = o[nlhc==0]
+            # TODO: if o has at least one -inf => prob is unbounded
+            tmp1 = o[nlhc==0] 
             if tmp1.size != 0:
                 tmp1 = nanmin(tmp1)
                 
@@ -84,7 +85,7 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
     
     if itn == 0: 
         # TODO: change for constrained probs
-        _s = atleast_1d(nanmax(a-o))
+        _s = atleast_1d(inf)
     y, e, o, a, _s, nlhc, residual = func7(y, e, o, a, _s, nlhc, residual)    
     if y.size == 0:
         return _in, g, fo_prev, _s, solutions, r6, xRecord, r41, r40
@@ -93,23 +94,11 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
     
     #y, e = func4(y, e, o, a, fo)
     
+    newNLH = 0
+    
     if p.solver.dataHandling == 'raw':
-        # NEW
-        if len(_in) != 0:
-            o2 = vstack((o, [node.o for node in _in]))
-            a2 = vstack((a, [node.a for node in _in]))
-        else:
-            o2, a2 = o, a
-        
-#        nlhf_fixed = log2(a2-o2)
-#        if nlhc is None:
-#            for i, node in enumerate(nodes): node.tnlhf = nlhf_fixed[i]
-#        else:
-#            for i, node in enumerate(nodes): node.tnlhf = nlhf_fixed[i] + nlhc[i]
-        
+       
         if nlhc is not None:
-            #nlhf_fixed = log2(a2-o2)
-            #Prev
             for i, node in enumerate(nodes): node.tnlhf = node.nlhf + node.nlhc
             #new
             #for i, node in enumerate(nodes): node.tnlhf = node.nlhf + node.residual
@@ -117,16 +106,24 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
             for i, node in enumerate(nodes): node.tnlhf = node.nlhf # TODO: improve it
             
         an = hstack((nodes, _in))
-        tnlh_fixed = vstack([node.tnlhf for node in an])
-    
-    
-        #NEW
-        tnlh_fixed_local = tnlh_fixed[:len(nodes)]
         
+        if newNLH:
+            o2 = [node.o for node in an]
+            a2 = [node.a for node in an]
+            tnlh_fixed = [node.tnlhf for node in an]
+            tnlh_fixed_local = asarray(tnlh_fixed[:len(nodes)])
+        else:
+            if len(_in) != 0:
+                o2 = vstack((o, [node.o for node in _in]))
+                a2 = vstack((a, [node.a for node in _in]))
+            else:
+                o2, a2 = o, a
+            tnlh_fixed = vstack([node.tnlhf for node in an])
+            tnlh_fixed_local = tnlh_fixed[:len(nodes)]
+
         tmp = a.copy()
         
         tmp[tmp>fo_prev] = fo_prev
-        #tnlh_curr = tnlh_fixed - log2(fo - o2)
         tnlh_curr = tnlh_fixed_local - log2(tmp - o)
         
         # TODO: use it instead of code above
@@ -153,27 +150,52 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
         
     if p.solver.dataHandling == 'raw':
         # TODO: check it with bool/integer variables
-        tmp = a2.copy()
-        tmp[tmp>fo] = fo
-        #tnlh_curr = tnlh_fixed - log2(fo - o2)
-        tnlh_curr = tnlh_fixed - log2(tmp - o2)
-        
-        r10 = where(nanmax(tmp - o2, 1) < 0)
-        if any(r10):
-            mino = [node.key for node in an]
-            mmlf = nanmin(asarray(mino)[r10])
-            g = min((g, mmlf))
-        
-        # TODO: optimize it, don't recalculate for whole stored arrays
-        ind = where(a2==inf)[0]
-        if ind.size != 0:
-            S = 1.0 # TODO: set better value
-            tnlh_curr[ind] = S+(asfarray([an[i].nlhc for i in ind]) if len(C) != 0 else 0)
+        tnlh_curr = []
+        r10 = []
+        NN = []
+        if newNLH:
+            for i in range(len(an)):
+                # TODO: optimize it
+                tmp = a2[i].copy()
+                tmp[tmp>fo] = fo
+                if fo == inf and any(tmp==inf):
+                    tmp[tmp==inf] = o2[tmp==inf]
+#                if nanmax(tmp - o2) < 0:
+#                    r10.append(i)
+                TMP = tnlh_fixed[i] - log2(tmp - o2[i])
+                tnlh_curr.append(TMP)
+                NN.append(nanmin(TMP))
+            NN = asarray(NN)
+            #r10 = asarray(r10)
+            NN = asarray(NN)
+        else:
+            tmp = a2.copy()
+            tmp[tmp>fo] = fo
+            ind = tmp==inf
+            if any(ind):
+                tmp[ind] = o2[ind] + 1.0 # TODO: rework it
+            #tnlh_curr = tnlh_fixed - log2(fo - o2)
+            tnlh_curr = tnlh_fixed - log2(tmp - o2)
+            #r10 = where(nanmax(tmp - o2, 1) < 0)[0]
+            r10 = where(array([node.key for node in nodes])>fo)[0]
+            # TODO: optimize it, don't recalculate for whole stored arrays
+            #ind_u_inf = where(a2==inf)[0]
+            
+#        if r10.size != 0:
+#            mino = [an[i].key for i in r10]
+#            mmlf = nanmin(asarray(mino))
+#            g = min((g, mmlf))
+
+#        if ind_u_inf.size != 0:
+#            S = 1.0 # TODO: set better value
+#            tnlh_curr[ind_u_inf] = S+(asfarray([an[i].nlhc for i in ind_u_inf]) if len(C) != 0 else 0)
         
         for i, node in enumerate(an): node.tnlh_curr = tnlh_curr[i]
         
-        NN = nanmin(tnlh_curr, 1)
+        if not newNLH:
+            NN = nanmin(tnlh_curr, 1)
         r10 = logical_or(isnan(NN), NN == inf)
+        
         if any(r10):
             ind = where(logical_not(r10))[0]
             an = take(an, ind, axis=0, out=an[:ind.size])
@@ -223,7 +245,7 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
     
     an, g = func9(an, fo, g, p)
 
-    nn = 1 if asdf1.isUncycled and all(isfinite(o)) and p._isOnlyBoxBounded else maxNodes
+    nn = maxNodes#1 if asdf1.isUncycled and all(isfinite(o)) and p._isOnlyBoxBounded and not p.probType.startswith('MI') else maxNodes
     
     an, g = func5(an, nn, g, p)
     nNodes.append(len(an))

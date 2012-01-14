@@ -1,6 +1,6 @@
 from numpy import tile, isnan, array, atleast_1d, asarray, logical_and, all, logical_or, any, nan, isinf, \
 arange, vstack, inf, where, logical_not, take, argmax, argmin, abs, hstack, empty, insert, isfinite, append, atleast_2d, \
-prod, sqrt, int32, int64, log2, log
+prod, sqrt, int32, int64, log2, log, searchsorted
 from FuncDesigner import oopoint
 from interalgT import *
 
@@ -8,26 +8,6 @@ try:
     from bottleneck import nanargmin, nanmin, nanargmax, nanmax
 except ImportError:
     from numpy import nanmin, nanargmin, nanargmax, nanmax
-
-def r42(o, a):
-    m, N = o.shape
-    n = N / 2
-    o_l, o_u = o[:, :n], o[:, n:]
-    a_l, a_u = a[:, :n], a[:, n:]
-    o_m = where(logical_or(o_l < o_u, isnan(o_u)), o_l, o_u)
-    a_m = where(logical_or(a_l < a_u, isnan(a_l)), a_u, a_l)
-    o_M = nanmax(o_m, 1)
-    a_M = nanmin(a_m, 1)
-    # TODO: make it matrix-vector componentwise
-    o_M = tile(o_M.reshape(m, 1), (1, 2*n))
-    ind = o < o_M
-    if any(ind):
-        o[ind] = o_M[ind]
-    a_M = tile(a_M.reshape(m, 1), (1, 2*n))        
-    ind = a > a_M
-    if any(ind):
-        a[ind] = a_M[ind]
-    
 
 def func82(y, e, vv, f, dataType):
     domain = dict([(v, (y[:, i], e[:, i])) for i, v in enumerate(vv)])
@@ -113,7 +93,18 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p):
     # TODO: rework it wrt nlh
     #cs = dict([(key, asarray((val[0]+val[1])/2, dataType)) for key, val in domain.items()])
     if tnlh is None:
+
+        wr4 = (y+e) / 2
+        for i, v in enumerate(vv):
+            tmp = wr4[:, i]
+            if v.domain is not None:
+                ind = searchsorted(v.domain, tmp, side='left')
+                ind[ind>=v.domain.size] = v.domain.size-1
+                tmp = v.domain[ind]
+            wr4[:, i] = tmp
+            
         cs = dict([(oovar, asarray((y[:, i]+e[:, i])/2, dataType)) for i, oovar in enumerate(vv)])
+
     else:
         tnlh = tnlh.copy()
         tnlh[atleast_1d(tnlh<1e-300)] = 1e-300 # to prevent division by zero
@@ -122,8 +113,23 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p):
         wr4 = (y * tnlh_l_inv + e * tnlh_u_inv) / (tnlh_l_inv + tnlh_u_inv)
         ind = tnlh_l_inv == tnlh_u_inv # especially important for tnlh_l_inv == tnlh_u_inv = 0
         wr4[ind] = (y[ind] + e[ind]) / 2
+        
+        for i, v in enumerate(vv):
+            tmp = wr4[:, i]
+            if v.domain is not None:
+                ind = searchsorted(v.domain, tmp, side='left')
+                ind[ind>=v.domain.size] = v.domain.size-1
+                tmp = v.domain[ind]
+            wr4[:, i] = tmp
+        
 #        wr4 = (y + e) / 2
+
+        # Prev
         cs = dict([(oovar, asarray(wr4[:, i], dataType)) for i, oovar in enumerate(vv)])
+        # New
+        
+        
+            
         
         #OLD
 #        cs = dict([(oovar, asarray((y[:, i]+e[:, i])/2, dataType)) for i, oovar in enumerate(vv)])
@@ -160,7 +166,7 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p):
         #F.fill(nanmax(tmp)+1) 
         F.fill(2**31-15 if dataType in (int32, int64, int) else nan)
         F[r15] = tmp[r15]
-    return atleast_1d(F), ((y+e) / 2 if tnlh is None else wr4)
+    return atleast_1d(F), wr4
 
 def r2(PointVals, PointCoords, dataType):
     r23 = nanargmin(PointVals)

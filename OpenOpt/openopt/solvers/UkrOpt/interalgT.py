@@ -1,10 +1,30 @@
-from numpy import isnan, take, any, all, logical_or, logical_and, logical_not, atleast_1d, where, asarray, inf, nan, argmin, argsort
+from numpy import isnan, take, any, all, logical_or, logical_and, logical_not, atleast_1d, where, \
+asarray, inf, nan, argmin, argsort, tile
 from bisect import bisect_right
 try:
     from bottleneck import nanargmin, nanmin, nanargmax, nanmax
 except ImportError:
     from numpy import nanmin, nanargmin, nanargmax, nanmax
-    
+
+def r42(o, a):
+    m, N = o.shape
+    n = N / 2
+    o_l, o_u = o[:, :n], o[:, n:]
+    a_l, a_u = a[:, :n], a[:, n:]
+    o_m = where(logical_or(o_l < o_u, isnan(o_u)), o_l, o_u)
+    a_m = where(logical_or(a_l < a_u, isnan(a_l)), a_u, a_l)
+    o_M = nanmax(o_m, 1)
+    a_M = nanmin(a_m, 1)
+    # TODO: make it matrix-vector componentwise
+    o_M = tile(o_M.reshape(m, 1), (1, 2*n))
+    ind = o < o_M
+    if any(ind):
+        o[ind] = o_M[ind]
+    a_M = tile(a_M.reshape(m, 1), (1, 2*n))        
+    ind = a > a_M
+    if any(ind):
+        a[ind] = a_M[ind]
+
 def func7(y, e, o, a, _s, nlhc, residual):
     r10 = logical_and(all(isnan(o), 1), all(isnan(a), 1))
     if any(r10):

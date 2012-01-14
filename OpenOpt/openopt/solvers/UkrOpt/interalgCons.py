@@ -235,14 +235,15 @@ def getTmp(o, a, lb, ub, tol, m, residual, dataType):
         o_t[o_t < val - tol] = val - tol
         r24 = a_t - o_t
         tmp = r24 / aor20
+        #tmp[tmp>1] = 1
         tmp[logical_or(isinf(o), isinf(a))] = 1e-10 #  (to prevent inf/inf=nan); TODO: rework it
         
         tmp[r24 == 0.0] = 1.0 # may be encountered if a == o, especially for integer probs
         tmp[tmp<1e-300] = 1e-300 # TODO: improve it
 
         # TODO: for non-exact interval quality increase nlh while moving from 0.5*(e-y)
-        tmp[val > a] = 0
-        tmp[val < o] = 0
+        tmp[val > a+tol] = 0
+        tmp[val < o-tol] = 0
     elif isfinite(lb) and not isfinite(ub):
         tmp = (a - (lb - tol)) / aor20
         
