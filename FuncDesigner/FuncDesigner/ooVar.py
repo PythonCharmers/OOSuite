@@ -56,8 +56,13 @@ class oovar(oofun):
         if r is not None: 
             return r
         else:                             
-            s = 'for oovar ' + self.name + \
-            " the point involved doesn't contain neither name nor the oovar instance. Maybe you try to get function value or derivative in a point where value for an oovar is missing"
+            s = '''for oovar %s the point involved doesn't contain 
+            neither name nor the oovar instance. 
+            Maybe you try to get function value or derivative 
+            in a point where value for an oovar is missing
+            or run optimization problem 
+            without setting initial value for this variable in start point
+            '''
             raise FuncDesignerException(s)
         
         

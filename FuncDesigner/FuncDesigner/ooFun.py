@@ -3,7 +3,7 @@ PythonSum = sum
 from numpy import inf, asfarray, copy, all, any, empty, atleast_2d, zeros, dot, asarray, atleast_1d, empty, \
 ones, ndarray, where, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum as npSum, prod, nonzero,\
 isnan, asscalar, zeros_like, ones_like, amin, amax, logical_and, logical_or, isinf, logical_not, logical_xor, flipud, \
-tile, float64
+tile, float64, searchsorted
 from traceback import extract_stack 
 try:
     from bottleneck import nanmin, nanmax
@@ -290,7 +290,7 @@ class oofun:
     def _iqg(self, domain, dtype):
         dep = self._getDep()
         v = domain.modificationVar
-        #v = modificationVar
+
         if v not in dep:
             tmp = domain.storedIntervals.get(self)
             return tmp, tmp
@@ -300,6 +300,11 @@ class oofun:
         
         assert dtype in (float, float64),  'other types unimplemented yet'
         middle = 0.5 * (lb+ub)
+        if v.domain is not None:
+            ind = searchsorted(v.domain, middle, side='left')
+            ind[ind>=v.domain.size] = v.domain.size-1
+            middle = v.domain[ind]
+
         
         domain[v] = (v_0[0], middle)
         domain.localStoredIntervals = {}
