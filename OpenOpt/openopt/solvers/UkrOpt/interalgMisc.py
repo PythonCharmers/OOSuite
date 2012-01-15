@@ -181,10 +181,10 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
             # TODO: optimize it, don't recalculate for whole stored arrays
             #ind_u_inf = where(a2==inf)[0]
             
-#        if r10.size != 0:
-#            mino = [an[i].key for i in r10]
-#            mmlf = nanmin(asarray(mino))
-#            g = min((g, mmlf))
+        if r10.size != 0:
+            mino = [an[i].key for i in r10]
+            mmlf = nanmin(asarray(mino))
+            g = min((g, mmlf))
 
 #        if ind_u_inf.size != 0:
 #            S = 1.0 # TODO: set better value
