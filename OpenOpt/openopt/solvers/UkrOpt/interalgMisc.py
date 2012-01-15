@@ -176,13 +176,13 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
                 tmp[ind] = o2[ind] + 1.0 # TODO: rework it
             #tnlh_curr = tnlh_fixed - log2(fo - o2)
             tnlh_curr = tnlh_fixed - log2(tmp - o2)
-            #r10 = where(nanmax(tmp - o2, 1) < 0)[0]
-            r10 = where(array([node.key for node in nodes])>fo)[0]
+            r10 = where(nanmax(o2, 1) <= fo)[0]
+            #r10 = where(o2>=fo)[0]
             # TODO: optimize it, don't recalculate for whole stored arrays
             #ind_u_inf = where(a2==inf)[0]
             
         if r10.size != 0:
-            mino = [an[i].key for i in r10]
+            mino = [an[i].o for i in r10]
             mmlf = nanmin(asarray(mino))
             g = min((g, mmlf))
 
