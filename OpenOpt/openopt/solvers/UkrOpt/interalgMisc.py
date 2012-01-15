@@ -160,13 +160,13 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
                 tmp[tmp>fo] = fo
                 if fo == inf and any(tmp==inf):
                     tmp[tmp==inf] = o2[tmp==inf]
-#                if nanmax(tmp - o2) < 0:
-#                    r10.append(i)
+                if nanmax(tmp - o2) < 0:
+                    r10.append(i)
                 TMP = tnlh_fixed[i] - log2(tmp - o2[i])
                 tnlh_curr.append(TMP)
                 NN.append(nanmin(TMP))
             NN = asarray(NN)
-            #r10 = asarray(r10)
+            r10 = asarray(r10)
             NN = asarray(NN)
         else:
             tmp = a2.copy()
@@ -176,7 +176,7 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
                 tmp[ind] = o2[ind] + 1.0 # TODO: rework it
             #tnlh_curr = tnlh_fixed - log2(fo - o2)
             tnlh_curr = tnlh_fixed - log2(tmp - o2)
-            r10 = where(nanmax(o2, 1) <= fo)[0]
+            r10 = where(nanmax(tmp-o2, 1) < 0)[0]
             #r10 = where(o2>=fo)[0]
             # TODO: optimize it, don't recalculate for whole stored arrays
             #ind_u_inf = where(a2==inf)[0]
