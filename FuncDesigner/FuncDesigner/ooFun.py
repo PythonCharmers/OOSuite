@@ -255,7 +255,7 @@ class oofun:
         r = {}
         for i, v in enumerate(self._getDep()):
             domain.modificationVar = v
-            r_l, r_u = self._iqg(domain, dtype)
+            r_l, r_u = self._iqg(domain, dtype, r0)
             r[v] = r_l, r_u
             if not self.isUncycled:
                 lf1, lf2, uf1, uf2 = r_l.lb, r_u.lb, r_l.ub, r_u.ub
@@ -287,7 +287,7 @@ class oofun:
         
         return r, r0
     
-    def _iqg(self, domain, dtype):
+    def _iqg(self, domain, dtype, r0):
         dep = self._getDep()
         v = domain.modificationVar
 
@@ -300,24 +300,27 @@ class oofun:
         
         assert dtype in (float, float64),  'other types unimplemented yet'
         middle = 0.5 * (lb+ub)
+        
         if v.domain is not None:
             ind = searchsorted(v.domain, middle, side='left')
             ind[ind>=v.domain.size] = v.domain.size-1
             ind[ind==0] = 1
-            middle = v.domain[ind-1]
-
+            middle1 = v.domain[ind-1]
+            
+            ind = searchsorted(v.domain, middle, side='left')
+            ind[ind==v.domain.size-1] = v.domain.size-2
+            middle2 = v.domain[ind+1]
+            # TODO: implement it
+            #if all()
+        else:
+            middle1 = middle2 = middle
         
         domain[v] = (v_0[0], middle)
         domain.localStoredIntervals = {}
         r_l = self.interval(domain, dtype, resetStoredIntervals = False)
         #print 'r_l:', r_l
         
-        if v.domain is not None:
-            middle = 0.5 * (lb+ub)
-            ind = searchsorted(v.domain, middle, side='left')
-            ind[ind>=v.domain.size] = v.domain.size-1
-            ind[ind==v.domain.size-1] = v.domain.size-2
-            middle = v.domain[ind+1]
+
         domain[v] = (middle, v_0[1])
         domain.localStoredIntervals = {}
         r_u = self.interval(domain, dtype, resetStoredIntervals = False)
