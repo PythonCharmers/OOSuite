@@ -100,7 +100,10 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p):
             if v.domain is not None:
                 ind = searchsorted(v.domain, tmp, side='left')
                 ind[ind>=v.domain.size] = v.domain.size-1
-                tmp = v.domain[ind]
+                tmp1 = v.domain[ind]
+                ind[ind==0] = 1
+                tmp2 = v.domain[ind-1]
+                tmp = where(abs(tmp-tmp1)<abs(tmp-tmp2), tmp1, tmp2)
             wr4[:, i] = tmp
             
         cs = dict([(oovar, asarray((y[:, i]+e[:, i])/2, dataType)) for i, oovar in enumerate(vv)])
@@ -119,7 +122,10 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p):
             if v.domain is not None:
                 ind = searchsorted(v.domain, tmp, side='left')
                 ind[ind>=v.domain.size] = v.domain.size-1
-                tmp = v.domain[ind]
+                tmp1 = v.domain[ind]
+                ind[ind==0] = 1
+                tmp2 = v.domain[ind-1]
+                tmp = where(abs(tmp-tmp1)<abs(tmp-tmp2), tmp1, tmp2)
             wr4[:, i] = tmp
         
 #        wr4 = (y + e) / 2

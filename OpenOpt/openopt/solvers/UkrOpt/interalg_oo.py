@@ -132,7 +132,7 @@ class interalg(baseSolver):
                 dataType = 'float64'
             dataType = getattr(numpy, dataType)
 
-        lb, ub = asarray(p.lb, dataType), asarray(p.ub, dataType)
+        lb, ub = asarray(p.lb, dataType).copy(), asarray(p.ub, dataType).copy()
 
         vv = list(p._freeVarsList)
 

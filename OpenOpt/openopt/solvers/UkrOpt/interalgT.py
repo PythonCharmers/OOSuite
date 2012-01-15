@@ -1,5 +1,5 @@
 from numpy import isnan, take, any, all, logical_or, logical_and, logical_not, atleast_1d, where, \
-asarray, inf, nan, argmin, argsort, tile
+asarray, inf, nan, argmin, argsort, tile, searchsorted
 from bisect import bisect_right
 try:
     from bottleneck import nanargmin, nanmin, nanargmax, nanmax
@@ -24,6 +24,23 @@ def r42(o, a):
     ind = a > a_M
     if any(ind):
         a[ind] = a_M[ind]
+
+def adjustDiscreteVarBounds(y, e, p):
+    #n = p.n
+    for i in p._discreteVarsNumList:
+        v = p._freeVarsList[i]
+        ind = searchsorted(v.domain, y[:, i], 'right')
+        ind[ind==v.domain.size] -= 1
+#        print 'domain:', v.domain
+#        print 'y_prev', y[:, i]
+        y[:, i] = v.domain[ind]
+#        print 'y_new', y[:, i]
+        ind = searchsorted(v.domain, e[:, i], 'right')
+        ind[ind==v.domain.size] -= 1
+        #print 'e_prev', e[:, i]
+        e[:, i] = v.domain[ind-1]
+        #print 'e_new', e[:, i]
+    
 
 def func7(y, e, o, a, _s, nlhc, residual):
     r10 = logical_and(all(isnan(o), 1), all(isnan(a), 1))

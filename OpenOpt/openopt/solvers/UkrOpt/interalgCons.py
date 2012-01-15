@@ -1,6 +1,7 @@
 from numpy import empty, where, logical_and, logical_not, take, logical_or, isnan, zeros, log2, isfinite, \
 int8, int16, int32, int64, inf, isinf, asfarray, hstack, vstack, prod, all, any, asarray, tile, zeros_like
 from interalgLLR import func8, func82, func10
+from interalgT import adjustDiscreteVarBounds
 
 try:
     from bottleneck import nanargmin, nanmin, nanargmax, nanmax
@@ -14,7 +15,10 @@ def processConstraints(C0, y, e, p, dataType):
     nlh = zeros((m, 2*n))
     r15.fill(True)
     DefiniteRange = True
-  
+    
+    if len(p._discreteVarsNumList):
+        adjustDiscreteVarBounds(y, e, p)
+        
     for f, r16, r17, tol in C0:
         if p.solver.dataHandling == 'sorted': tol = 0
         
@@ -126,6 +130,8 @@ def processConstraints2(C0, y, e, p, dataType):
     DefiniteRange = True
     indT = empty(m, bool)
     indT.fill(False)
+    if len(p._discreteVarsNumList):
+        adjustDiscreteVarBounds(y, e, p)
     
     for f, lb, ub, tol in C0:
         

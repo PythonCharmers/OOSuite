@@ -21,6 +21,8 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
 
     isSNLE = p.probType in ('NLSP', 'SNLE')
     
+    if len(p._discreteVarsNumList):
+        adjustDiscreteVarBounds(y, e, p)
     
     Case = p.solver.intervalObtaining
 
