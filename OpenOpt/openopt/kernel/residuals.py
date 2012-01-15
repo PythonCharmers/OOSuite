@@ -162,7 +162,7 @@ class residuals:
         is_X_finite = all(isfinite(x))
         is_ConTol_OK = self.getMaxResidual(x) <= self.contol
         cond1 = is_ConTol_OK and is_X_finite and all(isfinite(self.objFunc(x)))
-        if self.probType == 'NLSP': return cond1 and self.F(x) < self.ftol
+        if self.probType in ('NLSP', 'SNLE'): return cond1 and self.F(x) < self.ftol
         else: return cond1
 
     def discreteConstraintsAreSatisfied(self, x):

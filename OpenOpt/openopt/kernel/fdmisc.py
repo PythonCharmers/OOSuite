@@ -43,6 +43,12 @@ def setStartVectorAndTranslators(p):
     freeVars.sort(key=lambda elem: elem._id)
 #    fixedVars.sort()
     p._freeVarsList = freeVars # to use in interalg, a global solver from UkrOpt
+    p._discreteVarsNumList = []
+    p._discreteVarsList = []
+    for i, v in enumerate(p._freeVarsList):
+        if v.domain is not None:
+            p._discreteVarsNumList.append(i)
+            p._discreteVarsList.append(v)
     
     p._fixedVars = set(fixedVars) if fixedVars is not None else set()
     p._freeVars = set(freeVars) if freeVars is not None else set()
