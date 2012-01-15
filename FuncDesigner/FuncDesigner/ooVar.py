@@ -62,7 +62,7 @@ class oovar(oofun):
             in a point where value for an oovar is missing
             or run optimization problem 
             without setting initial value for this variable in start point
-            '''
+            ''' % self.name
             raise FuncDesignerException(s)
         
         

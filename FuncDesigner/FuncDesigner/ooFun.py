@@ -303,13 +303,21 @@ class oofun:
         if v.domain is not None:
             ind = searchsorted(v.domain, middle, side='left')
             ind[ind>=v.domain.size] = v.domain.size-1
-            middle = v.domain[ind]
+            ind[ind==0] = 1
+            middle = v.domain[ind-1]
 
         
         domain[v] = (v_0[0], middle)
         domain.localStoredIntervals = {}
         r_l = self.interval(domain, dtype, resetStoredIntervals = False)
         #print 'r_l:', r_l
+        
+        if v.domain is not None:
+            middle = 0.5 * (lb+ub)
+            ind = searchsorted(v.domain, middle, side='left')
+            ind[ind>=v.domain.size] = v.domain.size-1
+            ind[ind==v.domain.size-1] = v.domain.size-2
+            middle = v.domain[ind+1]
         domain[v] = (middle, v_0[1])
         domain.localStoredIntervals = {}
         r_u = self.interval(domain, dtype, resetStoredIntervals = False)
