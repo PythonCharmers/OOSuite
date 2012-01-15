@@ -358,7 +358,6 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             
             self._D_kwargs = D_kwargs
             
-            
             variableTolerancesDict = dict([(v, v.tol) for v in self._freeVars])
             self.variableTolerances = self._point2vector(variableTolerancesDict)
             
@@ -388,6 +387,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             
             C = list(self.constraints)
             self.constraints = set(self.constraints)
+            
+            
             if hasattr(self, 'f'):
                 if type(self.f) in [list, tuple, set]:
                     C += list(self.f)
@@ -397,9 +398,19 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             if self.useAttachedConstraints: 
                 self.constraints.update(_getAllAttachedConstraints(C))
             
+            for v in self._freeVars:
+                if v.domain in (bool, 'bool'):
+                    v.domain = array([0, 1])
+                    self.constraints.update([v>0, v<1])
+                elif v.domain is not None:
+                    # TODO: mb add integer domains?
+                    v.domain = array(list(v.domain))
+                    v.domain.sort()
+                    self.constraints.update([v>v.domain[0], v<v.domain[-1]])
+            
             """                                         handling constraints                                         """
             StartPointVars = set(self._x0.keys())
-            handleConstraint_args = (StartPointVars, probtol, areFixed, oovD, A, b, Aeq, beq, Z, D_kwargs, LB, UB)
+            handleConstraint_args = (StartPointVars, areFixed, oovD, A, b, Aeq, beq, Z, D_kwargs, LB, UB)
             for c in self.constraints:
                 if isinstance(c, ooarray):
                     for elem in c: 
@@ -469,10 +480,11 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             
         self._baseProblemIsPrepared = True
 
-    def handleConstraint(self, c, StartPointVars, probtol, areFixed, oovD, A, b, Aeq, beq, Z, D_kwargs, LB, UB):
+    def handleConstraint(self, c, StartPointVars, areFixed, oovD, A, b, Aeq, beq, Z, D_kwargs, LB, UB):
+        probtol = self.contol
         f, tol = c.oofun, c.tol
         _lb, _ub = c.lb, c.ub
-        f0, lb_0, ub_0 = f, _lb, _ub
+        f0, lb_0, ub_0 = f, copy(_lb), copy(_ub)
         Name = f.name
         
         dep = set([f]) if f.is_oovar else f._getDep()
@@ -504,9 +516,15 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         if tol not in (0, probtol, -probtol):
             scaleFactor = abs(probtol / tol)
             f *= scaleFactor
+            #c.oofun = f#c.oofun * scaleFactor
             _lb, _ub = _lb * scaleFactor, _ub * scaleFactor
+            Contol = tol
+            Contol2 = Contol * scaleFactor
+        else:
+            Contol = copy(probtol)
+            Contol2 = Contol 
             
-        Contol = tol if tol != 0 else self.contol
+        #Contol = tol if tol != 0 else copy(self.contol)
         if areFixed(dep):
             # TODO: get rid of self.contol, use separate contols for each constraint
             
@@ -573,7 +591,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             self.err('inform OpenOpt developers of the bug')
             
         if not f.is_oovar:
-            Contol = max((0, Contol))
+            Contol = max((0, Contol2))
             # TODO: handle it more properly, especially  for lb, ub of array type
             # FIXME: name of f0 vs f
 #            self._FD.nonBoxConsWithTolShift.append((f0, lb_0 - Contol, ub_0 + Contol))
