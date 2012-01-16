@@ -3,7 +3,6 @@ interalg example for global MINLP with 9 variables and some constraints
 '''
 from FuncDesigner import *
 from openopt import *
-from numpy import arange
  
 n = 7
 x = oovars(n)
