@@ -26,20 +26,37 @@ def r42(o, a):
         a[ind] = a_M[ind]
 
 def adjustDiscreteVarBounds(y, e, p):
-    #n = p.n
+    n = p.n
+    # TODO: remove the cycle, use vectorization
     for i in p._discreteVarsNumList:
         v = p._freeVarsList[i]
-        ind = searchsorted(v.domain, y[:, i], 'right')
+        
+        ind = searchsorted(v.domain, y[:, i], 'left')
+        ind2 = searchsorted(v.domain, y[:, i], 'right')
+        ind3 = where(ind!=ind2)[0]
+        #Tmp = y[:, ind3].copy()
+        Tmp = v.domain[ind[ind3]]
         ind[ind==v.domain.size] -= 1
-#        print 'domain:', v.domain
-#        print 'y_prev', y[:, i]
-        y[:, i] = v.domain[ind]
-#        print 'y_new', y[:, i]
-        ind = searchsorted(v.domain, e[:, i], 'right')
-        ind[ind==v.domain.size] -= 1
-        #print 'e_prev', e[:, i]
+        ind[ind==v.domain.size-1] -= 1
+        y[:, i] = v.domain[ind+1]
+        y[:, i][ind3] = Tmp
+        
+        
+        ind = searchsorted(v.domain, e[:, i], 'left')
+        ind2 = searchsorted(v.domain, e[:, i], 'right')
+        ind3 = where(ind!=ind2)[0]
+        #Tmp = e[:, ind3].copy()
+        Tmp = v.domain[ind[ind3]]
+        #ind[ind==v.domain.size] -= 1
+        ind[ind==0] = 1
         e[:, i] = v.domain[ind-1]
-        #print 'e_new', e[:, i]
+        e[:, i][ind3] = Tmp
+    ind = any(y>e, 1)
+    if any(ind):
+        ind = where(logical_not(ind))[0]
+        s = ind.size
+        y = take(y, ind, axis=0, out=y[:s])
+        e = take(e, ind, axis=0, out=e[:s])
     
 
 def func7(y, e, o, a, _s, nlhc, residual):

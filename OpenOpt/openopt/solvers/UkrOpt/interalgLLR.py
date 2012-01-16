@@ -99,10 +99,17 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p):
             tmp = wr4[:, i]
             if v.domain is not None:
                 ind = searchsorted(v.domain, tmp, side='left')
-                ind[ind>=v.domain.size] = v.domain.size-1
-                tmp1 = v.domain[ind]
-                ind[ind==0] = 1
-                tmp2 = v.domain[ind-1]
+                ind2 = searchsorted(v.domain, tmp, side='right')
+                ind3 = where(ind!=ind2)[0]
+                Tmp = tmp[ind3].copy()
+                ind[ind==v.domain.size] -= 1
+                ind2[ind2==v.domain.size] -= 1
+                ind2[ind2==v.domain.size-1] -=1
+                tmp1 = asarray(v.domain[ind], p.solver.dataType)
+                tmp2 = asarray(v.domain[ind2+1], p.solver.dataType)
+                if Tmp.size!=0:
+                    tmp2[ind3] = Tmp.copy()
+                    tmp1[ind3] = Tmp.copy()
                 tmp = where(abs(tmp-tmp1)<abs(tmp-tmp2), tmp1, tmp2)
             wr4[:, i] = tmp
             
@@ -118,29 +125,25 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p):
         wr4[ind] = (y[ind] + e[ind]) / 2
         
         for i, v in enumerate(vv):
-            tmp = wr4[:, i]
             if v.domain is not None:
+                tmp = wr4[:, i]
                 ind = searchsorted(v.domain, tmp, side='left')
-                ind[ind>=v.domain.size] = v.domain.size-1
-                tmp1 = v.domain[ind]
-                ind[ind==0] = 1
-                tmp2 = v.domain[ind-1]
+                ind2 = searchsorted(v.domain, tmp, side='right')
+                ind3 = where(ind!=ind2)[0]
+                Tmp = tmp[ind3].copy()
+                ind[ind==v.domain.size] -= 1
+                ind2[ind2==v.domain.size] -= 1
+                ind2[ind2==v.domain.size-1] -=1
+                tmp1 = asarray(v.domain[ind], p.solver.dataType)
+                tmp2 = asarray(v.domain[ind2+1], p.solver.dataType)
+                if Tmp.size!=0:
+                    tmp2[ind3] = Tmp.copy()
+                    tmp1[ind3] = Tmp.copy()
                 tmp = where(abs(tmp-tmp1)<abs(tmp-tmp2), tmp1, tmp2)
-            wr4[:, i] = tmp
+                #print max(abs(tmp-tmp1)), max(abs(tmp-tmp2))
+                wr4[:, i] = tmp
         
-#        wr4 = (y + e) / 2
-
-        # Prev
         cs = dict([(oovar, asarray(wr4[:, i], dataType)) for i, oovar in enumerate(vv)])
-        # New
-        
-        
-            
-        
-        #OLD
-#        cs = dict([(oovar, asarray((y[:, i]+e[:, i])/2, dataType)) for i, oovar in enumerate(vv)])
-#        wr4 = (y + e) / 2
-
         
     cs = oopoint(cs, skipArrayCast = True)
     cs.isMultiPoint = True
@@ -529,6 +532,9 @@ def func11(y, e, nlhc, indTC, residual, o, a, _s, p):
         return [si(IP_fields, sup_inf_diff[i], minres[i], y[i], e[i], o[i], a[i], _s[i], F[i], volume[i], volumeResidual[i]) for i in range(m)]
     else:
         assert p.probType in ('GLP', 'NLP', 'NSP', 'SNLE', 'NLSP')
+        
+        residual = None
+        
         return [si(Fields, Tmp[i], y[i], e[i], nlhf[i], 
                           nlhc[i] if nlhc is not None else None, 
                           indTC[i] if indTC is not None else None, 
