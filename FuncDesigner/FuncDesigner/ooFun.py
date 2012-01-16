@@ -301,27 +301,30 @@ class oofun:
         assert dtype in (float, float64),  'other types unimplemented yet'
         middle = 0.5 * (lb+ub)
         
-        if v.domain is not None:
-            ind = searchsorted(v.domain, middle, side='left')
-            ind[ind>=v.domain.size] = v.domain.size-1
-            ind[ind==0] = 1
-            middle1 = v.domain[ind-1]
-            
-            ind = searchsorted(v.domain, middle, side='left')
-            ind[ind==v.domain.size-1] = v.domain.size-2
-            middle2 = v.domain[ind+1]
-            # TODO: implement it
-            #if all()
-        else:
-            middle1 = middle2 = middle
         
-        domain[v] = (v_0[0], middle)
+#        if v.domain is not None:
+#            #print len(where(lb==ub)[0] / float(lb.size))
+#            ind = searchsorted(v.domain, middle, side='right')
+#            ind[ind==v.domain.size] -= 1
+#            middle1 = v.domain[ind]
+#            
+#            ind = searchsorted(v.domain, middle, side='left')
+#            ind[ind==v.domain.size] -= 1
+#            middle2 = v.domain[ind]
+#            # TODO: implement it
+#            #if all()
+#        else:
+#            middle1 = middle2 = middle
+            
+        middle1 = middle2 = middle
+        
+        domain[v] = (v_0[0], middle1)
         domain.localStoredIntervals = {}
         r_l = self.interval(domain, dtype, resetStoredIntervals = False)
         #print 'r_l:', r_l
         
 
-        domain[v] = (middle, v_0[1])
+        domain[v] = (middle2, v_0[1])
         domain.localStoredIntervals = {}
         r_u = self.interval(domain, dtype, resetStoredIntervals = False)
         #print 'r_u:', r_u
