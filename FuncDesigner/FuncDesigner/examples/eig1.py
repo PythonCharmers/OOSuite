@@ -1,7 +1,5 @@
-"""
-Another one, more advanced example
-for solving SLE (system of linear equations)
-"""
+# An example of FuncDesigner eigenvalues/eigenvectors for a linear equations system,
+# see http://openopt.org/EIG for more examples and details
 from FuncDesigner import *
 from numpy import arange
 n = 100
@@ -35,7 +33,8 @@ f = [a+f4==-5, 2*a+b==-15, a==-4*b.sum()-2*c.sum()+45]
 linSys = sle(f)
 print('dimension of the SLE: %d' % linSys.n) # dimension of the SLE: 301
 # let's search for 4 largest magnitude eigenvalues
-r = linSys.eig(goal={'lm':4}, solver='arpack')
+#r = linSys.eig(goal={'lm':4}, solver='arpack')
+r = linSys.eig(solver='numpy_eig')
 # or goal={'largest magnitude':4}, with or without space inside, case-insensitive
 # for whole list of available goals see http://openopt.org/EIG
 
