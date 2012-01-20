@@ -19,12 +19,15 @@ class pymls(baseSolver):
 
     #__bvls_inf__ = 1e100
     T = np.float64
+    __pymls_inf__ = 1e9
     def __init__(self): pass
 
     def __solver__(self, p):
         T = self.T
         A, b = T(p.C),  T(p.d).copy().reshape(-1, 1)
         lb,  ub = p.lb.copy().reshape(-1, 1), p.ub.copy().reshape(-1, 1)
+        lb[lb==-np.inf] = -self.__pymls_inf__
+        ub[ub==np.inf] = self.__pymls_inf__
         xf = bounded_lsq(A,b,lb,ub)
         p.xf = p.xk = xf.flatten()
 
