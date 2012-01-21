@@ -62,7 +62,8 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
     m, n = e.shape
     o, a = o.reshape(2*n, m).T, a.reshape(2*n, m).T
     
-    if asdf1.isUncycled and nlhc is not None and not isSNLE and not p.probType.startswith('MI') and all([v.domain is None for v in p._freeVarsList]):# for SNLE fo = 0
+    if asdf1.isUncycled and nlhc is not None and not isSNLE and not p.probType.startswith('MI') \
+    and len(p._discreteVarsList)==0:# for SNLE fo = 0
         
         # TODO: 
         # handle constraints with restricted domain and matrix definiteRange
