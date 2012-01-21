@@ -95,25 +95,24 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p):
     if tnlh is None:
 
         wr4 = (y+e) / 2
-        # TODO: change the cycle iterator
-        for i, v in enumerate(vv):
-            if v.domain is not None:
-                tmp = wr4[:, i]
-                ind = searchsorted(v.domain, tmp, side='left')
-                ind2 = searchsorted(v.domain, tmp, side='right')
-                ind3 = where(ind!=ind2)[0]
-                Tmp = tmp[ind3].copy()
-                ind[ind==v.domain.size] -= 1
-                ind2[ind2==v.domain.size] -= 1
-                ind2[ind2==v.domain.size-1] -=1
-                tmp1 = asarray(v.domain[ind], p.solver.dataType)
-                tmp2 = asarray(v.domain[ind2+1], p.solver.dataType)
-                if Tmp.size!=0:
-                    tmp2[ind3] = Tmp.copy()
-                    tmp1[ind3] = Tmp.copy()
-                tmp = where(abs(tmp-tmp1)<abs(tmp-tmp2), tmp1, tmp2)
-                #print max(abs(tmp-tmp1)), max(abs(tmp-tmp2))
-                wr4[:, i] = tmp
+        for i in p._discreteVarsNumList:
+            v = p._freeVarsList[i]
+            tmp = wr4[:, i]
+            ind = searchsorted(v.domain, tmp, side='left')
+            ind2 = searchsorted(v.domain, tmp, side='right')
+            ind3 = where(ind!=ind2)[0]
+            Tmp = tmp[ind3].copy()
+            ind[ind==v.domain.size] -= 1
+            ind2[ind2==v.domain.size] -= 1
+            ind2[ind2==v.domain.size-1] -=1
+            tmp1 = asarray(v.domain[ind], p.solver.dataType)
+            tmp2 = asarray(v.domain[ind2+1], p.solver.dataType)
+            if Tmp.size!=0:
+                tmp2[ind3] = Tmp.copy()
+                tmp1[ind3] = Tmp.copy()
+            tmp = where(abs(tmp-tmp1)<abs(tmp-tmp2), tmp1, tmp2)
+            #print max(abs(tmp-tmp1)), max(abs(tmp-tmp2))
+            wr4[:, i] = tmp
             
         cs = dict([(oovar, asarray((y[:, i]+e[:, i])/2, dataType)) for i, oovar in enumerate(vv)])
 
@@ -126,25 +125,24 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p):
         ind = tnlh_l_inv == tnlh_u_inv # especially important for tnlh_l_inv == tnlh_u_inv = 0
         wr4[ind] = (y[ind] + e[ind]) / 2
         
-        # TODO: change the cycle iterator
-        for i, v in enumerate(vv):
-            if v.domain is not None:
-                tmp = wr4[:, i]
-                ind = searchsorted(v.domain, tmp, side='left')
-                ind2 = searchsorted(v.domain, tmp, side='right')
-                ind3 = where(ind!=ind2)[0]
-                Tmp = tmp[ind3].copy()
-                ind[ind==v.domain.size] -= 1
-                ind2[ind2==v.domain.size] -= 1
-                ind2[ind2==v.domain.size-1] -=1
-                tmp1 = asarray(v.domain[ind], p.solver.dataType)
-                tmp2 = asarray(v.domain[ind2+1], p.solver.dataType)
-                if Tmp.size!=0:
-                    tmp2[ind3] = Tmp.copy()
-                    tmp1[ind3] = Tmp.copy()
-                tmp = where(abs(tmp-tmp1)<abs(tmp-tmp2), tmp1, tmp2)
-                #print max(abs(tmp-tmp1)), max(abs(tmp-tmp2))
-                wr4[:, i] = tmp
+        for i in p._discreteVarsNumList:
+            v = p._freeVarsList[i]
+            tmp = wr4[:, i]
+            ind = searchsorted(v.domain, tmp, side='left')
+            ind2 = searchsorted(v.domain, tmp, side='right')
+            ind3 = where(ind!=ind2)[0]
+            Tmp = tmp[ind3].copy()
+            ind[ind==v.domain.size] -= 1
+            ind2[ind2==v.domain.size] -= 1
+            ind2[ind2==v.domain.size-1] -=1
+            tmp1 = asarray(v.domain[ind], p.solver.dataType)
+            tmp2 = asarray(v.domain[ind2+1], p.solver.dataType)
+            if Tmp.size!=0:
+                tmp2[ind3] = Tmp.copy()
+                tmp1[ind3] = Tmp.copy()
+            tmp = where(abs(tmp-tmp1)<abs(tmp-tmp2), tmp1, tmp2)
+            #print max(abs(tmp-tmp1)), max(abs(tmp-tmp2))
+            wr4[:, i] = tmp
         
         cs = dict([(oovar, asarray(wr4[:, i], dataType)) for i, oovar in enumerate(vv)])
         
