@@ -22,32 +22,31 @@ constraints = [
                interpolator([1, 2, 3, 4], [1.001, 4, 9, 16.01])(x[4]+2*x[5]) < 6
                ]
 
-startPoint = {x:[0]*n, y:0, z:3} # [0]*n means Python list [0,0,...,0] with n zeros
+startPoint = {x:[0]*n, y:0, z:1.5} # [0]*n means Python list [0,0,...,0] with n zeros
 
 # interalg solves problems with specifiable accuracy fTol: 
 # | f - f*|< fTol , where f* is  theoretical optimal value
 
-p = GLP(F, startPoint, fTol = 0.01, constraints = constraints)
+p = GLP(F, startPoint, fTol = 0.0005, constraints = constraints)
 # interalg requires all finite box bounds, but they can be very huge, e.g. +/- 10^15
 # you may found useful arg implicitBounds, for example p.implicitBounds = [-1, 1], 
 # for those variables that haven't assigned bounds, 
 # it affects only solvers that demand finite box bounds on variables
 
-r = p.solve('interalg', iprint = 50)
+r = p.solve('interalg', iprint = 100)
 print(r(x, y, z))
 '''
 ------------------------- OpenOpt 0.37 -------------------------
 solver: interalg   problem: unnamed    type: GLP
  iter   objFunVal   log10(MaxResidual/ConTol)   
     0  9.890e-01                      6.70 
-   50  1.274e+00                     -0.08 
-  100  1.230e+00                     -0.60 
-OpenOpt info: Solution with required tolerance 1.0e-02 
- is guarantied (obtained precision: 3.9e-03)
-  106  1.222e+00                     -0.07 
+  100  1.254e+00                     -1.64 
+  200  1.221e+00                     -0.24 
+OpenOpt info: Solution with required tolerance 5.0e-04 
+ is guarantied (obtained precision: 5.0e-04)
+  233  1.221e+00                     -0.01 
 istop: 1000 (solution has been obtained)
-Solver:   Time Elapsed = 7.21 	CPU Time Elapsed = 7.19
-objFunValue: 1.2218493 (feasible, max(residuals/requiredTolerances) = 0.85687)
-[[-0.63418555259704279, -0.31274366370910428, 0.072183378174295279, -0.066029369051045964, 
--0.69999999999999996, -0.88473824157067527, 0.89907134783056863], 1.0, -4.0]
+Solver:   Time Elapsed = 16.86 	CPU Time Elapsed = 16.61
+objFunValue: 1.2209237 (feasible, max(residuals/requiredTolerances) = 0.982429)
+[[-0.63423135876655579, -0.31265074014663696, 0.073974609375, -0.0665283203125, -0.69999999999999996, -0.88623046875, 0.89990234375], 1.0, -4.0]
 '''
