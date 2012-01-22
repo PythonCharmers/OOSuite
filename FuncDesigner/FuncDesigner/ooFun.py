@@ -16,7 +16,7 @@ from FDmisc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scip
 raise_except, DiagonalType
 #from copy import deepcopy
 from ooPoint import ooPoint
-from Interval import Interval
+from Interval import Interval, adjustLxWithDiscreteDomain, adjustUxWithDiscreteDomain
 import inspect
 
 Copy = lambda arg: asscalar(arg) if type(arg)==ndarray and arg.size == 1 else arg.copy() if hasattr(arg, 'copy') else copy(arg)
@@ -258,7 +258,10 @@ class oofun:
             r_l, r_u = self._iqg(domain, dtype, r0)
             r[v] = r_l, r_u
             if not self.isUncycled:
-                lf1, lf2, uf1, uf2 = r_l.lb, r_u.lb, r_l.ub, r_u.ub
+                try:
+                    lf1, lf2, uf1, uf2 = r_l.lb, r_u.lb, r_l.ub, r_u.ub
+                except:
+                    pass
                 lf, uf = nanmin(vstack((lf1, lf2)), 0), nanmax(vstack((uf1, uf2)), 0)
                 if i == 0:
                     L, U = lf.copy(), uf.copy()
@@ -291,32 +294,21 @@ class oofun:
         dep = self._getDep()
         v = domain.modificationVar
 
-        if v not in dep:
-            tmp = domain.storedIntervals.get(self)
-            return tmp, tmp
-        
         v_0 = domain[v]
         lb, ub = v_0[0], v_0[1]
-        
+
+        if v.domain is not None and array_equal(lb, ub):
+            return r0,r0 
+
         assert dtype in (float, float64),  'other types unimplemented yet'
         middle = 0.5 * (lb+ub)
         
-        
-#        if v.domain is not None:
-#            #print len(where(lb==ub)[0] / float(lb.size))
-#            ind = searchsorted(v.domain, middle, side='right')
-#            ind[ind==v.domain.size] -= 1
-#            middle1 = v.domain[ind]
-#            
-#            ind = searchsorted(v.domain, middle, side='left')
-#            ind[ind==v.domain.size] -= 1
-#            middle2 = v.domain[ind]
-#            # TODO: implement it
-#            #if all()
-#        else:
-#            middle1 = middle2 = middle
-            
-        middle1 = middle2 = middle
+        if v.domain is not None:
+            middle1, middle2 = middle.copy(), middle.copy()
+            adjustUxWithDiscreteDomain(middle1, v)
+            adjustLxWithDiscreteDomain(middle2, v)
+        else:
+            middle1 = middle2 = middle
         
         domain[v] = (v_0[0], middle1)
         domain.localStoredIntervals = {}

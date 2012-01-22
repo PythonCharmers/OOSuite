@@ -1,5 +1,6 @@
 from numpy import ndarray, asscalar, isscalar, hstack, amax, amin, floor, ceil, pi, \
-arange, copy as Copy, logical_and, where, asarray, any, atleast_1d, empty_like, nan, logical_not, vstack
+arange, copy as Copy, logical_and, where, asarray, any, atleast_1d, empty_like, nan, logical_not, vstack, \
+searchsorted
 
 try:
     from bottleneck import nanmin, nanmax
@@ -143,3 +144,26 @@ def box_1_interval(inp, func, domain, dtype, F_l, F_u):
 #    else:
 #        t_min, t_max = func(lb), func(ub)
     return vstack((t_min, t_max)), definiteRange
+
+
+def adjustLxWithDiscreteDomain(Lx, v):
+    ind = searchsorted(v.domain, Lx, 'left')
+    ind2 = searchsorted(v.domain, Lx, 'right')
+    ind3 = where(ind!=ind2)[0]
+    #Tmp = Lx[:, ind3].copy()
+    Tmp = v.domain[ind[ind3]]
+    ind[ind==v.domain.size] -= 1
+    ind[ind==v.domain.size-1] -= 1
+    Lx[:] = v.domain[ind+1]
+    Lx[ind3] = Tmp
+        
+def adjustUxWithDiscreteDomain(Ux, v):
+    ind = searchsorted(v.domain, Ux, 'left')
+    ind2 = searchsorted(v.domain, Ux, 'right')
+    ind3 = where(ind!=ind2)[0]
+    #Tmp = Ux[:, ind3].copy()
+    Tmp = v.domain[ind[ind3]]
+    #ind[ind==v.domain.size] -= 1
+    ind[ind==0] = 1
+    Ux[:] = v.domain[ind-1]
+    Ux[ind3] = Tmp
