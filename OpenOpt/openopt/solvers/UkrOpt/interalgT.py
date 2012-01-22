@@ -1,6 +1,7 @@
 from numpy import isnan, take, any, all, logical_or, logical_and, logical_not, atleast_1d, where, \
 asarray, inf, nan, argmin, argsort, tile, searchsorted
 from bisect import bisect_right
+from Interval import adjustyWithDiscreteDomain, adjusteWithDiscreteDomain
 try:
     from bottleneck import nanargmin, nanmin, nanargmax, nanmax
 except ImportError:
@@ -30,27 +31,28 @@ def adjustDiscreteVarBounds(y, e, p):
     # TODO: remove the cycle, use vectorization
     for i in p._discreteVarsNumList:
         v = p._freeVarsList[i]
-        
-        ind = searchsorted(v.domain, y[:, i], 'left')
-        ind2 = searchsorted(v.domain, y[:, i], 'right')
-        ind3 = where(ind!=ind2)[0]
-        #Tmp = y[:, ind3].copy()
-        Tmp = v.domain[ind[ind3]]
-        ind[ind==v.domain.size] -= 1
-        ind[ind==v.domain.size-1] -= 1
-        y[:, i] = v.domain[ind+1]
-        y[:, i][ind3] = Tmp
-        
-        
-        ind = searchsorted(v.domain, e[:, i], 'left')
-        ind2 = searchsorted(v.domain, e[:, i], 'right')
-        ind3 = where(ind!=ind2)[0]
-        #Tmp = e[:, ind3].copy()
-        Tmp = v.domain[ind[ind3]]
-        #ind[ind==v.domain.size] -= 1
-        ind[ind==0] = 1
-        e[:, i] = v.domain[ind-1]
-        e[:, i][ind3] = Tmp
+        adjustyWithDiscreteDomain(y[:, i], v)
+        adjusteWithDiscreteDomain(e[:, i], v)
+#        ind = searchsorted(v.domain, y[:, i], 'left')
+#        ind2 = searchsorted(v.domain, y[:, i], 'right')
+#        ind3 = where(ind!=ind2)[0]
+#        #Tmp = y[:, ind3].copy()
+#        Tmp = v.domain[ind[ind3]]
+#        ind[ind==v.domain.size] -= 1
+#        ind[ind==v.domain.size-1] -= 1
+#        y[:, i] = v.domain[ind+1]
+#        y[:, i][ind3] = Tmp
+#        
+#        
+#        ind = searchsorted(v.domain, e[:, i], 'left')
+#        ind2 = searchsorted(v.domain, e[:, i], 'right')
+#        ind3 = where(ind!=ind2)[0]
+#        #Tmp = e[:, ind3].copy()
+#        Tmp = v.domain[ind[ind3]]
+#        #ind[ind==v.domain.size] -= 1
+#        ind[ind==0] = 1
+#        e[:, i] = v.domain[ind-1]
+#        e[:, i][ind3] = Tmp
     ind = any(y>e, 1)
     if any(ind):
         ind = where(logical_not(ind))[0]
@@ -58,6 +60,7 @@ def adjustDiscreteVarBounds(y, e, p):
         y = take(y, ind, axis=0, out=y[:s])
         e = take(e, ind, axis=0, out=e[:s])
     
+
 
 def func7(y, e, o, a, _s, nlhc, residual):
     r10 = logical_and(all(isnan(o), 1), all(isnan(a), 1))
