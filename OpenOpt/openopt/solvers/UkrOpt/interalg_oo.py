@@ -26,7 +26,7 @@ class interalg(baseSolver):
     __license__ = "BSD"
     __authors__ = "Dmitrey"
     __alg__ = ""
-    __optionalDataThatCanBeHandled__ = ['lb', 'ub', 'c', 'h', 'A', 'Aeq', 'b', 'beq']
+    __optionalDataThatCanBeHandled__ = ['lb', 'ub', 'c', 'h', 'A', 'Aeq', 'b', 'beq', 'discreteVars']
     iterfcnConnected = True
     fStart = None
     dataType = float64
@@ -46,7 +46,8 @@ class interalg(baseSolver):
         
     def __solver__(self, p):
         
-        isOpt = p.probType in ['NLP', 'NSP', 'GLP']
+        isMOP = p.probType == 'MOP'
+        isOpt = p.probType in ['NLP', 'NSP', 'GLP', 'MINLP']
         isODE = p.probType == 'ODE'
         isSNLE = p.probType in ('NLSP', 'SNLE')
         if self.intervalObtaining == 'auto':
@@ -60,7 +61,7 @@ class interalg(baseSolver):
             ''' % self.__name__)
         if p.fixedVars is not None:
             p.err('solver %s cannot handle FuncDesigner problems with some variables declared as fixed' % self.__name__)
-        if p.probType in ('LP', 'MILP', 'MINLP'):
+        if p.probType in ('LP', 'MILP'):
             p.err("the solver can't handle problems of type " + p.probType)
         if not p.isFDmodel:
             p.err('solver %s can handle only FuncDesigner problems' % self.__name__)

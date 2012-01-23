@@ -532,7 +532,7 @@ def func11(y, e, nlhc, indTC, residual, o, a, _s, p):
         F = 0.25 * (a[w, ind] + o[w, ind] + a[w, n+ind] + o[w, n+ind])
         return [si(IP_fields, sup_inf_diff[i], minres[i], y[i], e[i], o[i], a[i], _s[i], F[i], volume[i], volumeResidual[i]) for i in range(m)]
     else:
-        assert p.probType in ('GLP', 'NLP', 'NSP', 'SNLE', 'NLSP')
+        assert p.probType in ('GLP', 'NLP', 'NSP', 'SNLE', 'NLSP', 'MINLP')
         
         residual = None
         
