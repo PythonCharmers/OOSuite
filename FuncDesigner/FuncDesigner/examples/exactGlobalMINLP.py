@@ -27,7 +27,9 @@ startPoint = {x:[0]*n, y:0, z:1.5} # [0]*n means Python list [0,0,...,0] with n 
 # interalg solves problems with specifiable accuracy fTol: 
 # | f - f*|< fTol , where f* is  theoretical optimal value
 
-p = GLP(F, startPoint, fTol = 0.0005, constraints = constraints)
+# Any of the following will work here in the same way - 
+# NLP, NSP, GLP, MINLP , but word MINLP is more informative
+p = MINLP(F, startPoint, fTol = 0.0005, constraints = constraints)
 # interalg requires all finite box bounds, but they can be very huge, e.g. +/- 10^15
 # you may found useful arg implicitBounds, for example p.implicitBounds = [-1, 1], 
 # for those variables that haven't assigned bounds, 
@@ -48,5 +50,6 @@ OpenOpt info: Solution with required tolerance 5.0e-04
 istop: 1000 (solution has been obtained)
 Solver:   Time Elapsed = 16.86 	CPU Time Elapsed = 16.61
 objFunValue: 1.2209237 (feasible, max(residuals/requiredTolerances) = 0.982429)
-[[-0.63423135876655579, -0.31265074014663696, 0.073974609375, -0.0665283203125, -0.69999999999999996, -0.88623046875, 0.89990234375], 1.0, -4.0]
+[[-0.63423135876655579, -0.31265074014663696, 0.073974609375, -0.0665283203125, 
+-0.69999999999999996, -0.88623046875, 0.89990234375], 1.0, -4.0]
 '''
