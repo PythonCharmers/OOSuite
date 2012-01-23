@@ -1,6 +1,6 @@
 from ooMisc import assignScript
 from baseProblem import NonLinProblem
-from numpy import asarray, ones, inf, array, iterable, sort
+from numpy import asarray, ones, inf, array, iterable, sort, ndarray
 
 class MINLP(NonLinProblem):
     _optionalData = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'c', 'h', 'discreteVars']
@@ -31,7 +31,7 @@ class MINLP(NonLinProblem):
         # TODO: use something else instead of dict.keys()
         for key in self.discreteVars.keys():
             fv = self.discreteVars[key]
-            if type(fv) not in [list, tuple]:
+            if type(fv) not in [list, tuple, ndarray]:
                 self.err('each element from discreteVars dictionary should be list or tuple of allowed values')
             fv = sort(fv)
             if fv[0]>self.ub[key]:
