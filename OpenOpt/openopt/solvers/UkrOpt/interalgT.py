@@ -1,7 +1,7 @@
 from numpy import isnan, take, any, all, logical_or, logical_and, logical_not, atleast_1d, where, \
 asarray, inf, nan, argmin, argsort, tile, searchsorted
 from bisect import bisect_right
-from FuncDesigner.Interval import adjustyWithDiscreteDomain, adjusteWithDiscreteDomain
+from FuncDesigner.Interval import adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain
 try:
     from bottleneck import nanargmin, nanmin, nanargmax, nanmax
 except ImportError:
@@ -46,8 +46,8 @@ def adjustDiscreteVarBounds(y, e, p):
 #        n_where_ux_2 = where(e[:, i] >=-0.5)[0].size
 #        nn = n_where_lx_2 + n_where_ux_2
         
-        adjustyWithDiscreteDomain(y[:, i], v)
-        adjusteWithDiscreteDomain(e[:, i], v)
+        adjust_lx_WithDiscreteDomain(y[:, i], v)
+        adjust_ux_WithDiscreteDomain(e[:, i], v)
         
 #        n_where_lx_2 = where(y[:, i] <=-0.5)[0].size
 #        n_where_ux_2 = where(e[:, i] >=-0.5)[0].size
