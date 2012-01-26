@@ -1,13 +1,16 @@
 from numpy import isnan, take, any, all, logical_or, logical_and, logical_not, atleast_1d, where, \
 asarray, inf, nan, argmin, argsort, tile, searchsorted
 from bisect import bisect_right
-from Interval import adjustyWithDiscreteDomain, adjusteWithDiscreteDomain
+from FuncDesigner.Interval import adjustyWithDiscreteDomain, adjusteWithDiscreteDomain
 try:
     from bottleneck import nanargmin, nanmin, nanargmax, nanmax
 except ImportError:
     from numpy import nanmin, nanargmin, nanargmax, nanmax
 
 def r42(o, a):
+#    n_where_lx_2 = where(y <=-0.5)[0].size
+#    n_where_ux_2 = where(e >=-0.5)[0].size
+#    nn = n_where_lx_2 + n_where_ux_2
     m, N = o.shape
     n = N / 2
     o_l, o_u = o[:, :n], o[:, n:]
@@ -26,13 +29,33 @@ def r42(o, a):
     if any(ind):
         a[ind] = a_M[ind]
 
+#    n_where_lx_2 = where(y <=-0.5)[0].size
+#    n_where_ux_2 = where(e >=-0.5)[0].size
+#    nn2 = n_where_lx_2 + n_where_ux_2
+#    print nn, nn2
+#    assert nn == nn2
+
+
 def adjustDiscreteVarBounds(y, e, p):
     n = p.n
     # TODO: remove the cycle, use vectorization
     for i in p._discreteVarsNumList:
         v = p._freeVarsList[i]
+        
+#        n_where_lx_2 = where(y[:, i] <=-0.5)[0].size
+#        n_where_ux_2 = where(e[:, i] >=-0.5)[0].size
+#        nn = n_where_lx_2 + n_where_ux_2
+        
         adjustyWithDiscreteDomain(y[:, i], v)
         adjusteWithDiscreteDomain(e[:, i], v)
+        
+#        n_where_lx_2 = where(y[:, i] <=-0.5)[0].size
+#        n_where_ux_2 = where(e[:, i] >=-0.5)[0].size
+#        nn2 = n_where_lx_2 + n_where_ux_2
+#        print nn, nn2, p.iter
+#        if nn != nn2:
+#            raise 0
+
 #        ind = searchsorted(v.domain, y[:, i], 'left')
 #        ind2 = searchsorted(v.domain, y[:, i], 'right')
 #        ind3 = where(ind!=ind2)[0]
@@ -53,6 +76,7 @@ def adjustDiscreteVarBounds(y, e, p):
 #        ind[ind==0] = 1
 #        e[:, i] = v.domain[ind-1]
 #        e[:, i][ind3] = Tmp
+
     ind = any(y>e, 1)
     if any(ind):
         ind = where(logical_not(ind))[0]
@@ -169,7 +193,8 @@ def func4(y, e, o, a, nlhc, fo):
     ind = logical_or(q > fo, isnan(q)) # TODO: assert isnan(q) is same to isnan(a_modU)
     indT = logical_or(any(ind, 1), indT)
     if any(ind):
-        e[ind] = cs[ind]
+        # copy is used to prevent y and e being same array, that may be buggy with discret vars
+        e[ind] = cs[ind].copy() 
         # Changes
 #        ind = logical_and(ind, logical_not(isnan(a[:, n:])))
 ##        ii = len(where(ind)[0])
@@ -177,3 +202,58 @@ def func4(y, e, o, a, nlhc, fo):
 #        a[:, n:2*n][ind] = a[:, 0:n][ind]
 #        o[:, n:2*n][ind] = o[:, 0:n][ind]
     return y, e, indT
+
+def updateWPF(solutionsCoords, solutionsF, r5Coords, r5F, targets):
+    m, n = r5Coords.shape
+    # TODO: mb use inplace r5Coords / r5F modification instead?
+    k = m+1
+    for j in range(m):
+        k -= 1
+        M = solutionsCoords.shape[0] # 0 or 1?
+        f = r5F[j]
+        
+        # TODO: rewrite it
+        d = f - solutionsF # vector-matrix
+        
+        Candidat_better = empty(k)
+        Candidat_better.fill(False)
+        Solution_better = empty(M)
+        Solution_better.fill(False)
+        for i, target in enumerate(targets):
+            val, tol = target.val, target.tol
+            if val == inf:
+                ind_candidat_better = d[i] > tol
+                r36olution_better = d[i] < -tol
+                #r36ame_or_worse = d <= tol
+            elif val == -inf:
+                ind_candidat_better = d[i] < -tol
+                r36olution_better = d[i] > tol
+                #r36ame_or_worse = d >= -tol
+            else:
+                r20 = abs(f[i] - target) - abs(solutionsF[i] - target)
+                ind_candidat_better = r20 < tol # abs(f[i] - target)  < abs(solutionsF[i] - target) + tol
+                r36olution_better = r20 > -tol # abs(solutionsF[i] - target)  < abs(f[i] - target) + tol
+                #r36ame_or_worse = abs(f - target)  >= abs(r5['f'] - target) - tol
+            
+            Candidat_better = logical_or(Candidat_better, ind_candidat_better)
+            Solution_better = logical_or(Solution_better, r36olution_better)
+        
+        accept_c = all(Candidat_better)
+        SolutionsToBeRemoved = logical_not(Solution_better)
+        remove_s = any(SolutionsToBeRemoved)
+        if remove_s:
+            indRemove = where(remove_s)[0]
+            indStart = 0
+            if accept_c:
+                solutionsCoords[ind[0]] = r5Coords[j]
+                solutionsF[indRemove[0]] = f
+                indStart = 1
+                
+            if indRemove.size > indStart:
+                newSolNumber = solutionsCoords.shape[0] - indRemove.size + indStart
+                solutionsCoords = take(solutionsCoords, ind[indStart:], axis=0, out = solutionsCoords[:newSolNumber])
+                solutionsF = take(solutionsF, ind[indStart:], axis=0, out = solutionsF[:newSolNumber])
+        elif accept_c:
+            solutionsCoords.append(r5Coords[j])
+            solutionsF.append(f)
+

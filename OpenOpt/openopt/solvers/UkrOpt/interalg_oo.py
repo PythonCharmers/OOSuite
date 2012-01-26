@@ -65,10 +65,7 @@ class interalg(baseSolver):
             p.err("the solver can't handle problems of type " + p.probType)
         if not p.isFDmodel:
             p.err('solver %s can handle only FuncDesigner problems' % self.__name__)
-        
-        if not p.__isNoMoreThanBoxBounded__ and not isSNLE:
-            p.warn('handling constraints by the solver interalg is undone properly yet for all problems except of SNLE')
-        
+       
         isIP = p.probType == 'IP'
         if isIP:
             pb = r14IP
@@ -105,9 +102,6 @@ class interalg(baseSolver):
         
         n = p.n
         
-        # TODO: handle it in other level
-        p.useMultiPoints = True
-        
         maxSolutions = p.maxSolutions
         if maxSolutions == 0: maxSolutions = 10**50
         if maxSolutions != 1 and p.fEnough != -inf:
@@ -116,7 +110,6 @@ class interalg(baseSolver):
             is not ajusted with fEnough stop criterium yet, it will be omitted
             ''')
             p.kernelIterFuncs.pop(FVAL_IS_ENOUGH)
-            
         
         nNodes = []        
         p.extras['nNodes'] = nNodes
@@ -171,6 +164,11 @@ class interalg(baseSolver):
             
             # TODO: check it, for reducing calculations
             #C.update([elem == 0 for elem in p.user.f])
+        elif isMOP:
+            asdf1 = p.user.f
+            if point(p.x0).isFeas(altLinInEq=False):
+                solutions.append(p.x0.copy())
+                solutionCoords = asarray(solutions)
         elif not isODE:
             asdf1 = p.user.f[0]
             
