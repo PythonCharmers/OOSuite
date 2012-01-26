@@ -39,17 +39,19 @@ r = p.solve('interalg', iprint = 100)
 print(r(x, y, z))
 '''
 ------------------------- OpenOpt 0.37 -------------------------
-solver: interalg   problem: unnamed    type: GLP
+solver: interalg   problem: unnamed    type: MINLP   goal: minimum
  iter   objFunVal   log10(MaxResidual/ConTol)   
     0  9.890e-01                      6.70 
-  100  1.254e+00                     -1.64 
-  200  1.221e+00                     -0.24 
+  100  -2.571e-01                     -1.20 
+  200  -2.910e-01                     -0.47 
+  300  -2.910e-01                     -0.47 
+  400  -2.926e-01                     -0.22 
 OpenOpt info: Solution with required tolerance 5.0e-04 
  is guarantied (obtained precision: 5.0e-04)
-  233  1.221e+00                     -0.01 
+  409  -2.926e-01                     -0.22 
 istop: 1000 (solution has been obtained)
-Solver:   Time Elapsed = 16.86 	CPU Time Elapsed = 16.61
-objFunValue: 1.2209237 (feasible, max(residuals/requiredTolerances) = 0.982429)
-[[-0.63423135876655579, -0.31265074014663696, 0.073974609375, -0.0665283203125, 
--0.69999999999999996, -0.88623046875, 0.89990234375], 1.0, -4.0]
+Solver:   Time Elapsed = 37.75 	CPU Time Elapsed = 37.01
+objFunValue: -0.29255101 (feasible, max(residuals/requiredTolerances) = 0.59926)
+[[-0.63428688049307214, -0.31253814696507071, 0.074464532391391849, -0.066528274992712286, 
+-0.69999999999999996, -0.88575384524595291, 0.89992401222574525], 1.0, 4.0]
 '''
