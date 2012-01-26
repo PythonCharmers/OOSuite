@@ -153,8 +153,8 @@ def adjustLxWithDiscreteDomain(Lx, v):
     #Tmp = Lx[:, ind3].copy()
     Tmp = v.domain[ind[ind3]]
     ind[ind==v.domain.size] -= 1
-    ind[ind==v.domain.size-1] -= 1
-    Lx[:] = v.domain[ind+1]
+#    ind[ind==v.domain.size-1] -= 1
+    Lx[:] = v.domain[ind]
     Lx[ind3] = Tmp
         
 def adjustUxWithDiscreteDomain(Ux, v):
