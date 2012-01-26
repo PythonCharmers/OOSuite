@@ -146,18 +146,19 @@ def box_1_interval(inp, func, domain, dtype, F_l, F_u):
     return vstack((t_min, t_max)), definiteRange
 
 
-def adjustLxWithDiscreteDomain(Lx, v):
+def adjust_lx_WithDiscreteDomain(Lx, v):
     ind = searchsorted(v.domain, Lx, 'left')
     ind2 = searchsorted(v.domain, Lx, 'right')
     ind3 = where(ind!=ind2)[0]
     #Tmp = Lx[:, ind3].copy()
     Tmp = v.domain[ind[ind3]]
-    ind[ind==v.domain.size] -= 1
+    #if any(ind==v.domain.size):print 'asdf'
+    ind[ind==v.domain.size] -= 1# Is it ever encountered?
 #    ind[ind==v.domain.size-1] -= 1
     Lx[:] = v.domain[ind]
     Lx[ind3] = Tmp
         
-def adjustUxWithDiscreteDomain(Ux, v):
+def adjust_ux_WithDiscreteDomain(Ux, v):
     ind = searchsorted(v.domain, Ux, 'left')
     ind2 = searchsorted(v.domain, Ux, 'right')
     ind3 = where(ind!=ind2)[0]

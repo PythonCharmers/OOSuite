@@ -16,7 +16,7 @@ from FDmisc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scip
 raise_except, DiagonalType
 #from copy import deepcopy
 from ooPoint import ooPoint
-from Interval import Interval, adjustLxWithDiscreteDomain, adjustUxWithDiscreteDomain
+from Interval import Interval, adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain
 import inspect
 
 Copy = lambda arg: asscalar(arg) if type(arg)==ndarray and arg.size == 1 else arg.copy() if hasattr(arg, 'copy') else copy(arg)
@@ -305,8 +305,8 @@ class oofun:
         
         if v.domain is not None:
             middle1, middle2 = middle.copy(), middle.copy()
-            adjustUxWithDiscreteDomain(middle1, v)
-            adjustLxWithDiscreteDomain(middle2, v)
+            adjust_ux_WithDiscreteDomain(middle1, v)
+            adjust_lx_WithDiscreteDomain(middle2, v)
         else:
             middle1 = middle2 = middle
         
