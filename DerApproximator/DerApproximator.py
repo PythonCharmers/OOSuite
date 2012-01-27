@@ -1,7 +1,7 @@
 """finite-difference derivatives approximation"""
 
-from numpy import atleast_1d, atleast_2d, isfinite, ndarray, nan, empty, where, ndarray, log10, hstack, floor, ceil, \
-argmax, asscalar, abs, isscalar, asfarray, asarray, isnan, array, all
+from numpy import atleast_1d, atleast_2d, isfinite, nan, empty, ndarray, hstack, \
+asscalar, abs, isscalar, asfarray, asarray, isnan, array, all
 
 class DerApproximatorException:
     def __init__(self,  msg):
@@ -65,7 +65,7 @@ def get_d1(fun, vars, diffInt=1.5e-8, pointVal = None, args=(), stencil = 3, var
         else: diff_int = diffInt
    
         cmp = atleast_1d(1e-10 * abs(S))
-        ind = where(diff_int<cmp)[0]
+        ind = diff_int<cmp
         diff_int[ind] = cmp[ind]
         
         d1 = empty((M, S.size))
@@ -153,6 +153,9 @@ def check_d1(fun, fun_d, vars, func_name='func', diffInt=1.5e-8, pointVal = None
     where
     Diff = 1 - (info_user+1e-8)/(info_numerical + 1e-8) 
     """
+    
+    from numpy import floor, ceil, log10, argmax
+    
     info_numerical = get_d1(fun, vars, diffInt=diffInt, pointVal = pointVal, args=args, stencil = stencil, varForDifferentiation = varForCheck)
     
     if type(vars) not in [list, tuple]:
