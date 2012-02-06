@@ -277,9 +277,11 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     setattr(newProb, key, None)
                         
     FuncDesignerSign = 'f'
-    _isFDmodel = lambda self: hasattr(self, self.FuncDesignerSign) and \
+    _isFDmodel = lambda self: \
+    (self.probType == 'MOP' and (hasattr(self.f[0], 'is_oovar') or type(self.f[0] in (list, tuple) and hasattr(self.f[0][0], 'is_oovar')))) \
+    or (hasattr(self, self.FuncDesignerSign) and \
     ((type(getattr(self, self.FuncDesignerSign)) in [list, tuple] and 'is_oovar' in dir(getattr(self, self.FuncDesignerSign)[0])) \
-                                                                                                or 'is_oovar' in dir(getattr(self, self.FuncDesignerSign) ))
+                                                                                                or 'is_oovar' in dir(getattr(self, self.FuncDesignerSign) )))
     
     # Base class method
     def _prepare(self): 
