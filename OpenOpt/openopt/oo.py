@@ -9,6 +9,7 @@ from QP import QP as CQP
 from MILP import MILP as CMILP
 from NSP import NSP as CNSP
 from NLP import NLP as CNLP
+from MOP import MOP as CMOP
 from MINLP import MINLP as CMINLP
 from NLSP import NLSP as CNLSP
 from NLLSP import NLLSP as CNLLSP
@@ -22,6 +23,7 @@ from SOCP import SOCP as CSOCP
 from DFP import DFP as CDFP
 from IP import IP as CIP
 from ODE import ODE as CODE
+
 
 def MILP(*args, **kwargs):
     """
@@ -499,6 +501,16 @@ def NLLSP(*args, **kwargs):
         converter to NLP. Example: r = p.solve('nlp:ralg')
     """
     return CNLLSP(*args, **kwargs)
+    
+def MOP(*args, **kwargs):
+    '''
+    Multiobjective optimization
+    Search for weak or strong Pareto front
+    
+    Solvers available for now:
+        interalg (http://openopt.org/interalg)
+    '''
+    return CMOP(*args, **kwargs)
 
 def IP(*args, **kwargs):
     """
