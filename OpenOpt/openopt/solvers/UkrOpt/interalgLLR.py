@@ -479,6 +479,7 @@ def func11(y, e, nlhc, indTC, residual, o, a, _s, p):
             s, q = o[:, 0:n], o[:, n:2*n]
             Tmp = nanmax(where(q<s, q, s), 1)
             nlhf = log2(a-o)#-log2(p.fTol)
+            nlhf[logical_and(isinf(a), isinf(nlhf))] = 1e300
             assert p.probType in ('GLP', 'NLP', 'NSP', 'SNLE', 'NLSP', 'MINLP')
         
 #            residual = None
