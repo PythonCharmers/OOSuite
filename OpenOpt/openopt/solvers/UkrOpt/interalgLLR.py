@@ -92,30 +92,12 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p):
     n = y.shape[1]
     # TODO: rework it wrt nlh
     #cs = dict([(key, asarray((val[0]+val[1])/2, dataType)) for key, val in domain.items()])
-    if tnlh is None:
-
+    if tnlh is None:# or p.probType =='MOP':
         wr4 = (y+e) / 2
-        for i in p._discreteVarsNumList:
-            v = p._freeVarsList[i]
-            tmp = wr4[:, i]
-            ind = searchsorted(v.domain, tmp, side='left')
-            ind2 = searchsorted(v.domain, tmp, side='right')
-            ind3 = where(ind!=ind2)[0]
-            Tmp = tmp[ind3].copy()
-            ind[ind==v.domain.size] -= 1
-            ind2[ind2==v.domain.size] -= 1
-            ind2[ind2==v.domain.size-1] -=1
-            tmp1 = asarray(v.domain[ind], p.solver.dataType)
-            tmp2 = asarray(v.domain[ind2+1], p.solver.dataType)
-            if Tmp.size!=0:
-                tmp2[ind3] = Tmp.copy()
-                tmp1[ind3] = Tmp.copy()
-            tmp = where(abs(tmp-tmp1)<abs(tmp-tmp2), tmp1, tmp2)
-            #print max(abs(tmp-tmp1)), max(abs(tmp-tmp2))
-            wr4[:, i] = tmp
-            
-        cs = dict([(oovar, asarray((y[:, i]+e[:, i])/2, dataType)) for i, oovar in enumerate(vv)])
-
+        adjustr4WithDiscreteVariables(wr4, p)
+        #cs = dict([(oovar, asarray((y[:, i]+e[:, i])/2, dataType)) for i, oovar in enumerate(vv)])
+        cs = dict([(oovar, asarray(wr4[:, i], dataType)) for i, oovar in enumerate(vv)])
+        
     else:
         tnlh = tnlh.copy()
         tnlh[atleast_1d(tnlh<1e-300)] = 1e-300 # to prevent division by zero
@@ -124,26 +106,7 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p):
         wr4 = (y * tnlh_l_inv + e * tnlh_u_inv) / (tnlh_l_inv + tnlh_u_inv)
         ind = tnlh_l_inv == tnlh_u_inv # especially important for tnlh_l_inv == tnlh_u_inv = 0
         wr4[ind] = (y[ind] + e[ind]) / 2
-        
-        for i in p._discreteVarsNumList:
-            v = p._freeVarsList[i]
-            tmp = wr4[:, i]
-            ind = searchsorted(v.domain, tmp, side='left')
-            ind2 = searchsorted(v.domain, tmp, side='right')
-            ind3 = where(ind!=ind2)[0]
-            Tmp = tmp[ind3].copy()
-            ind[ind==v.domain.size] -= 1
-            ind2[ind2==v.domain.size] -= 1
-            ind2[ind2==v.domain.size-1] -=1
-            tmp1 = asarray(v.domain[ind], p.solver.dataType)
-            tmp2 = asarray(v.domain[ind2+1], p.solver.dataType)
-            if Tmp.size!=0:
-                tmp2[ind3] = Tmp.copy()
-                tmp1[ind3] = Tmp.copy()
-            tmp = where(abs(tmp-tmp1)<abs(tmp-tmp2), tmp1, tmp2)
-            #print max(abs(tmp-tmp1)), max(abs(tmp-tmp2))
-            wr4[:, i] = tmp
-        
+        adjustr4WithDiscreteVariables(wr4, p)
         cs = dict([(oovar, asarray(wr4[:, i], dataType)) for i, oovar in enumerate(vv)])
         
     cs = oopoint(cs, skipArrayCast = True)
@@ -162,21 +125,58 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p):
             r15 = logical_and(r15, ind)
     else:
         r15 = True
+        
+    isMOP = p.probType =='MOP'
     if not any(r15):
         F = empty(m, dataType)
         F.fill(2**31-2 if dataType in (int32, int64, int) else nan) 
+        if isMOP:
+            FF = [F for k in range(p.nf)]
     elif all(r15):
-        F = func(cs)
+        if isMOP:
+            FF = [fun(cs) for fun in func]
+        else:
+            F = func(cs)
     else:
         #cs = dict([(oovar, (y[r15, i] + e[r15, i])/2) for i, oovar in enumerate(vv)])
         #cs = ooPoint(cs, skipArrayCast = True)
-        cs.isMultiPoint = True
-        tmp = func(cs)
-        F = empty(m, dataType)
-        #F.fill(nanmax(tmp)+1) 
-        F.fill(2**31-15 if dataType in (int32, int64, int) else nan)
-        F[r15] = tmp[r15]
-    return atleast_1d(F), wr4
+        #cs.isMultiPoint = True
+        if isMOP:
+            for fun in func:
+                tmp = fun(cs)
+                F = empty(m, dataType)
+                F.fill(2**31-15 if dataType in (int32, int64, int) else nan)
+                F[r15] = tmp[r15]    
+                FF.append(F)
+        else:
+            tmp = func(cs)
+            F = empty(m, dataType)
+            F.fill(2**31-15 if dataType in (int32, int64, int) else nan)
+            F[r15] = tmp[r15]
+    if isMOP:
+        return array(FF).T.reshape(m, len(func)).tolist(), wr4.tolist()
+    else:
+        return atleast_1d(F) , wr4
+
+def adjustr4WithDiscreteVariables(wr4, p):
+    for i in p._discreteVarsNumList:
+        v = p._freeVarsList[i]
+        tmp = wr4[:, i]
+        ind = searchsorted(v.domain, tmp, side='left')
+        ind2 = searchsorted(v.domain, tmp, side='right')
+        ind3 = where(ind!=ind2)[0]
+        Tmp = tmp[ind3].copy()
+        ind[ind==v.domain.size] -= 1
+        ind2[ind2==v.domain.size] -= 1
+        ind2[ind2==v.domain.size-1] -=1
+        tmp1 = asarray(v.domain[ind], p.solver.dataType)
+        tmp2 = asarray(v.domain[ind2+1], p.solver.dataType)
+        if Tmp.size!=0:
+            tmp2[ind3] = Tmp.copy()
+            tmp1[ind3] = Tmp.copy()
+        tmp = where(abs(tmp-tmp1)<abs(tmp-tmp2), tmp1, tmp2)
+        #print max(abs(tmp-tmp1)), max(abs(tmp-tmp2))
+        wr4[:, i] = tmp
 
 def r2(PointVals, PointCoords, dataType):
     r23 = nanargmin(PointVals)
@@ -198,105 +198,11 @@ def func3(an, maxActiveNodes):
         an1, _in = an, array([], object)
     return an1, _in
 
-def func1(tnlhf, tnlhf_curr, residual, y, e, o, a, _s_prev, p, indT, Case):
+def func1(tnlhf, tnlhf_curr, residual, y, e, o, a, _s_prev, p, indT):
     m, n = y.shape
     w = arange(m)
-
-    if Case != 'IP':
-        if p.solver.dataHandling == 'sorted':
-            _s = func13(o, a, Case)
-            t = nanargmin(a, 1) % n
-            d = nanmax([a[w, t] - o[w, t], 
-                    a[w, n+t] - o[w, n+t]], 0)
-            
-            ## !!!! Don't replace it by (_s_prev /d- 1) to omit rounding errors ###
-            #ind = 2**(-n) >= (_s_prev - d)/asarray(d, 'float64')
-            
-            #NEW
-            ind = d  >=  _s_prev / 2 ** (1.0e-12/n)
-            #ind = d  >=  _s_prev / 2 ** (1.0/n)
-            indD = empty(m, bool)
-            indD.fill(True)
-            #ind.fill(False)
-            ###################################################
-        elif p.solver.dataHandling == 'raw':
-            tnlh_1, tnlh_2 = tnlhf[:, 0:n], tnlhf[:, n:]
-            TNHLF_min =  where(logical_or(tnlh_1 > tnlh_2, isnan(tnlh_1)), tnlh_2, tnlh_1)
-            
-            # Set _s
-            #1
-#            _s = nanmin(TNHLF_min, 1)
-            #2
-            if residual is not None and residual.dtype != object: Tmp = log2(a-o) +  log2(residual) - log2(p.fTol)
-            else: Tmp = log2(a-o) - log2(p.fTol)
-            #Tmp = tnlhf + log2(residual)
-            tmp_1, tmp_2 = Tmp[:, 0:n], Tmp[:, n:]
-            #Tmp1 = Tmp
-            Tmp = where(logical_or(tmp_1 < tmp_2, isnan(tmp_1)), tmp_2, tmp_1)
-            _s = nanmin(Tmp, 1)
-            
-            
-            T = tnlhf_curr
-            tnlh_curr_1, tnlh_curr_2 = T[:, 0:n], T[:, n:]
-            TNHL_curr_min =  where(logical_or(tnlh_curr_1 < tnlh_curr_2, isnan(tnlh_curr_2)), tnlh_curr_1, tnlh_curr_2)
-            
-            #1
-            t = nanargmin(TNHL_curr_min, 1)
-            
-#            t = nanargmin(TNHLF_min, 1)
-            
-#            t = nanargmin(Tmp, 1)
-            
-            #new
-#            ind = TNHLF_min.T > _s_prev - 1.0/n
-#            T = TNHL_curr_min.copy().T
-#            T[ind] = inf
-#            t = nanargmin(T, 0)
-            
-            # Prev
-            if 1:
-                T = tnlhf
-                #T = log2(a-o) +  log2(residual) - log2(p.fTol)
-            else:
-                T = 2**tnlhf 
-                if residual is not None: T += residual
-                t1, t2 = T[:, 0:n], T[:, n:]
-                T2 = where(logical_or(t1 < t2, isnan(t2)), t1, t2)
-                t = nanargmin(T2, 1)
-#            T = log2(T)
-            
-#            if residual is not None and residual.dtype != object: 
-#                T +=  log2(residual) - log2(p.fTol)
-#            T = tnlhf_curr
-#            T = Tmp1
-            d = nanmin(vstack(([T[w, t], T[w, n+t]])), 0)
-            #d = nanmin(Tmp, 1)
-            
-            # NEW
-#            d = _s
-            _s = d
-
-            #OLD
-            #!#!#!#! Don't replace it by _s_prev - d <= ... to omit inf-inf = nan !#!#!#
-            #ind = _s_prev  <= d + ((2**-n / log(2)) if n > 15 else log2(1+2**-n)) 
-            #ind = _s_prev - d <= ((2**-n / log(2)) if n > 15 else log2(1+2**-n)) 
-            
-            #NEW
-            if any(_s_prev < d):
-                pass
-            ind = _s_prev  <= d + 1.0/n
-            T = TNHL_curr_min
-            #ind2 = nanmin(TNHL_curr_min, 0)
-            
-            indQ = d >= _s_prev - 1.0/n 
-            #indQ = logical_and(indQ, False)
-            indD = logical_or(indQ, logical_not(indT))
-            #print _s_prev - d
-            ###################################################
-            #d = ((tnlh[w, t]* tnlh[w, n+t])**0.5)
-        else:
-            assert 0
-    else: # IP
+    
+    if p.probType == 'IP':
         oc_modL, oc_modU = o[:, :n], o[:, n:]
         ac_modL, ac_modU = a[:, :n], a[:, n:]
 #            # TODO: handle nans
@@ -337,30 +243,68 @@ def func1(tnlhf, tnlhf_curr, residual, y, e, o, a, _s_prev, p, indT, Case):
         indD = ind
         indD = None
         #print len(where(indD)[0]), len(where(logical_not(indD))[0])
-        
-#        indD = None
-        
-        
-#        oc_modL, oc_modU = o[:, :n], o[:, n:]
-#        ac_modL, ac_modU = a[:, :n], a[:, n:]
-##            # TODO: handle nans
-#        mino = where(oc_modL < oc_modU, oc_modL, oc_modU)
-#        maxa = where(ac_modL < ac_modU, ac_modU, ac_modL)
-#        tmp = a[:, 0:n]-o[:, 0:n]+a[:, n:]-o[:, n:]
-#        t = nanargmin(tmp,1)
-#        _s = nanmin(maxa - mino, 1)
-#        ind = 2**(-n) >= (_s_prev - _s)/asarray(_s, 'float64')
-#        indD = None
+#    elif p.probType == 'MOP':
+#
+#        raise 'unimplemented'
+    else:
+        if p.solver.dataHandling == 'sorted':
+            _s = func13(o, a)
+            t = nanargmin(a, 1) % n
+            d = nanmax([a[w, t] - o[w, t], 
+                    a[w, n+t] - o[w, n+t]], 0)
+            
+            ## !!!! Don't replace it by (_s_prev /d- 1) to omit rounding errors ###
+            #ind = 2**(-n) >= (_s_prev - d)/asarray(d, 'float64')
+            
+            #NEW
+            ind = d  >=  _s_prev / 2 ** (1.0e-12/n)
+            #ind = d  >=  _s_prev / 2 ** (1.0/n)
+            indD = empty(m, bool)
+            indD.fill(True)
+            #ind.fill(False)
+            ###################################################
+        elif p.solver.dataHandling == 'raw':
+            if p.probType == 'MOP':
+                t = p._t[:m]
+                p._t = p._t[m:]
+                d = _s = p.__s[:m]
+                p.__s = p.__s[m:]
+            else:
+#                tnlh_1, tnlh_2 = tnlhf[:, 0:n], tnlhf[:, n:]
+#                TNHLF_min =  where(logical_or(tnlh_1 > tnlh_2, isnan(tnlh_1)), tnlh_2, tnlh_1)
+#               # Set _s
+#                _s = nanmin(TNHLF_min, 1)
+                T = tnlhf_curr
+                tnlh_curr_1, tnlh_curr_2 = T[:, 0:n], T[:, n:]
+                TNHL_curr_min =  where(logical_or(tnlh_curr_1 < tnlh_curr_2, isnan(tnlh_curr_2)), tnlh_curr_1, tnlh_curr_2)
+                t = nanargmin(TNHL_curr_min, 1)
+                T = tnlhf
+                d = nanmin(vstack(([T[w, t], T[w, n+t]])), 0)
+                _s = d
+
+            #OLD
+            #!#!#!#! Don't replace it by _s_prev - d <= ... to omit inf-inf = nan !#!#!#
+            #ind = _s_prev  <= d + ((2**-n / log(2)) if n > 15 else log2(1+2**-n)) 
+            #ind = _s_prev - d <= ((2**-n / log(2)) if n > 15 else log2(1+2**-n)) 
+            
+            #NEW
+            if any(_s_prev < d):
+                pass
+            ind = _s_prev  <= d + 1.0/n
+#            T = TNHL_curr_min
+            #ind2 = nanmin(TNHL_curr_min, 0)
+            
+            indQ = d >= _s_prev - 1.0/n 
+            #indQ = logical_and(indQ, False)
+            indD = logical_or(indQ, logical_not(indT))
+            #print _s_prev - d
+            ###################################################
+            #d = ((tnlh[w, t]* tnlh[w, n+t])**0.5)
+        else:
+            assert 0
 
         
-        #ind = _s  >= 2 ** (1.0/n) * _s_prev
-        
-#        if p.debug: 
-#            assert all(_s_prev >= _s)
-        #print len(where(ind)[0]), len(d)
-        #ind = d  >= 2 ** (1.0/n) * _s_prev
-    
-    #ind = d * (1.0 + max((1e-15, 2 ** (-n)))) >= _s_prev
+
    
     if any(ind):
 #        print _s_prev
@@ -372,24 +316,20 @@ def func1(tnlhf, tnlhf_curr, residual, y, e, o, a, _s_prev, p, indT, Case):
         
     return t, _s, indD
     
-def func13(o, a, case = 2): 
+def func13(o, a): 
     m, n = o.shape
     n /= 2
-    if case == 1:
-        U1, U2 = a[:, :n].copy(), a[:, n:] 
-        #TODO: mb use nanmax(concatenate((U1,U2),3),3) instead?
-        U1 = where(logical_or(U1<U2, isnan(U1)),  U2, U1)
-        return nanmin(U1, 1)
+#    if case == 1:
+#        U1, U2 = a[:, :n].copy(), a[:, n:] 
+#        #TODO: mb use nanmax(concatenate((U1,U2),3),3) instead?
+#        U1 = where(logical_or(U1<U2, isnan(U1)),  U2, U1)
+#        return nanmin(U1, 1)
         
     L1, L2, U1, U2 = o[:, :n], o[:, n:], a[:, :n], a[:, n:] 
-    if case == 2:
-        U = where(logical_or(U1<U2, isnan(U1)),  U2, U1)
-        L = where(logical_or(L2<L1, isnan(L1)), L2, L1)
-        return nanmax(U-L, 1)
-#    elif case == 'IP': # IP
-#        return nanmax(U1-L1+U2-L2, 1)
-    else: 
-        raise('bug in interalg kernel')
+#    if case == 2:
+    U = where(logical_or(U1<U2, isnan(U1)),  U2, U1)
+    L = where(logical_or(L2<L1, isnan(L1)), L2, L1)
+    return nanmax(U-L, 1)
 
 def func2(y, e, t, vv):
     new_y, new_e = y.copy(), e.copy()
@@ -419,7 +359,8 @@ def func2(y, e, t, vv):
     return new_y, new_e
 
 
-def func12(an, maxActiveNodes, p, solutions, r6, vv, varTols, fo, Case):
+def func12(an, maxActiveNodes, p, Solutions, vv, varTols, fo):
+    solutions, r6 = Solutions.solutions, Solutions.coords
     if len(an) == 0:
         return array([]), array([]), array([]), array([])
     _in = an
@@ -439,21 +380,26 @@ def func12(an, maxActiveNodes, p, solutions, r6, vv, varTols, fo, Case):
         asarray([t._s for t in an1Candidates])
         
         
-        
-        tnlhf = asarray([t.tnlhf for t in an1Candidates]) if p.solver.dataHandling == 'raw' else None
-        tnlhf_curr = asarray([t.tnlh_curr for t in an1Candidates]) if p.solver.dataHandling == 'raw' else None
+        if p.solver.dataHandling == 'raw' and p.probType != 'MOP':
+            tnlhf = asarray([t.tnlhf for t in an1Candidates]) 
+            tnlhf_curr = asarray([t.tnlh_curr for t in an1Candidates]) 
+        else:
+            tnlhf, tnlhf_curr = None, None
         
         if p.probType != 'IP': 
-            nlhc = asarray([t.nlhc for t in an1Candidates])
+            #nlhc = asarray([t.nlhc for t in an1Candidates])
             indtc = asarray([t.indtc for t in an1Candidates])
             residual = asarray([t.residual for t in an1Candidates]) 
-            yc, ec, indT = func4(yc, ec, oc, ac, nlhc, fo)
+            if p.probType != 'MOP':
+                yc, ec, indT = func4(yc, ec, oc, ac, fo)
+            else:
+                indT = False
             if indtc[0] is not None:
                 indT = logical_or(indT, indtc)
         else:
             residual = None
             indT = None
-        t, _s, indD = func1(tnlhf, tnlhf_curr, residual, yc, ec, oc, ac, SIc, p, indT, Case)
+        t, _s, indD = func1(tnlhf, tnlhf_curr, residual, yc, ec, oc, ac, SIc, p, indT)
         
         NewD = 1
         if NewD and indD is not None: # and p.probType != 'IP':
@@ -495,6 +441,8 @@ def func12(an, maxActiveNodes, p, solutions, r6, vv, varTols, fo, Case):
     return y, e, _in, _s
 
 Fields = ['key', 'y', 'e', 'nlhf','nlhc', 'indtc','residual','o', 'a', '_s']
+MOP_Fields = ['y', 'e', 'nlhc', 'indtc','residual','o', 'a', '_s']
+
 #FuncValFields = ['key', 'y', 'e', 'nlhf','nlhc', 'o', 'a', '_s','r18', 'r19']
 IP_fields = ['key', 'minres','y', 'e', 'o', 'a', '_s','F', 'volume', 'volumeResidual']
 
@@ -509,34 +457,33 @@ def func11(y, e, nlhc, indTC, residual, o, a, _s, p):
         minres_ind = nanargmin(diffao, 1) % n 
         minres = where(diffao[w, minres_ind] < diffao[w, n+minres_ind], \
                        diffao[w, minres_ind], diffao[w, n+minres_ind])
-        #sup_inf_diff = -sup_inf_diff
-        # DEBUG
-        #tmp3 = nanmin(a[:, 0:n]-o[:, 0:n]+a[:, n:]-o[:, n:],1)
-        #assert all(tmp2==tmp3)
-        
         volume = prod(e-y, 1)
         volumeResidual = volume * sup_inf_diff
 #        initVolumeResidual = volume * 
-
-    else:
-        s, q = o[:, 0:n], o[:, n:2*n]
-        Tmp = nanmax(where(q<s, q, s), 1)
-#        a_modL, a_modU = a[:, 0:n], a[:, n:2*n]
-#        uu = nanmax(where(logical_or(a_modU>a_modL, isnan(a_modU)), a_modU, a_modL), 1)
-#        ll = nanmin(where(logical_or(q>s, isnan(q)), s, q), 1)
-#        nlhf = log2(uu-ll)
-        nlhf = log2(a-o)#-log2(p.fTol)
-#        nlhf = hstack((nlhf[:, :nlhf.shape[1]/2], nlhf[:, nlhf.shape[1]/2:]))
-
-    if p.probType == 'IP':
         F = 0.25 * (a[w, ind] + o[w, ind] + a[w, n+ind] + o[w, n+ind])
         return [si(IP_fields, sup_inf_diff[i], minres[i], y[i], e[i], o[i], a[i], _s[i], F[i], volume[i], volumeResidual[i]) for i in range(m)]
+        
     else:
-        assert p.probType in ('GLP', 'NLP', 'NSP', 'SNLE', 'NLSP', 'MINLP')
         
         residual = None
         
-        return [si(Fields, Tmp[i], y[i], e[i], nlhf[i], 
+        if p.probType == "MOP":
+            # make correct o,a wrt each target
+            return [si(MOP_Fields, y[i], e[i], 
+                          nlhc[i] if nlhc is not None else None, 
+                          indTC[i] if indTC is not None else None, 
+                          residual[i] if residual is not None else None, 
+                          [o[i][k] for k in range(p.nf)], [a[i][k] for k in range(p.nf)], 
+                          _s[i]) for i in range(m)]
+        else:
+            s, q = o[:, 0:n], o[:, n:2*n]
+            Tmp = nanmax(where(q<s, q, s), 1)
+            nlhf = log2(a-o)#-log2(p.fTol)
+            assert p.probType in ('GLP', 'NLP', 'NSP', 'SNLE', 'NLSP', 'MINLP')
+        
+#            residual = None
+        
+            return [si(Fields, Tmp[i], y[i], e[i], nlhf[i], 
                           nlhc[i] if nlhc is not None else None, 
                           indTC[i] if indTC is not None else None, 
                           residual[i] if residual is not None else None, 

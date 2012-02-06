@@ -11,6 +11,7 @@ from FuncDesigner import sum as fd_sum, abs as fd_abs, max as fd_max
 from ii_engine import *
 from interalgCons import processConstraints, processConstraints2
 from interalgODE import interalg_ODE_routine
+from interalgMOP import r14MOP
 
 bottleneck_is_present = False
 try:
@@ -75,6 +76,8 @@ class interalg(baseSolver):
             p._r0 = prod(p.ub-p.lb) * (f_int.ub - f_int.lb)
             p._volume = 0.0
             p.kernelIterFuncs.pop(IS_NAN_IN_X)
+        elif isMOP:
+            pb = r14MOP
         else:
             pb = r14
         
@@ -116,8 +119,10 @@ class interalg(baseSolver):
         nActiveNodes = []
         p.extras['nActiveNodes'] = nActiveNodes
 
-        solutions = []
-        r6 = array([]).reshape(0, n)
+        Solutions = Solution()
+        Solutions.maxNum = maxSolutions
+        Solutions.solutions = []
+        Solutions.coords = array([]).reshape(0, n)
         
         dataType = self.dataType
         if type(dataType) == str:
@@ -141,7 +146,7 @@ class interalg(baseSolver):
             elif fTol != p.ftol:
                 p.err('you have provided both ftol and fTol')
 
-        if fTol is None:
+        if fTol is None and not isMOP: # TODO: require tols for MOP
             fTol = 1e-7
             p.warn('solver %s require p.fTol value (required objective function tolerance); 10^-7 will be used' % self.__name__)
 
@@ -166,9 +171,12 @@ class interalg(baseSolver):
             #C.update([elem == 0 for elem in p.user.f])
         elif isMOP:
             asdf1 = p.user.f
+            Solutions.F = []
             if point(p.x0).isFeas(altLinInEq=False):
-                solutions.append(p.x0.copy())
-                solutionCoords = asarray(solutions)
+                Solutions.solutions.append(p.x0.copy())
+                Solutions.coords = asarray(Solutions.solutions)
+                Solutions.F.append(p.f(p.x0))
+                p._solutions = Solutions
         elif not isODE:
             asdf1 = p.user.f[0]
             
@@ -209,6 +217,8 @@ class interalg(baseSolver):
         if self.dataHandling == 'auto':
             if isIP or isODE:
                 self.dataHandling = 'sorted'
+            elif isMOP:
+                self.dataHandling = 'raw'
             else:
                 M = 0
                 for func in [p.user.f[0]] + [Elem[0] for Elem in p._FD.nonBoxCons]:
@@ -220,11 +230,13 @@ class interalg(baseSolver):
                     
             #self.dataHandling = 'sorted' if isIP or (p.__isNoMoreThanBoxBounded__() and n < 50) else 'raw'
             
-        p._isOnlyBoxBounded = p.__isNoMoreThanBoxBounded__() 
-        if isODE or (asdf1.isUncycled and p._isOnlyBoxBounded and all(isfinite(p.user.f[0].interval(domain).lb))):
-            #maxNodes = 1
-            self.dataHandling = 'sorted'
-            
+        # TODO: is it required yet?
+        if not isMOP:
+            p._isOnlyBoxBounded = p.__isNoMoreThanBoxBounded__() 
+            if isODE or (asdf1.isUncycled and p._isOnlyBoxBounded and all(isfinite(p.user.f[0].interval(domain).lb))):
+                #maxNodes = 1
+                self.dataHandling = 'sorted'
+                
 
         self.maxActiveNodes = int(self.maxActiveNodes)
 #        if self.maxActiveNodes < 2:
@@ -260,7 +272,7 @@ class interalg(baseSolver):
         
         # TODO: hanlde fixed variables here
         varTols = p.variableTolerances
-        if maxSolutions != 1:
+        if Solutions.maxNum != 1:
             if not isSNLE:
                 p.err('''
                 "search several solutions" mode is unimplemented
@@ -289,26 +301,26 @@ class interalg(baseSolver):
                 nlhc, residual, definiteRange, indT = None, None, True, None
             
             if y.size != 0:
-                an, g, fo, _s, solutions, r6, xRecord, r41, r40 = \
+                an, g, fo, _s, Solutions, xRecord, r41, r40 = \
                 pb(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, \
-                             nNodes, r41, fTol, maxSolutions, varTols, solutions, r6, _in, \
+                             nNodes, r41, fTol, Solutions, varTols, _in, \
                              dataType, maxNodes, _s, indT, xRecord)
                 if _s is None:
                     break
             else:
                 an = _in
-                fo = 0.0 if isSNLE else min((r41, r40 - (fTol if maxSolutions == 1 else 0.0))) 
+                fo = 0.0 if isSNLE else min((r41, r40 - (fTol if Solutions.maxNum == 1 else 0.0))) 
             pnc = max((len(an), pnc))
             
             if isIP:
                 y, e, _in, _s = \
-                    func12(an, self.maxActiveNodes, p, solutions, r6, vv, varTols, inf, 'IP')# Case=3
+                    func12(an, self.maxActiveNodes, p, Solutions, vv, varTols, inf)
             else:
                 y, e, _in, _s = \
-                func12(an, self.maxActiveNodes, p, solutions, r6, vv, varTols, fo, 2) # Case=2
+                func12(an, self.maxActiveNodes, p, Solutions, vv, varTols, fo)
             nActiveNodes.append(y.shape[0]/2)
             if y.size == 0: 
-                if len(solutions) > 1:
+                if len(Solutions.solutions) > 1:
                     p.istop, p.msg = 1001, 'all solutions have been obtained'
                 else:
                     p.istop, p.msg = 1000, 'solution has been obtained'
@@ -353,7 +365,9 @@ class interalg(baseSolver):
         if p.goal in ['max', 'maximum']: tmp = tmp[1], tmp[0]
         p.extras['extremumBounds'] = tmp if not isIP else 'unimplemented for IP yet'
         
-        p.solutions = [p._vector2point(s) for s in solutions]
+        # TODO: handle solutions for MOP here
+        
+        p.solutions = [p._vector2point(s) for s in Solutions.solutions]
         if p.maxSolutions == 1: delattr(p, 'solutions')
         if p.iprint >= 0:
 #            s = 'Solution with required tolerance %0.1e \n is%s guarantied (obtained precision: %0.1e)' \
@@ -365,7 +379,8 @@ class interalg(baseSolver):
             if not p.extras['isRequiredPrecisionReached'] and pnc == self.maxNodes: s += '\nincrease maxNodes (current value %d)' % self.maxNodes
             p.info(s)
 
-
+class Solution:
+    pass
     
 
     

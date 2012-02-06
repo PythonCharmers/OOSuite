@@ -4,7 +4,7 @@ from numpy import inf, prod, searchsorted, all
 
 
 def r14IP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, CBKPMV, itn, g, nNodes,  \
-         frc, fTol, maxSolutions, varTols, solutions, r6, _in, dataType, \
+         frc, fTol, Solutions, varTols, _in, dataType, \
          maxNodes, _s, indTC, xRecord):
 
     required_sigma = p.ftol * 0.99 # to suppress roundoff effects
@@ -104,4 +104,4 @@ def r14IP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, CBKPMV, itn, g, 
     #nn = 1 if asdf1.isUncycled and all(isfinite(a)) and all(isfinite(o)) and p._isOnlyBoxBounded else maxNodes
     #an, g = func5(an, nn, g)
 
-    return an, g, inf, _s, solutions, r6, xRecord, frc, CBKPMV
+    return an, g, inf, _s, Solutions, xRecord, frc, CBKPMV

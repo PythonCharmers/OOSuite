@@ -175,7 +175,7 @@ def func5(an, nn, g, p):
             an = an[:nn]
     return an, g
 
-def func4(y, e, o, a, nlhc, fo):
+def func4(y, e, o, a, fo):
     if fo is None: return # used in IP
     cs = (y + e)/2
     n = y.shape[1]
@@ -202,58 +202,4 @@ def func4(y, e, o, a, nlhc, fo):
 #        a[:, n:2*n][ind] = a[:, 0:n][ind]
 #        o[:, n:2*n][ind] = o[:, 0:n][ind]
     return y, e, indT
-
-def updateWPF(solutionsCoords, solutionsF, r5Coords, r5F, targets):
-    m, n = r5Coords.shape
-    # TODO: mb use inplace r5Coords / r5F modification instead?
-    k = m+1
-    for j in range(m):
-        k -= 1
-        M = solutionsCoords.shape[0] # 0 or 1?
-        f = r5F[j]
-        
-        # TODO: rewrite it
-        d = f - solutionsF # vector-matrix
-        
-        Candidat_better = empty(k)
-        Candidat_better.fill(False)
-        Solution_better = empty(M)
-        Solution_better.fill(False)
-        for i, target in enumerate(targets):
-            val, tol = target.val, target.tol
-            if val == inf:
-                ind_candidat_better = d[i] > tol
-                r36olution_better = d[i] < -tol
-                #r36ame_or_worse = d <= tol
-            elif val == -inf:
-                ind_candidat_better = d[i] < -tol
-                r36olution_better = d[i] > tol
-                #r36ame_or_worse = d >= -tol
-            else:
-                r20 = abs(f[i] - target) - abs(solutionsF[i] - target)
-                ind_candidat_better = r20 < tol # abs(f[i] - target)  < abs(solutionsF[i] - target) + tol
-                r36olution_better = r20 > -tol # abs(solutionsF[i] - target)  < abs(f[i] - target) + tol
-                #r36ame_or_worse = abs(f - target)  >= abs(r5['f'] - target) - tol
-            
-            Candidat_better = logical_or(Candidat_better, ind_candidat_better)
-            Solution_better = logical_or(Solution_better, r36olution_better)
-        
-        accept_c = all(Candidat_better)
-        SolutionsToBeRemoved = logical_not(Solution_better)
-        remove_s = any(SolutionsToBeRemoved)
-        if remove_s:
-            indRemove = where(remove_s)[0]
-            indStart = 0
-            if accept_c:
-                solutionsCoords[ind[0]] = r5Coords[j]
-                solutionsF[indRemove[0]] = f
-                indStart = 1
-                
-            if indRemove.size > indStart:
-                newSolNumber = solutionsCoords.shape[0] - indRemove.size + indStart
-                solutionsCoords = take(solutionsCoords, ind[indStart:], axis=0, out = solutionsCoords[:newSolNumber])
-                solutionsF = take(solutionsF, ind[indStart:], axis=0, out = solutionsF[:newSolNumber])
-        elif accept_c:
-            solutionsCoords.append(r5Coords[j])
-            solutionsF.append(f)
 

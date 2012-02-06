@@ -168,15 +168,13 @@ def processConstraints2(C0, y, e, p, dataType):
                 nlh[:, n+j] += tmp[:, tmp.shape[1]/2:].flatten()
                 nlh[:, j] += tmp[:, :tmp.shape[1]/2].flatten()
                 
-                #assert res.shape[1] == 2
-#                ind1, ind2 = res_ind[res_ind<n], res_ind[res_ind>=n]
-                residual[:, n+j] += res[:, 0]
-                residual[:, j] += res[:, 1]
+#                residual[:, n+j] += res[:, 0]
+#                residual[:, j] += res[:, 1]
             else:
                 nlh[:, j] += T0.flatten()
                 nlh[:, n+j] += T0.flatten()
-                residual[:, n+j] += res0[:, 0]
-                residual[:, j] += res0[:, 0]
+#                residual[:, n+j] += res0[:, 0]
+#                residual[:, j] += res0[:, 0]
 
         ind = where(any(isfinite(nlh), 1))[0]
         lj = ind.size
