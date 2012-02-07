@@ -11,8 +11,8 @@ textOutputDict = {\
 'isFeasible': signOfFeasible, 
 'nSolutions': lambda p: '%d' % p._nObtainedSolutions, 
 'front length':lambda p: '%d' % p._frontLength, 
-'outcome': lambda p: ('%+d' % -p._nOutcome if p._nOutcome != 0 else '0'), 
-'income': lambda p: ('%+d' % p._nIncome if p._nIncome != 0 else '0'), 
+'outcome': lambda p: ('%+d' % -p._nOutcome if p._nOutcome != 0 else ''), 
+'income': lambda p: ('%+d' % p._nIncome if p._nIncome != 0 else ''), 
 }
 delimiter = '   '
 
