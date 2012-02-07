@@ -85,7 +85,7 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nN
 #        r5F += [[2.96, -1.36]]
     # debug end
     
-    r44(Solutions, r5Coords, r5F, targets)
+    nIncome, nOutcome = r44(Solutions, r5Coords, r5F, targets)
     fo = 0 # unused for MOP
     
     # TODO: better of nlhc for unconstrained probs
@@ -152,8 +152,11 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nN
     #p.iterfcn(xRecord, r40)
     
     # TODO: fix it
-    #p.iterfcn(p._x0)
-    print('iter: %d (%d) frontLenght: %d' %(p.iter, itn, len(Solutions.coords)))
+    p._frontLength = len(Solutions.F)
+    p._nIncome = nIncome
+    p._nOutcome = nOutcome
+    p.iterfcn(p.x0)
+    #print('iter: %d (%d) frontLenght: %d' %(p.iter, itn, len(Solutions.coords)))
     
     if p.istop != 0: 
         return an, g, fo, None, Solutions, xRecord, r41, r40
@@ -174,7 +177,7 @@ def r44(Solutions, r5Coords, r5F, targets):
 #        raise 0
     # TODO: rework it
     #sf = asarray(Solutions.F)
-    
+    nIncome, nOutcome = 0, 0
     m= len(r5Coords)
     n = len(r5Coords[0])
     # TODO: mb use inplace r5Coords / r5F modification instead?
@@ -216,10 +219,12 @@ def r44(Solutions, r5Coords, r5F, targets):
         accept_c = all(r47)
         #print sum(asarray(Solutions.F))/asarray(Solutions.F).size
         if accept_c:
+            nIncome += 1
             r49 = logical_not(r48)
             remove_s = any(r49)
             if remove_s:# and False :
                 r50 = where(r49)[0]
+                nOutcome += r50.size
                 Solutions.coords[r50[0]] = r5Coords[j]
                 Solutions.F[r50[0]] = r5F[j]
                 
@@ -235,6 +240,7 @@ def r44(Solutions, r5Coords, r5F, targets):
             else:
                 Solutions.coords = vstack((Solutions.coords, r5Coords[j]))
                 Solutions.F.append(r5F[j])
+    return nIncome, nOutcome
 #    r0 = 1000
 #    for i in range(len(Solutions.F)):
 #        for j in range(i):
