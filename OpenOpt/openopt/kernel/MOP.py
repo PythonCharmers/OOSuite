@@ -48,6 +48,9 @@ class MOP(NonLinProblem):
         return 0#(fv ** 2).sum()
 
     def solve(self, *args, **kw):
+        if self.plot or kw.get('plot', False):
+            self.warn('\ninteractive graphic output for MOP is unimplemented yet and will be turned off')
+            kw['plot'] = False
         r = NonLinProblem.solve(self, *args, **kw)
         r.plot = lambda *args, **kw: self._plot(**kw)
         return r
