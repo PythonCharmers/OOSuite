@@ -282,9 +282,12 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     
     p.isFinished = True # After the feasibility check above!
     
-    if p.probType == 'IP':
+    if p.probType == 'MOP':
+        p.isFeasible = True
+    elif p.probType == 'IP':
         p.isFeasible = p.rk < p.ftol
-    if p.probType != 'IP': p.fk = p.objFunc(p.xk)
+    else:
+        p.fk = p.objFunc(p.xk)
     if not hasattr(p,  'ff') or any(p.ff==nan): 
         p.iterfcn, tmp_iterfcn = lambda *args: None, p.iterfcn
         p.ff = p.fk
