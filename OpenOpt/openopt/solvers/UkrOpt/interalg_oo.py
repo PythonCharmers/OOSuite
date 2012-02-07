@@ -327,13 +327,12 @@ class interalg(baseSolver):
                 break            
             ############# End of main cycle ###############
             
-        if not isSNLE and not isIP:
+        if not isSNLE and not isIP and not isMOP:
             if p._bestPoint.betterThan(p.point(p.xk)):
                 p.iterfcn(p._bestPoint)
             else:
                 p.iterfcn(p.xk)
-            
-            
+        
         ff = p.fk # ff may be not assigned yet
 #        ff = p._bestPoint.f()
 #        p.xk = p._bestPoint.x
@@ -341,8 +340,9 @@ class interalg(baseSolver):
             p.xk = array([nan]*p.n)
             p.rk = p._residual
             p.fk = p._F
-            
-        isFeas = p.isFeas(p.xk) if not isIP else p.rk < fTol
+        
+        isFeas = len(Solutions.F) != 0 if isMOP else p.isFeas(p.xk) if not isIP else p.rk < fTol
+        
         if not isFeas and p.istop > 0:
             p.istop, p.msg = -1000, 'no feasible solution has been obtained'
         
@@ -354,22 +354,32 @@ class interalg(baseSolver):
         True if ff - g < fTol and isFeas else False
         # and (k is False or (isSNLE and (p._nObtainedSolutions >= maxSolutions or maxSolutions==1))) 
         
-        if not p.extras['isRequiredPrecisionReached'] and p.istop > 0:
+        if not isMOP and not p.extras['isRequiredPrecisionReached'] and p.istop > 0:
             p.istop = -1
             p.msg = 'required precision is not guarantied'
+            
         # TODO: simplify it
-        if p.goal in ('max', 'maximum'):
-            g = -g
-            o = -o
-        tmp = [nanmin(hstack((ff, g, o.flatten()))), numpy.asscalar(array((ff if p.goal not in ['max', 'maximum'] else -ff)))]
-        if p.goal in ['max', 'maximum']: tmp = tmp[1], tmp[0]
-        p.extras['extremumBounds'] = tmp if not isIP else 'unimplemented for IP yet'
+        if not isMOP:
+            if p.goal in ('max', 'maximum'):
+                g = -g
+                o = -o
+            tmp = [nanmin(hstack((ff, g, o.flatten()))), numpy.asscalar(array((ff if p.goal not in ['max', 'maximum'] else -ff)))]
+            if p.goal in ['max', 'maximum']: tmp = tmp[1], tmp[0]
+            p.extras['extremumBounds'] = tmp if not isIP else 'unimplemented for IP yet'
         
-        # TODO: handle solutions for MOP here
         
-        p.solutions = [p._vector2point(s) for s in Solutions.solutions]
-        if p.maxSolutions == 1: delattr(p, 'solutions')
-        if p.iprint >= 0:
+        p.solutions = [p._vector2point(s) for s in Solutions.coords] if not isMOP else \
+        MOPsolutions([p._vector2point(s) for s in Solutions.coords])
+        if isMOP:
+            for i, s in enumerate(p.solutions):
+                s.useAsMutable = True
+                for j, goal in enumerate(p.user.f):
+                    s[goal] = Solutions.F[i][j]
+                s.useAsMutable = False
+            p.solutions.F = Solutions.F
+            p.solutions.coords = Solutions.coords
+        if not isMOP and p.maxSolutions == 1: delattr(p, 'solutions')
+        if p.iprint >= 0 and not isMOP:
 #            s = 'Solution with required tolerance %0.1e \n is%s guarantied (obtained precision: %0.1e)' \
 #                   %(fTol, '' if p.extras['isRequiredPrecisionReached'] else ' NOT', tmp[1]-tmp[0])
             s = 'Solution with required tolerance %0.1e \n is%s guarantied' \
@@ -382,6 +392,7 @@ class interalg(baseSolver):
 class Solution:
     pass
     
-
+class MOPsolutions(list):
+    pass
     
 

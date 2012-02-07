@@ -142,6 +142,7 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p):
         #cs = ooPoint(cs, skipArrayCast = True)
         #cs.isMultiPoint = True
         if isMOP:
+            FF = []
             for fun in func:
                 tmp = fun(cs)
                 F = empty(m, dataType)

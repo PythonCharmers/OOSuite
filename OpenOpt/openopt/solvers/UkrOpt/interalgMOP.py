@@ -68,9 +68,13 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nN
     newNLH = False
     
     assert p.solver.dataHandling == 'raw', '"sorted" mode is unimplemented for MOP yet'
-    tnlh_curr = nlhf
-    if nlhc is not None: 
-        tnlh_curr += nlhc
+    
+    if nlhf is None:
+        tnlh_curr = nlhc
+    elif nlhc is None: 
+        tnlh_curr = nlhf
+    else:
+        tnlh_curr = nlhf + nlhc
 
     asdf1 = [t.func for t in p.targets]
     r5F, r5Coords = getr4Values(vv, y, e, tnlh_curr, asdf1, C, p.contol, dataType, p) 
@@ -85,18 +89,19 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nN
     fo = 0 # unused for MOP
     
     # TODO: better of nlhc for unconstrained probs
+    
+    
+    
     if len(_in) != 0:
-        ol2 = [node.o for node in _in]
-        al2 = [node.a for node in _in]
-        nlhc2 = [node.nlhc for node in _in]
-#        o2, a2 = [node.o for node in _in], [node.a for node in _in]
-        tnlh2 = r43(targets, Solutions, ol2, al2, vv, dataType)
-        if nlhc2[0] is not None:
-            tnlh2 += asarray(nlhc2)
-        tnlh_all = vstack((tnlh_curr, tnlh2))
-
+        an = hstack((nodes,  _in))
     else:
-        tnlh_all = tnlh_curr
+        an = atleast_1d(nodes)
+        
+    ol2 = [node.o for node in an]
+    al2 = [node.a for node in an]
+    nlhc2 = [node.nlhc for node in an]
+    nlhf2 = r43(targets, Solutions, ol2, al2, vv, dataType)
+    tnlh_all = asarray(nlhc2) if nlhf2 is None else nlhf2 if nlhc2[0] is None else asarray(nlhc2) + nlhf2
     
     T1, T2 = tnlh_all[:, :tnlh_all.shape[1]/2], tnlh_all[:, tnlh_all.shape[1]/2:]
     T = where(logical_or(T1 < T2, isnan(T2)), T1, T2)
@@ -111,7 +116,7 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nN
     #NN = nanmin(tnlh_all, 1)
     r10 = logical_or(isnan(NN), NN == inf)
     
-    an = hstack((nodes,  _in))
+    
     #print NN
     
     if any(r10):
@@ -173,11 +178,11 @@ def r44(Solutions, r5Coords, r5F, targets):
     m= len(r5Coords)
     n = len(r5Coords[0])
     # TODO: mb use inplace r5Coords / r5F modification instead?
-#    S = m+1
     for j in range(m):
-#        S -= 1
+        if isnan(r5F[0][0]):
+            continue
         if Solutions.coords.size == 0:
-            Solutions.coords = array(r5Coords[j])
+            Solutions.coords = array(r5Coords[j]).reshape(1, -1)
             Solutions.F.append(r5F[0])
             continue
         M = Solutions.coords.shape[0] 
