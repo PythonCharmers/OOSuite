@@ -9,7 +9,10 @@ textOutputDict = {\
 'log10(maxResidual)': lambda p: '%0.2f' % log10(p.rk+1e-100), \
 'log10(MaxResidual/ConTol)':lambda p: '%0.2f' % log10(max((p.rk/p.contol, 1e-100))), \
 'isFeasible': signOfFeasible, 
-'nSolutions': lambda p: '%d' % p._nObtainedSolutions
+'nSolutions': lambda p: '%d' % p._nObtainedSolutions, 
+'front length':lambda p: '%d' % p._frontLength, 
+'outcome': lambda p: ('%+d' % -p._nOutcome if p._nOutcome != 0 else '0'), 
+'income': lambda p: ('%+d' % p._nIncome if p._nIncome != 0 else '0'), 
 }
 delimiter = '   '
 

@@ -10,11 +10,16 @@ class MOP(NonLinProblem):
     allowedGoals = ['weak pareto front', 'strong pareto front', 'wpf', 'spf']
     isObjFunValueASingleNumber = False
     expectedArgs = ['f', 'x0']
+    _frontLength = 0
+    _nIncome = 0
+    _nOutcome = 0
+    __isIterPointAlwaysFeasible__ = True
     
     def __init__(self, *args, **kwargs):
         NonLinProblem.__init__(self, *args, **kwargs)
         self.kernelIterFuncs.pop(SMALL_DELTA_X, None)
         self.kernelIterFuncs.pop(SMALL_DELTA_F, None)
+        self.data4TextOutput= ['front length', 'income', 'outcome']
         f = self.f
         i = 0
         targets = []
