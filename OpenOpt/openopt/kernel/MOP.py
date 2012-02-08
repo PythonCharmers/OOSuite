@@ -76,10 +76,14 @@ class MOP(NonLinProblem):
         if 'marker' not in kw2: 
             kw2['marker'] = (5, 1, 0)
         if 's' not in kw2:
-            kw2['s']=[60]
-        if 'color' not in kw2:
-            kw2['color'] = '#FF4500'
+            kw2['s']=[150]
+        if 'edgecolor' not in kw2:
+            kw2['edgecolor'] = 'b'
+        if 'facecolor' not in kw2:
+            kw2['facecolor'] = '#FFFF00'#'y'
+
         pylab.scatter(X, Y, **kw2)
+        
         pylab.grid(useGrid)
         pylab.xlabel(self.user.f[0].name)
         pylab.ylabel(self.user.f[1].name)
