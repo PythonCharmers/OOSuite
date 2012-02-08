@@ -442,7 +442,7 @@ def func12(an, maxActiveNodes, p, Solutions, vv, varTols, fo):
     return y, e, _in, _s
 
 Fields = ['key', 'y', 'e', 'nlhf','nlhc', 'indtc','residual','o', 'a', '_s']
-MOP_Fields = ['y', 'e', 'nlhc', 'indtc','residual','o', 'a', '_s']
+MOP_Fields = ['y', 'e', 'nlhf','nlhc', 'indtc','residual','o', 'a', '_s']
 
 #FuncValFields = ['key', 'y', 'e', 'nlhf','nlhc', 'o', 'a', '_s','r18', 'r19']
 IP_fields = ['key', 'minres','y', 'e', 'o', 'a', '_s','F', 'volume', 'volumeResidual']
@@ -467,10 +467,13 @@ def func11(y, e, nlhc, indTC, residual, o, a, _s, p):
     else:
         
         residual = None
+        nlhf = log2(asarray(a)-asarray(o))#-log2(p.fTol)
+        if nlhf.ndim == 3: # in MOP
+            nlhf = nlhf.sum(axis=1)
         
         if p.probType == "MOP":
             # make correct o,a wrt each target
-            return [si(MOP_Fields, y[i], e[i], 
+            return [si(MOP_Fields, y[i], e[i], nlhf[i], 
                           nlhc[i] if nlhc is not None else None, 
                           indTC[i] if indTC is not None else None, 
                           residual[i] if residual is not None else None, 
@@ -479,7 +482,7 @@ def func11(y, e, nlhc, indTC, residual, o, a, _s, p):
         else:
             s, q = o[:, 0:n], o[:, n:2*n]
             Tmp = nanmax(where(q<s, q, s), 1)
-            nlhf = log2(a-o)#-log2(p.fTol)
+            
             nlhf[logical_and(isinf(a), isinf(nlhf))] = 1e300
             assert p.probType in ('GLP', 'NLP', 'NSP', 'SNLE', 'NLSP', 'MINLP')
         

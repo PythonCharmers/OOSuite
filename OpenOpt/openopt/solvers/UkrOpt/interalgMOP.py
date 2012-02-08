@@ -107,10 +107,14 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nN
     T = where(logical_or(T1 < T2, isnan(T2)), T1, T2)
     t = nanargmin(T, 1)
     p._t = t
+    
+    nlhf_fixed = asarray([node.nlhf for node in an])
+    tnlh_fixed = asarray(nlhc2) if nlhf_fixed is None else nlhf_fixed if nlhc2[0] is None else asarray(nlhc2) + nlhf_fixed
     w = arange(t.size)
     n = p.n
+    T = tnlh_all
     p.__s = \
-    nanmin(vstack(([tnlh_all[w, t], tnlh_all[w, n+t]])), 0)
+    nanmin(vstack(([T[w, t], T[w, n+t]])), 0)
 
     NN = T[w, t].flatten()
     #NN = nanmin(tnlh_all, 1)
@@ -187,39 +191,56 @@ def r44(Solutions, r5Coords, r5F, targets):
         if Solutions.coords.size == 0:
             Solutions.coords = array(r5Coords[j]).reshape(1, -1)
             Solutions.F.append(r5F[0])
+            nIncome += 1
             continue
         M = Solutions.coords.shape[0] 
         
         r47 = empty(M, bool)
         r47.fill(False)
-        r48 = empty(M, bool)
-        r48.fill(False)
+#        r48 = empty(M, bool)
+#        r48.fill(False)
         for i, target in enumerate(targets):
             
             f = r5F[j][i]
             
             # TODO: rewrite it
-            d = f - asarray([Solutions.F[k][i] for k in range(M)]) # vector-matrix
+            F = asarray([Solutions.F[k][i] for k in range(M)])
+            #d = f - F # vector-matrix
             
             val, tol = target.val, target.tol
             if val == inf:
-                r52 = d > tol
-                r36olution_better = d < 0#-tol
+                r52 = f > F + 0.1* tol#0.5*tol#tol
+#                r36olution_better = f <= F#-tol
             elif val == -inf:
-                r52 = d < -tol
-                r36olution_better = d > 0#tol
+                r52 = f < F - 0.1* tol#-0.5*tol
+#                r36olution_better = f >= F#tol
             else:
-                r20 = abs(f - target) - abs(Solutions.F[i] - target)
-                r52 = r20 < tol # abs(f[i] - target)  < abs(Solutions.F[i] - target) + tol
-                r36olution_better = r20 > 0#-tol # abs(Solutions.F[i] - target)  < abs(f[i] - target) + tol
-
+                r52 = abs(f - val) < abs(Solutions.F[i] - val) - 0.1* tol
+#                r36olution_better = abs(f - val) >= abs(Solutions.F[i] - val)#-tol # abs(Solutions.F[i] - target)  < abs(f[i] - target) + tol
+            
             r47 = logical_or(r47, r52)
-            r48 = logical_or(r48, r36olution_better)
+#            r48 = logical_or(r48, r36olution_better)
         
         accept_c = all(r47)
         #print sum(asarray(Solutions.F))/asarray(Solutions.F).size
         if accept_c:
             nIncome += 1
+            #new
+            r48 = empty(M, bool)
+            r48.fill(False)
+            for i, target in enumerate(targets):
+                f = r5F[j][i]
+                F = asarray([Solutions.F[k][i] for k in range(M)])
+                val, tol = target.val, target.tol
+                if val == inf:
+                    r36olution_better = f < F
+                elif val == -inf:
+                    r36olution_better = f > F
+                else:
+                    r36olution_better = abs(f - val) > abs(Solutions.F[i] - val)
+                    #assert 0, 'unimplemented yet'
+                r48 = logical_or(r48, r36olution_better)
+
             r49 = logical_not(r48)
             remove_s = any(r49)
             if remove_s:# and False :
@@ -241,16 +262,7 @@ def r44(Solutions, r5Coords, r5F, targets):
                 Solutions.coords = vstack((Solutions.coords, r5Coords[j]))
                 Solutions.F.append(r5F[j])
     return nIncome, nOutcome
-#    r0 = 1000
-#    for i in range(len(Solutions.F)):
-#        for j in range(i):
-#            r = max(array(Solutions.F[i])-array(Solutions.F[j]))
-#            r0 = min((r, r0))
-#    print 'r0:', r0
 
-#        else:# Debug
-#            pass
-    
 
 def r43(targets, Solutions, lf, uf, vv, dataType):
     lf, uf = asarray(lf), asarray(uf)
@@ -260,7 +272,7 @@ def r43(targets, Solutions, lf, uf, vv, dataType):
     
     #print '!', asarray(lf).shape, asarray(uf).shape
     #lf, uf = asarray(lf), asarray(uf)
-    
+
     m = len(lf)
     n = lf[0][0].size/2
     r = zeros((m, 2*n))
@@ -279,29 +291,25 @@ def r43(targets, Solutions, lf, uf, vv, dataType):
                 ind = a > ff
                 if any(ind):
                     t1 = a[ind]
-                    t2 = o[ind].copy()
-                    t2[t2>ff] = ff
+                    t2 = o[ind]
                     
                     # TODO: check discrete cases
                     tmp[ind] *= (ff-t2) / (t1-t2)
-                    
+                    tmp[ff<o] = 0.0
             elif val == -inf:
                 ff = s[i] - tol
                 ind = o < ff
                 if any(ind):
-                    t1 = a[ind].copy()
+                    t1 = a[ind]
                     t2 = o[ind]
-                    t1[t1<ff] = ff
                     # TODO: check discrete cases
                     tmp[ind] *= (t1-ff) / (t1-t2)
+                    tmp[a<ff] = 0.0
             else:
                 raise('unimplemented yet')    
 #            if any(tmp<0) or any(tmp>1):
 #                raise 0
-
-        #r -= log2(1.0 - tmp)
         r -= log1p(-tmp) * 1.4426950408889634 # log2(e)
-                
     return r
 
 #def r432(targets, Solutions, lf, uf, vv, dataType):

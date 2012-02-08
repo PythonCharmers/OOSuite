@@ -38,7 +38,8 @@ class interalg(baseSolver):
     
     _requiresBestPointDetection = True
     
-    __isIterPointAlwaysFeasible__ = lambda self, p: p.__isNoMoreThanBoxBounded__() #and p.probType != 'IP'
+    __isIterPointAlwaysFeasible__ = lambda self, p: \
+    p.__isNoMoreThanBoxBounded__() or p.probType == 'MOP' #and p.probType != 'IP'
     _requiresFiniteBoxBounds = True
 
     def __init__(self): 
@@ -309,7 +310,7 @@ class interalg(baseSolver):
                     break
             else:
                 an = _in
-                fo = 0.0 if isSNLE else min((r41, r40 - (fTol if Solutions.maxNum == 1 else 0.0))) 
+                fo = 0.0 if isSNLE or isMOP else min((r41, r40 - (fTol if Solutions.maxNum == 1 else 0.0))) 
             pnc = max((len(an), pnc))
             
             if isIP:
@@ -320,7 +321,7 @@ class interalg(baseSolver):
                 func12(an, self.maxActiveNodes, p, Solutions, vv, varTols, fo)
             nActiveNodes.append(y.shape[0]/2)
             if y.size == 0: 
-                if len(Solutions.solutions) > 1:
+                if len(Solutions.coords) > 1:
                     p.istop, p.msg = 1001, 'all solutions have been obtained'
                 else:
                     p.istop, p.msg = 1000, 'solution has been obtained'
@@ -376,7 +377,7 @@ class interalg(baseSolver):
                 for j, goal in enumerate(p.user.f):
                     s[goal] = Solutions.F[i][j]
                 s.useAsMutable = False
-            p.solutions.F = Solutions.F
+            p.solutions.objectives = asarray(Solutions.F)
             p.solutions.coords = Solutions.coords
         if not isMOP and p.maxSolutions == 1: delattr(p, 'solutions')
         if p.iprint >= 0 and not isMOP:
