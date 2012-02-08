@@ -13,14 +13,15 @@ class MOP(NonLinProblem):
     _frontLength = 0
     _nIncome = 0
     _nOutcome = 0
-    __isIterPointAlwaysFeasible__ = True
+    
     iprint = 1
     
     def __init__(self, *args, **kwargs):
         NonLinProblem.__init__(self, *args, **kwargs)
+        self.nSolutions = 'all'
         self.kernelIterFuncs.pop(SMALL_DELTA_X, None)
         self.kernelIterFuncs.pop(SMALL_DELTA_F, None)
-        self.data4TextOutput= ['front length', 'income', 'outcome']
+        self.data4TextOutput = ['front length', 'income', 'outcome', 'log10(maxResidual)']
         f = self.f
         i = 0
         targets = []
@@ -56,23 +57,33 @@ class MOP(NonLinProblem):
         return r
 
     def _plot(self, **kw):
+        from numpy import asarray, atleast_1d
+        tmp = asarray(self.solutions.objectives)
+        if tmp.size == 0:
+            self.disp('no solutions, nothing to plot')
+            return
         try:
             import pylab
         except:
             self.err('you should have matplotlib installed')
         if self.nf != 2:
             self.err('MOP plotting is implemented for problems with only 2 goals, while you have %d' % self.nf)
-        from numpy import asarray, atleast_1d
-        tmp = asarray(self.solutions.F)
         X, Y = atleast_1d(tmp[:, 0]), atleast_1d(tmp[:, 1])
         from copy import deepcopy
         kw2 = deepcopy(kw)
         useGrid = kw2.pop('grid', 'on')
         useShow = kw2.pop('show', True)
+        if 'marker' not in kw2: 
+            kw2['marker'] = (5, 1, 0)
+        if 's' not in kw2:
+            kw2['s']=[60]
+        if 'color' not in kw2:
+            kw2['color'] = '#FF4500'
         pylab.scatter(X, Y, **kw2)
         pylab.grid(useGrid)
         pylab.xlabel(self.user.f[0].name)
         pylab.ylabel(self.user.f[1].name)
+        pylab.title('problem: %s    goal: %s' %(self.name, self.goal))
         if useShow: pylab.show()
 
 class target:

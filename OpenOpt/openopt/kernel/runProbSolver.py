@@ -345,6 +345,11 @@ def finalTextOutput(p, r):
         if p.plot:
             p.disp('Plotting: Time Elapsed = '+ str(r.elapsed['plot_time'])+ ' \tCPU Time Elapsed = ' + str(r.elapsed['plot_cputime']))
         
+        if p.probType == 'MOP':
+            msg = '%d solutions have been obtained' % len(p.solutions.coords)
+            p.disp(msg)
+            return
+        
         # TODO: add output of NaNs number in constraints (if presernt)
         if p.useScaledResidualOutput: 
             rMsg = 'max(residuals/requiredTolerances) = %g' % (r.rf / p.contol)
