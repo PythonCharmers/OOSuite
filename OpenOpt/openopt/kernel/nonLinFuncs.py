@@ -1,4 +1,3 @@
-__docformat__ = "restructuredtext en"
 from numpy import *
 from setDefaultIterFuncs import USER_DEMAND_EXIT
 from ooMisc import killThread, setNonLinFuncsNumber
@@ -80,6 +79,7 @@ class nonLinFuncs:
         else:
             nFuncsToObtain = len(ind)
 
+        x = atleast_1d(x)
         if x.shape[0] != p.n and (x.ndim<2 or x.shape[1] != p.n): 
             p.err('x with incorrect shape passed to non-linear function')
 
@@ -195,7 +195,9 @@ class nonLinFuncs:
 
                 """                                                 getting derivatives                                                 """
                 if getDerivative:
-                    func = lambda x: fun(*((x,) + Args))
+                    def func(x):
+                        r = fun(*((x,) + Args))
+                        return r if type(r) not in (list, tuple) or len(r)!=1 else r[0]
                     d1 = get_d1(func, x, pointVal = None, diffInt = finiteDiffNumbers, stencil=p.JacobianApproximationStencil, exactShape=True)
                     #r[agregate_counter:agregate_counter+d1.size] = d1
                     r.append(d1)
@@ -277,6 +279,7 @@ class nonLinFuncs:
 
         #TODO: patterns!
         nFuncs = getattr(p, 'n'+funcType)
+        x = atleast_1d(x)
         if hasattr(p.userProvided, derivativesType) and getattr(p.userProvided, derivativesType):
                
             funcs = getattr(p.user, derivativesType)
