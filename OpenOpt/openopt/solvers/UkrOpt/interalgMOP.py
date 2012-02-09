@@ -1,3 +1,4 @@
+PythonSum = sum
 from numpy import tile, isnan, array, atleast_1d, asarray, logical_and, all, searchsorted, logical_or, any, \
 nan, isinf, arange, vstack, inf, where, logical_not, take, argmax, argmin, min, abs, hstack, empty, insert, \
 isfinite, append, atleast_2d, prod, logical_xor, argsort, asfarray, ones, log2, zeros, log1p
@@ -42,11 +43,11 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nN
         #ol.append(o.reshape(2*n, m).T.tolist())
         #al.append(a.reshape(2*n, m).T.tolist())
 
-    nlhf = r43(targets, Solutions, ol, al, vv, dataType)
+    nlhf = r43(targets, Solutions.F, ol, al)
     
     # DEBUG!
 #    from numpy import array_equal, isinf
-#    nlhf2 = r43(targets, Solutions, ol, al, vv, dataType, Case=2)
+#    nlhf2 = r43(targets, Solutions.F, ol, al,Case=2)
 #    if nlhf is not None:
 #        nlhf3, nlhf4 = nlhf.copy(), nlhf2.copy()
 #        nlhf3[isinf(nlhf3)] = 0.001
@@ -100,7 +101,7 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nN
     ol2 = [node.o for node in an]
     al2 = [node.a for node in an]
     nlhc2 = [node.nlhc for node in an]
-    nlhf2 = r43(targets, Solutions, ol2, al2, vv, dataType)
+    nlhf2 = r43(targets, Solutions.F, ol2, al2)
     tnlh_all = asarray(nlhc2) if nlhf2 is None else nlhf2 if nlhc2[0] is None else asarray(nlhc2) + nlhf2
     
     T1, T2 = tnlh_all[:, :tnlh_all.shape[1]/2], tnlh_all[:, tnlh_all.shape[1]/2:]
@@ -175,7 +176,7 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nN
 
 
 
-def r44(Solutions, r5Coords, r5F, targets):
+def r44(Solutions, r5Coords, r5F, targets, sigma = 0.1):
 #    print Solutions.F
 #    if len(Solutions.F) != Solutions.coords.shape[0]:
 #        raise 0
@@ -208,14 +209,15 @@ def r44(Solutions, r5Coords, r5F, targets):
             #d = f - F # vector-matrix
             
             val, tol = target.val, target.tol
+            Tol = sigma * tol
             if val == inf:
-                r52 = f > F + 0.1* tol#0.5*tol#tol
+                r52 = f > F + Tol
 #                r36olution_better = f <= F#-tol
             elif val == -inf:
-                r52 = f < F - 0.1* tol#-0.5*tol
+                r52 = f < F - Tol
 #                r36olution_better = f >= F#tol
             else:
-                r52 = abs(f - val) < abs(Solutions.F[i] - val) - 0.1* tol
+                r52 = abs(f - val) < abs(F - val) - Tol
 #                r36olution_better = abs(f - val) >= abs(Solutions.F[i] - val)#-tol # abs(Solutions.F[i] - target)  < abs(f[i] - target) + tol
             
             r47 = logical_or(r47, r52)
@@ -237,7 +239,7 @@ def r44(Solutions, r5Coords, r5F, targets):
                 elif val == -inf:
                     r36olution_better = f > F
                 else:
-                    r36olution_better = abs(f - val) > abs(Solutions.F[i] - val)
+                    r36olution_better = abs(f - val) > abs(F - val)
                     #assert 0, 'unimplemented yet'
                 r48 = logical_or(r48, r36olution_better)
 
@@ -264,24 +266,25 @@ def r44(Solutions, r5Coords, r5F, targets):
     return nIncome, nOutcome
 
 
-def r43(targets, Solutions, lf, uf, vv, dataType):
+
+r43 = lambda targets, SolutionsF, lf, uf: r43_seq(targets, SolutionsF, lf, uf)
+    #parallel_r43(targets, SolutionsF, lf, uf, 2)
+    
+def r43_seq(targets, solutionsF, lf, uf):
     lf, uf = asarray(lf), asarray(uf)
-    solutionsF = Solutions.F
+
     S = len(solutionsF)
     if S == 0: return None
-    
-    #print '!', asarray(lf).shape, asarray(uf).shape
-    #lf, uf = asarray(lf), asarray(uf)
 
     m = len(lf)
-    n = lf[0][0].size/2
+    n = lf.shape[2]/2
     r = zeros((m, 2*n))
 
     for _s in solutionsF:
         s = asarray(_s)
         tmp = ones((m, 2*n))
         for i, t in enumerate(targets):
-            f, val, tol = t.func, t.val, t.tol
+            val, tol = t.val, t.tol
             
             #TODO: mb optimize it
             o, a = lf[:, i], uf[:, i] 
@@ -294,8 +297,11 @@ def r43(targets, Solutions, lf, uf, vv, dataType):
                     t2 = o[ind]
                     
                     # TODO: check discrete cases
-                    tmp[ind] *= (ff-t2) / (t1-t2)
+                    Tmp = (ff-t2) / (t1-t2)
+                    Tmp[t1==t2] = 0.0 # for discrete cases
+                    tmp[ind] *= Tmp
                     tmp[ff<o] = 0.0
+                    
             elif val == -inf:
                 ff = s[i] - tol
                 ind = o < ff
@@ -303,64 +309,122 @@ def r43(targets, Solutions, lf, uf, vv, dataType):
                     t1 = a[ind]
                     t2 = o[ind]
                     # TODO: check discrete cases
-                    tmp[ind] *= (t1-ff) / (t1-t2)
+                    Tmp = (t1-ff) / (t1-t2)
+                    Tmp[t1==t2] = 0.0 # for discrete cases
+                    tmp[ind] *= Tmp
                     tmp[a<ff] = 0.0
-            else:
-                raise('unimplemented yet')    
+            else: # finite val
+                ff = abs(s[i]-val) - tol
+                if ff <= 0:
+                    continue
+                _lf, _uf = o - val, a - val
+                ind = logical_or(_lf < ff, _uf > - ff)
+                _lf = _lf[ind]
+                _uf = _uf[ind]
+                _lf[_lf>ff] = ff
+                _lf[_lf<-ff] = -ff
+                _uf[_uf<-ff] = -ff
+                _uf[_uf>ff] = ff
+                
+                r20 = a[ind] - o[ind]
+                Tmp = 1.0 - (_uf - _lf) / r20
+                Tmp[r20==0] = 0.0 # for discrete cases
+                tmp[ind] *= Tmp
+                #raise('unimplemented yet')    
 #            if any(tmp<0) or any(tmp>1):
 #                raise 0
         r -= log1p(-tmp) * 1.4426950408889634 # log2(e)
     return r
 
-#def r432(targets, Solutions, lf, uf, vv, dataType):
+
+
+from multiprocessing import Pool
+def parallel_r43(targets, SolutionsF, lf, uf, nProc=1):
+    #def func(s): 
+        #return r43_seq(targets, s, lf, uf)
+    
+    if nProc == 1:
+        return r43_seq(targets, Solutions, lf, uf)
+    pool = Pool(processes = nProc)
+    Args = [(targets, s, lf, uf) for s in SolutionsF]
+    
+    result = pool.imap_unordered(r43_seq, Args)#, callback = cb)    
+    return PythonSum(result)
+        
+        
+#def r43(targets, Solutions, lf, uf):
+#    lf, uf = asarray(lf), asarray(uf)
 #    solutionsF = Solutions.F
 #    S = len(solutionsF)
 #    if S == 0: return None
 #    
 #    #print '!', asarray(lf).shape, asarray(uf).shape
 #    #lf, uf = asarray(lf), asarray(uf)
-#    
+#
 #    m = len(lf)
 #    n = lf[0][0].size/2
 #    r = zeros((m, 2*n))
-#
-#    for _s in solutionsF:
-#        s = asarray(_s)
-#        for j in range(m):
-#            o_, a_ = lf[j], uf[j]
-#            tmp = ones(2*n)
-#            for i, t in enumerate(targets):
-#                f, val, tol = t.func, t.val, t.tol
-#                #F = asarray([solutionsF[k][i] for k in range(K)])
-#                o, a = o_[i], a_[i]
+#    
+#    ss = asarray(solutionsF)
+#    tmp = ones((S, m, 2*n))
+#    for i, t in enumerate(targets):
+#        val, tol = t.val, t.tol
+#        
+#        #TODO: mb optimize it
+#        o, a = tile(lf[:, i], (S, 1, 1)), tile(uf[:, i], (S, 1, 1)) 
+#        
+#        if val == inf:
+#            ff = s[i] + tol
+#            ind = a > ff
+#            if any(ind):
+#                t1 = a[ind]
+#                t2 = o[ind]
 #                
-#                if val == inf:
-#                    ff = s[i] + tol
-#                    ind = a > ff
-#                    if any(ind):
-#                        t1 = a[ind]
-#                        t2 = o[ind].copy()
-#                        t2[t2>ff] = ff
-#                        
-#                        # TODO: check discrete cases
-#                        tmp[ind] *= (ff-t2) / (t1-t2)
-#                        
-#                elif val == -inf:
-#                    ff = s[i] - tol
-#                    ind = o < ff
-#                    if any(ind):
-#                        t1 = a[ind].copy()
-#                        t2 = o[ind]
-#                        t1[t1<ff] = ff
-#                        
-#                        # TODO: check discrete cases
-#                        tmp[ind] *= (t1-ff) / (t1-t2)
-#                else:
-#                    raise('unimplemented yet')    
+#                # TODO: check discrete cases
+#                Tmp = (ff-t2) / (t1-t2)
+#                Tmp[t1==t2] = 0.0 # for discrete cases
+#                tmp[ind] *= Tmp
+#                tmp[ff<o] = 0.0
+#                
+#        elif val == -inf:
+#            ff = (ss[:, i] - tol).reshape(S, 1, 1)
+#            try:
+#                ind = o < ff
+#            except:
+#                pass
+#            if any(ind):
+#                try:
+#                    t1 = a[ind]
+#                except:
+#                    pass
+#                t2 = o[ind]
+#                # TODO: check discrete cases
+#                Tmp = (t1-ff) / (t1-t2)
+#                Tmp[t1==t2] = 0.0 # for discrete cases
+#                try:
+#                    tmp[ind] *= Tmp
+#                except:
+#                    pass
+#                tmp[a<ff] = 0.0
+#        else: # finite val
+#            ff = abs(s[i]-val) - tol
+#            if ff <= 0:
+#                continue
+#            _lf, _uf = o - val, a - val
+#            ind = logical_or(_lf < ff, _uf > - ff)
+#            _lf = _lf[ind]
+#            _uf = _uf[ind]
+#            _lf[_lf>ff] = ff
+#            _lf[_lf<-ff] = -ff
+#            _uf[_uf<-ff] = -ff
+#            _uf[_uf>ff] = ff
+#            
+#            r20 = a[ind] - o[ind]
+#            Tmp = 1.0 - (_uf - _lf) / r20
+#            Tmp[r20==0] = 0.0 # for discrete cases
+#            tmp[ind] *= Tmp
+#                #raise('unimplemented yet')    
 ##            if any(tmp<0) or any(tmp>1):
 ##                raise 0
-#            tmp[tmp<0.0] = 0.0 # suppress roundoff errors
-#            r[j] -= log2(1.0 - tmp)
-#                
+#        r -= log1p(-sum(tmp, axis=0)) * 1.4426950408889634 # log2(e)
 #    return r
-    

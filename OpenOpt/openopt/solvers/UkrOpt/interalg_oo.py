@@ -124,6 +124,7 @@ class interalg(baseSolver):
         Solutions.maxNum = maxSolutions
         Solutions.solutions = []
         Solutions.coords = array([]).reshape(0, n)
+        p.solutions = Solutions
         
         dataType = self.dataType
         if type(dataType) == str:
@@ -377,7 +378,7 @@ class interalg(baseSolver):
                 for j, goal in enumerate(p.user.f):
                     s[goal] = Solutions.F[i][j]
                 s.useAsMutable = False
-            p.solutions.objectives = asarray(Solutions.F)
+            p.solutions.values = asarray(Solutions.F)
             p.solutions.coords = Solutions.coords
         if not isMOP and p.maxSolutions == 1: delattr(p, 'solutions')
         if p.iprint >= 0 and not isMOP:

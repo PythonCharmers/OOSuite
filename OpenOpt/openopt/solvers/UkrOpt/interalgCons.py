@@ -248,6 +248,7 @@ def getTmp(o, a, lb, ub, tol, m, residual, dataType):
         # TODO: for non-exact interval quality increase nlh while moving from 0.5*(e-y)
         tmp[val > a+tol] = 0
         tmp[val < o-tol] = 0
+
     elif isfinite(lb) and not isfinite(ub):
         tmp = (a - (lb - tol)) / aor20
         
