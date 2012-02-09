@@ -56,6 +56,15 @@ class MOP(NonLinProblem):
         r = NonLinProblem.solve(self, *args, **kw)
         r.plot = lambda *args, **kw: self._plot(**kw)
         r.__call__ = lambda *args, **kw: self.err('evaluation of MOP result on arguments is unimplemented yet, use r.solutions')
+        r.export = lambda *args, **Kw: _export_to_xls(self, r, *args, **kw)
+        T0 = self.targets[0]
+        if T0.val == -inf:
+            keyfunc = lambda elem: elem[T0.func]
+        elif T0.val == inf:
+            keyfunc = lambda elem: -elem[T0.func]
+        else:
+            keyfunc = lambda elem: abs(T0.val - elem[T0.func])
+        r.solutions.sort(key=keyfunc)
         return r
 
     def _plot(self, **kw):
@@ -113,8 +122,95 @@ class MOP(NonLinProblem):
             pylab.show()
 
 def mop_iterdraw(p):
-    useShow = False#p.isFinished and p.show
-    p._plot(show=useShow)
+    p._plot(show=False)
 
+def _export_to_xls(p, r, *args, **kw):
+    try:
+        import xlwt
+    except:
+        s = '''
+        To export OpenOpt MOP result into xls file
+        you should have Python module "xlwt" installed,
+        (http://www.python-excel.org),
+        available via easy_install xlwt 
+        or Linux apt-get python-xlwt
+        '''
+        p.err(s)
+    if len(args) != 0:
+        xls_file = args[0]
+    else:
+        p.err('you should specify xls file')
+        
+#    xls_file = asksaveasfilename(defaultextension='.xls', initialdir = self.hd, filetypes = [('xls files', '.xls')])
+#    if xls_file in (None, ''):
+#        return
+
+    nf = p.nf
+    target_funcs = [t.func for t in p.targets]
+    vars4export = set(p._freeVarsList).difference(target_funcs)
+    vars4export = list(vars4export)
+    vars4export.sort(key = lambda v: v._id)
+    nv = len(vars4export)
+    R = [[] for i in range(nv + nf)]
+    Names = [t.name for t in target_funcs] + [v.name for v in vars4export]
+    Keys = target_funcs + vars4export
+    for elem in r.solutions:
+        for i, key in enumerate(Keys):
+            R[i].append(elem[key])
+    from numpy import argsort, asarray, abs
+    R = asarray(R)
+#    if p.targets[0].val == -inf:
+#        ind = argsort(R[0])
+#    elif p.targets[0].val == inf:
+#        ind = argsort(-R[0])
+#    else:
+#        ind = argsort(abs(R[0] - p.targets[0].val))
+    
+    # TODO: mb simplify it
+#    for i in range(nv + nf):
+#        R[i] = R[i][ind]
+    
+    L = len(r.solutions)
+    
+    wb = xlwt.Workbook()
+    
+
+    ws = wb.add_sheet('OpenOpt MOP result')
+    from openopt import __version__ as ver
+    ws.write(0, 0, 'OpenOpt ver')
+    ws.write(0, 1, ver)
+    ws.write(1, 0, 'Prob name')
+    ws.write(1, 1, p.name)
+    ws.write(2, 0, 'Prob type')
+    ws.write(2, 1, p.probType)
+    ws.write(3, 0, 'Time, s')
+    ws.write(3, 1, str(int(r.elapsed['solver_time'])))
+    ws.write(4, 0, 'CPU Time, s')
+    ws.write(4, 1, str(int(r.elapsed['solver_cputime'])))
+    ws.write(5, 0, 'N solutions')
+    ws.write(5, 1, str(L))
+       
+    style1 = xlwt.easyxf("""
+         font:
+             name Times New Roman,
+             colour_index black;
+         pattern:
+             back_colour yellow,
+             pattern thick_forward_diag,
+             fore-colour yellow
+         """) 
+    for i in range(nf):
+        ws.write(0, 3+i, Names[i], style1)
+        for j in range(L):
+            ws.write(1+j, 3+i, R[i, j], style1)
+
+    for i in range(nf, nf + nv):
+        ws.write(0, 3+i, Names[i])
+        for j in range(L):
+            ws.write(1+j, 3+i, R[i, j])
+
+
+    wb.save(xls_file)
+    
 class target:
     pass
