@@ -401,6 +401,7 @@ class OpenOptResult:
         self.rf = asscalar(asarray(p.rf))
         self.ff = asscalar(asarray(p.ff))
         self.isFDmodel = p.isFDmodel
+        self.probType = p.probType
         if p.probType == 'EIG':
             self.eigenvalues, self.eigenvectors = p.eigenvalues, p.eigenvectors
               

@@ -5,9 +5,9 @@ from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X,  SMALL_DELTA_F
 class MOP(NonLinProblem):
     _optionalData = ['lb', 'ub', 'A', 'Aeq', 'b', 'beq', 'c', 'h']
     showGoal = True
-    goal = 'weak pareto front'
+    goal = 'weak Pareto front'
     probType = 'MOP'
-    allowedGoals = ['weak pareto front', 'strong pareto front', 'wpf', 'spf']
+    allowedGoals = ['weak Pareto front', 'strong Pareto front', 'wpf', 'spf']
     isObjFunValueASingleNumber = False
     expectedArgs = ['f', 'x0']
     _frontLength = 0
@@ -49,16 +49,26 @@ class MOP(NonLinProblem):
         return 0#(fv ** 2).sum()
 
     def solve(self, *args, **kw):
-        if self.plot or kw.get('plot', False):
-            self.warn('\ninteractive graphic output for MOP is unimplemented yet and will be turned off')
-            kw['plot'] = False
+#        if self.plot or kw.get('plot', False):
+#            self.warn('\ninteractive graphic output for MOP is unimplemented yet and will be turned off')
+#            kw['plot'] = False
+        self.graphics.drawFuncs = [mop_iterdraw]
         r = NonLinProblem.solve(self, *args, **kw)
         r.plot = lambda *args, **kw: self._plot(**kw)
+        r.__call__ = lambda *args, **kw: self.err('evaluation of MOP result on arguments is unimplemented yet, use r.solutions')
         return r
 
     def _plot(self, **kw):
-        from numpy import asarray, atleast_1d
-        tmp = asarray(self.solutions.objectives)
+        from numpy import asarray, atleast_1d, array_equal
+        S = self.solutions
+        if type(S)==list and len(S) == 0: return
+        tmp = asarray(self.solutions.F if 'F' in dir(self.solutions) else self.solutions.values)
+        from copy import deepcopy
+        kw2 = deepcopy(kw)
+        useShow = kw2.pop('show', True)
+        if not useShow and hasattr(self, '_prev_mop_solutions') and array_equal(self._prev_mop_solutions, tmp):
+            return
+        self._prev_mop_solutions = tmp.copy()
         if tmp.size == 0:
             self.disp('no solutions, nothing to plot')
             return
@@ -66,13 +76,13 @@ class MOP(NonLinProblem):
             import pylab
         except:
             self.err('you should have matplotlib installed')
+        pylab.ion()
         if self.nf != 2:
             self.err('MOP plotting is implemented for problems with only 2 goals, while you have %d' % self.nf)
         X, Y = atleast_1d(tmp[:, 0]), atleast_1d(tmp[:, 1])
-        from copy import deepcopy
-        kw2 = deepcopy(kw)
+
         useGrid = kw2.pop('grid', 'on')
-        useShow = kw2.pop('show', True)
+        
         if 'marker' not in kw2: 
             kw2['marker'] = (5, 1, 0)
         if 's' not in kw2:
@@ -81,14 +91,30 @@ class MOP(NonLinProblem):
             kw2['edgecolor'] = 'b'
         if 'facecolor' not in kw2:
             kw2['facecolor'] = '#FFFF00'#'y'
-
+            
         pylab.scatter(X, Y, **kw2)
         
         pylab.grid(useGrid)
-        pylab.xlabel(self.user.f[0].name)
-        pylab.ylabel(self.user.f[1].name)
+        t0_goal = 'min' if self.targets[0].val == -inf else 'max' if self.targets[0].val == inf else str(self.targets[0].val)
+        t1_goal = 'min' if self.targets[1].val == -inf else 'max' if self.targets[1].val == inf else str(self.targets[1].val)
+        
+        pylab.xlabel(self.user.f[0].name + ' (goal: %s    tolerance: %s)' %(t0_goal, self.targets[0].tol))
+        pylab.ylabel(self.user.f[1].name + ' (goal: %s    tolerance: %s)' %(t1_goal, self.targets[1].tol))
+        
         pylab.title('problem: %s    goal: %s' %(self.name, self.goal))
-        if useShow: pylab.show()
+        figure = pylab.gcf()
+        from openopt import __version__ as ooversion
+        figure.canvas.set_window_title('OpenOpt ' + ooversion)
+        
+        pylab.hold(0)
+        pylab.draw()
+        if useShow: 
+            pylab.ioff()
+            pylab.show()
+
+def mop_iterdraw(p):
+    useShow = False#p.isFinished and p.show
+    p._plot(show=useShow)
 
 class target:
     pass
