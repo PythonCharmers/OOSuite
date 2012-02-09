@@ -313,11 +313,12 @@ def sum(inp, *args, **kwargs):
             INP.append(elem)
 
         f = lambda *args: r0 + PythonSum(args)
-        r = oofun(f, INP) 
+        r = oofun(f, INP, _isSum = True)
+        r._summation_elements = INP if np.array_equal(r0, 0.0) else INP + [r0]
 
         r.storedSumsFuncs = {}
         for inp in INP:
-            Dep = [inp] if elem.is_oovar else inp._getDep()
+            Dep = [inp] if inp.is_oovar else inp._getDep()
             for v in Dep:
                 if v not in r.storedSumsFuncs:
                     r.storedSumsFuncs[v] = set()

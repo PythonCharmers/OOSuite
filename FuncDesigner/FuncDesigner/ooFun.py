@@ -64,6 +64,7 @@ class oofun:
     #isDifferentiable = True
     discrete = False
     isCostly = False
+    _isSum = False
     
     stencil = 3 # used for DerApproximator
     
@@ -353,6 +354,16 @@ class oofun:
         
         if not isinstance(other, (oofun, list, ndarray, tuple)) and not isscalar(other):
             raise FuncDesignerException('operation oofun_add is not implemented for the type ' + str(type(other)))
+        
+        other_is_sum = isinstance(other, oofun) and other._isSum
+        
+        from overloads import sum
+        if self._isSum and other_is_sum:
+            return sum(self._summation_elements + other._summation_elements)
+        elif self._isSum:
+            return sum(self._summation_elements + [other])
+        elif other_is_sum:
+            return sum(other._summation_elements + [self])
             
         # TODO: check for correct sizes during f, not only f.d 
     
@@ -368,7 +379,8 @@ class oofun:
                 raise FuncDesignerException('for oofun summation a+b should be size(a)=size(b) or size(a)=1 or size(b)=1')        
 
         if isinstance(other, oofun):
-            r = oofun(lambda x, y: x+y, [self, other], d = (lambda x, y: aux_d(x, y), lambda x, y: aux_d(y, x)))
+            r = oofun(lambda x, y: x+y, [self, other], d = (lambda x, y: aux_d(x, y), lambda x, y: aux_d(y, x)), _isSum = True)
+            r._summation_elements = [self, other]
             r.discrete = self.discrete and other.discrete
             r.getOrder = lambda *args, **kwargs: max((self.getOrder(*args, **kwargs), other.getOrder(*args, **kwargs)))
             
@@ -391,7 +403,8 @@ class oofun:
 #                #assert len(r._getDep())>0
 #                #r._c = self._c + other
 #            else:
-            r = oofun(lambda a: a+other, self)
+            r = oofun(lambda a: a+other, self, _isSum=True)
+            r._summation_elements = [self, other]
             r.d = lambda x: aux_d(x, other)
             r._getFuncCalcEngine = lambda *args,  **kwargs: self._getFuncCalcEngine(*args,  **kwargs) + other
             r.discrete = self.discrete
@@ -996,6 +1009,9 @@ class oofun:
                             " the point involved doesn't contain neither name nor the oovar instance. Maybe you try to get function value or derivative in a point where value for an oovar is missing"
                             raise FuncDesignerException(s)
                     elif hasattr(x, 'xf'):
+                        if x.probType == 'MOP': # x is MOP result struct
+                            s = 'evaluation of MOP result on arguments is unimplemented yet, use r.solutions'
+                            raise FuncDesignerException(s)
                         # TODO: possibility of squeezing
                         return x.xf[self]
                     else:
@@ -1009,7 +1025,12 @@ class oofun:
                 if fn in kwargs:
                     setattr(self, fn, kwargs[fn])
             return self
-                
+        
+        if hasattr(x, 'probType') and x.probType == 'MOP':# x is MOP result struct
+            s = 'evaluation of MOP result on arguments is unimplemented yet, use r.solutions'
+            raise FuncDesignerException(s)
+
+        
         return self._getFuncCalcEngine(*Args, **kwargs)
 
 
