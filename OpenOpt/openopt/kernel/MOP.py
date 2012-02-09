@@ -157,18 +157,8 @@ def _export_to_xls(p, r, *args, **kw):
     for elem in r.solutions:
         for i, key in enumerate(Keys):
             R[i].append(elem[key])
-    from numpy import argsort, asarray, abs
+    from numpy import asarray
     R = asarray(R)
-#    if p.targets[0].val == -inf:
-#        ind = argsort(R[0])
-#    elif p.targets[0].val == inf:
-#        ind = argsort(-R[0])
-#    else:
-#        ind = argsort(abs(R[0] - p.targets[0].val))
-    
-    # TODO: mb simplify it
-#    for i in range(nv + nf):
-#        R[i] = R[i][ind]
     
     L = len(r.solutions)
     
