@@ -81,7 +81,7 @@ def r43(targets, SolutionsF, lf, uf, pool, nProc):
     lf, uf = asarray(lf), asarray(uf)
     target_vals = [t.val for t in targets]
     target_tols = [t.tol for t in targets]
-    if pool is None:
+    if pool is None or len(SolutionsF) <= 1:
         return r43_seq((target_vals, target_tols, SolutionsF, lf, uf))
     #Args = [(target_vals, target_tols, [s], lf, uf) for s in SolutionsF]
     ss = array_split(SolutionsF, nProc)
@@ -202,8 +202,14 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nN
 
     p._t = t
     
-    p.__s = \
-    nanmin(vstack(([tnlh_all[w, t], tnlh_all[w, n+t]])), 0)
+    nlhf_fixed = asarray([node.nlhf for node in an])
+    nlhc_fixed = asarray([node.nlhc for node in an])
+    T = nlhf_fixed + nlhc_fixed
+    if T.size != 0:
+        p.__s = \
+        nanmin(vstack(([T[w, t], T[w, n+t]])), 0)
+    else:
+        p.__s = array([])
 
 #        p._nObtainedSolutions = len(solutions)
 #        if p._nObtainedSolutions > maxSolutions:
