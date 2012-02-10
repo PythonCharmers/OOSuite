@@ -184,48 +184,26 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nN
     nlhc2 = [node.nlhc for node in an]
     nlhf2 = r43(targets, Solutions.F, ol2, al2, p.pool, p.nProc)
     tnlh_all = asarray(nlhc2) if nlhf2 is None else nlhf2 if nlhc2[0] is None else asarray(nlhc2) + nlhf2
-    
+
+    r10 = logical_not(any(isfinite(tnlh_all), 1))
+    if any(r10):
+        ind = where(logical_not(r10))[0]
+        an = take(an, ind, axis=0, out=an[:ind.size])
+        tnlh_all = take(tnlh_all, ind, axis=0, out=tnlh_all[:ind.size])
+
     T1, T2 = tnlh_all[:, :tnlh_all.shape[1]/2], tnlh_all[:, tnlh_all.shape[1]/2:]
     T = where(logical_or(T1 < T2, isnan(T2)), T1, T2)
     t = nanargmin(T, 1)
-    p._t = t
     
-    nlhf_fixed = asarray([node.nlhf for node in an])
-    tnlh_fixed = asarray(nlhc2) if nlhf_fixed is None else nlhf_fixed if nlhc2[0] is None else asarray(nlhc2) + nlhf_fixed
     w = arange(t.size)
-    n = p.n
-    T = tnlh_all
-    p.__s = \
-    nanmin(vstack(([T[w, t], T[w, n+t]])), 0)
-
-    NN = T[w, t].flatten()
-    #NN = nanmin(tnlh_all, 1)
-    r10 = logical_or(isnan(NN), NN == inf)
-    
-    
-    #print NN
-    
-    if any(r10):
-        ind = where(logical_not(r10))[0]
-        
-        # Debug
-#        ind2 = where(r10)[0]
-#        for i in ind2:
-#            if all (an[i].y <= 0 ) and all(an[i].e >= 0 ):
-##                raise 0
-#                pass
-        # debug end
-        
-        an = take(an, ind, axis=0, out=an[:ind.size])
-        #tnlh = take(tnlh, ind, axis=0, out=tnlh[:ind.size])
-        NN = take(NN, ind, axis=0, out=NN[:ind.size])
-    
+    NN = tnlh_all[w, t].flatten()
     astnlh = argsort(NN)
     an = an[astnlh]
-    #print len(an)
+
+    p._t = t
     
-#    else: #if p.solver.dataHandling == 'sorted':
-#        p.err('dataHandling = "sorted" is unimplemented yet for MOP')
+    p.__s = \
+    nanmin(vstack(([tnlh_all[w, t], tnlh_all[w, n+t]])), 0)
 
 #        p._nObtainedSolutions = len(solutions)
 #        if p._nObtainedSolutions > maxSolutions:
@@ -234,8 +212,6 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nN
 #            p.msg = 'user-defined maximal number of solutions (p.maxSolutions = %d) has been exeeded' % p.maxSolutions
 #            return an, g, fo, None, solutions, coords, xRecord, r41, r40
     
-    #p.iterfcn(xk, Min)
-    #p.iterfcn(xRecord, r40)
     
     # TODO: fix it
     p._frontLength = len(Solutions.F)
