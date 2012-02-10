@@ -4,8 +4,6 @@ A MOP example for interalg
 from FuncDesigner import *
 from openopt import *
 
-
-
 S = oovar('cooler area')
 V = oovar('voltage')
 cooler_cost = S * 1.6
@@ -25,7 +23,8 @@ objectives = [
      cooler_water_temperature, 1, 40
      ]
      
-constraints = [S>0, S<10, V>0, V<300, engine_efficiency > 0.5, engine_cost < 40, cooler_water_temperature > 20, cooler_water_temperature < 60]
+constraints = [S>0, S<10, V>0, V<300, engine_efficiency > 0.5, 
+               engine_cost < 40, cooler_water_temperature > 20, cooler_water_temperature < 60]
 
 startPoint = {S:1.0, V:100} # we could use any start point
 
