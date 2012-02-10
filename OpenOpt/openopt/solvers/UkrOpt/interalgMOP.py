@@ -167,7 +167,7 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nN
 #        r5F += [[2.96, -1.36]]
     # debug end
     
-    nIncome, nOutcome = r44(Solutions, r5Coords, r5F, targets)
+    nIncome, nOutcome = r44(Solutions, r5Coords, r5F, targets, p.solver.sigma)
     fo = 0 # unused for MOP
     
     # TODO: better of nlhc for unconstrained probs
@@ -257,7 +257,7 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nN
 
 
 
-def r44(Solutions, r5Coords, r5F, targets, sigma = 0.1):
+def r44(Solutions, r5Coords, r5F, targets, sigma):
 #    print Solutions.F
 #    if len(Solutions.F) != Solutions.coords.shape[0]:
 #        raise 0

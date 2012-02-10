@@ -34,7 +34,7 @@ class interalg(baseSolver):
     #maxMem = '150MB'
     maxNodes = 150000
     maxActiveNodes = 150
-    
+    sigma = 0.1 # for MOP, unestablished
     
     _requiresBestPointDetection = True
     
