@@ -79,7 +79,8 @@ class MOP(NonLinProblem):
             return
         self._prev_mop_solutions = tmp.copy()
         if tmp.size == 0:
-            self.disp('no solutions, nothing to plot')
+            if self.isFinished:
+                self.disp('no solutions, nothing to plot')
             return
         try:
             import pylab

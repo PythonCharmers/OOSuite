@@ -65,7 +65,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
     TimeElapsed = 0.
     isFinished = False
     invertObjFunc = False # True for goal = 'max' or 'maximum'
-    
+    nProc = 1 # number of processors to use
 
     lastPrintedIter = -1
     
