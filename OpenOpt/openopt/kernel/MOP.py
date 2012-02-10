@@ -125,6 +125,23 @@ class MOP(NonLinProblem):
 def mop_iterdraw(p):
     p._plot(show=False)
 
+TkinterIsInstalled = True
+import platform
+if platform.python_version()[0] == '2': 
+    # Python2
+    try:
+        from Tkinter import Tk
+        from tkFileDialog import asksaveasfilename
+    except:
+        TkinterIsInstalled = False
+else: 
+    # Python3
+    try:
+        from tkinter import Tk
+        from tkinter.filedialog import asksaveasfilename
+    except:
+        TkinterIsInstalled = False
+
 def _export_to_xls(p, r, *args, **kw):
     try:
         import xlwt
@@ -139,8 +156,19 @@ def _export_to_xls(p, r, *args, **kw):
         p.err(s)
     if len(args) != 0:
         xls_file = args[0]
+    elif TkinterIsInstalled:
+        root = Tk()
+        root.withdraw()
+        import os
+        hd = os.getenv("HOME")
+        xls_file = asksaveasfilename(defaultextension='.xls', initialdir = hd, filetypes = [('xls files', '.xls')])
+        root.destroy()
+        if xls_file in (None, ''): 
+            return
     else:
-        p.err('you should specify xls file')
+        p.err('''
+        you should either provide xls file name for data output 
+        or have tkinter installed to set it via GUI window''')
         
 #    xls_file = asksaveasfilename(defaultextension='.xls', initialdir = self.hd, filetypes = [('xls files', '.xls')])
 #    if xls_file in (None, ''):
@@ -168,18 +196,27 @@ def _export_to_xls(p, r, *args, **kw):
 
     ws = wb.add_sheet('OpenOpt MOP result')
     from openopt import __version__ as ver
-    ws.write(0, 0, 'OpenOpt ver')
-    ws.write(0, 1, ver)
-    ws.write(1, 0, 'Prob name')
-    ws.write(1, 1, p.name)
-    ws.write(2, 0, 'Prob type')
-    ws.write(2, 1, p.probType)
-    ws.write(3, 0, 'Time, s')
-    ws.write(3, 1, str(int(r.elapsed['solver_time'])))
-    ws.write(4, 0, 'CPU Time, s')
-    ws.write(4, 1, str(int(r.elapsed['solver_cputime'])))
-    ws.write(5, 0, 'N solutions')
-    ws.write(5, 1, str(L))
+    i = 0
+    ws.write(i, 0, 'OpenOpt ver')
+    ws.write(i, 1, ver)
+    i += 1
+    ws.write(i, 0, 'Solver')
+    ws.write(i, 1, p.solver.__name__)
+    i += 1
+    ws.write(i, 0, 'Prob name')
+    ws.write(i, 1, p.name)
+    i += 1
+    ws.write(i, 0, 'Prob type')
+    ws.write(i, 1, p.probType)
+    i += 1
+    ws.write(i, 0, 'Time, s')
+    ws.write(i, 1, str(int(r.elapsed['solver_time'])))
+    i += 1
+    ws.write(i, 0, 'CPU Time, s')
+    ws.write(i, 1, str(int(r.elapsed['solver_cputime'])))
+    i += 1
+    ws.write(i, 0, 'N solutions')
+    ws.write(i, 1, str(L))
        
     style1 = xlwt.easyxf("""
          font:
@@ -202,6 +239,7 @@ def _export_to_xls(p, r, *args, **kw):
 
 
     wb.save(xls_file)
+    p.disp('export MOP %s result to xls file finished' % p.name)
     
 class target:
     pass
