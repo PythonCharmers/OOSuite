@@ -1,7 +1,7 @@
 PythonSum = sum
 from numpy import tile, isnan, array, atleast_1d, asarray, logical_and, all, searchsorted, logical_or, any, \
 nan, isinf, arange, vstack, inf, where, logical_not, take, argmax, argmin, min, abs, hstack, empty, insert, \
-isfinite, append, atleast_2d, prod, logical_xor, argsort, asfarray, ones, log2, zeros, log1p
+isfinite, append, atleast_2d, prod, logical_xor, argsort, asfarray, ones, log2, zeros, log1p, array_split
 
 from interalgLLR import *
 
@@ -10,12 +10,89 @@ try:
 except ImportError:
     from numpy import nanmin, nanargmin, nanargmax, nanmax
 
-       
-#    o = hstack([r[v][0].lb for v in vv] + [r[v][1].lb for v in vv])
-#    a = hstack([r[v][0].ub for v in vv] + [r[v][1].ub for v in vv])
-#    definiteRange = hstack([r[v][0].definiteRange for v in vv] + [r[v][1].definiteRange for v in vv])
-#    # TODO: rework all(definiteRange)
-#    return o, a, all(definiteRange)
+
+def r43_seq(Arg):
+    targets_vals, targets_tols, solutionsF, lf, uf = Arg
+    lf, uf = asarray(lf), asarray(uf)
+
+    S = len(solutionsF)
+    if S == 0: return None
+
+    m = len(lf)
+    n = lf.shape[2]/2
+    r = zeros((m, 2*n))
+
+    for _s in solutionsF:
+        s = atleast_1d(_s)
+        tmp = ones((m, 2*n))
+        for i in range(len(targets_vals)):
+            val, tol = targets_vals[i], targets_tols[i]#, t.val, t.tol
+            #TODO: mb optimize it
+            o, a = lf[:, i], uf[:, i] 
+            if val == inf:
+                ff = s[i] + tol
+                ind = a > ff
+                if any(ind):
+                    t1 = a[ind]
+                    t2 = o[ind]
+                    
+                    # TODO: check discrete cases
+                    Tmp = (ff-t2) / (t1-t2)
+                    Tmp[t1==t2] = 0.0 # for discrete cases
+                    tmp[ind] *= Tmp
+                    tmp[ff<o] = 0.0
+                    
+            elif val == -inf:
+                ff = s[i] - tol
+                ind = o < ff
+                if any(ind):
+                    t1 = a[ind]
+                    t2 = o[ind]
+                    # TODO: check discrete cases
+                    Tmp = (t1-ff) / (t1-t2)
+                    Tmp[t1==t2] = 0.0 # for discrete cases
+                    tmp[ind] *= Tmp
+                    tmp[a<ff] = 0.0
+            else: # finite val
+                ff = abs(s[i]-val) - tol
+                if ff <= 0:
+                    continue
+                _lf, _uf = o - val, a - val
+                ind = logical_or(_lf < ff, _uf > - ff)
+                _lf = _lf[ind]
+                _uf = _uf[ind]
+                _lf[_lf>ff] = ff
+                _lf[_lf<-ff] = -ff
+                _uf[_uf<-ff] = -ff
+                _uf[_uf>ff] = ff
+                
+                r20 = a[ind] - o[ind]
+                Tmp = 1.0 - (_uf - _lf) / r20
+                Tmp[r20==0] = 0.0 # for discrete cases
+                tmp[ind] *= Tmp
+                #raise('unimplemented yet')    
+#            if any(tmp<0) or any(tmp>1):
+#                raise 0
+        r -= log1p(-tmp) * 1.4426950408889634 # log2(e)
+    return r
+
+from multiprocessing import Pool
+def r43(targets, SolutionsF, lf, uf, pool, nProc):
+    lf, uf = asarray(lf), asarray(uf)
+    target_vals = [t.val for t in targets]
+    target_tols = [t.tol for t in targets]
+    if pool is None:
+        return r43_seq((target_vals, target_tols, SolutionsF, lf, uf))
+    #Args = [(target_vals, target_tols, [s], lf, uf) for s in SolutionsF]
+    ss = array_split(SolutionsF, nProc)
+    #print ss
+    Args = [(target_vals, target_tols, s, lf, uf) for s in ss]
+    
+    result = pool.imap_unordered(r43_seq, Args)#, callback = cb)    
+    #result = pool.map(r43_seq, Args)
+    r = [elem for elem in result if elem is not None]
+    return PythonSum(r)
+
 
 def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNodes,  \
          r41, fTol, Solutions, varTols, _in, dataType, \
@@ -29,6 +106,10 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nN
     if itn == 0: 
         # TODO: change for constrained probs
         _s = atleast_1d(inf)
+        if p.nProc != 1:
+            p.pool = Pool(processes = p.nProc)
+        else:
+            p.pool = None
     
     ol, al = [], []
     targets = p.targets # TODO: check it
@@ -43,7 +124,7 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nN
         #ol.append(o.reshape(2*n, m).T.tolist())
         #al.append(a.reshape(2*n, m).T.tolist())
 
-    nlhf = r43(targets, Solutions.F, ol, al)
+    nlhf = r43(targets, Solutions.F, ol, al, p.pool, p.nProc)
     
     # DEBUG!
 #    from numpy import array_equal, isinf
@@ -101,7 +182,7 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nN
     ol2 = [node.o for node in an]
     al2 = [node.a for node in an]
     nlhc2 = [node.nlhc for node in an]
-    nlhf2 = r43(targets, Solutions.F, ol2, al2)
+    nlhf2 = r43(targets, Solutions.F, ol2, al2, p.pool, p.nProc)
     tnlh_all = asarray(nlhc2) if nlhf2 is None else nlhf2 if nlhc2[0] is None else asarray(nlhc2) + nlhf2
     
     T1, T2 = tnlh_all[:, :tnlh_all.shape[1]/2], tnlh_all[:, tnlh_all.shape[1]/2:]
@@ -267,89 +348,13 @@ def r44(Solutions, r5Coords, r5F, targets, sigma = 0.1):
 
 
 
-r43 = lambda targets, SolutionsF, lf, uf: r43_seq(targets, SolutionsF, lf, uf)
+#r43 = lambda targets, SolutionsF, lf, uf: r43_seq([t.val for t in targets], [t.tol for t in targets], SolutionsF, lf, uf)
     #parallel_r43(targets, SolutionsF, lf, uf, 2)
     
-def r43_seq(targets, solutionsF, lf, uf):
-    lf, uf = asarray(lf), asarray(uf)
-
-    S = len(solutionsF)
-    if S == 0: return None
-
-    m = len(lf)
-    n = lf.shape[2]/2
-    r = zeros((m, 2*n))
-
-    for _s in solutionsF:
-        s = asarray(_s)
-        tmp = ones((m, 2*n))
-        for i, t in enumerate(targets):
-            val, tol = t.val, t.tol
-            
-            #TODO: mb optimize it
-            o, a = lf[:, i], uf[:, i] 
-            
-            if val == inf:
-                ff = s[i] + tol
-                ind = a > ff
-                if any(ind):
-                    t1 = a[ind]
-                    t2 = o[ind]
-                    
-                    # TODO: check discrete cases
-                    Tmp = (ff-t2) / (t1-t2)
-                    Tmp[t1==t2] = 0.0 # for discrete cases
-                    tmp[ind] *= Tmp
-                    tmp[ff<o] = 0.0
-                    
-            elif val == -inf:
-                ff = s[i] - tol
-                ind = o < ff
-                if any(ind):
-                    t1 = a[ind]
-                    t2 = o[ind]
-                    # TODO: check discrete cases
-                    Tmp = (t1-ff) / (t1-t2)
-                    Tmp[t1==t2] = 0.0 # for discrete cases
-                    tmp[ind] *= Tmp
-                    tmp[a<ff] = 0.0
-            else: # finite val
-                ff = abs(s[i]-val) - tol
-                if ff <= 0:
-                    continue
-                _lf, _uf = o - val, a - val
-                ind = logical_or(_lf < ff, _uf > - ff)
-                _lf = _lf[ind]
-                _uf = _uf[ind]
-                _lf[_lf>ff] = ff
-                _lf[_lf<-ff] = -ff
-                _uf[_uf<-ff] = -ff
-                _uf[_uf>ff] = ff
-                
-                r20 = a[ind] - o[ind]
-                Tmp = 1.0 - (_uf - _lf) / r20
-                Tmp[r20==0] = 0.0 # for discrete cases
-                tmp[ind] *= Tmp
-                #raise('unimplemented yet')    
-#            if any(tmp<0) or any(tmp>1):
-#                raise 0
-        r -= log1p(-tmp) * 1.4426950408889634 # log2(e)
-    return r
 
 
 
-from multiprocessing import Pool
-def parallel_r43(targets, SolutionsF, lf, uf, nProc=1):
-    #def func(s): 
-        #return r43_seq(targets, s, lf, uf)
-    
-    if nProc == 1:
-        return r43_seq(targets, Solutions, lf, uf)
-    pool = Pool(processes = nProc)
-    Args = [(targets, s, lf, uf) for s in SolutionsF]
-    
-    result = pool.imap_unordered(r43_seq, Args)#, callback = cb)    
-    return PythonSum(result)
+
         
         
 #def r43(targets, Solutions, lf, uf):
