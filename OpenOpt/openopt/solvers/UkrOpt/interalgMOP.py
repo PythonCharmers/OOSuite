@@ -202,10 +202,11 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nN
 
     p._t = t
     
-    nlhf_fixed = asarray([node.nlhf for node in an])
-    nlhc_fixed = asarray([node.nlhc for node in an])
-    T = nlhf_fixed + nlhc_fixed
-    if T.size != 0:
+       
+    if len(an) != 0:
+        nlhf_fixed = asarray([node.nlhf for node in an])
+        nlhc_fixed = asarray([node.nlhc for node in an])
+        T = nlhf_fixed + nlhc_fixed if nlhc_fixed[0] is not None else nlhf_fixed 
         p.__s = \
         nanmin(vstack(([T[w, t], T[w, n+t]])), 0)
     else:
