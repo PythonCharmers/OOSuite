@@ -2,56 +2,57 @@
 An example of solving global optimization problem
 with guaranteed precision |f-f*| < fTol
 '''
-
+from numpy import zeros
 from FuncDesigner import *
 from openopt import *
 
-a, b, c, d, e, f = oovars('a', 'b', 'c', 'd', 'e', 'f')
+a, b, c = oovars(3) # create 3 variables
+d = oovars(4) # create 4 variables in a single vector
 
 # objective function:
-F = cos(5*a) + (a-0.9)**2 +exp(10*abs(a-0.1)) \
-+ cos(10*b) + (b-0.2)**2 + exp(10*abs(b-0.7)) \
-+ cos(20*c) + (c-0.3)**2  + exp(10*abs(c-0.9)) \
-+ cos(40*d) + (d-0.4)**2 + exp(e/4) + cos(5*f)
+F = cos(5*a) + 0.2*(b-0.2)**2 +  exp(4*abs(c-0.9)) \
++ 0.05*sum(sin(d-0.1*(a+b+c))) + 3 * abs(d[0] - 0.2) + 4 * abs(d[2] - 0.2)
 
-startPoint = {a:0.5, b:0.5, c:0.5, d:0.5, e:0.5, f:0.5}
+startPoint = {a:0.5, b:0.5, c:0.5, d: zeros(4)}
 
 # set box-bound domain:
-constraints = (a>0, a<1, b>0, b<1, c>0, c<1, d>0, d<1, e>0, e<1, f>0, f<1)
+constraints = [a>0, a<1, b>0, b<1, c>0, c<1, d>-1, d<1, d[3] < 0.5]
+
+# set some general constraints:
+constraints += [
+                (a*b + sin(c) < 0.5)(tol=1e-5), 
+                d < cos(a) + 0.5, # default tol 10^-6
+                cos(d[0]) +a < sin(d[3]) + b, 
+                d[1] + c == 0.7
+                ]
 
 # choose required objective function tolerance: 
 # |f-f*| < fTol, where f* is objective function value in optimal point
-fTol = 5e-4
+fTol = 0.005
 
 solver='interalg'
-# other global solvers to compare (they cannot handle required tolerance fTol)
-#solver=oosolver('mlsl', iprint = 200, maxIter = 10000)
+# another global solver to compare (it cannot handle required tolerance fTol)
 #solver=oosolver('de', iprint=10, maxFunEvals = 10000, maxIter = 1500)
 # or this solver with some non-default parameters:
 #solver=oosolver('interalg', fStart = 5.175, maxIter = 1000,maxNodes = 1000000, maxActiveNodes = 15)
 
 p = GLP(F, startPoint, fTol = fTol, constraints = constraints)
-r = p.minimize(solver)
-print(r.xf)#{a: 0.100006103515625, b: 0.70000457763671875, c: 0.83860015869140625, d: 0.392822265625, e: 0.0001220703125, f: 0.62890625}
+r = p.minimize(solver, iprint = 200)
+print(r(a, b, c, d))
+'''
+------------------------- OpenOpt 0.37 -------------------------
+solver: interalg   problem: unnamed    type: GLP
+ iter   objFunVal   log10(MaxResidual/ConTol)   
+    0  5.540e+00                      6.00 
+  200  5.975e+00                     -0.77 
+  400  5.602e+00                     -0.87 
+OpenOpt info: Solution with required tolerance 5.0e-03 
+ is guarantied (obtained precision: 4.9e-03)
+  477  5.561e+00                     -0.11 
+istop: 1000 (solution has been obtained)
+Solver:   Time Elapsed = 41.26 	CPU Time Elapsed = 40.38
+objFunValue: 5.5611794 (feasible, max(residuals/requiredTolerances) = 0.783904)
+[6.4849853515625e-05, 0.52830866626324779, 0.52356340597460604, 
+[0.20009332597693788, 0.1764373779296875, 0.19999030162612966, 0.48973883274923724]]
+'''
 
-'''                                                    Some other objectives that were tried with interalg                                                    '''
-#F = cos(5*a) + (a-0.1)**2 + cos(10*b) + (b-0.2)**2 + cos(20*c) + (c-0.3)**2  + cos(40*d) + (d-0.4)**2 + exp(e/4) + cos(5*f)
-#F = 5*sin(5*a) +ceil(sin(10*a) + exp(5*a))+ (a-0.1)**2+ exp(0.1*(b + c)) + 5*cos(5*d) * cos(5*a) + exp(d/5) + cos(e) + cos(f) 
-#F = sin(0) * a ** 0 + sin(1) * a ** 1
-#F = (a-0.1)*a*b*c + a*(b-0.2)*b + (c-0.3)*c * f*d*e+ (f+0.2)**3*a*b*(c-0.5) + d*e*f + a/((f-0.95)**2)
-#F =  (a-0.1)*a*b*c + a*(b-0.2)*b + (c-0.3)*c * f*d*e+ (f+0.2)**3*a*b*(c-0.5) + d*e*f + a/((f-0.95)**2)
-#F =  a/((f-0.95)**2)
-#F = (a+1e-10)/(f-0.95)**2
-#F = a**3 + (a-0.1)**2 + b**3 + (b-0.2)**2 + c**5 + (c-0.3)**2  + d**3 + (d-0.4)**2 + exp(e/4) + a*b*(f-0.7)*3
-#F = exp(a) + exp(b)
-#F = a+b+exp(c)/1e100
-
-#N = 5
-#a = oovars(N)
-#F = sum([sin(1+N*i)*a[i]**int(2+i**0.3) for i in range(N)])
-#S = oosystem()
-#S &= [a[i] > 0 for i in range(N)] + [a[i] < 1 for i in range(N)]
-#startPoint = dict([(a[i], 0.5) for i in range(N)])
-#startPoint = {a:[1]*N}
-#r = S.minimize(F, startPoint, solver=solver)
-#print(r.xf)
