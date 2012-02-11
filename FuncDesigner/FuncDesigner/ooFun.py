@@ -336,7 +336,7 @@ class oofun:
 #        print('len(tmp):', len(tmp))
         for frame_tuple in inspect.stack():
             frame = frame_tuple[0]
-            if frame.f_code is npSum.func_code:
+            if 'func_code' in dir(frame) and 'func_code' in dir(npSum) and frame.f_code is npSum.func_code:
                 pWarn('''
                 seems like you use numpy.sum() on FuncDesigner obects, 
                 using FuncDesigner.sum() instead is highly recommended''')
@@ -916,7 +916,8 @@ class oofun:
     
     def eq(self, other):
         if other in (None, (), []): return False
-        if type(other) in (str, unicode): return False
+        #if type(other) in (str, unicode): return False # buggy
+        if 'startswith' in dir(other): return False
         if self.is_oovar and not isinstance(other, oofun):
             raise FuncDesignerException('Constraints like this: "myOOVar = <some value>" are not implemented yet and are not recommended; for openopt use freeVars / fixedVars instead')
         r = Constraint(self - other, ub = 0.0, lb = 0.0) # do not perform check for other == 0, copy should be returned, not self!
