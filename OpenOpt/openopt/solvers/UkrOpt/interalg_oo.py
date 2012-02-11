@@ -351,10 +351,11 @@ class interalg(baseSolver):
         o = asarray([t.o for t in an])
         if o.size != 0:
             g = nanmin([nanmin(o), g])
-            
-        p.extras['isRequiredPrecisionReached'] = \
-        True if ff - g < fTol and isFeas else False
-        # and (k is False or (isSNLE and (p._nObtainedSolutions >= maxSolutions or maxSolutions==1))) 
+        
+        if not isMOP:
+            p.extras['isRequiredPrecisionReached'] = \
+            True if ff - g < fTol and isFeas else False
+            # and (k is False or (isSNLE and (p._nObtainedSolutions >= maxSolutions or maxSolutions==1))) 
         
         if not isMOP and not p.extras['isRequiredPrecisionReached'] and p.istop > 0:
             p.istop = -1
