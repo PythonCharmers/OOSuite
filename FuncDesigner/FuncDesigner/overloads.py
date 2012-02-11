@@ -1,7 +1,7 @@
 PythonSum = sum
 from ooFun import oofun
 import numpy as np
-from FDmisc import FuncDesignerException, Diag, Eye, raise_except
+from FDmisc import FuncDesignerException, Diag, Eye, raise_except, diagonal
 from ooFun import atleast_oofun, ooarray
 from ooPoint import ooPoint
 from Interval import TrigonometryCriticalPoints, ZeroCriticalPoints, nonnegative_interval, ZeroCriticalPointsInterval, box_1_interval
@@ -411,6 +411,9 @@ def sum(inp, *args, **kwargs):
             #print 'asdf'
             r, keys = {}, set()
             
+            # TODO: rework it, don't recalculate each time
+            #Size = np.amax((1, np.asarray(r0).size))
+            
             for elem in INP:
                 if not elem.is_oovar and (elem.input is None or len(elem.input)==0 or elem.input[0] is None): 
                     continue # TODO: get rid if None, use [] instead
@@ -437,6 +440,7 @@ def sum(inp, *args, **kwargs):
                                 val = val.toarray()
                             elif not isinstance(r[key], np.ndarray) and isinstance(val, np.ndarray):
                                 r[key] = r[key].toarray()
+                            # TODO: rework it
                             try:
                                 r[key] += val
                             except:
@@ -449,6 +453,22 @@ def sum(inp, *args, **kwargs):
                     if np.isscalar(val): val = np.asfarray(val)
                     if not isinstance(val, np.ndarray): # i.e. sparse matrix
                         r[key] = val.toarray()
+                        
+            # TODO: rework it
+            Size = np.asarray(r0).size
+            for elem in r.values():
+                if not np.isscalar(elem):
+                    Size  = elem.shape[0]
+            #Size = np.amax([np.atleast_2d(elem).shape[0] for elem in r.values()])
+                
+            if Size != 1:
+                for key, val in r.items():
+                    if not isinstance(val, diagonal) and (np.isscalar(val) or np.prod(val.shape) <= 1):
+                        tmp = np.empty(Size)
+                        tmp.fill(val)
+                        r[key] = tmp
+#                    elif np.asarray(val).size !=1:
+#                        raise_except('incorrect size in FD sum kernel')
             return r
         r._D = _D
         return r
