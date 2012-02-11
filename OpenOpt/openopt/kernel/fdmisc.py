@@ -207,7 +207,7 @@ def setStartVectorAndTranslators(p):
                 if r.ndim == 1:
                     r[indexes[0]:indexes[1]] = val.flatten() if type(val) == ndarray else val
                 else:
-                    r[:, indexes[0]:indexes[1]] = val if val.shape[0] == r.shape[0] else val.reshape((funcLen, prod(val.shape)/funcLen))
+                    r[:, indexes[0]:indexes[1]] = val if val.shape == r.shape else val.reshape((funcLen, prod(val.shape)/funcLen))
             if useSparse is True and funcLen == 1: 
                 return SparseMatrixConstructor(r)
             elif r.ndim <= 1:
