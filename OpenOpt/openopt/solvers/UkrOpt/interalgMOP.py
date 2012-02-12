@@ -14,9 +14,7 @@ except ImportError:
 def r43_seq(Arg):
     targets_vals, targets_tols, solutionsF, lf, uf = Arg
     lf, uf = asarray(lf), asarray(uf)
-
-    S = len(solutionsF)
-    if S == 0: return None
+    if lf.size == 0 or len(solutionsF) == 0: return None
 
     m = len(lf)
     n = lf.shape[2]/2
@@ -81,17 +79,23 @@ def r43(targets, SolutionsF, lf, uf, pool, nProc):
     lf, uf = asarray(lf), asarray(uf)
     target_vals = [t.val for t in targets]
     target_tols = [t.tol for t in targets]
-    if pool is None or len(SolutionsF) <= 1:
+    if nProc == 1 or len(SolutionsF) <= 1:
         return r43_seq((target_vals, target_tols, SolutionsF, lf, uf))
-    #Args = [(target_vals, target_tols, [s], lf, uf) for s in SolutionsF]
-    ss = array_split(SolutionsF, nProc)
-    #print ss
-    Args = [(target_vals, target_tols, s, lf, uf) for s in ss]
-    
-    result = pool.imap_unordered(r43_seq, Args)#, callback = cb)    
-    #result = pool.map(r43_seq, Args)
-    r = [elem for elem in result if elem is not None]
-    return PythonSum(r)
+        
+    splitBySolutions = True #if len(SolutionsF) > max((4*nProc, ))
+    if splitBySolutions:
+        ss = array_split(SolutionsF, nProc)
+        Args = [(target_vals, target_tols, s, lf, uf) for s in ss]
+        result = pool.imap_unordered(r43_seq, Args)#, callback = cb)    
+        r = [elem for elem in result if elem is not None]
+        return PythonSum(r)
+    else:
+        lf2 = array_split(lf, nProc)
+        uf2 = array_split(uf, nProc)
+        Args = [(target_vals, target_tols, SolutionsF, lf2[i], uf2[i]) for i in range(nProc)]
+        result = pool.map(r43_seq, Args)
+        r = [elem for elem in result if elem is not None]
+        return vstack(r)
 
 
 def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNodes,  \
@@ -126,17 +130,6 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nN
 
     nlhf = r43(targets, Solutions.F, ol, al, p.pool, p.nProc)
     
-    # DEBUG!
-#    from numpy import array_equal, isinf
-#    nlhf2 = r43(targets, Solutions.F, ol, al,Case=2)
-#    if nlhf is not None:
-#        nlhf3, nlhf4 = nlhf.copy(), nlhf2.copy()
-#        nlhf3[isinf(nlhf3)] = 0.001
-#        nlhf4[isinf(nlhf4)] = 0.001
-#        if not array_equal(nlhf3, nlhf4):
-#            pass
-    # Debug end
-    
     fo_prev = 0
     # TODO: remove NaN nodes here
 
@@ -160,12 +153,6 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nN
 
     asdf1 = [t.func for t in p.targets]
     r5F, r5Coords = getr4Values(vv, y, e, tnlh_curr, asdf1, C, p.contol, dataType, p) 
-
-    # debug!!
-#    if itn > 50:
-#        r5Coords += [[1, 2, 3, 4]]
-#        r5F += [[2.96, -1.36]]
-    # debug end
     
     nIncome, nOutcome = r44(Solutions, r5Coords, r5F, targets, p.solver.sigma)
     fo = 0 # unused for MOP
@@ -178,19 +165,37 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nN
         an = hstack((nodes,  _in))
     else:
         an = atleast_1d(nodes)
+    
+#    if nIncome != 0 or not hasattr(an[0], 'tnlh_all'):
+
+    hasNewParetoNodes = False if nIncome == 0 else True
+    if hasNewParetoNodes:
+        ol2 = [node.o for node in an]
+        al2 = [node.a for node in an]
+        nlhc2 = [node.nlhc for node in an]
+        nlhf2 = r43(targets, Solutions.F, ol2, al2, p.pool, p.nProc)
+        tnlh_all = asarray(nlhc2) if nlhf2 is None else nlhf2 if nlhc2[0] is None else asarray(nlhc2) + nlhf2
+    else:
+        ol2 = [node.o for node in nodes]
+        al2 = [node.a for node in nodes]
+        nlhc2 = [node.nlhc for node in nodes]
+        nlhf2 = r43(targets, Solutions.F, ol2, al2, p.pool, p.nProc)
+        tnlh_all1 = asarray(nlhc2) if nlhf2 is None else nlhf2 if nlhc2[0] is None else asarray(nlhc2) + nlhf2
+        tnlh_all = vstack([tnlh_all1] + [node.tnlh_all for node in _in]) if len(_in) != 0 else tnlh_all1
         
-    ol2 = [node.o for node in an]
-    al2 = [node.a for node in an]
-    nlhc2 = [node.nlhc for node in an]
-    nlhf2 = r43(targets, Solutions.F, ol2, al2, p.pool, p.nProc)
-    tnlh_all = asarray(nlhc2) if nlhf2 is None else nlhf2 if nlhc2[0] is None else asarray(nlhc2) + nlhf2
+    for i, node in enumerate(nodes):
+        node.tnlh_all = tnlh_all[i]
 
     r10 = logical_not(any(isfinite(tnlh_all), 1))
     if any(r10):
         ind = where(logical_not(r10))[0]
         an = take(an, ind, axis=0, out=an[:ind.size])
         tnlh_all = take(tnlh_all, ind, axis=0, out=tnlh_all[:ind.size])
-
+    for i, node in enumerate(an):
+        node.tnlh_all = tnlh_all[i]
+#    else:
+#        tnlh_all = hstack([node.tnlh_all for node in an])
+        
     T1, T2 = tnlh_all[:, :tnlh_all.shape[1]/2], tnlh_all[:, tnlh_all.shape[1]/2:]
     T = where(logical_or(T1 < T2, isnan(T2)), T1, T2)
     t = nanargmin(T, 1)
