@@ -81,5 +81,5 @@ class lsqr(baseSolver):
         p.debugmsg('lsqr iterations elapsed: %d' % itn)
         #p.iter = 1 # itn
         p.xf = x
-        p.ff = p.fk = w[0]
+        p.ff = p.fk = p.objFunc(x)
 
