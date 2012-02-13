@@ -287,7 +287,7 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     elif p.probType == 'IP':
         p.isFeasible = p.rk < p.ftol
     else:
-        p.fk = p.objFunc(p.xk)
+        p.ff = p.fk = p.objFunc(p.xk)
     if not hasattr(p,  'ff') or any(p.ff==nan): 
         p.iterfcn, tmp_iterfcn = lambda *args: None, p.iterfcn
         p.ff = p.fk
@@ -378,7 +378,9 @@ def finalShow(p):
     pylab = __import__('pylab')
     pylab.ioff()
     if p.show:
-        pylab.show()
+#        import os
+#        if os.fork():
+            pylab.show()
 
 class OpenOptResult: 
     # TODO: implement it
