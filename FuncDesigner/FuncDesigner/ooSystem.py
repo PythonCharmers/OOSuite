@@ -111,7 +111,12 @@ class ooSystem:
         constraints = self._getAllConstraints()
             
         # TODO: mention it in doc
-        kwargs['constraints'] = set(kwargs['constraints']).update(set(constraints)) if 'constraints' in kwargs else constraints
+        if 'constraints' in kwargs:
+            tmp = set(kwargs['constraints'])
+            tmp.update(set(constraints))
+            kwargs['constraints'] = tmp
+        else:
+            kwargs['constraints'] = constraints
         
         freeVars, fixedVars = kwargs.get('freeVars', None), kwargs.get('fixedVars', None)
         isSystemOfEquations = kwargs['goal'] == 'solution'
