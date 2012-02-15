@@ -1,6 +1,7 @@
 # created by Dmitrey
 from numpy import isscalar, all, asfarray, ndarray, array, asscalar, asarray, pi, atleast_1d, asscalar
-from FuncDesigner import oofun, ooarray, dot, sum, sqrt, cross, norm
+from FuncDesigner.ooFun import oofun
+from FuncDesigner import  ooarray, dot, sum, sqrt, cross, norm
 from misc import SpaceFuncsException, pWarn, SF_error
 from baseGeometryObject import baseGeometryObject
 
