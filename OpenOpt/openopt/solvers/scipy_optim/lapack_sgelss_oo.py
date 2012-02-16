@@ -11,7 +11,8 @@ class lapack_sgelss(baseSolver):
     __info__ = 'wrapper to LAPACK sgelss routine (single precision), requires scipy & LAPACK 3.0 or newer installed'
     def __init__(self):pass
     def __solver__(self, p):
-        v,x,s,rank,info = sgelss(p.C, p.d)
+        res = sgelss(p.C, p.d)
+        x,info = res[1], res[-1]
         xf = x[:p.C.shape[1]]
         ff = atleast_1d(asfarray(p.F(xf)))
         p.xf = p.xk = xf
