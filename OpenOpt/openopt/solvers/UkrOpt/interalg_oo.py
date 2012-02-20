@@ -366,7 +366,9 @@ class interalg(baseSolver):
             if p.goal in ('max', 'maximum'):
                 g = -g
                 o = -o
-            tmp = [nanmin(hstack((ff, g, o.flatten()))), numpy.asscalar(array((ff if p.goal not in ['max', 'maximum'] else -ff)))]
+            if p.goal in ['max', 'maximum']:
+                ff = -ff
+            tmp = [nanmin(hstack((ff, g, o.flatten()))), numpy.asscalar(array((ff)))]
             if p.goal in ['max', 'maximum']: tmp = tmp[1], tmp[0]
             p.extras['extremumBounds'] = tmp if not isIP else 'unimplemented for IP yet'
         

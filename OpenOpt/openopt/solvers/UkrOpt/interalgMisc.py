@@ -20,7 +20,7 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
          maxNodes, _s, indTC, xRecord):
 
     isSNLE = p.probType in ('NLSP', 'SNLE')
-    isMOP = p.probType == 'MOP'
+    
     maxSolutions, solutions, coords = Solutions.maxNum, Solutions.solutions, Solutions.coords
     if len(p._discreteVarsNumList):
         adjustDiscreteVarBounds(y, e, p)
@@ -32,22 +32,25 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
     o, a, r41 = r45(y, e, vv, p, asdf1, dataType, r41, nlhc)
     fo_prev = float(0 if isSNLE else min((r41, r40 - (fTol if maxSolutions == 1 else 0))))
     y, e, o, a, _s, nlhc, residual = func7(y, e, o, a, _s, nlhc, residual)    
+    
+    #ind = where(all(o>fo_prev, 1))
+    
         
     if y.size == 0:
         return _in, g, fo_prev, _s, Solutions, xRecord, r41, r40
     
     nodes = func11(y, e, nlhc, indTC, residual, o, a, _s, p)
-    
+    #nodes, g = func9(nodes, fo_prev, g, p)
     #y, e = func4(y, e, o, a, fo)
     
     newNLH = 0
     
     if p.solver.dataHandling == 'raw':
-       
+        if not isSNLE:
+            for node in nodes:
+                node.fo = fo_prev       
         if nlhc is not None:
             for i, node in enumerate(nodes): node.tnlhf = node.nlhf + node.nlhc
-            #new
-            #for i, node in enumerate(nodes): node.tnlhf = node.nlhf + node.residual
         else:
             for i, node in enumerate(nodes): node.tnlhf = node.nlhf # TODO: improve it
             
@@ -59,6 +62,8 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
             tnlh_fixed = [node.tnlhf for node in an]
             tnlh_fixed_local = asarray(tnlh_fixed[:len(nodes)])
         else:
+#            o2 = vstack([node.o for node in an])
+#            a2 = vstack([node.a for node in an])
             if len(_in) != 0:
                 o2 = vstack((o, [node.o for node in _in]))
                 a2 = vstack((a, [node.a for node in _in]))
@@ -70,7 +75,15 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
         tmp = a.copy()
         
         tmp[tmp>fo_prev] = fo_prev
+        #try:
+#        o = o2[:len(nodes)]
+#        a = a2[:len(nodes)]
+#        y = vstack([node.y for node in nodes])
+#        e = vstack([node.e for node in nodes])
+#        tmp = a.copy()
         tnlh_curr = tnlh_fixed_local - log2(tmp - o)
+#        except:
+#            pass
         
         # TODO: use it instead of code above
         #tnlh_curr = tnlh_fixed_local - log2(where() - o)
