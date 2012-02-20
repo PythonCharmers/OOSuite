@@ -423,7 +423,7 @@ def sum(inp, *args, **kwargs):
                     sz = np.asarray(point[elem]).size
                     tmpres = Eye(sz) 
                     if elem in keys:
-                        if isinstance(r[elem], np.ndarray) and not isinstance(tmpres, np.ndarray): # i.e. tmpres is sparse matrix
+                        if sz != 1 and isinstance(r[elem], np.ndarray) and not isinstance(tmpres, np.ndarray): # i.e. tmpres is sparse matrix
                             tmpres = tmpres.toarray()
                         elif not isinstance(r[elem], np.ndarray) and isinstance(tmpres, np.ndarray):
                             r[elem] = r[elem].toarray()
@@ -436,9 +436,9 @@ def sum(inp, *args, **kwargs):
                     tmp = elem._D(point, fixedVarsScheduleID, Vars, fixedVars, useSparse = useSparse)
                     for key, val in tmp.items():
                         if key in keys:
-                            if isinstance(r[key], np.ndarray) and not isinstance(val, np.ndarray): # i.e. tmpres is sparse matrix
+                            if not np.isscalar(val) and isinstance(r[key], np.ndarray) and not isinstance(val, np.ndarray): # i.e. tmpres is sparse matrix
                                 val = val.toarray()
-                            elif not isinstance(r[key], np.ndarray) and isinstance(val, np.ndarray):
+                            elif not np.isscalar(r[key]) and not isinstance(r[key], np.ndarray) and isinstance(val, np.ndarray):
                                 r[key] = r[key].toarray()
                             # TODO: rework it
                             try:
@@ -458,15 +458,19 @@ def sum(inp, *args, **kwargs):
             Size = np.asarray(r0).size
             for elem in r.values():
                 if not np.isscalar(elem):
-                    Size  = elem.shape[0]
+                    Size  = np.max((Size, elem.shape[0]))
             #Size = np.amax([np.atleast_2d(elem).shape[0] for elem in r.values()])
                 
             if Size != 1:
                 for key, val in r.items():
-                    if not isinstance(val, diagonal) and (np.isscalar(val) or np.prod(val.shape) <= 1):
-                        tmp = np.empty(Size)
-                        tmp.fill(val)
-                        r[key] = tmp
+                    if not isinstance(val, diagonal):
+                        if np.isscalar(val) or np.prod(val.shape) <= 1:
+                            tmp = np.empty((Size, 1))
+                            tmp.fill(val)
+                            r[key] = tmp
+                        elif val.shape[0] != Size:
+                            tmp = np.tile(val, (Size, 1))
+                            r[key] = tmp
 #                    elif np.asarray(val).size !=1:
 #                        raise_except('incorrect size in FD sum kernel')
             return r
