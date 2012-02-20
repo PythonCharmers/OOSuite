@@ -33,10 +33,12 @@ f = [a+f4==-5, 2*a+b==-15, a==-4*b.sum()-2*c.sum()+45]
 linSys = sle(f)
 print('dimension of the SLE: %d' % linSys.n) # dimension of the SLE: 301
 # let's search for 4 largest magnitude eigenvalues
-#r = linSys.eig(goal={'lm':4}, solver='arpack')
-r = linSys.eig(solver='numpy_eig')
+r = linSys.eig(goal={'lm':4}, solver='arpack') # requires SciPy installed
 # or goal={'largest magnitude':4}, with or without space inside, case-insensitive
 # for whole list of available goals see http://openopt.org/EIG
+
+# or use numpy_eig solver instead to search all eigenvalues / eigenvectors:
+#r = linSys.eig(solver='numpy_eig') # requires only NumPy installed
 
 print(r.eigenvalues)
 #[ -1.35516602e-05 -1.71948079e-05j  -6.93570858e-01 +0.00000000e+00j
