@@ -302,13 +302,13 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             from FuncDesigner import _getAllAttachedConstraints, _getDiffVarsID, ooarray
             self._FDVarsID = _getDiffVarsID()
 
-            if self.probType in ['SLE', 'NLSP']:
+            if self.probType in ['SLE', 'NLSP', 'SNLE']:
                 equations = self.C if self.probType == 'SLE' else self.f
                 ConstraintTags = [elem.isConstraint for elem in equations]
                 cond_all_oofuns_but_not_cons = not any(ConstraintTags) 
                 cond_cons = all(ConstraintTags) 
                 if not cond_all_oofuns_but_not_cons and not cond_cons:
-                    raise OpenOptException('for FuncDesigner SLE/NLSP constructors args must be either all-equalities or all-oofuns')            
+                    raise OpenOptException('for FuncDesigner SLE/SNLE constructors args must be either all-equalities or all-oofuns')            
                 if self.fTol is not None:
                     fTol = min((self.ftol, self.fTol))
                     p.warn('''
@@ -322,7 +322,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 self.fTol = self.ftol = fTol
                 EQs = [((elem.oofun*(fTol/elem.tol) if elem.tol != 0 else elem.oofun) if elem.isConstraint else elem) for elem in equations]
                 if self.probType == 'SLE': self.C = EQs
-                elif self.probType == 'NLSP': self.f = EQs
+                elif self.probType in ('NLSP', 'SNLE'): self.f = EQs
                 else: raise OpenOptException('bug in OO kernel')
                 
 
