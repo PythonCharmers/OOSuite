@@ -42,7 +42,9 @@ r = p.solve('arpack') # requires SciPy installed
 # for whole list of available goals see http://openopt.org/EIG
 
 # or use numpy_eig solver instead to search all eigenvalues / eigenvectors:
-#r = linSys.eig(solver='numpy_eig') # requires only NumPy installed
+# it requires only NumPy installed
+#p = EIG(C)
+#r = p.solve('numpy_eig')
 
 print(r.eigenvalues) # [-221.93543679+0.j  627.10390438+0.j  625.02348702+0.j]
 
