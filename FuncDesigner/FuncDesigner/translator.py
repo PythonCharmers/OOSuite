@@ -42,13 +42,18 @@ class FuncDesignerTranslator:
         # TODO: involve fixed variables
         self._SavedValues = {'prevX':nan}
         def vector2point(x):
-            x = atleast_1d(array(x, copy=True, dtype=float))
+            isComplexArray = isinstance(x, ndarray) and str(x.dtype).startswith('complex')
+            if isComplexArray:
+                x = atleast_1d(array(x, copy=True))
+            else:
+                x = atleast_1d(array(x, copy=True, dtype=float)) 
             if array_equal(x, self._SavedValues['prevX']):
                 return self._SavedValues['prevVal']
                 
             
             # without copy() ipopt and probably others can replace it by noise after closing
-            r = ooPoint([(v, x[oovar_indexes[i]:oovar_indexes[i+1]]) for i, v in enumerate(self._variables)])
+            kw = {'skipArrayCast':True} if isComplexArray else {}
+            r = ooPoint([(v, x[oovar_indexes[i]:oovar_indexes[i+1]]) for i, v in enumerate(self._variables)], **kw)
             
             self._SavedValues['prevVal'] = r
             self._SavedValues['prevX'] = copy(x)
