@@ -24,7 +24,7 @@ class numpy_eig(baseSolver):
         #M = p.M
         
         if p._goal != 'all':
-            p.err('numpy_eig cannot handle the goal %s yet' % p._goal)
+            p.err('numpy_eig cannot handle the goal "%s" yet' % p._goal)
         
         eigenvalues, eigenvectors = eig(A)
         p.xf = p.xk = Vstack((eigenvalues, eigenvectors))
