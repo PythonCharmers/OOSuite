@@ -68,7 +68,17 @@ class diagonal:
             if self.isOnes and item.isOnes:
                 return diagonal(None, self.scalarMultiplier + item.scalarMultiplier, size=self.size)
             else:
-                return diagonal(self.diag * self.scalarMultiplier + item.diag*item.scalarMultiplier)
+                if self.isOnes:
+                    d1 = np.empty(self.size) 
+                    d1.fill(self.scalarMultiplier )
+                else:
+                    d1 = self.diag
+                if item.isOnes:
+                    d2 = np.empty(item.size) 
+                    d2.fill(item.scalarMultiplier )
+                else:
+                    d2 = item.diag
+                return diagonal(d1 * self.scalarMultiplier + d2 * item.scalarMultiplier)
         elif np.isscalar(item) or type(item) == np.ndarray:
             return self.resolve(False)+item
         else: # sparse matrix
