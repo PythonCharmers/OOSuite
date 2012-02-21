@@ -1,4 +1,4 @@
-# An example of FuncDesigner eigenvalues/eigenvectors for a automatic differentiation result,
+# An example of FuncDesigner eigenvalues/eigenvectors for an automatic differentiation result,
 # see http://openopt.org/EIG for more examples and details
 from FuncDesigner import *
 from openopt import EIG
