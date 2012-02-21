@@ -30,7 +30,7 @@ f3 = dot(R, f3)
 Point = {a:-1, b: [2, -3], c: [4, 5, 6, -7]}
 
 # Create Python list of Automaic differentiation results:
-C = [f.D(Point, exactShape = True) for f in (f1, f2, f3, )]
+C = [f.D(Point, exactShape = True) for f in (f1, f2, f3)]
 
 # define a prob
 p = EIG(C, goal={'lm':3})
