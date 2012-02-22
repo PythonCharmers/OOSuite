@@ -89,7 +89,7 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
             setattr(p, key, value)
         else: p.warn('incorrect parameter for prob.solve(): "' + str(key) + '" - will be ignored (this one has been not found in neither prob nor ' + p.solver.__name__ + ' solver parameters)')
     if p.probType == 'EIG' and 'goal' in kwargs:
-        self.err('for EIG parameter "goal" should be used only in class instance definition, not in "solve" method')
+        p.err('for EIG parameter "goal" should be used only in class instance definition, not in "solve" method')
         
     p.iterValues = EmptyClass()
 
