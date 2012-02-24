@@ -58,12 +58,12 @@ def func10(y, e, vv):
         #T1[(n+i)*m:(n+i+1)*m, i] = T2[i*m:(i+1)*m, i] = r4[:, i]
         t1[(n+i)*m:(n+i+1)*m] = t2[i*m:(i+1)*m] = r4[:, i]
         
-        if vv[i].domain is bool:
-            indINQ = y[:, i] != e[:, i]
-            tmp = t1[(n+i)*m:(n+i+1)*m]
-            tmp[indINQ] = 1
-            tmp = t2[i*m:(i+1)*m]
-            tmp[indINQ] = 0
+#        if vv[i].domain is bool:
+#            indINQ = y[:, i] != e[:, i]
+#            tmp = t1[(n+i)*m:(n+i+1)*m]
+#            tmp[indINQ] = 1
+#            tmp = t2[i*m:(i+1)*m]
+#            tmp[indINQ] = 0
             
 #        if vv[i].domain is bool:
 #            t1[(n+i)*m:(n+i+1)*m] = 1
@@ -168,19 +168,21 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p):
     else:
         return atleast_1d(F) , wr4
 
+A = array([0, 1])
 def adjustr4WithDiscreteVariables(wr4, p):
     for i in p._discreteVarsNumList:
         v = p._freeVarsList[i]
         tmp = wr4[:, i]
-        ind = searchsorted(v.domain, tmp, side='left')
-        ind2 = searchsorted(v.domain, tmp, side='right')
+        d = v.domain if v.domain is not 'bool' and v.domain is not bool else A
+        ind = searchsorted(d, tmp, side='left')
+        ind2 = searchsorted(d, tmp, side='right')
         ind3 = where(ind!=ind2)[0]
         Tmp = tmp[ind3].copy()
-        ind[ind==v.domain.size] -= 1
-        ind2[ind2==v.domain.size] -= 1
-        ind2[ind2==v.domain.size-1] -=1
-        tmp1 = asarray(v.domain[ind], p.solver.dataType)
-        tmp2 = asarray(v.domain[ind2+1], p.solver.dataType)
+        ind[ind==d.size] -= 1
+        ind2[ind2==d.size] -= 1
+        ind2[ind2==d.size-1] -=1
+        tmp1 = asarray(d[ind], p.solver.dataType)
+        tmp2 = asarray(d[ind2+1], p.solver.dataType)
         if Tmp.size!=0:
             tmp2[ind3] = Tmp.copy()
             tmp1[ind3] = Tmp.copy()
@@ -348,20 +350,20 @@ def func2(y, e, t, vv):
     
     # TODO: omit or imporove it for all-float problems    
     th = (new_y[w, t] + new_e[w, t]) / 2
-    BoolVars = [v.domain is bool for v in vv]
-    if any(BoolVars):
-        indBool = where(BoolVars)[0]
-        if len(indBool) != n:
-            new_y[w, t] = th
-            new_e[w, t] = th
-            new_y[indBool, t] = 1
-            new_e[indBool, t] = 0
-        else:
-            new_y[w, t] = 1
-            new_e[w, t] = 0
-    else:
-        new_y[w, t] = th
-        new_e[w, t] = th
+#    BoolVars = [v.domain in (bool, 'bool') for v in vv]
+#    if any(BoolVars):
+#        indBool = where(BoolVars)[0]
+#        if len(indBool) != n:
+#            new_y[w, t] = th
+#            new_e[w, t] = th
+#            new_y[indBool, t] = 1
+#            new_e[indBool, t] = 0
+#        else:
+#            new_y[w, t] = 1
+#            new_e[w, t] = 0
+#    else:
+    new_y[w, t] = th
+    new_e[w, t] = th
     
     new_y = vstack((y, new_y))
     new_e = vstack((new_e, e))
