@@ -402,9 +402,9 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             
             for v in self._freeVars:
                 if v.domain in (bool, 'bool'):
-                    v.domain = array([0, 1])
+                    #v.domain = array([0, 1])
                     self.constraints.update([v>0, v<1])
-                elif v.domain is not None:
+                elif v.domain not in (None, int, 'int', bool, 'bool'):
                     # TODO: mb add integer domains?
                     v.domain = array(list(v.domain))
                     v.domain.sort()

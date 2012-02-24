@@ -31,12 +31,14 @@ class MINLP(NonLinProblem):
         # TODO: use something else instead of dict.keys()
         for key in self.discreteVars.keys():
             fv = self.discreteVars[key]
-            if type(fv) not in [list, tuple, ndarray]:
+            if type(fv) not in [list, tuple, ndarray] and fv not in ('bool', bool):
                 self.err('each element from discreteVars dictionary should be list or tuple of allowed values')
-            fv = sort(fv)
-            if fv[0]>self.ub[key]:
+            if fv is not bool and fv is not 'bool': fv = sort(fv)
+            lowest = 0 if fv is bool or fv is 'bool' else fv[0] 
+            biggest = 1 if fv is bool or fv is 'bool' else fv[-1] 
+            if lowest > self.ub[key]:
                 self.err('variable '+ str(key)+ ': smallest allowed discrete value ' + str(fv[0]) + ' exeeds imposed upper bound '+ str(self.ub[key]))
-            if fv[-1]<self.lb[key]:
+            if biggest < self.lb[key]:
                 self.err('variable '+ str(key)+ ': biggest allowed discrete value ' + str(fv[-1]) + ' is less than imposed lower bound '+ str(self.lb[key]))
             self.discreteVars[key] = fv
         

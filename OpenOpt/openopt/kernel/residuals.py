@@ -167,9 +167,11 @@ class residuals:
 
     def discreteConstraintsAreSatisfied(self, x):
         k = -1
+        A = array([0, 1])
         for i in self.discreteVars.keys():#range(m):	# check x-vector
             # TODO: replace it by "for i, val in dict.itervalues()"
-            if not any(abs(x[i] - self.discreteVars[i]) < self.discrtol):
+            s = self.discreteVars[i] if self.discreteVars[i] is not bool and self.discreteVars[i] is not 'bool' else A
+            if not any(abs(x[i] - s) < self.discrtol):
                 k=i	# Violation of this set constraint.
                 break # Go and split for this x-component
         if k == -1:

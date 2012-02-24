@@ -22,12 +22,26 @@ class MILP(LP):
         if type(self.intVars) not in [list, tuple, set] and not isinstance(self.intVars, ndarray):
             self.intVars = [self.intVars]
         if self.isFDmodel:
+            
+            ########### obsolete, to be removed in future versions
+            if self.intVars != []:
+                s = '''
+                For FuncDesigner models prob parameter intVars is deprecated
+                and will be removed in future versions, use oovar(..., domain = int) instead'''
+                self.pWarn(s)
             for iv in self.intVars:
                 if self.fixedVars is not None and iv in self.fixedVars or\
                 self.freeVars is not None and iv not in self.freeVars:
                     continue
                 r1, r2 = self._oovarsIndDict[iv]
                 r += range(r1, r2)
+            ########### obsolete, to be removed in future versions
+        
+            for v in self._freeVarsList:
+                if v.domain in (int, 'int', bool, 'bool'):
+                    r1, r2 = self._oovarsIndDict[v]
+                    r += range(r1, r2)
+            
             self.intVars, self._intVars = r, self.intVars
         self._intVars_vector = self.intVars
                 
