@@ -1,6 +1,6 @@
 from numpy import ndarray, asscalar, isscalar, hstack, amax, amin, floor, ceil, pi, \
 arange, copy as Copy, logical_and, where, asarray, any, atleast_1d, empty_like, nan, logical_not, vstack, \
-searchsorted
+searchsorted, array
 
 try:
     from bottleneck import nanmin, nanmax
@@ -145,26 +145,28 @@ def box_1_interval(inp, func, domain, dtype, F_l, F_u):
 #        t_min, t_max = func(lb), func(ub)
     return vstack((t_min, t_max)), definiteRange
 
-
+A = array([0, 1])
 def adjust_lx_WithDiscreteDomain(Lx, v):
-    ind = searchsorted(v.domain, Lx, 'left')
-    ind2 = searchsorted(v.domain, Lx, 'right')
+    d = v.domain if v.domain is not 'bool' and v.domain is not bool else A
+    ind = searchsorted(d, Lx, 'left')
+    ind2 = searchsorted(d, Lx, 'right')
     ind3 = where(ind!=ind2)[0]
     #Tmp = Lx[:, ind3].copy()
-    Tmp = v.domain[ind[ind3]]
-    #if any(ind==v.domain.size):print 'asdf'
-    ind[ind==v.domain.size] -= 1# Is it ever encountered?
-#    ind[ind==v.domain.size-1] -= 1
-    Lx[:] = v.domain[ind]
+    Tmp = d[ind[ind3]]
+    #if any(ind==d.size):print 'asdf'
+    ind[ind==d.size] -= 1# Is it ever encountered?
+#    ind[ind==d.size-1] -= 1
+    Lx[:] = d[ind]
     Lx[ind3] = Tmp
         
 def adjust_ux_WithDiscreteDomain(Ux, v):
-    ind = searchsorted(v.domain, Ux, 'left')
-    ind2 = searchsorted(v.domain, Ux, 'right')
+    d = v.domain if v.domain is not 'bool' and v.domain is not bool else A
+    ind = searchsorted(d, Ux, 'left')
+    ind2 = searchsorted(d, Ux, 'right')
     ind3 = where(ind!=ind2)[0]
     #Tmp = Ux[:, ind3].copy()
-    Tmp = v.domain[ind[ind3]]
-    #ind[ind==v.domain.size] -= 1
+    Tmp = d[ind[ind3]]
+    #ind[ind==d.size] -= 1
     ind[ind==0] = 1
-    Ux[:] = v.domain[ind-1]
+    Ux[:] = d[ind-1]
     Ux[ind3] = Tmp
