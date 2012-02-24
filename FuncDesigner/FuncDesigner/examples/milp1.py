@@ -5,7 +5,11 @@ from FuncDesigner import *
 from openopt import MILP
 
 # Define some oovars
-x, y, z = oovars('x', 'y', 'z')
+# old-style:
+#x, y, z = oovars('x y z')
+# new (OpenOpt v 0.37+): 
+x = oovar('x')
+y, z = oovars('y z', domain = int)# also you may use domain = bool
 
 # Let's define some linear functions
 f1 = 4*x+5*y + 3*z + 5
@@ -22,7 +26,10 @@ startPoint = {x:[8, 15], y:25, z:80} # however, using numpy.arrays is more recom
 cons = [x+5*y<15, x[0]<-5, f1<[25, 35], f1>-100, 2*f1+4*z<[80, 800], 5*f2+4*z<100, [-5.5, -4.5]<x,  x<1, -17<y,  y<20, -4000<z, z<4]
 
 # Create prob
-p = MILP(obj, startPoint, intVars = [y, z], constraints=cons)
+# old-style:
+#p = MILP(obj, startPoint, intVars = [y, z], constraints=cons)
+# new (OpenOpt v 0.37+): 
+p = MILP(obj, startPoint, constraints=cons)
 
 # Solve
 r = p.minimize('lpSolve', iprint=-1) # glpk is name of the solver involved, see OOF doc for more arguments
