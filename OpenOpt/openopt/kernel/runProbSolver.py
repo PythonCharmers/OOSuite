@@ -306,6 +306,10 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     p.rf = p.getMaxResidual(p.xf) if not p.probType == 'IP' else p.rk
 
     if not p.isFeasible and p.istop > 0: p.istop = -100-p.istop/1000.0
+    
+    if p.istop == 0 and p.iter >= p.maxIter:
+        p.istop, p.msg = IS_MAX_ITER_REACHED, 'Max Iter has been reached'
+    
     p.stopcase = stopcase(p)
 
     p.xk, p.rk = p.xf, p.rf
