@@ -2,7 +2,7 @@ __docformat__ = "restructuredtext en"
 from time import time, clock
 from numpy import asfarray, copy, inf, nan, isfinite, ones, ndim, all, atleast_1d, any, isnan, \
 array_equiv, asscalar, asarray, where, ndarray, isscalar, matrix, seterr, isinf
-from setDefaultIterFuncs import stopcase,  SMALL_DELTA_X,  SMALL_DELTA_F
+from setDefaultIterFuncs import stopcase,  SMALL_DELTA_X,  SMALL_DELTA_F, IS_MAX_ITER_REACHED
 from check import check
 from oologfcn import OpenOptException
 from openopt import __version__ as version
