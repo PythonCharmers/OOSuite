@@ -136,7 +136,9 @@ def processConstraints2(C0, y, e, p, dataType):
     for f, lb, ub, tol in C0:
         
         m = y.shape[0] # is changed in the cycle
-        if m == 0: return y.reshape(0, n), e.reshape(0, n), nlh.reshape(0, 2*n), residual.reshape(0, 2*n), True, False
+        if m == 0: 
+            return y.reshape(0, n), e.reshape(0, n), nlh.reshape(0, 2*n), None, True, False
+            #return y.reshape(0, n), e.reshape(0, n), nlh.reshape(0, 2*n), residual.reshape(0, 2*n), True, False
         
         if p.solver.dataHandling == 'sorted': tol = 0
         

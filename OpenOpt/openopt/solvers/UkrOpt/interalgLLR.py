@@ -216,6 +216,7 @@ def func3(an, maxActiveNodes):
         t0 = an1[0].tnlh_curr_best
         tnlh_curr_best_values = [node.tnlh_curr_best for node in an1]
         ind = searchsorted(tnlh_curr_best_values, t0 + 16)
+        print tnlh_curr_best_values[:5]
         if ind == 0: ind = 1
         an1 = an1[:ind]
         _in = hstack((an1[ind:], _in))
