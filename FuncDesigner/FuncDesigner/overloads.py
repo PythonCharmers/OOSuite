@@ -290,6 +290,9 @@ def floor(inp):
 __all__ += ['ceil', 'floor']
 
 def sum(inp, *args, **kwargs):
+    if type(inp) == np.ndarray and inp.dtype != object:
+        return np.sum(inp, *args, **kw)
+        
     if isinstance(inp, ooarray) and inp.dtype != object:
         inp = inp.view(np.ndarray)
         
@@ -311,7 +314,8 @@ def sum(inp, *args, **kwargs):
                 r0 = r0 + np.asfarray(elem) # so it doesn't work for different sizes
                 continue
             INP.append(elem)
-
+        if len(INP) == 0:
+            return r0
         f = lambda *args: r0 + PythonSum(args)
         r = oofun(f, INP, _isSum = True)
         r._summation_elements = INP if np.array_equal(r0, 0.0) else INP + [r0]
