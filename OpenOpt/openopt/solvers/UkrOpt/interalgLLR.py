@@ -1,6 +1,6 @@
 from numpy import tile, isnan, array, atleast_1d, asarray, logical_and, all, logical_or, any, nan, isinf, \
 arange, vstack, inf, where, logical_not, take, argmax, argmin, abs, hstack, empty, insert, isfinite, append, atleast_2d, \
-prod, sqrt, int32, int64, log2, log, searchsorted
+prod, sqrt, int32, int64, log2, log, searchsorted, cumprod
 from FuncDesigner import oopoint
 from interalgT import *
 
@@ -214,9 +214,17 @@ def func3(an, maxActiveNodes):
 
     if getattr(an1[0], 'tnlh_curr_best', None) is not None:
         t0 = an1[0].tnlh_curr_best
-        tnlh_curr_best_values = [node.tnlh_curr_best for node in an1]
+        tnlh_curr_best_values = asarray([node.tnlh_curr_best for node in an1])
+        
+        #changes
+        tmp = 2 ** (-tnlh_curr_best_values)
+        Tmp = -cumprod(1.0-tmp)
+        ind2 = searchsorted(Tmp, -0.1)
+        #changes end
+        
         ind = searchsorted(tnlh_curr_best_values, t0 + 16)
         #print tnlh_curr_best_values[:5]
+        ind = min((ind, ind2))
         if ind == 0: ind = 1
         an1 = an1[:ind]
         _in = hstack((an1[ind:], _in))
