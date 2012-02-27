@@ -263,7 +263,7 @@ def getTmp(o, a, lb, ub, tol, m, residual, dataType):
         tmp[tmp<1e-300] = 1e-300 # TODO: improve it
         tmp[tmp>1.0] = 1.0
         
-        tmp[lb+tol > a] = 0
+        tmp[lb-tol> a] = 0
         
         tmp[lb - tol <= o] = 1
         #tmp[lb <= o] = 1
@@ -280,7 +280,7 @@ def getTmp(o, a, lb, ub, tol, m, residual, dataType):
         tmp[tmp<1e-300] = 1e-300 # TODO: improve it
         tmp[tmp>1.0] = 1.0
         
-        tmp[ub-tol < o] = 0
+        tmp[ub+tol < o] = 0
         
         tmp[ub+tol >= a] = 1
         #tmp[ub >= a] = 1

@@ -320,6 +320,7 @@ class interalg(baseSolver):
             else:
                 y, e, _in, _s = \
                 func12(an, self.maxActiveNodes, p, Solutions, vv, varTols, fo)
+
             nActiveNodes.append(y.shape[0]/2)
             if y.size == 0: 
                 if len(Solutions.coords) > 1:

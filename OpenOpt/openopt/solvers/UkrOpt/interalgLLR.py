@@ -223,16 +223,18 @@ def func3(an, maxActiveNodes):
         #changes end
         
         ind = searchsorted(tnlh_curr_best_values, t0 + 16)
-        #print tnlh_curr_best_values[:5]
+
         ind = min((ind, ind2))
         if ind == 0: ind = 1
-        an1 = an1[:ind]
-        _in = hstack((an1[ind:], _in))
+        tmp1, tmp2 = an1[:ind], an1[ind:]
+        an1 = tmp1
+        _in = hstack((tmp2, _in))
+
+        
     l1 = len(an1)
 #    if l0 != l1:
 #        print 'l0:', l0, 'l1:', l1
     # changes end
-
     return an1, _in
 
 def func1(tnlhf, tnlhf_curr, residual, y, e, o, a, _s_prev, p, indT):
@@ -401,6 +403,7 @@ def func12(an, maxActiveNodes, p, Solutions, vv, varTols, fo):
     if len(an) == 0:
         return array([]), array([]), array([]), array([])
     _in = an
+    
     if r6.size != 0:
         r11, r12 = r6 - varTols, r6 + varTols
     y, e, S = [], [], []
@@ -409,6 +412,7 @@ def func12(an, maxActiveNodes, p, Solutions, vv, varTols, fo):
     
     while True:
         an1Candidates, _in = func3(_in, maxActiveNodes)
+
         #print nanmax(2**(-an1Candidates[0].tnlh_curr)) ,  nanmax(2**(-an1Candidates[-1].tnlh_curr))
         yc, ec, oc, ac, SIc = asarray([t.y for t in an1Candidates]), \
         asarray([t.e for t in an1Candidates]), \
@@ -474,7 +478,7 @@ def func12(an, maxActiveNodes, p, Solutions, vv, varTols, fo):
         if len(_in) == 0 or N >= maxActiveNodes: 
             y, e, _s = vstack(y), vstack(e), hstack(S)
             break
-        
+
     return y, e, _in, _s
 
 Fields = ['key', 'y', 'e', 'nlhf','nlhc', 'indtc','residual','o', 'a', '_s']

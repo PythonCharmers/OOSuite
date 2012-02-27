@@ -153,13 +153,14 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
         for i, node in enumerate(an): 
             node.tnlh_curr = tnlh_curr[i]
             node.tnlh_curr_best = NN[i]
-        
+
+       
         if any(r10):
             ind = where(logical_not(r10))[0]
             an = take(an, ind, axis=0, out=an[:ind.size])
             #tnlh = take(tnlh, ind, axis=0, out=tnlh[:ind.size])
             NN = take(NN, ind, axis=0, out=NN[:ind.size])
-        
+
         if not isSNLE or p.maxSolutions == 1:
             astnlh = argsort(NN)
             an = an[astnlh]
@@ -200,11 +201,13 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
     
     
     an, g = func9(an, fo, g, p)
+  
 
     nn = maxNodes#1 if asdf1.isUncycled and all(isfinite(o)) and p._isOnlyBoxBounded and not p.probType.startswith('MI') else maxNodes
     
     an, g = func5(an, nn, g, p)
     nNodes.append(len(an))
+
     return an, g, fo, _s, Solutions, xRecord, r41, r40
 
 
