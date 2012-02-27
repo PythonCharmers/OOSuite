@@ -191,8 +191,7 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nN
         ind = where(logical_not(r10))[0]
         an = take(an, ind, axis=0, out=an[:ind.size])
         tnlh_all = take(tnlh_all, ind, axis=0, out=tnlh_all[:ind.size])
-    for i, node in enumerate(an):
-        node.tnlh_all = tnlh_all[i]
+    
 #    else:
 #        tnlh_all = hstack([node.tnlh_all for node in an])
         
@@ -202,6 +201,9 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nN
     
     w = arange(t.size)
     NN = tnlh_all[w, t].flatten()
+    for i, node in enumerate(an):
+        node.tnlh_all = tnlh_all[i]
+        node.tnlh_curr_best = NN[i]
     astnlh = argsort(NN)
     an = an[astnlh]
 

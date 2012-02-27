@@ -208,6 +208,22 @@ def func3(an, maxActiveNodes):
         an1, _in = an[:maxActiveNodes], an[maxActiveNodes:]
     else:
         an1, _in = an, array([], object)
+        
+    # Changes!
+    l0 = len(an1)
+
+    if getattr(an1[0], 'tnlh_curr_best', None) is not None:
+        t0 = an1[0].tnlh_curr_best
+        tnlh_curr_best_values = [node.tnlh_curr_best for node in an1]
+        ind = searchsorted(tnlh_curr_best_values, t0 + 16)
+        if ind == 0: ind = 1
+        an1 = an1[:ind]
+        _in = hstack((an1[ind:], _in))
+    l1 = len(an1)
+#    if l0 != l1:
+#        print 'l0:', l0, 'l1:', l1
+    # changes end
+
     return an1, _in
 
 def func1(tnlhf, tnlhf_curr, residual, y, e, o, a, _s_prev, p, indT):
@@ -384,7 +400,7 @@ def func12(an, maxActiveNodes, p, Solutions, vv, varTols, fo):
     
     while True:
         an1Candidates, _in = func3(_in, maxActiveNodes)
-
+        #print nanmax(2**(-an1Candidates[0].tnlh_curr)) ,  nanmax(2**(-an1Candidates[-1].tnlh_curr))
         yc, ec, oc, ac, SIc = asarray([t.y for t in an1Candidates]), \
         asarray([t.e for t in an1Candidates]), \
         asarray([t.o for t in an1Candidates]), \

@@ -125,7 +125,7 @@ def processConstraints2(C0, y, e, p, dataType):
     n = p.n
     m = y.shape[0]
     nlh = zeros((m, 2*n))
-    residual = zeros((m, 2*n))
+    residual = None#zeros((m, 2*n))
     
     DefiniteRange = True
     indT = empty(m, bool)
@@ -182,7 +182,7 @@ def processConstraints2(C0, y, e, p, dataType):
             y = take(y, ind, axis=0, out=y[:lj])
             e = take(e, ind, axis=0, out=e[:lj])
             nlh = take(nlh, ind, axis=0, out=nlh[:lj])
-            residual = take(residual, ind, axis=0, out=residual[:lj])
+#            residual = take(residual, ind, axis=0, out=residual[:lj])
             indT = indT[ind]
             if asarray(DefiniteRange).size != 1: 
                 DefiniteRange = take(DefiniteRange, ind, axis=0, out=DefiniteRange[:lj])
@@ -227,8 +227,8 @@ def getTmp(o, a, lb, ub, tol, m, residual, dataType):
         val = ub
         
         ind1, ind2 = val - tol > a, val+tol < o
-        residual[ind1] += val - tol - a[ind1]
-        residual[ind2] += o[ind2] - (val + tol)
+#        residual[ind1] += val - tol - a[ind1]
+#        residual[ind2] += o[ind2] - (val + tol)
         
         a_t,  o_t = a.copy(), o.copy()
         if dataType in [int8, int16, int32, int64, int]:
@@ -253,7 +253,7 @@ def getTmp(o, a, lb, ub, tol, m, residual, dataType):
         tmp = (a - (lb - tol)) / aor20
         
         ind = o < lb-tol
-        residual[ind] += lb-o[ind]
+        #residual[ind] += lb-o[ind]
         
         tmp[logical_and(isinf(o), logical_not(isinf(a)))] = 1e-10 # (to prevent inf/inf=nan); TODO: rework it
         tmp[isinf(a)] = 1-1e-10 # (to prevent inf/inf=nan); TODO: rework it
@@ -261,7 +261,7 @@ def getTmp(o, a, lb, ub, tol, m, residual, dataType):
         tmp[tmp<1e-300] = 1e-300 # TODO: improve it
         tmp[tmp>1.0] = 1.0
         
-        tmp[lb > a] = 0
+        tmp[lb+tol > a] = 0
         
         tmp[lb - tol <= o] = 1
         #tmp[lb <= o] = 1
@@ -270,7 +270,7 @@ def getTmp(o, a, lb, ub, tol, m, residual, dataType):
         tmp = (ub-o+tol) / aor20
         
         ind = a > ub+tol
-        residual[ind] += a[ind]-ub
+        #residual[ind] += a[ind]-ub
         
         tmp[isinf(o)] = 1-1e-10 # (to prevent inf/inf=nan);TODO: rework it
         tmp[logical_and(isinf(a), logical_not(isinf(o)))] = 1e-10 # (to prevent inf/inf=nan); TODO: rework it
@@ -278,7 +278,7 @@ def getTmp(o, a, lb, ub, tol, m, residual, dataType):
         tmp[tmp<1e-300] = 1e-300 # TODO: improve it
         tmp[tmp>1.0] = 1.0
         
-        tmp[ub < o] = 0
+        tmp[ub-tol < o] = 0
         
         tmp[ub+tol >= a] = 1
         #tmp[ub >= a] = 1

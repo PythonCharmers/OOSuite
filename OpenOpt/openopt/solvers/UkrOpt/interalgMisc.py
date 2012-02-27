@@ -146,11 +146,13 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
             g = min((g, mmlf))
 
         
-        for i, node in enumerate(an): node.tnlh_curr = tnlh_curr[i]
-        
         if not newNLH:
             NN = nanmin(tnlh_curr, 1)
         r10 = logical_or(isnan(NN), NN == inf)
+        
+        for i, node in enumerate(an): 
+            node.tnlh_curr = tnlh_curr[i]
+            node.tnlh_curr_best = NN[i]
         
         if any(r10):
             ind = where(logical_not(r10))[0]
