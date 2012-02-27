@@ -200,10 +200,12 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nN
     t = nanargmin(T, 1)
     
     w = arange(t.size)
-    NN = tnlh_all[w, t].flatten()
+    NN = T[w, t].flatten()
+
     for i, node in enumerate(an):
         node.tnlh_all = tnlh_all[i]
         node.tnlh_curr_best = NN[i]
+        
     astnlh = argsort(NN)
     an = an[astnlh]
 

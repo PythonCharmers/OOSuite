@@ -222,9 +222,12 @@ def func3(an, maxActiveNodes):
         ind2 = searchsorted(Tmp, -0.1)
         #changes end
         
-        ind = searchsorted(tnlh_curr_best_values, t0 + 16)
-
-        ind = min((ind, ind2))
+#        ind = searchsorted(tnlh_curr_best_values, t0 + 32)
+        
+#        ind = min((ind, ind2))
+        ind = ind2
+        
+#        ind = maxActiveNodes
         if ind == 0: ind = 1
         tmp1, tmp2 = an1[:ind], an1[ind:]
         an1 = tmp1
