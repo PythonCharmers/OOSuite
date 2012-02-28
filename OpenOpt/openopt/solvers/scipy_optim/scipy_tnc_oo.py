@@ -1,4 +1,5 @@
-from scipy.optimize.tnc import *
+from scipy.optimize.tnc import fmin_tnc
+import scipy.optimize.tnc as tnc
 import openopt
 from openopt.kernel.setDefaultIterFuncs import *
 from openopt.kernel.ooMisc import WholeRepr2LinConst
@@ -28,17 +29,17 @@ class scipy_tnc(baseSolver):
 
         xf, nfeval, rc = fmin_tnc(p.f, x0 = p.x0, fprime=p.df, args=(), approx_grad=0, bounds=bounds, messages=messages, maxfun=maxfun, ftol=p.ftol, xtol=p.xtol, pgtol=p.gtol)
 
-        if rc in (INFEASIBLE, NOPROGRESS): istop = FAILED_WITH_UNIMPLEMENTED_OR_UNKNOWN_REASON
-        elif rc == FCONVERGED: istop = SMALL_DELTA_F
-        elif rc == XCONVERGED: istop = SMALL_DELTA_X
-        elif rc == MAXFUN: istop = IS_MAX_FUN_EVALS_REACHED
-        elif rc == LSFAIL: istop = IS_LINE_SEARCH_FAILED
-        elif rc == CONSTANT: istop = IS_ALL_VARS_FIXED
-        elif rc == LOCALMINIMUM: istop = SOLVED_WITH_UNIMPLEMENTED_OR_UNKNOWN_REASON
+        if rc in (tnc.INFEASIBLE, tnc.NOPROGRESS): istop = FAILED_WITH_UNIMPLEMENTED_OR_UNKNOWN_REASON
+        elif rc == tnc.FCONVERGED: istop = SMALL_DELTA_F
+        elif rc == tnc.XCONVERGED: istop = SMALL_DELTA_X
+        elif rc == tnc.MAXFUN: istop = IS_MAX_FUN_EVALS_REACHED
+        elif rc == tnc.LSFAIL: istop = IS_LINE_SEARCH_FAILED
+        elif rc == tnc.CONSTANT: istop = IS_ALL_VARS_FIXED
+        elif rc == tnc.LOCALMINIMUM: istop = SOLVED_WITH_UNIMPLEMENTED_OR_UNKNOWN_REASON
         else:
             #TODO: IMPLEMENT USERABORT
             p.err('unknown stop reason')
-        msg = RCSTRINGS[rc]
+        msg = tnc.RCSTRINGS[rc]
         p.istop, p.msg = istop, msg
         p.xf = xf
 
@@ -64,29 +65,7 @@ class scipy_tnc(baseSolver):
 ##        USERABORT    : "User requested end of minimization"
 ##}
 
-if __name__ == '__main__':
-    import sys, os.path as P
-    sys.path.insert(0,P.split(P.split(P.split(P.split(P.realpath(P.dirname(__file__)))[0])[0])[0])[0])
-    from openopt import NLP
-    from numpy import *
 
-    N = 750
-
-    ff = lambda x: (((x/32 - 1)**4).sum() + 64*((x/4 -1 )**2).sum())
-##    ff = lambda x: (arctan((x-arange(x.size))/arange(x.size))**2).sum()
-##    for solver in ('scipy_tnc',  'scipy_lbfgsb', 'ALGENCAN'):
-    for solver in ( 'lincher', 'scipy_lbfgsb', 'ALGENCAN'):
-##        lb = 0.1*N + arange(N)
-##        ub = 0.8*N + arange(N)
-        #x0 = cos(arange(N))
-        lb = 50*sin(arange(N))+15
-        ub = lb + 15
-        x0 = (lb + ub)/2
-        p = NLP(ff, x0, lb = lb, ub = ub, plot = 0, maxFunEvals = 1e8, maxIter = 1e4, gtol = 1e-3)
-        #p.c = lambda x: x[0]**2 - (lb[0] + ub[0])**2 / 4.0
-        #p = NLP(ff, x0, maxFunEvals = 1e8)
-        r = p.solve(solver)
-        #assert r.istop > 0
 
 
 
