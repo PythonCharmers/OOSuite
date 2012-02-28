@@ -219,7 +219,7 @@ def func3(an, maxActiveNodes):
         #changes
         tmp = 2 ** (-tnlh_curr_best_values)
         Tmp = -cumprod(1.0-tmp)
-        ind2 = searchsorted(Tmp, -0.1)
+        ind2 = searchsorted(Tmp, -0.05)
         #changes end
         
 #        ind = searchsorted(tnlh_curr_best_values, t0 + 32)
@@ -235,8 +235,8 @@ def func3(an, maxActiveNodes):
 
         
     l1 = len(an1)
-#    if l0 != l1:
-#        print 'l0:', l0, 'l1:', l1
+#    if 1 or l0 != l1:
+#        print 'l0:', l0, 'l1:', l1, Tmp[0], Tmp[-1], tnlh_curr_best_values[0], tnlh_curr_best_values[-1]
     # changes end
     return an1, _in
 
