@@ -136,7 +136,9 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
         if hasattr(p, fn):
             fv = getattr(p, fn)
             if fv != None:# and fv != []:
-                setattr(p, fn, asfarray(fv, dtype='float').flatten())
+                if str(type(fv)) == "<class 'map'>":
+                    p.err("Python3 incompatibility with previous versions: you can't use 'map' here, use rendered value instead")
+                setattr(p, fn, asfarray(fv).flatten())
             else:
                 setattr(p, fn, asfarray([]))
 
