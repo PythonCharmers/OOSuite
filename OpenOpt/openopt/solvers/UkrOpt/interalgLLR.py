@@ -189,6 +189,7 @@ def adjustr4WithDiscreteVariables(wr4, p):
         tmp = where(abs(tmp-tmp1)<abs(tmp-tmp2), tmp1, tmp2)
         #print max(abs(tmp-tmp1)), max(abs(tmp-tmp2))
         wr4[:, i] = tmp
+    #print where(wr4==0)[0].size, where(wr4==1)[0].size
 
 def r2(PointVals, PointCoords, dataType):
     r23 = nanargmin(PointVals)

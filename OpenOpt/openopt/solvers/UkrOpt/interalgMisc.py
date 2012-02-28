@@ -98,7 +98,7 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
     else: # all points have been removed by func7
         xk = p.xk
         Min = nan
-    
+
     if r40 > Min:
         r40 = Min
         xRecord = xk.copy()# TODO: is copy required?

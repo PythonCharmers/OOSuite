@@ -12,6 +12,7 @@ from ii_engine import *
 from interalgCons import processConstraints, processConstraints2
 from interalgODE import interalg_ODE_routine
 from interalgMOP import r14MOP
+from interalgLLR import adjustr4WithDiscreteVariables
 
 bottleneck_is_present = False
 try:
@@ -153,6 +154,7 @@ class interalg(baseSolver):
             p.warn('solver %s require p.fTol value (required objective function tolerance); 10^-7 will be used' % self.__name__)
 
         xRecord = 0.5 * (lb + ub)
+        adjustr4WithDiscreteVariables(xRecord.reshape(1, -1), p)
 
         r40 = inf
         
