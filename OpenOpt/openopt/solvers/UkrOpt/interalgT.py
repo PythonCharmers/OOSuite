@@ -1,5 +1,5 @@
 from numpy import isnan, take, any, all, logical_or, logical_and, logical_not, atleast_1d, where, \
-asarray, inf, nan, argmin, argsort, tile, searchsorted
+asarray, inf, nan, argmin, argsort, tile, searchsorted, isfinite
 from bisect import bisect_right
 from FuncDesigner.Interval import adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain
 try:
@@ -141,12 +141,19 @@ def func5(an, nn, g, p):
             an = an[:nn]
     return an, g
 
-def func4(y, e, o, a, fo):
-    if fo is None: return # used in IP
+def func4(y, e, o, a, fo, tnlhf_curr = None):
+    if fo is None and tnlhf_curr is None: return # used in IP
     cs = (y + e)/2
     n = y.shape[1]
-    s, q = o[:, 0:n], o[:, n:2*n]
-    ind = logical_or(s > fo, isnan(s)) # TODO: assert isnan(s) is same to isnan(a_modL)
+    
+    
+    if tnlhf_curr is not None:
+        tnlh_modL = tnlhf_curr[:, 0:n]
+        ind = logical_not(isfinite(tnlh_modL))
+    else:
+        s = o[:, 0:n]
+        ind = logical_or(s > fo, isnan(s)) # TODO: assert isnan(s) is same to isnan(a_modL)
+        
     indT = any(ind, 1)
     if any(ind):
         y[ind] = cs[ind]
@@ -156,7 +163,13 @@ def func4(y, e, o, a, fo):
 ##        if ii != 0: print ii
 #        a[:, 0:n][ind] = a[:, n:2*n][ind]
 #        o[:, 0:n][ind] = o[:, n:2*n][ind]
-    ind = logical_or(q > fo, isnan(q)) # TODO: assert isnan(q) is same to isnan(a_modU)
+    if tnlhf_curr is not None:
+        tnlh_modU = tnlhf_curr[:, n:2*n]
+        ind = logical_not(isfinite(tnlh_modU))
+    else:
+        q = o[:, n:2*n]
+        ind = logical_or(q > fo, isnan(q)) # TODO: assert isnan(q) is same to isnan(a_modU)
+        
     indT = logical_or(any(ind, 1), indT)
     if any(ind):
         # copy is used to prevent y and e being same array, that may be buggy with discret vars

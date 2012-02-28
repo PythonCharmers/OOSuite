@@ -373,7 +373,7 @@ def func13(o, a):
     L = where(logical_or(L2<L1, isnan(L1)), L2, L1)
     return nanmax(U-L, 1)
 
-def func2(y, e, t, vv):
+def func2(y, e, t, vv, tnlhf_curr):
     new_y, new_e = y.copy(), e.copy()
     m, n = y.shape
     w = arange(m)
@@ -398,7 +398,11 @@ def func2(y, e, t, vv):
     new_y = vstack((y, new_y))
     new_e = vstack((new_e, e))
     
-    return new_y, new_e
+    if tnlhf_curr is not None:
+        tnlhf_curr_local = hstack((tnlhf_curr[w, t], tnlhf_curr[w, n+t]))
+    else:
+        tnlhf_curr_local = None
+    return new_y, new_e, tnlhf_curr_local
 
 
 def func12(an, maxActiveNodes, p, Solutions, vv, varTols, fo):
@@ -410,6 +414,7 @@ def func12(an, maxActiveNodes, p, Solutions, vv, varTols, fo):
     if r6.size != 0:
         r11, r12 = r6 - varTols, r6 + varTols
     y, e, S = [], [], []
+    Tnlhf_curr_local = []
     N = 0
     maxSolutions = p.maxSolutions
     
@@ -423,21 +428,23 @@ def func12(an, maxActiveNodes, p, Solutions, vv, varTols, fo):
         asarray([t.a for t in an1Candidates]), \
         asarray([t._s for t in an1Candidates])
         
-        
-        if p.solver.dataHandling == 'raw' and p.probType != 'MOP':
+        if p.probType == 'MOP':
+            tnlhf_curr = asarray([t.tnlh_all for t in an1Candidates])
+            tnlhf = None        
+        elif p.solver.dataHandling == 'raw':
             tnlhf = asarray([t.tnlhf for t in an1Candidates]) 
             tnlhf_curr = asarray([t.tnlh_curr for t in an1Candidates]) 
         else:
             tnlhf, tnlhf_curr = None, None
         
+        
         if p.probType != 'IP': 
             #nlhc = asarray([t.nlhc for t in an1Candidates])
             indtc = asarray([t.indtc for t in an1Candidates])
             residual = asarray([t.residual for t in an1Candidates]) 
-            if p.probType != 'MOP':
-                yc, ec, indT = func4(yc, ec, oc, ac, fo)
-            else:
-                indT = False
+            
+            yc, ec, indT = func4(yc, ec, oc, ac, fo, tnlhf_curr)
+                
             if indtc[0] is not None:
                 indT = logical_or(indT, indtc)
         else:
@@ -456,13 +463,13 @@ def func12(an, maxActiveNodes, p, Solutions, vv, varTols, fo):
         else:
             _s = tile(_s, 2)
 
-        yc, ec = func2(yc, ec, t, vv)
+        yc, ec, tnlhf_curr_local = func2(yc, ec, t, vv, tnlhf_curr)
         if NewD and indD is not None:
             yc = vstack((yc, yf))
             ec = vstack((ec, ef))
             
         if maxSolutions == 1 or len(solutions) == 0: 
-            y, e = yc, ec
+            y, e, Tnlhf_curr_local = yc, ec, tnlhf_curr_local
             break
         
         # TODO: change cycle variable if len(solutions) >> maxActiveNodes
@@ -474,14 +481,19 @@ def func12(an, maxActiveNodes, p, Solutions, vv, varTols, fo):
                 yc = take(yc, j, axis=0, out=yc[:lj])
                 ec = take(ec, j, axis=0, out=ec[:lj])
                 _s = _s[j]
+                if tnlhf_curr_local is not None:
+                    tnlhf_curr_local = tnlhf_curr_local[j]
         y.append(yc)
         e.append(ec)
         S.append(_s)
+        Tnlhf_curr_local.append(tnlhf_curr_local)
         N += yc.shape[0]
         if len(_in) == 0 or N >= maxActiveNodes: 
-            y, e, _s = vstack(y), vstack(e), hstack(S)
+            y, e, _s = vstack(y), vstack(e), hstack(S), hstack(Tnlhf_curr_local)
             break
-
+    if Tnlhf_curr_local is not None and len(Tnlhf_curr_local) != 0 and Tnlhf_curr_local[0] is not None:
+        #print len(where(isfinite(Tnlhf_curr_local))[0]), Tnlhf_curr_local.size
+        pass
     return y, e, _in, _s
 
 Fields = ['key', 'y', 'e', 'nlhf','nlhc', 'indtc','residual','o', 'a', '_s']
