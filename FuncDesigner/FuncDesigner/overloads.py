@@ -3,7 +3,6 @@ from ooFun import oofun
 import numpy as np
 from FDmisc import FuncDesignerException, Diag, Eye, raise_except, diagonal
 from ooFun import atleast_oofun, ooarray
-from ooPoint import ooPoint
 from Interval import TrigonometryCriticalPoints, ZeroCriticalPoints, nonnegative_interval, ZeroCriticalPointsInterval, box_1_interval
 from numpy import atleast_1d, logical_and, logical_not, empty_like
 
@@ -291,7 +290,7 @@ __all__ += ['ceil', 'floor']
 
 def sum(inp, *args, **kwargs):
     if type(inp) == np.ndarray and inp.dtype != object:
-        return np.sum(inp, *args, **kw)
+        return np.sum(inp, *args, **kwargs)
         
     if isinstance(inp, ooarray) and inp.dtype != object:
         inp = inp.view(np.ndarray)
@@ -382,7 +381,7 @@ def sum(inp, *args, **kwargs):
             # !!! don't use sum([inp._interval(domain, dtype) for ...]) here
             # to reduce memory consumption
             DefiniteRange = True
-            
+#            R_ = []
             for inp in INP:
                 arg_lb_ub, definiteRange = inp._interval(domain, dtype)
                 Tmp = inp._getDep() if not inp.is_oovar else [inp]
@@ -392,13 +391,16 @@ def sum(inp, *args, **kwargs):
                         domain.storedSums[r][oov] = arg_lb_ub.copy()
                     else:
                         domain.storedSums[r][oov] += arg_lb_ub
-                       
                 
                 DefiniteRange = logical_and(DefiniteRange, definiteRange)
+#                R_.append(arg_lb_ub)
                 if R.shape == arg_lb_ub.shape:
                     R += arg_lb_ub
                 else:
                     R = R + arg_lb_ub
+            #R = np.sum(np.dstack(R_), 2).reshape(arg_lb_ub.shape)
+
+            #print R.shape
             #####################
             
             if v is None:
