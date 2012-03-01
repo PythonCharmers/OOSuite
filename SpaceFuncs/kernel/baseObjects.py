@@ -97,6 +97,15 @@ class Point(ooarray, baseGeometryObject):
             return Point(bp + alpha * d1 + beta * d2)
         else:    
             raise SpaceFuncsException('not implemented for this geometry object yet')
+    
+    def symmetry(self, other):
+        if not isinstance(other, (Point, Line, Plane)):
+            raise SpaceFuncsException('method Point.symmetry(object) is implemented for Point|Line|Plane objects only')
+        if type(other) == Point:
+            return 2*other - self
+        else:
+            proj = self.projection(other)
+            return 2*proj - self
      
     perpendicular = lambda self, obj: \
         _perpendicularToLine(self, obj) if isinstance(obj, Line) \
