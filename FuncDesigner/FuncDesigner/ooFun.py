@@ -3,7 +3,7 @@ PythonSum = sum
 from numpy import inf, asfarray, copy, all, any, empty, atleast_2d, zeros, dot, asarray, atleast_1d, empty, \
 ones, ndarray, where, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum as npSum, prod, nonzero,\
 isnan, asscalar, zeros_like, ones_like, amin, amax, logical_and, logical_or, isinf, logical_not, logical_xor, flipud, \
-tile, float64, searchsorted
+tile, float64, searchsorted, int32
 from traceback import extract_stack 
 try:
     from bottleneck import nanmin, nanmax
@@ -221,7 +221,10 @@ class oofun:
         return Interval(lb_ub[0], lb_ub[1], definiteRange)
     
     def _interval(self, domain, dtype):
-        
+        tmp = domain.dictOfFixedFuncs.get(self, None)
+        if tmp is not None:
+            return tile(tmp, (2, 1)), True
+            
         v = domain.modificationVar
 
         if v is None or ((v not in self._getDep() or self.is_oovar) and self is not v): 
@@ -254,15 +257,14 @@ class oofun:
         domain.useSave = False
         
         r = {}
-        for i, v in enumerate(self._getDep()):
+        Dep = self._getDep().intersection(domain.keys())
+        
+        for i, v in enumerate(Dep):
             domain.modificationVar = v
             r_l, r_u = self._iqg(domain, dtype, r0)
             r[v] = r_l, r_u
             if not self.isUncycled:
-                try:
-                    lf1, lf2, uf1, uf2 = r_l.lb, r_u.lb, r_l.ub, r_u.ub
-                except:
-                    pass
+                lf1, lf2, uf1, uf2 = r_l.lb, r_u.lb, r_l.ub, r_u.ub
                 lf, uf = nanmin(vstack((lf1, lf2)), 0), nanmax(vstack((uf1, uf2)), 0)
                 if i == 0:
                     L, U = lf.copy(), uf.copy()
@@ -294,14 +296,13 @@ class oofun:
     def _iqg(self, domain, dtype, r0):
         dep = self._getDep()
         v = domain.modificationVar
-
         v_0 = domain[v]
         lb, ub = v_0[0], v_0[1]
 
         if v.domain is not None and array_equal(lb, ub):
             return r0,r0 
 
-        assert dtype in (float, float64),  'other types unimplemented yet'
+        assert dtype in (float, float64, int32),  'other types unimplemented yet'
         middle = 0.5 * (lb+ub)
         
         if v.domain is not None:
@@ -603,6 +604,41 @@ class oofun:
         isOtherOOFun = isinstance(other, oofun)
         
         def interval(domain, dtype):
+#            # changes
+            if domain.isMultiPoint and isOtherOOFun and self.is_oovar and self.domain in (bool, 'bool'):
+                #ind_nz = where(domain[self][1]!=0)[0]
+                lb_ub, definiteRange = other._interval(domain, dtype)
+                n = domain[self][1].size
+                R = zeros((2, n), dtype)
+                ind = domain[self][0]!=0
+                R[0][ind] = lb_ub[0][ind]
+                ind = domain[self][1]!=0
+                R[1][ind] = lb_ub[1][ind]
+                return R, definiteRange
+#                    if ind_nz.size == 0:
+#                        n = domain[self][1].size
+#                        R = zeros((2, n), dtype)
+#                        definiteRange = empty(n, bool)
+#                        definiteRange.fill(True)# TODO: sometimes it may be wrong
+#                        return R, definiteRange
+                    
+                    # TODO: implement it
+#                    subdomain = ooPoint([(v, (d[0][ind_nz], d[1][ind_nz])) for v, d in domain.items()], skipArrayCast=True)
+#                    subdomain.isMultiPoint = True
+#                    #subdomain.modificationVar = domain.modificationVar
+#                    #subdomain.useSave = domain.useSave
+#                    #subdomain.localStoredIntervals = {}
+#                    lb_ub, definiteRange2 = other._interval(subdomain, dtype)
+#                    R[:, ind_nz] = lb_ub.copy()
+#                    definiteRange[ind_nz] = definiteRange2
+#                    return R, definiteRange
+#                    
+#                elif isOtherOOFun:
+#                    # TODO: implement it
+#                    pass
+#            
+#            # changes end
+            
             lb1_ub1, definiteRange = self._interval(domain, dtype)
             lb1, ub1 = lb1_ub1[0], lb1_ub1[1]
             
@@ -1052,10 +1088,13 @@ class oofun:
         
         if rebuildFixedCheck:
             self._isFixed = (fixedVars is not None and dep.issubset(fixedVars)) or (Vars is not None and dep.isdisjoint(Vars))
-            
-        cond_same_point = CondSamePointByID or \
-        (self._f_val_prev is not None and (self._isFixed or (self.isCostly and  all([array_equal((x if isinstance(x, dict) else x.xf)[elem], self._f_key_prev[elem]) for elem in dep]))))
         
+        if args[0].isMultiPoint:
+            cond_same_point = False
+        else:
+            cond_same_point = CondSamePointByID or \
+            (self._f_val_prev is not None and (self._isFixed or (self.isCostly and  all([array_equal((x if isinstance(x, dict) else x.xf)[elem], self._f_key_prev[elem]) for elem in dep]))))
+            
         if cond_same_point:
             self.same += 1
             return self._f_val_prev.copy() # self._f_val_prev is ndarray always 
@@ -1510,7 +1549,7 @@ class oofun:
                 inp._broadcast(func, *args, **kwargs)
         for c in self.attachedConstraints:
             c._broadcast(func, *args, **kwargs)
-        func(self)
+        func(self, *args, **kwargs)
         
 #    def isUncycled(self):
 #        # TODO: speedup the function via omitting same oofuns
@@ -1576,6 +1615,8 @@ class oofun:
 
 # TODO: make it work for ooSystem as well
 def broadcast(func, oofuncs, *args, **kwargs):
+    if isinstance(oofuncs, oofun):
+        oofuncs = [oofuncs]
     oofun._BroadCastID += 1
     for oof in oofuncs:
         if oof is not None: 

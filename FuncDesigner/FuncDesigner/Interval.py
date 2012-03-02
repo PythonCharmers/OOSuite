@@ -145,7 +145,7 @@ def box_1_interval(inp, func, domain, dtype, F_l, F_u):
 #        t_min, t_max = func(lb), func(ub)
     return vstack((t_min, t_max)), definiteRange
 
-A = array([0, 1])
+A = array([0, 1], 'int32')
 def adjust_lx_WithDiscreteDomain(Lx, v):
     d = v.domain if v.domain is not 'bool' and v.domain is not bool else A
     ind = searchsorted(d, Lx, 'left')
@@ -158,6 +158,7 @@ def adjust_lx_WithDiscreteDomain(Lx, v):
 #    ind[ind==d.size-1] -= 1
     Lx[:] = d[ind]
     Lx[ind3] = Tmp
+
         
 def adjust_ux_WithDiscreteDomain(Ux, v):
     d = v.domain if v.domain is not 'bool' and v.domain is not bool else A

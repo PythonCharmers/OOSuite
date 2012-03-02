@@ -345,6 +345,8 @@ def sum(inp, *args, **kwargs):
                 R, DefiniteRange = domain.storedSums[r][None]
                 if not np.all(np.isfinite(R)):
                     R = R0.copy()
+                    if domain.isMultiPoint:
+                        R = np.tile(R, (1, len(domain.values()[0][0])))
                     DefiniteRange = True
                     #####################
                     # !!! don't use sum([inp._interval(domain, dtype) for ...]) here
@@ -364,6 +366,7 @@ def sum(inp, *args, **kwargs):
                     # TODO: mb rework definiteRange processing ?
                     arg_lb_ub, definiteRange = inp._interval(domain, dtype)
                     R += arg_lb_ub
+
                 R -= domain.storedSums[r][v]
                 
                 # To supress inf-inf=nan, however, it doesn't work properly yet, other code is used
@@ -376,6 +379,8 @@ def sum(inp, *args, **kwargs):
 
             #assert np.asarray(r0).ndim <= 1
             R = R0.copy()
+            if domain.isMultiPoint:
+                R = np.tile(R, (1, len(domain.values()[0][0])))
 
             #####################
             # !!! don't use sum([inp._interval(domain, dtype) for ...]) here
@@ -398,6 +403,7 @@ def sum(inp, *args, **kwargs):
                     R += arg_lb_ub
                 else:
                     R = R + arg_lb_ub
+
             #R = np.sum(np.dstack(R_), 2).reshape(arg_lb_ub.shape)
 
             #print R.shape
