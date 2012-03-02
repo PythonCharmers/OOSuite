@@ -383,7 +383,7 @@ def func2(y, e, t, vv, tnlhf_curr):
     
     #!!!! TODO: omit or imporove it for all-float problems    
     th = (new_y[w, t] + new_e[w, t]) / 2
-    BoolVars = [v.domain in (bool, 'bool') for v in vv]
+    BoolVars = [v.domain is bool or v.domain is 'bool' for v in vv]
     if any(BoolVars):
         indBool = where(BoolVars)[0]
         if len(indBool) != n:
