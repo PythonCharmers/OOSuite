@@ -395,7 +395,11 @@ def sum(inp, *args, **kwargs):
                     if tmp is None:
                         domain.storedSums[r][oov] = arg_lb_ub.copy()
                     else:
-                        domain.storedSums[r][oov] += arg_lb_ub
+                        try:
+                            domain.storedSums[r][oov] += arg_lb_ub
+                        except:
+                            # may be of different shape, e.g. for a fixed variable
+                            domain.storedSums[r][oov] = domain.storedSums[r][oov] + arg_lb_ub
                 
                 DefiniteRange = logical_and(DefiniteRange, definiteRange)
 #                R_.append(arg_lb_ub)
