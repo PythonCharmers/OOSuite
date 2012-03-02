@@ -18,8 +18,9 @@ except ImportError:
 #    Args = [(yl[i], el[i], vv, lf, uf) for s in ss]
 #    R = func82_seq(y, e, vv, f, dataType)
     
-def func82(y, e, vv, f, dataType):
-    domain = dict([(v, (y[:, i], e[:, i])) for i, v in enumerate(vv)])
+def func82(y, e, vv, f, dataType, p):
+    domain = oopoint([(v, (y[:, i], e[:, i])) for i, v in enumerate(vv)], skipArrayCast=True, isMultiPoint=True)
+    domain.dictOfFixedFuncs = p.dictOfFixedFuncs
     r, r0 = f.iqg(domain, dataType)
     dep = f._getDep() # TODO: Rework it for fixed vars
     o_l, o_u, a_l, a_u = [], [], [], []
@@ -120,6 +121,7 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p):
         
     cs = oopoint(cs, skipArrayCast = True)
     cs.isMultiPoint = True
+    cs.update(p.dictOfFixedFuncs)
     
     # TODO: improve it
     #V = domain.values()
@@ -379,25 +381,27 @@ def func2(y, e, t, vv, tnlhf_curr):
     m, n = y.shape
     w = arange(m)
     
-    # TODO: omit or imporove it for all-float problems    
+    #!!!! TODO: omit or imporove it for all-float problems    
     th = (new_y[w, t] + new_e[w, t]) / 2
-#    BoolVars = [v.domain in (bool, 'bool') for v in vv]
-#    if any(BoolVars):
-#        indBool = where(BoolVars)[0]
-#        if len(indBool) != n:
-#            new_y[w, t] = th
-#            new_e[w, t] = th
-#            new_y[indBool, t] = 1
-#            new_e[indBool, t] = 0
-#        else:
-#            new_y[w, t] = 1
-#            new_e[w, t] = 0
-#    else:
-    new_y[w, t] = th
-    new_e[w, t] = th
+    BoolVars = [v.domain in (bool, 'bool') for v in vv]
+    if any(BoolVars):
+        indBool = where(BoolVars)[0]
+        if len(indBool) != n:
+            new_y[w, t] = th
+            new_e[w, t] = th
+            new_y[indBool, t] = 1
+            new_e[indBool, t] = 0
+        else:
+            new_y[w, t] = 1
+            new_e[w, t] = 0
+    else:
+        new_y[w, t] = th
+        new_e[w, t] = th
     
     new_y = vstack((y, new_y))
     new_e = vstack((new_e, e))
+    if not all(new_y<=new_e):
+        pass
     
     if tnlhf_curr is not None:
         tnlhf_curr_local = hstack((tnlhf_curr[w, t], tnlhf_curr[w, n+t]))

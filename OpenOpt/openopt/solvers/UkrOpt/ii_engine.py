@@ -13,10 +13,11 @@ def r14IP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, CBKPMV, itn, g, 
     
     if 1:
         ip = func10(y, e, vv)
+        ip.dictOfFixedFuncs = p.dictOfFixedFuncs
         o, a, definiteRange = func8(ip, asdf1, dataType)
     else:
         vv = p._freeVarsList
-        o, a, definiteRange = func82(y, e, vv, asdf1, dataType)
+        o, a, definiteRange = func82(y, e, vv, asdf1, dataType, p)
     
     if not all(definiteRange):
         p.err('''

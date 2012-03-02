@@ -1,7 +1,8 @@
 from numpy import empty, where, logical_and, logical_not, take, logical_or, isnan, zeros, log2, isfinite, \
 int8, int16, int32, int64, inf, isinf, asfarray, hstack, vstack, prod, all, any, asarray, tile, zeros_like
-from interalgLLR import func8, func82, func10
+from interalgLLR import func8, func10
 from interalgT import adjustDiscreteVarBounds
+from FuncDesigner import oopoint
 
 try:
     from bottleneck import nanargmin, nanmin, nanargmax, nanmax
@@ -23,6 +24,7 @@ def processConstraints(C0, y, e, p, dataType):
         if p.solver.dataHandling == 'sorted': tol = 0
         
         ip = func10(y, e, p._freeVarsList)
+        ip.dictOfFixedFuncs = p.dictOfFixedFuncs
         o, a, definiteRange = func8(ip, f, dataType)
             
         DefiniteRange = logical_and(DefiniteRange, definiteRange)
@@ -142,11 +144,17 @@ def processConstraints2(C0, y, e, p, dataType):
         
         if p.solver.dataHandling == 'sorted': tol = 0
         
-        domain = dict([(v, (y[:, k], e[:, k])) for k, v in enumerate(p._freeVarsList)])
+        domain = oopoint([(v, (y[:, k], e[:, k])) for k, v in enumerate(p._freeVarsList)], skipArrayCast=True)
+        domain.isMultiPoint = True
+        domain.dictOfFixedFuncs = p.dictOfFixedFuncs
         
         r, r0 = f.iqg(domain, dataType)
-        dep = f._getDep() # TODO: Rework it for fixed vars
-        isSubset = len(dep) < n
+        dep = f._getDep().intersection(domain.keys()) # TODO: Improve it
+        
+        ################################
+        # not len(dep) < n!  Some vqariables can be ooarrays
+        isSubset = len(dep) < len(p._freeVarsList)
+        ################################
         
         if isSubset:
             o, a = r0.lb, r0.ub

@@ -120,7 +120,7 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nN
     m, n = y.shape
     ol, al = [[] for k in range(m)], [[] for k in range(m)]
     for i, t in enumerate(targets):
-        o, a, definiteRange = func82(y, e, vv, t.func, dataType)
+        o, a, definiteRange = func82(y, e, vv, t.func, dataType, p)
         o, a = o.reshape(2*n, m).T, a.reshape(2*n, m).T
         for j in range(m):
             ol[j].append(o[j])

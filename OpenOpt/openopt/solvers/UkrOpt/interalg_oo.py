@@ -7,7 +7,7 @@ from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X,  SMALL_DELTA_F, MA
 from openopt.kernel.baseSolver import *
 from openopt.kernel.Point import Point
 from openopt.solvers.UkrOpt.interalgMisc import *
-from FuncDesigner import sum as fd_sum, abs as fd_abs, max as fd_max
+from FuncDesigner import sum as fd_sum, abs as fd_abs, max as fd_max, oopoint
 from ii_engine import *
 from interalgCons import processConstraints, processConstraints2
 from interalgODE import interalg_ODE_routine
@@ -62,8 +62,8 @@ class interalg(baseSolver):
             lb <= x <= ub 
             (you can use "implicitBoounds")
             ''' % self.__name__)
-        if p.fixedVars is not None:
-            p.err('solver %s cannot handle FuncDesigner problems with some variables declared as fixed' % self.__name__)
+#        if p.fixedVars is not None:
+#            p.err('solver %s cannot handle FuncDesigner problems with some variables declared as fixed' % self.__name__)
         if p.probType in ('LP', 'MILP'):
             p.err("the solver can't handle problems of type " + p.probType)
         if not p.isFDmodel:
@@ -82,8 +82,20 @@ class interalg(baseSolver):
             pb = r14MOP
         else:
             pb = r14
+
         
         for val in p._x0.values():
+            if isinstance(val,  (list, tuple, ndarray)) and len(val) > 1:
+                p.pWarn('''
+                solver %s currently can handle only single-element variables, 
+                use oovars(n) instead of oovar(size=n),
+                elseware correct result is not guaranteed
+                '''% self.__name__)
+                
+        vv = list(p._freeVarsList)
+        x0 = dict([(v, p._x0[v]) for v in vv])
+        
+        for val in x0.values():
             if isinstance(val,  (list, tuple, ndarray)) and len(val) > 1:
                 p.err('''
                 solver %s currently can handle only single-element variables, 
@@ -101,9 +113,6 @@ class interalg(baseSolver):
                 (http://berkeleyanalytics.com/bottleneck,
                 available via easy_install, takes several minutes for compilation)
                 could speedup the solver %s''' % self.__name__)
-        
-#        if isSNLE and not p.__isNoMoreThanBoxBounded__():
-#           p.err('constrained systems of equations are unimplemented yet')
         
         n = p.n
         
@@ -135,8 +144,6 @@ class interalg(baseSolver):
             dataType = getattr(numpy, dataType)
 
         lb, ub = asarray(p.lb, dataType).copy(), asarray(p.ub, dataType).copy()
-
-        vv = list(p._freeVarsList)
 
         fTol = p.fTol
         if isIP or isODE:
@@ -216,7 +223,8 @@ class interalg(baseSolver):
             # handles 'auto' as well
             self.dataHandling ='sorted'
 
-        domain = dict([(v, [p.lb[i], p.ub[i]]) for i,  v in enumerate(vv)])
+        domain = oopoint([(v, [p.lb[i], p.ub[i]]) for i,  v in enumerate(vv)], skipArrayCast=True)
+        domain.dictOfFixedFuncs = p.dictOfFixedFuncs
         
         if self.dataHandling == 'auto':
             if isIP or isODE:
