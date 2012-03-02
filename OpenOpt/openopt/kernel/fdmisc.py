@@ -17,6 +17,15 @@ def setStartVectorAndTranslators(p):
     
     fixedVars, freeVars = None, None
     
+    from FuncDesigner import ooarray
+    def getVars(t):
+        vars1 = [v for v in (t if t is not None else []) if type(v) != ooarray]
+        vars2 = [v for v in (t if t is not None else []) if type(v) == ooarray]
+        t = vars1 
+        for elem in vars2:
+            t += elem.tolist()
+        return t
+    
     if p.freeVars is not None:
         if not isinstance(p.freeVars,  (list, tuple, ndarray, set)):
             assert hasattr(p.freeVars, 'is_oovar')
@@ -24,6 +33,7 @@ def setStartVectorAndTranslators(p):
             freeVars = p.freeVars
         else:
             freeVars = list(p.freeVars)
+        freeVars = getVars(freeVars)
         fixedVars = list(set(startPoint.keys()).difference(set(freeVars)))
         p.fixedVars = fixedVars
     elif p.fixedVars is not None:
@@ -34,11 +44,12 @@ def setStartVectorAndTranslators(p):
         else:
             fixedVars = list(p.fixedVars)
             p.fixedVars = fixedVars
+        fixedVars = getVars(fixedVars)
         freeVars = list(set(startPoint.keys()).difference(set(fixedVars)))
         p.freeVars = freeVars
     else:
         freeVars = list(startPoint.keys())
-    
+
     # TODO: use ordered set instead
     freeVars.sort(key=lambda elem: elem._id)
 #    fixedVars.sort()

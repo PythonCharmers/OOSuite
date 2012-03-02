@@ -299,7 +299,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             self._FD = EmptyClass()
             self._FD.nonBoxConsWithTolShift = []
             self._FD.nonBoxCons = []
-            from FuncDesigner import _getAllAttachedConstraints, _getDiffVarsID, ooarray
+            from FuncDesigner import _getAllAttachedConstraints, _getDiffVarsID, ooarray, oopoint
             self._FDVarsID = _getDiffVarsID()
 
             if self.probType in ['SLE', 'NLSP', 'SNLE']:
@@ -312,7 +312,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 if self.fTol is not None:
                     fTol = min((self.ftol, self.fTol))
                     p.warn('''
-                    both ftol and fTol are passed to the NLSP;
+                    both ftol and fTol are passed to the SNLE;
                     minimal value of the pair will be used (%0.1e);
                     also, you can modify each personal tolerance for equation, e.g. 
                     equations = [(sin(x)+cos(y)=-0.5)(tol = 0.001), ...]
@@ -344,7 +344,9 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                         for i in range(len(val)):
                             tmp.append((key[i], val[i]))
                 self.x0 = dict(tmp)
-
+            
+            self.x0 = oopoint(self.x0)
+            
             if self.probType in ['LP', 'MILP'] and self.f.getOrder(self.freeVars, self.fixedVars) > 1:
                 self.err('for LP/MILP objective function has to be linear, while this one ("%s") is not' % self.f.name)
 
@@ -370,7 +372,6 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             else:
                 areFixed = lambda dep: dep.isdisjoint(self._freeVars)
                 Z = dict([(v, zeros_like(self._x0[v]) if v in self._freeVars else self._x0[v]) for v in self._x0.keys()])
-            self.theseAreFixed = areFixed
             
             lb, ub = -inf*ones(self.n), inf*ones(self.n)
 
@@ -412,6 +413,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             
             """                                         handling constraints                                         """
             StartPointVars = set(self._x0.keys())
+            self.dictOfFixedFuncs = {}
             handleConstraint_args = (StartPointVars, areFixed, oovD, A, b, Aeq, beq, Z, D_kwargs, LB, UB)
             for c in self.constraints:
                 if isinstance(c, ooarray):
@@ -491,7 +493,9 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         
         dep = set([f]) if f.is_oovar else f._getDep()
         
-        if f.is_oovar and areFixed(dep):  
+        isFixed = areFixed(dep)
+
+        if f.is_oovar and isFixed:  
             if self._x0 is None or f not in self._x0: 
                 self.err('your problem has fixed oovar '+ Name + ' but no value for the one in start point is provided')
             return
@@ -527,7 +531,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             Contol2 = Contol 
             
         #Contol = tol if tol != 0 else copy(self.contol)
-        if areFixed(dep):
+        if isFixed:
             # TODO: get rid of self.contol, use separate contols for each constraint
             
             if not c(self._x0, tol=Contol):
@@ -536,6 +540,10 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 self.err(s)
             # TODO: check doesn't constraint value exeed self.contol
             return
+
+        from FuncDesigner import broadcast
+        broadcast(formDictOfFixedFuncs, f, self.dictOfFixedFuncs, areFixed, self._x0)
+            #self.dictOfFixedFuncs[f] = f(self.x0)
 
         if self.probType in ['LP', 'MILP', 'LLSP', 'LLAVP'] and f.getOrder(self.freeVars, self.fixedVars) > 1:
             self.err('for LP/MILP/LLSP/LLAVP all constraints have to be linear, while ' + f.name + ' is not')
@@ -600,6 +608,12 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
 #            self._FD.nonBoxCons.append((f0, lb_0, ub_0, Contol))
             self._FD.nonBoxConsWithTolShift.append((f, _lb - Contol, _ub + Contol))
             self._FD.nonBoxCons.append((f, _lb, _ub, Contol))
+
+def formDictOfFixedFuncs(oof, dictOfFixedFuncs, areFixed, startPoint):
+    dep = set([oof]) if oof.is_oovar else oof._getDep()
+    if areFixed(dep):
+        dictOfFixedFuncs[oof] = oof(startPoint)
+
 
 class MatrixProblem(baseProblem):
     _baseClassName = 'Matrix'
