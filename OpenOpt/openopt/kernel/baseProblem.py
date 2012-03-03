@@ -414,6 +414,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             """                                         handling constraints                                         """
             StartPointVars = set(self._x0.keys())
             self.dictOfFixedFuncs = {}
+            from FuncDesigner import broadcast
+            broadcast(formDictOfFixedFuncs, self.f, self.dictOfFixedFuncs, areFixed, self._x0)
             handleConstraint_args = (StartPointVars, areFixed, oovD, A, b, Aeq, beq, Z, D_kwargs, LB, UB)
             for c in self.constraints:
                 if isinstance(c, ooarray):
