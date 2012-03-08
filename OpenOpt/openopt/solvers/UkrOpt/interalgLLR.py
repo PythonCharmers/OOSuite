@@ -494,7 +494,8 @@ def func12(an, maxActiveNodes, p, Solutions, vv, varTols, fo):
         #Tnlhf_curr_local.append(tnlhf_curr_local)
         N += yc.shape[0]
         if len(_in) == 0 or N >= maxActiveNodes: 
-            y, e, _s, Tnlhf_curr_local = vstack(y), vstack(e), hstack(S), hstack(Tnlhf_curr_local)
+            y, e, _s = vstack(y), vstack(e), hstack(S)
+            #Tnlhf_curr_local = hstack(Tnlhf_curr_local)
             break
     if Tnlhf_curr_local is not None and len(Tnlhf_curr_local) != 0 and Tnlhf_curr_local[0] is not None:
         #print len(where(isfinite(Tnlhf_curr_local))[0]), Tnlhf_curr_local.size
