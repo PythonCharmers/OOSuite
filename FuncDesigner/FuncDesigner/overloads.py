@@ -380,7 +380,7 @@ def sum(inp, *args, **kwargs):
             #assert np.asarray(r0).ndim <= 1
             R = R0.copy()
             if domain.isMultiPoint:
-                R = np.tile(R, (1, len(domain.values()[0][0])))
+                R = np.tile(R, (1, len(list(domain.values())[0][0])))
 
             #####################
             # !!! don't use sum([inp._interval(domain, dtype) for ...]) here
