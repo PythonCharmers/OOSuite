@@ -491,10 +491,10 @@ def func12(an, maxActiveNodes, p, Solutions, vv, varTols, fo):
         y.append(yc)
         e.append(ec)
         S.append(_s)
-        Tnlhf_curr_local.append(tnlhf_curr_local)
+        #Tnlhf_curr_local.append(tnlhf_curr_local)
         N += yc.shape[0]
         if len(_in) == 0 or N >= maxActiveNodes: 
-            y, e, _s = vstack(y), vstack(e), hstack(S), hstack(Tnlhf_curr_local)
+            y, e, _s, Tnlhf_curr_local = vstack(y), vstack(e), hstack(S), hstack(Tnlhf_curr_local)
             break
     if Tnlhf_curr_local is not None and len(Tnlhf_curr_local) != 0 and Tnlhf_curr_local[0] is not None:
         #print len(where(isfinite(Tnlhf_curr_local))[0]), Tnlhf_curr_local.size
@@ -520,7 +520,6 @@ def func11(y, e, nlhc, indTC, residual, o, a, _s, p):
                        diffao[w, minres_ind], diffao[w, n+minres_ind])
         volume = prod(e-y, 1)
         volumeResidual = volume * sup_inf_diff
-#        initVolumeResidual = volume * 
         F = 0.25 * (a[w, ind] + o[w, ind] + a[w, n+ind] + o[w, n+ind])
         return [si(IP_fields, sup_inf_diff[i], minres[i], y[i], e[i], o[i], a[i], _s[i], F[i], volume[i], volumeResidual[i]) for i in range(m)]
         
