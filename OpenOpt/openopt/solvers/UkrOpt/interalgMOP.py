@@ -189,7 +189,8 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nN
     r10 = logical_not(any(isfinite(tnlh_all), 1))
     if any(r10):
         ind = where(logical_not(r10))[0]
-        an = take(an, ind, axis=0, out=an[:ind.size])
+        #an = take(an, ind, axis=0, out=an[:ind.size])
+        an = asarray(an[ind])
         tnlh_all = take(tnlh_all, ind, axis=0, out=tnlh_all[:ind.size])
     
 #    else:

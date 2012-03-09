@@ -79,7 +79,8 @@ def func9(an, fo, g, p):
         else:
             g = nanmin((g, nanmin(mino[ind])))
             ind2 = where(logical_not(ind))[0]
-            an = take(an, ind2, axis=0, out=an[:ind2.size])
+            #an = take(an, ind2, axis=0, out=an[:ind2.size])
+            an = asarray(an[ind2])
             return an, g
             
         
@@ -105,7 +106,8 @@ def func9(an, fo, g, p):
             g = nanmin((g, nanmin(atleast_1d(mino)[ind])))
             an = asarray(an)
             ind2 = where(logical_not(r10))[0]
-            an = take(an, ind2, axis=0, out=an[:ind2.size])
+            #an = take(an, ind2, axis=0, out=an[:ind2.size])
+            an = asarray(an[ind2])
             return an, g
 
         # NEW 2
@@ -135,7 +137,8 @@ def func5(an, nn, g, p):
             th = mino[ind[nn]]
             ind2 = where(mino < th)[0]
             g = nanmin((th, g))
-            an = take(an, ind2, axis=0, out=an[:ind2.size])
+            #an = take(an, ind2, axis=0, out=an[:ind2.size])
+            an = an[ind2]
         else:
             g = nanmin((mino[nn], g))
             an = an[:nn]

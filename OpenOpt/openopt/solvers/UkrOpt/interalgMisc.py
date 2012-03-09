@@ -157,9 +157,10 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
        
         if any(r10):
             ind = where(logical_not(r10))[0]
-            an = take(an, ind, axis=0, out=an[:ind.size])
+            an = an[ind]
             #tnlh = take(tnlh, ind, axis=0, out=tnlh[:ind.size])
             NN = take(NN, ind, axis=0, out=NN[:ind.size])
+            #NN = NN[ind]
 
         if not isSNLE or p.maxSolutions == 1:
             astnlh = argsort(NN)

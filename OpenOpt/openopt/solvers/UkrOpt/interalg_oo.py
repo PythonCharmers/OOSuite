@@ -1,6 +1,6 @@
 import numpy
 from numpy import isfinite, all, argmax, where, delete, array, asarray, inf, argmin, hstack, vstack, arange, amin, \
-logical_and, float64, ceil, amax, inf, ndarray, isinf, any, logical_or, nan, take, logical_not, asanyarray, searchsorted, \
+logical_and, float64, ceil, amax, inf, ndarray, isinf, any, logical_or, nan, logical_not, asanyarray, searchsorted, \
 logical_xor, empty
 from numpy.linalg import norm, solve, LinAlgError
 from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X,  SMALL_DELTA_F, MAX_NON_SUCCESS, IS_NAN_IN_X
@@ -322,7 +322,7 @@ class interalg(baseSolver):
             else:
                 an = _in
                 fo = 0.0 if isSNLE or isMOP else min((r41, r40 - (fTol if Solutions.maxNum == 1 else 0.0))) 
-            pnc = max((len(an), pnc))
+            pnc = max((len(atleast_1d(an)), pnc))
             
             if isIP:
                 y, e, _in, _s = \
