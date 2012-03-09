@@ -233,7 +233,7 @@ class nonLinFuncs:
         if p.invertObjFunc and userFunctionType=='f':
             r = -r
 
-        if not getDerivative or not p.isFDmodel:
+        if not getDerivative:
             if ind is None:
                 p.nEvals[userFunctionType] += nXvectors
             else:
@@ -243,7 +243,7 @@ class nonLinFuncs:
             assert x.size == p.n#TODO: add python list possibility here
             x = x_0 # for to suppress numerical instability effects while x +/- delta_x
 
-        if userFunctionType == 'f' and hasattr(p, 'solver') and p.solver.funcForIterFcnConnection=='f' and hasattr(p, 'f_iter'):
+        if userFunctionType == 'f' and hasattr(p, 'solver') and p.solver.funcForIterFcnConnection=='f' and hasattr(p, 'f_iter') and not getDerivative:
             if p.nEvals['f']%p.f_iter == 0:
                 p.iterfcn(x, r)
 
