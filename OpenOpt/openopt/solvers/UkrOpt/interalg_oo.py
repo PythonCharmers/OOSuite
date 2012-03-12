@@ -40,7 +40,7 @@ class interalg(baseSolver):
     _requiresBestPointDetection = True
     
     __isIterPointAlwaysFeasible__ = lambda self, p: \
-    p.__isNoMoreThanBoxBounded__() or p.probType == 'MOP' #and p.probType != 'IP'
+    p.__isNoMoreThanBoxBounded__() or p.probType in ('MOP', 'IP') #and p.probType != 'IP'
     _requiresFiniteBoxBounds = True
 
     def __init__(self): 

@@ -1,6 +1,6 @@
 from interalgLLR import *
 from interalgT import r42
-from numpy import inf, prod, searchsorted, all
+from numpy import inf, prod, searchsorted, all, sum
 
 
 def r14IP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, CBKPMV, itn, g, nNodes,  \
@@ -118,7 +118,7 @@ def r14IP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, CBKPMV, itn, g, 
         if p._residual < required_sigma:
             p._F = sum(array([node.F for node in an]) * v)
             an = []
-    
+    p._Residual = p._residual + sum(asarray([node.volume for node in an]) * asarray([node.key for node in an]))
     nNodes.append(len(an))
    
     p.iterfcn(xk=array(nan), fk=p._F, rk = 0)#TODO: change rk to something like p._r0 - p._residual
