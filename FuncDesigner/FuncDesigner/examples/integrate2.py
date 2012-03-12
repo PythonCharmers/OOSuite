@@ -21,7 +21,7 @@ r = p.solve('interalg', maxIter = 15000, maxNodes = 500000, maxActiveNodes = 150
 print('interalg result: %f' % p._F)
 '''
 Solver:   Time Elapsed = 3.48 	CPU Time Elapsed = 3.47
-objFunValue: 1.0000214 (feasible, MaxResidual = 0.000202611) (usually solution, obtained by interalg, has real residual 10-100 times less 
+objFunValue: 1.0000214 (feasible, MaxResidual = 0.0450278) (usually solution, obtained by interalg, has real residual 10-100 times less 
 than required tolerance, because interalg works with "most worst case" that extremely rarely occurs. 
 Unfortunately, real obtained residual cannot be revealed).
 Now let's ensure scipy.integrate dblquad fails to solve the problem and mere lies about obtained residual:'''
