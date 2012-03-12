@@ -383,11 +383,13 @@ def func2(y, e, t, vv, tnlhf_curr):
     
     #!!!! TODO: omit or imporove it for all-float problems    
     th = (new_y[w, t] + new_e[w, t]) / 2
-    BoolVars = [(v.domain is bool or v.domain is 'bool') for v in vv]
+    
     
     ### !!!!!!!!!!!!!!!!!!!!!
     # TODO: rework it for integer dataType 
-    if False and any(BoolVars):
+    #BoolVars = [(v.domain is bool or v.domain is 'bool') for v in vv]
+    BoolVars = False
+    if any(BoolVars):
         indBool = where(BoolVars)[0]
         if len(indBool) != n:
             new_y[w, t] = th
@@ -405,8 +407,8 @@ def func2(y, e, t, vv, tnlhf_curr):
     
     new_y = vstack((y, new_y))
     new_e = vstack((new_e, e))
-    if not all(new_y<=new_e):
-        pass
+#    if not all(new_y<=new_e):
+#        pass
     
     if tnlhf_curr is not None:
         tnlhf_curr_local = hstack((tnlhf_curr[w, t], tnlhf_curr[w, n+t]))
@@ -511,7 +513,7 @@ Fields = ['key', 'y', 'e', 'nlhf','nlhc', 'indtc','residual','o', 'a', '_s']
 MOP_Fields = ['y', 'e', 'nlhf','nlhc', 'indtc','residual','o', 'a', '_s']
 
 #FuncValFields = ['key', 'y', 'e', 'nlhf','nlhc', 'o', 'a', '_s','r18', 'r19']
-IP_fields = ['key', 'minres','y', 'e', 'o', 'a', '_s','F', 'volume', 'volumeResidual']
+IP_fields = ['key', 'minres', 'minres_ind', 'complementary_minres', 'y', 'e', 'o', 'a', '_s','F', 'volume', 'volumeResidual']
 
 def func11(y, e, nlhc, indTC, residual, o, a, _s, p): 
     m, n = y.shape
@@ -521,13 +523,13 @@ def func11(y, e, nlhc, indTC, residual, o, a, _s, p):
         ind = nanargmin(a[:, 0:n] - o[:, 0:n] + a[:, n:] - o[:, n:], 1)
         sup_inf_diff = 0.5*(a[w, ind] - o[w, ind] + a[w, n+ind] - o[w, n+ind])
         diffao = a - o
-        minres_ind = nanargmin(diffao, 1) % n 
-        minres = where(diffao[w, minres_ind] < diffao[w, n+minres_ind], \
-                       diffao[w, minres_ind], diffao[w, n+minres_ind])
+        minres_ind = nanargmin(diffao, 1) 
+        minres = diffao[w, minres_ind]
+        complementary_minres = diffao[w, where(minres_ind<n, minres_ind+n, minres_ind-n)]
         volume = prod(e-y, 1)
         volumeResidual = volume * sup_inf_diff
         F = 0.25 * (a[w, ind] + o[w, ind] + a[w, n+ind] + o[w, n+ind])
-        return [si(IP_fields, sup_inf_diff[i], minres[i], y[i], e[i], o[i], a[i], _s[i], F[i], volume[i], volumeResidual[i]) for i in range(m)]
+        return [si(IP_fields, sup_inf_diff[i], minres[i], minres_ind[i], complementary_minres[i], y[i], e[i], o[i], a[i], _s[i], F[i], volume[i], volumeResidual[i]) for i in range(m)]
         
     else:
         

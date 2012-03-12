@@ -67,7 +67,7 @@ def r14IP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, CBKPMV, itn, g, 
     volumes = array([node.volume for node in an])
     
     if 1:
-        r10 = ao_diff <= 0.95*(required_sigma-p._residual) / (prod(p.ub-p.lb) - p._volume)
+        r10 = ao_diff <= 0.5*(required_sigma-p._residual) / (prod(p.ub-p.lb) - p._volume)
         #r10 = nanmax(a-o, 1) <= required_sigma / prod(p.ub-p.lb)
         
         ind = where(r10)[0]
@@ -79,11 +79,38 @@ def r14IP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, CBKPMV, itn, g, 
         residuals = ao_diff[ind] * v
         p._residual += residuals.sum()
         p._volume += v.sum()
-        
+#        print '1: %e' %  v.sum()
+        volume_0 = p._volume
         #print 'iter:', p.iter, 'nNodes:', len(an), 'F:', p._F, 'div:', ao_diff / (required_sigma / prod(p.ub-p.lb))
-        an = array(an, object)
-        an = take(an, where(logical_not(r10))[0])
-    
+        an = asarray(an, object)
+        an = an[where(logical_not(r10))[0]]
+        
+        # changes
+        if 0:
+            minres = array([node.minres for node in an])
+            r10 = minres <= 0.5*(required_sigma-p._residual) / (prod(p.ub-p.lb) - p._volume)
+            ind = where(r10)[0]
+            for i in ind:
+                node = an[i]
+                minres_ind = node.minres_ind
+                minres = node.minres
+                node_volume = prod(node.e-node.y) # TODO: get rid of cycle here
+                minres_residual = node.a[minres_ind] - node.o[minres_ind]
+                minres_F = 0.5*(node.a[minres_ind] + node.o[minres_ind])
+                p._residual += 0.5 * minres_residual * node_volume
+                p._F += 0.5 * minres_F * node_volume
+                p._volume += 0.5 * node_volume
+                node.volume *= 0.5
+                node.minres = inf
+                if minres_ind < n:
+                    node.y[minres_ind] += 0.5 * (node.e[minres_ind] - node.y[minres_ind])
+                    #node.key = min((node.key, node.a[minres_ind-n] - node.o[minres_ind-n]))
+                else:
+                    node.e[minres_ind-n] -= 0.5 * (node.e[minres_ind-n] - node.y[minres_ind-n])
+                    #node.key = min((node.key, node.a[minres_ind] - node.o[minres_ind]))
+                node.minres = node.complementary_minres
+    #        if ind.size != 0 : print '2: %e' % (p._volume - volume_0)
+            # changes end
     else:
         residuals = ao_diff * volumes
         p._residual = 0.5*sum(residuals) 
