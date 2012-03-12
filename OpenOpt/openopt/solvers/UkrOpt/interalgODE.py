@@ -71,6 +71,8 @@ def interalg_ODE_routine(p, solver):
         else:
             assert isIP
             F += 0.5 * sum((r29[ind]-r28[ind])*(r34[ind]+r35[ind]))
+            
+        p._Residual = sum((r34 - r35)*(r29-r28))
         
         if ind.size != 0: 
             tmp = abs(r29[ind] - r28[ind])
@@ -99,6 +101,8 @@ def interalg_ODE_routine(p, solver):
         # !!! unestablished !!!
         if isODE:
             p.iterfcn(fk = r33/ftol)
+        else:
+            p.iterfcn(xk=array(nan), fk=p._F, rk = 0)
         # TODO: add isIP case
         
         #print(itn, r28.size)
