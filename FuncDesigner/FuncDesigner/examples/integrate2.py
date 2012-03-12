@@ -1,6 +1,4 @@
 from numpy import pi
-import sys
-sys.path += ['/home/dmitrey/OOSuite/FuncDesigner', '/home/dmitrey/OOSuite/SpaceFuncs', '/home/dmitrey/OOSuite/OpenOpt']
 
 sigma = 1e-4
 ff = lambda y, x:  (exp(-(x-0.1)**2/(2*sigma)) * exp(-(y+0.2)**2/(2*sigma))) / (2*pi*sigma)
@@ -18,12 +16,12 @@ f = (exp(-(x-0.1)**2/(2*sigma)) * exp(-(y+0.2)**2/(2*sigma))) / (2*pi*sigma)
 #f = 100*cos(y+x)*sin(y+x**2)
 
 domain = {x: bounds_x, y: bounds_y}
-p = IP(f, domain, ftol = 5e-2)
+p = IP(f, domain, ftol = 0.04)
 r = p.solve('interalg', maxIter = 15000, maxNodes = 500000, maxActiveNodes = 150, iprint = 100)
 print('interalg result: %f' % p._F)
 '''
-Solver:   Time Elapsed = 3.29 	CPU Time Elapsed = 3.29
-interalg result: 1.007690 (usually solution, obtained by interalg, has real residual 10-100 times less 
+Solver:   Time Elapsed = 3.48 	CPU Time Elapsed = 3.47
+objFunValue: 1.0000214 (feasible, MaxResidual = 0.000202611) (usually solution, obtained by interalg, has real residual 10-100 times less 
 than required tolerance, because interalg works with "most worst case" that extremely rarely occurs. 
 Unfortunately, real obtained residual cannot be revealed).
 Now let's ensure scipy.integrate dblquad fails to solve the problem and mere lies about obtained residual:'''
