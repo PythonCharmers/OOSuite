@@ -14,7 +14,8 @@ class IP(NonLinProblem):
         domain = args[1]
         self.x0 = dict([(v, 0.5*(val[0]+val[1])) for v, val in domain.items()])
         self.constraints = [v>bounds[0] for v,  bounds in domain.items()] + [v<bounds[1] for v,  bounds in domain.items()]
-        
+        self.data4TextOutput = ['objFunVal', 'residual']
+        self._Residual = 0.0
 
     def objFunc(self, x):
         return 0

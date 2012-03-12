@@ -166,8 +166,11 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     isIterPointAlwaysFeasible = p.solver.__isIterPointAlwaysFeasible__ if type(p.solver.__isIterPointAlwaysFeasible__) == bool \
         else p.solver.__isIterPointAlwaysFeasible__(p)
     if isIterPointAlwaysFeasible:
-        assert p.data4TextOutput[-1] == 'log10(maxResidual)'
-        p.data4TextOutput = p.data4TextOutput[:-1]
+        #assert p.data4TextOutput[-1] == 'log10(maxResidual)'
+        if p.data4TextOutput[-1] == 'log10(maxResidual)': 
+            p.data4TextOutput = p.data4TextOutput[:-1]
+#        else:
+#            p.err('bug in runProbSolver.py')
     elif p.useScaledResidualOutput:
         p.data4TextOutput[-1] = 'log10(MaxResidual/ConTol)'
 
