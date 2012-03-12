@@ -16,7 +16,7 @@ f = (exp(-(x-0.1)**2/(2*sigma)) * exp(-(y+0.2)**2/(2*sigma))) / (2*pi*sigma)
 #f = 100*cos(y+x)*sin(y+x**2)
 
 domain = {x: bounds_x, y: bounds_y}
-p = IP(f, domain, ftol = 0.04)
+p = IP(f, domain, ftol = 0.05)
 r = p.solve('interalg', maxIter = 15000, maxNodes = 500000, maxActiveNodes = 150, iprint = 100)
 print('interalg result: %f' % p._F)
 '''
