@@ -45,6 +45,7 @@ def interalg_ODE_routine(p, solver):
     r32 = []
     r33 = ftol
     F = 0.0
+    p._Residual = 0
     
     # Main cycle
     for itn in range(p.maxIter+1):
@@ -72,11 +73,13 @@ def interalg_ODE_routine(p, solver):
             assert isIP
             F += 0.5 * sum((r29[ind]-r28[ind])*(r34[ind]+r35[ind]))
             
-        p._Residual = sum((r34 - r35)*(r29-r28))
+            #p._Residual = p._residual + 0.5*sum((abs(r34) +abs(r35)) * (r29 - r28))
         
         if ind.size != 0: 
             tmp = abs(r29[ind] - r28[ind])
-            r33 -= sum((r34[ind] - r35[ind]) * tmp)
+            Tmp = sum((r34[ind] - r35[ind]) * tmp)
+            r33 -= Tmp
+            if isIP: p._residual += Tmp
             r37 -= sum(tmp)
         ind = where(logical_not(r36))[0]
         if ind.size == 0:
@@ -101,9 +104,13 @@ def interalg_ODE_routine(p, solver):
         # !!! unestablished !!!
         if isODE:
             p.iterfcn(fk = r33/ftol)
+        elif isIP:
+            p.iterfcn(xk=array(nan), fk=F, rk = 0)
         else:
-            p.iterfcn(xk=array(nan), fk=p._F, rk = 0)
-        # TODO: add isIP case
+            p.err('bug in interalgODE.py')
+            
+        if p.istop != 0 : 
+            break
         
         #print(itn, r28.size)
 
@@ -128,7 +135,8 @@ def interalg_ODE_routine(p, solver):
 #        p.xk = array([nan]*p.n)
 #        p.rk = r33
 #        p.fk = F
-        p.iterfcn(P)
+        #p._Residual = 
+        p.iterfcn(asarray([nan]*p.n), fk=F, rk=0)
     else:
         p.err('incorrect prob type in interalg ODE routine')
 
