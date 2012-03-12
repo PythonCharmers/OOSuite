@@ -1,5 +1,6 @@
 from baseProblem import NonLinProblem
 #from numpy.linalg import norm
+from numpy import inf
 
 class IP(NonLinProblem):
     probType = 'IP'
@@ -14,8 +15,8 @@ class IP(NonLinProblem):
         domain = args[1]
         self.x0 = dict([(v, 0.5*(val[0]+val[1])) for v, val in domain.items()])
         self.constraints = [v>bounds[0] for v,  bounds in domain.items()] + [v<bounds[1] for v,  bounds in domain.items()]
-        self.data4TextOutput = ['objFunVal', 'residual']
-        self._Residual = 0.0
+        #self.data4TextOutput = ['objFunVal', 'residual']
+        self._Residual = inf
 
     def objFunc(self, x):
         return 0
