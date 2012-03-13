@@ -1,6 +1,6 @@
 from numpy import tile, isnan, array, atleast_1d, asarray, logical_and, all, logical_or, any, nan, isinf, \
 arange, vstack, inf, where, logical_not, take, argmax, argmin, abs, hstack, empty, insert, isfinite, append, atleast_2d, \
-prod, sqrt, int32, int64, log2, log, searchsorted, cumprod
+prod, sqrt, int16, int32, int64, log2, log, searchsorted, cumprod
 from FuncDesigner import oopoint
 from interalgT import *
 
@@ -159,9 +159,9 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p):
                 F[r15] = tmp[r15]    
                 FF.append(F)
         else:
-            tmp = func(cs)
+            tmp = asarray(func(cs), dataType)
             F = empty(m, dataType)
-            F.fill(2**31-15 if dataType in (int32, int64, int) else nan)
+            F.fill(2**31-15 if dataType in (int16, int32, int64, int) else nan)
             F[r15] = tmp[r15]
     if isMOP:
         return array(FF).T.reshape(m, len(func)).tolist(), wr4.tolist()
@@ -187,6 +187,8 @@ def adjustr4WithDiscreteVariables(wr4, p):
         tmp1 = asarray(d[ind], p.solver.dataType)
         tmp2 = asarray(d[ind2], p.solver.dataType)
         if Tmp.size!=0:
+            if str(tmp1.dtype).startswith('int'):
+                Tmp = asarray(Tmp, p.solver.dataType)
             tmp2[ind3] = Tmp.copy()
             tmp1[ind3] = Tmp.copy()
         tmp = where(abs(tmp-tmp1)<abs(tmp-tmp2), tmp1, tmp2)

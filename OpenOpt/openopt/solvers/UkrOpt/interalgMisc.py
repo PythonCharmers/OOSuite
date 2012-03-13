@@ -269,14 +269,14 @@ def r45(y, e, vv, p, asdf1, dataType, r41, nlhc):
     m, n = e.shape
     o, a = o.reshape(2*n, m).T, a.reshape(2*n, m).T
 
-    if asdf1.isUncycled and nlhc is not None and p.probType not in ('SNLE', 'NLSP') and not p.probType.startswith('MI') \
+    if asdf1.isUncycled and p.probType not in ('SNLE', 'NLSP') and not p.probType.startswith('MI') \
     and len(p._discreteVarsList)==0:# for SNLE fo = 0
         # TODO: 
         # handle constraints with restricted domain and matrix definiteRange
         
         if all(definiteRange):
             # TODO: if o has at least one -inf => prob is unbounded
-            tmp1 = o[nlhc==0] 
+            tmp1 = o[nlhc==0] if nlhc is not None else o
             if tmp1.size != 0:
                 tmp1 = nanmin(tmp1)
                 
