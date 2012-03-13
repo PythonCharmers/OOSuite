@@ -40,8 +40,7 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
     #nodes, g = func9(nodes, fo_prev, g, p)
     #y, e = func4(y, e, o, a, fo)
     
-    newNLH = 0
-    
+
     if p.solver.dataHandling == 'raw':
         if not isSNLE:
             for node in nodes:
@@ -53,34 +52,16 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
             
         an = hstack((nodes, _in))
         
-        if newNLH:
-            o2 = [node.o for node in an]
-            a2 = [node.a for node in an]
-            tnlh_fixed = [node.tnlhf for node in an]
-            tnlh_fixed_local = asarray(tnlh_fixed[:len(nodes)])
-        else:
-#            o2 = vstack([node.o for node in an])
-#            a2 = vstack([node.a for node in an])
-            if len(_in) != 0:
-                o2 = vstack((o, [node.o for node in _in]))
-                a2 = vstack((a, [node.a for node in _in]))
-            else:
-                o2, a2 = o, a
-            tnlh_fixed = vstack([node.tnlhf for node in an])
-            tnlh_fixed_local = tnlh_fixed[:len(nodes)]
+        tnlh_fixed = vstack([node.tnlhf for node in an])
+        tnlh_fixed_local = tnlh_fixed[:len(nodes)]
 
         tmp = a.copy()
         
         tmp[tmp>fo_prev] = fo_prev
-        #try:
-#        o = o2[:len(nodes)]
-#        a = a2[:len(nodes)]
-#        y = vstack([node.y for node in nodes])
-#        e = vstack([node.e for node in nodes])
-#        tmp = a.copy()
+
         tnlh_curr = tnlh_fixed_local - log2(tmp - o)
-#        except:
-#            pass
+        for i, node in enumerate(nodes):
+            node.tnlh_curr = tnlh_curr[i]
         
         # TODO: use it instead of code above
         #tnlh_curr = tnlh_fixed_local - log2(where() - o)
@@ -104,47 +85,40 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
     
     fo = float(0 if isSNLE else min((r41, r40 - (fTol if maxSolutions == 1 else 0))))
         
-
+    
     if p.solver.dataHandling == 'raw':
-        # TODO: check it with bool/integer variables
-        tnlh_curr = []
-        r10 = []
-        NN = []
-        if newNLH:
-            for i in range(len(an)):
-                # TODO: optimize it
-                tmp = a2[i].copy()
-                tmp[tmp>fo] = fo
-                if fo == inf and any(tmp==inf):
-                    tmp[tmp==inf] = o2[tmp==inf]
-                if nanmax(tmp - o2) < 0:
-                    r10.append(i)
-                TMP = tnlh_fixed[i] - log2(tmp - o2[i])
-                tnlh_curr.append(TMP)
-                NN.append(nanmin(TMP))
-            NN = asarray(NN)
-            r10 = asarray(r10)
-            NN = asarray(NN)
-        else:
-            tmp = a2.copy()
-            tmp[tmp>fo] = fo
-            if fo == inf:
-                ind = tmp==inf
-                if any(ind):
-                    tmp[ind] = o2[ind] + 1.0 # TODO: rework it
-            
-            tnlh_curr = tnlh_fixed - log2(tmp - o2)
-            r10 = where(nanmax(tmp-o2, 1) < 0)[0]
-
-            
-        if r10.size != 0:
-            mino = [an[i].o for i in r10]
-            mmlf = nanmin(asarray(mino))
-            g = min((g, mmlf))
-
         
-        if not newNLH:
-            NN = nanmin(tnlh_curr, 1)
+        if fo == inf or isSNLE:
+
+#            tmp = a2.copy()
+#            ind = tmp==inf
+#            if any(ind):
+#                tmp[ind] = o2[ind] + 1.0 # TODO: rework it
+            tnlh_curr = tnlh_fixed# - log2(tmp - o2)
+#            assert all(tnlh_curr >= 0)
+        else:
+            #changes
+            fos = asarray([node.fo for node in an])
+            mino = asarray([node.key for node in an])
+            ind = where(fos > fo + 0.01* fTol)[0]
+            o_tmp, a_tmp = asarray([an[i].o for i in ind]), asarray([an[i].a for i in ind])
+            tmp = a_tmp.copy()
+            tmp[tmp>fo] = fo
+            if any(ind):# elseware bug with shapes of zero-sized arrays
+                tnlh_all_new = tnlh_fixed[ind] - log2(tmp - o_tmp)
+                for j, index in enumerate(ind): 
+                    an[index].fo = fo
+                    an[index].tnlh_curr = tnlh_all_new[j]
+            tnlh_curr = vstack([node.tnlh_curr for node in an])
+
+            tmp = asarray([node.key for node in an])
+            r10 = where(tmp > fo)[0]
+            if r10.size != 0:
+                mino = [an[i].key for i in r10]
+                mmlf = nanmin(asarray(mino))
+                g = min((g, mmlf))
+
+        NN = nanmin(tnlh_curr, 1)
         r10 = logical_or(isnan(NN), NN == inf)
         
         for i, node in enumerate(an): 
