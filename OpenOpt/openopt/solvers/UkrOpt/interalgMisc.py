@@ -33,9 +33,6 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
     fo_prev = float(0 if isSNLE else min((r41, r40 - (fTol if maxSolutions == 1 else 0))))
     y, e, o, a, _s, nlhc, residual = func7(y, e, o, a, _s, nlhc, residual)    
     
-    #ind = where(all(o>fo_prev, 1))
-    
-        
     if y.size == 0:
         return _in, g, fo_prev, _s, Solutions, xRecord, r41, r40
     

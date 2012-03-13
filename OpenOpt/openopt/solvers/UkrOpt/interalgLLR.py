@@ -99,6 +99,7 @@ def func8(domain, func, dataType):
     return asarray(TMP.lb, dtype=dataType), asarray(TMP.ub, dtype=dataType), TMP.definiteRange
 
 def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p):
+    #print where(y), where(e!=1)
     n = y.shape[1]
     # TODO: rework it wrt nlh
     #cs = dict([(key, asarray((val[0]+val[1])/2, dataType)) for key, val in domain.items()])
@@ -123,9 +124,6 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p):
     cs.isMultiPoint = True
     cs.update(p.dictOfFixedFuncs)
     
-    # TODO: improve it
-    #V = domain.values()
-    #m = V[0][0].size if type(V) == list else next(iter(V))[0].size
     m = y.shape[0]
     if len(C) != 0:
         r15 = empty(m, bool)
@@ -168,6 +166,7 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p):
     if isMOP:
         return array(FF).T.reshape(m, len(func)).tolist(), wr4.tolist()
     else:
+        #print F
         return atleast_1d(F) , wr4
 
 A = array([0, 1])
@@ -180,11 +179,13 @@ def adjustr4WithDiscreteVariables(wr4, p):
         ind2 = searchsorted(d, tmp, side='right')
         ind3 = where(ind!=ind2)[0]
         Tmp = tmp[ind3].copy()
-        ind[ind==d.size] -= 1
-        ind2[ind2==d.size] -= 1
-        ind2[ind2==d.size-1] -=1
+        
+        ind[ind==d.size] -= 1 # may be due to roundoff errors
+        ind[ind==1] = 0
+        ind2[ind2==d.size] -=1
+        ind2[ind2==0] = 1 # may be due to roundoff errors
         tmp1 = asarray(d[ind], p.solver.dataType)
-        tmp2 = asarray(d[ind2+1], p.solver.dataType)
+        tmp2 = asarray(d[ind2], p.solver.dataType)
         if Tmp.size!=0:
             tmp2[ind3] = Tmp.copy()
             tmp1[ind3] = Tmp.copy()
@@ -384,31 +385,29 @@ def func2(y, e, t, vv, tnlhf_curr):
     #!!!! TODO: omit or imporove it for all-float problems    
     th = (new_y[w, t] + new_e[w, t]) / 2
     
-    
     ### !!!!!!!!!!!!!!!!!!!!!
     # TODO: rework it for integer dataType 
-    #BoolVars = [(v.domain is bool or v.domain is 'bool') for v in vv]
-    BoolVars = False
-    if any(BoolVars):
+    
+    BoolVars = [(v.domain is bool or v.domain is 'bool') for v in vv]
+    if not str(th.dtype).startswith('float') and any(BoolVars):
         indBool = where(BoolVars)[0]
         if len(indBool) != n:
+            #boolCoords = list(set(indBool) & set(t))
+            S = set(indBool)
+            boolCoords = where([t[j] in indBool for j in range(m)])[0]
             new_y[w, t] = th
             new_e[w, t] = th
-            new_y[indBool, t] = 1
-            new_e[indBool, t] = 0
+            new_y[boolCoords, t[boolCoords]] = 1
+            new_e[boolCoords, t[boolCoords]] = 0
         else:
             new_y[w, t] = 1
             new_e[w, t] = 0
-        ### !!!!!!!!!!!!!!!!!!!!!
-        
     else:
         new_y[w, t] = th
         new_e[w, t] = th
     
     new_y = vstack((y, new_y))
     new_e = vstack((new_e, e))
-#    if not all(new_y<=new_e):
-#        pass
     
     if tnlhf_curr is not None:
         tnlhf_curr_local = hstack((tnlhf_curr[w, t], tnlhf_curr[w, n+t]))
