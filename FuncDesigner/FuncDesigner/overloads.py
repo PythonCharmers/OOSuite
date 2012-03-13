@@ -344,7 +344,7 @@ def sum(inp, *args, **kwargs):
                 # self already must be in domain.storedSums
                 R, DefiniteRange = domain.storedSums[r][None]
                 if not np.all(np.isfinite(R)):
-                    R = R0.copy()
+                    R = np.asarray(R0, dtype).copy()
                     if domain.isMultiPoint:
                         R = np.tile(R, (1, len(domain.values()[0][0])))
                     DefiniteRange = True
@@ -370,15 +370,16 @@ def sum(inp, *args, **kwargs):
                 R -= domain.storedSums[r][v]
                 
                 # To supress inf-inf=nan, however, it doesn't work properly yet, other code is used
-                R[arg_lb_ub == np.inf] = np.inf
-                R[arg_lb_ub == -np.inf] = -np.inf
+                if np.any(np.isinf(arg_lb_ub)):
+                    R[arg_lb_ub == np.inf] = np.inf
+                    R[arg_lb_ub == -np.inf] = -np.inf
                 
                 return R, definiteRange
             else:
                 domain.storedSums[r] = {}        
 
             #assert np.asarray(r0).ndim <= 1
-            R = R0.copy()
+            R = np.asarray(R0, dtype).copy()
             if domain.isMultiPoint:
                 R = np.tile(R, (1, len(list(domain.values())[0][0])))
 
