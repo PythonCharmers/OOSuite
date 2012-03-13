@@ -24,8 +24,8 @@ constraints = [a>0, a<1, b>0, b<1, c>0, c<1, d>-1, d<1, d[3] < 0.5]
 # set some general constraints:
 constraints += [
                 (a*b + sin(c) < 0.5)(tol=1e-5), 
-                (d < cos(a) + 0.5), # default tol 10^-6
-                (cos(d[0]) +a < sin(d[3]) + b),
+                d < cos(a) + 0.5, # default tol 10^-6
+                cos(d[0]) +a < sin(d[3]) + b,
                 (d[1] + c == 0.7)(tol=1e-3)
                 ]
 
@@ -39,7 +39,7 @@ solver='interalg'
 # or this solver with some non-default parameters:
 #solver=oosolver('interalg', fStart = 5.56, maxIter = 1000,maxNodes = 1000000, maxActiveNodes = 15)
 
-p = GLP(F, startPoint, fTol = fTol, constraints = constraints)
+p = GLP(F, startPoint, fTol = fTol, constraints = constraints, dataHandling='raw')
 r = p.minimize(solver, iprint = 100)
 print(r(a, b, c, d))
 
