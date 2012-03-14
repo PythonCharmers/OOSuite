@@ -159,20 +159,28 @@ class Line(baseGeometryObject):
         return r
 
 class LineSegment(baseGeometryObject):
+    # TODO: mb rewrite it with _AttributesDict?
+    #_AttributesDict = baseGeometryObject._AttributesDict.copy()
     def __init__(self, Start, End, *args, **kw):
         self.color = 'b'
         assert len(args) == 0
         baseGeometryObject.__init__(self, *args, **kw)
         self.points = [Start, End]
+        
     
     __call__ = lambda self, *args, **kw: LineSegment(self.points[0](*args, **kw), self.points[1](*args, **kw))        
     
     _length = lambda self: self.points[0].distance(self.points[1])
     
+    _middle = lambda self: 0.5 * (self.points[0] + self.points[1])
+    
     def __getattr__(self, attr):
         if attr == 'length':
             self.length = self._length()
             return self.length
+        elif attr == 'middle':
+            self.middle = self._middle()
+            return self.middle
         else:
             raise AttributeError('no such method %s for LineSegment' % attr)
     
