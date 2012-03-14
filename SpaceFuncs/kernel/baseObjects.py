@@ -1,5 +1,5 @@
 # created by Dmitrey
-from numpy import isscalar, all, asfarray, ndarray, array, asscalar, asarray, pi, atleast_1d, asscalar
+from numpy import isscalar, all, asfarray, ndarray, array, asscalar, asarray, pi, atleast_1d, asscalar, sin, cos
 from FuncDesigner.ooFun import oofun
 from FuncDesigner import  ooarray, dot, sum, sqrt, cross, norm
 from misc import SpaceFuncsException, pWarn, SF_error
@@ -97,6 +97,22 @@ class Point(ooarray, baseGeometryObject):
             return Point(bp + alpha * d1 + beta * d2)
         else:    
             raise SpaceFuncsException('not implemented for this geometry object yet')
+    
+    def rotate(self, P, angle):
+        '''
+        Usage: newPoint = originPoint.rotate(BasePoint, angle)
+        (angle in radians)
+        currently is implemented for 2-dimensional space only
+        for other spaces you can use FuncDesigner.dot(RotationMatrix ,Point - BasePoint) + BasePoint
+        (implementing it with more convenient API is in Future Plans)
+        if BasePoint is (0,0), you can just use prevPoint.rotate(0, angle)
+        '''
+        Tmp = (self - P) if P is not 0 else self
+        x, y = Tmp[0], Tmp[1]
+        sin_theta, cos_theta = sin(angle), cos(angle)
+        x2, y2 = x*cos_theta-y*sin_theta, x*sin_theta+y*cos_theta
+        return Point(x2+P[0], y2+P[1]) if P is not 0 else Point(x2, y2)
+        
     
     def symmetry(self, other):
         if not isinstance(other, (Point, Line, Plane)):
