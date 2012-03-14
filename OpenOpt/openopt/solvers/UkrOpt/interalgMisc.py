@@ -60,8 +60,10 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
         tmp[tmp>fo_prev] = fo_prev
 
         tnlh_curr = tnlh_fixed_local - log2(tmp - o)
+        tnlh_curr_best = nanmin(tnlh_curr, 1)
         for i, node in enumerate(nodes):
             node.tnlh_curr = tnlh_curr[i]
+            node.tnlh_curr_best = tnlh_curr_best[i]
         
         # TODO: use it instead of code above
         #tnlh_curr = tnlh_fixed_local - log2(where() - o)
@@ -89,28 +91,23 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
     if p.solver.dataHandling == 'raw':
         
         if fo == inf or isSNLE:
-
-#            tmp = a2.copy()
-#            ind = tmp==inf
-#            if any(ind):
-#                tmp[ind] = o2[ind] + 1.0 # TODO: rework it
-            tnlh_curr = tnlh_fixed# - log2(tmp - o2)
-#            assert all(tnlh_curr >= 0)
+            tnlh_curr = tnlh_fixed
         else:
-            #changes
-            fos = asarray([node.fo for node in an])
-            mino = asarray([node.key for node in an])
-            ind = where(fos > fo + 0.01* fTol)[0]
-            o_tmp, a_tmp = asarray([an[i].o for i in ind]), asarray([an[i].a for i in ind])
-            tmp = a_tmp.copy()
-            tmp[tmp>fo] = fo
-            if any(ind):# elseware bug with shapes of zero-sized arrays
-                tnlh_all_new = tnlh_fixed[ind] - log2(tmp - o_tmp)
-                for j, index in enumerate(ind): 
-                    an[index].fo = fo
-                    an[index].tnlh_curr = tnlh_all_new[j]
-            tnlh_curr = vstack([node.tnlh_curr for node in an])
-
+            if fo != fo_prev:
+                fos = asarray([node.fo for node in an])
+                mino = asarray([node.key for node in an])
+                ind = where(fos > fo + 0.01* fTol)[0]
+                o_tmp, a_tmp = asarray([an[i].o for i in ind]), asarray([an[i].a for i in ind])
+                tmp = a_tmp.copy()
+                tmp[tmp>fo] = fo
+                if any(ind):# elseware bug with shapes of zero-sized arrays
+                    tnlh_all_new = tnlh_fixed[ind] - log2(tmp - o_tmp)
+                    tnlh_curr_best = nanmin(tnlh_all_new, 1)
+                    for j, index in enumerate(ind): 
+                        an[index].fo = fo
+                        an[index].tnlh_curr = tnlh_all_new[j]
+                        an[index].tnlh_curr_best = tnlh_curr_best[j]
+                    
             tmp = asarray([node.key for node in an])
             r10 = where(tmp > fo)[0]
             if r10.size != 0:
@@ -118,20 +115,15 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
                 mmlf = nanmin(asarray(mino))
                 g = min((g, mmlf))
 
-        NN = nanmin(tnlh_curr, 1)
+        NN = atleast_1d([node.tnlh_curr_best for node in an])
         r10 = logical_or(isnan(NN), NN == inf)
-        
-        for i, node in enumerate(an): 
-            node.tnlh_curr = tnlh_curr[i]
-            node.tnlh_curr_best = NN[i]
-
        
         if any(r10):
             ind = where(logical_not(r10))[0]
             an = an[ind]
             #tnlh = take(tnlh, ind, axis=0, out=tnlh[:ind.size])
-            NN = take(NN, ind, axis=0, out=NN[:ind.size])
-            #NN = NN[ind]
+            #NN = take(NN, ind, axis=0, out=NN[:ind.size])
+            NN = NN[ind]
 
         if not isSNLE or p.maxSolutions == 1:
             astnlh = argsort(NN)
