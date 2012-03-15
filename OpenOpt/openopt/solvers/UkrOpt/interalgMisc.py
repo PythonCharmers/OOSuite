@@ -103,17 +103,18 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
                 if any(ind):# elseware bug with shapes of zero-sized arrays
                     tnlh_all_new = tnlh_fixed[ind] - log2(tmp - o_tmp)
                     tnlh_curr_best = nanmin(tnlh_all_new, 1)
-                    for j, index in enumerate(ind): 
-                        an[index].fo = fo
-                        an[index].tnlh_curr = tnlh_all_new[j]
-                        an[index].tnlh_curr_best = tnlh_curr_best[j]
+                    for j, node in enumerate(an[ind]): 
+                        node.fo = fo
+                        node.tnlh_curr = tnlh_all_new[j]
+                        node.tnlh_curr_best = tnlh_curr_best[j]
                     
             tmp = asarray([node.key for node in an])
             r10 = where(tmp > fo)[0]
             if r10.size != 0:
                 mino = [an[i].key for i in r10]
                 mmlf = nanmin(asarray(mino))
-                g = min((g, mmlf))
+                g = nanmin((g, mmlf))
+                #an = an[where(logical_not(ind0))[0]]
 
         NN = atleast_1d([node.tnlh_curr_best for node in an])
         r10 = logical_or(isnan(NN), NN == inf)

@@ -202,6 +202,10 @@ def processConstraints2(C0, y, e, p, dataType):
             indT[any(ind, 1)] = True
             ind_l,  ind_u = ind[:, :ind.shape[1]/2], ind[:, ind.shape[1]/2:]
             y[ind_l], e[ind_u] = 0.5 * (y[ind_l] + e[ind_l]), 0.5 * (y[ind_u] + e[ind_u])
+            # TODO: mb implement it
+            #if len(p._discreteVarsNumList):
+                #adjustDiscreteVarBounds(y[ind], e[ind], p)
+                #adjustDiscreteVarBounds(y, e, p)
             
             nlh_l, nlh_u = nlh[:, nlh.shape[1]/2:], nlh[:, :nlh.shape[1]/2]
             
