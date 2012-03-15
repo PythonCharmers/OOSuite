@@ -512,7 +512,7 @@ def norm(*args, **kwargs):
     if len(kwargs) or len(args) > 1:
         return np.linalg.norm(*args, **kwargs)
     r = sqrt(sum(args[0]**2),  attachConstraints=False)
-    r.hasDefiniteRange=True
+    #r.hasDefiniteRange=True
     return r
 
 __all__ += ['sum', 'prod', 'norm']
