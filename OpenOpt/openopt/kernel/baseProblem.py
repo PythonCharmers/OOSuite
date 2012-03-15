@@ -302,8 +302,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             from FuncDesigner import _getAllAttachedConstraints, _getDiffVarsID, ooarray, oopoint
             self._FDVarsID = _getDiffVarsID()
 
-            if self.probType in ['SLE', 'NLSP', 'SNLE']:
-                equations = self.C if self.probType == 'SLE' else self.f
+            if self.probType in ['SLE', 'NLSP', 'SNLE', 'LLSP']:
+                equations = self.C if self.probType in ('SLE', 'LLSP') else self.f
                 ConstraintTags = [elem.isConstraint for elem in equations]
                 cond_all_oofuns_but_not_cons = not any(ConstraintTags) 
                 cond_cons = all(ConstraintTags) 
@@ -321,7 +321,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     fTol = self.ftol
                 self.fTol = self.ftol = fTol
                 EQs = [((elem.oofun*(fTol/elem.tol) if elem.tol != 0 else elem.oofun) if elem.isConstraint else elem) for elem in equations]
-                if self.probType == 'SLE': self.C = EQs
+                if self.probType in ('SLE', 'LLSP'): self.C = EQs
                 elif self.probType in ('NLSP', 'SNLE'): self.f = EQs
                 else: raise OpenOptException('bug in OO kernel')
                 
@@ -415,7 +415,11 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             StartPointVars = set(self._x0.keys())
             self.dictOfFixedFuncs = {}
             from FuncDesigner import broadcast
-            broadcast(formDictOfFixedFuncs, self.f, self.dictOfFixedFuncs, areFixed, self._x0)
+            if self.probType in ['SLE', 'NLSP', 'SNLE', 'LLSP']:
+                for eq in equations:
+                    broadcast(formDictOfFixedFuncs, eq, self.dictOfFixedFuncs, areFixed, self._x0)
+            else:
+                broadcast(formDictOfFixedFuncs, self.f, self.dictOfFixedFuncs, areFixed, self._x0)
             handleConstraint_args = (StartPointVars, areFixed, oovD, A, b, Aeq, beq, Z, D_kwargs, LB, UB)
             for c in self.constraints:
                 if isinstance(c, ooarray):
