@@ -1089,7 +1089,7 @@ class oofun:
         if rebuildFixedCheck:
             self._isFixed = (fixedVars is not None and dep.issubset(fixedVars)) or (Vars is not None and dep.isdisjoint(Vars))
         
-        if args[0].isMultiPoint:
+        if isinstance(args[0], ooPoint) and args[0].isMultiPoint:
             cond_same_point = False
         else:
             cond_same_point = CondSamePointByID or \
