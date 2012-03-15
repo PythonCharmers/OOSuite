@@ -85,7 +85,7 @@ class FuncDesignerTranslator:
             else:
                 raise FuncDesignerException('unclear error, maybe you have constraint independend on any optimization variables') 
 
-        key, val = pointDerivarive.items()[0]
+        key, val = list(pointDerivarive.items())[0]
         
         if isscalar(val) or (isinstance(val, ndarray) and val.shape == ()):
             val = atleast_1d(val)
