@@ -1804,15 +1804,15 @@ class ooarray(ndarray):
         elif isinstance(other, oofun):
             hasSize = 'size' in dir(other)
             if not hasSize: 
-                print('''
-                FuncDesigner warning: 
-                to perform the operation 
-                (ooarray multiplication on oofun)
-                oofun size should be known.
-                Assuming oofun size is 1,
-                the value is ascribed to the oofun attributes.
-                Handling of the issue is intended to be 
-                enhanced in future.''')
+#                print('''
+#                FuncDesigner warning: 
+#                to perform the operation 
+#                (ooarray multiplication on oofun)
+#                oofun size should be known.
+#                Assuming oofun size is 1,
+#                the value is ascribed to the oofun attributes.
+#                Handling of the issue is intended to be 
+#                enhanced in future.''')
                 other.size = 1
                 #raise FuncDesignerException('to perform the operation oofun size should be known')
             if other.size == 1:
