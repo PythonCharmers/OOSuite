@@ -26,7 +26,7 @@ class EIG(MatrixProblem):
             assert type(self.goal) in (dict, tuple, list) and len(self.goal) == 1, \
             'EIG goal argument should be "all" or Python dict {goal_name: number_of_required_eigenvalues}'
             if type(self.goal) == dict:
-                goal_name, N = self.goal.items()[0]
+                goal_name, N = list(self.goal.items())[0]
             else:
                 goal_name, N = self.goal
             self.N = N
@@ -71,7 +71,8 @@ class EIG(MatrixProblem):
                             self.err(s)
                     else:
                         varSizes[key] = d[key].shape[1] if not isscalar(d[key]) else 1
-                N += d.values()[0].shape[0] if not isscalar(d.values()[0]) else 1
+                tmp = list(d.values())
+                N += tmp[0].shape[0] if not isscalar(tmp[0]) else 1
             P = dict([(key, [0]*val) for key, val in varSizes.items()])
             T = ootranslator(P)
             C2 = vstack([T.pointDerivative2array(d) for d in C])
