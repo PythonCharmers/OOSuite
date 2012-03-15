@@ -102,7 +102,7 @@ class Point(ooarray, baseGeometryObject):
         '''
         Usage: newPoint = originPoint.rotate(BasePoint, angle)
         (angle in radians)
-        currently is implemented for 2-dimensional space only
+        currently the method is implemented for 2-dimensional space only
         for other spaces you can use FuncDesigner.dot(RotationMatrix ,Point - BasePoint) + BasePoint
         (implementing it with more convenient API is in Future Plans)
         if BasePoint is (0,0), you can just use prevPoint.rotate(0, angle)
