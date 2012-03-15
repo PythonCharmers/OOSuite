@@ -81,7 +81,8 @@ class EIG(MatrixProblem):
                 self.err('square matrix of shape (%d,%d) expected, shape %s obtained instead' % (N, N, C2.shape))
 
         r = MatrixProblem.solve(self, *args, **kw)
-        r.eigenvectors = [T.vector2point(v) for v in self.eigenvectors.T]
+        if type(C) in (tuple,  list) and isinstance(C[0], dict):
+            r.eigenvectors = [T.vector2point(v) for v in self.eigenvectors.T]
         return r
         
     
