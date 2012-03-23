@@ -331,7 +331,7 @@ class oofun:
     # @checkSizes
     def __add__(self, other):
         
-        stk = extract_stack() 
+        #stk = extract_stack() 
 #        import inspect
 #        tmp = inspect.stack()
 #        print('len(tmp):', len(tmp))
@@ -339,7 +339,7 @@ class oofun:
             frame = frame_tuple[0]
             if 'func_code' in dir(frame) and 'func_code' in dir(npSum) and frame.f_code is npSum.func_code:
                 pWarn('''
-                seems like you use numpy.sum() on FuncDesigner obects, 
+                seems like you use numpy.sum() on FuncDesigner object(s), 
                 using FuncDesigner.sum() instead is highly recommended''')
 
 #            elif frame.f_code is PythonSum.func_code:
@@ -350,7 +350,7 @@ class oofun:
 #            if not S[0].endswith('ooFun.py') and not S[0].endswith('overloads.py') and \
 #            S[2] == '<module>' and S[3] is not None and 'sum(' in S[3]:
 #                pWarn('''
-#                seems like you use Python sum() on FuncDesigner obects, 
+#                seems like you use Python sum() on FuncDesigner object(s), 
 #                using FuncDesigner.sum() instead is highly recommended''')                
         
         if not isinstance(other, (oofun, list, ndarray, tuple)) and not isscalar(other):
