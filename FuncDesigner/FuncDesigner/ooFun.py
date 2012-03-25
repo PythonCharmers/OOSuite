@@ -866,7 +866,7 @@ class oofun:
                 self.pWarn(scipyAbsentMsg)
             
             if condBigMatrix and scipyInstalled:
-                r = SP_eye(ind2-ind1)
+                r = SP_eye(ind2-ind1, ind2-ind1)
                 if ind1 != 0:
                     m1 = SparseMatrixConstructor((ind2-ind1, ind1))
                     r = Hstack((SparseMatrixConstructor((ind2-ind1, ind1)), r))
