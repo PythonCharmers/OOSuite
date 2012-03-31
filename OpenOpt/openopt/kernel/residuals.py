@@ -1,5 +1,5 @@
 __docformat__ = "restructuredtext en"
-from numpy import concatenate, asfarray, array, where, argmax, zeros, isfinite, copy, all, isnan, arange
+from numpy import concatenate, asfarray, array, asarray, where, argmax, zeros, isfinite, copy, all, isnan, arange
 from copy import deepcopy
 empty_arr = asfarray([])
 
@@ -83,15 +83,15 @@ class residuals:
         residuals = self._getresiduals(x)
         r, fname, ind = 0, None, None
         for field in ('c',  'lin_ineq', 'lb', 'ub'):
-            fv = array(getattr(residuals, field)).flatten()
-            if fv not in ([], ()) and fv.size>0:
+            fv = asarray(getattr(residuals, field)).flatten()
+            if fv.size>0:
                 ind_max = argmax(fv)
                 val_max = fv[ind_max]
                 if r < val_max:
                     r, ind, fname = val_max, ind_max, field
         for field in ('h', 'lin_eq'):
-            fv = array(getattr(residuals, field)).flatten()
-            if fv not in ([], ()) and fv.size>0:
+            fv = asarray(getattr(residuals, field)).flatten()
+            if fv.size>0:
                 fv = abs(fv)
                 ind_max = argmax(fv)
                 val_max = fv[ind_max]

@@ -1,5 +1,6 @@
 __docformat__ = "restructuredtext en"
 from numpy import *
+from numpy import linalg
 from oologfcn import *
 from oographics import Graphics
 from setDefaultIterFuncs import setDefaultIterFuncs, IS_MAX_FUN_EVALS_REACHED, denyingStopFuncs
@@ -811,9 +812,11 @@ class NonLinProblem(baseProblem, nonLinFuncs, Args):
 
     # TODO: move the function to child classes
     def _isUnconstrained(self):
-        s = ((), [], array([]), None)
+#        s = ((), [], array([]), None)
+#        print '1:',all(isinf(self.lb))
+#        print self.b.size,self.beq.size
         return self.b.size ==0 and self.beq.size==0 and not self.userProvided.c and not self.userProvided.h \
-            and (self.lb in s or all(isinf(self.lb))) and (self.ub in s or all(isinf(self.ub)))
+            and (len(self.lb)==0 or all(isinf(self.lb))) and (len(self.ub)==0 or all(isinf(self.ub)))
     
 
 def minimize(p, *args, **kwargs):

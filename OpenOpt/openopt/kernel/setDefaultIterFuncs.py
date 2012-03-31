@@ -81,7 +81,8 @@ def small_deltaF(p):
 
 
 def isEnough(p):
-    if p.fEnough > p.Fk and p.isFeas(p.xk): #TODO: mb replace by p.rk<p.contol? or other field like p.iterValues.isFeasible?
+#    asscalar(asarray(p.Fk)) was added for compatibility with ironpython
+    if p.fEnough > asscalar(asarray(p.Fk)) and p.isFeas(p.xk): #TODO: mb replace by p.rk<p.contol? or other field like p.iterValues.isFeasible?
        return (True, 'fEnough has been reached')
     else: return False
 
