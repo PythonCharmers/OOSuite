@@ -127,8 +127,7 @@ def processConstraints2(C0, y, e, p, dataType):
     n = p.n
     m = y.shape[0]
     nlh = zeros((m, 2*n))
-    residual = None#zeros((m, 2*n))
-    
+
     DefiniteRange = True
     indT = empty(m, bool)
     indT.fill(False)
@@ -136,7 +135,6 @@ def processConstraints2(C0, y, e, p, dataType):
         adjustDiscreteVarBounds(y, e, p)
     
     for f, lb, ub, tol in C0:
-        
         m = y.shape[0] # is changed in the cycle
         if m == 0: 
             return y.reshape(0, n), e.reshape(0, n), nlh.reshape(0, 2*n), None, True, False
@@ -151,18 +149,15 @@ def processConstraints2(C0, y, e, p, dataType):
         r, r0 = f.iqg(domain, dataType)
         dep = f._getDep().intersection(domain.keys()) # TODO: Improve it
         
-        ################################
-        # not len(dep) < n!  Some vqariables can be ooarrays
-        isSubset = len(dep) < len(p._freeVarsList)
-        ################################
+        o, a = r0.lb, r0.ub
         
-        if isSubset:
-            o, a = r0.lb, r0.ub
-            
-            # using tile to make shape like it was divided into 2 boxes
-            # todo: optimize it
-            tmp, res0 = getTmp(tile(o, (2, 1)), tile(a, (2, 1)), lb, ub, tol, m, zeros((m, 2)), dataType)
-            T0 = tmp[:, tmp.shape[1]/2:]
+        # using tile to make shape like it was divided into 2 boxes
+        # todo: optimize it
+        tmp = getTmp(tile(o, (2, 1)), tile(a, (2, 1)), lb, ub, tol, m, dataType)
+        #tmp, res0 = getTmp(tile(o, (2, 1)), tile(a, (2, 1)), lb, ub, tol, m, zeros((m, 2)), dataType)
+        T0 = tmp[:, tmp.shape[1]/2:].flatten()
+        #isFiniteT0 = all(isfinite(T0))
+        #T0 = tmp
         
         for j, v in enumerate(p._freeVarsList):
             if v in dep:
@@ -173,26 +168,38 @@ def processConstraints2(C0, y, e, p, dataType):
                 DefiniteRange = logical_and(DefiniteRange, r[v][0].definiteRange)
                 DefiniteRange = logical_and(DefiniteRange, r[v][1].definiteRange)
                 
-                tmp, res = getTmp(o, a, lb, ub, tol, m, zeros((m, 2)), dataType)
-               
+                tmp = getTmp(o, a, lb, ub, tol, m, dataType)
+
                 nlh[:, n+j] += tmp[:, tmp.shape[1]/2:].flatten()
                 nlh[:, j] += tmp[:, :tmp.shape[1]/2].flatten()
                 
-#                residual[:, n+j] += res[:, 0]
-#                residual[:, j] += res[:, 1]
-            else:
+#                if isFiniteT0:
+#                    nlh[:, n+j] -= T0
+#                    nlh[:, j] -= T0
+                    
+                #nlh[:, n+j] += (tmp[:, tmp.shape[1]/2:]-T0).flatten()
+                #nlh[:, j] += (tmp[:, :tmp.shape[1]/2]-T0).flatten()
+                
+    #                residual[:, n+j] += res[:, 0]
+    #                residual[:, j] += res[:, 1]
+            else:#if not isFiniteT0:
+                #pass
+                # TODO: get rid of it
                 nlh[:, j] += T0.flatten()
                 nlh[:, n+j] += T0.flatten()
-#                residual[:, n+j] += res0[:, 0]
-#                residual[:, j] += res0[:, 0]
-
+    #                residual[:, n+j] += res0[:, 0]
+    #                residual[:, j] += res0[:, 0]
+#            if isFiniteT0:
+#                nlh[:, j] += T0.flatten()
+#                nlh[:, n+j] += T0.flatten()
+            
         ind = where(any(isfinite(nlh), 1))[0]
         lj = ind.size
         if lj != m:
             y = take(y, ind, axis=0, out=y[:lj])
             e = take(e, ind, axis=0, out=e[:lj])
             nlh = take(nlh, ind, axis=0, out=nlh[:lj])
-#            residual = take(residual, ind, axis=0, out=residual[:lj])
+    #            residual = take(residual, ind, axis=0, out=residual[:lj])
             indT = indT[ind]
             if asarray(DefiniteRange).size != 1: 
                 DefiniteRange = take(DefiniteRange, ind, axis=0, out=DefiniteRange[:lj])
@@ -210,14 +217,19 @@ def processConstraints2(C0, y, e, p, dataType):
             nlh_l, nlh_u = nlh[:, nlh.shape[1]/2:], nlh[:, :nlh.shape[1]/2]
             
             # copy() is used because += and -= operators are involved on nlh in this cycle and probably some other computations
-            nlh_l[ind_u], nlh_u[ind_l] = nlh_u[ind_u].copy(), nlh_l[ind_l].copy()
+            nlh_l[ind_u], nlh_u[ind_l] = nlh_u[ind_u].copy(), nlh_l[ind_l].copy()        
+        
             
 #    print nlh
 #    from numpy import diff
 #    print diff(nlh)
+    residual = None
     return y, e, nlh, residual, DefiniteRange, indT
 
-def getTmp(o, a, lb, ub, tol, m, residual, dataType):
+#def updateNLH(c, y, e, nlh, p):
+
+
+def getTmp(o, a, lb, ub, tol, m, dataType):
    
     #print o.shape
     M = prod(o.shape) / (2*m)
@@ -300,6 +312,12 @@ def getTmp(o, a, lb, ub, tol, m, residual, dataType):
     else:
         p.err('this part of interalg code is unimplemented for double-box-bound constraints yet')
         
-    residual /= tol
+    #residual /= tol
     
-    return -log2(tmp), residual
+    # debug
+#    s1, s2 = tmp[tmp==0].size, tmp[tmp==1].size
+#    s1, s2 = s1 / float(tmp.size), s2 / float(tmp.size)
+#    print 'size 0: %0.2f   size 1: %0.2f  rest: %0.2f' % (s1, s2,  1-s1-s2)
+    # debug end
+    
+    return -log2(tmp)

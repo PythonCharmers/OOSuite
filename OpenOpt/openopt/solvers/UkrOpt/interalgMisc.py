@@ -203,18 +203,18 @@ def r45(y, e, vv, p, asdf1, dataType, r41, nlhc):
     if Case == 1:
         ip = func10(y, e, vv)
         #o, a = func8(ip, asdf1 + 1e10*p._cons_obj if p._cons_obj is not None else asdf1, dataType)
-        o, a, definiteRange = func8(ip, asdf1 + p._cons_obj if p._cons_obj is not None else asdf1, dataType)
+        o, a, definiteRange = func8(ip, asdf1, dataType)
     elif Case == 2:
 #        o2, a2, definiteRange2 = func82(y, e, vv, asdf1 + p._cons_obj if p._cons_obj is not None else asdf1, dataType)
 #        o, a, definiteRange = o2, a2, definiteRange2
-        f = asdf1 + p._cons_obj if p._cons_obj is not None else asdf1
+        f = asdf1 
         o, a, definiteRange = func82(y, e, vv, f, dataType, p)
     elif Case == 3:
         # Used for debug
         ip = func10(y, e, vv)
-        o, a, definiteRange = func8(ip, asdf1 + p._cons_obj if p._cons_obj is not None else asdf1, dataType)
+        o, a, definiteRange = func8(ip, asdf1, dataType)
         
-        f = asdf1 + p._cons_obj if p._cons_obj is not None else asdf1
+        f = asdf1
         o2, a2, definiteRange2 = func82(y, e, vv, f, dataType, p)
         from numpy import allclose
         lf, lf2 = o.copy(), o2.copy()

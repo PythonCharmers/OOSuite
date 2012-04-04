@@ -260,23 +260,22 @@ class interalg(baseSolver):
         g = inf
         C = p._FD.nonBoxConsWithTolShift
         C0 = p._FD.nonBoxCons
-        if isOpt:
-            r = []
-            for (elem, lb, ub, tol) in C0:
-                if tol == 0: tol = p.contol
-                if lb == ub:
-                    r.append(fd_max((fd_abs(elem-lb)-tol, 0)) * (fTol/tol))
-                elif lb == -inf:
-                    r.append(fd_max((0, elem-ub-tol)) * (fTol/tol))
-                elif ub == inf:
-                    r.append(fd_max((0, lb-elem-tol)) * (fTol/tol))
-                else:
-                    p.err('finite box constraints are unimplemented for interalg yet')
+#        if isOpt:
+#            r = []
+#            for (elem, lb, ub, tol) in C0:
+#                if tol == 0: tol = p.contol
+#                if lb == ub:
+#                    r.append(fd_max((fd_abs(elem-lb)-tol, 0)) * (fTol/tol))
+#                elif lb == -inf:
+#                    r.append(fd_max((0, elem-ub-tol)) * (fTol/tol))
+#                elif ub == inf:
+#                    r.append(fd_max((0, lb-elem-tol)) * (fTol/tol))
+#                else:
+#                    p.err('finite box constraints are unimplemented for interalg yet')
             #p._cons_obj = 1e100 * fd_sum(r) if len(r) != 0 else None
             #p._cons_obj = fd_sum(r) if len(r) != 0 else None
-            p._cons_obj = None
+
         if isSNLE:
-            p._cons_obj = None # TODO: check it!
             C += [(elem, -(elem.tol if elem.tol != 0 else p.ftol), (elem.tol if elem.tol != 0 else p.ftol)) for elem in p.user.f]
             C0 += [(elem, 0, 0, (elem.tol if elem.tol != 0 else p.ftol)) for elem in p.user.f]
         

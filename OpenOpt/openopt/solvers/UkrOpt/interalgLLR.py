@@ -454,7 +454,8 @@ def func12(an, maxActiveNodes, p, Solutions, vv, varTols, fo):
         if p.probType != 'IP': 
             #nlhc = asarray([t.nlhc for t in an1Candidates])
             indtc = asarray([t.indtc for t in an1Candidates])
-            residual = asarray([t.residual for t in an1Candidates]) 
+            #residual = asarray([t.residual for t in an1Candidates]) 
+            residual = None
             
             yc, ec, indT = func4(yc, ec, oc, ac, fo, tnlhf_curr)
                 

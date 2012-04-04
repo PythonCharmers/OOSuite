@@ -71,7 +71,26 @@ def r43_seq(Arg):
                 #raise('unimplemented yet')    
 #            if any(tmp<0) or any(tmp>1):
 #                raise 0
-        r -= log1p(-tmp) * 1.4426950408889634 # log2(e)
+        
+        # debug
+#        s1, s2 = tmp[tmp==0].size, tmp[tmp==1].size
+#        s1, s2 = s1 / float(tmp.size), s2 / float(tmp.size)
+#        print 'size 0: %0.2f   size 1: %0.2f  rest: %0.2f' % (s1, s2,  1-s1-s2)
+        # debug end
+        new = 0
+        if new:
+            ind_0 = tmp == 0.0
+            ind_1 = tmp == 1.0
+            r[ind_1] = inf
+            ind_m = logical_not(logical_and(ind_0, ind_1))
+            #r[ind_m] -= log1p(-tmp[ind_m]) * 1.4426950408889634
+            r[ind_m] -= log1p(-tmp[ind_m]) * 1.4426950408889634
+            #r20 = log2(1-tmp[ind_m]) #* 1.4426950408889634
+            
+        else:
+            r -= log1p(-tmp) * 1.4426950408889634 # log2(e)
+            
+        #r -= r20
     return r
 
 from multiprocessing import Pool
