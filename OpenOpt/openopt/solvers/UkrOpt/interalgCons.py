@@ -153,8 +153,8 @@ def processConstraints2(C0, y, e, p, dataType):
         
         # using tile to make shape like it was divided into 2 boxes
         # todo: optimize it
-        tmp = getTmp(tile(o, (2, 1)), tile(a, (2, 1)), lb, ub, tol, m, dataType)
-        #tmp, res0 = getTmp(tile(o, (2, 1)), tile(a, (2, 1)), lb, ub, tol, m, zeros((m, 2)), dataType)
+        tmp = getNLH(tile(o, (2, 1)), tile(a, (2, 1)), lb, ub, tol, m, dataType)
+        #tmp, res0 = getNLH(tile(o, (2, 1)), tile(a, (2, 1)), lb, ub, tol, m, zeros((m, 2)), dataType)
         T0 = tmp[:, tmp.shape[1]/2:].flatten()
         #isFiniteT0 = all(isfinite(T0))
         #T0 = tmp
@@ -168,7 +168,7 @@ def processConstraints2(C0, y, e, p, dataType):
                 DefiniteRange = logical_and(DefiniteRange, r[v][0].definiteRange)
                 DefiniteRange = logical_and(DefiniteRange, r[v][1].definiteRange)
                 
-                tmp = getTmp(o, a, lb, ub, tol, m, dataType)
+                tmp = getNLH(o, a, lb, ub, tol, m, dataType)
 
                 nlh[:, n+j] += tmp[:, tmp.shape[1]/2:].flatten()
                 nlh[:, j] += tmp[:, :tmp.shape[1]/2].flatten()
@@ -229,7 +229,7 @@ def processConstraints2(C0, y, e, p, dataType):
 #def updateNLH(c, y, e, nlh, p):
 
 
-def getTmp(o, a, lb, ub, tol, m, dataType):
+def getNLH(o, a, lb, ub, tol, m, dataType):
    
     #print o.shape
     M = prod(o.shape) / (2*m)

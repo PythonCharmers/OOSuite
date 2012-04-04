@@ -31,6 +31,8 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
     
     o, a, r41 = r45(y, e, vv, p, asdf1, dataType, r41, nlhc)
     fo_prev = float(0 if isSNLE else min((r41, r40 - (fTol if maxSolutions == 1 else 0))))
+    if fo_prev > 1e300:
+        fo_prev = 1e300
     y, e, o, a, _s, nlhc, residual = func7(y, e, o, a, _s, nlhc, residual)    
     
     if y.size == 0:

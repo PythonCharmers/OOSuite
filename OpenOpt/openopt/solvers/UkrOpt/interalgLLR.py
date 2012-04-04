@@ -537,6 +537,8 @@ def func11(y, e, nlhc, indTC, residual, o, a, _s, p):
         
         residual = None
         nlhf = log2(asarray(a)-asarray(o))#-log2(p.fTol)
+#        nlhf[a==inf] = 1e300# to make it not inf and nan
+#        nlhf[o==-inf] = 1e300# to make it not inf and nan
         if nlhf.ndim == 3: # in MOP
             nlhf = nlhf.sum(axis=1)
         
