@@ -15,6 +15,12 @@ except ImportError:
 
 Len = lambda x: 1 if isscalar(x) else x.size if type(x)==ndarray else len(x)
 
+def ooMultiPoint(*args, **kw):
+    kw['skipArrayCast'] = True
+    r = ooPoint(*args, **kw)
+    r.isMultiPoint = True
+    return r
+
 class ooPoint(dict):
     _id = 0
     isMultiPoint = False

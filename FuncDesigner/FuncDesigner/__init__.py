@@ -6,7 +6,9 @@ from ooVar import oovar, oovars
 from ooFun import _getAllAttachedConstraints, broadcast, ooarray, ooFun as oofun
 from ooSystem import ooSystem as oosystem
 from translator import FuncDesignerTranslator as ootranslator
-from ooPoint import ooPoint as oopoint
+
+from ooPoint import ooPoint as oopoint, ooMultiPoint 
+
 from sle import sle
 from ode import ode
 from overloads import *

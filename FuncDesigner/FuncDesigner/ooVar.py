@@ -5,6 +5,7 @@ asfarray, isscalar, ndarray, int16, int32, int64, float64, tile, vstack
 from FDmisc import FuncDesignerException, checkSizes
 from ooFun import oofun, Len, ooarray
 
+f_none = lambda *args, **kw: None
 class oovar(oofun):
     is_oovar = True
     domain = None
@@ -21,7 +22,7 @@ class oovar(oofun):
             oovar._unnamedVarNumber += 1
         else:
             kwargs['name'] = name
-        oofun.__init__(self, lambda *ARGS: None, *args, **kwargs)
+        oofun.__init__(self, f_none, *args, **kwargs)
     
     def _interval_(self, domain, dtype = float64):
         tmp = domain.get(self, None)
