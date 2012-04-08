@@ -613,8 +613,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             # FIXME: name of f0 vs f
 #            self._FD.nonBoxConsWithTolShift.append((f0, lb_0 - Contol, ub_0 + Contol))
 #            self._FD.nonBoxCons.append((f0, lb_0, ub_0, Contol))
-            self._FD.nonBoxConsWithTolShift.append((f, _lb - Contol, _ub + Contol))
-            self._FD.nonBoxCons.append((f, _lb, _ub, Contol))
+            self._FD.nonBoxConsWithTolShift.append((c, f, _lb - Contol, _ub + Contol))
+            self._FD.nonBoxCons.append((c, f, _lb, _ub, Contol))
 
 def formDictOfFixedFuncs(oof, dictOfFixedFuncs, areFixed, startPoint):
     dep = set([oof]) if oof.is_oovar else oof._getDep()
