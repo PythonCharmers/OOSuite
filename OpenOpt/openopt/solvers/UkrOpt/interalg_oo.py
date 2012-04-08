@@ -233,7 +233,7 @@ class interalg(baseSolver):
                 self.dataHandling = 'raw'
             else:
                 M = 0
-                for func in [p.user.f[0]] + [Elem[0] for Elem in p._FD.nonBoxCons]:
+                for func in [p.user.f[0]] + [Elem[1] for Elem in p._FD.nonBoxCons]:
                     r = func.interval(domain, self.dataType)
                     M = max((M, max(atleast_1d(abs(r.lb)))))
                     M = max((M, max(atleast_1d(abs(r.ub)))))

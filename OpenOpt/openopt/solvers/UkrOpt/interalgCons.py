@@ -238,7 +238,10 @@ def processConstraints2(C0, y, e, p, dataType):
             # copy() is used because += and -= operators are involved on nlh in this cycle and probably some other computations
             nlh_l[ind_u], nlh_u[ind_l] = nlh_u[ind_u].copy(), nlh_l[ind_l].copy()        
         
-        nlh += tile(nlh_0.reshape(-1, 1), (1, 2*n))
+        # !! matrix - vector
+        nlh += nlh_0.reshape(-1, 1)
+        #nlh += tile(nlh_0.reshape(-1, 1), (1, 2*n))
+        
 #    print nlh
 #    from numpy import diff
 #    print diff(nlh)
