@@ -276,8 +276,8 @@ class interalg(baseSolver):
             #p._cons_obj = fd_sum(r) if len(r) != 0 else None
 
         if isSNLE:
-            C += [(elem, -(elem.tol if elem.tol != 0 else p.ftol), (elem.tol if elem.tol != 0 else p.ftol)) for elem in p.user.f]
-            C0 += [(elem, 0, 0, (elem.tol if elem.tol != 0 else p.ftol)) for elem in p.user.f]
+            C += [(elem==0, elem, -(elem.tol if elem.tol != 0 else p.ftol), (elem.tol if elem.tol != 0 else p.ftol)) for elem in p.user.f]
+            C0 += [(elem==0, elem, 0, 0, (elem.tol if elem.tol != 0 else p.ftol)) for elem in p.user.f]
         
         
         

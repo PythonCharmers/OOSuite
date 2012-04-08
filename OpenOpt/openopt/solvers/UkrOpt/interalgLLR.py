@@ -128,7 +128,7 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p):
     if len(C) != 0:
         r15 = empty(m, bool)
         r15.fill(True)
-        for f, r16, r17 in C:
+        for _c, f, r16, r17 in C:
             c = f(cs)
             ind = logical_and(c  >= r16, c <= r17) # here r16 and r17 are already shifted by required tolerance
             r15 = logical_and(r15, ind)

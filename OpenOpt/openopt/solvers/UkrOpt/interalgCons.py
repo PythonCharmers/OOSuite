@@ -3,6 +3,7 @@ int8, int16, int32, int64, inf, isinf, asfarray, hstack, vstack, prod, all, any,
 from interalgLLR import func8, func10
 from interalgT import adjustDiscreteVarBounds
 from FuncDesigner import oopoint
+from FuncDesigner.ooFun import getSmoothNLH
 
 try:
     from bottleneck import nanargmin, nanmin, nanargmax, nanmax
@@ -127,71 +128,88 @@ def processConstraints2(C0, y, e, p, dataType):
     n = p.n
     m = y.shape[0]
     nlh = zeros((m, 2*n))
-
+    nlh_0 = zeros(m)
+    
     DefiniteRange = True
     indT = empty(m, bool)
     indT.fill(False)
     if len(p._discreteVarsNumList):
         adjustDiscreteVarBounds(y, e, p)
     
-    for f, lb, ub, tol in C0:
+    for c, f, lb, ub, tol in C0:
         m = y.shape[0] # is changed in the cycle
         if m == 0: 
             return y.reshape(0, n), e.reshape(0, n), nlh.reshape(0, 2*n), None, True, False
             #return y.reshape(0, n), e.reshape(0, n), nlh.reshape(0, 2*n), residual.reshape(0, 2*n), True, False
         
         if p.solver.dataHandling == 'sorted': tol = 0
-        
-        domain = oopoint([(v, (y[:, k], e[:, k])) for k, v in enumerate(p._freeVarsList)], skipArrayCast=True)
-        domain.isMultiPoint = True
-        domain.dictOfFixedFuncs = p.dictOfFixedFuncs
-        
-        r, r0 = f.iqg(domain, dataType)
-        dep = f._getDep().intersection(domain.keys()) # TODO: Improve it
-        
-        o, a = r0.lb, r0.ub
-        
-        # using tile to make shape like it was divided into 2 boxes
-        # todo: optimize it
-        tmp = getNLH(tile(o, (2, 1)), tile(a, (2, 1)), lb, ub, tol, m, dataType)
-        #tmp, res0 = getNLH(tile(o, (2, 1)), tile(a, (2, 1)), lb, ub, tol, m, zeros((m, 2)), dataType)
-        T0 = tmp[:, tmp.shape[1]/2:].flatten()
-        #isFiniteT0 = all(isfinite(T0))
-        #T0 = tmp
-        
-        for j, v in enumerate(p._freeVarsList):
-            if v in dep:
-                o, a = vstack((r[v][0].lb, r[v][1].lb)), vstack((r[v][0].ub, r[v][1].ub))
-                
-                # TODO: 1) FIX IT it for matrix definiteRange
-                # 2) seems like DefiniteRange = (True, True) for any variable is enough for whole range to be defined in the involved node
-                DefiniteRange = logical_and(DefiniteRange, r[v][0].definiteRange)
-                DefiniteRange = logical_and(DefiniteRange, r[v][1].definiteRange)
-                
-                tmp = getNLH(o, a, lb, ub, tol, m, dataType)
 
-                nlh[:, n+j] += tmp[:, tmp.shape[1]/2:].flatten()
-                nlh[:, j] += tmp[:, :tmp.shape[1]/2].flatten()
-                
-#                if isFiniteT0:
-#                    nlh[:, n+j] -= T0
-#                    nlh[:, j] -= T0
+        New = 1
+        
+        if New:
+            T0, res, DefiniteRange2 = c.nlh(y, e, p, dataType)
+            DefiniteRange = logical_and(DefiniteRange, DefiniteRange2)
+            # TODO: rework it
+            #T02 = hstack((T0, T0))
+            nlh_0 += T0
+            
+            # TODO: rework it for case len(p._freeVarsList) >> 1
+            for j, v in enumerate(p._freeVarsList):
+                tmp = res.get(v, None)
+                if tmp is None:
+                    pass
+                else:
+                    nlh[:, n+j] += tmp[:, tmp.shape[1]/2:].flatten()
+                    nlh[:, j] += tmp[:, :tmp.shape[1]/2].flatten()
+        else:
+            domain = oopoint([(v, (y[:, k], e[:, k])) for k, v in enumerate(p._freeVarsList)], skipArrayCast=True)
+            domain.isMultiPoint = True
+            domain.dictOfFixedFuncs = p.dictOfFixedFuncs
+            
+            r, r0 = f.iqg(domain, dataType)
+            dep = f._getDep().intersection(domain.keys()) # TODO: Improve it
+            
+            o, a = r0.lb, r0.ub
+            
+            # using tile to make shape like it was divided into 2 boxes
+            # todo: optimize it
+            tmp = getSmoothNLH(tile(o, (2, 1)), tile(a, (2, 1)), lb, ub, tol, m, dataType)
+            #tmp, res0 = getNLH(tile(o, (2, 1)), tile(a, (2, 1)), lb, ub, tol, m, zeros((m, 2)), dataType)
+            T0 = tmp[:, tmp.shape[1]/2:].flatten()
+            #isFiniteT0 = all(isfinite(T0))        
+            for j, v in enumerate(p._freeVarsList):
+                if v in dep:
+                    o, a = vstack((r[v][0].lb, r[v][1].lb)), vstack((r[v][0].ub, r[v][1].ub))
                     
-                #nlh[:, n+j] += (tmp[:, tmp.shape[1]/2:]-T0).flatten()
-                #nlh[:, j] += (tmp[:, :tmp.shape[1]/2]-T0).flatten()
-                
-    #                residual[:, n+j] += res[:, 0]
-    #                residual[:, j] += res[:, 1]
-            else:#if not isFiniteT0:
-                #pass
-                # TODO: get rid of it
-                nlh[:, j] += T0.flatten()
-                nlh[:, n+j] += T0.flatten()
-    #                residual[:, n+j] += res0[:, 0]
-    #                residual[:, j] += res0[:, 0]
-#            if isFiniteT0:
-#                nlh[:, j] += T0.flatten()
-#                nlh[:, n+j] += T0.flatten()
+                    # TODO: 1) FIX IT it for matrix definiteRange
+                    # 2) seems like DefiniteRange = (True, True) for any variable is enough for whole range to be defined in the involved node
+                    DefiniteRange = logical_and(DefiniteRange, r[v][0].definiteRange)
+                    DefiniteRange = logical_and(DefiniteRange, r[v][1].definiteRange)
+                    
+                    tmp = getSmoothNLH(o, a, lb, ub, tol, m, dataType)
+
+                    nlh[:, n+j] += tmp[:, tmp.shape[1]/2:].flatten()
+                    nlh[:, j] += tmp[:, :tmp.shape[1]/2].flatten()
+                    
+    #                if isFiniteT0:
+    #                    nlh[:, n+j] -= T0
+    #                    nlh[:, j] -= T0
+                        
+                    #nlh[:, n+j] += (tmp[:, tmp.shape[1]/2:]-T0).flatten()
+                    #nlh[:, j] += (tmp[:, :tmp.shape[1]/2]-T0).flatten()
+                    
+        #                residual[:, n+j] += res[:, 0]
+        #                residual[:, j] += res[:, 1]
+                else:#if not isFiniteT0:
+                    #pass
+                    # TODO: get rid of it
+                    nlh[:, j] += T0.flatten()
+                    nlh[:, n+j] += T0.flatten()
+        #                residual[:, n+j] += res0[:, 0]
+        #                residual[:, j] += res0[:, 0]
+    #            if isFiniteT0:
+    #                nlh[:, j] += T0.flatten()
+    #                nlh[:, n+j] += T0.flatten()
             
         ind = where(any(isfinite(nlh), 1))[0]
         lj = ind.size
@@ -199,6 +217,7 @@ def processConstraints2(C0, y, e, p, dataType):
             y = take(y, ind, axis=0, out=y[:lj])
             e = take(e, ind, axis=0, out=e[:lj])
             nlh = take(nlh, ind, axis=0, out=nlh[:lj])
+            nlh_0 = nlh_0[ind]
     #            residual = take(residual, ind, axis=0, out=residual[:lj])
             indT = indT[ind]
             if asarray(DefiniteRange).size != 1: 
@@ -219,7 +238,7 @@ def processConstraints2(C0, y, e, p, dataType):
             # copy() is used because += and -= operators are involved on nlh in this cycle and probably some other computations
             nlh_l[ind_u], nlh_u[ind_l] = nlh_u[ind_u].copy(), nlh_l[ind_l].copy()        
         
-            
+        nlh += tile(nlh_0.reshape(-1, 1), (1, 2*n))
 #    print nlh
 #    from numpy import diff
 #    print diff(nlh)
@@ -229,95 +248,4 @@ def processConstraints2(C0, y, e, p, dataType):
 #def updateNLH(c, y, e, nlh, p):
 
 
-def getNLH(o, a, lb, ub, tol, m, dataType):
-   
-    #print o.shape
-    M = prod(o.shape) / (2*m)
-    #init
-    o, a  = o.reshape(2*M, m).T, a.reshape(2*M, m).T
-    #1
-    #o, a  = o.reshape(m, 2*M), a.reshape(m, 2*M)
-    
-    lf1, lf2, uf1, uf2 = o[:, 0:M], o[:, M:2*M], a[:, 0:M], a[:, M:2*M]
-    o_ = where(logical_or(lf1>lf2, isnan(lf1)), lf2, lf1)
-    a_ = where(logical_or(uf1>uf2, isnan(uf2)), uf1, uf2)
-    om, am = nanmin(o_, 1), nanmax(a_, 1)
-    
-    ind = logical_and(am >= lb, om  <= ub)
-        
-    aor20 = a - o
-    if dataType in [int8, int16, int32, int64, int]:
-        aor20 = asfarray(aor20)
-    #aor20[aor20 > 1e200] = 1e200
-    if lb == ub:
-        val = ub
-        
-        ind1, ind2 = val - tol > a, val+tol < o
-#        residual[ind1] += val - tol - a[ind1]
-#        residual[ind2] += o[ind2] - (val + tol)
-        
-        a_t,  o_t = a.copy(), o.copy()
-        if dataType in [int8, int16, int32, int64, int]:
-            a_t,  o_t = asfarray(a_t), asfarray(o_t)
-        
-        
-        a_t[a_t > val + tol] = val + tol
-        o_t[o_t < val - tol] = val - tol
-        r24 = a_t - o_t
-        tmp = r24 / aor20
-        #tmp[tmp>1] = 1
-        tmp[logical_or(isinf(o), isinf(a))] = 1e-10 #  (to prevent inf/inf=nan); TODO: rework it
-        
-        tmp[r24 == 0.0] = 1.0 # may be encountered if a == o, especially for integer probs
-        tmp[tmp<1e-300] = 1e-300 # TODO: improve it
 
-        # TODO: for non-exact interval quality increase nlh while moving from 0.5*(e-y)
-        tmp[val > a+tol] = 0
-        tmp[val < o-tol] = 0
-
-    elif isfinite(lb) and not isfinite(ub):
-        tmp = (a - (lb - tol)) / aor20
-        
-        ind = o < lb-tol
-        #residual[ind] += lb-o[ind]
-        
-        tmp[logical_and(isinf(o), logical_not(isinf(a)))] = 1e-10 # (to prevent inf/inf=nan); TODO: rework it
-        tmp[isinf(a)] = 1-1e-10 # (to prevent inf/inf=nan); TODO: rework it
-        
-        tmp[tmp<1e-300] = 1e-300 # TODO: improve it
-        tmp[tmp>1.0] = 1.0
-        
-        tmp[lb+tol> a] = 0
-        
-        tmp[lb <= o] = 1
-        #tmp[lb <= o] = 1
-        
-    elif isfinite(ub) and not isfinite(lb):
-        tmp = (ub-o+tol) / aor20
-        
-        ind = a > ub+tol
-        #residual[ind] += a[ind]-ub
-        
-        tmp[isinf(o)] = 1-1e-10 # (to prevent inf/inf=nan);TODO: rework it
-        tmp[logical_and(isinf(a), logical_not(isinf(o)))] = 1e-10 # (to prevent inf/inf=nan); TODO: rework it
-        
-        tmp[tmp<1e-300] = 1e-300 # TODO: improve it
-        tmp[tmp>1.0] = 1.0
-        
-        tmp[ub-tol < o] = 0
-        
-        tmp[ub >= a] = 1
-        #tmp[ub >= a] = 1
-
-    else:
-        p.err('this part of interalg code is unimplemented for double-box-bound constraints yet')
-        
-    #residual /= tol
-    
-    # debug
-#    s1, s2 = tmp[tmp==0].size, tmp[tmp==1].size
-#    s1, s2 = s1 / float(tmp.size), s2 / float(tmp.size)
-#    print 'size 0: %0.2f   size 1: %0.2f  rest: %0.2f' % (s1, s2,  1-s1-s2)
-    # debug end
-    
-    return -log2(tmp)
