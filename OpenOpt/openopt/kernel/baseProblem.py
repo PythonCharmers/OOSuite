@@ -492,6 +492,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         self._baseProblemIsPrepared = True
 
     def handleConstraint(self, c, StartPointVars, areFixed, oovD, A, b, Aeq, beq, Z, D_kwargs, LB, UB):
+        #if not isinstance(c, SmoothFDConstraint) and isinstance(c, BooleanOOFun): continue
         probtol = self.contol
         f, tol = c.oofun, c.tol
         _lb, _ub = c.lb, c.ub
@@ -590,8 +591,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             if f.getOrder(self.freeVars, self.fixedVars) < 2:
                 Aeq.append(self._pointDerivative2array(f.D(Z, **D_kwargs)))      
                 beq.append(-f(Z)+_lb)
-            elif self.h is None: self.h = [f+_lb]
-            else: self.h.append(f+_lb)
+            elif self.h is None: self.h = [f-_lb]
+            else: self.h.append(f-_lb)
         elif isfinite(_ub):
             if f.getOrder(self.freeVars, self.fixedVars) < 2:
                 A.append(self._pointDerivative2array(f.D(Z, **D_kwargs)))                       
@@ -602,8 +603,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             if f.getOrder(self.freeVars, self.fixedVars) < 2:
                 A.append(-self._pointDerivative2array(f.D(Z, **D_kwargs)))                       
                 b.append(f(Z) - _lb)                        
-            elif self.c is None: self.c = [- f - _lb]
-            else: self.c.append(- f - _lb)
+            elif self.c is None: self.c = [- f + _lb]
+            else: self.c.append(- f + _lb)
         else:
             self.err('inform OpenOpt developers of the bug')
             
