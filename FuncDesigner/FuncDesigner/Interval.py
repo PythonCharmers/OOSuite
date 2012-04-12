@@ -157,7 +157,7 @@ def adjust_lx_WithDiscreteDomain(Lx, v):
     ind[ind==d.size] -= 1# Is it ever encountered?
 #    ind[ind==d.size-1] -= 1
     Lx[:] = d[ind]
-    Lx[ind3] = Tmp
+    Lx[ind3] = asarray(Tmp, dtype=Lx.dtype)
 
         
 def adjust_ux_WithDiscreteDomain(Ux, v):
@@ -170,4 +170,4 @@ def adjust_ux_WithDiscreteDomain(Ux, v):
     #ind[ind==d.size] -= 1
     ind[ind==0] = 1
     Ux[:] = d[ind-1]
-    Ux[ind3] = Tmp
+    Ux[ind3] = asarray(Tmp, dtype=Ux.dtype)

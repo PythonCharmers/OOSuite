@@ -257,7 +257,8 @@ class oofun:
         domain.useSave = False
         
         r = {}
-        Dep = self._getDep().intersection(domain.keys())
+        Dep = (self._getDep() if not self.is_oovar else set([self])).intersection(domain.keys())
+        #Dep = self._getDep().intersection(domain.keys())
         
         for i, v in enumerate(Dep):
             domain.modificationVar = v
@@ -302,7 +303,7 @@ class oofun:
         if v.domain is not None and array_equal(lb, ub):
             return r0,r0 
 
-        assert dtype in (float, float64, int32),  'other types unimplemented yet'
+        assert dtype in (float, float64, int32, int16),  'other types unimplemented yet'
         middle = 0.5 * (lb+ub)
         
         if v.domain is not None:
@@ -605,7 +606,7 @@ class oofun:
         
         def interval(domain, dtype):
 #            # changes
-            if domain.isMultiPoint and isOtherOOFun and self.is_oovar and self.domain is bool or self.domain is 'bool':
+            if domain.isMultiPoint and isOtherOOFun and self.is_oovar and (self.domain is bool or self.domain is 'bool'):
                 #ind_nz = where(domain[self][1]!=0)[0]
                 lb_ub, definiteRange = other._interval(domain, dtype)
                 n = domain[self][1].size
@@ -954,8 +955,8 @@ class oofun:
         if other in (None, (), []): return False
         #if type(other) in (str, unicode): return False # buggy
         if 'startswith' in dir(other): return False
-        if self.is_oovar and not isinstance(other, oofun):
-            raise FuncDesignerException('Constraints like this: "myOOVar = <some value>" are not implemented yet and are not recommended; for openopt use freeVars / fixedVars instead')
+        #if self.is_oovar and not isinstance(other, oofun):
+            #raise FuncDesignerException('Constraints like this: "myOOVar = <some value>" are not implemented yet and are not recommended; for openopt use freeVars / fixedVars instead')
         r = Constraint(self - other, ub = 0.0, lb = 0.0) # do not perform check for other == 0, copy should be returned, not self!
         return r  
 
@@ -1830,7 +1831,8 @@ class SmoothFDConstraint(BaseFDConstraint):
     def nlh(self, Lx, Ux, p, dataType):
         m = Lx.shape[0] # is changed in the cycle
         if m == 0:
-            return None, None, None
+            assert 0, 'bug in FuncDesigner'
+            #return None, None, None
             
         DefiniteRange = True
         
@@ -1848,8 +1850,10 @@ class SmoothFDConstraint(BaseFDConstraint):
         T02 = tmp
         T0 = T02[:, tmp.shape[1]/2:].flatten()
         
-        dep = self.oofun._getDep().intersection(domain.keys()) # TODO: Improve it
+        dep = (self.oofun._getDep() if not self.oofun.is_oovar else set([self.oofun])).intersection(domain.keys()) # TODO: Improve it
         res = {}
+#        print T0
+#        print '====='
         for v in dep:
             Lf, Uf = vstack((r[v][0].lb, r[v][1].lb)), vstack((r[v][0].ub, r[v][1].ub))
             
@@ -1861,6 +1865,8 @@ class SmoothFDConstraint(BaseFDConstraint):
             tmp = getSmoothNLH(Lf, Uf, self.lb, self.ub, tol, m, dataType) - T02
             tmp[isnan(tmp)] = inf
             res[v] = tmp 
+#            print tmp
+#        print '----'
         return T0, res, DefiniteRange
         
 def getSmoothNLH(Lf, Uf, lb, ub, tol, m, dataType):
@@ -1921,8 +1927,8 @@ def getSmoothNLH(Lf, Uf, lb, ub, tol, m, dataType):
         tmp[tmp<1e-300] = 1e-300 # TODO: improve it
         tmp[tmp>1.0] = 1.0
         
-        #tmp[lb+tol> Uf] = 0
-        tmp[lb > Uf] = 0
+        #tmp[lb-tol> Uf] = 0
+        tmp[lb-tol > Uf] = 0
         
         tmp[lb <= Lf] = 1
         #tmp[lb <= Lf] = 1
@@ -1939,8 +1945,8 @@ def getSmoothNLH(Lf, Uf, lb, ub, tol, m, dataType):
         tmp[tmp<1e-300] = 1e-300 # TODO: improve it
         tmp[tmp>1.0] = 1.0
         
-        #tmp[ub-tol < Lf] = 0
-        tmp[ub < Lf] = 0
+        tmp[ub+tol < Lf] = 0
+        #tmp[ub < Lf] = 0
         
         tmp[ub >= Uf] = 1
         #tmp[ub >= Uf] = 1
