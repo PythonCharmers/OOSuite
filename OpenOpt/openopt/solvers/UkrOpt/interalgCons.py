@@ -150,6 +150,8 @@ def processConstraints2(C0, y, e, p, dataType):
             T0, res, DefiniteRange2 = c.nlh(y, e, p, dataType)
             DefiniteRange = logical_and(DefiniteRange, DefiniteRange2)
             # TODO: rework it
+            T0 = -log2(T0)
+            assert T0.ndim <= 1
             #T02 = hstack((T0, T0))
             nlh_0 += T0
             
@@ -159,8 +161,9 @@ def processConstraints2(C0, y, e, p, dataType):
                 if tmp is None:
                     pass
                 else:
-                    nlh[:, n+j] += tmp[:, tmp.shape[1]/2:].flatten()
-                    nlh[:, j] += tmp[:, :tmp.shape[1]/2].flatten()
+                    tmp = -log2(tmp)
+                    nlh[:, n+j] += tmp[:, tmp.shape[1]/2:].flatten() - T0
+                    nlh[:, j] += tmp[:, :tmp.shape[1]/2].flatten() - T0
         else:
             domain = oopoint([(v, (y[:, k], e[:, k])) for k, v in enumerate(p._freeVarsList)], skipArrayCast=True)
             domain.isMultiPoint = True
@@ -174,8 +177,9 @@ def processConstraints2(C0, y, e, p, dataType):
             # using tile to make shape like it was divided into 2 boxes
             # todo: optimize it
             tmp = getSmoothNLH(tile(o, (2, 1)), tile(a, (2, 1)), lb, ub, tol, m, dataType)
+            #T02 = tmp
             #tmp, res0 = getNLH(tile(o, (2, 1)), tile(a, (2, 1)), lb, ub, tol, m, zeros((m, 2)), dataType)
-            T0 = tmp[:, tmp.shape[1]/2:].flatten()
+            T0 = -log2(tmp[:, tmp.shape[1]/2:].flatten())
             #isFiniteT0 = all(isfinite(T0))        
             for j, v in enumerate(p._freeVarsList):
                 if v in dep:
@@ -186,10 +190,10 @@ def processConstraints2(C0, y, e, p, dataType):
                     DefiniteRange = logical_and(DefiniteRange, r[v][0].definiteRange)
                     DefiniteRange = logical_and(DefiniteRange, r[v][1].definiteRange)
                     
-                    tmp = getSmoothNLH(o, a, lb, ub, tol, m, dataType)
+                    tmp = -log2(getSmoothNLH(o, a, lb, ub, tol, m, dataType))
 
-                    nlh[:, n+j] += tmp[:, tmp.shape[1]/2:].flatten()
-                    nlh[:, j] += tmp[:, :tmp.shape[1]/2].flatten()
+                    nlh[:, n+j] += tmp[:, tmp.shape[1]/2:].flatten() - T0
+                    nlh[:, j] += tmp[:, :tmp.shape[1]/2].flatten() - T0
                     
     #                if isFiniteT0:
     #                    nlh[:, n+j] -= T0
@@ -210,7 +214,12 @@ def processConstraints2(C0, y, e, p, dataType):
     #            if isFiniteT0:
     #                nlh[:, j] += T0.flatten()
     #                nlh[:, n+j] += T0.flatten()
-            
+
+        if New:
+            # !! matrix - vector
+            nlh += nlh_0.reshape(-1, 1)
+            #nlh += tile(nlh_0.reshape(-1, 1), (1, 2*n))
+
         ind = where(any(isfinite(nlh), 1))[0]
         lj = ind.size
         if lj != m:
@@ -238,10 +247,7 @@ def processConstraints2(C0, y, e, p, dataType):
             # copy() is used because += and -= operators are involved on nlh in this cycle and probably some other computations
             nlh_l[ind_u], nlh_u[ind_l] = nlh_u[ind_u].copy(), nlh_l[ind_l].copy()        
         
-        if New:
-            # !! matrix - vector
-            nlh += nlh_0.reshape(-1, 1)
-            #nlh += tile(nlh_0.reshape(-1, 1), (1, 2*n))
+
         
 #    print nlh
 #    from numpy import diff
