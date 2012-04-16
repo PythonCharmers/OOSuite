@@ -8,6 +8,7 @@ from ooSystem import ooSystem as oosystem
 from translator import FuncDesignerTranslator as ootranslator
 
 from ooPoint import ooPoint as oopoint, ooMultiPoint 
+from logic import *
 
 from sle import sle
 from ode import ode

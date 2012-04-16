@@ -1634,77 +1634,107 @@ def _getAllAttachedConstraints(oofuns):
     broadcast(F, oofuns)
     return r
 
-def nlh_and(_input, Lx, Ux, p, dataType):#nlh(self, Lx, Ux, p, dataType)
-    elems_nlh = [(elem.nlh(Lx, Ux, p, dataType) if isinstance(elem, oofun) else 0.0 if elem is True else inf if elem is False else raise_except()) for elem in _input]
-    return PythonSum(elems_nlh)
-    
-#from numpy import log2
-def nlh_or(_input, dep, Lx, Ux, p, dataType):
-    #tmp = [log2(1.0- 2.0 ** (-elem)) for elem in input]
-    #r = -PythonSum(tmp)
+def nlh_and(_input, dep, Lx, Ux, p, dataType):
+    T = None
+    R = {}
     DefiniteRange = True
-    m, n = Lx.shape
-    T0_list = []
-    elems_nlh_list = []
-    Temp = dict([(v, []) for v in dep])
-    for elem in _input:
-        if elem is True:
-            return 0.0, 0.0, True
-            #res = 0.0
-        elif elem is False:
-            pass
-            #T0, res = inf, inf
-            #T0_list.append(T0)
+    
+    elems_nlh = [(elem.nlh(Lx, Ux, p, dataType) if isinstance(elem, oofun) \
+                  else (None, None, None) if elem is True 
+                  else (nan, None, None) if elem is False 
+                  else raise_except()) for elem in _input]
+    
+    for T0, res, DefiniteRange2 in elems_nlh:
+        if T0 is None: continue
+        if all(isnan(T0)):
+            raise 'unimplemented for non-oofun input yet'
+        if T is None:
+            T = 1-T0.copy()
         else:
-            assert isinstance(elem, oofun), 'FuncDesigner bug'
-            T0, res, DefiniteRange2 = elem.nlh(Lx, Ux, p, dataType) 
-            DefiniteRange = logical_and(DefiniteRange, DefiniteRange2)
-            T0_list.append(T0)
-            elems_nlh_list.append(res)
-            #T02 = tile(T0, (2, 1))
-            for v in elem._getDep():
-                #assert all(res[v] + T0.reshape(-1, 1) >= 0)
-                Temp[v].append(log1p(- 2.0 ** (-res[v] - T0.reshape(-1, 1))))
-            #res[isnan(res)] = inf
-        #elems_nlh.append((T0, res))
-    if len(T0_list) == 0:
-        assert 0, 'unimplemented for fixed variables yet'
-    tmp_0 = [log1p(- 2.0 ** (-elem)) for elem in T0_list]
-    Tmp_0 = PythonSum(tmp_0) * 1.4426950408889634 # log2(e)
-    S0 = -log2(1.0 - 2.0 ** Tmp_0)
-    S02 = tile(S0, (2, 1))
-    S = {}
-    for v, val in Temp.items():
-        #tmp = [log1p(- 2.0 ** (-elem))  for elem in val]
-        #tmp = log1p(- 2.0 ** (-PythonSum(val)))
-        tmp = PythonSum([2.0 ** (elem * 1.4426950408889634) for elem in val]) # log2(e)
-        
-        #S[v] = (-S02 + 2 ** PythonSum(tmp).T).T * 1.4426950408889634 # log2(e)
-        S[v] = tmp#.T.T 
-        if not all(S[v]==0):
-            #print S[v]
-            pass        
-#        print S02.shape, S0.shape, PythonSum(tmp).shape, S[v].shape
-#        raise 0
-#    S = dict([(v, ) for v in ])
-    # TODO: rework it
-#    for v in p._freeVarsList:
-#        if v not in dep:
-#            continue 
-        
-        
-    
-    
-    # TODO: rework it
-#    tmp = [log1p(- 2.0 ** (-elem)) for elem in elems_nlh]
-    
-    
-#    r = -PythonSum(tmp) * 1.4426950408889634 # log2(e)
-#    assert not any(isnan(r)), 'bug in FuncDesigner kernel'
-    if not all(S0==0):
-        #print S0
-        pass
-    return S0, S, DefiniteRange
+            if T.shape == T0.shape:
+                T *= 1-T0
+            else:
+                T *= 1-T0.reshape(T.shape)
+        for v, val in res.items():
+            r = R.get(v, None)
+            if r is None:
+                R[v] = 1-val.copy()
+            else:
+                if r.shape == val.shape:
+                    r *= 1-val
+                else:
+                    r *= 1-val.reshape(R[v].shape)
+        DefiniteRange = logical_and(DefiniteRange2, DefiniteRange)
+        for v, val in R.items():
+            R[v] = 1-val
+    return 1-T.flatten(), R, DefiniteRange
+
+
+def nlh_not(_input_bool_oofun, dep, Lx, Ux, p, dataType):
+    if _input_bool_oofun is True or _input_bool_oofun is False:
+        raise 'unimplemented for non-oofun input yet'
+    T0, res, DefiniteRange = _input_bool_oofun.nlh(Lx, Ux, p, dataType)
+    T = 1.0 - T0
+    R = dict([(v, 1.0-val) for v, val in res.items()])
+    return T.flatten(), R, DefiniteRange
+
+
+#    T0, res, DefiniteRange = _input_bool_oofun.nlh(Lx, Ux, p, dataType)
+#    R = {}
+#    #T0[T0==0] = 1e-300
+#    T0 = T0.reshape(-1, 1)
+#    T0_1 = T0 + 1.0
+#    T = 2**(1-log2(T0))
+#    T_1 = 2**(1-log2(T0_1))
+#    T02 = tile(T0, (1, 2))
+#    T02_1 = tile(T0_1, (1, 2))
+#    T2 = tile(T, (1, 2))
+#    T2_1 = tile(T_1, (1, 2))
+#    for v, val in res.items():
+#        tmp = log2(val + T02_1)
+#        tmp = 2**(1-tmp) - T2_1
+#        tmp[isnan(tmp)] = inf # else - buggy results
+#        R[v] = tmp
+#    
+#    return T.flatten(), R, DefiniteRange
+
+
+#def nlh_or(_input, dep, Lx, Ux, p, dataType):
+#    #tmp = [log2(1.0- 2.0 ** (-elem)) for elem in input]
+#    #r = -PythonSum(tmp)
+#    DefiniteRange = True
+#    m, n = Lx.shape
+#    T = None
+#    #elems_nlh_list = []
+#    Temp = dict([(v, []) for v in dep])
+#    for elem in _input:
+#        if elem is True:
+#            raise 'unimplemented for non-oofun input yet'
+#        elif elem is False:
+#            raise 'unimplemented for non-oofun input yet'
+#        else:
+#            assert isinstance(elem, oofun), 'FuncDesigner bug'
+#            T0, res, DefiniteRange2 = elem.nlh(Lx, Ux, p, dataType) 
+#            DefiniteRange = logical_and(DefiniteRange, DefiniteRange2)
+#            if T is None:
+#                T = T0.copy()
+#            else:
+#                T += T0
+#            #T0_list.append(T0)
+#            #elems_nlh_list.append(res)
+#            for v in elem._getDep():
+#                #assert all(res[v] + T0.reshape(-1, 1) >= 0)
+#                #Temp[v].append((log1p(- 2.0 ** (-res[v] - T0.reshape(-1, 1))), T0))
+#                Temp[v].append(log2(1 - 2.0 ** (-res[v] - T0.reshape(-1, 1))) - T0.reshape(-1, 1))
+#            #res[isnan(res)] = inf
+#    if len(T0_list) == 0:
+#        assert 0, 'unimplemented for fixed variables yet'
+#    tmp_0 = [log1p(- 2.0 ** (-elem)) for elem in T0_list]
+#    Tmp_0 = PythonSum(tmp_0) * 1.4426950408889634 # log2(e)
+#    S0 = -log2(1.0 - 2.0 ** Tmp_0)
+#    S = dict([(v, PythonSum(Val)) for v, Val in Temp.items()])
+#
+#    return S0, S, DefiniteRange
 
 
 class BooleanOOFun(oofun):
@@ -1730,30 +1760,36 @@ class BooleanOOFun(oofun):
     
     def __and__(self, other):
         if other is True: return self
-        print('__and__')
+        #print('__and__')
         
         r = BooleanOOFun(logical_and, (self, other), vectorized = True)
-        r.nlh = lambda *args: nlh_and((self, other), *args)
+        r.nlh = lambda *args: nlh_and((self, other), r._getDep(), *args)
         r.oofun = r
         return r
         
     
     def __or__(self, other):
         #if other is False: return self
-        print('__or__')
-        r = BooleanOOFun(logical_or, (self, other), vectorized = True)
-        r.nlh = lambda *args: nlh_or((self, other), r._getDep(), *args)
-        r.oofun = r
-        return r
+        
+        return ~((~self) & (~other))
+        
+#        print('__or__')
+#        r = BooleanOOFun(logical_or, (self, other), vectorized = True)
+#        r.nlh = lambda *args: nlh_or((self, other), r._getDep(), *args)
+#        r.oofun = r
+#        return r
         
     
     def __xor__(self, other):
-        print('__xor__')
+        #print('__xor__')
         return BooleanOOFun(logical_xor, (self, other), vectorized = True)
     
     def __invert__(self):
-        print('__not__')
-        return BooleanOOFun(logical_not, self, vectorized = True)
+        #print('__not__')
+        r = BooleanOOFun(logical_not, self, vectorized = True)
+        r.nlh = lambda *args: nlh_not(self, r._getDep(), *args)
+        r.oofun = r
+        return r
     
 class BaseFDConstraint(BooleanOOFun):
     isConstraint = True
@@ -1862,7 +1898,7 @@ class SmoothFDConstraint(BaseFDConstraint):
             DefiniteRange = logical_and(DefiniteRange, r[v][0].definiteRange)
             DefiniteRange = logical_and(DefiniteRange, r[v][1].definiteRange)
             
-            tmp = getSmoothNLH(Lf, Uf, self.lb, self.ub, tol, m, dataType) - T02
+            tmp = getSmoothNLH(Lf, Uf, self.lb, self.ub, tol, m, dataType) #- T02
             tmp[isnan(tmp)] = inf
             res[v] = tmp 
 #            print tmp
@@ -1954,8 +1990,8 @@ def getSmoothNLH(Lf, Uf, lb, ub, tol, m, dataType):
     else:
         p.err('this part of interalg code is unimplemented for double-box-bound constraints yet')
     #print tmp
-    tmp = -log2(tmp)
-    tmp[isnan(tmp)] = inf # to prevent some issues in disjunctive cons
+    #tmp = -log2(tmp)
+    #tmp[isnan(tmp)] = inf # to prevent some issues in disjunctive cons
     return tmp
 
 class Constraint(SmoothFDConstraint):
