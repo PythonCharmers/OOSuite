@@ -3,12 +3,12 @@ curr_dir = ''.join([elem + os.sep for elem in __file__.split(os.sep)[:-1]])
 sys.path += [curr_dir]
 
 from ooVar import oovar, oovars
-from ooFun import _getAllAttachedConstraints, broadcast, ooarray, ooFun as oofun
+from ooFun import _getAllAttachedConstraints, broadcast, ooarray, ooFun as oofun, AND, OR, NOT
 from ooSystem import ooSystem as oosystem
 from translator import FuncDesignerTranslator as ootranslator
 
 from ooPoint import ooPoint as oopoint, ooMultiPoint 
-from logic import *
+#from logic import *
 
 from sle import sle
 from ode import ode

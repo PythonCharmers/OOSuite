@@ -3,7 +3,8 @@
 from numpy import nan, asarray, isfinite, empty, zeros, inf, any, array, prod, atleast_1d, \
 asfarray, isscalar, ndarray, int16, int32, int64, float64, tile, vstack
 from FDmisc import FuncDesignerException, checkSizes
-from ooFun import oofun, Len, ooarray
+from ooFun import oofun, Len, ooarray, BooleanOOFun, AND, OR, NOT
+#from FuncDesigner.Interval import adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain
 
 f_none = lambda *args, **kw: None
 class oovar(oofun):
@@ -67,6 +68,35 @@ class oovar(oofun):
             raise FuncDesignerException(s)
         
         
+    def nlh(self, Lx, Ux, p, dataType):
+        if self.domain is not bool and self.domain is not 'bool':
+            raise FuncDesignerException('probably you are invoking boolean operation on non-boolean oovar')
+        inds = p._oovarsIndDict.get(self, None)
+        if inds is None:
+            raise FuncDesignerException('probably you are trying to get nlh of fixed oovar, this is unimplemented in FD yet')
+        ind1, ind2 = inds
+        assert ind2-ind1 == 1, 'unimplemented for oovars of size > 1 yet'
+        lx, ux = Lx[:, ind1], Ux[:, ind1]
+        
+        from numpy import logical_or
+        assert all(logical_or(lx==1, lx==0))
+        assert all(logical_or(ux==1, ux==0))
+        
+        m = lx.size
+        T0 = zeros(m)
+        T0[ux != lx] = 0.5 # lx = 0, ux = 1
+        T0[lx == 1.0] = 1.0 # lx = 1 => ux = 1
+        T2 = zeros((m, 2)) 
+        T2[:, 0] = ux == 1
+        T2[:, 1] = lx == 1
+        res = {self:T2}
+        DefiniteRange = True
+        return T0, res, DefiniteRange
+    
+    __and__ = lambda self, other: AND(self, other)
+    __or__ = lambda self, other: OR(self, other)
+    __invert__ = NOT
+    
 #        if isinstance(x, dict):
 #            tmp = x.get(self, None)
 #            if tmp is not None:

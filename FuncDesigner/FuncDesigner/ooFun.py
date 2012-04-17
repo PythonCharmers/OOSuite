@@ -4,6 +4,7 @@ from numpy import inf, asfarray, copy, all, any, empty, atleast_2d, zeros, dot, 
 ones, ndarray, where, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum as npSum, prod, nonzero,\
 isnan, asscalar, zeros_like, ones_like, amin, amax, logical_and, logical_or, isinf, logical_not, logical_xor, flipud, \
 tile, float64, searchsorted, int8, int16, int32, int64, log1p, isfinite, log2
+#from logic import AND
 from traceback import extract_stack 
 try:
     from bottleneck import nanmin, nanmax
@@ -106,6 +107,9 @@ class oofun:
     
     def disp(self, msg): 
         print(msg)
+    
+    def nlh(self):
+        raise FuncDesignerError("probably you have involved boolean operation on continuous function, that is error")
     
     def __getattr__(self, attr):
         if attr == '__len__':
@@ -1744,6 +1748,43 @@ def nlh_not(_input_bool_oofun, dep, Lx, Ux, p, dataType):
 #
 #    return S0, S, DefiniteRange
 
+def AND(*args):
+    Args = args[0] if len(args) == 1 and type(args[0]) in (ooarray, ndarray, tuple, list, set) else args
+    assert not isinstance(args[0], ndarray), 'unimplemented yet' 
+    for arg in Args:
+        if not isinstance(arg, oofun):
+            raise FuncDesignerException('FuncDesigner logical AND currently is implemented for oofun instances only')
+    #if other is True: return self
+    
+    
+    r = BooleanOOFun(logical_and, Args, vectorized = True)
+    r.nlh = lambda *arguments: nlh_and(Args, r._getDep(), *arguments)
+    r.oofun = r
+    return r
+
+def NOT(_bool_oofun):
+    assert not isinstance(_bool_oofun, (ndarray, list, tuple, set)), 'unimplemented yet' 
+    #Args = args[0] if len(args) == 1 and type(args[0]) in (tuple, list, set) else args
+    #Args = args if type(args) in (tuple, list, set) else [args]
+    if not isinstance(_bool_oofun, oofun):
+        raise FuncDesignerException('FuncDesigner logical AND currently is implemented for oofun instances only')
+    #if other is True: return False
+    r = BooleanOOFun(logical_not, [_bool_oofun], vectorized = True)
+    r.nlh = lambda *arguments: nlh_not(_bool_oofun, r._getDep(), *arguments)
+    r.oofun = r
+    return r
+
+def OR(*args):
+    Args = args[0] if len(args) == 1 and isinstance(args[0], (ndarray, list, tuple, set)) else args
+    assert not isinstance(args[0], ndarray), 'unimplemented yet' 
+    for arg in Args:
+        if not isinstance(arg, oofun):
+            raise FuncDesignerException('FuncDesigner logical AND currently is implemented for oofun instances only')
+    
+    r = ~ AND([~elem for elem in Args])
+    #r.fun = np.logical_or
+    r.oofun = r
+    return r
 
 class BooleanOOFun(oofun):
     _unnamedBooleanOOFunNumber = 0
@@ -1754,7 +1795,7 @@ class BooleanOOFun(oofun):
         #self.input = oofun_Involved.input
         BooleanOOFun._unnamedBooleanOOFunNumber += 1
         self.name = 'unnamed_boolean_oofun_' + str(BooleanOOFun._unnamedBooleanOOFunNumber)
-        self.oofun = oofun(lambda *args, **kw: asarray(func(*args, **kw), int8), _input, lb=1, ub=1, vectorized = True)
+        self.oofun = oofun(lambda *args, **kw: asarray(func(*args, **kw), int8), _input, vectorized = True)
         # TODO: THIS SHOULD BE USED IN UP-LEVEL ONLY
         self.lb = self.ub = 1
         
@@ -1767,13 +1808,7 @@ class BooleanOOFun(oofun):
         raise FuncDesignerException('This is virtual method to be overloaded in derived class instance')
     
     def __and__(self, other):
-        if other is True: return self
-        #print('__and__')
-        
-        r = BooleanOOFun(logical_and, (self, other), vectorized = True)
-        r.nlh = lambda *args: nlh_and((self, other), r._getDep(), *args)
-        r.oofun = r
-        return r
+        return AND(self, other)
         
     
     def __or__(self, other):
