@@ -1655,7 +1655,7 @@ def nlh_and(_input, dep, Lx, Ux, p, dataType):
         T_0_vect = T0.reshape(-1, 1)
         #assert not any(T0==0)
         if P_0 is None:
-            P_0 = T0
+            P_0 = T0.copy()
         else:
             if P_0.shape == T0.shape:
                 P_0 *= T0
@@ -1664,7 +1664,7 @@ def nlh_and(_input, dep, Lx, Ux, p, dataType):
         for v, val in res.items():
             r = R.get(v, None)
             if r is None:
-                tmp = val.copy() / T_0_vect
+                tmp = val / T_0_vect
                 R[v] = tmp
             else:
                 if r.shape == val.shape:
@@ -1690,63 +1690,6 @@ def nlh_not(_input_bool_oofun, dep, Lx, Ux, p, dataType):
     R = dict([(v, 1.0-val) for v, val in res.items()])
     return T.flatten(), R, DefiniteRange
 
-
-#    T0, res, DefiniteRange = _input_bool_oofun.nlh(Lx, Ux, p, dataType)
-#    R = {}
-#    #T0[T0==0] = 1e-300
-#    T0 = T0.reshape(-1, 1)
-#    T0_1 = T0 + 1.0
-#    T = 2**(1-log2(T0))
-#    T_1 = 2**(1-log2(T0_1))
-#    T02 = tile(T0, (1, 2))
-#    T02_1 = tile(T0_1, (1, 2))
-#    T2 = tile(T, (1, 2))
-#    T2_1 = tile(T_1, (1, 2))
-#    for v, val in res.items():
-#        tmp = log2(val + T02_1)
-#        tmp = 2**(1-tmp) - T2_1
-#        tmp[isnan(tmp)] = inf # else - buggy results
-#        R[v] = tmp
-#    
-#    return T.flatten(), R, DefiniteRange
-
-
-#def nlh_or(_input, dep, Lx, Ux, p, dataType):
-#    #tmp = [log2(1.0- 2.0 ** (-elem)) for elem in input]
-#    #r = -PythonSum(tmp)
-#    DefiniteRange = True
-#    m, n = Lx.shape
-#    T = None
-#    #elems_nlh_list = []
-#    Temp = dict([(v, []) for v in dep])
-#    for elem in _input:
-#        if elem is True:
-#            raise 'unimplemented for non-oofun input yet'
-#        elif elem is False:
-#            raise 'unimplemented for non-oofun input yet'
-#        else:
-#            assert isinstance(elem, oofun), 'FuncDesigner bug'
-#            T0, res, DefiniteRange2 = elem.nlh(Lx, Ux, p, dataType) 
-#            DefiniteRange = logical_and(DefiniteRange, DefiniteRange2)
-#            if T is None:
-#                T = T0.copy()
-#            else:
-#                T += T0
-#            #T0_list.append(T0)
-#            #elems_nlh_list.append(res)
-#            for v in elem._getDep():
-#                #assert all(res[v] + T0.reshape(-1, 1) >= 0)
-#                #Temp[v].append((log1p(- 2.0 ** (-res[v] - T0.reshape(-1, 1))), T0))
-#                Temp[v].append(log2(1 - 2.0 ** (-res[v] - T0.reshape(-1, 1))) - T0.reshape(-1, 1))
-#            #res[isnan(res)] = inf
-#    if len(T0_list) == 0:
-#        assert 0, 'unimplemented for fixed variables yet'
-#    tmp_0 = [log1p(- 2.0 ** (-elem)) for elem in T0_list]
-#    Tmp_0 = PythonSum(tmp_0) * 1.4426950408889634 # log2(e)
-#    S0 = -log2(1.0 - 2.0 ** Tmp_0)
-#    S = dict([(v, PythonSum(Val)) for v, Val in Temp.items()])
-#
-#    return S0, S, DefiniteRange
 
 def AND(*args):
     Args = args[0] if len(args) == 1 and type(args[0]) in (ooarray, ndarray, tuple, list, set) else args
