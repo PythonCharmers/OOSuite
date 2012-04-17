@@ -4,6 +4,7 @@ from interalgLLR import func8, func10
 from interalgT import adjustDiscreteVarBounds
 from FuncDesigner import oopoint
 from FuncDesigner.ooFun import getSmoothNLH
+from FuncDesigner.Interval import adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain
 
 try:
     from bottleneck import nanargmin, nanmin, nanargmax, nanmax
@@ -147,6 +148,9 @@ def processConstraints2(C0, y, e, p, dataType):
         New = 1
         
         if New:
+#            for v in p._discreteVarsList:
+#                adjust_ux_WithDiscreteDomain(e, v)
+#                adjust_lx_WithDiscreteDomain(y, v)
             T0, res, DefiniteRange2 = c.nlh(y, e, p, dataType)
             DefiniteRange = logical_and(DefiniteRange, DefiniteRange2)
             # TODO: rework it
@@ -238,8 +242,11 @@ def processConstraints2(C0, y, e, p, dataType):
             ind_l,  ind_u = ind[:, :ind.shape[1]/2], ind[:, ind.shape[1]/2:]
             y[ind_l], e[ind_u] = 0.5 * (y[ind_l] + e[ind_l]), 0.5 * (y[ind_u] + e[ind_u])
             # TODO: mb implement it
-            #if len(p._discreteVarsNumList):
-                #adjustDiscreteVarBounds(y[ind], e[ind], p)
+            if len(p._discreteVarsNumList):
+                if y[ind_l].ndim > 1:
+                    adjustDiscreteVarBounds(y[ind_l], e[ind_u], p)
+                else:
+                    adjustDiscreteVarBounds(y, e, p)
                 #adjustDiscreteVarBounds(y, e, p)
             
             nlh_l, nlh_u = nlh[:, nlh.shape[1]/2:], nlh[:, :nlh.shape[1]/2]
