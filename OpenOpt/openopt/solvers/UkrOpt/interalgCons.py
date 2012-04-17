@@ -219,7 +219,10 @@ def processConstraints2(C0, y, e, p, dataType):
     #                nlh[:, j] += T0.flatten()
     #                nlh[:, n+j] += T0.flatten()
 
-
+        if New:
+            # !! matrix - vector
+            nlh += nlh_0.reshape(-1, 1)
+            #nlh += tile(nlh_0.reshape(-1, 1), (1, 2*n))
 
         ind = where(any(isfinite(nlh), 1))[0]
         lj = ind.size
@@ -232,29 +235,26 @@ def processConstraints2(C0, y, e, p, dataType):
             indT = indT[ind]
             if asarray(DefiniteRange).size != 1: 
                 DefiniteRange = take(DefiniteRange, ind, axis=0, out=DefiniteRange[:lj])
-                
+
         ind = logical_not(isfinite((nlh)))
         if any(ind):
             indT[any(ind, 1)] = True
             ind_l,  ind_u = ind[:, :ind.shape[1]/2], ind[:, ind.shape[1]/2:]
             y[ind_l], e[ind_u] = 0.5 * (y[ind_l] + e[ind_l]), 0.5 * (y[ind_u] + e[ind_u])
             # TODO: mb implement it
-            if len(p._discreteVarsNumList):
-                if y[ind_l].ndim > 1:
-                    adjustDiscreteVarBounds(y[ind_l], e[ind_u], p)
-                else:
-                    adjustDiscreteVarBounds(y, e, p)
-                #adjustDiscreteVarBounds(y, e, p)
+#            if len(p._discreteVarsNumList):
+##                if y[ind_l].ndim > 1:
+##                    adjustDiscreteVarBounds(y[ind_l], e[ind_u], p)
+##                else:
+##                    adjustDiscreteVarBounds(y, e, p)
+#                adjustDiscreteVarBounds(y, e, p)
             
             nlh_l, nlh_u = nlh[:, nlh.shape[1]/2:], nlh[:, :nlh.shape[1]/2]
             
             # copy() is used because += and -= operators are involved on nlh in this cycle and probably some other computations
             nlh_l[ind_u], nlh_u[ind_l] = nlh_u[ind_u].copy(), nlh_l[ind_l].copy()        
         
-    if New:
-        # !! matrix - vector
-        nlh += nlh_0.reshape(-1, 1)
-        #nlh += tile(nlh_0.reshape(-1, 1), (1, 2*n))
+
         
 #    print nlh
 #    from numpy import diff
