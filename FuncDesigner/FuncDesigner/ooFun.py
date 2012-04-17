@@ -1635,7 +1635,7 @@ def _getAllAttachedConstraints(oofuns):
     return r
 
 def nlh_and(_input, dep, Lx, Ux, p, dataType):
-    T = None
+    P_0 = None
     R = {}
     DefiniteRange = True
     
@@ -1648,26 +1648,34 @@ def nlh_and(_input, dep, Lx, Ux, p, dataType):
         if T0 is None: continue
         if all(isnan(T0)):
             raise 'unimplemented for non-oofun input yet'
-        if T is None:
-            T = 1-T0.copy()
+        T_0_vect = T0.reshape(-1, 1)
+        #assert not any(T0==0)
+        if P_0 is None:
+            P_0 = T0
         else:
-            if T.shape == T0.shape:
-                T *= 1-T0
+            if P_0.shape == T0.shape:
+                P_0 *= T0
             else:
-                T *= 1-T0.reshape(T.shape)
+                P_0 *= T0.reshape(P_0.shape)
         for v, val in res.items():
             r = R.get(v, None)
             if r is None:
-                R[v] = 1-val.copy()
+                tmp = val.copy() / T_0_vect
+                R[v] = tmp
             else:
                 if r.shape == val.shape:
-                    r *= 1-val
+                    tmp = val / T_0_vect
                 else:
-                    r *= 1-val.reshape(R[v].shape)
+                    tmp = val.reshape(r.shape) / T_0_vect
+                r *= tmp
         DefiniteRange = logical_and(DefiniteRange2, DefiniteRange)
-        for v, val in R.items():
-            R[v] = 1-val
-    return 1-T.flatten(), R, DefiniteRange
+    for v, val in R.items():
+        
+        # TODO: check it
+        val[isnan(val)] = 0
+        
+        R[v] =  val * P_0.reshape(-1, 1)
+    return P_0.flatten(), R, DefiniteRange
 
 
 def nlh_not(_input_bool_oofun, dep, Lx, Ux, p, dataType):
@@ -1899,7 +1907,7 @@ class SmoothFDConstraint(BaseFDConstraint):
             DefiniteRange = logical_and(DefiniteRange, r[v][1].definiteRange)
             
             tmp = getSmoothNLH(Lf, Uf, self.lb, self.ub, tol, m, dataType) #- T02
-            tmp[isnan(tmp)] = inf
+            tmp[isnan(tmp)] = 0.0
             res[v] = tmp 
 #            print tmp
 #        print '----'
@@ -1922,7 +1930,7 @@ def getSmoothNLH(Lf, Uf, lb, ub, tol, m, dataType):
     ind = logical_and(Ufm >= lb, Lfm  <= ub)
         
     UfLfDiff = Uf - Lf
-    if dataType in [int8, int16, int32, int64, int]:
+    if UfLfDiff.dtype.type in [int8, int16, int32, int64, int]:
         UfLfDiff = asfarray(UfLfDiff)
     #UfLfDiff[UfLfDiff > 1e200] = 1e200
     if lb == ub:
@@ -1933,7 +1941,7 @@ def getSmoothNLH(Lf, Uf, lb, ub, tol, m, dataType):
 #        residual[ind2] += Lf[ind2] - (val + tol)
         
         Uf_t,  Lf_t = Uf.copy(), Lf.copy()
-        if dataType in [int8, int16, int32, int64, int]:
+        if Uf.dtype.type in [int8, int16, int32, int64, int] or Lf.dtype.type in [int8, int16, int32, int64, int]:
             Uf_t,  Lf_t = asfarray(Uf_t), asfarray(Lf_t)
         
         
