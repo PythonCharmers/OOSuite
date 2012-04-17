@@ -219,10 +219,7 @@ def processConstraints2(C0, y, e, p, dataType):
     #                nlh[:, j] += T0.flatten()
     #                nlh[:, n+j] += T0.flatten()
 
-        if New:
-            # !! matrix - vector
-            nlh += nlh_0.reshape(-1, 1)
-            #nlh += tile(nlh_0.reshape(-1, 1), (1, 2*n))
+
 
         ind = where(any(isfinite(nlh), 1))[0]
         lj = ind.size
@@ -254,7 +251,10 @@ def processConstraints2(C0, y, e, p, dataType):
             # copy() is used because += and -= operators are involved on nlh in this cycle and probably some other computations
             nlh_l[ind_u], nlh_u[ind_l] = nlh_u[ind_u].copy(), nlh_l[ind_l].copy()        
         
-
+    if New:
+        # !! matrix - vector
+        nlh += nlh_0.reshape(-1, 1)
+        #nlh += tile(nlh_0.reshape(-1, 1), (1, 2*n))
         
 #    print nlh
 #    from numpy import diff
