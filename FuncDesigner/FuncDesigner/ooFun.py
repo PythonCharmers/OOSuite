@@ -1653,7 +1653,7 @@ def nlh_and(_input, dep, Lx, Ux, p, dataType):
         if all(isnan(T0)):
             raise 'unimplemented for non-oofun input yet'
         T_0_vect = T0.reshape(-1, 1)
-        #assert not any(T0==0)
+        
         if P_0 is None:
             P_0 = T0.copy()
         else:
@@ -1664,19 +1664,15 @@ def nlh_and(_input, dep, Lx, Ux, p, dataType):
         for v, val in res.items():
             r = R.get(v, None)
             if r is None:
-                tmp = val / T_0_vect
-                R[v] = tmp
+                R[v] = val / T_0_vect
             else:
-                if r.shape == val.shape:
-                    tmp = val / T_0_vect
-                else:
-                    tmp = val.reshape(r.shape) / T_0_vect
-                r *= tmp
+                r *= (val if r.shape == val.shape else val.reshape(r.shape)) / T_0_vect
         DefiniteRange = logical_and(DefiniteRange2, DefiniteRange)
     for v, val in R.items():
         
         # TODO: check it
         val[isnan(val)] = 0
+        #assert all(isfinite(val))
         
         R[v] =  val * P_0.reshape(-1, 1)
     return P_0.flatten(), R, DefiniteRange

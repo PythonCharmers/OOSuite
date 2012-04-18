@@ -78,17 +78,22 @@ class oovar(oofun):
         assert ind2-ind1 == 1, 'unimplemented for oovars of size > 1 yet'
         lx, ux = Lx[:, ind1], Ux[:, ind1]
         
-        from numpy import logical_or
-        assert all(logical_or(lx==1, lx==0))
-        assert all(logical_or(ux==1, ux==0))
+#        from numpy import logical_or
+#        assert all(logical_or(lx==1, lx==0))
+#        assert all(logical_or(ux==1, ux==0))
         
         m = lx.size
+        
         T0 = zeros(m)
         T0[ux != lx] = 0.5 # lx = 0, ux = 1
+        #T0[ux > 0.5+ lx] = 0.5
         T0[lx == 1.0] = 1.0 # lx = 1 => ux = 1
+        #T0[lx >= 0.4] = 1.0
+        
         T2 = zeros((m, 2)) 
-        T2[:, 0] = ux == 1
-        T2[:, 1] = lx == 1
+        T2[:, 0] = lx == 1
+        T2[:, 1] = ux == 1
+        
         res = {self:T2}
         DefiniteRange = True
         return T0, res, DefiniteRange
