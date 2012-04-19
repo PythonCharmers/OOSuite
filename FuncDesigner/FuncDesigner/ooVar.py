@@ -1,7 +1,7 @@
 # created by Dmitrey
 
 from numpy import nan, asarray, isfinite, empty, zeros, inf, any, array, prod, atleast_1d, \
-asfarray, isscalar, ndarray, int16, int32, int64, float64, tile, vstack
+asfarray, isscalar, ndarray, int16, int32, int64, float64, tile, vstack, searchsorted, logical_or, where
 from FDmisc import FuncDesignerException, checkSizes
 from ooFun import oofun, Len, ooarray, BooleanOOFun, AND, OR, NOT
 #from FuncDesigner.Interval import adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain
@@ -68,8 +68,11 @@ class oovar(oofun):
             raise FuncDesignerException(s)
         
         
-    def nlh(self, Lx, Ux, p, dataType):
-        if self.domain is not bool and self.domain is not 'bool':
+    def nlh(self, Lx, Ux, p, dataType, other=None):
+        d = self.domain
+        if d is None:
+            raise FuncDesignerException('probably you are invoking boolean operation on continuous oovar')
+        if d is int or d is 'int':
             raise FuncDesignerException('probably you are invoking boolean operation on non-boolean oovar')
         inds = p._oovarsIndDict.get(self, None)
         if inds is None:
@@ -85,15 +88,42 @@ class oovar(oofun):
         m = lx.size
         
         T0 = zeros(m)
-        T0[ux != lx] = 0.5 # lx = 0, ux = 1
-        #T0[ux > 0.5+ lx] = 0.5
-        T0[lx == 1.0] = 1.0 # lx = 1 => ux = 1
-        #T0[lx >= 0.4] = 1.0
-        
         T2 = zeros((m, 2)) 
-        T2[:, 0] = lx == 1
-        T2[:, 1] = ux == 1
         
+        if d is bool or d is 'bool':
+            T0[ux != lx] = 0.5 # lx = 0, ux = 1
+            T0[lx == 1.0] = 1.0 # lx = 1 => ux = 1
+            T2[:, 0] = lx == 1
+            T2[:, 1] = ux == 1
+        else:
+            assert other is not None, 'bug in FD kernel: called nlh with incorrect domain type'
+            sd = d.size
+            mx = 0.5 * (lx + ux)
+            I = searchsorted(d, lx, 'left')
+            I1 = searchsorted(d, mx, 'left')
+            I2 = I1#searchsorted(d, mx, 'left')
+            I3 = searchsorted(d, ux, 'left')
+#            I1[I1==d.size] -= 1
+#            I3[I3==d.size] -= 1
+#            I = searchsorted(d, lx, 'left')
+#            I1 = searchsorted(d, mx, 'left')
+#            I2 = searchsorted(d, ux, 'left')
+            
+            d1, d2 = d[I], d[where(I1==sd, sd-1, I)]
+            tmp = 1.0 / (I1-I+where(d2==other, 1, 0))
+            tmp[logical_or(other<d1, other>d2)] = 0
+            T2[:, 0] = tmp
+            
+            d1, d2 = d[I1], d[where(I3==sd, sd-1, I3)]
+            tmp = 1.0 / (I3-I1+where(d2==other, 1, 0))
+            tmp[logical_or(other<d1, other>d2)] = 0
+            T2[:, 1] = tmp
+            
+            d1, d2 = d[I], d[where(I3==sd, sd-1, I3)]
+            tmp = 1.0 / (I3-I+where(d2==other, 1, 0))
+            tmp[logical_or(other<d1, other>d2)] = 0
+            T0 = tmp
+
         res = {self:T2}
         DefiniteRange = True
         return T0, res, DefiniteRange

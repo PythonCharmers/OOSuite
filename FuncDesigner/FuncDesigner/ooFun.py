@@ -10,12 +10,10 @@ try:
     from bottleneck import nanmin, nanmax
 except ImportError:
     from numpy import nanmin, nanmax
-#from numpy import nanmin, nanmax
 
 from numpy.linalg import norm
 from FDmisc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scipyInstalled, \
 raise_except, DiagonalType
-#from copy import deepcopy
 from ooPoint import ooPoint
 from Interval import Interval, adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain
 import inspect
@@ -98,7 +96,6 @@ class oofun:
     _f_val_prev = None
     _d_key_prev = None
     _d_val_prev = None
-    #_c = 0.0
     __array_priority__ = 15# set it greater than 1 to prevent invoking numpy array __mul__ etc
     
     hasDefiniteRange = True
@@ -159,10 +156,6 @@ class oofun:
                     elem._usedIn += 1
                     levels.append(elem._level)
             self._level = max(levels)+1
-            
-
-
-        
 
     __hash__ = lambda self: self._id
     
@@ -744,7 +737,7 @@ class oofun:
                 if any(ind):
                     isNonInteger = other != asarray(other, int) # TODO: rational numbers?
                     
-                    # TODo: rework it properly, with matrix operations
+                    # TODO: rework it properly, with matrix operations
                     if any(isNonInteger):
                         definiteRange = False
                     
@@ -962,6 +955,13 @@ class oofun:
         #if self.is_oovar and not isinstance(other, oofun):
             #raise FuncDesignerException('Constraints like this: "myOOVar = <some value>" are not implemented yet and are not recommended; for openopt use freeVars / fixedVars instead')
         r = Constraint(self - other, ub = 0.0, lb = 0.0) # do not perform check for other == 0, copy should be returned, not self!
+        if self.is_oovar and isscalar(other) and self.domain is not None:
+            if self.domain is bool or self.domain is 'bool':
+                if other not in [0, 1]:
+                    raise FuncDesignerException('bool oovar can be compared with 0 or 1 only')
+                r.nlh = self.nlh if other == 1.0 else (~self).nlh
+            elif self.domain is not int and self.domain is not 'int':
+                r.nlh = lambda Lx, Ux, p, dataType: self.nlh(Lx, Ux, p, dataType, other)
         return r  
 
 
@@ -1637,6 +1637,14 @@ def _getAllAttachedConstraints(oofuns):
         r.update(oof.attachedConstraints)
     broadcast(F, oofuns)
     return r
+
+
+#def discreteNLH(_input_bool_oofun, Lx, Ux, p, dataType):
+#    
+#    T0, res, DefiniteRange = _input_bool_oofun.nlh(Lx, Ux, p, dataType)
+#    #T = 1.0 - T0
+#    #R = dict([(v, 1.0-val) for v, val in res.items()])
+#    return T.flatten(), R, DefiniteRange
 
 def nlh_and(_input, dep, Lx, Ux, p, dataType):
     P_0 = None
