@@ -169,31 +169,35 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p):
         #print F
         return atleast_1d(F) , wr4
 
-A = array([0, 1])
+
 def adjustr4WithDiscreteVariables(wr4, p):
     for i in p._discreteVarsNumList:
         v = p._freeVarsList[i]
-        tmp = wr4[:, i]
-        d = v.domain if v.domain is not 'bool' and v.domain is not bool else A
-        ind = searchsorted(d, tmp, side='left')
-        ind2 = searchsorted(d, tmp, side='right')
-        ind3 = where(ind!=ind2)[0]
-        Tmp = tmp[ind3].copy()
         
-        ind[ind==d.size] -= 1 # may be due to roundoff errors
-        ind[ind==1] = 0
-        ind2[ind2==d.size] -=1
-        ind2[ind2==0] = 1 # may be due to roundoff errors
-        tmp1 = asarray(d[ind], p.solver.dataType)
-        tmp2 = asarray(d[ind2], p.solver.dataType)
-        if Tmp.size!=0:
-            if str(tmp1.dtype).startswith('int'):
-                Tmp = asarray(Tmp, p.solver.dataType)
-            tmp2[ind3] = Tmp.copy()
-            tmp1[ind3] = Tmp.copy()
-        tmp = where(abs(tmp-tmp1)<abs(tmp-tmp2), tmp1, tmp2)
-        #print max(abs(tmp-tmp1)), max(abs(tmp-tmp2))
-        wr4[:, i] = tmp
+        if v.domain is bool or v.domain is 'bool':
+            wr4[:, i] = where(wr4[:, i]<0.5, 0, 1)
+        else:
+            tmp = wr4[:, i]
+            d = v.domain 
+            ind = searchsorted(d, tmp, side='left')
+            ind2 = searchsorted(d, tmp, side='right')
+            ind3 = where(ind!=ind2)[0]
+            Tmp = tmp[ind3].copy()
+            
+            ind[ind==d.size] -= 1 # may be due to roundoff errors
+            ind[ind==1] = 0
+            ind2[ind2==d.size] -=1
+            ind2[ind2==0] = 1 # may be due to roundoff errors
+            tmp1 = asarray(d[ind], p.solver.dataType)
+            tmp2 = asarray(d[ind2], p.solver.dataType)
+            if Tmp.size!=0:
+                if str(tmp1.dtype).startswith('int'):
+                    Tmp = asarray(Tmp, p.solver.dataType)
+                tmp2[ind3] = Tmp.copy()
+                tmp1[ind3] = Tmp.copy()
+            tmp = where(abs(tmp-tmp1)<abs(tmp-tmp2), tmp1, tmp2)
+            #print max(abs(tmp-tmp1)), max(abs(tmp-tmp2))
+            wr4[:, i] = tmp
     #print where(wr4==0)[0].size, where(wr4==1)[0].size
 
 def r2(PointVals, PointCoords, dataType):
