@@ -100,26 +100,22 @@ class oovar(oofun):
             sd = d.size
             mx = 0.5 * (lx + ux)
             I = searchsorted(d, lx, 'left')
-            I1 = searchsorted(d, mx, 'left')
-            I2 = I1#searchsorted(d, mx, 'left')
-            I3 = searchsorted(d, ux, 'left')
-#            I1[I1==d.size] -= 1
-#            I3[I3==d.size] -= 1
-#            I = searchsorted(d, lx, 'left')
-#            I1 = searchsorted(d, mx, 'left')
-#            I2 = searchsorted(d, ux, 'left')
+            J = searchsorted(d, mx, 'left')
+            K = searchsorted(d, ux, 'left')
+
+            D0, D1, D2 = d[I], d[J], d[K]
             
-            d1, d2 = d[I], d[where(I1==sd, sd-1, I)]
+            d1, d2 = D0, D1
             tmp = 1.0 / (I1-I+where(d2==other, 1, 0))
             tmp[logical_or(other<d1, other>d2)] = 0
             T2[:, 0] = tmp
             
-            d1, d2 = d[I1], d[where(I3==sd, sd-1, I3)]
+            d1, d2 = D1, D2
             tmp = 1.0 / (I3-I1+where(d2==other, 1, 0))
             tmp[logical_or(other<d1, other>d2)] = 0
             T2[:, 1] = tmp
             
-            d1, d2 = d[I], d[where(I3==sd, sd-1, I3)]
+            d1, d2 = D0, D2
             tmp = 1.0 / (I3-I+where(d2==other, 1, 0))
             tmp[logical_or(other<d1, other>d2)] = 0
             T0 = tmp
