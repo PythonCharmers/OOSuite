@@ -65,6 +65,11 @@ class MOP(NonLinProblem):
         else:
             keyfunc = lambda elem: abs(T0.val - elem[T0.func])
         r.solutions.sort(key=keyfunc)
+        for v in self._categoricalVars:
+            for elem in r.solutions:
+                elem.useAsMutable = True
+                elem[v] = v.aux_domain[elem[v]]
+                elem.useAsMutable = False
         return r
 
     def _plot(self, **kw):

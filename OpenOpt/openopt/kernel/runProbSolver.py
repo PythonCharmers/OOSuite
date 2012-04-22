@@ -419,9 +419,10 @@ class OpenOptResult:
             self.eigenvalues, self.eigenvectors = p.eigenvalues, p.eigenvectors
               
         if p.isFDmodel:
-            self.xf = dict([(v, asscalar(val) if isinstance(val, ndarray) and val.size ==1 else val) for v, val in p.xf.items()])
+            self.xf = dict([(v, asscalar(val) if isinstance(val, ndarray) and val.size ==1 else v.aux_domain[val] if 'aux_domain' in v.__dict__ else val) for v, val in p.xf.items()])
             if not hasattr(self, '_xf'):
-                self._xf = dict([(v.name, asscalar(val) if isinstance(val, ndarray) and val.size ==1 else val) for v, val in p.xf.items()])
+                #self._xf = dict([(v.name, asscalar(val) if isinstance(val, ndarray) and val.size ==1 else val) for v, val in p.xf.items()])
+                self._xf = dict([(v.name, val) for v, val in self.xf.items()])
         else:
             self.xf = p.xf
         #if len(p.solutions) == 0 and p.isFeas(p.xk): p.solutions = [p.xk]

@@ -336,15 +336,21 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             if not isinstance(self.x0, dict):
                 self.err('Unexpected start point type: ooPoint or Python dict expected, '+ str(type(self.x0)) + ' obtained')
             
-            if not all([not isinstance(val, (list, tuple, ndarray)) or len(val) == 1 for val in self.x0.values()]):
-                tmp = []
-                for key, val in self.x0.items():
-                    if not isinstance(key, (list, tuple, ndarray)):
-                        tmp.append((key, val))
-                    else:
-                        for i in range(len(val)):
-                            tmp.append((key[i], val[i]))
-                self.x0 = dict(tmp)
+            #if not all([not isinstance(val, (list, tuple, ndarray)) or len(val) == 1 for val in self.x0.values()]):
+            tmp = []
+            for key, val in self.x0.items():
+                if not isinstance(key, (list, tuple, ndarray)):
+                    tmp.append((key, val))
+                else:
+                    for i in range(len(val)):
+                        tmp.append((key[i], val[i]))
+            self.x0 = dict(tmp)
+            self._categoricalVars = set()
+            for key, val in self.x0.items():
+                if type(val) in (str, unicode, string_):
+                    self._categoricalVars.add(key)
+                    key.formAuxDomain()
+                    self.x0[key] = searchsorted(key.aux_domain, val, 'left')
             
             self.x0 = oopoint(self.x0)
             
@@ -369,11 +375,14 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             #Z = self._vector2point(zeros(self.n))
             if len(self._fixedVars) < len(self._freeVars):
                 areFixed = lambda dep: dep.issubset(self._fixedVars)
+                isFixed = lambda v: v in self._fixedVars
                 Z = dict([(v, zeros_like(self._x0[v]) if v not in self._fixedVars else self._x0[v]) for v in self._x0.keys()])
             else:
                 areFixed = lambda dep: dep.isdisjoint(self._freeVars)
+                isFixed = lambda v: v not in self._freeVars
                 Z = dict([(v, zeros_like(self._x0[v]) if v in self._freeVars else self._x0[v]) for v in self._x0.keys()])
-            
+           
+            #p.isFixed = isFixed
             lb, ub = -inf*ones(self.n), inf*ones(self.n)
 
             # TODO: get rid of start c, h = None, use [] instead
@@ -403,15 +412,19 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 self.constraints.update(_getAllAttachedConstraints(C))
             
             for v in self._freeVars:
-                if v.domain in (bool, 'bool'):
+                d = v.domain
+                if d is bool or d is 'bool':
                     #v.domain = array([0, 1])
                     self.constraints.update([v>0, v<1])
-                elif v.domain not in (None, int, 'int', bool, 'bool'):
+                elif d is not None and d is not int and d is not 'int':
                     # TODO: mb add integer domains?
-                    v.domain = array(list(v.domain))
+                    v.domain = array(list(d))
                     v.domain.sort()
-                    self.constraints.update([v>v.domain[0], v<v.domain[-1]])
-            
+                    self.constraints.update([v >= v.domain[0], v <= v.domain[-1]])
+                    
+#            for v in self._categoricalVars:
+#                if isFixed(v):
+#                    ind = 
             """                                         handling constraints                                         """
             StartPointVars = set(self._x0.keys())
             self.dictOfFixedFuncs = {}

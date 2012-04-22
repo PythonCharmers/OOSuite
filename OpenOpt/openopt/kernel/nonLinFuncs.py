@@ -36,7 +36,7 @@ class nonLinFuncs:
         # this line had been added because some solvers pass tuple instead of
         # x being vector p.n x 1 or matrix X=[x1 x2 x3...xk], size(X)=[p.n, k]
         if not isspmatrix(x): 
-            x = asarray(x)
+            x = atleast_1d(x)
 #            if not str(x.dtype).startswith('float'):
 #                x = asfarray(x)
         else:
@@ -79,7 +79,6 @@ class nonLinFuncs:
         else:
             nFuncsToObtain = len(ind)
 
-        x = atleast_1d(x)
         if x.shape[0] != p.n and (x.ndim<2 or x.shape[1] != p.n): 
             p.err('x with incorrect shape passed to non-linear function')
 
