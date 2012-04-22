@@ -3,7 +3,7 @@ PythonSum = sum
 from numpy import inf, asfarray, copy, all, any, empty, atleast_2d, zeros, dot, asarray, atleast_1d, empty, \
 ones, ndarray, where, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum as npSum, prod, nonzero,\
 isnan, asscalar, zeros_like, ones_like, amin, amax, logical_and, logical_or, isinf, logical_not, logical_xor, flipud, \
-tile, float64, searchsorted, int8, int16, int32, int64, log1p, isfinite, log2
+tile, float64, searchsorted, int8, int16, int32, int64, log1p, isfinite, log2, string_
 #from logic import AND
 from traceback import extract_stack 
 try:
@@ -947,10 +947,25 @@ class oofun:
     __le__ = __lt__
     
     __eq__ = lambda self, other: self.eq(other)
-    
+  
     def eq(self, other):
+#        print '!', other, type(other)
+#        print other in (None, (), []), (other is None or other is () or other is [])
         if other in (None, (), []): return False
-        #if type(other) in (str, unicode): return False # buggy
+        #if other is None or other is () or (type(other) == list and len(other) == 0): return False
+        if type(other) in (str, unicode, string_): 
+            if 'aux_domain' not in self.__dict__:
+                if not self.is_oovar:
+                    raise FuncDesignerException('comparing with non-numeric data is allowed for string oovars, not for oofuns')
+                self.formAuxDomain()
+            if len(self.domain) != len(self.aux_domain):
+                raise FuncDesignerException('probably you have changed domain of categorical oovar, that is not allowed')
+            ind = searchsorted(self.aux_domain, other, 'left')
+            if self.aux_domain[ind] != other:
+                raise FuncDesignerException('compared value %s is absent in oovar %s domain' %(other, self.name))
+            return self == ind
+            #return False 
+            
         if 'startswith' in dir(other): return False
         #if self.is_oovar and not isinstance(other, oofun):
             #raise FuncDesignerException('Constraints like this: "myOOVar = <some value>" are not implemented yet and are not recommended; for openopt use freeVars / fixedVars instead')
@@ -1647,7 +1662,7 @@ def _getAllAttachedConstraints(oofuns):
 #    return T.flatten(), R, DefiniteRange
 
 def nlh_and(_input, dep, Lx, Ux, p, dataType):
-    P_0 = None
+    P_0 = array(1.0)
     R = {}
     DefiniteRange = True
     
@@ -1657,18 +1672,23 @@ def nlh_and(_input, dep, Lx, Ux, p, dataType):
                   else raise_except()) for elem in _input]
     
     for T0, res, DefiniteRange2 in elems_nlh:
-        if T0 is None: continue
+        if T0 is None or T0 is True: continue
+        if T0 is False or all(T0 == 0):
+            return 0.0, {}, DefiniteRange
         if all(isnan(T0)):
             raise 'unimplemented for non-oofun input yet'
-        T_0_vect = T0.reshape(-1, 1)
+        #T0 = asarray(T0)
+        T_0_vect = T0.reshape(-1, 1) if type(T0) == ndarray else T0
         
-        if P_0 is None:
-            P_0 = T0.copy()
-        else:
+        if type(T0) == ndarray:
             if P_0.shape == T0.shape:
                 P_0 *= T0
-            else:
+            elif P_0.size == T0.size:
                 P_0 *= T0.reshape(P_0.shape)
+            else:
+                P_0 = P_0 * T0
+        else:
+            P_0 *= T0
         for v, val in res.items():
             r = R.get(v, None)
             if r is None:
@@ -1683,7 +1703,7 @@ def nlh_and(_input, dep, Lx, Ux, p, dataType):
         #assert all(isfinite(val))
         
         R[v] =  val * P_0.reshape(-1, 1)
-    return P_0.flatten(), R, DefiniteRange
+    return P_0, R, DefiniteRange
 
 
 def nlh_not(_input_bool_oofun, dep, Lx, Ux, p, dataType):
@@ -1692,7 +1712,7 @@ def nlh_not(_input_bool_oofun, dep, Lx, Ux, p, dataType):
     T0, res, DefiniteRange = _input_bool_oofun.nlh(Lx, Ux, p, dataType)
     T = 1.0 - T0
     R = dict([(v, 1.0-val) for v, val in res.items()])
-    return T.flatten(), R, DefiniteRange
+    return T, R, DefiniteRange
 
 
 def AND(*args):
@@ -1703,12 +1723,22 @@ def AND(*args):
             raise FuncDesignerException('FuncDesigner logical AND currently is implemented for oofun instances only')
     #if other is True: return self
     
-    
-    r = BooleanOOFun(logical_and, Args, vectorized = True)
+    f  = logical_and if len(Args) == 2 else alt_AND_engine
+    r = BooleanOOFun(f, Args, vectorized = True)
     r.nlh = lambda *arguments: nlh_and(Args, r._getDep(), *arguments)
     r.oofun = r
     return r
+    
+def alt_AND_engine(*input):
+    tmp = input[0]
+    for i in range(1, len(input)):
+        tmp = logical_and(tmp, input[i])
+    return tmp
 
+# TODO: multiple args
+XOR = lambda arg1, arg2: (arg1 & ~arg2) | (~arg1 & arg2)
+EQUIVALENT = lambda arg1, arg2: ((arg1 & arg2) | (~arg1 & ~arg2))
+    
 def NOT(_bool_oofun):
     assert not isinstance(_bool_oofun, (ndarray, list, tuple, set)), 'unimplemented yet' 
     #Args = args[0] if len(args) == 1 and type(args[0]) in (tuple, list, set) else args
@@ -1720,6 +1750,15 @@ def NOT(_bool_oofun):
     r.nlh = lambda *arguments: nlh_not(_bool_oofun, r._getDep(), *arguments)
     r.oofun = r
     return r
+
+NAND = lambda *args, **kw: NOT(AND(*args, **kw))
+NOR = lambda *args, **kw: NOT(OR(*args, **kw))
+
+def IMPLICATION(condition, *args):
+    if len(args) == 1 and isinstance(args[0], (tuple, set, list, ndarray)):
+        return [IMPLICATION(condition, elem) for elem in args[0]]
+    return NOT(condition & NOT(args[0]))
+    
 
 def OR(*args):
     Args = args[0] if len(args) == 1 and isinstance(args[0], (ndarray, list, tuple, set)) else args
@@ -1754,9 +1793,10 @@ class BooleanOOFun(oofun):
     def nlh(self, *args, **kw):
         raise FuncDesignerException('This is virtual method to be overloaded in derived class instance')
     
-    def __and__(self, other):
-        return AND(self, other)
-        
+    __and__ = AND
+    
+    IMPLICATION = IMPLICATION
+    __eq__ = EQUIVALENT
     
     def __or__(self, other):
         #if other is False: return self

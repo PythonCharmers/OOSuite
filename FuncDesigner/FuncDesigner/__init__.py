@@ -2,8 +2,10 @@ import os, sys
 curr_dir = ''.join([elem + os.sep for elem in __file__.split(os.sep)[:-1]])
 sys.path += [curr_dir]
 
+__version__ = '0.38'
+
 from ooVar import oovar, oovars
-from ooFun import _getAllAttachedConstraints, broadcast, ooarray, ooFun as oofun, AND, OR, NOT
+from ooFun import _getAllAttachedConstraints, broadcast, ooarray, ooFun as oofun, AND, OR, NOT, NAND, NOR, XOR, IMPLICATION
 from ooSystem import ooSystem as oosystem
 from translator import FuncDesignerTranslator as ootranslator
 
@@ -17,7 +19,7 @@ from overloads import *
 from FDmisc import FuncDesignerException, _getDiffVarsID
 from interpolate import scipy_UnivariateSpline as interpolator
 from integrate import integrator
-__version__ = '0.38'
+
 
 isE = False
 try:

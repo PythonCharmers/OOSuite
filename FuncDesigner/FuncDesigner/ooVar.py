@@ -1,9 +1,10 @@
 # created by Dmitrey
 
 from numpy import nan, asarray, isfinite, empty, zeros, inf, any, array, prod, atleast_1d, \
-asfarray, isscalar, ndarray, int16, int32, int64, float64, tile, vstack, searchsorted, logical_or, where
+asfarray, isscalar, ndarray, int16, int32, int64, float64, tile, vstack, searchsorted, logical_or, where, \
+asanyarray, string_, arange
 from FDmisc import FuncDesignerException, checkSizes
-from ooFun import oofun, Len, ooarray, BooleanOOFun, AND, OR, NOT
+from ooFun import oofun, Len, ooarray, BooleanOOFun, AND, OR, NOT, IMPLICATION, EQUIVALENT
 #from FuncDesigner.Interval import adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain
 
 f_none = lambda *args, **kw: None
@@ -69,14 +70,24 @@ class oovar(oofun):
         
         
     def nlh(self, Lx, Ux, p, dataType, other=None):
+        DefiniteRange = True
         d = self.domain
         if d is None:
             raise FuncDesignerException('probably you are invoking boolean operation on continuous oovar')
         if d is int or d is 'int':
             raise FuncDesignerException('probably you are invoking boolean operation on non-boolean oovar')
         inds = p._oovarsIndDict.get(self, None)
+        m = Lx.shape[0]
         if inds is None:
-            raise FuncDesignerException('probably you are trying to get nlh of fixed oovar, this is unimplemented in FD yet')
+            # this oovar is fixed
+            res = {}
+            if self.domain is bool or self.domain is 'bool':
+                T0 = True if p._x0[self] == 1 else False # 0 or 1
+            else:
+                assert other is not None, 'bug in FD kernel: called nlh with incorrect domain type'
+                T0 = False if p._x0[self] != other else True
+            return T0, res, DefiniteRange
+            #raise FuncDesignerException('probably you are trying to get nlh of fixed oovar, this is unimplemented in FD yet')
         ind1, ind2 = inds
         assert ind2-ind1 == 1, 'unimplemented for oovars of size > 1 yet'
         lx, ux = Lx[:, ind1], Ux[:, ind1]
@@ -85,7 +96,7 @@ class oovar(oofun):
 #        assert all(logical_or(lx==1, lx==0))
 #        assert all(logical_or(ux==1, ux==0))
         
-        m = lx.size
+        #m = lx.size
         
         T0 = zeros(m)
         T2 = zeros((m, 2)) 
@@ -106,27 +117,43 @@ class oovar(oofun):
             D0, D1, D2 = d[I], d[J], d[K]
             
             d1, d2 = D0, D1
-            tmp = 1.0 / (I1-I+where(d2==other, 1, 0))
+            tmp = 1.0 / (J-I+where(d2==other, 1, 0))
             tmp[logical_or(other<d1, other>d2)] = 0
             T2[:, 0] = tmp
             
             d1, d2 = D1, D2
-            tmp = 1.0 / (I3-I1+where(d2==other, 1, 0))
+            tmp = 1.0 / (K-J+where(d2==other, 1, 0))
             tmp[logical_or(other<d1, other>d2)] = 0
             T2[:, 1] = tmp
             
             d1, d2 = D0, D2
-            tmp = 1.0 / (I3-I+where(d2==other, 1, 0))
+            tmp = 1.0 / (K-I+where(d2==other, 1, 0))
             tmp[logical_or(other<d1, other>d2)] = 0
             T0 = tmp
 
         res = {self:T2}
-        DefiniteRange = True
+        
         return T0, res, DefiniteRange
     
-    __and__ = lambda self, other: AND(self, other)
-    __or__ = lambda self, other: OR(self, other)
+    __and__ = AND
+    __or__ = OR
+    implication = IMPLICATION
     __invert__ = NOT
+    def __eq__(self, other): 
+        if (self.domain is bool or self.domain is 'bool') and isinstance(other, (oovar, BooleanOOFun)):
+            return EQUIVALENT(self, other)
+        else:
+            return oofun.__eq__(self, other)
+    
+    def formAuxDomain(self):
+        if 'aux_domain' in self.__dict__: return
+        self.domain = asanyarray(self.domain)
+        d = self.domain
+        if d.dtype.type not in [string_, unicode, str]:
+            raise FuncDesignerException('to compare string with oovar latter should have domain of string type')
+        if any(d[1:] < d[:-1]):
+            d.sort()
+        self.domain, self.aux_domain = arange(d.size), d    
     
 #        if isinstance(x, dict):
 #            tmp = x.get(self, None)
