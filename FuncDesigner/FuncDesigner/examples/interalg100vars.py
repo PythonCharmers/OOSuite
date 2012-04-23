@@ -1,5 +1,5 @@
 '''
-interalg example for global MINLP with 9 variables and some constraints
+interalg example for global MINLP with 100 variables and some constraints
 '''
 from FuncDesigner import *
 from openopt import *
