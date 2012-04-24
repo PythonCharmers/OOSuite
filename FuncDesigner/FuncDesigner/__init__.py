@@ -5,7 +5,7 @@ sys.path += [curr_dir]
 __version__ = '0.38'
 
 from ooVar import oovar, oovars
-from ooFun import _getAllAttachedConstraints, broadcast, ooarray, ooFun as oofun, AND, OR, NOT, NAND, NOR, XOR, IMPLICATION
+from ooFun import _getAllAttachedConstraints, broadcast, ooarray, ooFun as oofun, AND, OR, NOT, NAND, NOR, XOR, IMPLICATION, ifThen
 from ooSystem import ooSystem as oosystem
 from translator import FuncDesignerTranslator as ootranslator
 

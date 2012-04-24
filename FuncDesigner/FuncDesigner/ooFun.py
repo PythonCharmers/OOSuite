@@ -1662,7 +1662,7 @@ def _getAllAttachedConstraints(oofuns):
 #    return T.flatten(), R, DefiniteRange
 
 def nlh_and(_input, dep, Lx, Ux, p, dataType):
-    P_0 = array(1.0)
+    P_0 = array(0.0)
     R = {}
     DefiniteRange = True
     
@@ -1673,8 +1673,8 @@ def nlh_and(_input, dep, Lx, Ux, p, dataType):
     
     for T0, res, DefiniteRange2 in elems_nlh:
         if T0 is None or T0 is True: continue
-        if T0 is False or all(T0 == 0):
-            return 0.0, {}, DefiniteRange
+        if T0 is False or all(T0 == inf):
+            return inf, {}, DefiniteRange
         if all(isnan(T0)):
             raise 'unimplemented for non-oofun input yet'
         #T0 = asarray(T0)
@@ -1682,38 +1682,55 @@ def nlh_and(_input, dep, Lx, Ux, p, dataType):
         
         if type(T0) == ndarray:
             if P_0.shape == T0.shape:
-                P_0 *= T0
+                P_0 += T0
             elif P_0.size == T0.size:
-                P_0 *= T0.reshape(P_0.shape)
+                P_0 += T0.reshape(P_0.shape)
             else:
-                P_0 = P_0 * T0
+                P_0 = P_0 + T0
         else:
-            P_0 *= T0
+            P_0 += T0
         for v, val in res.items():
             r = R.get(v, None)
             if r is None:
-                R[v] = val / T_0_vect
+                R[v] = val - T_0_vect
             else:
-                r *= (val if r.shape == val.shape else val.reshape(r.shape)) / T_0_vect
+                r += (val if r.shape == val.shape else val.reshape(r.shape)) - T_0_vect
         DefiniteRange = logical_and(DefiniteRange2, DefiniteRange)
     for v, val in R.items():
         
         # TODO: check it
-        val[isnan(val)] = 0
+        val[isnan(val)] = inf
         #assert all(isfinite(val))
         
-        R[v] =  val * P_0.reshape(-1, 1)
+        R[v] =  val + P_0.reshape(-1, 1)
+    #print P_0, R, DefiniteRange
     return P_0, R, DefiniteRange
 
+
+#def nlh_not(_input_bool_oofun, dep, Lx, Ux, p, dataType):
+#    if _input_bool_oofun is True or _input_bool_oofun is False:
+#        raise 'unimplemented for non-oofun input yet'
+#    T0, res, DefiniteRange = _input_bool_oofun.nlh(Lx, Ux, p, dataType)
+#    T = 1.0 - T0
+#    R = dict([(v, 1.0-val) for v, val in res.items()])
+#    return T, R, DefiniteRange
 
 def nlh_not(_input_bool_oofun, dep, Lx, Ux, p, dataType):
     if _input_bool_oofun is True or _input_bool_oofun is False:
         raise 'unimplemented for non-oofun input yet'
     T0, res, DefiniteRange = _input_bool_oofun.nlh(Lx, Ux, p, dataType)
-    T = 1.0 - T0
-    R = dict([(v, 1.0-val) for v, val in res.items()])
+    T = reverse_l2P(T0)
+    R = dict([(v, reverse_l2P(val)) for v, val in res.items()])
     return T, R, DefiniteRange
 
+
+def reverse_l2P(l2P):
+    l2P = atleast_1d(l2P)# elseware bug "0-d arrays cannot be indexed"
+    r = 1.0 / l2P
+    ind = l2P < 15
+    r[ind] = -log2(1-2**(-l2P[ind]))
+    return r
+    
 
 def AND(*args):
     Args = args[0] if len(args) == 1 and type(args[0]) in (ooarray, ndarray, tuple, list, set) else args
@@ -1740,7 +1757,7 @@ XOR = lambda arg1, arg2: (arg1 & ~arg2) | (~arg1 & arg2)
 EQUIVALENT = lambda arg1, arg2: ((arg1 & arg2) | (~arg1 & ~arg2))
     
 def NOT(_bool_oofun):
-    assert not isinstance(_bool_oofun, (ndarray, list, tuple, set)), 'unimplemented yet' 
+    assert not isinstance(_bool_oofun, (ndarray, list, tuple, set)), 'disjunctive and other logical constraint are not implemented for ooarrays/ndarrays/lists/tuples yet' 
     #Args = args[0] if len(args) == 1 and type(args[0]) in (tuple, list, set) else args
     #Args = args if type(args) in (tuple, list, set) else [args]
     if not isinstance(_bool_oofun, oofun):
@@ -1759,6 +1776,7 @@ def IMPLICATION(condition, *args):
         return [IMPLICATION(condition, elem) for elem in args[0]]
     return NOT(condition & NOT(args[0]))
     
+ifThen = IMPLICATION
 
 def OR(*args):
     Args = args[0] if len(args) == 1 and isinstance(args[0], (ndarray, list, tuple, set)) else args
@@ -2019,10 +2037,14 @@ def getSmoothNLH(Lf, Uf, lb, ub, tol, m, dataType):
 
     else:
         p.err('this part of interalg code is unimplemented for double-box-bound constraints yet')
+    
     #print tmp
-    #tmp = -log2(tmp)
-    #tmp[isnan(tmp)] = inf # to prevent some issues in disjunctive cons
+    tmp = -log2(tmp)
+    
+    tmp[isnan(tmp)] = inf # to prevent some issues in disjunctive cons
+    
     return tmp
+    #return tmp
 
 class Constraint(SmoothFDConstraint):
     def __init__(self, *args, **kwargs):

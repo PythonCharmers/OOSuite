@@ -2,7 +2,7 @@
 
 from numpy import nan, asarray, isfinite, empty, zeros, inf, any, array, prod, atleast_1d, \
 asfarray, isscalar, ndarray, int16, int32, int64, float64, tile, vstack, searchsorted, logical_or, where, \
-asanyarray, string_, arange
+asanyarray, string_, arange, log2
 from FDmisc import FuncDesignerException, checkSizes
 from ooFun import oofun, Len, ooarray, BooleanOOFun, AND, OR, NOT, IMPLICATION, EQUIVALENT
 #from FuncDesigner.Interval import adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain
@@ -98,16 +98,19 @@ class oovar(oofun):
         
         #m = lx.size
         
-        T0 = zeros(m)
-        T2 = zeros((m, 2)) 
-        
         if d is bool or d is 'bool':
-            T0[ux != lx] = 0.5 # lx = 0, ux = 1
-            T0[lx == 1.0] = 1.0 # lx = 1 => ux = 1
-            T2[:, 0] = lx == 1
-            T2[:, 1] = ux == 1
+            T0 = empty(m)
+            T0.fill(inf)
+            T2 = empty((m, 2)) 
+            T2.fill(inf)
+        
+            T0[ux != lx] = 1.0 # lx = 0, ux = 1 => -log2(0.5) = 1
+            T0[lx == 1.0] = 0.0 # lx = 1 => ux = 1 => -log2(1) = 0
+            T2[:, 0] = where(lx == 1, 0, inf)
+            T2[:, 1] = where(ux == 1, 0, inf)
         else:
             assert other is not None, 'bug in FD kernel: called nlh with incorrect domain type'
+            T2 = empty((m, 2)) 
             sd = d.size
             mx = 0.5 * (lx + ux)
             I = searchsorted(d, lx, 'left')
@@ -117,19 +120,21 @@ class oovar(oofun):
             D0, D1, D2 = d[I], d[J], d[K]
             
             d1, d2 = D0, D1
-            tmp = 1.0 / (J-I+where(d2==other, 1, 0))
-            tmp[logical_or(other<d1, other>d2)] = 0
+            tmp = asfarray(J-I+where(d2==other, 1, 0))
+            tmp[logical_or(other<d1, other>d2)] = inf
             T2[:, 0] = tmp
             
             d1, d2 = D1, D2
-            tmp = 1.0 / (K-J+where(d2==other, 1, 0))
-            tmp[logical_or(other<d1, other>d2)] = 0
+            tmp =  asfarray(K-J+where(d2==other, 1, 0))
+            tmp[logical_or(other<d1, other>d2)] = inf
             T2[:, 1] = tmp
             
+            T2 = log2(T2)
+            
             d1, d2 = D0, D2
-            tmp = 1.0 / (K-I+where(d2==other, 1, 0))
-            tmp[logical_or(other<d1, other>d2)] = 0
-            T0 = tmp
+            tmp = asfarray(K-I+where(d2==other, 1, 0))
+            tmp[logical_or(other<d1, other>d2)] = inf
+            T0 = log2(tmp)
 
         res = {self:T2}
         
