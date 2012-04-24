@@ -154,7 +154,7 @@ def processConstraints2(C0, y, e, p, dataType):
             T0, res, DefiniteRange2 = c.nlh(y, e, p, dataType)
             DefiniteRange = logical_and(DefiniteRange, DefiniteRange2)
             # TODO: rework it
-            T0 = -log2(T0)
+            #T0 = -log2(T0)
             assert T0.ndim <= 1
             #T02 = hstack((T0, T0))
             nlh_0 += T0
@@ -165,7 +165,7 @@ def processConstraints2(C0, y, e, p, dataType):
                 if tmp is None:
                     pass
                 else:
-                    tmp = -log2(tmp)
+                    #tmp = -log2(tmp)
                     nlh[:, n+j] += tmp[:, tmp.shape[1]/2:].flatten() - T0
                     nlh[:, j] += tmp[:, :tmp.shape[1]/2].flatten() - T0
         else:
@@ -237,13 +237,14 @@ def processConstraints2(C0, y, e, p, dataType):
         if any(ind):
             indT[any(ind, 1)] = True
             ind_l,  ind_u = ind[:, :ind.shape[1]/2], ind[:, ind.shape[1]/2:]
-            y[ind_l], e[ind_u] = 0.5 * (y[ind_l] + e[ind_l]), 0.5 * (y[ind_u] + e[ind_u])
+            tmp_l, tmp_u = 0.5 * (y[ind_l] + e[ind_l]), 0.5 * (y[ind_u] + e[ind_u])
+            y[ind_l], e[ind_u] = tmp_l, tmp_u
             # TODO: mb implement it
-#            if len(p._discreteVarsNumList):
-##                if y[ind_l].ndim > 1:
-##                    adjustDiscreteVarBounds(y[ind_l], e[ind_u], p)
-##                else:
-##                    adjustDiscreteVarBounds(y, e, p)
+            if len(p._discreteVarsNumList):
+                if tmp_l.ndim > 1:
+                    adjustDiscreteVarBounds(tmp_l, tmp_u, p)
+                else:
+                    adjustDiscreteVarBounds(y, e, p)
 #                adjustDiscreteVarBounds(y, e, p)
             
             nlh_l, nlh_u = nlh[:, nlh.shape[1]/2:], nlh[:, :nlh.shape[1]/2]
