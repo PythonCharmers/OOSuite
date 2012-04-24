@@ -1773,7 +1773,9 @@ NOR = lambda *args, **kw: NOT(OR(*args, **kw))
 
 def IMPLICATION(condition, *args):
     if len(args) == 1 and isinstance(args[0], (tuple, set, list, ndarray)):
-        return [IMPLICATION(condition, elem) for elem in args[0]]
+        return ooarray([IMPLICATION(condition, elem) for elem in args[0]])
+    elif len(args) > 1:
+        return ooarray([IMPLICATION(condition, elem) for elem in args])
     return NOT(condition & NOT(args[0]))
     
 ifThen = IMPLICATION
