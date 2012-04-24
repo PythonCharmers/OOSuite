@@ -1699,11 +1699,16 @@ def nlh_and(_input, dep, Lx, Ux, p, dataType):
     for v, val in R.items():
         
         # TODO: check it
-        val[isnan(val)] = inf
+        
         #assert all(isfinite(val))
         
-        R[v] =  val + P_0.reshape(-1, 1)
+        tmp =  val + P_0.reshape(-1, 1)
+        tmp[isnan(tmp)] = inf # when val = -inf summation with P_0 == inf
+        R[v] = tmp
+        
+        #assert not any(isnan(R[v]))
     #print P_0, R, DefiniteRange
+    
     return P_0, R, DefiniteRange
 
 
