@@ -48,7 +48,7 @@ engine = oovar('engine', domain = engineNames)
 # suppose fuel consumption is 
 fuelConsumption = 4000 / (engineEfficiency * FuelOctaneNumber) 
 # suppose annual profit is
-annualProfit = (1000 - aircraftPrice - fuelConsumption)('annual profit')
+annualProfit = (20 - aircraftPrice - fuelConsumption)('annual profit')
 # define initial payment
 initialPayment = (aircraftPrice + enginePrice)('initial payment')
 
@@ -114,7 +114,7 @@ Plotting: Time Elapsed = 6.17 	CPU Time Elapsed = 4.17
 '''
 # to view list of solutions you could use print(r.solutions), it has 3 entries like
 # {aircraft price: 15.0, engine price: 2.7000000000000002, aircraft capacity: 15.0, engine efficiency: 35.700000000000003, 
-#   Fuel Octane Number: 97.903153068125874, aircraft: 'AN-15', engine: 'MotorSich D-27', annual profit: 983.8555545514535, initial payment: 17.7}
+#   Fuel Octane Number: 97.903153068125874, aircraft: 'AN-15', engine: 'MotorSich D-27', annual profit: 3.8555545514534693, initial payment: 17.7}
 # we could export it to Excel list via
 # r.export('/home/dmitrey/Aircrafts.xls')
 # (see result here: https://docs.google.com/spreadsheet/ccc?key=0Ak7GVY0fCdaidGY0ZkxqeEZMV1IyT3ViZGFBS2JhUWc)
