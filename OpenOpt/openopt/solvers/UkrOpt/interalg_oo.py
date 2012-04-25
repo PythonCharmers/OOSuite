@@ -373,7 +373,7 @@ class interalg(baseSolver):
             p.extras['isRequiredPrecisionReached'] = \
             True if ff - g < fTol and isFeas else False
             # and (k is False or (isSNLE and (p._nObtainedSolutions >= maxSolutions or maxSolutions==1))) 
-        print '1:', g, ff
+
         if not isMOP and not p.extras['isRequiredPrecisionReached'] and p.istop > 0:
             p.istop = -1
             p.msg = 'required precision is not guarantied'
