@@ -110,6 +110,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
     showFeas = False
     useScaledResidualOutput = False
 
+    hasLogicalConstraints = False
+    
     # A * x <= b inequalities
     A = None
     b = None
@@ -302,9 +304,13 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             self._FD.nonBoxCons = []
             from FuncDesigner import _getAllAttachedConstraints, _getDiffVarsID, ooarray, oopoint
             self._FDVarsID = _getDiffVarsID()
-
+            
+            #probDep = set()
+            
             if self.probType in ['SLE', 'NLSP', 'SNLE', 'LLSP']:
                 equations = self.C if self.probType in ('SLE', 'LLSP') else self.f
+                #for eq in equations:
+                    #probDep.update(eq._getDep())
                 ConstraintTags = [elem.isConstraint for elem in equations]
                 cond_all_oofuns_but_not_cons = not any(ConstraintTags) 
                 cond_cons = all(ConstraintTags) 
@@ -325,7 +331,19 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 if self.probType in ('SLE', 'LLSP'): self.C = EQs
                 elif self.probType in ('NLSP', 'SNLE'): self.f = EQs
                 else: raise OpenOptException('bug in OO kernel')
+            else:
+                pass
+                #probDep.update(self.f._getDep())
                 
+            # TODO: implement it
+            
+#            startPointVars = set(self.x0.keys())
+#            D = startPointVars.difference(probDep)
+#            if len(D):
+#                print('values for variables %s are missing in start point' % D)
+#            D2 = probDep.difference(startPointVars)
+#            if len(D2):
+#                self.x0 = dict([(key, self.x0[key]) for key in D2])
 
             for fn in ['lb', 'ub', 'A', 'Aeq', 'b', 'beq']:
                 if not hasattr(self, fn): continue
@@ -424,7 +442,9 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     
 #            for v in self._categoricalVars:
 #                if isFixed(v):
-#                    ind = 
+#                    ind = searchsorted(v.aux_domain, p._x0[v], 'left')
+#                    if v.aux_domain
+
             """                                         handling constraints                                         """
             StartPointVars = set(self._x0.keys())
             self.dictOfFixedFuncs = {}
@@ -505,7 +525,10 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         self._baseProblemIsPrepared = True
 
     def handleConstraint(self, c, StartPointVars, areFixed, oovD, A, b, Aeq, beq, Z, D_kwargs, LB, UB):
-        #if not isinstance(c, SmoothFDConstraint) and isinstance(c, BooleanOOFun): continue
+        from FuncDesigner.ooFun import SmoothFDConstraint, BooleanOOFun
+        if not isinstance(c, SmoothFDConstraint) and isinstance(c, BooleanOOFun): 
+            self.hasLogicalConstraints = True
+            #continue
         probtol = self.contol
         f, tol = c.oofun, c.tol
         _lb, _ub = c.lb, c.ub
