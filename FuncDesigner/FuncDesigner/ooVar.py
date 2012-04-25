@@ -2,7 +2,7 @@
 
 from numpy import nan, asarray, isfinite, empty, zeros, inf, any, array, prod, atleast_1d, \
 asfarray, isscalar, ndarray, int16, int32, int64, float64, tile, vstack, searchsorted, logical_or, where, \
-asanyarray, string_, arange, log2
+asanyarray, string_, arange, log2, logical_and
 from FDmisc import FuncDesignerException, checkSizes
 from ooFun import oofun, Len, ooarray, BooleanOOFun, AND, OR, NOT, IMPLICATION, EQUIVALENT
 #from FuncDesigner.Interval import adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain
@@ -112,7 +112,9 @@ class oovar(oofun):
             assert other is not None, 'bug in FD kernel: called nlh with incorrect domain type'
             T2 = empty((m, 2)) 
             sd = d.size
-            mx = 0.5 * (lx + ux)
+            mx = 0.5 * (lx + ux) 
+#            ind = logical_and(mx==other, lx != ux)
+#            mx[ind] += 1e-15 + 1e-15*abs(mx[ind])
             I = searchsorted(d, lx, 'left')
             J = searchsorted(d, mx, 'left')
             K = searchsorted(d, ux, 'left')
@@ -150,7 +152,11 @@ class oovar(oofun):
             T0 = log2(tmp)
 
         res = {self:T2}
-        
+#        if all(lx == ux): 
+#            if other == lx[0]:
+#                print '1!', T0, res
+#            else:
+#                print '2!', T0, res
         return T0, res, DefiniteRange
     
     __and__ = AND
