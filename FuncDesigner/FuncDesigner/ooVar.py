@@ -58,6 +58,9 @@ class oovar(oofun):
         r = x.get(self, None)
         if r is not None: 
             return r
+        r = x.get(self.name, None)
+        if r is not None: 
+            return r
         else:                             
             s = '''for oovar %s the point involved doesn't contain 
             neither name nor the oovar instance. 
@@ -113,21 +116,34 @@ class oovar(oofun):
             T2 = empty((m, 2)) 
             sd = d.size
             mx = 0.5 * (lx + ux) 
+            #print lx, ux
+            from numpy import logical_and
             ind = logical_and(mx==other, lx != ux)
-            mx[ind] += 1e-15 + 1e-15*abs(mx[ind])
-            I = searchsorted(d, lx, 'left')
-            J = searchsorted(d, mx, 'left')
-            K = searchsorted(d, ux, 'left')
-
+            if any(ind):
+                mx[ind] -= 1e-15 + 1e-15*abs(mx[ind])
+            assert all(lx >= d[0])
+            assert all(ux <= d[-1])
+            prev = 0
+            if prev:
+                I = searchsorted(d, lx, 'left')
+                J = searchsorted(d, mx, 'left')
+                K = searchsorted(d, ux, 'left')
+            else:
+                I = searchsorted(d, lx, 'right') -  1
+                J = searchsorted(d, mx, 'right') - 1
+                K = searchsorted(d, ux, 'right') - 1
             D0, D1, D2 = d[I], d[J], d[K]
             
             d1, d2 = D0, D1
             tmp = asfarray(J-I+where(d2==other, 1, 0))
             tmp[logical_or(other<d1, other>d2)] = inf
-#            from numpy import logical_and
+            
 #            ind = tmp == 0            
 #            if any(logical_and(ind, logical_or(other>mx, other < lx))):
 #                print '1!', other, tmp[ind]
+
+#            if any(ind) and (any(tmp[ind]==0) or any(tmp[ind] == inf)):
+#                print '1:', tmp[ind], lx[ind], ux[ind], other
             T2[:, 0] = tmp
             
             
@@ -137,7 +153,8 @@ class oovar(oofun):
 #            ind = tmp == 0
 #            if any(logical_and(ind, logical_or(other>ux, other < mx))):
 #                print '2!', other, tmp[ind]
-
+#            if any(ind) and (any(tmp[ind]==0) or any(tmp[ind] == inf)):
+#                print '2:', tmp[ind], lx[ind], ux[ind], other
             T2[:, 1] = tmp
             
             T2 = log2(T2)
@@ -148,7 +165,8 @@ class oovar(oofun):
 #            ind = tmp == 0
 #            if any(logical_and(ind, logical_or(other>ux, other < lx))):
 #                print '3!', other, tmp[ind]
-            
+#            if any(ind) and (any(tmp[ind]==0) or any(tmp[ind] == inf)):
+#                print '3:', tmp[ind], lx[ind], ux[ind], other
             T0 = log2(tmp)
 
         res = {self:T2}
