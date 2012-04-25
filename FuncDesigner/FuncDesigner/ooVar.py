@@ -171,7 +171,7 @@ class oovar(oofun):
             raise FuncDesignerException('to compare string with oovar latter should have domain of string type')
         if any(d[1:] < d[:-1]):
             d.sort()
-        self.domain, self.aux_domain = arange(d.size)**(1.0+1e-5), d    
+        self.domain, self.aux_domain = arange(d.size), d    
     
 #        if isinstance(x, dict):
 #            tmp = x.get(self, None)
