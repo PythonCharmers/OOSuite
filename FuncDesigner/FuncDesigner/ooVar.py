@@ -113,8 +113,8 @@ class oovar(oofun):
             T2 = empty((m, 2)) 
             sd = d.size
             mx = 0.5 * (lx + ux) 
-#            ind = logical_and(mx==other, lx != ux)
-#            mx[ind] += 1e-15 + 1e-15*abs(mx[ind])
+            ind = logical_and(mx==other, lx != ux)
+            mx[ind] += 1e-15 + 1e-15*abs(mx[ind])
             I = searchsorted(d, lx, 'left')
             J = searchsorted(d, mx, 'left')
             K = searchsorted(d, ux, 'left')
