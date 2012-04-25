@@ -1667,8 +1667,8 @@ def nlh_and(_input, dep, Lx, Ux, p, dataType):
     DefiniteRange = True
     
     elems_nlh = [(elem.nlh(Lx, Ux, p, dataType) if isinstance(elem, oofun) \
-                  else (None, None, None) if elem is True 
-                  else (nan, None, None) if elem is False 
+                  else (0, {}, None) if elem is True 
+                  else (inf, {}, None) if elem is False 
                   else raise_except()) for elem in _input]
     
     for T0, res, DefiniteRange2 in elems_nlh:
@@ -1689,6 +1689,7 @@ def nlh_and(_input, dep, Lx, Ux, p, dataType):
                 P_0 = P_0 + T0
         else:
             P_0 += T0
+        
         for v, val in res.items():
             r = R.get(v, None)
             if r is None:
@@ -1708,7 +1709,15 @@ def nlh_and(_input, dep, Lx, Ux, p, dataType):
         
         #assert not any(isnan(R[v]))
     #print P_0, R, DefiniteRange
-    
+#    if len(R) == 2:
+#    for i in range(len(Lx)):
+#        lx, ux = Lx[i], Ux[i]
+#        a = array([  15.        ,    2.1       ,   15.        ,   35.7       ,        105,    3.        ,    3.        ])
+#        if all(lx <= a) and all(a <= ux):
+#            print '*'*10
+#            print 'P_0:', P_0
+#            print 'R:', R
+#            print '='*10
     return P_0, R, DefiniteRange
 
 
@@ -1731,9 +1740,11 @@ def nlh_not(_input_bool_oofun, dep, Lx, Ux, p, dataType):
 
 def reverse_l2P(l2P):
     l2P = atleast_1d(l2P)# elseware bug "0-d arrays cannot be indexed"
+    #l2P[l2P<0]=0
     r = 1.0 / l2P
     ind = l2P < 15
     r[ind] = -log2(1-2**(-l2P[ind]))
+    #r[r<0] = 0
     return r
     
 
@@ -1822,6 +1833,7 @@ class BooleanOOFun(oofun):
     
     IMPLICATION = IMPLICATION
     __eq__ = EQUIVALENT
+    __ne__ = lambda self, arg: NOT(self==arg)
     
     def __or__(self, other):
         #if other is False: return self

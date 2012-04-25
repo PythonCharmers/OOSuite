@@ -116,13 +116,11 @@ class oovar(oofun):
             T2 = empty((m, 2)) 
             sd = d.size
             mx = 0.5 * (lx + ux) 
-            #print lx, ux
-            from numpy import logical_and
+
             ind = logical_and(mx==other, lx != ux)
             if any(ind):
                 mx[ind] -= 1e-15 + 1e-15*abs(mx[ind])
-            assert all(lx >= d[0])
-            assert all(ux <= d[-1])
+
             prev = 0
             if prev:
                 I = searchsorted(d, lx, 'left')
@@ -181,6 +179,7 @@ class oovar(oofun):
     __or__ = OR
     implication = IMPLICATION
     __invert__ = NOT
+    __ne__ = lambda self, arg: NOT(self==arg)
     def __eq__(self, other): 
         if (self.domain is bool or self.domain is 'bool') and isinstance(other, (oovar, BooleanOOFun)):
             return EQUIVALENT(self, other)
