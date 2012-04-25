@@ -229,7 +229,7 @@ class interalg(baseSolver):
         if self.dataHandling == 'auto':
             if isIP or isODE:
                 self.dataHandling = 'sorted'
-            elif isMOP:
+            elif isMOP or p.hasLogicalConstraints:
                 self.dataHandling = 'raw'
             else:
                 r = p.user.f[0].interval(domain, self.dataType)
@@ -247,12 +247,15 @@ class interalg(baseSolver):
             #self.dataHandling = 'sorted' if isIP or (p.__isNoMoreThanBoxBounded__() and n < 50) else 'raw'
             
         # TODO: is it required yet?
-        if not isMOP:
+        if not isMOP and not p.hasLogicalConstraints:
             p._isOnlyBoxBounded = p.__isNoMoreThanBoxBounded__() 
             if isODE or (asdf1.isUncycled and p._isOnlyBoxBounded and all(isfinite(p.user.f[0].interval(domain).lb))):
                 #maxNodes = 1
                 self.dataHandling = 'sorted'
                 
+        if self.dataHandling == 'sorted' and p.hasLogicalConstraints:
+            p.warn("interalg: for general logical constraints only dataHandling='raw' mode works")
+            self.dataHandling = 'raw'
 
         self.maxActiveNodes = int(self.maxActiveNodes)
 #        if self.maxActiveNodes < 2:
@@ -365,25 +368,20 @@ class interalg(baseSolver):
         o = asarray([t.o for t in an])
         if o.size != 0:
             g = nanmin([nanmin(o), g])
-        
+
         if not isMOP:
             p.extras['isRequiredPrecisionReached'] = \
             True if ff - g < fTol and isFeas else False
             # and (k is False or (isSNLE and (p._nObtainedSolutions >= maxSolutions or maxSolutions==1))) 
-        
+        print '1:', g, ff
         if not isMOP and not p.extras['isRequiredPrecisionReached'] and p.istop > 0:
             p.istop = -1
             p.msg = 'required precision is not guarantied'
             
         # TODO: simplify it
         if not isMOP:
-            if p.goal in ('max', 'maximum'):
-                g = -g
-                o = -o
-            if p.goal in ['max', 'maximum']:
-                ff = -ff
             tmp = [nanmin(hstack((ff, g, o.flatten()))), numpy.asscalar(array((ff)))]
-            if p.goal in ['max', 'maximum']: tmp = tmp[1], tmp[0]
+            if p.goal in ['max', 'maximum']: tmp = (-tmp[1], -tmp[0])
             p.extras['extremumBounds'] = tmp if not isIP else 'unimplemented for IP yet'
         
         
@@ -398,13 +396,19 @@ class interalg(baseSolver):
             p.solutions.values = asarray(Solutions.F)
             p.solutions.coords = Solutions.coords
         if not isMOP and p.maxSolutions == 1: delattr(p, 'solutions')
+        if isSNLE and p.maxSolutions != 1:
+            for v in p._categoricalVars:
+                for elem in r.solutions:
+                    elem.useAsMutable = True
+                    elem[v] = v.aux_domain[elem[v]]
+                    elem.useAsMutable = False
         if p.iprint >= 0 and not isMOP:
 #            s = 'Solution with required tolerance %0.1e \n is%s guarantied (obtained precision: %0.1e)' \
 #                   %(fTol, '' if p.extras['isRequiredPrecisionReached'] else ' NOT', tmp[1]-tmp[0])
             s = 'Solution with required tolerance %0.1e \n is%s guarantied' \
             %(fTol, '' if p.extras['isRequiredPrecisionReached'] else ' NOT')
             if not isIP and p.maxSolutions == 1:
-                s += ' (obtained precision: %0.1e)' % (tmp[1]-tmp[0])
+                s += ' (obtained precision: %0.1e)' % abs(tmp[1]-tmp[0])
             if not p.extras['isRequiredPrecisionReached'] and pnc == self.maxNodes: s += '\nincrease maxNodes (current value %d)' % self.maxNodes
             p.info(s)
 
