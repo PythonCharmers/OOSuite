@@ -977,6 +977,7 @@ class oofun:
                 r.nlh = self.nlh if other == 1.0 else (~self).nlh
             elif self.domain is not int and self.domain is not 'int':
                 r.nlh = lambda Lx, Ux, p, dataType: self.nlh(Lx, Ux, p, dataType, other)
+            r.alt_nlh_func = True
         return r  
 
 
@@ -1732,6 +1733,7 @@ def nlh_and(_input, dep, Lx, Ux, p, dataType):
 def nlh_not(_input_bool_oofun, dep, Lx, Ux, p, dataType):
     if _input_bool_oofun is True or _input_bool_oofun is False:
         raise 'unimplemented for non-oofun input yet'
+       
     T0, res, DefiniteRange = _input_bool_oofun.nlh(Lx, Ux, p, dataType)
     T = reverse_l2P(T0)
     R = dict([(v, reverse_l2P(val)) for v, val in res.items()])
@@ -1750,6 +1752,9 @@ def reverse_l2P(l2P):
 
 def AND(*args):
     Args = args[0] if len(args) == 1 and type(args[0]) in (ooarray, ndarray, tuple, list, set) else args
+    for arg in Args:
+        if isinstance(arg, SmoothFDConstraint) and arg.lb == arg.ub and arg.tol == 0 and not arg.alt_nlh_func:
+            raise FuncDesignerException('equality constraint for smooth func inside logical FD func should have user-assigned tolerance')
     assert not isinstance(args[0], ndarray), 'unimplemented yet' 
     for arg in Args:
         if not isinstance(arg, oofun):
@@ -1777,7 +1782,10 @@ def NOT(_bool_oofun):
     #Args = args[0] if len(args) == 1 and type(args[0]) in (tuple, list, set) else args
     #Args = args if type(args) in (tuple, list, set) else [args]
     if not isinstance(_bool_oofun, oofun):
-        raise FuncDesignerException('FuncDesigner logical AND currently is implemented for oofun instances only')
+        raise FuncDesignerException('FuncDesigner logical NOT currently is implemented for oofun instances only')
+    if isinstance(_bool_oofun, SmoothFDConstraint) and _bool_oofun.lb == _bool_oofun.ub and _bool_oofun.tol == 0 and not _bool_oofun.alt_nlh_func:
+        raise FuncDesignerException('equality constraint for smooth func inside logical FD func should have user-assigned tolerance')
+        
     #if other is True: return False
     r = BooleanOOFun(logical_not, [_bool_oofun], vectorized = True)
     r.nlh = lambda *arguments: nlh_not(_bool_oofun, r._getDep(), *arguments)
@@ -1811,6 +1819,7 @@ def OR(*args):
 class BooleanOOFun(oofun):
     _unnamedBooleanOOFunNumber = 0
     discrete = True
+    alt_nlh_func = False
     # an oofun that returns True/False
     def __init__(self, func, _input, *args, **kwargs):
         oofun.__init__(self, func, _input, *args, **kwargs)
