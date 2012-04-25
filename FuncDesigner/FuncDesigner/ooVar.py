@@ -122,11 +122,20 @@ class oovar(oofun):
             d1, d2 = D0, D1
             tmp = asfarray(J-I+where(d2==other, 1, 0))
             tmp[logical_or(other<d1, other>d2)] = inf
+#            from numpy import logical_and
+#            ind = tmp == 0            
+#            if any(logical_and(ind, logical_or(other>mx, other < lx))):
+#                print '1!', other, tmp[ind]
             T2[:, 0] = tmp
+            
             
             d1, d2 = D1, D2
             tmp =  asfarray(K-J+where(d2==other, 1, 0))
             tmp[logical_or(other<d1, other>d2)] = inf
+#            ind = tmp == 0
+#            if any(logical_and(ind, logical_or(other>ux, other < mx))):
+#                print '2!', other, tmp[ind]
+
             T2[:, 1] = tmp
             
             T2 = log2(T2)
@@ -134,6 +143,10 @@ class oovar(oofun):
             d1, d2 = D0, D2
             tmp = asfarray(K-I+where(d2==other, 1, 0))
             tmp[logical_or(other<d1, other>d2)] = inf
+#            ind = tmp == 0
+#            if any(logical_and(ind, logical_or(other>ux, other < lx))):
+#                print '3!', other, tmp[ind]
+            
             T0 = log2(tmp)
 
         res = {self:T2}
@@ -158,7 +171,7 @@ class oovar(oofun):
             raise FuncDesignerException('to compare string with oovar latter should have domain of string type')
         if any(d[1:] < d[:-1]):
             d.sort()
-        self.domain, self.aux_domain = arange(d.size), d    
+        self.domain, self.aux_domain = arange(d.size)**(1.0+1e-5), d    
     
 #        if isinstance(x, dict):
 #            tmp = x.get(self, None)
