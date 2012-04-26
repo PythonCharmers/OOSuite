@@ -368,6 +368,14 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 if type(val) in (str, unicode, string_):
                     self._categoricalVars.add(key)
                     key.formAuxDomain()
+                    if key.domain.size > 2:
+                        self.pWarn('''
+                        current implementation of categorical variables with domain size > 2 
+                        that is performed via casting to discrete variable with domain of same lenght
+                        seems to be unstable yet
+                        (may yield incorrect results) and thus is not recommended yet. 
+                        It is intended to be fixed in next OpenOpt stable release
+                        (casting to several boolean oovars is intended instead)''')
                     self.x0[key] = searchsorted(key.aux_domain, val, 'left')
             
             self.x0 = oopoint(self.x0)
