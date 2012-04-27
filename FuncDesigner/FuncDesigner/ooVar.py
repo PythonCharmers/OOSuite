@@ -2,7 +2,7 @@
 
 from numpy import nan, asarray, isfinite, empty, zeros, inf, any, array, prod, atleast_1d, \
 asfarray, isscalar, ndarray, int16, int32, int64, float64, tile, vstack, searchsorted, logical_or, where, \
-asanyarray, string_, arange, log2, logical_and
+asanyarray, string_, arange, log2, logical_and, ceil
 from FDmisc import FuncDesignerException, checkSizes
 from ooFun import oofun, Len, ooarray, BooleanOOFun, AND, OR, NOT, IMPLICATION, EQUIVALENT
 #from FuncDesigner.Interval import adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain
@@ -11,6 +11,8 @@ f_none = lambda *args, **kw: None
 class oovar(oofun):
     is_oovar = True
     domain = None
+    lb = -inf
+    ub = inf
     #shape = nan
     #fixed = False
     #initialized = False
@@ -119,7 +121,9 @@ class oovar(oofun):
 
             ind = logical_and(mx==other, lx != ux)
             if any(ind):
-                mx[ind] -= 1e-15 + 1e-15*abs(mx[ind])
+                p.pWarn('seems like a categorical variables bug in FuncDesigner kernel, inform developers')
+#                print 'asdf'
+#                mx[ind] += 1e-15 + 1e-15*abs(mx[ind])
 
             prev = 0
             if prev:
@@ -133,6 +137,7 @@ class oovar(oofun):
             D0, D1, D2 = d[I], d[J], d[K]
             
             d1, d2 = D0, D1
+            #tmp = asfarray(J-I+where(d2==other, 1, 0))
             tmp = asfarray(J-I+where(d2==other, 1, 0))
             tmp[logical_or(other<d1, other>d2)] = inf
             
@@ -190,11 +195,14 @@ class oovar(oofun):
         if 'aux_domain' in self.__dict__: return
         self.domain = asanyarray(self.domain)
         d = self.domain
-        if d.dtype.type not in [string_, unicode, str]:
-            raise FuncDesignerException('to compare string with oovar latter should have domain of string type')
+#        if d.dtype.type not in [string_, unicode, str]:
+#            raise FuncDesignerException('to compare string with oovar latter should have domain of string type')
+
         if any(d[1:] < d[:-1]):
             d.sort()
-        self.domain, self.aux_domain = arange(d.size), d    
+        #self.ub = d.size - 1
+        D = int(2 ** ceil(log2(d.size)))
+        self.domain, self.aux_domain = arange(D), d    
     
 #        if isinstance(x, dict):
 #            tmp = x.get(self, None)

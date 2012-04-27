@@ -958,8 +958,8 @@ class oofun:
                 if not self.is_oovar:
                     raise FuncDesignerException('comparing with non-numeric data is allowed for string oovars, not for oofuns')
                 self.formAuxDomain()
-            if len(self.domain) != len(self.aux_domain):
-                raise FuncDesignerException('probably you have changed domain of categorical oovar, that is not allowed')
+#            if len(self.domain) != len(self.aux_domain):
+#                raise FuncDesignerException('probably you have changed domain of categorical oovar, that is not allowed')
             ind = searchsorted(self.aux_domain, other, 'left')
             if self.aux_domain[ind] != other:
                 raise FuncDesignerException('compared value %s is absent in oovar %s domain' %(other, self.name))
@@ -975,9 +975,10 @@ class oofun:
                 if other not in [0, 1]:
                     raise FuncDesignerException('bool oovar can be compared with 0 or 1 only')
                 r.nlh = self.nlh if other == 1.0 else (~self).nlh
-            elif self.domain is not int and self.domain is not 'int':
+                r.alt_nlh_func = True
+            elif self.domain is not int and self.domain is not 'int' and type(other) in (str, unicode, string_):
                 r.nlh = lambda Lx, Ux, p, dataType: self.nlh(Lx, Ux, p, dataType, other)
-            r.alt_nlh_func = True
+                r.alt_nlh_func = True
         return r  
 
 
@@ -1754,7 +1755,8 @@ def AND(*args):
     Args = args[0] if len(args) == 1 and type(args[0]) in (ooarray, ndarray, tuple, list, set) else args
     for arg in Args:
         if isinstance(arg, SmoothFDConstraint) and arg.lb == arg.ub and arg.tol == 0 and not arg.alt_nlh_func:
-            raise FuncDesignerException('equality constraint for smooth func inside logical FD func should have user-assigned tolerance')
+            pass
+            #raise FuncDesignerException('equality constraint for smooth func inside logical FD func should have user-assigned tolerance')
     assert not isinstance(args[0], ndarray), 'unimplemented yet' 
     for arg in Args:
         if not isinstance(arg, oofun):
@@ -1783,8 +1785,8 @@ def NOT(_bool_oofun):
     #Args = args if type(args) in (tuple, list, set) else [args]
     if not isinstance(_bool_oofun, oofun):
         raise FuncDesignerException('FuncDesigner logical NOT currently is implemented for oofun instances only')
-    if isinstance(_bool_oofun, SmoothFDConstraint) and _bool_oofun.lb == _bool_oofun.ub and _bool_oofun.tol == 0 and not _bool_oofun.alt_nlh_func:
-        raise FuncDesignerException('equality constraint for smooth func inside logical FD func should have user-assigned tolerance')
+#    if isinstance(_bool_oofun, SmoothFDConstraint) and _bool_oofun.lb == _bool_oofun.ub and _bool_oofun.tol == 0 and not _bool_oofun.alt_nlh_func:
+#        raise FuncDesignerException('equality constraint for smooth func inside logical FD func should have user-assigned tolerance')
         
     #if other is True: return False
     r = BooleanOOFun(logical_not, [_bool_oofun], vectorized = True)
