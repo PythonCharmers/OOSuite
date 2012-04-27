@@ -368,14 +368,14 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 if type(val) in (str, unicode, string_):
                     self._categoricalVars.add(key)
                     key.formAuxDomain()
-                    if key.domain.size > 2:
-                        self.pWarn('''
-                        current implementation of categorical variables with domain size > 2 
-                        that is performed via casting to discrete variable with domain of same lenght
-                        seems to be unstable yet
-                        (may yield incorrect results) and thus is not recommended yet. 
-                        It is intended to be fixed in next OpenOpt stable release
-                        (casting to several boolean oovars is intended instead)''')
+#                    if key.domain.size > 2:
+#                        self.pWarn('''
+#                        current implementation of categorical variables with domain size > 2 
+#                        that is performed via casting to discrete variable with domain of same lenght
+#                        seems to be unstable yet
+#                        (may yield incorrect results) and thus is not recommended yet. 
+#                        It is intended to be fixed in next OpenOpt stable release
+#                        (casting to several boolean oovars is intended instead)''')
                     self.x0[key] = searchsorted(key.aux_domain, val, 'left')
             
             self.x0 = oopoint(self.x0)
@@ -426,7 +426,11 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             
             C = list(self.constraints)
             self.constraints = set(self.constraints)
-            
+            for v in self._x0.keys():
+                if not array_equal(v.lb, -inf):
+                    self.constraints.add(v >= v.lb)
+                if not array_equal(v.ub, inf):
+                    self.constraints.add(v <= v.ub)
             
             if hasattr(self, 'f'):
                 if type(self.f) in [list, tuple, set]:
@@ -447,6 +451,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     v.domain = array(list(d))
                     v.domain.sort()
                     self.constraints.update([v >= v.domain[0], v <= v.domain[-1]])
+                    if hasattr(v, 'aux_domain'):
+                         self.constraints.add(v - (len(v.aux_domain)-1)<=0)
                     
 #            for v in self._categoricalVars:
 #                if isFixed(v):
@@ -626,7 +632,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     UB[f] = val
                 else:
                     #min((val, UB[f])) doesn't work for arrays
-                    if val.size > 1 or LB[f].size > 1:
+                    if val.size > 1 or UB[f].size > 1:
                         UB[f][val < UB[f]] = val[val < UB[f]] if val.size > 1 else asscalar(val)
                     else:
                         UB[f] = min((val, UB[f]))
