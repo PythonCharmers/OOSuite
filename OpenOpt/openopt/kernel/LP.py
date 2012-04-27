@@ -121,7 +121,7 @@ class LP(MatrixProblem):
         # objective
         f = self._init_f_vector
         
-        lp_handle = lp_maker(List(f.flatten()), List(self.Awhole), List(self.bwhole.flatten()), List(self.dwhole.flatten()), \
+        lp_handle = lp_maker(List(asarray(f).flatten()), List(self.Awhole), List(asarray(self.bwhole).flatten()), List(asarray(self.dwhole).flatten()), \
         List(self.lb), List(self.ub), (1+asarray(self._intVars_vector)).tolist(), 0,minim)
        
         #lp_handle = lpsolve('make_lp', len(self.beq)+len(self.b), self.n) 
