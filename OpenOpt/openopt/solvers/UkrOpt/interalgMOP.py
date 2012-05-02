@@ -195,12 +195,7 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nN
         nlhf2 = r43(targets, Solutions.F, ol2, al2, p.pool, p.nProc)
         tnlh_all = asarray(nlhc2) if nlhf2 is None else nlhf2 if nlhc2[0] is None else asarray(nlhc2) + nlhf2
     else:
-        ol2 = [node.o for node in nodes]
-        al2 = [node.a for node in nodes]
-        nlhc2 = [node.nlhc for node in nodes]
-        nlhf2 = r43(targets, Solutions.F, ol2, al2, p.pool, p.nProc)
-        tnlh_all1 = asarray(nlhc2) if nlhf2 is None else nlhf2 if nlhc2[0] is None else asarray(nlhc2) + nlhf2
-        tnlh_all = vstack([tnlh_all1] + [node.tnlh_all for node in _in]) if len(_in) != 0 else tnlh_all1
+        tnlh_all = vstack([tnlh_curr] + [node.tnlh_all for node in _in]) if len(_in) != 0 else tnlh_curr
         
     for i, node in enumerate(nodes):
         node.tnlh_all = tnlh_all[i]
@@ -231,7 +226,7 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nN
 
     p._t = t
     
-       
+    # TODO: form _s in other level (for active nodes only), to reduce calculations
     if len(an) != 0:
         nlhf_fixed = asarray([node.nlhf for node in an])
         nlhc_fixed = asarray([node.nlhc for node in an])
