@@ -318,7 +318,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     raise OpenOptException('for FuncDesigner SLE/SNLE constructors args must be either all-equalities or all-oofuns')            
                 if self.fTol is not None:
                     fTol = min((self.ftol, self.fTol))
-                    p.warn('''
+                    self.warn('''
                     both ftol and fTol are passed to the SNLE;
                     minimal value of the pair will be used (%0.1e);
                     also, you can modify each personal tolerance for equation, e.g. 
