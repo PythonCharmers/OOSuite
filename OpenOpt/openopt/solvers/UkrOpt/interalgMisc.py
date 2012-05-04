@@ -89,7 +89,6 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
     
     fo = float(0 if isSNLE else min((r41, r40 - (fTol if maxSolutions == 1 else 0))))
         
-    
     if p.solver.dataHandling == 'raw':
         
         if fo == inf or isSNLE:
@@ -99,10 +98,10 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
                 fos = asarray([node.fo for node in an])
                 mino = asarray([node.key for node in an])
                 ind = where(fos > fo + 0.01* fTol)[0]
-                o_tmp, a_tmp = asarray([an[i].o for i in ind]), asarray([an[i].a for i in ind])
-                tmp = a_tmp.copy()
-                tmp[tmp>fo] = fo
                 if any(ind):# elseware bug with shapes of zero-sized arrays
+                    o_tmp, a_tmp = asarray([an[i].o for i in ind]), asarray([an[i].a for i in ind])
+                    tmp = a_tmp.copy()
+                    tmp[tmp>fo] = fo                
                     tnlh_all_new = tnlh_fixed[ind] - log2(tmp - o_tmp)
                     tnlh_curr_best = nanmin(tnlh_all_new, 1)
                     for j, node in enumerate(an[ind]): 
@@ -145,6 +144,10 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
                 arr2 = [node.key for node in nodes]
                 r10 = searchsorted(arr1, arr2)
                 an = insert(_in, r10, nodes)
+#                if p.debug:
+#                    arr = array([node.key for node in an])
+#                    #print arr[0]
+#                    assert all(arr[1:]>= arr[:-1])
 
         
     if maxSolutions != 1:
@@ -166,9 +169,14 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
         p.istop, p.msg = 1000, 'required solution has been obtained'
         return an, g, fo, None, Solutions, xRecord, r41, r40
     
-    
+#    print 'p.iter:', p.iter
+#    print '1:', len(an)
+#    print min([node.key for node in an])
+#    print 'p.iter:',p.iter, 'fo:', fo, 'g:', g
+#    print 'min(keys):', min([node.key for node in an])
     an, g = func9(an, fo, g, p)
-  
+#    print 'g_new:', g
+#    print '2:', len(an)
 
     nn = maxNodes#1 if asdf1.isUncycled and all(isfinite(o)) and p._isOnlyBoxBounded and not p.probType.startswith('MI') else maxNodes
     
