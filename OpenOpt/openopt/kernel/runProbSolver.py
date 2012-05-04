@@ -77,8 +77,20 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     if 'debug' in kwargs.keys():
        p.debug =  kwargs['debug']
 
-    solver = p.solver.__solver__
+    probAttributes = set(p.__dict__)
+    solverAttributes = set(p.solver.__dict__)
+    intersection = list(probAttributes.intersection(solverAttributes))
+    if len(intersection) != 0:
+        if p.debug:
+            p.warn('''
+            attribute %s is present in both solver and prob 
+            (probably you assigned solver parameter in prob constructor), 
+            the attribute will be assigned to solver''' % intersection[0])
+        for elem in intersection:
+            setattr(p.solver, elem, getattr(p, elem))
 
+    solver = p.solver.__solver__
+    
     for key, value in kwargs.items():
         if hasattr(p.solver, key):
             if isConverter:
