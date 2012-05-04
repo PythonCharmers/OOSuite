@@ -100,9 +100,8 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
                 ind = where(fos > fo + 0.01* fTol)[0]
                 if any(ind):# elseware bug with shapes of zero-sized arrays
                     o_tmp, a_tmp = asarray([an[i].o for i in ind]), asarray([an[i].a for i in ind])
-                    tmp = a_tmp.copy()
-                    tmp[tmp>fo] = fo                
-                    tnlh_all_new = tnlh_fixed[ind] - log2(tmp - o_tmp)
+                    a_tmp[a_tmp>fo] = fo                
+                    tnlh_all_new = tnlh_fixed[ind] - log2(a_tmp - o_tmp)
                     tnlh_curr_best = nanmin(tnlh_all_new, 1)
                     for j, node in enumerate(an[ind]): 
                         node.fo = fo
