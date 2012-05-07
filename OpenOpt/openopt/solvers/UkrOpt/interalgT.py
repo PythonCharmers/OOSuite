@@ -144,7 +144,7 @@ def func5(an, nn, g, p):
             an = an[:nn]
     return an, g
 
-def func4(y, e, o, a, fo, tnlhf_curr = None):
+def func4(p, y, e, o, a, fo, tnlhf_curr = None):
     if fo is None and tnlhf_curr is None: return # used in IP
     cs = (y + e)/2
     n = y.shape[1]
@@ -164,8 +164,15 @@ def func4(y, e, o, a, fo, tnlhf_curr = None):
 #        ind = logical_and(ind, logical_not(isnan(a[:, n:2*n])))
 ##        ii = len(where(ind)[0])
 ##        if ii != 0: print ii
-#        a[:, 0:n][ind] = a[:, n:2*n][ind]
-#        o[:, 0:n][ind] = o[:, n:2*n][ind]
+        if p.probType != 'MOP':
+            a[:, 0:n][ind] = a[:, n:2*n][ind]
+            o[:, 0:n][ind] = o[:, n:2*n][ind]
+        if tnlhf_curr is not None:
+            tnlhf_curr[:, 0:n][ind] = tnlhf_curr[:, n:2*n][ind]
+#        for arr in arrays:
+#            if arr is not None:
+#                arr[:, 0:n][ind] = arr[:, n:2*n][ind]
+
     if tnlhf_curr is not None:
         tnlh_modU = tnlhf_curr[:, n:2*n]
         ind = logical_not(isfinite(tnlh_modU))
@@ -181,7 +188,14 @@ def func4(y, e, o, a, fo, tnlhf_curr = None):
 #        ind = logical_and(ind, logical_not(isnan(a[:, n:])))
 ##        ii = len(where(ind)[0])
 ##        if ii != 0: print ii
-#        a[:, n:2*n][ind] = a[:, 0:n][ind]
-#        o[:, n:2*n][ind] = o[:, 0:n][ind]
-    return y, e, indT
+        if p.probType != 'MOP':
+            a[:, n:2*n][ind] = a[:, 0:n][ind]
+            o[:, n:2*n][ind] = o[:, 0:n][ind]
+        if tnlhf_curr is not None:
+            tnlhf_curr[:, n:2*n][ind] = tnlhf_curr[:, 0:n][ind]
+#        for arr in arrays:
+#            if arr is not None:
+#                arr[:, n:2*n][ind] = arr[:, 0:n][ind]
+        
+    return indT
 

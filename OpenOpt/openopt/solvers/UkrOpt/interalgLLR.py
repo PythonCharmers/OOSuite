@@ -223,7 +223,7 @@ def func3(an, maxActiveNodes):
     l0 = len(an1)
 
     if getattr(an1[0], 'tnlh_curr_best', None) is not None:
-        t0 = an1[0].tnlh_curr_best
+        #t0 = an1[0].tnlh_curr_best
         tnlh_curr_best_values = asarray([node.tnlh_curr_best for node in an1])
         
         #changes
@@ -231,8 +231,6 @@ def func3(an, maxActiveNodes):
         Tmp = -cumprod(1.0-tmp)
         ind2 = searchsorted(Tmp, -0.05)
         #changes end
-        
-#        ind = searchsorted(tnlh_curr_best_values, t0 + 32)
         
 #        ind = min((ind, ind2))
         ind = ind2
@@ -242,11 +240,8 @@ def func3(an, maxActiveNodes):
         tmp1, tmp2 = an1[:ind], an1[ind:]
         an1 = tmp1
         _in = hstack((tmp2, _in))
-
         
     l1 = len(an1)
-#    if 1 or l0 != l1:
-#        print 'l0:', l0, 'l1:', l1, Tmp[0], Tmp[-1], tnlh_curr_best_values[0], tnlh_curr_best_values[-1]
     # changes end
     return an1, _in
 
@@ -365,7 +360,7 @@ def func1(tnlhf, tnlhf_curr, residual, y, e, o, a, _s_prev, p, indT):
 #        print where(ind)[0].size
         bs = e[ind] - y[ind]
         t[ind] = nanargmax(bs, 1) # ordinary numpy.argmax can be used as well
-        
+    #print t, _s
     return t, _s, indD
     
 def func13(o, a): 
@@ -432,8 +427,17 @@ def func12(an, maxActiveNodes, p, Solutions, vv, varTols, fo):
         r11, r12 = r6 - varTols, r6 + varTols
     y, e, S = [], [], []
     Tnlhf_curr_local = []
+    n = p.n
     N = 0
     maxSolutions = p.maxSolutions
+    
+#    new = 1
+#    # new
+#    if new and p.probType in ('MOP', 'SNLE', 'GLP', 'NLP', 'MINLP') and p.maxSolutions == 1:
+#        
+#        
+#        return y, e, _in, _s
+        
     
     while True:
         an1Candidates, _in = func3(_in, maxActiveNodes)
@@ -461,17 +465,184 @@ def func12(an, maxActiveNodes, p, Solutions, vv, varTols, fo):
             #residual = asarray([t.residual for t in an1Candidates]) 
             residual = None
             
-            yc, ec, indT = func4(yc, ec, oc, ac, fo, tnlhf_curr)
-                
+            #R = dict([(Attr, array([getattr(node, Attr) for node in an1Candidates])) for Attr in ('nlhf','nlhc', 'tnlhf', 'tnlh_all') ])
+            
+            indT = func4(p, yc, ec, oc, ac, fo, tnlhf_curr)#, tuple(R.values()))
+            #indT = False
+#            print dir(an1Candidates[0])
+#            raw_input()
             if indtc[0] is not None:
                 indT = logical_or(indT, indtc)
         else:
             residual = None
             indT = None
         t, _s, indD = func1(tnlhf, tnlhf_curr, residual, yc, ec, oc, ac, SIc, p, indT)
+#        print 't:', t
+
+        new = 0
+        nn = 0
+        if new and p.probType in ('MOP', 'SNLE', 'NLSP','GLP', 'NLP', 'MINLP') and p.maxSolutions == 1:
+            arr = tnlhf_curr if p.solver.dataHandling == 'raw' else oc
+            M = arr.shape[0]
+            w = arange(M)
+            Midles = 0.5*(yc[w, t] + ec[w, t])
+            arr_1, arr2 = arr[w, t], arr[w, n+t]
+            Arr = hstack((arr_1, arr2))
+            ind = argsort(Arr)
+            Ind = set(ind[:maxActiveNodes])
+            tag_all, tag_1, tag_2 = [], [], []
+            sn = []
+            
+            # TODO: get rid of the cycles
+            for i in range(M):
+                cond1, cond2 = i in Ind, (i+M) in Ind
+                if cond1:
+                    if cond2:
+                        tag_all.append(i)
+                    else:
+                        tag_1.append(i)
+                else:
+                    if cond2:
+                        tag_2.append(i)
+                    else:
+                        sn.append(an1Candidates[i])
+
+            list_lx, list_ux = [], []
+            
+            _s_new = []
+            updateTC = an1Candidates[0].indtc is not None
+            isRaw = p.solver.dataHandling == 'raw'
+            for i in tag_1:
+                node = an1Candidates[i]
+                I = t[i]
+#                if node.o[n+I] >= node.o[I]:
+#                    print '1'
+#                else:
+#                    print i, I, node.o[n+I] ,  node.o[I], node.key, node.a[n+I] ,  node.a[I], node.nlhc[n+I], node.nlhc[I]
+                node.key = node.o[n+I]
+                node._s = _s[i]
+                
+                if isRaw:
+                    node.tnlh_curr[I] = node.tnlh_curr[n+I]
+                    node.tnlh_curr_best = nanmin(node.tnlh_curr)
+                
+                #assert node.o[n+I] >= node.o[I]
+                #lx, ux = node.y, node.e
+                lx, ux = yc[i], ec[i]
+                if nn:
+                    #node.o[I], node.a[I] = node.o[n+I], node.a[n+I]
+                    node.o[I], node.a[I] = node.o[n+I], node.a[n+I]
+                    node.o[node.o<node.o[n+I]], node.a[node.a>node.a[n+I]] = node.o[n+I], node.a[n+I]
+                else:
+                    node.o[n+I], node.a[n+I] = node.o[I], node.a[I]
+                    node.o[node.o<node.o[I]], node.a[node.a>node.a[I]] = node.o[I], node.a[I]
+
+#                if p.solver.dataHandling == 'raw':
+                for Attr in ('nlhf','nlhc', 'tnlhf', 'tnlh_curr', 'tnlh_all'):
+                    r = getattr(node, Attr, None)
+                    if r is not None:
+                        if nn: r[I] = r[n+I]
+                        else: 
+                            r[n+I] = r[I]
+
+                mx = ux.copy()
+                mx[I] = Midles[i]#0.5*(lx[I] + ux[I])
+                list_lx.append(lx)
+                list_ux.append(mx)
+                node.y = lx.copy()
+                node.y[I] = Midles[i]#0.5*(lx[I] + ux[I])
+                if updateTC: 
+                    node.indtc = True
+                
+                _s_new.append(node._s)
+                sn.append(node)
+            
+            for i in tag_2:
+                node = an1Candidates[i]
+                I = t[i]
+                node.key = node.o[I]
+
+                
+                node._s = _s[i]
+                
+                # for raw only
+                if isRaw:
+                    node.tnlh_curr[n+I] = node.tnlh_curr[I]
+                    node.tnlh_curr_best = nanmin(node.tnlh_curr)
+                
+                #assert node.o[I] >= node.o[n+I]
+                #lx, ux = node.y, node.e
+                lx, ux = yc[i], ec[i]
+
+                if nn:
+                    node.o[n+I], node.a[n+I] = node.o[I], node.a[I]
+                    node.o[node.o<node.o[I]], node.a[node.a>node.a[I]] = node.o[I], node.a[I]
+                else:
+                    node.o[I], node.a[I] = node.o[n+I], node.a[n+I]
+                    node.o[node.o<node.o[n+I]], node.a[node.a>node.a[n+I]] = node.o[n+I], node.a[n+I]
+                for Attr in ('nlhf','nlhc', 'tnlhf', 'tnlh_curr', 'tnlh_all'):
+                    r = getattr(node, Attr, None)
+                    if r is not None:
+                        if nn: r[n+I] = r[I]
+                        else: 
+                            r[I] = r[n+I]
+
+                mx = lx.copy()
+                mx[I] = Midles[i]#0.5*(lx[I] + ux[I])
+                list_lx.append(mx)
+                list_ux.append(ux)
+                node.e = ux.copy()
+                node.e[I] = Midles[i]#0.5*(lx[I] + ux[I])
+                if updateTC: 
+                    node.indtc = True
+
+                _s_new.append(node._s)
+                sn.append(node)
+            
+            for i in tag_all:
+                node = an1Candidates[i]
+                I = t[i]
+                
+                #lx, ux = node.y, node.e
+                lx, ux = yc[i], ec[i]
+                mx = ux.copy()
+                mx[I] = Midles[i]#0.5 * (lx[I] + ux[I])
+                
+                list_lx.append(lx)
+                list_ux.append(mx)
+                
+                mx = lx.copy()
+                mx[I] = Midles[i]#0.5 * (lx[I] + ux[I])
+                #mx[n+ t] = 0.5 * (lx[n + t] + ux[n + t])
+                list_lx.append(mx)
+                list_ux.append(ux)
+                
+                #_s_new += [_s[i]] * 2
+                _s_new.append(_s[i])
+                _s_new.append(_s[i])
+                
+#            print 'y_new:', vstack(list_lx)
+#            print 'e_new:', vstack(list_ux)
+#            print '_s_new:', hstack(_s)
+            _in = sn + _in.tolist()
+            if p.solver.dataHandling == 'sorted':
+                _in.sort(key = lambda obj: obj.key)
+            else:
+                #pass
+                _in.sort(key = lambda obj: obj.tnlh_curr_best)
+#            print 'tag 1:', len(tag_1), 'tag 2:', len(tag_2), 'tag all:', len(tag_all)
+#            print 'lx:', list_lx
+#            print 'sn lx:', [node.y for node in sn]
+#            print 'ux:', list_ux
+#            print 'sn ux:', [node.e for node in sn]
+#            print '-'*10
+            #print '!', vstack(list_lx), vstack(list_ux), hstack(_s_new)
+            NEW_lx, NEW_ux, NEW__in, NEW__s = \
+            vstack(list_lx), vstack(list_ux), array(_in), hstack(_s_new)
+            return NEW_lx, NEW_ux, NEW__in, NEW__s
         
         NewD = 1
-        if NewD and indD is not None: # and p.probType != 'IP':
+        if NewD and indD is not None: 
             s4d = _s[indD]
             sf = _s[logical_not(indD)]
             _s = hstack((s4d, s4d, sf))
@@ -510,9 +681,25 @@ def func12(an, maxActiveNodes, p, Solutions, vv, varTols, fo):
             y, e, _s = vstack(y), vstack(e), hstack(S)
             #Tnlhf_curr_local = hstack(Tnlhf_curr_local)
             break
-    if Tnlhf_curr_local is not None and len(Tnlhf_curr_local) != 0 and Tnlhf_curr_local[0] is not None:
-        #print len(where(isfinite(Tnlhf_curr_local))[0]), Tnlhf_curr_local.size
-        pass
+            
+#    if Tnlhf_curr_local is not None and len(Tnlhf_curr_local) != 0 and Tnlhf_curr_local[0] is not None:
+#        #print len(where(isfinite(Tnlhf_curr_local))[0]), Tnlhf_curr_local.size
+#        pass
+
+#    print 'y_prev:', y
+#    print 'e_prev:', e
+#    print '_s_prev:', hstack(_s)
+    #print 'prev!', y, e, _s
+    
+#    from numpy import array_equal
+#    if not array_equal(NEW_lx.sort(), y.sort()):
+#        pass
+#    if not array_equal(NEW_ux.sort(), e.sort()):
+#        pass
+#    if not array_equal(NEW__s.sort(), _s.sort()):
+#        pass
+        
+        #, NEW_ux, NEW__in, NEW__s
     return y, e, _in, _s
 
 Fields = ['key', 'y', 'e', 'nlhf','nlhc', 'indtc','residual','o', 'a', '_s']
