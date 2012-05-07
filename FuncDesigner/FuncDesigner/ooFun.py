@@ -953,7 +953,7 @@ class oofun:
 #        print other in (None, (), []), (other is None or other is () or other is [])
         if other in (None, (), []): return False
         #if other is None or other is () or (type(other) == list and len(other) == 0): return False
-        if type(other) in (str, unicode, string_): 
+        if type(other) in (str, string_): 
             if 'aux_domain' not in self.__dict__:
                 if not self.is_oovar:
                     raise FuncDesignerException('comparing with non-numeric data is allowed for string oovars, not for oofuns')
@@ -976,7 +976,7 @@ class oofun:
                     raise FuncDesignerException('bool oovar can be compared with 0 or 1 only')
                 r.nlh = self.nlh if other == 1.0 else (~self).nlh
                 r.alt_nlh_func = True
-            elif self.domain is not int and self.domain is not 'int' and type(other) in (str, unicode, string_):
+            elif self.domain is not int and self.domain is not 'int' and type(other) in (str, string_):
                 r.nlh = lambda Lx, Ux, p, dataType: self.nlh(Lx, Ux, p, dataType, other)
                 r.alt_nlh_func = True
         return r  
