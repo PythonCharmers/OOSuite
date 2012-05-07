@@ -1831,7 +1831,8 @@ class BooleanOOFun(oofun):
         self.oofun = oofun(lambda *args, **kw: asarray(func(*args, **kw), int8), _input, vectorized = True)
         # TODO: THIS SHOULD BE USED IN UP-LEVEL ONLY
         self.lb = self.ub = 1
-        
+    
+    __hash__ = lambda self: self._id
         
     def size(self, *args, **kwargs): raise FuncDesignerException('currently BooleanOOFun.size() is disabled')
     def D(self, *args, **kwargs): raise FuncDesignerException('currently BooleanOOFun.D() is disabled')
