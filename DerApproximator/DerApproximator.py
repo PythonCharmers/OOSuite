@@ -53,7 +53,7 @@ try:
     from numpy import atleast_1d
 except ImportError:
     from numpy import reshape
-    def atleast_2d(x):
+    def atleast_2d(X):
         x = X if type(X) == ndarray else asarray(X)
         return x if x.ndim >= 2 else reshape(x,(1, x.size))
 
