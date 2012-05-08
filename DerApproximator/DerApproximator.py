@@ -1,7 +1,68 @@
 """finite-difference derivatives approximation"""
 
-from numpy import atleast_1d, atleast_2d, isfinite, nan, empty, ndarray, hstack, \
-asscalar, abs, isscalar, asfarray, asarray, isnan, array, all
+try:
+    import numpypy as numpy
+except:
+    pass
+
+from numpy import isfinite, nan, empty, ndarray, abs, asarray, isnan, array, all, ndarray
+from numpy import float32, float64
+floatTypes = [float32, float64]
+try:
+    from numpy import float128
+    floatTypes.append(float128)
+except ImportError:
+    pass
+try:
+    from numpy import float16
+    floatTypes.append(float16)
+except ImportError:
+    pass
+
+# asfarray
+try:
+    from numpy import asfarray
+except ImportError:
+    asfarray = lambda elem: elem if type(elem) == ndarray and elem.dtype in floatTypes else array(elem, float)
+
+# isscalar
+try:
+    from numpy import isscalar
+except ImportError:
+    from numpy import int32, int64 
+    scalarTypes = [int, int32, int64] + floatTypes
+
+    isscalar = lambda elem: type(elem) in scalarTypes
+
+# asscalar
+try:
+    from numpy import asscalar
+except ImportError:
+    asscalar = lambda elem: elem if isscalar(elem) else elem.item()
+    
+# atleast_1d
+try:
+    from numpy import atleast_1d
+except ImportError:
+    def atleast_1d(X):
+        x = X if type(X) == ndarray else asarray(X)
+        return x if x.ndim >= 1 else reshape(x,(1,))
+
+# atleast_2d
+try:
+    from numpy import atleast_1d
+except ImportError:
+    from numpy import reshape
+    def atleast_2d(x):
+        x = X if type(X) == ndarray else asarray(X)
+        return x if x.ndim >= 2 else reshape(x,(1, x.size))
+
+# hstack
+try:
+    from numpy import hstack
+except ImportError:
+    from numpy import concatenate
+    hstack = lambda arg: concatenate(arg, 1)
 
 class DerApproximatorException:
     def __init__(self,  msg):
