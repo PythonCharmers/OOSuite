@@ -236,8 +236,9 @@ def func3(an, maxActiveNodes):
         ind = ind2
         
 #        ind = maxActiveNodes
-        if ind == 0: ind = 1
-        tmp1, tmp2 = an1[:ind], an1[ind:]
+        M = max((5, maxActiveNodes/2, ind))
+        #if M == 0: M = 1
+        tmp1, tmp2 = an1[:M], an1[M:]
         an1 = tmp1
         _in = hstack((tmp2, _in))
         
