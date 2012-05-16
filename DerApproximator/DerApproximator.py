@@ -7,7 +7,7 @@ except:
 
 from numpy import isfinite, nan, empty, ndarray, abs, asarray, isnan, array, all, ndarray
 from numpy import float32, float64
-floatTypes = [float32, float64]
+floatTypes = [float32, float64, float]
 try:
     from numpy import float128
     floatTypes.append(float128)
