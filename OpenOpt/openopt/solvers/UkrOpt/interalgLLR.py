@@ -40,7 +40,7 @@ def func82(y, e, vv, f, dataType, p):
             a_l.append(r0.ub)
             a_u.append(r0.ub)
             definiteRange = logical_and(definiteRange, r0.definiteRange)
-        o, a = hstack(o_l+o_u), hstack(a_l+a_u)    
+    o, a = hstack(o_l+o_u), hstack(a_l+a_u)    
     return o, a, definiteRange
 
 def func10(y, e, vv):
