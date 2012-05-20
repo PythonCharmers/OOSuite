@@ -24,7 +24,7 @@ def func82(y, e, vv, f, dataType, p):
     r, r0 = f.iqg(domain, dataType)
     dep = f._getDep() # TODO: Rework it for fixed vars
     o_l, o_u, a_l, a_u = [], [], [], []
-    definiteRange = True
+    definiteRange = r0.definiteRange
     for v in vv:
         # !!!! TODO: rework and optimize it
         if v in dep:
@@ -39,7 +39,7 @@ def func82(y, e, vv, f, dataType, p):
             o_u.append(r0.lb)
             a_l.append(r0.ub)
             a_u.append(r0.ub)
-            definiteRange = logical_and(definiteRange, r0.definiteRange)
+            #definiteRange = logical_and(definiteRange, r0.definiteRange)
     o, a = hstack(o_l+o_u), hstack(a_l+a_u)    
     return o, a, definiteRange
 
@@ -213,6 +213,7 @@ def r2(PointVals, PointCoords, dataType):
     return r7, r8
     
 def func3(an, maxActiveNodes):
+    
     m = len(an)
     if m > maxActiveNodes:
         an1, _in = an[:maxActiveNodes], an[maxActiveNodes:]
@@ -236,7 +237,11 @@ def func3(an, maxActiveNodes):
         ind = ind2
         
 #        ind = maxActiveNodes
-        M = max((5, maxActiveNodes/2, ind))
+        #M = max((5, maxActiveNodes/2, ind))
+        #M = ind
+        n = an[0].y.size
+        M = max((5, int(maxActiveNodes/n), ind))
+#        M = max((5, maxActiveNodes/5, ind))
         #if M == 0: M = 1
         tmp1, tmp2 = an1[:M], an1[M:]
         an1 = tmp1
@@ -244,6 +249,7 @@ def func3(an, maxActiveNodes):
         
     l1 = len(an1)
     # changes end
+    #print maxActiveNodes, len(an1), len(_in)
     return an1, _in
 
 def func1(tnlhf, tnlhf_curr, residual, y, e, o, a, _s_prev, p, indT):
@@ -345,6 +351,8 @@ def func1(tnlhf, tnlhf_curr, residual, y, e, o, a, _s_prev, p, indT):
             indQ = d >= _s_prev - 1.0/n 
             #indQ = logical_and(indQ, False)
             indD = logical_or(indQ, logical_not(indT))
+#            print _s_prev[:2], d[:2]
+            #print len(where(indD)[0]), len(where(indQ)[0]), len(where(indT)[0])
             #print _s_prev - d
             ###################################################
             #d = ((tnlh[w, t]* tnlh[w, n+t])**0.5)

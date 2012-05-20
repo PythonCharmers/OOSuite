@@ -44,6 +44,13 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
     
 
     if p.solver.dataHandling == 'raw':
+        
+        tmp = o.copy()
+        tmp[tmp > fo_prev] = -inf
+        M = atleast_1d(nanmax(tmp, 1))
+        for i, node in enumerate(nodes):
+            node.th_key = M[i]
+            
         if not isSNLE:
             for node in nodes:
                 node.fo = fo_prev       
@@ -54,8 +61,8 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
             
         an = hstack((nodes, _in))
         
-        tnlh_fixed = vstack([node.tnlhf for node in an])
-        tnlh_fixed_local = tnlh_fixed[:len(nodes)]
+        #tnlh_fixed = vstack([node.tnlhf for node in an])
+        tnlh_fixed_local = vstack([node.tnlhf for node in nodes])#tnlh_fixed[:len(nodes)]
 
         tmp = a.copy()
         
@@ -92,32 +99,68 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
     if p.solver.dataHandling == 'raw':
         
         if fo == inf or isSNLE:
-            tnlh_curr = tnlh_fixed
+            tnlh_curr = vstack([node.tnlhf for node in an])#tnlh_fixed
         else:
             if fo != fo_prev:
                 if fo < fo_prev - fTol:
                     update_nlh = True
-                    TF = tnlh_fixed
-                    o_tmp, a_tmp = array([node.o for node in an]), array([node.a for node in an])
+#                    TF = vstack([node.tnlhf for node in an])#tnlh_fixed
+#                    o_tmp, a_tmp = array([node.o for node in an]), array([node.a for node in an])
                     nodesToUpdate = an
                 else:
-                    fos = asarray([node.fo for node in an])
-                    ind = where(fos > fo + 0.01* fTol)[0]
-                    update_nlh = True if ind.size != 0 else False
-                    TF = tnlh_fixed[ind]
-                    o_tmp, a_tmp = array([an[i].o for i in ind]), array([an[i].a for i in ind])
-                    nodesToUpdate = an[ind]
+                    fos = array([node.fo for node in an])
+                    
+                    #prev
+                    #ind_update = where(fos > fo + 0.01* fTol)[0]
+                    
+                    #new
+                    th_keys = array([node.th_key for node in an])
+                    delta_fos = fos - fo
+                    ind_update = where(10 * delta_fos > fos - th_keys)[0]
+                    
+                    nodesToUpdate = an[ind_update]
+                    update_nlh = True if ind_update.size != 0 else False
+#                    from time import time
+#                    tt = time()
+#                    if update_nlh:
+#    #                    print 'o MB:', float(o_tmp.nbytes) / 1e6
+#                        print 'percent:', 100*float(ind_update.size) / len(an) 
+#    #                    print 'fo:', fo
+#    #                    print 'diff 0 end:', (fos[0] - fo)/fTol, (fos[-1] - fo)/fTol
+#    #                    print 'time:', time() - tt
+#                        if not hasattr(p, 'Time'):
+#                            p.Time = time() - tt
+#                        else:
+#                            p.Time += time() - tt
+                    
                 
                 if update_nlh:
+                    #tnlh_all_new = TF - log2(a_tmp - o_tmp)
+
+                    a_tmp = array([node.a for node in nodesToUpdate])
+                    Tmp = a_tmp
+                    Tmp[Tmp>fo] = fo                
+
+                    o_tmp = array([node.o for node in nodesToUpdate])
+                    Tmp -= o_tmp
                     
-                    a_tmp[a_tmp>fo] = fo                
-                    tnlh_all_new = TF - log2(a_tmp - o_tmp)
+                    tnlh_all_new =  - log2(Tmp)
+                    
+                    del Tmp, a_tmp
+                    
+                    tnlh_all_new += vstack([node.tnlhf for node in nodesToUpdate])#tnlh_fixed[ind_update]
                     
                     tnlh_curr_best = nanmin(tnlh_all_new, 1)
+
+                    o_tmp[o_tmp > fo] = -inf
+                    M = atleast_1d(nanmax(o_tmp, 1))
+                    del o_tmp
+                    
                     for j, node in enumerate(nodesToUpdate): 
                         node.fo = fo
                         node.tnlh_curr = tnlh_all_new[j]
                         node.tnlh_curr_best = tnlh_curr_best[j]
+                        node.th_key = M[j]
                     
             tmp = asarray([node.key for node in an])
             r10 = where(tmp > fo)[0]
