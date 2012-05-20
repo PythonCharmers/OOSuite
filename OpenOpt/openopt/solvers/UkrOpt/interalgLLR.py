@@ -241,6 +241,7 @@ def func3(an, maxActiveNodes):
         #M = ind
         n = an[0].y.size
         M = max((5, int(maxActiveNodes/n), ind))
+        M = ind
 #        M = max((5, maxActiveNodes/5, ind))
         #if M == 0: M = 1
         tmp1, tmp2 = an1[:M], an1[M:]
