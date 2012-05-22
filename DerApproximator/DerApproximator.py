@@ -50,7 +50,7 @@ except ImportError:
 
 # atleast_2d
 try:
-    from numpy import atleast_1d
+    from numpy import atleast_2d
 except ImportError:
     from numpy import reshape
     def atleast_2d(X):
