@@ -46,7 +46,11 @@ from numpy import *
 #from numpy.linalg import norm
 #from numpy import dot, asfarray, atleast_1d,  zeros, ones, int, float64, where, inf, ndarray
 from openopt.kernel.baseSolver import baseSolver
-from openopt.kernel.nonOptMisc import isspmatrix, scipyInstalled, scipyAbsentMsg, isPyPy
+from openopt.kernel.nonOptMisc import isspmatrix, scipyInstalled, scipyAbsentMsg
+try:
+    from openopt.kernel.nonOptMisc import isPyPy
+except:
+    pass
 from openopt.kernel.ooMisc import xBounds2Matrix
 from openopt.kernel.nonOptMisc import Hstack, Vstack, SparseMatrixConstructor, Eye, Diag, DenseMatrixConstructor
 #try:
@@ -147,7 +151,7 @@ def lp_engine(c, A, b):
     m,n = A.shape
     ind = b < 0
     if any(ind):
-        b[ind] = -b[ind]
+        b = abs(b)
         #A[ind, :] = -A[ind, :] doesn't work for sparse
         if type(A) == ndarray and not isPyPy:
             A[ind] = -A[ind]
