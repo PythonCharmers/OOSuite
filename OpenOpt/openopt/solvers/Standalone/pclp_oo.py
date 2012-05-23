@@ -46,9 +46,9 @@ from numpy import *
 #from numpy.linalg import norm
 #from numpy import dot, asfarray, atleast_1d,  zeros, ones, int, float64, where, inf, ndarray
 from openopt.kernel.baseSolver import baseSolver
-from openopt.kernel.nonOptMisc import isspmatrix, scipyInstalled, scipyAbsentMsg
+from openopt.kernel.nonOptMisc import isspmatrix, scipyInstalled, scipyAbsentMsg, isPyPy
 from openopt.kernel.ooMisc import xBounds2Matrix
-from openopt.kernel.nonOptMisc import Hstack, Vstack, SparseMatrixConstructor, Eye, Diag
+from openopt.kernel.nonOptMisc import Hstack, Vstack, SparseMatrixConstructor, Eye, Diag, DenseMatrixConstructor
 #try:
 #    from scipy.sparse import csc_matrix, csr_matrix
 #except:
@@ -71,16 +71,10 @@ class pclp(baseSolver):
         xBounds2Matrix(p)
         n = p.n
         
-        ind_unbounded = where(logical_and(isinf(p.lb), isinf(p.ub)))[0].copy()
         
-        # TODO: cleanup
-        #ind_unbounded = array([])#where(p.lb!=0)[0]
-#        ind_lb_0 = where(p.lb==0)[0]
-#        p.lb[ind_lb_0] = -inf
-        #print 'ind_unbounded:', ind_unbounded
+        Ind_unbounded = logical_and(isinf(p.lb), isinf(p.ub))
+        ind_unbounded = where(Ind_unbounded)[0]
         n_unbounded = ind_unbounded.size
-
-        
         
         # Cast linear inequality constraints into linear equality constraints using slack variables
         nLinInEq, nLinEq = p.b.size, p.beq.size
@@ -101,8 +95,8 @@ class pclp(baseSolver):
 #            _A = Hstack((Vstack((p.A, R)), R2))
 #        else:
 #            _A = Hstack((p.A, Eye(nLinInEq)))
-            
-        _A = Hstack((p.A, Eye(nLinInEq), -p.A[:, ind_unbounded]))
+
+        _A = Hstack((p.A, Eye(nLinInEq), -Vstack([p.A[:, i] for i in ind_unbounded]).T if isPyPy else -p.A[:, ind_unbounded]))
         
 
 #        if isspmatrix(_A): 
@@ -110,7 +104,9 @@ class pclp(baseSolver):
         
         # add lin eq cons
         if nLinEq != 0:
-            _A = Vstack((_A, Hstack((p.Aeq, SparseMatrixConstructor((nLinEq, nLinInEq)), -p.Aeq[:, ind_unbounded]))))
+            Constructor = SparseMatrixConstructor if scipyInstalled and nLinInEq > 100 else DenseMatrixConstructor
+            _A = Vstack((_A, Hstack((p.Aeq, Constructor((nLinEq, nLinInEq)), \
+                                                         -Vstack([p.Aeq[:, i] for i in ind_unbounded]).T if isPyPy else -p.Aeq[:, ind_unbounded]))))
             
         if isspmatrix(_A): 
             _A = _A.tolil()
@@ -122,7 +118,7 @@ class pclp(baseSolver):
         #_f = Hstack((p.f, zeros(nLinInEq), -p.f[ind_unbounded]))
         #_b = hstack((p.b, [0]*n_unbounded, p.beq))
         
-        _f = hstack((p.f, zeros(nLinInEq), -p.f[ind_unbounded]))
+        _f = hstack((p.f, zeros(nLinInEq), -p.f[Ind_unbounded]))
         
         _b = hstack((p.b, p.beq))
         
@@ -153,22 +149,24 @@ def lp_engine(c, A, b):
     if any(ind):
         b[ind] = -b[ind]
         #A[ind, :] = -A[ind, :] doesn't work for sparse
-        if type(A) == ndarray:
-            A[ind, :] = -A[ind, :]
+        if type(A) == ndarray and not isPyPy:
+            A[ind] = -A[ind]
         else:
             for i in where(ind)[0]:
                 A[i,:] = -A[i,:]
             
     d = -A.sum(axis=0)
-    if isinstance(d, matrix): d = d.A.flatten() # d may be dense matrix
+    if not isinstance(d, ndarray): d = d.A.flatten() # d may be dense matrix
     w0 = sum(b)
     # H = [A b;c' 0;d -w0];
     #H = bmat('A b; c 0; d -w0') 
     ''''''
     H = Vstack([     #  The initial _simplex table of phase one
-         Hstack([A, array([b]).T]), # first m rows
+         Hstack([A, atleast_2d(b).T]), # first m rows
          hstack([c, 0.]),   # last-but-one
          hstack([d, -asfarray(w0)])]) # last
+    #print sum(abs(Hstack([A, array([b]).T])))
+
     if isspmatrix(H): H = H.tolil()
     ''''''
     indx = arange(n)
@@ -264,10 +262,19 @@ def _simplex(H,basis,indx,s):
                 # NEW
                 tmp = H[:n1-s0,jp]
                 if isspmatrix(tmp): tmp = tmp.A
-                ind = where(tmp>0)[0]
-                tmp2 = H[ind,n2-1]/H[ind,jp]
+                ind = tmp>0
+                
+                #tmp2 = H[ind,n2-1]/H[ind,jp]
+                tmp2 = hstack([H[i,n2-1]/H[i, jp] for i in where(ind)[0]]) if 1 or isPyPy else H[ind,n2-1]/H[ind,jp]
+                
+                #assert hstack([H[i,n2-1]/H[i, jp] for i in where(ind)[0]]).shape == (H[ind,n2-1]/H[ind,jp]).shape
                 if isspmatrix(tmp2): tmp2 = tmp2.A
-                h1[ind] = tmp2
+                
+                if isPyPy:
+                    for i, val in enumerate(where(ind)[0]):
+                        h1[val] = tmp2[i]
+                else:
+                    h1[ind] = tmp2
                 
                 #OLD
 #                for i in range(n1-s0):
@@ -282,7 +289,6 @@ def _simplex(H,basis,indx,s):
     return is_bounded
 
 def _pivot(H,ip,jp):
-    
     # H is MODIFIED
     n, m = H.shape
     piv = H[ip,jp]
@@ -304,36 +310,36 @@ def _pivot(H,ip,jp):
 
 
 ######### Unit test section #########
-
-from numpy.testing import *
-
-def test_lp():
-    probs = [
-        {
-            'A': array([
-                [2.,  5., 3., -1.,  0.,  0.],
-                [3., 2.5, 8.,  0., -1.,  0.],
-                [8.,10.,  4.,  0.,  0., -1.]]),
-            'b': array([185., 155., 600.]),
-            'c': array([4., 8., 3., 0., 0., 0.]),
-            'result': [
-                    array([ 66.25, 0., 17.5, 0., 183.75, 0.]),
-                    317.5,
-                    True,
-                    True,
-                    array([2, 0, 4])            
-                ]
-        }, # add other test cases here...
-    ]
-
-    for prob in probs:
-        optx, zmin, bounded, solvable, basis = lp_engine(prob['c'],prob['A'],prob['b'])
-        expected_res = prob['result']
-        assert_almost_equal(optx, expected_res[0])
-        assert_almost_equal(zmin, expected_res[1])
-        assert_equal(bounded, expected_res[2])
-        assert_equal(solvable, expected_res[3])
-        assert_equal(basis, expected_res[4])
-
-if __name__ == "__main__":
-    run_module_suite()
+#
+#from numpy.testing import *
+#
+#def test_lp():
+#    probs = [
+#        {
+#            'A': array([
+#                [2.,  5., 3., -1.,  0.,  0.],
+#                [3., 2.5, 8.,  0., -1.,  0.],
+#                [8.,10.,  4.,  0.,  0., -1.]]),
+#            'b': array([185., 155., 600.]),
+#            'c': array([4., 8., 3., 0., 0., 0.]),
+#            'result': [
+#                    array([ 66.25, 0., 17.5, 0., 183.75, 0.]),
+#                    317.5,
+#                    True,
+#                    True,
+#                    array([2, 0, 4])            
+#                ]
+#        }, # add other test cases here...
+#    ]
+#
+#    for prob in probs:
+#        optx, zmin, bounded, solvable, basis = lp_engine(prob['c'],prob['A'],prob['b'])
+#        expected_res = prob['result']
+#        assert_almost_equal(optx, expected_res[0])
+#        assert_almost_equal(zmin, expected_res[1])
+#        assert_equal(bounded, expected_res[2])
+#        assert_equal(solvable, expected_res[3])
+#        assert_equal(basis, expected_res[4])
+#
+#if __name__ == "__main__":
+#    run_module_suite()
