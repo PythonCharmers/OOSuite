@@ -113,7 +113,10 @@ class pclp(baseSolver):
                                                          -Vstack([p.Aeq[:, i] for i in ind_unbounded]).T if isPyPy else -p.Aeq[:, ind_unbounded]))))
             
         if isspmatrix(_A): 
-            _A = _A.tolil()
+            if _A.size > 0.3 * prod(_A.shape):
+                _A = _A.A
+            else:
+                _A = _A.tolil()
             #_A = _A.A
         
         #p.A, p.b = zeros((0, p.n)), array([])
