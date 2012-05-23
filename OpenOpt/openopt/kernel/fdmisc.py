@@ -1,6 +1,6 @@
 # Handling of FuncDesigner probs
 from numpy import empty, isscalar, hstack, vstack, asfarray, all, atleast_1d, cumsum, asarray, zeros,  atleast_2d, ndarray, prod, ones, copy, nan, flatnonzero, array_equal
-from nonOptMisc import scipyInstalled, Hstack, Vstack, Find, isspmatrix, SparseMatrixConstructor, DenseMatrixConstructor, Bmat
+from nonOptMisc import scipyInstalled, Hstack, Vstack, Find, isspmatrix, SparseMatrixConstructor, DenseMatrixConstructor
 
 try:
     # available since numpy 1.6.x
@@ -306,7 +306,7 @@ def setStartVectorAndTranslators(p):
             d.append(-lin_oofun(Z))
             
         if any([isspmatrix(elem) for elem in C]):
-            Vstack = scipy.sparse.vstack
+            from scipy.sparse import vstack as Vstack
         else:
             Vstack = vstack # i.e. numpy.vstack
 
