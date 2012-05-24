@@ -310,14 +310,14 @@ def sum(inp, *args, **kwargs):
         for elem in inp: # TODO: mb use reduce() or something like that
             if not isinstance(elem, oofun): 
                 # not '+=' because size can be changed from 1 to another value
-                r0 = r0 + np.asfarray(elem) # so it doesn't work for different sizes
+                r0 = r0 + np.asarray(elem) # so it doesn't work for different sizes
                 continue
             INP.append(elem)
         if len(INP) == 0:
             return r0
         f = lambda *args: r0 + PythonSum(args)
         r = oofun(f, INP, _isSum = True)
-        r._summation_elements = INP if np.array_equal(r0, 0.0) else INP + [r0]
+        r._summation_elements = INP if np.isscalar(r0) and r0 == 0.0 else INP + [r0]
 
         r.storedSumsFuncs = {}
         for inp in INP:
@@ -335,7 +335,7 @@ def sum(inp, *args, **kwargs):
             return np.max(orders)
         r.getOrder = getOrder
         
-        R0 = np.vstack((r0, r0))
+        R0 = np.tile(r0, (2, 1))
 
         def interval(domain, dtype):
            
@@ -379,7 +379,8 @@ def sum(inp, *args, **kwargs):
                 domain.storedSums[r] = {}        
 
             #assert np.asarray(r0).ndim <= 1
-            R = np.asarray(R0, dtype).copy()
+            #R = np.asarray(R0, dtype).copy()
+            R = np.asarray(R0).copy()
             if domain.isMultiPoint:
                 R = np.tile(R, (1, len(list(domain.values())[0][0])))
 

@@ -10,10 +10,9 @@ try:
     from bottleneck import nanmin, nanmax
 except ImportError:
     from numpy import nanmin, nanmax
-
-from numpy.linalg import norm
+    
 from FDmisc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scipyInstalled, \
-raise_except, DiagonalType
+raise_except, DiagonalType, isPyPy
 from ooPoint import ooPoint
 from Interval import Interval, adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain
 import inspect
@@ -110,7 +109,13 @@ class oofun:
     
     def __getattr__(self, attr):
         if attr == '__len__':
-            raise AttributeError('using len(oofun) is not possible yet, try using oofun.size instead')
+#            print '===='
+#            print inspect.stack()
+#            print '----'
+            if isPyPy:
+                return 1
+            else:
+                raise AttributeError('using len(oofun) is not possible yet, try using oofun.size instead')
         elif attr == 'isUncycled':
             self._getDep()
             return self.isUncycled
@@ -440,7 +445,7 @@ class oofun:
         return r
         
     # overload "a-b"
-    __sub__ = lambda self, other: self + (-array(other, 'float')) if type(other) in (list, tuple, ndarray) else self + (-other)
+    __sub__ = lambda self, other: self + (-asfarray(other).copy()) if type(other) in (list, tuple, ndarray) else self + (-other)
     __rsub__ = lambda self, other: other + (-self)
 
     # overload "a/b"
@@ -595,7 +600,7 @@ class oofun:
             r.criticalPoints = False
 
             if isscalar(other) or asarray(other).size == 1:  # other may be array-like
-                r._D = lambda *args, **kwargs: dict([(key, other*value) for key, value in self._D(*args, **kwargs).items()])
+                r._D = lambda *args, **kwargs: dict([(key, value * other) for key, value in self._D(*args, **kwargs).items()])
                 r.d = raise_except
             else:
                 r.d = lambda x: aux_d(x, other)
@@ -837,7 +842,7 @@ class oofun:
                     r = SparseMatrixConstructor((1, x.shape[0]))
                     r[0, ind] = 1.0
                 else: 
-                    if not scipyInstalled: self.pWarn(scipyAbsentMsg)
+                    if condBigMatrix and not scipyInstalled: self.pWarn(scipyAbsentMsg)
                     r = zeros_like(x)
                     r[ind] = 1
                 return r
@@ -1188,7 +1193,6 @@ class oofun:
                 fixedVars = set([fixedVars])
         r = self._D(x, fixedVarsScheduleID, Vars, fixedVars, useSparse = useSparse)
         r = dict([(key, (val if type(val)!=DiagonalType else val.resolve(useSparse))) for key, val in r.items()])
-
         is_oofun = isinstance(initialVars, oofun)
         if is_oofun and not initialVars.is_oovar:
             # TODO: handle it with input of type list/tuple/etc as well
@@ -1273,7 +1277,6 @@ class oofun:
                     continue                
                 ac += 1
                 tmp = derivativeSelf[ac]
-
                 if inp in r:
                     if isscalar(tmp) or (type(r[inp]) == type(tmp) == ndarray and prod(tmp.shape) <= prod(r[inp].shape)): # some sparse matrices has no += implemented 
                         r[inp] += tmp
@@ -1295,9 +1298,10 @@ class oofun:
                         if isspmatrix(t1):
                             rr = t1._mul_sparse_matrix(val.resolve(True))
                         else:
-                            rr = t1 *  val
+                            rr = t1 *  val if  type(t1) == DiagonalType else val * t1 # for PyPy compatibility
                     elif isscalar(val) or isscalar(t1) or prod(t1.shape)==1 or prod(val.shape)==1:
                         #rr = t1 * val
+                        #print t1, type(t1), val, type(val)
                         rr = (t1 if isscalar(t1) or prod(t1.shape)>1 else asscalar(t1) if type(t1)==ndarray else t1[0, 0]) \
                         * (val if isscalar(val) or prod(val.shape)>1 else asscalar(val) if type(val)==ndarray else val[0, 0])
                     else:
@@ -1353,7 +1357,6 @@ class oofun:
                         r[key] = Val
                     else:
                         r[key] = rr
-        
         self._d_val_prev = dict([(key, Copy(value)) for key, value in r.items()])
         self._d_key_prev = dict([(elem, Copy(x[elem])) for elem in dep]) if involveStore else None
         return r
@@ -2114,7 +2117,9 @@ class ooarray(ndarray):
     __array_priority__ = 25 # !!! it should exceed oofun.__array_priority__ !!!
     def __new__(self, *args, **kwargs):
         #assert len(kwargs) == 0
-        obj = asarray(args[0] if len(args) == 1 else args).view(self)
+        tmp = args[0] if len(args) == 1 else args
+        
+        obj = asarray(tmp).view(self)
         #if obj.ndim != 1: raise FuncDesignerException('only 1-d ooarrays are implemented now')
         #if obj.dtype != object:obj = np.asfarray(obj) #TODO: FIXME !
 
@@ -2128,6 +2133,9 @@ class ooarray(ndarray):
         pass
     
     __hash__ = lambda self: self._id
+    
+    def __len__(self):
+        return self.size
 
     expected_kwargs = set(('tol', 'name'))
     def __call__(self, *args, **kwargs):

@@ -1,4 +1,4 @@
-from numpy import asscalar, diag, eye, isscalar, asfarray
+from numpy import asscalar, diag, eye, isscalar, asfarray, ndarray
 import numpy as np
 
 scipyInstalled = True
@@ -46,7 +46,11 @@ class diagonal:
     def toarray(self):
         if self.isOnes:
             tmp = np.empty(self.size)
-            tmp.fill(self.scalarMultiplier)
+            
+            # for PyPy compatibility
+            scalarMultiplier = asscalar(self.scalarMultiplier) if type(self.scalarMultiplier) == ndarray else self.scalarMultiplier
+            
+            tmp.fill(scalarMultiplier)
             return np.diag(tmp)
         else:
             return np.diag(self.diag * self.scalarMultiplier)
@@ -163,6 +167,11 @@ class fixedVarsScheduleID:
 DiffVarsID = fixedVarsScheduleID()
 _getDiffVarsID = lambda *args: DiffVarsID._getDiffVarsID(*args)
 
+try:
+    import numpypy
+    isPyPy = True
+except ImportError:
+    isPyPy = False
 
 def raise_except(*args, **kwargs):
     raise FuncDesignerException('bug in FuncDesigner engine, inform developers')

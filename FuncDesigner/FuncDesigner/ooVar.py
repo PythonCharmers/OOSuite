@@ -3,7 +3,7 @@
 from numpy import nan, asarray, isfinite, empty, zeros, inf, any, array, prod, atleast_1d, \
 asfarray, isscalar, ndarray, int16, int32, int64, float64, tile, vstack, searchsorted, logical_or, where, \
 asanyarray, string_, arange, log2, logical_and, ceil
-from FDmisc import FuncDesignerException, checkSizes
+from FDmisc import FuncDesignerException, checkSizes, isPyPy
 from ooFun import oofun, Len, ooarray, BooleanOOFun, AND, OR, NOT, IMPLICATION, EQUIVALENT
 #from FuncDesigner.Interval import adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain
 
@@ -276,7 +276,15 @@ class oovar(oofun):
         
         
 def oovars(*args, **kw):
-    
+    if isPyPy:
+        raise FuncDesignerException('''
+        for PyPy using oovars() is impossible yet. 
+        You could use oovar(size=n), also 
+        you can create list or tuple of oovars in a cycle, e.g.
+        a = [oovar('a'+str(i)) for i in range(100)]
+        but you should ensure you haven't operations like k*a or a+val in your code, 
+        it may work in completely different way (e.g. k*a will produce Python list of k a instances)
+        ''')
     if len(args) == 1:
         if type(args[0]) in (int, int16, int32, int64):
             return ooarray([oovar(**kw) for i in range(args[0])])
