@@ -1,7 +1,15 @@
 from numpy import diag, array, sqrt,  eye, ones, inf, any, copy, zeros, dot, where, all, tile, sum, nan, isfinite, float64, isnan, log10, \
 max, sign, array_equal, nonzero, ix_, arctan, pi, logical_not, logical_and, atleast_2d, matrix
-from numpy.linalg import norm, solve, LinAlgError
-from openopt.kernel.nonOptMisc import scipyAbsentMsg, scipyInstalled
+from openopt.kernel.ooMisc import norm
+
+try:
+    from numpy.linalg import solve, LinAlgError
+except ImportError:
+    LinAlgError = Exception
+    def solve(*args, **kw): 
+        print('ralg with equality constraints is unimplemented yet')
+        raise Exception('ralg with equality constraints is unimplemented yet')
+from openopt.kernel.nonOptMisc import scipyAbsentMsg, scipyInstalled, isPyPy
 import openopt
 
 #try:
@@ -59,6 +67,9 @@ class ralg(baseSolver):
     def __solver__(self, p):
 
         alp, h0, nh, q1, q2 = self.alp, self.h0, self.nh, self.q1, self.q2
+        
+        if isPyPy and not p.isUC:
+            p.err("ralg hasn't been ported to PyPy for constrained problems yet")
         
         if type(q1) == str:
             if p.probType== 'NLP' and p.isUC: q1 = 0.9
@@ -134,7 +145,7 @@ class ralg(baseSolver):
         w = asarray(1.0/alp-1.0, T)
 
         """                            Shor r-alg engine                           """
-        bestPoint = p.point(asarray(copy(x0), T))
+        bestPoint = p.point(array(copy(x0).tolist(), T)) # tolist() for PyPy compatibility
         prevIter_best_ls_point = bestPoint
         prevIter_PointForDilation = bestPoint
 
@@ -390,7 +401,7 @@ class ralg(baseSolver):
                         shift_x = step_x / p.xtol
                         RD = log10(shift_x+1e-100)
                         if PointForDilation.isFeas(True) or prevIter_PointForDilation.isFeas(True):
-                            RD = min((RD, log10(step_f / p.ftol + 1e-100)))
+                            RD = min((RD, asscalar(asarray(log10(step_f / p.ftol + 1e-100)))))
                         if RD > 1.0:
                             mp = (0.5, (ls/j0) ** 0.5, 1 - 0.2*RD)
                             hs *= max(mp)

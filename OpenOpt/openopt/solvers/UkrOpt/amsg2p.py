@@ -1,5 +1,5 @@
 from numpy import dot, diag, ones, zeros, sqrt
-from numpy.linalg import norm
+from openopt.kernel.ooMisc import norm
 
 def amsg2p(f, df, x0, epsilon, f_opt, gamma, callback = lambda x, f: False):
     # returns optim point and iteration number

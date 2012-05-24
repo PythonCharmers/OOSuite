@@ -1,5 +1,5 @@
 from numpy import asfarray, argmax, sign, inf, log10, dot
-from numpy.linalg import norm
+from openopt.kernel.ooMisc import norm
 from openopt.kernel.baseSolver import baseSolver
 from openopt import NSP
 from openopt.kernel.setDefaultIterFuncs import IS_MAX_FUN_EVALS_REACHED, FVAL_IS_ENOUGH, SMALL_DELTA_X, SMALL_DELTA_F

@@ -1,6 +1,6 @@
 from numpy import concatenate, vstack, hstack, inf, ones, zeros, diag, dot, abs, where, max, min
 from openopt import NLP, LLSP
-from numpy.linalg import norm
+from openopt.kernel.ooMisc import norm
 from openopt.kernel.setDefaultIterFuncs import IS_MAX_ITER_REACHED
 
 funcDirectionValue = lambda alpha, func, x, direction:  func(x+alpha*direction)
