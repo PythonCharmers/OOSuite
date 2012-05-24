@@ -1,7 +1,7 @@
 __docformat__ = "restructuredtext en"
 
 from time import time, clock
-from numpy import isreal,  array_equal
+from numpy import isscalar,  array_equal
 from ooMisc import isSolved
 from setDefaultIterFuncs import USER_DEMAND_STOP, BUTTON_ENOUGH_HAS_BEEN_PRESSED, IS_NAN_IN_X, SMALL_DELTA_X, IS_MAX_ITER_REACHED, IS_MAX_CPU_TIME_REACHED, IS_MAX_TIME_REACHED, IS_MAX_FUN_EVALS_REACHED
 
@@ -84,7 +84,7 @@ def ooIter(p, *args,  **kwargs):
                     if r is None: p.err('user-defined callback function returned None, that is forbidden, see /doc/userCallback.py for allowed return values')
                     if r not in [0,  False]:
                         if r in [True,  1]:  p.istop = USER_DEMAND_STOP
-                        elif isreal(r):
+                        elif isscalar(r):
                             p.istop = r
                             p.msg = 'user-defined'
                         else:

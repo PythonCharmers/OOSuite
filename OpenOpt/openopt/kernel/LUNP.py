@@ -1,7 +1,7 @@
 from ooMisc import assignScript
 from baseProblem import MatrixProblem
 from numpy import asfarray, ones, inf, dot, nan, zeros, any, all, isfinite, eye, hstack, vstack, asarray, atleast_2d
-from numpy.linalg import norm
+from ooMisc import norm
 import LP
 
 class LUNP(MatrixProblem):
@@ -22,7 +22,7 @@ class LUNP(MatrixProblem):
         #lunp_init(self, kwargs)
 
     def objFunc(self, x):
-        r = norm(dot(self.C, x) - self.d) ** 2  /  2.0
+        r = norm(dot(self.C, x) - self.d, inf)
 #        if not self.damp is None:
 #            r += self.damp * norm(x-self.X)**2 / 2.0
 #        if any(isfinite(self.f)): r += dot(self.f, x)

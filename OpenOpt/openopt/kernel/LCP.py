@@ -2,7 +2,7 @@ from ooMisc import assignScript
 from nonOptMisc import isspmatrix
 from baseProblem import MatrixProblem
 from numpy import asarray, ones, inf, dot, nan, zeros, isnan, any, vstack, array, asfarray
-from numpy.linalg import norm
+from ooMisc import norm
 
 class LCP(MatrixProblem):
     _optionalData = []

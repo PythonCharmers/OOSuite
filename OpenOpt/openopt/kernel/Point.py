@@ -1,8 +1,8 @@
 # created by Dmitrey
 from numpy import copy, isnan, array, argmax, abs, vstack, zeros, any, isfinite, all, where, asscalar, \
-sign, dot, sqrt, array_equal, nanmax, inf, hstack, isscalar, logical_or, matrix, asfarray, prod, arange, ndarray
-from numpy.linalg import norm
-from nonOptMisc import Copy
+sign, dot, sqrt, array_equal, nanmax, inf, hstack, isscalar, logical_or, matrix, asfarray, prod, arange, ndarray, asarray, sum
+from ooMisc import norm
+from nonOptMisc import Copy, isPyPy
 from pointProjection import pointProjection
 empty_arr = array(())
 try:
@@ -115,7 +115,7 @@ class Point:
     def mr(self, retAll = False):
         # returns max residual
         if not hasattr(self, '_mr'):
-            r, fname, ind = 0, None, None
+            r, fname, ind = 0, None, 0
             ineqs = ['lin_ineq', 'lb', 'ub']
             eqs = ['lin_eq']
             if self.p._baseClassName == 'NonLin':
@@ -268,10 +268,9 @@ class Point:
         """
         if self.p.isUC:
             return self.f() < point2compare.f()
-            
+
         contol = self.p.contol
 
-        
         if altLinInEq:
             mr, point2compareResidual = self.mr_alt(bestFeasiblePoint=bestFeasiblePoint), point2compare.mr_alt(bestFeasiblePoint=bestFeasiblePoint)
         else:
@@ -305,7 +304,11 @@ class Point:
 
         point2compareF_is_NaN = isnan(point2compare.f())
         selfF_is_NaN = isnan(self.f())
-
+        
+        if isPyPy:
+            if type(point2compareF_is_NaN) == ndarray: point2compareF_is_NaN = asscalar(point2compareF_is_NaN)
+            if type(selfF_is_NaN) == ndarray: selfF_is_NaN = asscalar(selfF_is_NaN)
+        
         if not point2compareF_is_NaN: # f(point2compare) is not NaN
             if not selfF_is_NaN: # f(newPoint) is not NaN
                 return self.f() < point2compare.f()
@@ -370,11 +373,20 @@ class Point:
             c1, c2 = self.c(), point2.c()
             ind1 = logical_or(c1 > 0,  isnan(c1))
             ind2 = logical_or(c2 > 0,  isnan(c2))
-            ind = where(ind1 | ind2)[0]
+            
+            # prev
+#            ind = where(ind1 | ind2)[0]
+#            
+#            _c = zeros(p.nc)
+#            if ind.size != 0:
+#                _c[ind] = p.c(r.x, ind)
+
+            # new, temporary walkaround for PyPy
+            ind = logical_or(ind1, ind2)
             
             _c = zeros(p.nc)
-            if ind.size != 0:
-                _c[ind] = p.c(r.x, ind)
+            if any(ind):
+                _c[ind] = p.c(r.x, where(ind)[0])
             r._c = _c
         
         # TODO: mb same for h?
@@ -390,35 +402,35 @@ class Point:
 #            if all(isfinite(self.f())): threshold = self.p.contol
 #            else: 0.0 = 0
             lin_eq = self.lin_eq()
-            ind_lb, ind_ub = where(lb>0.0)[0], where(ub>0.0)[0]
-            ind_lin_ineq = where(lin_ineq>0.0)[0]
-            ind_lin_eq = where(abs(lin_eq)>0.0)[0]
+            ind_lb, ind_ub = lb>0.0, ub>0.0
+            ind_lin_ineq = lin_ineq>0.0
+            ind_lin_eq = abs(lin_eq)>0.0
             USE_SQUARES = 1
             if USE_SQUARES:
-                if ind_lb.size != 0:
+                if any(ind_lb):
                     r += sum(lb[ind_lb] ** 2)
-                if ind_ub.size != 0:
+                if any(ind_ub):
                     r += sum(ub[ind_ub] ** 2)
 
 #                if ind_lb.size != 0:
 #                    r += sum(lb[ind_lb])
 #                if ind_ub.size != 0:
 #                    r += sum(ub[ind_ub])
-                if ind_lin_ineq.size != 0:
+                if any(ind_lin_ineq):
                     r += sum(lin_ineq[ind_lin_ineq] ** 2)
-                if ind_lin_eq.size != 0:
+                if any(ind_lin_eq):
                     r += sum(lin_eq[ind_lin_eq] ** 2)
 
                 self._all_lin = r / self.p.contol
 #                self._all_lin = r
             else:
-                if ind_lb.size != 0:
+                if any(ind_lb):
                     r += sum(lb[ind_lb])
-                if ind_ub.size != 0:
+                if any(ind_ub):
                     r += sum(ub[ind_ub])
-                if ind_lin_ineq.size != 0:
+                if any(ind_lin_ineq):
                     r += sum(lin_ineq[ind_lin_ineq])
-                if ind_lin_eq.size != 0:
+                if any(ind_lin_eq):
                     r += sum(abs(lin_eq[ind_lin_eq]))
                 self._all_lin = r
                     
@@ -434,18 +446,18 @@ class Point:
             lb, ub = self.lb(), self.ub()
             lin_ineq = self.lin_ineq()
             lin_eq = self.lin_eq()
-            ind_lb, ind_ub = where(lb > 0.0)[0], where(ub > 0.0)[0]
-            ind_lin_ineq = where(lin_ineq > 0.0)[0]
-            ind_lin_eq = where(abs(lin_eq) != 0.0)[0]
+            ind_lb, ind_ub = lb > 0.0, ub > 0.0
+            ind_lin_ineq = lin_ineq > 0.0
+            ind_lin_eq = abs(lin_eq) != 0.0
             
 
             USE_SQUARES = 1
             if USE_SQUARES:
-                if ind_lb.size != 0:
+                if any(ind_lb):
                     d[ind_lb] -= lb[ind_lb]# d/dx((x-lb)^2) for violated constraints
-                if ind_ub.size != 0:
+                if any(ind_ub):
                     d[ind_ub] += ub[ind_ub]# d/dx((x-ub)^2) for violated constraints
-                if ind_lin_ineq.size != 0:
+                if any(ind_lin_ineq):
                     # d/dx((Ax-b)^2)
                     b = p.b[ind_lin_ineq]
                     if hasattr(p, '_A'):
@@ -456,9 +468,12 @@ class Point:
                         d += a.T._mul_sparse_matrix(tmp.reshape(tmp.size, 1)).A.flatten()
                         #d += dot(a.T, dot(a, self.x)  - b) 
                     else:
-                        a = p.A[ind_lin_ineq] 
+                        if isPyPy:
+                            a = array([p.A[j] for j in where(ind_lin_ineq)[0]])
+                        else:
+                            a = p.A[ind_lin_ineq] 
                         d += dot(a.T, dot(a, self.x)  - b) # d/dx((Ax-b)^2)
-                if ind_lin_eq.size != 0:
+                if any(ind_lin_eq):
                     if isspmatrix(p.Aeq):
                         p.err('this solver is not ajusted to handle sparse Aeq matrices yet')
                     #self.p.err('nonzero threshold is not ajusted with lin eq yet')
@@ -471,18 +486,18 @@ class Point:
                 self._all_lin_gradient = 2.0 * d / p.contol
 
             else:
-                if ind_lb.size != 0:
+                if any(ind_lb):
                     d[ind_lb] -= 1# d/dx(lb-x) for violated constraints
-                if ind_ub.size != 0:
+                if any(ind_ub):
                     d[ind_ub] += 1# d/dx(x-ub) for violated constraints
-                if ind_lin_ineq.size != 0:
+                if any(ind_lin_ineq):
                     # d/dx(Ax-b)
                     b = p.b[ind_lin_ineq]
                     if hasattr(p, '_A'):
                         d += (p._A[ind_lin_ineq]).sum(0).A.flatten()
                     else:
                         d += (p.A[ind_lin_ineq]).sum(0).flatten()
-                if ind_lin_eq.size != 0:
+                if any(ind_lin_eq):
                     # currently for ralg it should be handled in dilation matrix
                     p.err('not implemented yet, if you see it inform OpenOpt developers')
 #                    beq = p.beq[ind_lin_eq]
@@ -517,8 +532,9 @@ class Point:
                 th = 0.0
                 #th = contol / 2.0
                 C = p.c(x)
-                ind = where(C>th)[0]
-                activeC = C[ind]
+                Ind = C>th
+                ind = where(Ind)[0]
+                activeC = asarray(C[Ind])# asarray and Ind for PyPy compatibility
                 if len(ind) > 0:
                     tmp = p.dc(x, ind)
 
@@ -536,15 +552,16 @@ class Point:
                             
                     if tmp.ndim > 1:
                         tmp = tmp.sum(0)
-                    direction += (tmp.A if isspmatrix(tmp) or isinstance(tmp, matrix) else tmp).flatten()
+                    direction += (tmp.A if type(tmp) != ndarray else tmp).flatten()
             
 
             if p.userProvided.h:
                 #th = 0.0
                 th = contol / 2.0
                 H = p.h(x)
-                ind1 = where(H>th)[0]
-                H1 = H[ind1]
+                Ind1 = H>th
+                ind1 = where(Ind1)[0]
+                H1 = asarray(H[Ind1])# asarray and Ind1 for PyPy compatibility
                 if len(ind1) > 0:
                     tmp = p.dh(x, ind1)
                     
@@ -562,7 +579,7 @@ class Point:
                     
                     if tmp.ndim > 1: 
                         tmp = tmp.sum(0)
-                    direction += (tmp.A if isspmatrix(tmp) or isinstance(tmp, matrix) else tmp).flatten()
+                    direction += (tmp.A if isspmatrix(tmp) or hasattr(tmp, 'toarray') else tmp).flatten()
                 ind2 = where(H<-th)[0]
                 H2 = H[ind2]
                 if len(ind2) > 0:

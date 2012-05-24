@@ -1,6 +1,6 @@
 from ooMisc import assignScript
 from baseProblem import NonLinProblem
-from numpy import asarray, ones, inf, array, iterable, sort, ndarray
+from numpy import asarray, ones, inf, array, sort, ndarray
 
 class MINLP(NonLinProblem):
     _optionalData = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'c', 'h', 'discreteVars']

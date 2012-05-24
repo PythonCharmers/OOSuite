@@ -1,7 +1,7 @@
 from ooMisc import assignScript
 from baseProblem import MatrixProblem
 from numpy import asfarray, ones, inf, dot, nan, zeros, any, all, isfinite, eye, sign
-from numpy.linalg import norm
+from ooMisc import norm
 import NSP
 
 class LLAVP(MatrixProblem):

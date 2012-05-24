@@ -1,14 +1,41 @@
 __docformat__ = "restructuredtext en"
-from numpy import zeros, ones, copy, isfinite, where, asarray, inf, array, asfarray, dot, ndarray, prod, flatnonzero
-from nonOptMisc import scipyAbsentMsg, scipyInstalled, isspmatrix, Hstack, Vstack, SparseMatrixConstructor, coo_matrix
+from numpy import zeros, ones, copy, isfinite, where, asarray, inf, \
+array, asfarray, dot, ndarray, prod, flatnonzero, max, abs, sqrt, sum, atleast_1d
+from nonOptMisc import scipyAbsentMsg, scipyInstalled, isspmatrix, Hstack, Vstack, SparseMatrixConstructor, coo_matrix, isPyPy
 
 Copy = lambda arg: asscalar(arg) if type(arg)==ndarray and arg.size == 1 else arg.copy() if hasattr(arg, 'copy') else copy(arg)
 
+try:
+    from numpy import linalg
+    norm = linalg.norm
+except ImportError:
+    def norm(x, k=2, *args, **kw):
+        if len(args) or len(kw):
+            raise ImportError('openopt overload for PyPy numpy linalg.norm cannot handle additional args or kwargs')
+        if k == 2:
+            return sqrt(sum(asarray(x)**2))
+        elif k == inf:
+            return max(abs(x))
+        elif k == 1:
+            return sum(abs(x))
+        else:
+            raise ImportError('unimplemented')
+
 def Len(arg):
-    if arg == None or arg == [] or (isinstance(arg, ndarray) and arg.size==1 and arg == array(None, dtype=object)):
-        return 0
-    elif type(arg) in [int, float]:
+    
+    # for PyPy:
+    if type(arg) == ndarray:
+        if arg.size > 1:
+            return arg.size  
+        elif arg.size == 1 and atleast_1d(arg)[0] is not None:
+            return 1 
+        elif arg.size == 0:
+            return 0
+       
+    if type(arg) in [int, float]:
         return 1
+    elif arg == None or arg == [] or (isinstance(arg, ndarray) and arg.size==1 and arg == array(None, dtype=object)):
+        return 0
     else:
         return len(arg)
 
@@ -19,10 +46,17 @@ def xBounds2Matrix(p):
     """
 
     #TODO: is reshape/flatten required in newest numpy versions?
+    
+    # for PyPy
+    IndLB, IndUB, IndEQ = \
+    isfinite(p.lb) & ~(p.lb == p.ub), \
+    isfinite(p.ub) & ~(p.lb == p.ub), \
+    p.lb == p.ub
+
     indLB, indUB, indEQ = \
-    where(isfinite(p.lb) & ~(p.lb == p.ub))[0], \
-    where(isfinite(p.ub) & ~(p.lb == p.ub))[0], \
-    where(p.lb == p.ub)[0]
+    where(IndLB)[0], \
+    where(IndUB)[0], \
+    where(IndEQ)[0]
 
     initLenB = Len(p.b)
     initLenBeq = Len(p.beq)
@@ -34,9 +68,17 @@ def xBounds2Matrix(p):
             R2 = coo_matrix((ones(nUB), (range(nUB), indUB)), shape=(nUB, p.n)) if nUB != 0 else zeros((0, p.n))
         else:
             R1 = zeros((nLB, p.n))
-            R1[range(nLB), indLB] = -1
+            if isPyPy:
+                for i in range(nLB):
+                    R1[i, indLB[i]] = -1
+            else:
+                R1[range(nLB), indLB] = -1
             R2 = zeros((nUB, p.n))
-            R2[range(nUB), indUB] = 1
+            if isPyPy:
+                for i in range(nUB):
+                    R2[i, indUB[i]] = -1
+            else:
+                R2[range(nUB), indUB] = 1
         
         p.A = Vstack((p.A, R1, R2))
         if hasattr(p, '_A'): delattr(p, '_A')
@@ -47,7 +89,7 @@ def xBounds2Matrix(p):
             else:
                 p.A = p.A.A
         
-        p.b = Hstack((p.b, -p.lb[indLB], p.ub[indUB]))
+        p.b = Hstack((p.b, -p.lb[IndLB], p.ub[IndUB]))
 
     if nEQ>0:
         
@@ -66,7 +108,7 @@ def xBounds2Matrix(p):
             else:
                 p.Aeq = p.Aeq.A
             
-        p.beq = Hstack((p.beq, p.lb[indEQ]))
+        p.beq = Hstack((p.beq, p.lb[IndEQ]))
         
     p.lb = -inf*ones(p.n)
     p.ub = inf*ones(p.n)
@@ -82,7 +124,6 @@ def xBounds2Matrix(p):
             p._Aeq = csc_matrix(p.Aeq)
     if (nA > SizeThreshold or nAeq > SizeThreshold) and not scipyInstalled and p.useSparse is not False:
         p.pWarn(scipyAbsentMsg)
-
 
 
 def LinConst2WholeRepr(p):
@@ -202,10 +243,12 @@ def setNonLinFuncsNumber(p,  userFunctionType):
 def economyMult(M, V):
     #return dot(M, V)
     assert V.ndim <= 1 or V.shape[1] == 1
-    if all(V): # all v coords are non-zeros
+    
+    if True or all(V) or isPyPy: # all v coords are non-zeros
         return dot(M, V)
     else:
         ind = where(V != 0)[0]
+        #ind = V != 0
         r = dot(M[:,ind], V[ind])
         return r
 

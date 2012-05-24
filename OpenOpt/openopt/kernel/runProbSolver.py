@@ -1,7 +1,7 @@
 __docformat__ = "restructuredtext en"
 from time import time, clock
 from numpy import asfarray, copy, inf, nan, isfinite, ones, ndim, all, atleast_1d, any, isnan, \
-array_equiv, asscalar, asarray, where, ndarray, isscalar, matrix, seterr, isinf
+array_equal, asscalar, asarray, where, ndarray, isscalar, matrix, seterr, isinf
 from setDefaultIterFuncs import stopcase,  SMALL_DELTA_X,  SMALL_DELTA_F, IS_MAX_ITER_REACHED
 from check import check
 from oologfcn import OpenOptException
@@ -143,11 +143,15 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
 
     for fn in ['maxFunEvals', 'maxIter']: setattr(p, fn, int(getattr(p, fn)))# to prevent warnings from numbers like 1e7
 
-    if hasattr(p, 'x0'): p.x0 = atleast_1d(asfarray(p.x0).copy())
+    if hasattr(p, 'x0'): 
+        try:
+            p.x0 = atleast_1d(asfarray(p.x0).copy())
+        except NotImplementedError:
+            p.x0 = asfarray(p.x0.tolist())
     for fn in ['lb', 'ub', 'b', 'beq']:
         if hasattr(p, fn):
             fv = getattr(p, fn)
-            if fv != None:# and fv != []:
+            if fv is not None:# and fv != []:
                 if str(type(fv)) == "<class 'map'>":
                     p.err("Python3 incompatibility with previous versions: you can't use 'map' here, use rendered value instead")
                 setattr(p, fn, asfarray(fv).flatten())
@@ -288,7 +292,7 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     # Solving finished
     if p.probType != 'EIG':
         if not hasattr(p, 'xf') and not hasattr(p, 'xk'): p.xf = p.xk = ones(p.n)*nan
-        if hasattr(p, 'xf') and (not hasattr(p, 'xk') or array_equiv(p.xk, p.x0)): p.xk = p.xf
+        if hasattr(p, 'xf') and (not hasattr(p, 'xk') or array_equal(p.xk, p.x0)): p.xk = p.xf
         if not hasattr(p,  'xf') or all(isnan(p.xf)): p.xf = p.xk
         if p.xf is nan: 
             p.xf = p.xk = ones(p.n)*nan
@@ -307,6 +311,11 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
         p.isFeasible = p.rk < p.ftol
     else:
         p.ff = p.fk = p.objFunc(p.xk)
+        
+        # walkaround for PyPy:
+        if type(p.ff) == ndarray and p.ff.size == 1:
+            p.ff = p.fk = asscalar(p.ff)
+        
     if not hasattr(p,  'ff') or any(p.ff==nan): 
         p.iterfcn, tmp_iterfcn = lambda *args: None, p.iterfcn
         p.ff = p.fk
@@ -359,7 +368,7 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
 ##################################################################
 def finalTextOutput(p, r):
     if p.iprint >= 0:
-        if p.msg is not '':  
+        if len(p.msg):  
             p.disp("istop: " + str(r.istop) + ' (' + p.msg +')')
         else: 
             p.disp("istop: " + str(r.istop))

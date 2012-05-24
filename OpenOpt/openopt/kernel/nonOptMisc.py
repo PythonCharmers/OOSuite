@@ -1,6 +1,6 @@
 import os
 from oologfcn import OpenOptException
-from numpy import zeros, bmat, hstack, vstack, ndarray, copy, where, prod, asarray, atleast_1d, isscalar, atleast_2d, eye, diag
+from numpy import zeros, hstack, vstack, ndarray, copy, where, prod, asarray, atleast_1d, isscalar, atleast_2d, eye, diag
 import sys
 syspath = sys.path
 Sep = os.sep
@@ -10,7 +10,6 @@ try:
     scipyInstalled = True
     scipyAbsentMsg = ''
     from scipy.sparse import isspmatrix, csr_matrix, coo_matrix
-    from scipy.sparse import bmat as Bmat
     from scipy.sparse import hstack as HstackSP, vstack as VstackSP, find as Find
     
     def Hstack(Tuple):
@@ -48,12 +47,17 @@ except:
     isspmatrix = lambda *args,  **kwargs:  False
     Hstack = hstack
     Vstack = vstack
-    Bmat = bmat
     def SparseMatrixConstructor(*args, **kwargs): 
         raise OpenOptException('error in OpenOpt kernel, inform developers')
     def Find(*args, **kwargs): 
         raise OpenOptException('error in OpenOpt kernel, inform developers')
-        
+
+try:
+    import numpypy
+    isPyPy = True
+except ImportError:
+    isPyPy = False
+
 DenseMatrixConstructor = lambda *args, **kwargs: zeros(*args, **kwargs)
 
 def Eye(n):

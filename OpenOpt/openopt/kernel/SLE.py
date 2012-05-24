@@ -1,7 +1,7 @@
 from ooMisc import assignScript
 from baseProblem import MatrixProblem
 from numpy import asfarray, ones, inf, dot, nan, zeros, any, all, isfinite, eye, vstack, hstack, flatnonzero, isscalar, ndarray, atleast_2d, zeros_like
-from numpy.linalg import norm
+from ooMisc import norm
 from oologfcn import OpenOptException
 import NLP
 from nonOptMisc import scipyInstalled, Vstack

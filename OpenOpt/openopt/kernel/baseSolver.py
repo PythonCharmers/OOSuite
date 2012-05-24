@@ -1,5 +1,5 @@
 __docformat__ = "restructuredtext en"
-from numpy import atleast_1d,  all, asarray, ndarray, copy, ravel, isnan, where
+from numpy import atleast_1d,  all, asarray, ndarray, copy, ravel, isnan, where, isscalar, asscalar
 from openopt.kernel.Point import Point
 
 class baseSolver:
@@ -106,5 +106,7 @@ class baseSolver:
 
         p.iterValues.f.append(v)
         
-
+        if not isscalar(p.fk) and p.fk.size == 1:
+            p.fk = asscalar(p.fk)
+            
 

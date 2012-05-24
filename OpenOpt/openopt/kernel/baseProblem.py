@@ -1,6 +1,5 @@
 __docformat__ = "restructuredtext en"
 from numpy import *
-from numpy import linalg
 from oologfcn import *
 from oographics import Graphics
 from setDefaultIterFuncs import setDefaultIterFuncs, IS_MAX_FUN_EVALS_REACHED, denyingStopFuncs
@@ -12,7 +11,7 @@ from ooIter import ooIter
 from openopt.kernel.Point import Point
 
 from iterPrint import ooTextOutput
-from ooMisc import setNonLinFuncsNumber, assignScript
+from ooMisc import setNonLinFuncsNumber, assignScript, norm
 from nonOptMisc import isspmatrix, scipyInstalled, scipyAbsentMsg, csr_matrix, Vstack, Hstack, EmptyClass
 from copy import copy as Copy
 try:
@@ -167,7 +166,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 self.err('Too much arguments for '+self.probType +': '+ str(len(args)) +' are got, at most '+ str(len(self.expectedArgs)) + ' were expected')
             for i, arg in enumerate(args):
                 setattr(self, self.expectedArgs[i], arg)
-        self.norm = linalg.norm
+        self.norm = norm
         self.denyingStopFuncs = denyingStopFuncs()
         self.iterfcn = lambda *args, **kwargs: ooIter(self, *args, **kwargs)# this parameter is only for OpenOpt developers, not common users
         self.graphics = Graphics()
@@ -585,7 +584,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             Contol = tol
             Contol2 = Contol * scaleFactor
         else:
-            Contol = copy(probtol)
+            Contol = asscalar(copy(probtol))
             Contol2 = Contol 
             
         #Contol = tol if tol != 0 else copy(self.contol)
@@ -614,7 +613,12 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             if any(isfinite(_lb)):
                 if _lb.size not in (f_size, 1): 
                     self.err('incorrect size of lower box-bound constraint for %s: 1 or %d expected, %d obtained' % (Name, f_size, _lb.size))
-                val = array(f_size*[_lb] if _lb.size < f_size else _lb)
+                    
+                # for PyPy compatibility
+                if type(_lb) == ndarray and _lb.size == 1:
+                    _lb = _lb.item()
+                
+                val = array(f_size*[_lb] if type(_lb) == ndarray and _lb.size < f_size else _lb)
                 if f not in LB:
                     LB[f] = val
                 else:
@@ -627,7 +631,12 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             if any(isfinite(_ub)):
                 if _ub.size not in (f_size, 1): 
                     self.err('incorrect size of upper box-bound constraint for %s: 1 or %d expected, %d obtained' % (Name, f_size, _ub.size))
-                val = array(f_size*[_ub] if _ub.size < f_size else _ub)
+                
+                # for PyPy compatibility
+                if type(_ub) == ndarray and _ub.size == 1:
+                    _ub = _ub.item()
+                    
+                val = array(f_size*[_ub] if type(_ub) == ndarray and _ub.size < f_size else _ub)
                 if f not in UB:
                     UB[f] = val
                 else:
@@ -699,8 +708,14 @@ class MatrixProblem(baseProblem):
 
     # TODO: move the function to child classes
     def _isUnconstrained(self):
-        s = ((), [], array([]), None)
-        return self.b.size ==0 and self.beq.size==0 and (self.lb in s or all(isinf(self.lb))) and (self.ub in s or all(isinf(self.ub)))
+        if  self.b.size !=0 or self.beq.size != 0: 
+            return False
+        
+        # for PyPy compatibility
+        if any(atleast_1d(self.lb) != -inf) or any(atleast_1d(self.ub) != inf):
+            return False
+            
+        return True
 
 
 class Parallel:

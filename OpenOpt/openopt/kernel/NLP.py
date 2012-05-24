@@ -1,6 +1,6 @@
 from ooMisc import assignScript
 from baseProblem import NonLinProblem
-from numpy import asarray, ones, inf, array, iterable
+from numpy import asarray, ones, inf, array
 
 
 class NLP(NonLinProblem):

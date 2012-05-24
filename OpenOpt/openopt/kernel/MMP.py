@@ -1,7 +1,6 @@
 from baseProblem import NonLinProblem
 from NLP import NLP
 from numpy import max, array, hstack, vstack, zeros, ones, inf, asfarray, atleast_2d
-from numpy.linalg import norm
 
 class MMP(NonLinProblem):
     """

@@ -1,6 +1,6 @@
 from baseProblem import NonLinProblem
 
-from numpy.linalg import norm
+from ooMisc import norm
 from numpy import inf, asfarray, atleast_1d, dot, abs, ndarray
 from setDefaultIterFuncs import FVAL_IS_ENOUGH, SMALL_DELTA_F
 from nonOptMisc import getSolverFromStringName

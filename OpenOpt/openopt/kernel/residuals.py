@@ -31,14 +31,14 @@ class residuals:
         else: return empty_arr.copy()
 
     def _get_AX_Less_B_residuals(self, x):
-        if self.A != None and self.A.size > 0: 
+        if self.A is not None and self.A.size > 0: 
             return self.matmult(self.A, x).flatten() - self.b if not hasattr(self, '_A') else \
             self._A._mul_sparse_matrix(csr_matrix((x, (arange(self.n), zeros(self.n))), shape=(self.n, 1))).toarray().flatten() - self.b
             #return self.matmult(self.A, x).flatten() - self.b if not hasattr(self, '_A') else self._A._mul_sparse_matrix(csr_matrix(x).reshape((self.n, 1))).toarray().flatten() - self.b
         else: return empty_arr.copy()
 
     def _get_AeqX_eq_Beq_residuals(self, x):
-        if self.Aeq != None and self.Aeq.size>0 : 
+        if self.Aeq is not None and self.Aeq.size>0 : 
             return self.matmult(self.Aeq, x).flatten() - self.beq if not hasattr(self, '_Aeq') else \
             self._Aeq._mul_sparse_matrix(csr_matrix((x, (arange(self.n), zeros(self.n))), shape=(self.n, 1))).toarray().flatten() - self.beq
         else: return empty_arr.copy()

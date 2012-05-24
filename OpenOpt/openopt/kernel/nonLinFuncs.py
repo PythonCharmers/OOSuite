@@ -1,7 +1,7 @@
 from numpy import *
 from setDefaultIterFuncs import USER_DEMAND_EXIT
 from ooMisc import killThread, setNonLinFuncsNumber
-from nonOptMisc import scipyInstalled, Vstack, isspmatrix
+from nonOptMisc import scipyInstalled, Vstack, isspmatrix, isPyPy
 try:
     from DerApproximator import get_d1
     DerApproximatorIsInstalled = True
@@ -24,7 +24,7 @@ class nonLinFuncs:
                 raise killThread
                 
         if getDerivative and not p.isFDmodel and not DerApproximatorIsInstalled:
-            p.err('To perform gradients check you should have DerApproximator installed, see http://openopt.org/DerApproximator')
+            p.err('For the problem you should have DerApproximator installed, see http://openopt.org/DerApproximator')
 
         #userFunctionType should be 'f', 'c', 'h'
         funcs = getattr(p.user, userFunctionType)
@@ -299,7 +299,8 @@ class nonLinFuncs:
             for fun in Funcs:#getattr(p.user, derivativesType):
                 tmp = atleast_1d(fun(*(x,)+getattr(p.args, funcType)))
                 # TODO: replace tmp.size here for sparse matrices
-                if mod(tmp.size, p.n) != 0:
+                #assert tmp.size % p.n == mod(tmp.size, p.n)
+                if tmp.size % p.n != 0:
                     if funcType=='f':
                         p.err('incorrect user-supplied (sub)gradient size of objective function')
                     elif funcType=='c':
@@ -411,13 +412,21 @@ def getFuncsAndExtractIndexes(p, funcs, ind, userFunctionType):
                 tmp = tmp.tocsc()
             elif not isinstance(tmp,  ndarray):
                 tmp = atleast_1d(tmp)
-            return tmp[ind]
+            if isPyPy:
+                return atleast_1d([tmp[i] for i in ind])
+            else:
+                return tmp[ind]
         return [f]
     
     #getting number of block and shift
     arr_of_indexes = getattr(p, 'arr_of_indexes_' + userFunctionType)
-    left_arr_indexes = searchsorted(arr_of_indexes, ind) 
     
+    if isPyPy: # temporary walkaround the bug "int32 is unhashable"
+        Left_arr_indexes = searchsorted(arr_of_indexes, ind) 
+        left_arr_indexes = [int(elem) for elem in atleast_1d(Left_arr_indexes)]
+    else:
+        left_arr_indexes = searchsorted(arr_of_indexes, ind) 
+
     indLenght = len(ind)
     
     Funcs2 = []
@@ -444,7 +453,15 @@ def getFuncsAndExtractIndexes(p, funcs, ind, userFunctionType):
             r = Funcs2[i][0](x)
             # TODO: are other formats better?
             if not isscalar(r):
-                r = r.tocsc()[Funcs2[i][1]] if isspmatrix(r) else atleast_1d(r)[Funcs2[i][1]]
+                if isPyPy:
+                    if isspmatrix(r):
+                        r = r.tocsc()[Funcs2[i][1]]
+                    else:
+                        # Temporary walkaround of PyPy integer indexation absence 
+                        tmp = atleast_1d(r)
+                        r = atleast_1d([tmp[i] for i in Funcs2[i][1]])
+                else:
+                    r = r.tocsc()[Funcs2[i][1]] if isspmatrix(r) else atleast_1d(r)[Funcs2[i][1]]
             return r
         Funcs.append(f_aux)
         #Funcs.append(lambda x, i=i: Funcs2[i][0](x)[Funcs2[i][1]])
