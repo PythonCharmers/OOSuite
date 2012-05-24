@@ -1,7 +1,7 @@
-from numpy.linalg import norm
-from numpy import dot, asfarray, atleast_1d,  zeros, ones, int, float64, where, inf, ndarray
+from openopt.kernel.ooMisc import norm
+from numpy import dot, asfarray, atleast_1d,  zeros, ones, float64, where, inf, ndarray, flatnonzero
 from openopt.kernel.baseSolver import baseSolver
-from openopt.kernel.nonOptMisc import isspmatrix, scipyInstalled, scipyAbsentMsg
+from openopt.kernel.nonOptMisc import isspmatrix, scipyInstalled, scipyAbsentMsg, isPyPy
 from lsqr import lsqr as LSQR
 
 try:
@@ -42,12 +42,18 @@ class lsqr(baseSolver):
             p.err("sorry, the solver can't handle non-zero X data yet, but you can easily handle it by yourself")
         C, d = p.C, p.d
         m, n = C.shape[0], p.n
-
-        if isinstance(C, ndarray) and 0.25* C.size > C.nonzero()[0].size:
-            if not scipyInstalled: 
-                p.pWarn(scipyAbsentMsg)
-            else:
+        
+        if scipyInstalled:
+            if isspmatrix(C) or 0.25* C.size > flatnonzero(C).size:
                 C = csc_matrix(C)
+        elif not isPyPy and 0.25* C.size > flatnonzero(C).size:
+            p.pWarn(scipyAbsentMsg)
+            
+#         if isinstance(C, ndarray) and 0.25* C.size > flatnonzero(C).size:
+#            if not scipyInstalled: 
+#                p.pWarn(scipyAbsentMsg)
+#            else:
+#                C = csc_matrix(C)
                 
         CT = C.T
         
@@ -81,5 +87,5 @@ class lsqr(baseSolver):
         p.debugmsg('lsqr iterations elapsed: %d' % itn)
         #p.iter = 1 # itn
         p.xf = x
-        p.ff = p.fk = p.objFunc(x)
+        #p.ff = p.fk = p.objFunc(x)
 

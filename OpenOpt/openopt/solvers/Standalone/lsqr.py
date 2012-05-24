@@ -12,7 +12,7 @@ $Id$
 """
 
 from numpy import zeros, dot
-from numpy.linalg import norm
+from openopt.kernel.ooMisc import norm
 from math import sqrt
 
 # Simple shortcuts---linalg.norm is too slow for small vectors
@@ -134,7 +134,7 @@ def lsqr( m, n, aprod, b, damp, atol, btol, conlim, itnlim, show, wantvar = Fals
         
     arnorm = alfa * beta;
     if arnorm == 0:
-        print(msg[0])
+#        print(msg[0])
         return (x, istop, itn, r1norm, r2norm, anorm, acond, arnorm, xnorm, var)
 
     rhobar = alfa;		phibar = beta;		bnorm  = beta;

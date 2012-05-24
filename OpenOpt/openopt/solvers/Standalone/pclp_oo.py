@@ -163,6 +163,8 @@ def lp_engine(c, A, b):
                 A[i,:] = -A[i,:]
             
     d = -A.sum(axis=0)
+    if not isscalar(d) and type(d) != ndarray:
+        d = d.A.flatten()
     if not isinstance(d, ndarray): d = d.A.flatten() # d may be dense matrix
     w0 = sum(b)
     # H = [A b;c' 0;d -w0];
@@ -268,7 +270,7 @@ def _simplex(H,basis,indx,s):
                 
                 # NEW
                 tmp = H[:n1-s0,jp]
-                if isspmatrix(tmp): tmp = tmp.A
+                if isspmatrix(tmp): tmp = tmp.A.flatten()
                 ind = tmp>0
                 
                 #tmp2 = H[ind,n2-1]/H[ind,jp]
@@ -281,7 +283,7 @@ def _simplex(H,basis,indx,s):
                     for i, val in enumerate(where(ind)[0]):
                         h1[val] = tmp2[i]
                 else:
-                    h1[ind] = tmp2
+                    h1[atleast_1d(ind)] = tmp2
                 
                 #OLD
 #                for i in range(n1-s0):
