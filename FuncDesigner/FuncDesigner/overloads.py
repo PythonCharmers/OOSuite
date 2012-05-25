@@ -602,7 +602,7 @@ def decision(*args, **kwargs):
     pass
         
 def max(inp,  *args,  **kwargs): 
-    if type(inp) in (list, tuple, np.ndarray) and (len(args) == 0 or len(args) == 1 and not isinstance(args[0], oofun)) and np.asarray(inp).dtype != object:
+    if type(inp) in (list, tuple, np.ndarray) and (len(args) == 0 or len(args) == 1 and not isinstance(args[0], oofun)) and np.asarray(inp).dtype.type != object:
         return np.max(inp, *args, **kwargs)
     assert len(args) == len(kwargs) == 0, 'incorrect data type in FuncDesigner max or not implemented yet'
     
@@ -645,7 +645,7 @@ def max(inp,  *args,  **kwargs):
     return r        
     
 def min(inp,  *args,  **kwargs): 
-    if type(inp) in (list, tuple, np.ndarray) and (len(args) == 0 or len(args) == 1 and not isinstance(args[0], oofun)) and np.asarray(inp).dtype != object:
+    if type(inp) in (list, tuple, np.ndarray) and (len(args) == 0 or len(args) == 1 and not isinstance(args[0], oofun)) and np.asarray(inp).dtype.type != object:
         return np.min(inp, *args, **kwargs)
     
     assert len(args) == len(kwargs) == 0, 'incorrect data type in FuncDesigner min or not implemented yet'
