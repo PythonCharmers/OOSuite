@@ -26,6 +26,8 @@ class Point(ooarray, baseGeometryObject):
         Args = args[:-1] if type(args[-1]) == str else args
         r =  asarray(Args[0]).view(self) if len(Args) == 1 and type(Args[0]) in (ooarray, Point, ndarray, list, tuple) else ooarray(Args).view(self)
         r.name = args[-1] if type(args[-1]) == str else kw['name'] if 'name' in kw else 'unnamed point ' + str(self._num)
+        r._id = oofun._id
+        oofun._id += 1
         return r
         #obj = ooarray(asarray(args[:-1] if type(args[-1]) == str else args).tolist()).view(self)
         #return obj
@@ -65,11 +67,11 @@ class Point(ooarray, baseGeometryObject):
     def distance(self, *args, **kw):
         assert len(kw) == 0 and len(args) == 1
         other = args[0]
-        if type(other) in (list, tuple):
+        if isinstance(other, (list, tuple)):
             other = Point(other)
-        if type(other) in (Line, Plane):
+        if isinstance(other, (Line, Plane)):
             return self.distance(self.projection(other))
-        elif type(other) in (Point, ooarray, ndarray):
+        elif isinstance(other, ndarray):
             return sqrt(sum((self-other)**2), attachConstraints = False)
    
     def projection(self, obj):
