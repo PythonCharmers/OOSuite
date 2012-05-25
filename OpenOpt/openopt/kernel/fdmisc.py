@@ -76,7 +76,18 @@ def setStartVectorAndTranslators(p):
     n = vector_x0.size
     p.n = n
     
-    oovar_sizes = [asarray(startPoint[elem]).size for elem in freeVars]
+    #oovar_sizes = [asarray(startPoint[elem]).size for elem in freeVars]
+    # temporary walkaround for pypy
+    oovar_sizes = [len(atleast_1d(startPoint[elem]).flatten()) for elem in freeVars]
+
+#    for elem in freeVars:
+#        print startPoint[elem]
+#        if type(startPoint[elem]) == ndarray: 
+#            print '----'
+#            print type(startPoint[elem])
+#            print startPoint[elem].size 
+#            print len(startPoint[elem])
+
     oovar_indexes = cumsum([0] + oovar_sizes)
     
     # TODO: mb use oovarsIndDict here as well (as for derivatives?)
@@ -112,7 +123,6 @@ def setStartVectorAndTranslators(p):
         
         p._FDtranslator['prevVal'] = r 
         p._FDtranslator['prevX'] = copy(x)
-
         return r
 
     oovarsIndDict = dict([(oov, (oovar_indexes[i], oovar_indexes[i+1])) for i, oov in enumerate(freeVars)])
