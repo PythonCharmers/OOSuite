@@ -102,66 +102,29 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
             tnlh_curr = vstack([node.tnlhf for node in an])#tnlh_fixed
         else:
             if fo != fo_prev:
-                if fo < fo_prev - fTol:
-                    update_nlh = True
-#                    TF = vstack([node.tnlhf for node in an])#tnlh_fixed
-#                    o_tmp, a_tmp = array([node.o for node in an]), array([node.a for node in an])
-                    nodesToUpdate = an
-                else:
-                    fos = array([node.fo for node in an])
-                    
-                    #prev
-                    #ind_update = where(fos > fo + 0.01* fTol)[0]
-                    
-                    #new
-                    th_keys = array([node.th_key for node in an])
-                    delta_fos = fos - fo
-                    ind_update = where(10 * delta_fos > fos - th_keys)[0]
-                    
-                    nodesToUpdate = an[ind_update]
-                    update_nlh = True if ind_update.size != 0 else False
+                fos = array([node.fo for node in an])
+                
+                #prev
+                #ind_update = where(fos > fo + 0.01* fTol)[0]
+                
+                #new
+                th_keys = array([node.th_key for node in an])
+                delta_fos = fos - fo
+                ind_update = where(10 * delta_fos > fos - th_keys)[0]
+                
+                nodesToUpdate = an[ind_update]
+                update_nlh = True if ind_update.size != 0 else False
+#                  print 'o MB:', float(o_tmp.nbytes) / 1e6
+#                  print 'percent:', 100*float(ind_update.size) / len(an) 
+                if update_nlh:
 #                    from time import time
 #                    tt = time()
-#                    if update_nlh:
-#    #                    print 'o MB:', float(o_tmp.nbytes) / 1e6
-#                        print 'percent:', 100*float(ind_update.size) / len(an) 
-#    #                    print 'fo:', fo
-#    #                    print 'diff 0 end:', (fos[0] - fo)/fTol, (fos[-1] - fo)/fTol
-#    #                    print 'time:', time() - tt
-#                        if not hasattr(p, 'Time'):
-#                            p.Time = time() - tt
-#                        else:
-#                            p.Time += time() - tt
-                    
-                
-                if update_nlh:
-                    #tnlh_all_new = TF - log2(a_tmp - o_tmp)
-
-                    a_tmp = array([node.a for node in nodesToUpdate])
-                    Tmp = a_tmp
-                    Tmp[Tmp>fo] = fo                
-
-                    o_tmp = array([node.o for node in nodesToUpdate])
-                    Tmp -= o_tmp
-                    
-                    tnlh_all_new =  - log2(Tmp)
-                    
-                    del Tmp, a_tmp
-                    
-                    tnlh_all_new += vstack([node.tnlhf for node in nodesToUpdate])#tnlh_fixed[ind_update]
-                    
-                    tnlh_curr_best = nanmin(tnlh_all_new, 1)
-
-                    o_tmp[o_tmp > fo] = -inf
-                    M = atleast_1d(nanmax(o_tmp, 1))
-                    del o_tmp
-                    
-                    for j, node in enumerate(nodesToUpdate): 
-                        node.fo = fo
-                        node.tnlh_curr = tnlh_all_new[j]
-                        node.tnlh_curr_best = tnlh_curr_best[j]
-                        node.th_key = M[j]
-                    
+                    updateNodes(nodesToUpdate, fo)
+#                    if not hasattr(p, 'Time'):
+#                        p.Time = time() - tt
+#                    else:
+#                        p.Time += time() - tt
+                        
             tmp = asarray([node.key for node in an])
             r10 = where(tmp > fo)[0]
             if r10.size != 0:
@@ -320,3 +283,52 @@ def r45(y, e, vv, p, asdf1, dataType, r41, nlhc):
         pass
         
     return o, a, r41
+
+def updateNodes(nodesToUpdate, fo):
+    if len(nodesToUpdate) == 0: return
+    a_tmp = array([node.a for node in nodesToUpdate])
+    Tmp = a_tmp
+    Tmp[Tmp>fo] = fo                
+
+    o_tmp = array([node.o for node in nodesToUpdate])
+    Tmp -= o_tmp
+    
+    tnlh_all_new =  - log2(Tmp)
+    
+    del Tmp, a_tmp
+    
+    tnlh_all_new += vstack([node.tnlhf for node in nodesToUpdate])#tnlh_fixed[ind_update]
+    
+    tnlh_curr_best = nanmin(tnlh_all_new, 1)
+
+    o_tmp[o_tmp > fo] = -inf
+    M = atleast_1d(nanmax(o_tmp, 1))
+    for j, node in enumerate(nodesToUpdate): 
+        node.fo = fo
+        node.tnlh_curr = tnlh_all_new[j]
+        node.tnlh_curr_best = tnlh_curr_best[j]
+        node.th_key = M[j]
+
+#    return tnlh_all_new, tnlh_curr_best, M
+
+
+#from multiprocessing import Pool
+#from numpy import array_split
+#def updateNodes(nodesToUpdate, fo, p):
+#    if p.nProc == 1:
+#        Chunks = [nodesToUpdate]
+#        result = [updateNodesEngine((nodesToUpdate, fo))]
+#    else:
+#        Chunks = array_split(nodesToUpdate, p.nProc)
+#        if not hasattr(p, 'pool'):
+#            p.pool = Pool(processes = p.nProc)
+#        #result = p.pool.imap(updateNodesEngine, [(c, fo) for c in Chunks])
+#        result = p.pool.map(updateNodesEngine, [(c, fo) for c in Chunks])
+#    for i, elem in enumerate(result):
+#        if elem is None: continue
+#        tnlh_all_new, tnlh_curr_best, M = elem
+#        for j, node in enumerate(Chunks[i]): 
+#            node.fo = fo
+#            node.tnlh_curr = tnlh_all_new[j]
+#            node.tnlh_curr_best = tnlh_curr_best[j]
+#            node.th_key = M[j]
