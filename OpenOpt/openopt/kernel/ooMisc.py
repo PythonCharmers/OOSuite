@@ -227,7 +227,11 @@ def setNonLinFuncsNumber(p,  userFunctionType):
         number = 0
         arr = []
         for func in fv:
-            number += asarray(func(*(X,) + args)).size
+            if isinstance(func, (list, tuple, set, ndarray)):
+                for elem in func:
+                    number += asarray(elem(*(X,) + args)).size
+            else:
+                number += asarray(func(*(X,) + args)).size
             arr.append(number)
         if len(arr) < number: p.functype[userFunctionType] = 'block'
         elif len(arr) > 1: p.functype[userFunctionType] = 'some funcs R^nvars -> R'

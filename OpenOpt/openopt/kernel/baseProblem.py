@@ -279,11 +279,24 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     setattr(newProb, key, None)
                         
     FuncDesignerSign = 'f'
-    _isFDmodel = lambda self: \
-    (self.probType == 'MOP' and (hasattr(self.f[0], 'is_oovar') or type(self.f[0] in (list, tuple) and hasattr(self.f[0][0], 'is_oovar')))) \
-    or (hasattr(self, self.FuncDesignerSign) and \
-    ((type(getattr(self, self.FuncDesignerSign)) in [list, tuple] and 'is_oovar' in dir(getattr(self, self.FuncDesignerSign)[0])) \
-                                                                                                or 'is_oovar' in dir(getattr(self, self.FuncDesignerSign) )))
+
+    def _isFDmodel(self):
+        try:
+            from FuncDesigner import ooarray
+            from FuncDesigner.ooFun import oofun
+        except ImportError:
+            return False
+        fds = getattr(self, self.FuncDesignerSign, None)
+        if fds is None:
+            return False        
+        if isinstance(fds, (oofun, ooarray)):
+            return True
+        if isinstance(fds, (list, tuple, ndarray)):
+            if isinstance(fds[0], (oofun, ooarray)):
+                return True
+            elif isinstance(fds[0], (list, tuple, ndarray)):
+                return isinstance(fds[0][0], (oofun, ooarray))
+        return False
     
     # Base class method
     def _prepare(self): 
@@ -310,7 +323,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 equations = self.C if self.probType in ('SLE', 'LLSP') else self.f
                 #for eq in equations:
                     #probDep.update(eq._getDep())
-                ConstraintTags = [elem.isConstraint for elem in equations]
+                ConstraintTags = [(elem if not isinstance(elem, (list, tuple, ndarray)) else elem[0]).isConstraint for elem in equations]
                 cond_all_oofuns_but_not_cons = not any(ConstraintTags) 
                 cond_cons = all(ConstraintTags) 
                 if not cond_all_oofuns_but_not_cons and not cond_cons:
@@ -326,7 +339,16 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 else:
                     fTol = self.ftol
                 self.fTol = self.ftol = fTol
-                EQs = [((elem.oofun*(fTol/elem.tol) if elem.tol != 0 else elem.oofun) if elem.isConstraint else elem) for elem in equations]
+                appender = lambda arg: [appender(elem) for elem in arg] if isinstance(arg, (ndarray, list, tuple, set))\
+                else ((arg.oofun*(fTol/arg.tol) if arg.tol != 0 else arg.oofun) if arg.isConstraint else arg)
+                EQs = []
+                for eq in equations:
+                    rr = appender(eq)
+                    if type(rr) == list:
+                        EQs += rr
+                    else:
+                        EQs.append(rr)
+                #EQs = [((elem.oofun*(fTol/elem.tol) if elem.tol != 0 else elem.oofun) if elem.isConstraint else elem) for elem in equations]
                 if self.probType in ('SLE', 'LLSP'): self.C = EQs
                 elif self.probType in ('NLSP', 'SNLE'): self.f = EQs
                 else: raise OpenOptException('bug in OO kernel')
