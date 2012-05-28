@@ -2,9 +2,14 @@ PythonSum = sum
 from ooFun import oofun
 import numpy as np
 from FDmisc import FuncDesignerException, Diag, Eye, raise_except, diagonal, DiagonalType
-from ooFun import atleast_oofun, ooarray, Vstack
+from ooFun import atleast_oofun, ooarray, Vstack, Copy
 from Interval import TrigonometryCriticalPoints, ZeroCriticalPoints, nonnegative_interval, ZeroCriticalPointsInterval, box_1_interval
 from numpy import atleast_1d, logical_and, logical_not, empty_like
+
+try:
+    from scipy.sparse import isspmatrix
+except:
+    isspmatrix = lambda *args, **kw: False
 
 __all__ = []
 
@@ -426,8 +431,9 @@ def sum(inp, *args, **kwargs):
         def _D(point, fixedVarsScheduleID, Vars=None, fixedVars = None, useSparse = 'auto'):
             # TODO: handle involvePrevData
             # TODO: handle fixed vars
-            #print 'asdf'
-            r, keys = {}, set()
+            
+            
+            r = {}
             
             # TODO: rework it, don't recalculate each time
             #Size = np.amax((1, np.asarray(r0).size))
@@ -440,42 +446,49 @@ def sum(inp, *args, **kwargs):
                     if (fixedVars is not None and elem in fixedVars) or (Vars is not None and elem not in Vars): continue
                     sz = np.asarray(point[elem]).size
                     tmpres = Eye(sz) 
-                    if elem in keys:
-                        if sz != 1 and isinstance(r[elem], np.ndarray) and not isinstance(tmpres, np.ndarray): # i.e. tmpres is sparse matrix
+                    r_val = r.get(elem, None)
+                    if r_val is not None:
+                        if sz != 1 and isinstance(r_val, np.ndarray) and not isinstance(tmpres, np.ndarray): # i.e. tmpres is sparse matrix
                             tmpres = tmpres.toarray()
-                        elif not isinstance(r[elem], np.ndarray) and isinstance(tmpres, np.ndarray):
-                            r[elem] = r[elem].toarray()
-                        r[elem] += tmpres
+                        elif not np.isscalar(r_val) and not isinstance(r_val, np.ndarray) and isinstance(tmpres, np.ndarray):
+                            r[elem] = r_val.toarray()
+                        
+                        r[elem] += (tmpres.resolve(True) if isspmatrix(r[elem]) and type(tmpres) == DiagonalType else tmpres)
                     else:
                         # TODO: check it for oovars with size > 1
-                        r[elem] = tmpres
-                        keys.add(elem)
+                        r[elem] = Copy(tmpres)
                 else:
                     tmp = elem._D(point, fixedVarsScheduleID, Vars, fixedVars, useSparse = useSparse)
                     for key, val in tmp.items():
-                        if key in keys:
-                            if not np.isscalar(val) and isinstance(r[key], np.ndarray) and not isinstance(val, np.ndarray): # i.e. tmpres is sparse matrix
+                        r_val = r.get(key, None)
+                        if r_val is not None:
+                            if not np.isscalar(val) and isinstance(r_val, np.ndarray) and not isinstance(val, np.ndarray): # i.e. tmpres is sparse matrix
                                 val = val.toarray()
-                            elif not np.isscalar(r[key]) and not isinstance(r[key], np.ndarray) and isinstance(val, np.ndarray):
-                                r[key] = r[key].toarray()
+                            elif not np.isscalar(r_val) and not isinstance(r_val, np.ndarray) and isinstance(val, np.ndarray):
+                                r[key] = r_val.toarray()
+                            
+                            if isspmatrix(r_val) and type(val) == DiagonalType:
+                                val = val.resolve(True)
+                            elif isspmatrix(val) and type(r_val) == DiagonalType:
+                                r[key] = r_val.resolve(True)
+                            
                             # TODO: rework it
                             try:
                                 r[key] += val
                             except:
-                                r[key] = r[key] + val
+                                r[key] = r_val + val
                         else:
-                            r[key] = val
-                            keys.add(key)
+                            r[key] = Copy(val)
             if useSparse is False:
                 for key, val in r.items():
-                    if np.isscalar(val): val = np.asfarray(val)
-                    if not isinstance(val, np.ndarray): # i.e. sparse matrix
+                    #if np.isscalar(val): val = np.asfarray(val)
+                    if not isinstance(val, np.ndarray) and not np.isscalar(val): # i.e. sparse matrix
                         r[key] = val.toarray()
                         
             # TODO: rework it
             Size = np.asarray(r0).size
             for elem in r.values():
-                if not np.isscalar(elem):
+                if not np.isscalar(elem) and elem.ndim >= 1:
                     Size  = np.max((Size, elem.shape[0]))
             #Size = np.amax([np.atleast_2d(elem).shape[0] for elem in r.values()])
                 
