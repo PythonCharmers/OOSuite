@@ -29,9 +29,8 @@ except:
 
 try:
     import scipy
-    SparseMatrixConstructor = lambda *args, **kwargs: scipy.sparse.lil_matrix(*args, **kwargs)
     from scipy import sparse
-    from scipy.sparse import hstack as HstackSP, vstack as VstackSP, isspmatrix_csc, isspmatrix_csr, eye as SP_eye
+    from scipy.sparse import hstack as HstackSP, vstack as VstackSP, isspmatrix_csc, isspmatrix_csr, eye as SP_eye, lil_matrix as SparseMatrixConstructor
     def Hstack(Tuple):
         ind = where([isscalar(elem) or prod(elem.shape)!=0 for elem in Tuple])[0].tolist()
         elems = [Tuple[i] for i in ind]
@@ -1288,10 +1287,13 @@ class oofun:
                     continue                
                 ac += 1
                 tmp = derivativeSelf[ac]
-                if inp in r:
-                    if isscalar(tmp) or (type(r[inp]) == type(tmp) == ndarray and prod(tmp.shape) <= prod(r[inp].shape)): # some sparse matrices has no += implemented 
+                val = r.get(inp, None)
+                if val is not None:
+                    if isscalar(tmp) or (type(val) == type(tmp) == ndarray and prod(tmp.shape) <= prod(val.shape)): # some sparse matrices has no += implemented 
                         r[inp] += tmp
                     else:
+                        if isspmatrix(val) and type(tmp) == DiagonalType:
+                            tmp = tmp.resolve(True)
                         r[inp] = r[inp] + tmp
                 else:
                     r[inp] = tmp

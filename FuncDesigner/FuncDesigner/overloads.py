@@ -7,10 +7,14 @@ from Interval import TrigonometryCriticalPoints, ZeroCriticalPoints, nonnegative
 from numpy import atleast_1d, logical_and, logical_not, empty_like
 
 try:
-    from scipy.sparse import isspmatrix
+    from scipy.sparse import isspmatrix, lil_matrix as Zeros
+    lambda *args, **kwargs: scipy.sparse.lil_matrix(*args, **kwargs)
+    scipyInstalled = True
 except:
+    scipyInstalled = False
     isspmatrix = lambda *args, **kw: False
-
+    Zeros = np.zeros 
+    
 __all__ = []
 
 #class unary_oofun_overload:
@@ -759,10 +763,13 @@ def hstack(tup): # overload for oofun[ind]
     r = oofun(f, tup, getOrder = getOrder)
     
     #!!!!!!!!!!!!!!!!! TODO: sparse 
-    Zeros = np.zeros 
+
     
     def _D(*args,  **kwargs): 
-        sizes = [(t(args[0]) if c[i] else np.asarray(t)).size for i, t in enumerate(tup)]
+        # TODO: rework it, especially if sizes are fixed and known
+        # TODO: get rid of fixedVarsScheduleID
+        sizes = [(t(args[0], fixedVarsScheduleID = kwargs.get('fixedVarsScheduleID', -1)) if c[i] else np.asarray(t)).size for i, t in enumerate(tup)]
+        
         tmp = [elem._D(*args,  **kwargs) if c[i] else None for i, elem in enumerate(tup)]
         res = {}
         for v in r._getDep():
@@ -775,10 +782,14 @@ def hstack(tup): # overload for oofun[ind]
                     else:
 #                        T = next(iter(tmp[i].values()))
 #                        sz = T.shape[0] if type(T) == DiagonalType else np.atleast_1d(T).shape[0]
-                        Temp.append(Zeros((sizes[i], np.asarray(args[0][v]).size)))
+                        Temp.append((Zeros if sizes[i] * np.asarray(args[0][v]).size > 1000 else np.zeros)((sizes[i], np.asarray(args[0][v]).size)))
                 else:
-                    Temp.append(Zeros(np.atleast_1d(t).shape[0]))
-            res[v] = Vstack([elem for elem in Temp])
+                    sz = np.atleast_1d(t).shape[0]
+                    Temp.append(Zeros((sz, 1)) if sz > 100 else np.zeros(sz))
+            rr = Vstack([elem for elem in Temp])
+            #print type(rr)
+            res[v] = rr if not isspmatrix(rr) or 0.3 * prod(rr.shape) > rr.size else rr.toarray()
+            #print type(res[v])
         return res
     r._D = _D
     return r
