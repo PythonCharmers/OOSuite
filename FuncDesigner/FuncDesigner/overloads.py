@@ -1,8 +1,8 @@
 PythonSum = sum
 from ooFun import oofun
 import numpy as np
-from FDmisc import FuncDesignerException, Diag, Eye, raise_except, diagonal
-from ooFun import atleast_oofun, ooarray
+from FDmisc import FuncDesignerException, Diag, Eye, raise_except, diagonal, DiagonalType
+from ooFun import atleast_oofun, ooarray, Vstack
 from Interval import TrigonometryCriticalPoints, ZeroCriticalPoints, nonnegative_interval, ZeroCriticalPointsInterval, box_1_interval
 from numpy import atleast_1d, logical_and, logical_not, empty_like
 
@@ -704,6 +704,73 @@ __all__ += ['min', 'max']
 det3 = lambda a, b, c: a[0] * (b[1]*c[2] - b[2]*c[1]) - a[1] * (b[0]*c[2] - b[2]*c[0]) + a[2] * (b[0]*c[1] - b[1]*c[0]) 
 
 __all__ += ['det3']
+
+
+def hstack(tup): # overload for oofun[ind]
+    c = [isinstance(t, (oofun, ooarray)) for t in tup]
+    if any([isinstance(t, ooarray) for t in tup]):
+        return np.hstack(tup)
+    if not any(c):
+        return np.hstack(tup)
+    an_oofun_ind = np.where(c)[0][0]
+    f = lambda *x: np.hstack(x)
+    
+    
+  
+#    def d(*x): 
+#
+#        r = [elem.d(x[i]) if c[i] else None for i, elem in enumerate(tup)]
+#        size = atleast_1d(r[an_oofun_ind]).shape[0]
+#        r2 = [elem if c[i] else Zeros(size) for elem in r]
+#        return r2
+        
+        #= lambda *x: np.hstack([elem.d(x) if c[i] else elem for elem in tup])
+            
+#        f = lambda x: x[ind] 
+#        def d(x):
+#            Xsize = Len(x)
+#            condBigMatrix = Xsize > 100 
+#            if condBigMatrix and scipyInstalled:
+#                r = SparseMatrixConstructor((1, x.shape[0]))
+#                r[0, ind] = 1.0
+#            else: 
+#                if condBigMatrix and not scipyInstalled: self.pWarn(scipyAbsentMsg)
+#                r = zeros_like(x)
+#                r[ind] = 1
+#            return r
+    def getOrder(*args, **kwargs):
+        orders = [0]+[inp.getOrder(*args, **kwargs) for inp in tup]
+        return np.max(orders)
+    
+            
+    r = oofun(f, tup, getOrder = getOrder)
+    
+    #!!!!!!!!!!!!!!!!! TODO: sparse 
+    Zeros = np.zeros 
+    
+    def _D(*args,  **kwargs): 
+        sizes = [(t(args[0]) if c[i] else np.asarray(t)).size for i, t in enumerate(tup)]
+        tmp = [elem._D(*args,  **kwargs) if c[i] else None for i, elem in enumerate(tup)]
+        res = {}
+        for v in r._getDep():
+            Temp = []
+            for i, t in enumerate(tup):
+                if c[i]:
+                    temp = tmp[i].get(v, None)
+                    if temp is not None:
+                        Temp.append(temp if type(temp) != DiagonalType else temp.resolve(kwargs['useSparse']))
+                    else:
+#                        T = next(iter(tmp[i].values()))
+#                        sz = T.shape[0] if type(T) == DiagonalType else np.atleast_1d(T).shape[0]
+                        Temp.append(Zeros((sizes[i], np.asarray(args[0][v]).size)))
+                else:
+                    Temp.append(Zeros(np.atleast_1d(t).shape[0]))
+            res[v] = Vstack([elem for elem in Temp])
+        return res
+    r._D = _D
+    return r
+
+__all__ += ['hstack']
 
 # TODO: move the func into fdmisc.py
 def errFunc(*args,  **kwargs): 
