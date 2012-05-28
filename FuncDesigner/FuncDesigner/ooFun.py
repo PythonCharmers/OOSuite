@@ -31,7 +31,7 @@ try:
     import scipy
     SparseMatrixConstructor = lambda *args, **kwargs: scipy.sparse.lil_matrix(*args, **kwargs)
     from scipy import sparse
-    from scipy.sparse import hstack as HstackSP, isspmatrix_csc, isspmatrix_csr, eye as SP_eye
+    from scipy.sparse import hstack as HstackSP, vstack as VstackSP, isspmatrix_csc, isspmatrix_csr, eye as SP_eye
     def Hstack(Tuple):
         ind = where([isscalar(elem) or prod(elem.shape)!=0 for elem in Tuple])[0].tolist()
         elems = [Tuple[i] for i in ind]
@@ -43,7 +43,18 @@ try:
         if ndim <= 1:  return hstack(elems)
         assert ndim <= 2 and 1 not in s, 'bug in FuncDesigner kernel, inform developers'
         return hstack(elems) if 0 not in s else hstack([atleast_2d(elem) for elem in elems])
-        
+    def Vstack(Tuple):
+        ind = where([isscalar(elem) or prod(elem.shape)!=0 for elem in Tuple])[0].tolist()
+        elems = [Tuple[i] for i in ind]
+        if any([isspmatrix(elem) for elem in elems]):
+            return VstackSP(elems)
+        else:
+            return vstack(elems)
+#        s = set([(0 if isscalar(elem) else elem.ndim) for elem in elems])
+#        ndim = max(s)
+#        if ndim <= 1:  return hstack(elems)
+#        assert ndim <= 2 and 1 not in s, 'bug in FuncDesigner kernel, inform developers'
+#        return hstack(elems) if 0 not in s else hstack([atleast_2d(elem) for elem in elems])        
     from scipy.sparse import isspmatrix
 except:
     scipy = None
@@ -1298,7 +1309,7 @@ class oofun:
                         if isspmatrix(t1):
                             rr = t1._mul_sparse_matrix(val.resolve(True))
                         else:
-                            rr = t1 *  val if  type(t1) == DiagonalType else val * t1 # for PyPy compatibility
+                            rr = t1 *  val if  type(t1) == DiagonalType or type(val) != ndarray else (val.T * t1).T   # for PyPy compatibility
                     elif isscalar(val) or isscalar(t1) or prod(t1.shape)==1 or prod(val.shape)==1:
                         #rr = t1 * val
                         #print t1, type(t1), val, type(val)
@@ -2279,7 +2290,7 @@ class ooarray(ndarray):
         if r.size == 1: return asscalar(r)==0
         
         # TODO: rework it
-        return [Constraint(elem) for elem in r.tolist()]
+        return ooarray([Constraint(elem) for elem in r.tolist()])
         #else: raise FuncDesignerException('unimplemented yet')
     
     
