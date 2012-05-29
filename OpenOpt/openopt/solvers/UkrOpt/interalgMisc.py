@@ -98,40 +98,36 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
         
     if p.solver.dataHandling == 'raw':
         
-        if fo == inf or isSNLE:
-            tnlh_curr = vstack([node.tnlhf for node in an])#tnlh_fixed
-        else:
-            if fo != fo_prev:
-                fos = array([node.fo for node in an])
-                
-                #prev
-                #ind_update = where(fos > fo + 0.01* fTol)[0]
-                
-                #new
-                th_keys = array([node.th_key for node in an])
-                delta_fos = fos - fo
-                ind_update = where(10 * delta_fos > fos - th_keys)[0]
-                
-                nodesToUpdate = an[ind_update]
-                update_nlh = True if ind_update.size != 0 else False
+        if fo != fo_prev and not  isSNLE:
+            fos = array([node.fo for node in an])
+            
+            #prev
+            #ind_update = where(fos > fo + 0.01* fTol)[0]
+            
+            #new
+            th_keys = array([node.th_key for node in an])
+            delta_fos = fos - fo
+            ind_update = where(10 * delta_fos > fos - th_keys)[0]
+            
+            nodesToUpdate = an[ind_update]
+            update_nlh = True if ind_update.size != 0 else False
 #                  print 'o MB:', float(o_tmp.nbytes) / 1e6
 #                  print 'percent:', 100*float(ind_update.size) / len(an) 
-                if update_nlh:
+            if update_nlh:
 #                    from time import time
 #                    tt = time()
-                    updateNodes(nodesToUpdate, fo)
+                updateNodes(nodesToUpdate, fo)
 #                    if not hasattr(p, 'Time'):
 #                        p.Time = time() - tt
 #                    else:
 #                        p.Time += time() - tt
-                        
+                    
             tmp = asarray([node.key for node in an])
             r10 = where(tmp > fo)[0]
             if r10.size != 0:
                 mino = [an[i].key for i in r10]
                 mmlf = nanmin(asarray(mino))
                 g = nanmin((g, mmlf))
-                #an = an[where(logical_not(ind0))[0]]
 
         NN = atleast_1d([node.tnlh_curr_best for node in an])
         r10 = logical_or(isnan(NN), NN == inf)
