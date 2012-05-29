@@ -1376,7 +1376,7 @@ class oofun:
 
     # TODO: handle 2**15 & 0.25 as parameters
     def _considerSparse(self, t1, t2):  
-        if prod(t1.shape) * prod(t2.shape) > 2**15 and   (isinstance(t1, ndarray) and t1.nonzero()[0].size < 0.25*t1.size) or \
+        if int64(prod(t1.shape)) * int64(prod(t2.shape)) > 2**15 and   (isinstance(t1, ndarray) and t1.nonzero()[0].size < 0.25*t1.size) or \
         (isinstance(t2, ndarray) and t2.nonzero()[0].size < 0.25*t2.size):
             if scipy is None: 
                 self.pWarn(scipyAbsentMsg)
