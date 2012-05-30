@@ -456,8 +456,11 @@ def sum(inp, *args, **kwargs):
                             tmpres = tmpres.toarray()
                         elif not np.isscalar(r_val) and not isinstance(r_val, np.ndarray) and isinstance(tmpres, np.ndarray):
                             r[elem] = r_val.toarray()
-                        
-                        r[elem] += (tmpres.resolve(True) if isspmatrix(r[elem]) and type(tmpres) == DiagonalType else tmpres)
+                        Tmp = tmpres.resolve(True) if isspmatrix(r[elem]) and type(tmpres) == DiagonalType else tmpres
+                        try:
+                            r[elem] += Tmp
+                        except:
+                            r[elem] = r[elem] + Tmp
                     else:
                         # TODO: check it for oovars with size > 1
                         r[elem] = Copy(tmpres)
