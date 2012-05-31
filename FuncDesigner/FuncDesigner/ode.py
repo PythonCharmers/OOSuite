@@ -13,7 +13,8 @@ class ode:
     
     
     def __init__(self, equations, startPoint, timeVariable, times, *args, **kwargs):
-        if len(args) > 0:  FuncDesignerException('incorrect ode definition, too many args are obtained')
+        if len(args) > 0:  
+            raise FuncDesignerException('incorrect ode definition, too many args are obtained')
         
         if not isinstance(equations, dict):
             raise FuncDesignerException('1st argument of ode constructor should be Python dict')
