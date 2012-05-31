@@ -68,8 +68,11 @@ class ralg(baseSolver):
 
         alp, h0, nh, q1, q2 = self.alp, self.h0, self.nh, self.q1, self.q2
         
-        if isPyPy and not p.isUC:
-            p.err("ralg hasn't been ported to PyPy for constrained problems yet")
+        if isPyPy:
+            if p.nc != 0 or p.nh != 0:
+                p.warn("in PyPy ralg may work incorrectly with nonlinear constraints yet")
+            if p.nbeq != 0 or any(p.lb==p.ub):
+                p.err('in PyPy ralg cannot handle linear equality constraints yet')
         
         if type(q1) == str:
             if p.probType== 'NLP' and p.isUC: q1 = 0.9
