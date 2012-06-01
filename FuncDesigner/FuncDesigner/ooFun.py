@@ -59,6 +59,7 @@ except:
     scipy = None
     isspmatrix = lambda *args,  **kwargs:  False
     Hstack = hstack
+    Vstack = vstack
 
 class oofun:
     #TODO:
