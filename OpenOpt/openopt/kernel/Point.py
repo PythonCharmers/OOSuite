@@ -469,7 +469,7 @@ class Point:
                         #d += dot(a.T, dot(a, self.x)  - b) 
                     else:
                         if isPyPy:
-                            a = array([p.A[j] for j in where(ind_lin_ineq)[0]])
+                            a = vstack([p.A[j] for j in where(ind_lin_ineq)[0]])
                         else:
                             a = p.A[ind_lin_ineq] 
                         d += dot(a.T, dot(a, self.x)  - b) # d/dx((Ax-b)^2)

@@ -315,14 +315,16 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             self._FD.nonBoxConsWithTolShift = []
             self._FD.nonBoxCons = []
             from FuncDesigner import _getAllAttachedConstraints, _getDiffVarsID, ooarray, oopoint
+            from FuncDesigner.ooFun import oofun
             self._FDVarsID = _getDiffVarsID()
             
-            #probDep = set()
+            probDep = set()
+            updateDep = lambda Dep, elem: [updateDep(Dep, f) for f in elem] if isinstance(elem, (tuple, list, set, ndarray))\
+            else Dep.update(elem._getDep()) if isinstance(elem, oofun) else None
             
             if self.probType in ['SLE', 'NLSP', 'SNLE', 'LLSP']:
                 equations = self.C if self.probType in ('SLE', 'LLSP') else self.f
-                #for eq in equations:
-                    #probDep.update(eq._getDep())
+                updateDep(probDep, equations)
                 ConstraintTags = [(elem if not isinstance(elem, (list, tuple, ndarray)) else elem[0]).isConstraint for elem in equations]
                 cond_all_oofuns_but_not_cons = not any(ConstraintTags) 
                 cond_cons = all(ConstraintTags) 
@@ -353,9 +355,9 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 elif self.probType in ('NLSP', 'SNLE'): self.f = EQs
                 else: raise OpenOptException('bug in OO kernel')
             else:
-                pass
-                #probDep.update(self.f._getDep())
-                
+                updateDep(probDep, self.f)
+            updateDep(probDep, self.constraints)
+            
             # TODO: implement it
             
 #            startPointVars = set(self.x0.keys())
@@ -383,7 +385,14 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 else:
                     for i in range(len(val)):
                         tmp.append((key[i], val[i]))
-            self.x0 = dict(tmp)
+            Tmp = dict(tmp)
+            
+            # mb other operations will speedup it?
+            Keys = set(Tmp.keys()).difference(probDep)
+            for key in Keys:
+                Tmp.pop(key)
+
+            self.x0 = Tmp
             self._categoricalVars = set()
             for key, val in self.x0.items():
                 if type(val) in (str, unicode, string_):
