@@ -35,8 +35,11 @@ class diagonal:
     
     def __init__(self, arr, scalarMultiplier=1.0, size=0):
         #assert arr.ndim <= 1
-        self.diag = arr.copy() if arr is not None else arr # may be None, then n has to be provided
-        self.scalarMultiplier = scalarMultiplier
+        self.diag = arr.copy() if arr is not None else None # may be None, then n has to be provided
+        self.scalarMultiplier = scalarMultiplier if isscalar(scalarMultiplier) \
+        else asscalar(scalarMultiplier) if type(scalarMultiplier) == ndarray\
+        else scalarMultiplier[0, 0] if scipyInstalled and SP.isspmatrix(scalarMultiplier)\
+        else raise_except()
         self.size = arr.size if size == 0 else size
         if arr is None:
             self.isOnes = True
@@ -117,11 +120,25 @@ class diagonal:
                 if self.diag is not None: r *= self.diag
                 return r.reshape(item.shape)
             else:
-                # !!!!!!!!!! TODO:  rework it!!!!!!!!!!!
-                if self.size < 100 or not scipyInstalled:
-                    return np.dot(self.resolve(False), item)
+                # new; TODO: improve it
+                if self.isOnes:
+                    D = empty(self.size)
+                    D.fill(self.scalarMultiplier)
                 else:
-                    return self.resolve(True)._mul_sparse_matrix(item)
+                    D = self.scalarMultiplier * self.diag if self.scalarMultiplier != 1.0 else self.diag
+                return D.reshape(-1, 1) * item # ! different shapes !
+                
+                
+#                    T = np.dot(self.resolve(False), item)
+#                    from numpy import array_equal, all
+#                    assert array_equal(T.shape,  T2.shape) and all(T==T2)
+#                    print '!'
+                #prev
+                # !!!!!!!!!! TODO:  rework it!!!!!!!!!!!
+#                if self.size < 100 or not scipyInstalled:
+#                    return np.dot(self.resolve(False), item)
+#                else:
+#                    return self.resolve(True)._mul_sparse_matrix(item)
         else:
             #assert SP.isspmatrix(item)
             if np.prod(item.shape) == 1:
