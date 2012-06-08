@@ -219,57 +219,57 @@ def bounded_lsq(A,b,lower_lim,upper_lim):
     """
     return mls(A,b,lower_lim,upper_lim)
 
-if __name__=='__main__':
-    from numpy.core.umath_tests import matrix_multiply
-    import matplotlib.pyplot as plt
-    plt.rcParams['font.family']='serif'
-    A=np.array([[1,-3],[5,7]])
-    b=np.array([[-50],[50]])
-    ll=np.array(([[-10],[-10]]))
-    ul=np.array(([[10],[10]]))
-    
-    Ud=np.array(([0,0]))
-    gamma=1000
-    
-    
-    x0=bounded_lsq(A,b,ll,ul)
-    x=np.linspace(-30,30,500)
-    y=np.linspace(-30,30,500)
-    
-    
-    X,Y=np.meshgrid(x,y)
-    
-    S=np.dstack((X,Y))
-    SN=matrix_multiply(S,A.T)
-    plt.clf()
-   
-    plt.contourf(x,y,np.sqrt(((SN-b.T)**2).sum(-1)),30,cmap=plt.cm.PuBu)
-    plt.colorbar()
-    #plt.axhline(ll[0])
-    #plt.axhline(ul[0])
-    #plt.axvline(ll[1])
-    #plt.axvline(ul[1])
-    rect=np.vstack((ll,ul-ll))
-    patch=plt.Rectangle(ll,*(ul-ll),facecolor=(0.0,0.,0.,0))
-    plt.gca().add_patch(patch)
-    plt.annotate("Bounded Min",
-                xy=x0, xycoords='data',
-                xytext=(-5, 5), textcoords='data',
-                arrowprops=dict(arrowstyle="->",
-                                connectionstyle="arc3"),
-                )
-    
-    plt.annotate("Lsq Min",
-                xy=np.linalg.lstsq(A,b)[0], xycoords='data',
-                xytext=(20, 10), textcoords='offset points',
-                arrowprops=dict(arrowstyle="->",
-                                connectionstyle="arc3"),
-                )
-                
-    plt.scatter(*x0)
-    plt.scatter(*np.linalg.lstsq(A,b)[0])
-    plt.show()
-    
+#if __name__=='__main__':
+#    from numpy.core.umath_tests import matrix_multiply
+#    import matplotlib.pyplot as plt
+#    plt.rcParams['font.family']='serif'
+#    A=np.array([[1,-3],[5,7]])
+#    b=np.array([[-50],[50]])
+#    ll=np.array(([[-10],[-10]]))
+#    ul=np.array(([[10],[10]]))
+#    
+#    Ud=np.array(([0,0]))
+#    gamma=1000
+#    
+#    
+#    x0=bounded_lsq(A,b,ll,ul)
+#    x=np.linspace(-30,30,500)
+#    y=np.linspace(-30,30,500)
+#    
+#    
+#    X,Y=np.meshgrid(x,y)
+#    
+#    S=np.dstack((X,Y))
+#    SN=matrix_multiply(S,A.T)
+#    plt.clf()
+#   
+#    plt.contourf(x,y,np.sqrt(((SN-b.T)**2).sum(-1)),30,cmap=plt.cm.PuBu)
+#    plt.colorbar()
+#    #plt.axhline(ll[0])
+#    #plt.axhline(ul[0])
+#    #plt.axvline(ll[1])
+#    #plt.axvline(ul[1])
+#    rect=np.vstack((ll,ul-ll))
+#    patch=plt.Rectangle(ll,*(ul-ll),facecolor=(0.0,0.,0.,0))
+#    plt.gca().add_patch(patch)
+#    plt.annotate("Bounded Min",
+#                xy=x0, xycoords='data',
+#                xytext=(-5, 5), textcoords='data',
+#                arrowprops=dict(arrowstyle="->",
+#                                connectionstyle="arc3"),
+#                )
+#    
+#    plt.annotate("Lsq Min",
+#                xy=np.linalg.lstsq(A,b)[0], xycoords='data',
+#                xytext=(20, 10), textcoords='offset points',
+#                arrowprops=dict(arrowstyle="->",
+#                                connectionstyle="arc3"),
+#                )
+#                
+#    plt.scatter(*x0)
+#    plt.scatter(*np.linalg.lstsq(A,b)[0])
+#    plt.show()
+#    
     
             
     
