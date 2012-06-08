@@ -429,7 +429,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             self.variableTolerances = self._point2vector(variableTolerancesDict)
             
             #Z = self._vector2point(zeros(self.n))
-            if len(self._fixedVars) < len(self._freeVars):
+            if len(self._fixedVars) < len(self._freeVars) and 'isdisjoint' in dir(set()):
                 areFixed = lambda dep: dep.issubset(self._fixedVars)
                 isFixed = lambda v: v in self._fixedVars
                 Z = dict([(v, zeros_like(self._x0[v]) if v not in self._fixedVars else self._x0[v]) for v in self._x0.keys()])
