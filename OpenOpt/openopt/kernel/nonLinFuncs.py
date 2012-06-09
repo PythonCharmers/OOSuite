@@ -410,11 +410,13 @@ def getFuncsAndExtractIndexes(p, funcs, ind, userFunctionType):
             tmp = funcs[0](*args, **kwargs)
             if isspmatrix(tmp):
                 tmp = tmp.tocsc()
-            elif not isinstance(tmp,  ndarray):
+            elif not isinstance(tmp,  ndarray) or tmp.ndim == 0:
                 tmp = atleast_1d(tmp)
             if isPyPy:
                 return atleast_1d([tmp[i] for i in ind])
             else:
+#                if p.debug:
+#                    assert all(tmp[ind] == atleast_1d([tmp[i] for i in ind]))
                 return tmp[ind]
         return [f]
     
