@@ -77,7 +77,8 @@ class ooarray(OOArray):
                 other.size = 1
                 #raise FuncDesignerException('to perform the operation oofun size should be known')
             if other.size == 1:
-                if self.dtype == object:
+                if any([isinstance(elem, oofun) for elem in atleast_1d(self)]):
+                #if self.dtype == object:
                     s = atleast_1d(self)
                     return ooarray([s[i]*other for i in range(self.size)])
                 else:
@@ -156,7 +157,8 @@ class ooarray(OOArray):
     def __pow__(self, other):
         if isinstance(other, ndarray) and other.size > 1 and self.size > 1:
             return ooarray([self[i]**other[i] for i in range(self.size)])
-        if self.dtype == object:
+        if any([isinstance(elem, oofun) for elem in atleast_1d(self)]):
+        #if self.dtype == object:
             return ooarray([elem**other for elem in self.tolist()])
             
         # TODO: is this part of code trigger any time?

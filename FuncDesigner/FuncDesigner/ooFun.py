@@ -546,7 +546,7 @@ class oofun:
     def __rdiv__(self, other):
         
         # without the code it somehow doesn't fork in either Python3 or latest numpy
-        if isinstance(other, OOArray) and other.dtype == object:
+        if isinstance(other, OOArray) and any([isinstance(elem, oofun) for elem in atleast_1d(other)]):
             return other.__div__(self)
             
         assert not isinstance(other, oofun)

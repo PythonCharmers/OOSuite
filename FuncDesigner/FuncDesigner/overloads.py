@@ -39,7 +39,7 @@ __all__ = []
 
 
 def sin(inp):
-    if isinstance(inp, ooarray) and inp.dtype == object:
+    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([sin(elem) for elem in inp])
     elif not isinstance(inp, oofun): return np.sin(inp)
     return oofun(np.sin, inp, 
@@ -49,7 +49,7 @@ def sin(inp):
                  #_interval = lambda domain: ufuncInterval(inp, domain, np.sin, TrigonometryCriticalPoints))
 
 def cos(inp):
-    if isinstance(inp, ooarray) and inp.dtype == object:
+    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([cos(elem) for elem in inp])
     elif not isinstance(inp, oofun): return np.cos(inp)
     #return oofun(np.cos, inp, d = lambda x: Diag(-np.sin(x)))
@@ -60,7 +60,7 @@ def cos(inp):
              #_interval = lambda domain: ufuncInterval(inp, domain, np.cos, TrigonometryCriticalPoints))
 
 def tan(inp):
-    if isinstance(inp, ooarray) and inp.dtype == object:
+    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([tan(elem) for elem in inp])
     if not isinstance(inp, oofun): return np.tan(inp)
     # TODO: move it outside of tan definition
@@ -77,7 +77,7 @@ __all__ += ['sin', 'cos', 'tan']
 get_box1_DefiniteRange = lambda lb, ub: logical_and(np.all(lb >= -1.0), np.all(ub <= 1.0))
 
 def arcsin(inp):
-    if isinstance(inp, ooarray) and inp.dtype == object:
+    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([arcsin(elem) for elem in inp])
     if not isinstance(inp, oofun): 
         return np.arcsin(inp)
@@ -89,7 +89,7 @@ def arcsin(inp):
     return r
 
 def arccos(inp):
-    if isinstance(inp, ooarray) and inp.dtype == object:
+    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([arccos(elem) for elem in inp])
     if not isinstance(inp, oofun): return np.arccos(inp)
     r = oofun(np.arccos, inp, d = lambda x: Diag(-1.0 / np.sqrt(1.0 - x**2)), vectorized = True)
@@ -100,7 +100,7 @@ def arccos(inp):
     return r
 
 def arctan(inp):
-    if isinstance(inp, ooarray) and inp.dtype == object:
+    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([arctan(elem) for elem in inp])    
     if not isinstance(inp, oofun): return np.arctan(inp)
     return oofun(np.arctan, inp, 
@@ -111,13 +111,13 @@ def arctan(inp):
 __all__ += ['arcsin', 'arccos', 'arctan']
 
 def sinh(inp):
-    if isinstance(inp, ooarray) and inp.dtype == object:
+    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([sinh(elem) for elem in inp])        
     if not isinstance(inp, oofun): return np.sinh(inp)
     return oofun(np.sinh, inp, d = lambda x: Diag(np.cosh(x)), vectorized = True, criticalPoints = False)
 
 def cosh(inp):
-    if isinstance(inp, ooarray) and inp.dtype == object:
+    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([cosh(elem) for elem in inp])        
     if not isinstance(inp, oofun): return np.cosh(inp)
     return oofun(np.cosh, inp, d = lambda x: Diag(np.sinh(x)), vectorized = True, _interval_=ZeroCriticalPointsInterval(inp, np.cosh))
@@ -125,13 +125,13 @@ def cosh(inp):
 __all__ += ['sinh', 'cosh']
 
 def tanh(inp):
-    if isinstance(inp, ooarray) and inp.dtype == object:
+    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([tanh(elem) for elem in inp])        
     if not isinstance(inp, oofun): return np.tanh(inp)
     return oofun(np.tanh, inp, d = lambda x: Diag(1.0/np.cosh(x)**2), vectorized = True, criticalPoints = False)
     
 def arctanh(inp):
-    if isinstance(inp, ooarray) and inp.dtype == object:
+    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([arctanh(elem) for elem in inp])        
     if not isinstance(inp, oofun): return np.arctanh(inp)
     r = oofun(np.arctanh, inp, d = lambda x: Diag(1.0/(1.0-x**2)), vectorized = True, criticalPoints = False)
@@ -142,13 +142,13 @@ def arctanh(inp):
 __all__ += ['tanh', 'arctanh']
 
 def arcsinh(inp):
-    if isinstance(inp, ooarray) and inp.dtype == object:
+    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([arcsinh(elem) for elem in inp])        
     if not isinstance(inp, oofun): return np.arcsinh(inp)
     return oofun(np.arcsinh, inp, d = lambda x: Diag(1.0/np.sqrt(1+x**2)), vectorized = True, criticalPoints = False)
 
 def arccosh(inp):
-    if isinstance(inp, ooarray) and inp.dtype == object:
+    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([arccosh(elem) for elem in inp])        
     if not isinstance(inp, oofun): return np.arccosh(inp)
     r = oofun(np.arccosh, inp, d = lambda x: Diag(1.0/np.sqrt(x**2-1.0)), vectorized = True)
@@ -174,7 +174,7 @@ def exp(inp):
 
     
 def sqrt(inp, attachConstraints = True):
-    if isinstance(inp, ooarray) and inp.dtype == object:
+    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([sqrt(elem) for elem in inp])
     elif not isinstance(inp, oofun): 
         return np.sqrt(inp)
@@ -190,7 +190,7 @@ def sqrt(inp, attachConstraints = True):
 __all__ += ['angle', 'exp', 'sqrt']
 
 def abs(inp):
-    if isinstance(inp, ooarray) and inp.dtype == object:
+    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([abs(elem) for elem in inp])
     elif not isinstance(inp, oofun): return np.abs(inp)
     
@@ -222,7 +222,7 @@ def log_interval(logfunc, inp):
     return interval
 
 def log(inp):
-    if isinstance(inp, ooarray) and inp.dtype == object:
+    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([log(elem) for elem in inp])    
     if not isinstance(inp, oofun): return np.log(inp)
     r = oofun(np.log, inp, d = lambda x: Diag(1.0/x), vectorized = True, _interval_ = log_interval(np.log, inp))
@@ -231,7 +231,7 @@ def log(inp):
 
 INV_LOG_10 = 1.0 / np.log(10)
 def log10(inp):
-    if isinstance(inp, ooarray) and inp.dtype == object:
+    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([log10(elem) for elem in inp])    
     if not isinstance(inp, oofun): return np.log10(inp)
     r = oofun(np.log10, inp, d = lambda x: Diag(INV_LOG_10 / x), vectorized = True, _interval_ = log_interval(np.log10, inp))
@@ -240,7 +240,7 @@ def log10(inp):
     
 INV_LOG_2 = 1.0 / np.log(2)
 def log2(inp):
-    if isinstance(inp, ooarray) and inp.dtype == object:
+    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([log2(elem) for elem in inp])    
     if not isinstance(inp, oofun): return np.log2(inp)
     r = oofun(np.log2, inp, d = lambda x: Diag(INV_LOG_2/x), vectorized = True, _interval_ = log_interval(np.log2, inp))
@@ -282,7 +282,7 @@ def cross(a, b):
 __all__ += ['dot', 'cross']
 
 def ceil(inp):
-    if isinstance(inp, ooarray) and inp.dtype == object:
+    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([ceil(elem) for elem in inp])        
     if not isinstance(inp, oofun): return np.ceil(inp)
     r = oofun(lambda x: np.ceil(x), inp, vectorized = True)
@@ -291,7 +291,7 @@ def ceil(inp):
     return r
 
 def floor(inp):
-    if isinstance(inp, ooarray) and inp.dtype == object:
+    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([floor(elem) for elem in inp])        
     if not isinstance(inp, oofun): return np.floor(inp)
     r = oofun(lambda x: np.floor(x), inp, vectorized = True)
@@ -308,7 +308,7 @@ def sum(inp, *args, **kwargs):
     if isinstance(inp, ooarray) and inp.dtype != object:
         inp = inp.view(np.ndarray)
         
-    cond_ooarray = isinstance(inp, ooarray) and inp.dtype == object
+    cond_ooarray = isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)])
     if cond_ooarray and inp.size == 1: 
         return np.asscalar(inp).sum()
     condIterableOfOOFuns = type(inp) in (list, tuple) or cond_ooarray
@@ -316,7 +316,7 @@ def sum(inp, *args, **kwargs):
     if not isinstance(inp, oofun) and not condIterableOfOOFuns: 
         return np.sum(inp, *args, **kwargs)
 
-    if isinstance(inp, ooarray) and inp.dtype == object: inp = inp.tolist()
+    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]): inp = inp.tolist()
 
     if condIterableOfOOFuns:
         d, INP, r0 = [], [], 0.0
