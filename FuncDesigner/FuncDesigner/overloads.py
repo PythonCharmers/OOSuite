@@ -2,7 +2,8 @@ PythonSum = sum
 from ooFun import oofun
 import numpy as np
 from FDmisc import FuncDesignerException, Diag, Eye, raise_except, diagonal, DiagonalType
-from ooFun import atleast_oofun, ooarray, Vstack, Copy
+from ooFun import atleast_oofun, Vstack, Copy
+from ooarray import ooarray
 from Interval import TrigonometryCriticalPoints, ZeroCriticalPoints, nonnegative_interval, ZeroCriticalPointsInterval, box_1_interval
 from numpy import atleast_1d, logical_and, logical_not, empty_like
 
@@ -177,6 +178,9 @@ def sqrt(inp, attachConstraints = True):
         return ooarray([sqrt(elem) for elem in inp])
     elif not isinstance(inp, oofun): 
         return np.sqrt(inp)
+#    def fff(x):
+#        print x
+#        return np.sqrt(x)
     r = oofun(np.sqrt, inp, d = lambda x: Diag(0.5 / np.sqrt(x)), vectorized = True)
     F0 = 0.0
     r._interval_ = lambda domain, dtype: nonnegative_interval(inp, np.sqrt, domain, dtype, F0)
@@ -504,7 +508,7 @@ def sum(inp, *args, **kwargs):
                     if not isinstance(val, diagonal):
                         if np.isscalar(val) or np.prod(val.shape) <= 1:
                             tmp = np.empty((Size, 1))
-                            tmp.fill(val)
+                            tmp.fill(val if np.isscalar(val) else val.item())
                             r[key] = tmp
                         elif val.shape[0] != Size:
                             tmp = np.tile(val, (Size, 1))
@@ -622,12 +626,15 @@ def decision(*args, **kwargs):
     pass
         
 def max(inp,  *args,  **kwargs): 
-    if type(inp) in (list, tuple, np.ndarray) and (len(args) == 0 or len(args) == 1 and not isinstance(args[0], oofun)) and np.asarray(inp).dtype.type != object:
+    if type(inp) in (list, tuple, np.ndarray) and (len(args) == 0 or len(args) == 1 and not isinstance(args[0], oofun)) and not any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return np.max(inp, *args, **kwargs)
     assert len(args) == len(kwargs) == 0, 'incorrect data type in FuncDesigner max or not implemented yet'
     
     if isinstance(inp, oofun):
         f = lambda x: np.max(x)
+#        def f(x):
+#            print np.max(x)
+#            return np.max(x)
         def d(x):
             df = inp.d(x)
             ind = np.argmax(x)
@@ -665,7 +672,7 @@ def max(inp,  *args,  **kwargs):
     return r        
     
 def min(inp,  *args,  **kwargs): 
-    if type(inp) in (list, tuple, np.ndarray) and (len(args) == 0 or len(args) == 1 and not isinstance(args[0], oofun)) and np.asarray(inp).dtype.type != object:
+    if type(inp) in (list, tuple, np.ndarray) and (len(args) == 0 or len(args) == 1 and not isinstance(args[0], oofun)) and not any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return np.min(inp, *args, **kwargs)
     
     assert len(args) == len(kwargs) == 0, 'incorrect data type in FuncDesigner min or not implemented yet'

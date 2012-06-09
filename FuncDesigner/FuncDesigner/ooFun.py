@@ -16,6 +16,7 @@ raise_except, DiagonalType, isPyPy
 from ooPoint import ooPoint
 from Interval import Interval, adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain
 import inspect
+from baseClasses import OOArray
 
 Copy = lambda arg: asscalar(arg) if type(arg)==ndarray and arg.size == 1 else arg.copy() if hasattr(arg, 'copy') else copy(arg)
 Len = lambda x: 1 if isscalar(x) else x.size if type(x)==ndarray else len(x)
@@ -161,7 +162,7 @@ class oofun:
             #assert key in self.__allowedFields__ # TODO: make set comparison
             setattr(self, key, item)
             
-        if isinstance(input, (tuple, list)): self.input = [(elem if isinstance(elem, (oofun, ooarray)) else array(elem, 'float')) for elem in input]
+        if isinstance(input, (tuple, list)): self.input = [(elem if isinstance(elem, (oofun, OOArray)) else array(elem, 'float')) for elem in input]
         elif input is not None: self.input = [input]
         else: self.input = [None] # TODO: get rid of None, use input = [] instead
 
@@ -408,7 +409,7 @@ class oofun:
             r._interval_ = interval
         else:
             if isscalar(other) and other == 0: return self # sometimes triggers from other parts of FD engine 
-            if isinstance(other,  ooarray): return other + self
+            if isinstance(other,  OOArray): return other + self
             if isinstance(other,  ndarray): other = other.copy() 
 #            if other.size == 1:
 #                #r = oofun(lambda *ARGS, **KWARGS: None, input = self.input)
@@ -545,7 +546,7 @@ class oofun:
     def __rdiv__(self, other):
         
         # without the code it somehow doesn't fork in either Python3 or latest numpy
-        if isinstance(other, ooarray) and other.dtype == object:
+        if isinstance(other, OOArray) and other.dtype == object:
             return other.__div__(self)
             
         assert not isinstance(other, oofun)
@@ -581,7 +582,7 @@ class oofun:
 
     # overload "a*b"
     def __mul__(self, other):
-        if isinstance(other, ooarray):
+        if isinstance(other, OOArray):
             return other.__mul__(self)
         def aux_d(x, y):
             Xsize, Ysize = Len(x), Len(y)
@@ -714,11 +715,12 @@ class oofun:
 
     def __pow__(self, other):
 
-        if isinstance(other, ooarray):
-            if 'size' not in self.__dict__ or self.size is 1:
-                return ooarray([self ** other[i] for i in range(other.size)])
-            elif isscalar(self.size):# and is not 1
-                return ooarray([self[i] ** other[i] for i in range(other.size)])
+        if isinstance(other, OOArray):
+            return other.__rpow__(self)
+#            if 'size' not in self.__dict__ or (isscalar(self.size) and self.size == 1):
+#                return ooarray([self ** other[i] for i in range(other.size)])
+#            elif isscalar(self.size):# and is not 1
+#                return ooarray([self[i] ** other[i] for i in range(other.size)])
 
         d_x = lambda x, y: \
             (y * x ** (y - 1) if (isscalar(x) or x.size == 1) else Diag(y * x ** (y - 1))) if y is not 2 else Diag(2 * x)
@@ -1769,7 +1771,7 @@ def reverse_l2P(l2P):
     
 
 def AND(*args):
-    Args = args[0] if len(args) == 1 and type(args[0]) in (ooarray, ndarray, tuple, list, set) else args
+    Args = args[0] if len(args) == 1 and isinstance(args[0], (ndarray, tuple, list, set)) else args
     for arg in Args:
         if isinstance(arg, SmoothFDConstraint) and arg.lb == arg.ub and arg.tol == 0 and not arg.alt_nlh_func:
             pass
@@ -1814,14 +1816,6 @@ def NOT(_bool_oofun):
 NAND = lambda *args, **kw: NOT(AND(*args, **kw))
 NOR = lambda *args, **kw: NOT(OR(*args, **kw))
 
-def IMPLICATION(condition, *args):
-    if len(args) == 1 and isinstance(args[0], (tuple, set, list, ndarray)):
-        return ooarray([IMPLICATION(condition, elem) for elem in args[0]])
-    elif len(args) > 1:
-        return ooarray([IMPLICATION(condition, elem) for elem in args])
-    return NOT(condition & NOT(args[0]))
-    
-ifThen = IMPLICATION
 
 def OR(*args):
     Args = args[0] if len(args) == 1 and isinstance(args[0], (ndarray, list, tuple, set)) else args
@@ -1860,7 +1854,8 @@ class BooleanOOFun(oofun):
     
     __and__ = AND
     
-    IMPLICATION = IMPLICATION
+    #IMPLICATION = IMPLICATION
+    IMPLICATION = lambda *args, **kw: err_func('oofun.IMPLICATION is temporary disabled, use ifThen(...) or IMPLICATION(...) instead')
     __eq__ = EQUIVALENT
     __ne__ = lambda self, arg: NOT(self==arg)
     
@@ -1877,11 +1872,9 @@ class BooleanOOFun(oofun):
         
     
     def __xor__(self, other):
-        #print('__xor__')
         return BooleanOOFun(logical_xor, (self, other), vectorized = True)
     
     def __invert__(self):
-        #print('__not__')
         r = BooleanOOFun(logical_not, self, vectorized = True)
         r.nlh = lambda *args: nlh_not(self, r._getDep(), *args)
         r.oofun = r
@@ -1984,8 +1977,6 @@ class SmoothFDConstraint(BaseFDConstraint):
         
         dep = (self.oofun._getDep() if not self.oofun.is_oovar else set([self.oofun])).intersection(domain.keys()) # TODO: Improve it
         res = {}
-#        print T0
-#        print '====='
         for v in dep:
             Lf, Uf = vstack((r[v][0].lb, r[v][1].lb)), vstack((r[v][0].ub, r[v][1].ub))
             
@@ -1997,13 +1988,10 @@ class SmoothFDConstraint(BaseFDConstraint):
             tmp = getSmoothNLH(Lf, Uf, self.lb, self.ub, tol, m, dataType) #- T02
             tmp[isnan(tmp)] = 0.0
             res[v] = tmp 
-#            print tmp
-#        print '----'
         return T0, res, DefiniteRange
         
 def getSmoothNLH(Lf, Uf, lb, ub, tol, m, dataType):
-   
-    #print Lf.shape
+
     M = prod(Lf.shape) / (2*m)
     #init
     Lf, Uf  = Lf.reshape(2*M, m).T, Uf.reshape(2*M, m).T
@@ -2084,15 +2072,11 @@ def getSmoothNLH(Lf, Uf, lb, ub, tol, m, dataType):
         #tmp[ub >= Uf] = 1
 
     else:
-        p.err('this part of interalg code is unimplemented for double-box-bound constraints yet')
+        raise FuncDesignerException('this part of interalg code is unimplemented for double-box-bound constraints yet')
     
-    #print tmp
     tmp = -log2(tmp)
-    
-    tmp[isnan(tmp)] = inf # to prevent some issues in disjunctive cons
-    
+    tmp[isnan(tmp)] = inf # to prevent some issues in disjunctive cons    
     return tmp
-    #return tmp
 
 class Constraint(SmoothFDConstraint):
     def __init__(self, *args, **kwargs):
@@ -2126,269 +2110,3 @@ def atleast_oofun(arg):
         #return oofun(lambda *args, **kwargs: arg(*args,  **kwargs), input=None, discrete=True)
         raise FuncDesignerException('incorrect type for the function _atleast_oofun')
 
-
-class ooarray(ndarray):
-    __array_priority__ = 25 # !!! it should exceed oofun.__array_priority__ !!!
-    def __new__(self, *args, **kwargs):
-        #assert len(kwargs) == 0
-        tmp = args[0] if len(args) == 1 else args
-        
-        obj = asarray(tmp).view(self)
-        #if obj.ndim != 1: raise FuncDesignerException('only 1-d ooarrays are implemented now')
-        #if obj.dtype != object:obj = np.asfarray(obj) #TODO: FIXME !
-
-        obj._id = oofun._id
-        self.name = 'unnamed_ooarray_%d' % obj._id
-        oofun._id += 1
-        
-        return obj
-    
-    def __init__(self, *args, **kw):
-        pass
-    
-    __hash__ = lambda self: self._id
-    
-    def __len__(self):
-        return self.size
-
-    expected_kwargs = set(('tol', 'name'))
-    def __call__(self, *args, **kwargs):
-        #if self.dtype != object: return self.view(ndarray)
-        
-        # TODO: give different names for each element while assigning name to ooarray
-        expected_kwargs = self.expected_kwargs
-        #if not set(kwargs.keys()).issubset(expected_kwargs):
-            #raise FuncDesignerException('Unexpected kwargs: should be in '+str(expected_kwargs)+' got: '+str(kwargs.keys()))
-            
-        for elem in expected_kwargs:
-            if elem in kwargs:
-                setattr(self, elem, kwargs[elem])
-        
-        if len(args) > 1: raise FuncDesignerException('No more than single argument is expected')
-        
-        if len(args) == 0:
-           if len(kwargs) == 0: raise FuncDesignerException('You should provide at least one argument')
-           #return self
-           
-        if len(args) != 0 and isinstance(args[0], str):
-            self.name = args[0]
-            #return self
-        tmp = asarray([asscalar(asarray(self[i](*args, **kwargs))) if isinstance(self[i], oofun) else self[i] for i in range(self.size)])
-        if tmp.dtype != object:
-            return array(tmp, dtype = float).flatten()
-        else:
-            #tmp = tmp.flatten()
-            return ooarray(tmp)
-        #return ooarray(tmp, dtype=float if tmp.dtype != object else object).flatten()
-
-    def __mul__(self, other):
-        if self.size == 1:
-            return ooarray(asscalar(self)*other)
-        elif isscalar(other):
-            # TODO: mb return mere ooarray(self.view(ndarray)*other) or other.view(ndarray)
-            return ooarray(self.view(ndarray)*other if self.dtype != object else [self[i]*other for i in range(self.size)])
-        elif isinstance(other, oofun):
-            hasSize = 'size' in dir(other)
-            if not hasSize: 
-#                print('''
-#                FuncDesigner warning: 
-#                to perform the operation 
-#                (ooarray multiplication on oofun)
-#                oofun size should be known.
-#                Assuming oofun size is 1,
-#                the value is ascribed to the oofun attributes.
-#                Handling of the issue is intended to be 
-#                enhanced in future.''')
-                other.size = 1
-                #raise FuncDesignerException('to perform the operation oofun size should be known')
-            if other.size == 1:
-                if self.dtype == object:
-                    s = atleast_1d(self)
-                    return ooarray([s[i]*other for i in range(self.size)])
-                else:
-                    return ooarray(self*other)
-            else: # other.size > 1
-                # and self.size != 1
-                s, o = atleast_1d(self), atleast_1d(other)
-                return ooarray([s[i]*o[i] for i in range(self.size)])
-        elif isinstance(other, ndarray):
-            # TODO: mb return mere ooarray(self.view(ndarray)*other)?or other.view(ndarray)
-            return ooarray(self*asscalar(other) if other.size == 1 else [self[i]*other[i] for i in range(other.size)])
-        elif type(other) in (list, tuple):
-            r = self * asarray(other)
-            return r
-        else:
-            raise FuncDesignerException('bug in multiplication')
-
-    def __div__(self, other):
-        if self.size == 1:
-            return asscalar(self)/other
-        elif isscalar(other) or (isinstance(other, ndarray) and other.size in (1, self.size)):
-            return self * (1.0/other)
-        elif isinstance(other, oofun):
-            if self.dtype != object:
-                return self.view(ndarray) / other
-            else:
-                s = atleast_1d(self)
-                return ooarray([s[i] / other for i in range(self.size)])
-        elif isinstance(other, ooarray):
-            if self.dtype != object:
-                return self.view(ndarray) / other.view(ndarray)
-            else:
-                # TODO: mb return mere ooarray(self.view(ndarray) / other)? or other.view(ndarray)
-                s, o = atleast_1d(self), atleast_1d(other)
-                return ooarray([s[i] / o[i] for i in range(self.size)])
-        else:
-            raise FuncDesignerException('unimplemented yet')
-
-    def __add__(self, other):
-        if isinstance(other, list):
-            other = ooarray(other)
-        if isscalar(other) or (isinstance(other, ndarray) and other.size in (1, self.size)):
-            r = ooarray(self.view(ndarray) + other)
-        elif isinstance(other, oofun):
-            if self.dtype != object:
-                r = self.view(ndarray) + other
-            else:
-                s = atleast_1d(self)
-                r = ooarray([s[i] + other for i in range(self.size)])
-        elif isinstance(other, ndarray):
-            if self.dtype != object:
-                r = self.view(ndarray) + other.view(ndarray)
-            elif self.size == 1:
-                r = other + asscalar(self) 
-            else:
-                # TODO: mb return mere ooarray(self.view(ndarray) + other) or ooarray(self.view(ndarray) + other.view(ndarray))?
-                r = ooarray([self[i] + other[i] for i in range(self.size)])
-        else:
-            raise FuncDesignerException('unimplemented yet')
-        if isinstance(r, ndarray) and r.size == 1:
-            r = asscalar(r)
-        return r
-
-    # TODO: check why it doesn't work with oofuns
-    def __radd__(self, other):
-        return self + other
-        
-    def __rmul__(self, other):
-        return self * other
-
-    # TODO : fix it
-#    def __rdiv__(self, other):
-#        return self * other
-    
-    
-    def __pow__(self, other):
-        if isinstance(other, ndarray) and other.size > 1 and self.size > 1:
-            return ooarray([self[i]**other[i] for i in range(self.size)])
-        if self.dtype == object:
-            return ooarray([elem**other for elem in self.tolist()])
-            
-        # TODO: is this part of code trigger any time?
-        return self.view(ndarray)**other
-    
-    def __eq__(self, other):
-        r = self - other
-        if r.dtype != object: return all(r)
-        if r.size == 1: return asscalar(r)==0
-        
-        # TODO: rework it
-        return ooarray([Constraint(elem) for elem in r.tolist()])
-        #else: raise FuncDesignerException('unimplemented yet')
-    
-    
-    def __lt__(self, other):
-        if self.dtype != object and (not isinstance(other, ooarray) or other.dtype != object):
-            return self.view(ndarray) < (other.view(ndarray) if isinstance(other, ooarray) else other)
-        if isinstance(other, (ndarray, list, tuple)) and self.size > 1 and len(other) > 1:
-            return ooarray([self[i] < other[i] for i in range(self.size)])
-        if isscalar(other) or (isinstance(other, (ndarray, list, tuple)) and len(other) == 1):
-            return ooarray([elem < other for elem in self])
-        if isinstance(other, oofun):
-            if 'size' in other.__dict__ and not isinstance(other.size, oofun):
-                if other.size == self.size:
-                    return ooarray([elem[i] < other[i] for i in range(self.size)])
-                elif self.size == 1:
-                    return ooarray([self[0] < other[i] for i in range(other.size)])
-                else:
-                    FuncDesignerException('bug or yet unimplemented case in FD kernel')
-            else:
-                # !!! assunimg other.size = 1
-                return ooarray([elem < other for elem in self])
-        raise FuncDesignerException('unimplemented yet')
-            
-    
-    def __le__(self, other):
-        if self.dtype != object and (not isinstance(other, ooarray) or other.dtype != object):
-            return self.view(ndarray) <= (other.view(ndarray) if isinstance(other, ooarray) else other)
-        if isinstance(other, (ndarray, list, tuple)) and self.size > 1 and len(other) > 1:
-            return ooarray([self[i] <= other[i] for i in range(self.size)])
-        if isscalar(other) or (isinstance(other, (ndarray, list, tuple)) and len(other) == 1):
-            return ooarray([elem <= other for elem in self])
-        if isinstance(other, oofun):
-            if 'size' in other.__dict__ and not isinstance(other.size, oofun):
-                if other.size == self.size:
-                    return ooarray([elem[i] <= other[i] for i in range(self.size)])
-                elif self.size == 1:
-                    return ooarray([self[0] <= other[i] for i in range(other.size)])
-                else:
-                    FuncDesignerException('bug or yet unimplemented case in FD kernel')
-            else:
-                # !!! assunimg other.size = 1
-                return ooarray([elem <= other for elem in self])            
-        raise FuncDesignerException('unimplemented yet')
-        
-    
-    def __gt__(self, other):
-        if self.dtype != object and (not isinstance(other, ooarray) or other.dtype != object):
-            return self.view(ndarray) > (other.view(ndarray) if isinstance(other, ooarray) else other)
-        if isinstance(other, (ndarray, list, tuple)) and self.size > 1 and len(other) > 1:
-            return ooarray([self[i] > other[i] for i in range(self.size)])
-        if isscalar(other) or (isinstance(other, (ndarray, list, tuple)) and len(other) == 1):
-            return ooarray([elem > other for elem in self])
-        if isinstance(other, oofun):
-            if 'size' in other.__dict__ and not isinstance(other.size, oofun):
-                if other.size == self.size:
-                    return ooarray([elem[i] > other[i] for i in range(self.size)])
-                elif self.size == 1:
-                    return ooarray([self[0] > other[i] for i in range(other.size)])
-                else:
-                    FuncDesignerException('bug or yet unimplemented case in FD kernel')
-            else:
-                # !!! assunimg other.size = 1
-                return ooarray([elem > other for elem in self])            
-        raise FuncDesignerException('unimplemented yet')
-        
-    
-    def __ge__(self, other):
-        if self.dtype != object and (not isinstance(other, ooarray) or other.dtype != object):
-            return self.view(ndarray) >= (other.view(ndarray) if isinstance(other, ooarray) else other)
-        if isinstance(other, (ndarray, list, tuple)) and self.size > 1 and len(other) > 1:
-            return ooarray([self[i] >= other[i] for i in range(self.size)])
-        if isscalar(other) or (isinstance(other, (ndarray, list, tuple)) and len(other) == 1):
-            return ooarray([elem >= other for elem in self])
-        if isinstance(other, oofun):
-            if 'size' in other.__dict__ and not isinstance(other.size, oofun):
-                if other.size == self.size:
-                    return ooarray([elem[i] >= other[i] for i in range(self.size)])
-                elif self.size == 1:
-                    return ooarray([self[0] >= other[i] for i in range(other.size)])
-                else:
-                    FuncDesignerException('bug or yet unimplemented case in FD kernel')
-            else:
-                # !!! assunimg other.size = 1
-                return ooarray([elem >= other for elem in self])                   
-        raise FuncDesignerException('unimplemented yet')
-    
-
-#def asdf(lb1, ub1, other):
-#    return (lb1 * other, ub1 * other) if other >= 0 else (ub1 * other, lb1 * other)
-
-# TODO: implement it!
-# TODO: check __mul__ and __div__ for oofun with size > 1
-
-#    def __add__(self, other):
-#        if isscalar(other) or isinstance(other, ndarray) and other.size == 1:
-#            return self + other
-#        elif  isinstance(other, oofun):
-#            

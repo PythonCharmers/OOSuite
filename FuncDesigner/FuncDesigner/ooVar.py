@@ -4,7 +4,9 @@ from numpy import nan, asarray, isfinite, empty, zeros, inf, any, array, prod, a
 asfarray, isscalar, ndarray, int16, int32, int64, float64, tile, vstack, searchsorted, logical_or, where, \
 asanyarray, string_, arange, log2, logical_and, ceil
 from FDmisc import FuncDesignerException, checkSizes, isPyPy
-from ooFun import oofun, Len, ooarray, BooleanOOFun, AND, OR, NOT, IMPLICATION, EQUIVALENT
+from ooFun import oofun, Len, BooleanOOFun, AND, OR, NOT, EQUIVALENT
+#from FuncDesigner import IMPLICATION
+from ooarray import ooarray
 #from FuncDesigner.Interval import adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain
 
 f_none = lambda *args, **kw: None
@@ -182,7 +184,7 @@ class oovar(oofun):
     
     __and__ = AND
     __or__ = OR
-    implication = IMPLICATION
+    #implication = IMPLICATION
     __invert__ = NOT
     __ne__ = lambda self, arg: NOT(self==arg)
     def __eq__(self, other): 
