@@ -1314,7 +1314,15 @@ class oofun:
                         if isspmatrix(t1):
                             rr = t1._mul_sparse_matrix(val.resolve(True))
                         else:
-                            rr = t1 *  val if  type(t1) == DiagonalType or type(val) != ndarray else (val.T * t1).T   # for PyPy compatibility
+#                            print type(t1), type(val), isinstance(t1, diagonal), isinstance(val, diagonal)
+#                            print type(t1) == DiagonalType or type(val) != ndarray
+#                            if type(t1) == DiagonalType:
+#                                print t1 *  val
+#                                print '----'
+                            if not isPyPy or type(val) != DiagonalType:
+                                rr = t1 *  val #if  type(t1) == DiagonalType or type(val) not in (ndarray, DiagonalType) else (val.T * t1).T   # for PyPy compatibility
+                            else:
+                                rr = (val * t1.T).T
                     elif isscalar(val) or isscalar(t1) or prod(t1.shape)==1 or prod(val.shape)==1:
                         #rr = t1 * val
                         #print t1, type(t1), val, type(val)
