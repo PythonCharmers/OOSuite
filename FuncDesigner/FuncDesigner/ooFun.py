@@ -158,7 +158,6 @@ class oofun:
             oofun._unnamedFunNumber += 1
         
         for key, item in kwargs.items():
-            #print key
             #assert key in self.__allowedFields__ # TODO: make set comparison
             setattr(self, key, item)
             
@@ -1151,7 +1150,8 @@ class oofun:
                 Input += self.args
             tmp = self.fun(*Input)
         else:
-            inputs = zip(*[inp.tolist() for inp in Input])
+            n = next(iter(x.values())).size
+            inputs = zip(*[(atleast_1d(inp) if inp.size == n else [inp]*n) for inp in Input])
             
             # Check it!
             tmp = [self.fun(inp if self.args == () else inp + self.args) for inp in inputs]
