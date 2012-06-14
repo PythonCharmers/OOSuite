@@ -68,7 +68,7 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
             p.solver = getSolverFromStringName(p, solver_str_or_instance)
         else: # solver_str_or_instance is oosolver
             p.solver = solver_str_or_instance
-            for key, value  in solver_str_or_instance.fieldsForProbInstance.iteritems():
+            for key, value  in solver_str_or_instance.fieldsForProbInstance.items():
                 setattr(p, key, value)
     p.isConverterInvolved = isConverter
 

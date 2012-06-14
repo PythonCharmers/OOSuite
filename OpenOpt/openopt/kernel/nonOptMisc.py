@@ -135,7 +135,7 @@ def oosolver(solverName, *args,  **kwargs):
         solverClass = solver_import(solverPaths[solverName], solverName)
         solverClassInstance = solverClass()
         solverClassInstance.fieldsForProbInstance = {}
-        for key, value in kwargs.iteritems():
+        for key, value in kwargs.items():
             if hasattr(solverClassInstance, key):
                 setattr(solverClassInstance, key, value)
             else:
