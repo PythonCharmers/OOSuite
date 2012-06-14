@@ -2100,10 +2100,10 @@ class Derivative(dict):
         pass
 
 
-def ooFun(*args, **kwargs):
-    r = oofun(*args, **kwargs)
-    r.isCostly = True
-    return r
+#def ooFun(*args, **kwargs):
+#    r = oofun(*args, **kwargs)
+#    r.isCostly = True
+#    return r
 
 def atleast_oofun(arg):
     if isinstance(arg, oofun):
