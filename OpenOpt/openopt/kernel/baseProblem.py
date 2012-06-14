@@ -282,8 +282,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
 
     def _isFDmodel(self):
         try:
-            from FuncDesigner import ooarray
-            from FuncDesigner.ooFun import oofun
+            #from FuncDesigner.ooFun import oofun
+            from FuncDesigner import ooarray, oofun
         except ImportError:
             return False
         fds = getattr(self, self.FuncDesignerSign, None)
@@ -314,8 +314,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             self._FD = EmptyClass()
             self._FD.nonBoxConsWithTolShift = []
             self._FD.nonBoxCons = []
-            from FuncDesigner import _getAllAttachedConstraints, _getDiffVarsID, ooarray, oopoint
-            from FuncDesigner.ooFun import oofun
+            from FuncDesigner import _getAllAttachedConstraints, _getDiffVarsID, ooarray, oopoint, oofun
             self._FDVarsID = _getDiffVarsID()
             
             probDep = set()
@@ -498,6 +497,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     broadcast(formDictOfFixedFuncs, eq, self.dictOfFixedFuncs, areFixed, self._x0)
             else:
                 broadcast(formDictOfFixedFuncs, self.f, self.dictOfFixedFuncs, areFixed, self._x0)
+
             handleConstraint_args = (StartPointVars, areFixed, oovD, A, b, Aeq, beq, Z, D_kwargs, LB, UB)
             for c in self.constraints:
                 if isinstance(c, ooarray):
