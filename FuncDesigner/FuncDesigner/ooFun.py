@@ -73,7 +73,6 @@ class oofun:
     isConstraint = False
     #isDifferentiable = True
     discrete = False
-    isCostly = False
     _isSum = False
     
     stencil = 3 # used for DerApproximator
@@ -131,6 +130,8 @@ class oofun:
         elif attr == 'isUncycled':
             self._getDep()
             return self.isUncycled
+        elif attr == 'isCostly':
+            return self.d is None
         elif attr != 'size': 
             raise AttributeError('you are trying to obtain incorrect attribute "%s" for FuncDesigner oofun "%s"' %(attr, self.name))
         
@@ -989,8 +990,8 @@ class oofun:
         r = Constraint(self - other, ub = 0.0, lb = 0.0) # do not perform check for other == 0, copy should be returned, not self!
         if self.is_oovar and isscalar(other) and self.domain is not None:
             if self.domain is bool or self.domain is 'bool':
-                if other not in [0, 1]:
-                    raise FuncDesignerException('bool oovar can be compared with 0 or 1 only')
+                if other not in [0, 1]:# and type(other) not in (int, int16, int32, int64):
+                    raise FuncDesignerException('bool oovar can be compared with [0,1] only')
                 r.nlh = self.nlh if other == 1.0 else (~self).nlh
                 r.alt_nlh_func = True
             elif self.domain is not int and self.domain is not 'int' and type(other) in (str, string_):
@@ -1972,8 +1973,17 @@ class SmoothFDConstraint(BaseFDConstraint):
         tol = self.tol if self.tol > 0.0 else p.contol if self.tol == 0 else 0.0 # 0 for negative tolerances
         # TODO: check it
         if p.solver.dataHandling == 'sorted': tol = 0
-        
-        domain = ooPoint([(v, (Lx[:, k], Ux[:, k])) for k, v in enumerate(p._freeVarsList)], skipArrayCast=True)
+        selfDep = (self.oofun._getDep() if not self.oofun.is_oovar else set([self.oofun]))
+        #1
+        #domainData = [(v, (Lx[:, k], Ux[:, k])) for k, v in enumerate(p._freeVarsList)]
+        #2
+        # TODO: improve it
+        domainData = []
+        for k, v in enumerate(p._freeVarsList):
+            if v in selfDep:
+                domainData.append((v, (Lx[:, k], Ux[:, k])))
+
+        domain = ooPoint(domainData, skipArrayCast=True)
         domain.isMultiPoint = True
         domain.dictOfFixedFuncs = p.dictOfFixedFuncs
         
@@ -1983,7 +1993,7 @@ class SmoothFDConstraint(BaseFDConstraint):
         T02 = tmp
         T0 = T02[:, tmp.shape[1]/2:].flatten()
         
-        dep = (self.oofun._getDep() if not self.oofun.is_oovar else set([self.oofun])).intersection(domain.keys()) # TODO: Improve it
+        dep = selfDep.intersection(domain.keys()) # TODO: Improve it
         res = {}
         for v in dep:
             Lf, Uf = vstack((r[v][0].lb, r[v][1].lb)), vstack((r[v][0].ub, r[v][1].ub))
