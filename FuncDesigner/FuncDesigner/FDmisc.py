@@ -122,7 +122,7 @@ class diagonal:
             else:
                 # new; TODO: improve it
                 if self.isOnes:
-                    D = empty(self.size)
+                    D = np.empty(self.size)
                     D.fill(self.scalarMultiplier)
                 else:
                     D = self.scalarMultiplier * self.diag if self.scalarMultiplier != 1.0 else self.diag
