@@ -715,13 +715,13 @@ class gsubg(baseSolver):
 #                    s2 = 0
                     
                 if not s2 and any(p.stopdict.values()):
-                    for key,  val in p.stopdict.iteritems():
+                    for key,  val in p.stopdict.items():
                         if val == True:
                             s2 = key
                             break
                 p.istop = s2
                 
-                for key,  val in p.stopdict.iteritems():
+                for key,  val in p.stopdict.items():
                     if key < 0 or key in set([FVAL_IS_ENOUGH, USER_DEMAND_STOP, BUTTON_ENOUGH_HAS_BEEN_PRESSED]):
                         #p.iterfcn(bestPoint)
                         return
