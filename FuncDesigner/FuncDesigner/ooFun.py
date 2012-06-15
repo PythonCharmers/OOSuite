@@ -1974,14 +1974,13 @@ class SmoothFDConstraint(BaseFDConstraint):
         # TODO: check it
         if p.solver.dataHandling == 'sorted': tol = 0
         selfDep = (self.oofun._getDep() if not self.oofun.is_oovar else set([self.oofun]))
-        #1
+        
+        # prev
         #domainData = [(v, (Lx[:, k], Ux[:, k])) for k, v in enumerate(p._freeVarsList)]
-        #2
+        
+        # new
         # TODO: improve it
-        domainData = []
-        for k, v in enumerate(p._freeVarsList):
-            if v in selfDep:
-                domainData.append((v, (Lx[:, k], Ux[:, k])))
+        domainData = [(v, (Lx[:, k], Ux[:, k])) for k, v in enumerate(p._freeVarsList) if v in selfDep]
 
         domain = ooPoint(domainData, skipArrayCast=True)
         domain.isMultiPoint = True
