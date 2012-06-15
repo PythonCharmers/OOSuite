@@ -27,8 +27,9 @@ class discrete(oof):
         
     def _variance(self):
         # may be less than zero due to roundoff errors and thus yield nan in std
-        Tmp = (fdsum((self.values)**2 * self.probabilities) - self.M**2, 0)
-        return o.max(Tmp)
+        #Tmp = (fdsum((self.values)**2 * self.probabilities) - self.M**2, 0)
+        #return o.max(Tmp)
+        return o.abs(fdsum((self.values)**2 * self.probabilities) - self.M**2)
         
     def _std(self):
         return o.sqrt(self.Var, attachConstraints = False)
@@ -93,17 +94,40 @@ def mergeDistributions(d1, d2, operation):
     r.is_var = False
     
     # adjust stochDep
-    stochDep = d1.stochDep 
-    if isinstance(d2, discrete):
-        stochDep = stochDep.copy()
-        for key, val in d2.stochDep.items():
-            if key in stochDep:
-                raise FuncDesignerException('This SP has structure that makes it impossible to solve in OpenOpt yet')
-                stochDep[key] += val
-            else:
-                stochDep[key] = val
+    stochDep = d1.stochDep.copy()
+    for key, val in d2.stochDep.items():
+        if key in stochDep:
+            raise FuncDesignerException('This SP has structure that makes it impossible to solve in OpenOpt yet')
+            stochDep[key] += val
+        else:
+            stochDep[key] = val
     r.stochDep = stochDep
     return r
 
+from numpy import argsort, cumsum, searchsorted, linspace
 
+def reduce_distrib(values, probabilities, N = 500):
+    if len(values) <= N:
+        return values, probabilities
+    ind = argsort(values)
+    values, probabilities = values[ind], probabilities[ind]
+    csp = cumsum(probabilities)
+    tmp = linspace(0, 1, N)
+    Ind = searchsorted(csp, tmp)
+    
+    # TODO: rework it as linear 1st order approximation
+#    from numpy import where
+#    J = where(Ind == values.size)[0]
+#    print J.size
+    Ind[Ind == values.size] -= 1
+    new_values = values[Ind] 
+    return new_values, asarray([1.0/N]*N)
 
+#from numpy import *
+#n = 20
+#values = sin(arange(n))
+#probabilities = (2 + cos(arange(n))) / sum(2+cos(arange(n)))
+#nv,np = reduce_distrib(values,probabilities, 10)
+#from pylab import plot, show
+#plot(nv)
+#show()
