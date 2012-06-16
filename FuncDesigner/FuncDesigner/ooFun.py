@@ -341,7 +341,9 @@ class oofun:
         domain.localStoredIntervals = {}
         return r_l, r_u
             
-    
+    __pos__ = lambda self: self
+
+        
     # overload "a+b"
     # @checkSizes
     def __add__(self, other):
