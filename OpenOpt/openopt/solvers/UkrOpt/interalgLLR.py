@@ -243,7 +243,10 @@ def func3(an, maxActiveNodes):
         M = max((5, int(maxActiveNodes/n), ind))
         M = ind
 #        M = max((5, maxActiveNodes/5, ind))
-        #if M == 0: M = 1
+        
+        # IMPORTANT!
+        if M == 0: M = 1
+        
         tmp1, tmp2 = an1[:M], an1[M:]
         an1 = tmp1
         _in = hstack((tmp2, _in))
@@ -251,6 +254,7 @@ def func3(an, maxActiveNodes):
     l1 = len(an1)
     # changes end
     #print maxActiveNodes, len(an1), len(_in)
+    
     return an1, _in
 
 def func1(tnlhf, tnlhf_curr, residual, y, e, o, a, _s_prev, p, indT):
