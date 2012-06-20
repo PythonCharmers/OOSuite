@@ -1314,21 +1314,14 @@ class oofun:
                     if type(t1) == DiagonalType and type(val) == DiagonalType:
                         rr = t1 * val
                     elif type(t1) == DiagonalType or type(val) == DiagonalType:
-                        if isspmatrix(t1):
+                        if isspmatrix(t1): # thus val is DiagonalType
                             rr = t1._mul_sparse_matrix(val.resolve(True))
                         else:
-#                            print type(t1), type(val), isinstance(t1, diagonal), isinstance(val, diagonal)
-#                            print type(t1) == DiagonalType or type(val) != ndarray
-#                            if type(t1) == DiagonalType:
-#                                print t1 *  val
-#                                print '----'
                             if not isPyPy or type(val) != DiagonalType:
                                 rr = t1 *  val #if  type(t1) == DiagonalType or type(val) not in (ndarray, DiagonalType) else (val.T * t1).T   # for PyPy compatibility
                             else:
                                 rr = (val * t1.T).T
                     elif isscalar(val) or isscalar(t1) or prod(t1.shape)==1 or prod(val.shape)==1:
-                        #rr = t1 * val
-                        #print t1, type(t1), val, type(val)
                         rr = (t1 if isscalar(t1) or prod(t1.shape)>1 else asscalar(t1) if type(t1)==ndarray else t1[0, 0]) \
                         * (val if isscalar(val) or prod(val.shape)>1 else asscalar(val) if type(val)==ndarray else val[0, 0])
                     else:
@@ -1359,9 +1352,10 @@ class oofun:
                     #assert rr.ndim>1
                     
                     Val = r.get(key, None)
+                    ValType = type(Val)
                     if Val is not None:
                         if type(rr) == DiagonalType:
-                            if type(Val) == DiagonalType:
+                            if ValType == DiagonalType:
                                 
                                 Val = Val + rr # !!!! NOT inplace! (elseware will overwrite stored data used somewhere else)
                                 
@@ -1369,18 +1363,19 @@ class oofun:
                                 tmp  = rr.resolve(useSparse)
                                 if type(tmp) == ndarray and hasattr(Val, 'toarray'):
                                     Val = Val.toarray()
-                                if type(tmp) == type(Val) == ndarray and Val.size >= tmp.size:
+                                if type(tmp) == ValType == ndarray and Val.size >= tmp.size:
                                     Val += tmp
                                 else: # may be problems with sparse matrices inline operation, which are badly done in scipy.sparse for now
                                     Val = Val + tmp
-                        elif isinstance(Val, ndarray) and hasattr(rr, 'toarray'): # i.e. rr is sparse matrix
-                            rr = rr.toarray() # I guess r[key] will hardly be all-zeros
-                        elif hasattr(Val, 'toarray') and isinstance(rr, ndarray): # i.e. Val is sparse matrix
-                            Val = Val.toarray()
-                        if type(rr) == type(Val) == ndarray and rr.size == Val.size: 
-                            Val += rr
-                        else: 
-                            Val = Val + rr
+                        else:
+                            if isinstance(Val, ndarray) and hasattr(rr, 'toarray'): # i.e. rr is sparse matrix
+                                rr = rr.toarray() # I guess r[key] will hardly be all-zeros
+                            elif hasattr(Val, 'toarray') and isinstance(rr, ndarray): # i.e. Val is sparse matrix
+                                Val = Val.toarray()
+                            if type(rr) == ValType == ndarray and rr.size == Val.size: 
+                                Val += rr
+                            else: 
+                                Val = Val + rr
                         r[key] = Val
                     else:
                         r[key] = rr
@@ -1454,7 +1449,7 @@ class oofun:
                                 tmp = tmp.T
                                     
                             ########################################
-                            
+
                         derivativeSelf.append(tmp)
             else:
                 tmp = self.d(*Input)
