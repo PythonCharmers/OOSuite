@@ -314,7 +314,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             self._FD = EmptyClass()
             self._FD.nonBoxConsWithTolShift = []
             self._FD.nonBoxCons = []
-            from FuncDesigner import _getAllAttachedConstraints, _getDiffVarsID, ooarray, oopoint, oofun
+            from FuncDesigner import _getAllAttachedConstraints, _getDiffVarsID, ooarray, oopoint, oofun, _Stochastic
             self._FDVarsID = _getDiffVarsID()
             
             probDep = set()
@@ -323,6 +323,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             
             if self.probType in ['SLE', 'NLSP', 'SNLE', 'LLSP']:
                 equations = self.C if self.probType in ('SLE', 'LLSP') else self.f
+                F = equations
                 updateDep(probDep, equations)
                 ConstraintTags = [(elem if not isinstance(elem, (list, tuple, ndarray)) else elem[0]).isConstraint for elem in equations]
                 cond_all_oofuns_but_not_cons = not any(ConstraintTags) 
@@ -354,6 +355,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 elif self.probType in ('NLSP', 'SNLE'): self.f = EQs
                 else: raise OpenOptException('bug in OO kernel')
             else:
+                F = [self.f]
                 updateDep(probDep, self.f)
             updateDep(probDep, self.constraints)
             
@@ -470,6 +472,23 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             
             if self.useAttachedConstraints: 
                 self.constraints.update(_getAllAttachedConstraints(C))
+                
+            FF = self.constraints.copy()
+            FF.update(F)
+            unvectorizableFuncs = set()
+            unvectorizableVariables = set([var for var, val in self._x0.items() if isinstance(val, _Stochastic) or asarray(val).size > 1])
+            hasVectorizableFuncs = False
+            if len(unvectorizableVariables) != 0:
+                for ff in FF:
+                    _dep = ff._getDep()
+                    if len(_dep & unvectorizableVariables) != 0:
+                        unvectorizableFuncs.add(ff)
+                    else:
+                        hasVectorizableFuncs = True
+            else:
+                hasVectorizableFuncs = True
+            self.unvectorizableFuncs = unvectorizableFuncs
+            self.hasVectorizableFuncs = hasVectorizableFuncs
             
             for v in self._freeVars:
                 d = v.domain

@@ -136,20 +136,33 @@ class nonLinFuncs:
             
 
             if p.isFDmodel:
-                #new
-                if p.vectorizable:
-                    from FuncDesigner import oopoint
-                    X = dict([(oovar, x[:, i]) for i, oovar in enumerate(p._freeVarsList)])
-                    X = oopoint(X, skipArrayCast = True)
-                    X.N = nXvectors
-                    X.isMultiPoint = True
-                    X.update(p.dictOfFixedFuncs)
-                    r = hstack([fun(X) for fun in Funcs]).reshape(1, -1)
-                
-                #old
-                else:
-                    X = [p._vector2point(x[i]) for i in range(nXvectors)]
-                    r = hstack([[fun(xx) for xx in X] for fun in Funcs]).reshape(1, -1)
+                #new 2
+                if p.hasVectorizableFuncs:
+                    from FuncDesigner.ooPoint import ooPoint as oopoint, multiarray
+                    X = dict([(oov, x[:, i].view(multiarray)) for i, oov in enumerate(p._freeVarsList)])
+                if len(p.unvectorizableFuncs) != 0:
+                    XX = [p._vector2point(x[i]) for i in range(nXvectors)]
+                    
+                r = hstack([[fun(xx) for xx in XX] if fun in p.unvectorizableFuncs else fun(X) for fun in Funcs]).reshape(1, -1)
+
+#                X = [p._vector2point(x[i]) for i in range(nXvectors)]
+#                r = hstack([[fun(xx) for xx in X] for fun in Funcs]).reshape(1, -1)
+
+                #new 
+#                if p.vectorizable:
+#                    from FuncDesigner.ooPoint import ooPoint as oopoint, multiarray
+#                    
+#                    X = dict([(oovar, x[:, i].view(multiarray)) for i, oovar in enumerate(p._freeVarsList)])
+#                    X = oopoint(X, skipArrayCast = True)
+#                    X.N = nXvectors
+#                    X.isMultiPoint = True
+#                    X.update(p.dictOfFixedFuncs)
+#                    r = hstack([fun(X) for fun in Funcs]).reshape(1, -1)
+#                
+#                #old
+#                else:
+#                    X = [p._vector2point(x[i]) for i in range(nXvectors)]
+#                    r = hstack([[fun(xx) for xx in X] for fun in Funcs]).reshape(1, -1)
             else:
                 X = [((x[i],) + Args) for i in range(nXvectors)] 
                 r = hstack([[fun(xx) for xx in X] for fun in Funcs]).reshape(1, -1)
@@ -212,6 +225,7 @@ class nonLinFuncs:
                     
 #                agregate_counter += atleast_1d(v).shape[0]
             r = hstack(r) if not getDerivative else vstack(r)
+            #assert r.size != 30
         #if type(r) == matrix: r = r.A
             
         if userFunctionType == 'f' and p.isObjFunValueASingleNumber and prod(r.shape) > 1 and (type(r) == ndarray or min(r.shape) > 1): 
