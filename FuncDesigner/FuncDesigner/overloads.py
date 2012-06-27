@@ -497,11 +497,34 @@ def sum(inp, *args, **kwargs):
             return r0
         #f = lambda *args: PythonSum(args) + r0#r0 + PythonSum(args)
         def f(*args):
-            rr = PythonSum(args)
-            if type(rr) == np.ndarray and rr.dtype.type in (object, np.object_):
-                return np.array([elem + r0 for elem in np.atleast_1d(rr)]) # may be in SP
-            else:
-                return rr + r0
+#            if len(args)>=3 and isinstance(args[2], np.ndarray):
+#                print args[2].shape
+            rr = PythonSum(args) + r0
+            return rr
+#           if type(rr) == np.ndarray and rr.dtype.type in (object, np.object_):
+#               return np.array([elem + r0 for elem in np.atleast_1d(rr)]) # may be in SP
+#           else:
+#               return rr + r0    
+
+#            args1, args2, args3 = [], [], []
+#            for arg in args:
+#                if type(arg) != np.ndarray: 
+#                    args1.append(arg)
+#                elif arg.dtype.type not in (object, np.object_):
+#                    args2.append(arg)
+#                else:
+#                    args3.append(arg)
+#                s1 = PythonSum(args1) + r0
+#                s2 = PythonSum(args2)
+#                ss = s1 + s2
+#                if len(args3) == 0:
+#                    return ss
+#                else:
+#                    s3 = PythonSum(args3)
+#                return np.array([elem + ss for elem in np.atleast_1d(s3)]) # may be in SP
+                
+            
+            
         r = oofun(f, INP, _isSum = True)
         r._summation_elements = INP if np.isscalar(r0) and r0 == 0.0 else INP + [r0]
 

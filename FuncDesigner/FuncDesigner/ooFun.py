@@ -13,7 +13,7 @@ except ImportError:
     
 from FDmisc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scipyInstalled, \
 raise_except, DiagonalType, isPyPy
-from ooPoint import ooPoint
+from ooPoint import ooPoint, multiarray
 from Interval import Interval, adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain
 import inspect
 from baseClasses import OOArray, Stochastic
@@ -70,7 +70,7 @@ class oofun:
     input = None#[] 
     #usedIn =  set()
     is_oovar = False
-    is_stoch = False
+    #is_stoch = False
     isConstraint = False
     #isDifferentiable = True
     discrete = False
@@ -1134,7 +1134,7 @@ class oofun:
         if rebuildFixedCheck:
             self._isFixed = (fixedVars is not None and dep.issubset(fixedVars)) or (Vars is not None and dep.isdisjoint(Vars))
         
-        if isinstance(args[0], ooPoint) and args[0].isMultiPoint:
+        if isinstance(x, ooPoint) and x.isMultiPoint:
             cond_same_point = False
         else:
             cond_same_point = CondSamePointByID or \
@@ -1155,7 +1155,11 @@ class oofun:
         if not isinstance(x, ooPoint) or not x.isMultiPoint or (self.vectorized and not any([isinstance(inp, Stochastic) for inp in Input])):
             if self.args != ():
                 Input += self.args
-            tmp = self.fun(*Input)
+            Tmp = self.fun(*Input)
+            if isinstance(Tmp, (list, tuple)):
+                tmp = hstack(Tmp) if len(Tmp) > 1 else Tmp[0]
+            else:
+                tmp = Tmp
         else:
             if hasattr(x, 'N'):
                 N = x.N
@@ -1169,10 +1173,14 @@ class oofun:
             inputs = zip(*[(atleast_1d(inp) if not isinstance(inp, Stochastic) and type(inp) == ndarray and inp.size == N else [inp]*N) for inp in Input])
             
             # Check it!
-            tmp = [self.fun(*inp) if self.args == () else self.fun(*(inp + self.args)) for inp in inputs]
-                
-        if isinstance(tmp, (list, tuple)):
-            tmp = hstack(tmp) if len(tmp) > 1 else tmp[0]
+            Tmp = [self.fun(*inp) if self.args == () else self.fun(*(inp + self.args)) for inp in inputs]
+            if N == 1:
+                tmp = Tmp[0]
+            else:
+                tmp = array([elem for elem in Tmp], object).view(multiarray)
+#                if tmp.shape == (30, 30):
+#                    raise 0
+#                    pass
         
         #if self._c != 0.0: tmp += self._c
         

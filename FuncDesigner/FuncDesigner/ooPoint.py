@@ -8,13 +8,45 @@
 
 from FDmisc import FuncDesignerException
 from baseClasses import Stochastic
-from numpy import asanyarray, ndarray, isscalar
+from numpy import asanyarray, ndarray, isscalar, array
 try:
     from scipy.sparse import isspmatrix
 except ImportError:
     isspmatrix = lambda *args, **kw: False
 
 Len = lambda x: 1 if isscalar(x) else x.size if type(x)==ndarray else len(x)
+
+import operator
+if 'div' in operator.__dict__:
+    div = operator.div
+else:
+    div = operator.truediv
+
+class multiarray(ndarray):
+    __add__ = lambda self, other: multiarray_op(self, other, operator.add)
+    __radd__ = lambda self, other: self.__add__(other)
+    __mul__ = lambda self, other: multiarray_op(self, other, operator.mul)
+    __rmul__ = lambda self, other: self.__mul__(other)
+    __div__ = lambda self, other: multiarray_op(self, other, div)
+    __truediv__ = __div__
+    # TODO: rdiv, rpow
+    __pow__ = lambda self, other: multiarray_op(self, other, operator.pow)
+    __rpow__ = lambda self, other: multiarray_op(other, self, operator.rpow)
+
+def multiarray_op(x, y, op):
+    if isinstance(y, multiarray):
+        r = op(x.view(ndarray), y.view(ndarray)).view(multiarray)
+        #assert r.shape != (30, 30)
+        return r
+    else:
+        return array([(elem + y) for elem in x.view(ndarray)]).view(multiarray)
+#        try:
+#            return array([(elem + y) for elem in x.view(ndarray)]).view(multiarray)
+#        except:
+#            print x.shape
+#            print y,  type(y)
+#            raise 0
+    
 
 def ooMultiPoint(*args, **kw):
     kw['skipArrayCast'] = True
