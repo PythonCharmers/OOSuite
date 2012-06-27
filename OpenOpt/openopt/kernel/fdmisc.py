@@ -1,5 +1,6 @@
 # Handling of FuncDesigner probs
-from numpy import empty, isscalar, hstack, vstack, asfarray, all, atleast_1d, cumsum, asarray, zeros,  atleast_2d, ndarray, prod, ones, copy, nan, flatnonzero, array_equal
+from numpy import empty, isscalar, hstack, vstack, asfarray, all, atleast_1d, cumsum, asarray, zeros,  atleast_2d, ndarray,\
+prod, ones, copy, nan, flatnonzero, array_equal, asanyarray
 from nonOptMisc import scipyInstalled, Hstack, Vstack, Find, isspmatrix, SparseMatrixConstructor, DenseMatrixConstructor
 
 try:
@@ -49,6 +50,19 @@ def setStartVectorAndTranslators(p):
         p.freeVars = freeVars
     else:
         freeVars = list(startPoint.keys())
+    
+    from FuncDesigner import _Stochastic
+    nn = len(freeVars)
+    for i in range(nn):
+        v = freeVars[nn-1-i]
+        if isinstance(startPoint[v], _Stochastic):
+            if fixedVars is None:
+                p.fixedVars = fixedVars = [v]
+            else:
+                fixedVars.append(v)
+            if freeVars is None:
+                freeVars = p.freeVars = startPoint.keys()
+            del freeVars[nn-1-i]
 
     # TODO: use ordered set instead
     freeVars.sort(key=lambda elem: elem._id)
@@ -67,7 +81,12 @@ def setStartVectorAndTranslators(p):
     # point should be FuncDesigner point that currently is Python dict        
     # point2vector = lambda point: atleast_1d(hstack([asfarray(point[oov]) for oov in freeVars]))
     
-    p._optVarSizes = dict([(oov, asarray(startPoint[oov]).size) for oov in freeVars])
+    tmp = {}
+    for oov in freeVars:
+        val = startPoint[oov]
+        tmp[oov] = 1 if isinstance(val, _Stochastic) else asanyarray(val).size
+            
+    p._optVarSizes = tmp#dict([(oov, asarray(startPoint[oov]).size) for oov in freeVars])
     sizes = p._optVarSizes
     point2vector = lambda point: atleast_1d(hstack([(point[oov] if oov in point else zeros(sizes[oov])) for oov in p._optVarSizes]))
     # 2nd case can trigger from objective/constraints defined over some of opt oovars only

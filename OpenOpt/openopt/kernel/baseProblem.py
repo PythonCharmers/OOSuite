@@ -494,9 +494,9 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             from FuncDesigner import broadcast
             if self.probType in ['SLE', 'NLSP', 'SNLE', 'LLSP']:
                 for eq in equations:
-                    broadcast(formDictOfFixedFuncs, eq, self.dictOfFixedFuncs, areFixed, self._x0)
+                    broadcast(formDictOfFixedFuncs, eq, self.useAttachedConstraints, self.dictOfFixedFuncs, areFixed, self._x0)
             else:
-                broadcast(formDictOfFixedFuncs, self.f, self.dictOfFixedFuncs, areFixed, self._x0)
+                broadcast(formDictOfFixedFuncs, self.f, self.useAttachedConstraints, self.dictOfFixedFuncs, areFixed, self._x0)
 
             handleConstraint_args = (StartPointVars, areFixed, oovD, A, b, Aeq, beq, Z, D_kwargs, LB, UB)
             for c in self.constraints:
@@ -521,7 +521,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 inds = oovD[vName]
                 ub[inds[0]:inds[1]] = vVal
             self.lb, self.ub = lb, ub
-        else: # not namedvariablesStyle
+        else: # not FuncDesigner
             if self.fixedVars is not None or self.freeVars is not None:
                 self.err('fixedVars and freeVars are valid for optimization of FuncDesigner models only')
         if self.x0 is None: 
@@ -586,7 +586,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         if f.is_oovar and isFixed:  
             if self._x0 is None or f not in self._x0: 
                 self.err('your problem has fixed oovar '+ Name + ' but no value for the one in start point is provided')
-            return
+            return True
             
         if not dep.issubset(StartPointVars):
             self.err('your start point has no enough variables to define constraint ' + c.name)
@@ -627,10 +627,10 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 hence the problem is infeasible, maybe you should change start point'""" % c.name
                 self.err(s)
             # TODO: check doesn't constraint value exeed self.contol
-            return
+            return True
 
         from FuncDesigner import broadcast
-        broadcast(formDictOfFixedFuncs, f, self.dictOfFixedFuncs, areFixed, self._x0)
+        broadcast(formDictOfFixedFuncs, f, self.useAttachedConstraints, self.dictOfFixedFuncs, areFixed, self._x0)
             #self.dictOfFixedFuncs[f] = f(self.x0)
 
         if self.probType in ['LP', 'MILP', 'LLSP', 'LLAVP'] and f.getOrder(self.freeVars, self.fixedVars) > 1:
@@ -706,6 +706,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
 #            self._FD.nonBoxCons.append((f0, lb_0, ub_0, Contol))
             self._FD.nonBoxConsWithTolShift.append((c, f, _lb - Contol, _ub + Contol))
             self._FD.nonBoxCons.append((c, f, _lb, _ub, Contol))
+            
+        return False
 
 def formDictOfFixedFuncs(oof, dictOfFixedFuncs, areFixed, startPoint):
     dep = set([oof]) if oof.is_oovar else oof._getDep()

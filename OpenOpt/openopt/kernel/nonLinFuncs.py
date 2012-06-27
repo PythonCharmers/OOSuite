@@ -125,10 +125,7 @@ class nonLinFuncs:
 
         agregate_counter = 0
         
-        if p.isFDmodel:
-            Args = ()
-        else:
-            Args = args
+        Args = () if p.isFDmodel else args
             
         if nXvectors == 1:
             X = p._vector2point(x) if p.isFDmodel else x
@@ -136,16 +133,25 @@ class nonLinFuncs:
         if nXvectors > 1: # and hence getDerivative isn't involved
             #temporary, to be fixed
             assert userFunctionType == 'f' and p.isObjFunValueASingleNumber
-            if p.isFDmodel:
-                X = [p._vector2point(x[i]) for i in range(nXvectors)]
-            elif len(Args) == 0:
-                X = [x[i] for i in range(nXvectors)]
-            else:
-                X = [((x[i],) + Args) for i in range(nXvectors)]
             
-            #r = hstack([map(fun, X) for fun in Funcs]).reshape(1, -1)
-            r = hstack([[fun(xx) for xx in X] for fun in Funcs]).reshape(1, -1)
-           
+
+            if p.isFDmodel:
+                #new
+                from FuncDesigner import oopoint
+                X = dict([(oovar, x[:, i]) for i, oovar in enumerate(p._freeVarsList)])
+                X = oopoint(X, skipArrayCast = True)
+                X.N = nXvectors
+                X.isMultiPoint = True
+                X.update(p.dictOfFixedFuncs)
+                r = hstack([fun(X) for fun in Funcs]).reshape(1, -1)
+                
+                #old
+                #X = [p._vector2point(x[i]) for i in range(nXvectors)]
+                #r = hstack([[fun(xx) for xx in X] for fun in Funcs]).reshape(1, -1)
+            else:
+                X = [((x[i],) + Args) for i in range(nXvectors)] 
+                r = hstack([[fun(xx) for xx in X] for fun in Funcs]).reshape(1, -1)
+                
         elif not getDerivative:
             r = hstack([fun(*(X, )+Args) for fun in Funcs])
 #            if not ignorePrev and ind is None:
