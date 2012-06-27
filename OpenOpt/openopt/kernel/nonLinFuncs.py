@@ -137,17 +137,19 @@ class nonLinFuncs:
 
             if p.isFDmodel:
                 #new
-                from FuncDesigner import oopoint
-                X = dict([(oovar, x[:, i]) for i, oovar in enumerate(p._freeVarsList)])
-                X = oopoint(X, skipArrayCast = True)
-                X.N = nXvectors
-                X.isMultiPoint = True
-                X.update(p.dictOfFixedFuncs)
-                r = hstack([fun(X) for fun in Funcs]).reshape(1, -1)
+                if p.vectorizable:
+                    from FuncDesigner import oopoint
+                    X = dict([(oovar, x[:, i]) for i, oovar in enumerate(p._freeVarsList)])
+                    X = oopoint(X, skipArrayCast = True)
+                    X.N = nXvectors
+                    X.isMultiPoint = True
+                    X.update(p.dictOfFixedFuncs)
+                    r = hstack([fun(X) for fun in Funcs]).reshape(1, -1)
                 
                 #old
-                #X = [p._vector2point(x[i]) for i in range(nXvectors)]
-                #r = hstack([[fun(xx) for xx in X] for fun in Funcs]).reshape(1, -1)
+                else:
+                    X = [p._vector2point(x[i]) for i in range(nXvectors)]
+                    r = hstack([[fun(xx) for xx in X] for fun in Funcs]).reshape(1, -1)
             else:
                 X = [((x[i],) + Args) for i in range(nXvectors)] 
                 r = hstack([[fun(xx) for xx in X] for fun in Funcs]).reshape(1, -1)

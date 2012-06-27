@@ -413,6 +413,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 self.err('for LP/MILP objective function has to be linear, while this one ("%s") is not' % self.f.name)
 
             setStartVectorAndTranslators(self)
+            self.vectorizable = all([asarray(self._x0[v]).size == 1 for v in self._freeVarsList])
             
             if self.fixedVars is None or (self.freeVars is not None and len(self.freeVars)<len(self.fixedVars)):
                 D_kwargs = {'Vars':self.freeVars}
