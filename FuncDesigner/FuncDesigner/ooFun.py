@@ -3,7 +3,7 @@ PythonSum = sum
 from numpy import inf, asfarray, copy, all, any, empty, atleast_2d, zeros, dot, asarray, atleast_1d, empty, \
 ones, ndarray, where, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum as npSum, prod, nonzero,\
 isnan, asscalar, zeros_like, ones_like, amin, amax, logical_and, logical_or, isinf, logical_not, logical_xor, flipud, \
-tile, float64, searchsorted, int8, int16, int32, int64, log1p, isfinite, log2, string_
+tile, float64, searchsorted, int8, int16, int32, int64, log1p, isfinite, log2, string_, asanyarray
 #from logic import AND
 from traceback import extract_stack 
 try:
@@ -16,10 +16,10 @@ raise_except, DiagonalType, isPyPy
 from ooPoint import ooPoint
 from Interval import Interval, adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain
 import inspect
-from baseClasses import OOArray
+from baseClasses import OOArray, Stochastic
 
 Copy = lambda arg: asscalar(arg) if type(arg)==ndarray and arg.size == 1 else arg.copy() if hasattr(arg, 'copy') else copy(arg)
-Len = lambda x: 1 if isscalar(x) else x.size if type(x)==ndarray else len(x)
+Len = lambda x: 1 if isscalar(x) else x.size if type(x)==ndarray else x.values.size if isinstance(x, Stochastic) else len(x)
 
 try:
     from DerApproximator import get_d1, check_d1
@@ -70,6 +70,7 @@ class oofun:
     input = None#[] 
     #usedIn =  set()
     is_oovar = False
+    is_stoch = False
     isConstraint = False
     #isDifferentiable = True
     discrete = False
@@ -162,9 +163,12 @@ class oofun:
             #assert key in self.__allowedFields__ # TODO: make set comparison
             setattr(self, key, item)
             
-        if isinstance(input, (tuple, list)): self.input = [(elem if isinstance(elem, (oofun, OOArray)) else array(elem, 'float')) for elem in input]
-        elif input is not None: self.input = [input]
-        else: self.input = [None] # TODO: get rid of None, use input = [] instead
+        if isinstance(input, (tuple, list)): 
+            self.input = [(elem if isinstance(elem, (oofun, OOArray)) else array(elem, 'float')) for elem in input]
+        elif input is not None: 
+            self.input = [input]
+        else: 
+            self.input = [None] # TODO: get rid of None, use input = [] instead
 
         if input is not None:
             levels = [0]
@@ -347,7 +351,8 @@ class oofun:
     # overload "a+b"
     # @checkSizes
     def __add__(self, other):
-        
+        if isinstance(other, Stochastic):
+            return other.__add__(self)
         #stk = extract_stack() 
 #        import inspect
 #        tmp = inspect.stack()
@@ -411,7 +416,7 @@ class oofun:
             r._interval_ = interval
         else:
             if isscalar(other) and other == 0: return self # sometimes triggers from other parts of FD engine 
-            if isinstance(other,  OOArray): return other + self
+            if isinstance(other,  (OOArray, Stochastic)): return other + self
             if isinstance(other,  ndarray): other = other.copy() 
 #            if other.size == 1:
 #                #r = oofun(lambda *ARGS, **KWARGS: None, input = self.input)
@@ -548,10 +553,8 @@ class oofun:
     def __rdiv__(self, other):
         
         # without the code it somehow doesn't fork in either Python3 or latest numpy
-        if isinstance(other, OOArray) and any([isinstance(elem, oofun) for elem in atleast_1d(other)]):
+        if isinstance(other,  Stochastic) or (isinstance(other, OOArray) and any([isinstance(elem, oofun) for elem in atleast_1d(other)])):
             return other.__div__(self)
-            
-        assert not isinstance(other, oofun)
        
         other = array(other, 'float') # TODO: sparse matrices handling!
         r = oofun(lambda x: other/x, self, discrete = self.discrete)
@@ -584,7 +587,7 @@ class oofun:
 
     # overload "a*b"
     def __mul__(self, other):
-        if isinstance(other, OOArray):
+        if isinstance(other, (OOArray, Stochastic)):
             return other.__mul__(self)
         def aux_d(x, y):
             Xsize, Ysize = Len(x), Len(y)
@@ -717,7 +720,7 @@ class oofun:
 
     def __pow__(self, other):
 
-        if isinstance(other, OOArray):
+        if isinstance(other, (OOArray, Stochastic)):
             return other.__rpow__(self)
 #            if 'size' not in self.__dict__ or (isscalar(self.size) and self.size == 1):
 #                return ooarray([self ** other[i] for i in range(other.size)])
@@ -1008,7 +1011,7 @@ class oofun:
         r = []
         for item in self.input:
             tmp = item._getFuncCalcEngine(*args, **kwargs) if isinstance(item, oofun) else item
-            r.append(tmp if type(tmp) not in (list, tuple) else asfarray(tmp))
+            r.append(tmp if type(tmp) not in (list, tuple, Stochastic) else asanyarray(tmp))
         return tuple(r)
 
     """                                                getDep                                             """
@@ -1079,10 +1082,10 @@ class oofun:
                         tmp = x.get(self, None)
                         if tmp is not None:
                             # currently tmp hasn't to be sparse matrix, mb for future
-                            return float(tmp) if isscalar(tmp) and type(tmp)==int else asfarray(tmp) if not isspmatrix(tmp) else tmp
+                            return float(tmp) if isscalar(tmp) and type(tmp)==int else asfarray(tmp) if not isspmatrix(tmp) and not isinstance(tmp, Stochastic) else tmp
                         elif self.name in x:
                             tmp = x[self.name]
-                            return float(tmp) if isscalar(tmp) and type(tmp)==int else asfarray(tmp) if not isspmatrix(tmp) else tmp
+                            return float(tmp) if isscalar(tmp) and type(tmp)==int else asfarray(tmp) if not isspmatrix(tmp) and not isinstance(tmp, Stochastic) else tmp
                         else:
                             s = 'for oovar ' + self.name + \
                             " the point involved doesn't contain neither name nor the oovar instance. Maybe you try to get function value or derivative in a point where value for an oovar is missing"
@@ -1139,7 +1142,8 @@ class oofun:
             
         if cond_same_point:
             self.same += 1
-            return self._f_val_prev.copy() # self._f_val_prev is ndarray always 
+            tmp =  self._f_val_prev
+            return tmp.copy() if isinstance(tmp, (ndarray, Stochastic)) else tmp 
             
         self.evals += 1
         
@@ -1148,19 +1152,27 @@ class oofun:
             
         Input = self._getInput(*args, **kwargs) 
         
-        if not isinstance(x, ooPoint) or (not x.isMultiPoint or self.vectorized):
+        if not isinstance(x, ooPoint) or not x.isMultiPoint or (self.vectorized and not any([isinstance(inp, Stochastic) for inp in Input])):
             if self.args != ():
                 Input += self.args
             tmp = self.fun(*Input)
         else:
-            n = next(iter(x.values())).size
-            inputs = zip(*[(atleast_1d(inp) if inp.size == n else [inp]*n) for inp in Input])
+            if hasattr(x, 'N'):
+                N = x.N
+            else:
+                # TODO: fix it for x.values() is Stochastic
+                N = 1
+                for inp in Input:
+                    if not isinstance(inp,  Stochastic):
+                        N = inp.size if type(inp) == ndarray else 1
+                        break
+            inputs = zip(*[(atleast_1d(inp) if not isinstance(inp, Stochastic) and type(inp) == ndarray and inp.size == N else [inp]*N) for inp in Input])
             
             # Check it!
-            tmp = [self.fun(inp if self.args == () else inp + self.args) for inp in inputs]
+            tmp = [self.fun(*inp) if self.args == () else self.fun(*(inp + self.args)) for inp in inputs]
                 
         if isinstance(tmp, (list, tuple)):
-            tmp = hstack(tmp)
+            tmp = hstack(tmp) if len(tmp) > 1 else tmp[0]
         
         #if self._c != 0.0: tmp += self._c
         
@@ -1170,11 +1182,10 @@ class oofun:
             self._point_id = x._id
         
         if (type(x) == ooPoint and not x.isMultiPoint) or self.isCostly or self._isFixed:
-            self._f_val_prev = copy(tmp) 
+            #self._f_val_prev = copy(tmp) 
+            self._f_val_prev = tmp.copy() if isinstance(tmp, (ndarray, Stochastic)) else tmp
             self._f_key_prev = dict([(elem, copy((x if isinstance(x, dict) else x.xf)[elem])) for elem in dep]) if self.isCostly else None
-            r =  copy(self._f_val_prev)
-        else:
-            r = tmp
+        r = tmp
 
         return r
 
@@ -1585,7 +1596,7 @@ class oofun:
         return self._order
     
     # TODO: should broadcast return non-void result?
-    def _broadcast(self, func, *args, **kwargs):
+    def _broadcast(self, func, useAttachedConstraints, *args, **kwargs):
         if self._broadcast_id == oofun._BroadCastID: 
             return # already done for this one
             
@@ -1595,9 +1606,10 @@ class oofun:
         if self.input is not None:
             for inp in self.input: 
                 if not isinstance(inp, oofun): continue
-                inp._broadcast(func, *args, **kwargs)
-        for c in self.attachedConstraints:
-            c._broadcast(func, *args, **kwargs)
+                inp._broadcast(func, useAttachedConstraints, *args, **kwargs)
+        if useAttachedConstraints:
+            for c in self.attachedConstraints:
+                c._broadcast(func, useAttachedConstraints, *args, **kwargs)
         func(self, *args, **kwargs)
         
 #    def isUncycled(self):
@@ -1663,13 +1675,13 @@ class oofun:
     """                                             End of class oofun                                             """
 
 # TODO: make it work for ooSystem as well
-def broadcast(func, oofuncs, *args, **kwargs):
+def broadcast(func, oofuncs, useAttachedConstraints, *args, **kwargs):
     if isinstance(oofuncs, oofun):
         oofuncs = [oofuncs]
     oofun._BroadCastID += 1
     for oof in oofuncs:
         if oof is not None: 
-            oof._broadcast(func, *args, **kwargs)
+            oof._broadcast(func, useAttachedConstraints, *args, **kwargs)
 
 def _getAllAttachedConstraints(oofuns):
     from FuncDesigner import broadcast
@@ -1677,7 +1689,7 @@ def _getAllAttachedConstraints(oofuns):
     def F(oof):
         #print len(oof.attachedConstraints)
         r.update(oof.attachedConstraints)
-    broadcast(F, oofuns)
+    broadcast(F, oofuns, useAttachedConstraints=True)
     return r
 
 
@@ -1845,7 +1857,7 @@ class BooleanOOFun(oofun):
         #self.input = oofun_Involved.input
         BooleanOOFun._unnamedBooleanOOFunNumber += 1
         self.name = 'unnamed_boolean_oofun_' + str(BooleanOOFun._unnamedBooleanOOFunNumber)
-        self.oofun = oofun(lambda *args, **kw: asarray(func(*args, **kw), int8), _input, vectorized = True)
+        self.oofun = oofun(lambda *args, **kw: asanyarray(func(*args, **kw), int8), _input, vectorized = True)
         # TODO: THIS SHOULD BE USED IN UP-LEVEL ONLY
         self.lb = self.ub = 1
     

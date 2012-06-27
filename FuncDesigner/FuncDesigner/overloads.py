@@ -36,37 +36,68 @@ __all__ = []
 #        return np.cos(x)
 #    return oofun(lambda x: np.sin(x), inp, d = d)
 
+try:
+    import stochastic
+    hasStochastic = True
+except:
+    hasStochastic = False
 
+st_sin = (lambda x: \
+stochastic.discreteDistribution(sin(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, stochastic.discreteDistribution)\
+else np.sin(x))\
+if hasStochastic\
+else np.sin
 
 def sin(inp):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([sin(elem) for elem in inp])
+    elif hasStochastic and isinstance(inp, stochastic.discreteDistribution):
+        return stochastic.discreteDistribution(sin(inp.values), inp.probabilities.copy())._update(inp)
     elif not isinstance(inp, oofun): return np.sin(inp)
-    return oofun(np.sin, inp, 
+    return oofun(st_sin, inp, 
                  d = lambda x: Diag(np.cos(x)), 
                  vectorized = True, 
                  criticalPoints = TrigonometryCriticalPoints)
                  #_interval = lambda domain: ufuncInterval(inp, domain, np.sin, TrigonometryCriticalPoints))
 
+st_cos = (lambda x: \
+stochastic.discreteDistribution(cos(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, stochastic.discreteDistribution)\
+else np.cos(x))\
+if hasStochastic\
+else np.cos
+
 def cos(inp):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([cos(elem) for elem in inp])
+    elif hasStochastic and isinstance(inp, stochastic.discreteDistribution):
+        return stochastic.discreteDistribution(cos(inp.values), inp.probabilities.copy())._update(inp)        
     elif not isinstance(inp, oofun): return np.cos(inp)
     #return oofun(np.cos, inp, d = lambda x: Diag(-np.sin(x)))
-    return oofun(np.cos, inp, 
+    return oofun(st_cos, inp, 
              d = lambda x: Diag(-np.sin(x)), 
              vectorized = True, 
              criticalPoints = TrigonometryCriticalPoints)
              #_interval = lambda domain: ufuncInterval(inp, domain, np.cos, TrigonometryCriticalPoints))
 
+st_tan = (lambda x: \
+stochastic.discreteDistribution(tan(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, stochastic.discreteDistribution)\
+else np.tan(x))\
+if hasStochastic\
+else np.tan
+
 def tan(inp):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([tan(elem) for elem in inp])
+    if hasStochastic and  isinstance(inp, stochastic.discreteDistribution):
+        return stochastic.discreteDistribution(tan(inp.values), inp.probabilities.copy())._update(inp)       
     if not isinstance(inp, oofun): return np.tan(inp)
     # TODO: move it outside of tan definition
     def interval(arg_inf, arg_sup):
         raise 'interval for tan is unimplemented yet'
-    r = oofun(np.tan, inp, d = lambda x: Diag(1.0 / np.cos(x) ** 2), vectorized = True, interval = interval)
+    r = oofun(st_tan, inp, d = lambda x: Diag(1.0 / np.cos(x) ** 2), vectorized = True, interval = interval)
     return r
     
 __all__ += ['sin', 'cos', 'tan']
@@ -76,82 +107,165 @@ __all__ += ['sin', 'cos', 'tan']
 # TODO: rework it with matrix ops
 get_box1_DefiniteRange = lambda lb, ub: logical_and(np.all(lb >= -1.0), np.all(ub <= 1.0))
 
+st_arcsin = (lambda x: \
+stochastic.discreteDistribution(arcsin(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, stochastic.discreteDistribution)\
+else np.arcsin(x))\
+if hasStochastic\
+else np.arcsin
+
 def arcsin(inp):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([arcsin(elem) for elem in inp])
+    if hasStochastic and  isinstance(inp, stochastic.discreteDistribution):
+        return stochastic.discreteDistribution(arcsin(inp.values), inp.probabilities.copy())._update(inp)       
     if not isinstance(inp, oofun): 
         return np.arcsin(inp)
-    r = oofun(np.arcsin, inp, d = lambda x: Diag(1.0 / np.sqrt(1.0 - x**2)), vectorized = True)
+    r = oofun(st_arcsin, inp, d = lambda x: Diag(1.0 / np.sqrt(1.0 - x**2)), vectorized = True)
     r.getDefiniteRange = get_box1_DefiniteRange
     F_l, F_u = np.arcsin((-1, 1))
     r._interval_ = lambda domain, dtype: box_1_interval(inp, np.arcsin, domain, dtype, F_l, F_u)
     r.attach((inp>-1)('arcsin_domain_lower_bound_%d' % r._id, tol=-1e-7), (inp<1)('arcsin_domain_upper_bound_%d' % r._id, tol=-1e-7))
     return r
 
+st_arccos = (lambda x: \
+stochastic.discreteDistribution(arccos(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, stochastic.discreteDistribution)\
+else np.arccos(x))\
+if hasStochastic\
+else np.arccos
+
+
 def arccos(inp):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([arccos(elem) for elem in inp])
+    if hasStochastic and  isinstance(inp, stochastic.discreteDistribution):
+        return stochastic.discreteDistribution(arccos(inp.values), inp.probabilities.copy())._update(inp)     
     if not isinstance(inp, oofun): return np.arccos(inp)
-    r = oofun(np.arccos, inp, d = lambda x: Diag(-1.0 / np.sqrt(1.0 - x**2)), vectorized = True)
+    r = oofun(st_arccos, inp, d = lambda x: Diag(-1.0 / np.sqrt(1.0 - x**2)), vectorized = True)
     r.getDefiniteRange = get_box1_DefiniteRange
     F_l, F_u = np.arccos((-1, 1))
     r._interval_ = lambda domain, dtype: box_1_interval(inp, np.arccos, domain, dtype, F_l, F_u)
     r.attach((inp>-1)('arccos_domain_lower_bound_%d' % r._id, tol=-1e-7), (inp<1)('arccos_domain_upper_bound_%d' % r._id, tol=-1e-7))
     return r
 
+st_arctan = (lambda x: \
+stochastic.discreteDistribution(arctan(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, stochastic.discreteDistribution)\
+else np.arctan(x))\
+if hasStochastic\
+else np.arctan
+
 def arctan(inp):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([arctan(elem) for elem in inp])    
+    if hasStochastic and  isinstance(inp, stochastic.discreteDistribution):
+        return stochastic.discreteDistribution(arctan(inp.values), inp.probabilities.copy())._update(inp)             
     if not isinstance(inp, oofun): return np.arctan(inp)
-    return oofun(np.arctan, inp, 
+    return oofun(st_arctan, inp, 
                  d = lambda x: Diag(1.0 / (1.0 + x**2)), 
                  vectorized = True, 
                  criticalPoints = False)
 
 __all__ += ['arcsin', 'arccos', 'arctan']
 
+st_sinh = (lambda x: \
+stochastic.discreteDistribution(sinh(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, stochastic.discreteDistribution)\
+else np.sinh(x))\
+if hasStochastic\
+else np.sinh
+
 def sinh(inp):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([sinh(elem) for elem in inp])        
+    if hasStochastic and  isinstance(inp, stochastic.discreteDistribution):
+        return stochastic.discreteDistribution(sinh(inp.values), inp.probabilities.copy())._update(inp)        
     if not isinstance(inp, oofun): return np.sinh(inp)
-    return oofun(np.sinh, inp, d = lambda x: Diag(np.cosh(x)), vectorized = True, criticalPoints = False)
+    return oofun(st_sinh, inp, d = lambda x: Diag(np.cosh(x)), vectorized = True, criticalPoints = False)
+
+st_cosh = (lambda x: \
+stochastic.discreteDistribution(cosh(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, stochastic.discreteDistribution)\
+else np.cosh(x))\
+if hasStochastic\
+else np.cosh
 
 def cosh(inp):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([cosh(elem) for elem in inp])        
+    if hasStochastic and  isinstance(inp, stochastic.discreteDistribution):
+        return stochastic.discreteDistribution(cosh(inp.values), inp.probabilities.copy())._update(inp)                
     if not isinstance(inp, oofun): return np.cosh(inp)
-    return oofun(np.cosh, inp, d = lambda x: Diag(np.sinh(x)), vectorized = True, _interval_=ZeroCriticalPointsInterval(inp, np.cosh))
+    return oofun(st_cosh, inp, d = lambda x: Diag(np.sinh(x)), vectorized = True, _interval_=ZeroCriticalPointsInterval(inp, np.cosh))
     
 __all__ += ['sinh', 'cosh']
 
+st_tanh = (lambda x: \
+stochastic.discreteDistribution(tanh(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, stochastic.discreteDistribution)\
+else np.tanh(x))\
+if hasStochastic\
+else np.tanh
+
+
 def tanh(inp):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
-        return ooarray([tanh(elem) for elem in inp])        
+        return ooarray([tanh(elem) for elem in inp])       
+    if hasStochastic and  isinstance(inp, stochastic.discreteDistribution):
+        return stochastic.discreteDistribution(tanh(inp.values), inp.probabilities.copy())._update(inp)              
     if not isinstance(inp, oofun): return np.tanh(inp)
-    return oofun(np.tanh, inp, d = lambda x: Diag(1.0/np.cosh(x)**2), vectorized = True, criticalPoints = False)
+    return oofun(st_tanh, inp, d = lambda x: Diag(1.0/np.cosh(x)**2), vectorized = True, criticalPoints = False)
     
+st_arctanh = (lambda x: \
+stochastic.discreteDistribution(arctanh(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, stochastic.discreteDistribution)\
+else np.arctanh(x))\
+if hasStochastic\
+else np.arctanh
+
 def arctanh(inp):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([arctanh(elem) for elem in inp])        
+    if hasStochastic and  isinstance(inp, stochastic.discreteDistribution):
+        return stochastic.discreteDistribution(arctanh(inp.values), inp.probabilities.copy())._update(inp)          
     if not isinstance(inp, oofun): return np.arctanh(inp)
-    r = oofun(np.arctanh, inp, d = lambda x: Diag(1.0/(1.0-x**2)), vectorized = True, criticalPoints = False)
+    r = oofun(st_arctanh, inp, d = lambda x: Diag(1.0/(1.0-x**2)), vectorized = True, criticalPoints = False)
     r.getDefiniteRange = get_box1_DefiniteRange
     r._interval_ = lambda domain, dtype: box_1_interval(inp, np.arctanh, domain, dtype, -np.inf, np.inf)
     return r
 
 __all__ += ['tanh', 'arctanh']
 
+st_arcsinh = (lambda x: \
+stochastic.discreteDistribution(arcsinh(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, stochastic.discreteDistribution)\
+else np.arcsinh(x))\
+if hasStochastic\
+else np.arcsinh
+
 def arcsinh(inp):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([arcsinh(elem) for elem in inp])        
+    if hasStochastic and  isinstance(inp, stochastic.discreteDistribution):
+        return stochastic.discreteDistribution(arcsinh(inp.values), inp.probabilities.copy())._update(inp)      
     if not isinstance(inp, oofun): return np.arcsinh(inp)
-    return oofun(np.arcsinh, inp, d = lambda x: Diag(1.0/np.sqrt(1+x**2)), vectorized = True, criticalPoints = False)
+    return oofun(st_arcsinh, inp, d = lambda x: Diag(1.0/np.sqrt(1+x**2)), vectorized = True, criticalPoints = False)
+
+st_arccosh = (lambda x: \
+stochastic.discreteDistribution(arccosh(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, stochastic.discreteDistribution)\
+else np.arccosh(x))\
+if hasStochastic\
+else np.arccosh
 
 def arccosh(inp):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([arccosh(elem) for elem in inp])        
+    if hasStochastic and  isinstance(inp, stochastic.discreteDistribution):
+        return stochastic.discreteDistribution(arccosh(inp.values), inp.probabilities.copy())._update(inp)      
     if not isinstance(inp, oofun): return np.arccosh(inp)
-    r = oofun(np.arccosh, inp, d = lambda x: Diag(1.0/np.sqrt(x**2-1.0)), vectorized = True)
+    r = oofun(st_arccosh, inp, d = lambda x: Diag(1.0/np.sqrt(x**2-1.0)), vectorized = True)
     F0, shift = 0.0, 1.0
     r._interval_ = lambda domain, dtype: nonnegative_interval(inp, np.arccosh, domain, dtype, F0, shift)
     return r
@@ -166,22 +280,39 @@ def angle(inp1, inp2):
     #     (currently they are handled via constraint attached to arccos)
     return arccos(sum(inp1*inp2)/sqrt(sum(inp1**2)*sum(inp2**2)))
 
+st_exp = (lambda x: \
+stochastic.discreteDistribution(exp(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, stochastic.discreteDistribution)\
+else np.exp(x))\
+if hasStochastic\
+else np.exp
+
 def exp(inp):
     if isinstance(inp, ooarray):
-        return ooarray([exp(elem) for elem in inp])            
+        return ooarray([exp(elem) for elem in inp])         
+    if hasStochastic and  isinstance(inp, stochastic.discreteDistribution):
+        return stochastic.discreteDistribution(exp(inp.values), inp.probabilities.copy())._update(inp)      
     if not isinstance(inp, oofun): return np.exp(inp)
-    return oofun(np.exp, inp, d = lambda x: Diag(np.exp(x)), vectorized = True, criticalPoints = False)
+    return oofun(st_exp, inp, d = lambda x: Diag(np.exp(x)), vectorized = True, criticalPoints = False)
 
-    
+st_sqrt = (lambda x: \
+stochastic.discreteDistribution(sqrt(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, stochastic.discreteDistribution)\
+else np.sqrt(x))\
+if hasStochastic\
+else np.sqrt
+
 def sqrt(inp, attachConstraints = True):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([sqrt(elem) for elem in inp])
-    elif not isinstance(inp, oofun): 
+    if hasStochastic and  isinstance(inp, stochastic.discreteDistribution):
+        return stochastic.discreteDistribution(sqrt(inp.values), inp.probabilities.copy())._update(inp)      
+    if not isinstance(inp, oofun): 
         return np.sqrt(inp)
 #    def fff(x):
 #        print x
 #        return np.sqrt(x)
-    r = oofun(np.sqrt, inp, d = lambda x: Diag(0.5 / np.sqrt(x)), vectorized = True)
+    r = oofun(st_sqrt, inp, d = lambda x: Diag(0.5 / np.sqrt(x)), vectorized = True)
     F0 = 0.0
     r._interval_ = lambda domain, dtype: nonnegative_interval(inp, np.sqrt, domain, dtype, F0)
     if attachConstraints: r.attach((inp>0)('sqrt_domain_zero_bound_%d' % r._id, tol=-1e-7))
@@ -189,12 +320,21 @@ def sqrt(inp, attachConstraints = True):
 
 __all__ += ['angle', 'exp', 'sqrt']
 
+st_abs = (lambda x: \
+stochastic.discreteDistribution(abs(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, stochastic.discreteDistribution)\
+else np.abs(x))\
+if hasStochastic\
+else np.abs
+
 def abs(inp):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([abs(elem) for elem in inp])
-    elif not isinstance(inp, oofun): return np.abs(inp)
+    if hasStochastic and  isinstance(inp, stochastic.discreteDistribution):
+        return stochastic.discreteDistribution(abs(inp.values), inp.probabilities.copy())._update(inp)      
+    if not isinstance(inp, oofun): return np.abs(inp)
     
-    return oofun(np.abs, inp, d = lambda x: Diag(np.sign(x)), vectorized = True, _interval_ = ZeroCriticalPointsInterval(inp, np.abs))
+    return oofun(st_abs, inp, d = lambda x: Diag(np.sign(x)), vectorized = True, _interval_ = ZeroCriticalPointsInterval(inp, np.abs))
     #return oofun(np.abs, inp, d = lambda x: Diag(np.sign(x)), vectorized = True, criticalPoints = ZeroCriticalPoints)
 
 __all__ += ['abs']
@@ -221,29 +361,56 @@ def log_interval(logfunc, inp):
         return np.vstack((t_min, t_max)), definiteRange
     return interval
 
+st_log = (lambda x: \
+stochastic.discreteDistribution(log(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, stochastic.discreteDistribution)\
+else np.log(x))\
+if hasStochastic\
+else np.log
+
 def log(inp):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([log(elem) for elem in inp])    
+    if hasStochastic and  isinstance(inp, stochastic.discreteDistribution):
+        return stochastic.discreteDistribution(log(inp.values), inp.probabilities.copy())._update(inp)      
     if not isinstance(inp, oofun): return np.log(inp)
-    r = oofun(np.log, inp, d = lambda x: Diag(1.0/x), vectorized = True, _interval_ = log_interval(np.log, inp))
+    r = oofun(st_log, inp, d = lambda x: Diag(1.0/x), vectorized = True, _interval_ = log_interval(np.log, inp))
     r.attach((inp>1e-300)('log_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
+
+st_log10 = (lambda x: \
+stochastic.discreteDistribution(log10(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, stochastic.discreteDistribution)\
+else np.log10(x))\
+if hasStochastic\
+else np.log10
 
 INV_LOG_10 = 1.0 / np.log(10)
 def log10(inp):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([log10(elem) for elem in inp])    
+    if hasStochastic and  isinstance(inp, stochastic.discreteDistribution):
+        return stochastic.discreteDistribution(log10(inp.values), inp.probabilities.copy())._update(inp)              
     if not isinstance(inp, oofun): return np.log10(inp)
-    r = oofun(np.log10, inp, d = lambda x: Diag(INV_LOG_10 / x), vectorized = True, _interval_ = log_interval(np.log10, inp))
+    r = oofun(st_log10, inp, d = lambda x: Diag(INV_LOG_10 / x), vectorized = True, _interval_ = log_interval(np.log10, inp))
     r.attach((inp>1e-300)('log10_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
-    
+
+st_log2 = (lambda x: \
+stochastic.discreteDistribution(log2(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, stochastic.discreteDistribution)\
+else np.log2(x))\
+if hasStochastic\
+else np.log2
+
 INV_LOG_2 = 1.0 / np.log(2)
 def log2(inp):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([log2(elem) for elem in inp])    
+    if hasStochastic and  isinstance(inp, stochastic.discreteDistribution):
+        return stochastic.discreteDistribution(log2(inp.values), inp.probabilities.copy())._update(inp)       
     if not isinstance(inp, oofun): return np.log2(inp)
-    r = oofun(np.log2, inp, d = lambda x: Diag(INV_LOG_2/x), vectorized = True, _interval_ = log_interval(np.log2, inp))
+    r = oofun(st_log2, inp, d = lambda x: Diag(INV_LOG_2/x), vectorized = True, _interval_ = log_interval(np.log2, inp))
     r.attach((inp>1e-300)('log2_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
 
@@ -323,12 +490,18 @@ def sum(inp, *args, **kwargs):
         for elem in inp: # TODO: mb use reduce() or something like that
             if not isinstance(elem, oofun): 
                 # not '+=' because size can be changed from 1 to another value
-                r0 = r0 + np.asarray(elem) # so it doesn't work for different sizes
+                r0 = r0 + np.asanyarray(elem) # so it doesn't work for different sizes
                 continue
             INP.append(elem)
         if len(INP) == 0:
             return r0
-        f = lambda *args: r0 + PythonSum(args)
+        #f = lambda *args: PythonSum(args) + r0#r0 + PythonSum(args)
+        def f(*args):
+            rr = PythonSum(args)
+            if type(rr) == np.ndarray and rr.dtype.type in (object, np.object_):
+                return np.array([elem + r0 for elem in np.atleast_1d(rr)]) # may be in SP
+            else:
+                return rr + r0
         r = oofun(f, INP, _isSum = True)
         r._summation_elements = INP if np.isscalar(r0) and r0 == 0.0 else INP + [r0]
 

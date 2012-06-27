@@ -13,7 +13,12 @@ from translator import FuncDesignerTranslator as ootranslator
 
 from ooPoint import ooPoint as oopoint, ooMultiPoint 
 #from logic import *
-from stochastic import discrete
+from baseClasses import Stochastic as _Stochastic
+try:
+    from stochastic import discreteDistribution as discrete, P, mean, var, std
+except ImportError:
+    pass
+    
 from ooarray import ooarray
 
 def IMPLICATION(condition, *args):

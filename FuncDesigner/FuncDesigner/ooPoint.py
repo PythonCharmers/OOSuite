@@ -7,7 +7,8 @@
 #from copy import deepcopy
 
 from FDmisc import FuncDesignerException
-from numpy import asfarray, ndarray, isscalar
+from baseClasses import Stochastic
+from numpy import asanyarray, ndarray, isscalar
 try:
     from scipy.sparse import isspmatrix
 except ImportError:
@@ -34,18 +35,18 @@ class ooPoint(dict):
         self.dictOfFixedFuncs = {}
         
         if kwargs.get('skipArrayCast', False): 
-            Asfarray = lambda arg: arg
+            Asanyarray = lambda arg: arg
         else: 
-            Asfarray = lambda arg: asfarray(arg) #if not isspmatrix(arg) else arg
+            Asanyarray = lambda arg: asanyarray(arg)  if not isinstance(arg, Stochastic) else arg#if not isspmatrix(arg) else arg
             
         # TODO: remove float() after Python 3 migraion
         if args:
             if not isinstance(args[0], dict):
-                items = [(key, Asfarray(val) if not isscalar(val) else float(val) if type(val) == int else val) for key, val in args[0]] 
+                items = [(key, Asanyarray(val) if not isscalar(val) else float(val) if type(val) == int else val) for key, val in args[0]] 
             else:
-                items = [(key, Asfarray(val) if not isscalar(val) else float(val) if type(val) == int else val) for key, val in args[0].items()] 
+                items = [(key, Asanyarray(val) if not isscalar(val) else float(val) if type(val) == int else val) for key, val in args[0].items()] 
         elif kwargs:
-            items = [(key, Asfarray(val) if not isscalar(val) else float(val) if type(val) == int else val) for key, val in kwargs.items()]
+            items = [(key, Asanyarray(val) if not isscalar(val) else float(val) if type(val) == int else val) for key, val in kwargs.items()]
         else:
             raise FuncDesignerException('incorrect oopoint constructor arguments')
             

@@ -8,6 +8,7 @@ from ooFun import oofun, Len, BooleanOOFun, AND, OR, NOT, EQUIVALENT
 #from FuncDesigner import IMPLICATION
 from ooarray import ooarray
 #from FuncDesigner.Interval import adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain
+from baseClasses import Stochastic
 
 f_none = lambda *args, **kw: None
 class oovar(oofun):
@@ -61,6 +62,8 @@ class oovar(oofun):
         if hasattr(x, 'xf'):return x.xf[self]
         r = x.get(self, None)
         if r is not None: 
+            if isinstance(r, Stochastic):
+                r.stochDep = {self:1}
             return r
         r = x.get(self.name, None)
         if r is not None: 
