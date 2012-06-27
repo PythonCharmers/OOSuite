@@ -242,7 +242,9 @@ def setNonLinFuncsNumber(p,  userFunctionType):
     else:
         if type(fv) in [list, tuple]: FV = fv[0]
         else:  FV = fv
-        setattr(p, 'n'+userFunctionType, asfarray(FV(*(X, ) + args, **kwargs)).size)
+        
+        tmp = FV(*(X, ) + args, **kwargs)
+        setattr(p, 'n'+userFunctionType, asfarray(tmp).size)
 
 def economyMult(M, V):
     #return dot(M, V)
