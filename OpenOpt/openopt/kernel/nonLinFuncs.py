@@ -137,13 +137,15 @@ class nonLinFuncs:
 
             if p.isFDmodel:
                 #new 2
-                if p.hasVectorizableFuncs:
+                assert ind is None
+                if p.hasVectorizableFuncs: # TODO: get rid of box-bound constraints
                     from FuncDesigner.ooPoint import ooPoint as oopoint, multiarray
                     X = dict([(oov, x[:, i].view(multiarray)) for i, oov in enumerate(p._freeVarsList)])
                 if len(p.unvectorizableFuncs) != 0:
                     XX = [p._vector2point(x[i]) for i in range(nXvectors)]
                     
-                r = hstack([[fun(xx) for xx in XX] if fun in p.unvectorizableFuncs else fun(X) for fun in Funcs]).reshape(1, -1)
+                r = hstack([[fun(xx) for xx in XX] if funcs[i] in p.unvectorizableFuncs else fun(X) for i, fun in enumerate(Funcs)]).reshape(1, -1)
+
 
 #                X = [p._vector2point(x[i]) for i in range(nXvectors)]
 #                r = hstack([[fun(xx) for xx in X] for fun in Funcs]).reshape(1, -1)
