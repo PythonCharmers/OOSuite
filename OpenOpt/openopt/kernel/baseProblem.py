@@ -77,6 +77,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
     #if iprint<0 -- no output
     #if iprint==0 -- final output only
 
+    maxDistributionSize = 1500 # used in stochastic problems
+
     maxIter = 1000
     maxFunEvals = 10000 # TODO: move it to NinLinProblem class?
     maxCPUTime = inf
@@ -378,9 +380,14 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             if not isinstance(self.x0, dict):
                 self.err('Unexpected start point type: ooPoint or Python dict expected, '+ str(type(self.x0)) + ' obtained')
             
+            x0 = self.x0.copy()
+            if isinstance(self.fixedVars, dict):
+                x0.update(self.fixedVars)
+                self.fixedVars = set(self.fixedVars.keys())
+            
             #if not all([not isinstance(val, (list, tuple, ndarray)) or len(val) == 1 for val in self.x0.values()]):
             tmp = []
-            for key, val in self.x0.items():
+            for key, val in x0.items():
                 if not isinstance(key, (list, tuple, ndarray)):
                     tmp.append((key, val))
                 else:
@@ -410,6 +417,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     self.x0[key] = searchsorted(key.aux_domain, val, 'left')
             
             self.x0 = oopoint(self.x0)
+            self.x0.maxDistributionSize = self.maxDistributionSize
             
             if self.probType in ['LP', 'MILP'] and self.f.getOrder(self.freeVars, self.fixedVars) > 1:
                 self.err('for LP/MILP objective function has to be linear, while this one ("%s") is not' % self.f.name)
