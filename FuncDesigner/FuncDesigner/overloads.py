@@ -4,8 +4,8 @@ import numpy as np
 from FDmisc import FuncDesignerException, Diag, Eye, raise_except, diagonal, DiagonalType
 from ooFun import atleast_oofun, Vstack, Copy
 from ooarray import ooarray
-from Interval import TrigonometryCriticalPoints, ZeroCriticalPoints, nonnegative_interval, ZeroCriticalPointsInterval, box_1_interval
-from numpy import atleast_1d, logical_and, logical_not, empty_like
+from Interval import TrigonometryCriticalPoints, nonnegative_interval, ZeroCriticalPointsInterval, box_1_interval
+from numpy import atleast_1d, logical_and
 
 try:
     from scipy.sparse import isspmatrix, lil_matrix as Zeros
@@ -37,14 +37,14 @@ __all__ = []
 #    return oofun(lambda x: np.sin(x), inp, d = d)
 
 try:
-    import stochastic
+    import distribution
     hasStochastic = True
 except:
     hasStochastic = False
 
 st_sin = (lambda x: \
-stochastic.discreteDistribution(sin(x.values), x.probabilities.copy())._update(x) \
-if isinstance(x, stochastic.discreteDistribution)\
+distribution.stochasticDistribution(sin(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, distribution.stochasticDistribution)\
 else np.sin(x))\
 if hasStochastic\
 else np.sin
@@ -52,8 +52,8 @@ else np.sin
 def sin(inp):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([sin(elem) for elem in inp])
-    elif hasStochastic and isinstance(inp, stochastic.discreteDistribution):
-        return stochastic.discreteDistribution(sin(inp.values), inp.probabilities.copy())._update(inp)
+    elif hasStochastic and isinstance(inp, distribution.stochasticDistribution):
+        return distribution.stochasticDistribution(sin(inp.values), inp.probabilities.copy())._update(inp)
     elif not isinstance(inp, oofun): return np.sin(inp)
     return oofun(st_sin, inp, 
                  d = lambda x: Diag(np.cos(x)), 
@@ -62,8 +62,8 @@ def sin(inp):
                  #_interval = lambda domain: ufuncInterval(inp, domain, np.sin, TrigonometryCriticalPoints))
 
 st_cos = (lambda x: \
-stochastic.discreteDistribution(cos(x.values), x.probabilities.copy())._update(x) \
-if isinstance(x, stochastic.discreteDistribution)\
+distribution.stochasticDistribution(cos(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, distribution.stochasticDistribution)\
 else np.cos(x))\
 if hasStochastic\
 else np.cos
@@ -71,8 +71,8 @@ else np.cos
 def cos(inp):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([cos(elem) for elem in inp])
-    elif hasStochastic and isinstance(inp, stochastic.discreteDistribution):
-        return stochastic.discreteDistribution(cos(inp.values), inp.probabilities.copy())._update(inp)        
+    elif hasStochastic and isinstance(inp, distribution.stochasticDistribution):
+        return distribution.stochasticDistribution(cos(inp.values), inp.probabilities.copy())._update(inp)        
     elif not isinstance(inp, oofun): return np.cos(inp)
     #return oofun(np.cos, inp, d = lambda x: Diag(-np.sin(x)))
     return oofun(st_cos, inp, 
@@ -82,8 +82,8 @@ def cos(inp):
              #_interval = lambda domain: ufuncInterval(inp, domain, np.cos, TrigonometryCriticalPoints))
 
 st_tan = (lambda x: \
-stochastic.discreteDistribution(tan(x.values), x.probabilities.copy())._update(x) \
-if isinstance(x, stochastic.discreteDistribution)\
+distribution.stochasticDistribution(tan(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, distribution.stochasticDistribution)\
 else np.tan(x))\
 if hasStochastic\
 else np.tan
@@ -91,8 +91,8 @@ else np.tan
 def tan(inp):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([tan(elem) for elem in inp])
-    if hasStochastic and  isinstance(inp, stochastic.discreteDistribution):
-        return stochastic.discreteDistribution(tan(inp.values), inp.probabilities.copy())._update(inp)       
+    if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
+        return distribution.stochasticDistribution(tan(inp.values), inp.probabilities.copy())._update(inp)       
     if not isinstance(inp, oofun): return np.tan(inp)
     # TODO: move it outside of tan definition
     def interval(arg_inf, arg_sup):
@@ -108,8 +108,8 @@ __all__ += ['sin', 'cos', 'tan']
 get_box1_DefiniteRange = lambda lb, ub: logical_and(np.all(lb >= -1.0), np.all(ub <= 1.0))
 
 st_arcsin = (lambda x: \
-stochastic.discreteDistribution(arcsin(x.values), x.probabilities.copy())._update(x) \
-if isinstance(x, stochastic.discreteDistribution)\
+distribution.stochasticDistribution(arcsin(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, distribution.stochasticDistribution)\
 else np.arcsin(x))\
 if hasStochastic\
 else np.arcsin
@@ -117,8 +117,8 @@ else np.arcsin
 def arcsin(inp):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([arcsin(elem) for elem in inp])
-    if hasStochastic and  isinstance(inp, stochastic.discreteDistribution):
-        return stochastic.discreteDistribution(arcsin(inp.values), inp.probabilities.copy())._update(inp)       
+    if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
+        return distribution.stochasticDistribution(arcsin(inp.values), inp.probabilities.copy())._update(inp)       
     if not isinstance(inp, oofun): 
         return np.arcsin(inp)
     r = oofun(st_arcsin, inp, d = lambda x: Diag(1.0 / np.sqrt(1.0 - x**2)), vectorized = True)
@@ -129,8 +129,8 @@ def arcsin(inp):
     return r
 
 st_arccos = (lambda x: \
-stochastic.discreteDistribution(arccos(x.values), x.probabilities.copy())._update(x) \
-if isinstance(x, stochastic.discreteDistribution)\
+distribution.stochasticDistribution(arccos(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, distribution.stochasticDistribution)\
 else np.arccos(x))\
 if hasStochastic\
 else np.arccos
@@ -139,8 +139,8 @@ else np.arccos
 def arccos(inp):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([arccos(elem) for elem in inp])
-    if hasStochastic and  isinstance(inp, stochastic.discreteDistribution):
-        return stochastic.discreteDistribution(arccos(inp.values), inp.probabilities.copy())._update(inp)     
+    if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
+        return distribution.stochasticDistribution(arccos(inp.values), inp.probabilities.copy())._update(inp)     
     if not isinstance(inp, oofun): return np.arccos(inp)
     r = oofun(st_arccos, inp, d = lambda x: Diag(-1.0 / np.sqrt(1.0 - x**2)), vectorized = True)
     r.getDefiniteRange = get_box1_DefiniteRange
@@ -150,8 +150,8 @@ def arccos(inp):
     return r
 
 st_arctan = (lambda x: \
-stochastic.discreteDistribution(arctan(x.values), x.probabilities.copy())._update(x) \
-if isinstance(x, stochastic.discreteDistribution)\
+distribution.stochasticDistribution(arctan(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, distribution.stochasticDistribution)\
 else np.arctan(x))\
 if hasStochastic\
 else np.arctan
@@ -159,8 +159,8 @@ else np.arctan
 def arctan(inp):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([arctan(elem) for elem in inp])    
-    if hasStochastic and  isinstance(inp, stochastic.discreteDistribution):
-        return stochastic.discreteDistribution(arctan(inp.values), inp.probabilities.copy())._update(inp)             
+    if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
+        return distribution.stochasticDistribution(arctan(inp.values), inp.probabilities.copy())._update(inp)             
     if not isinstance(inp, oofun): return np.arctan(inp)
     return oofun(st_arctan, inp, 
                  d = lambda x: Diag(1.0 / (1.0 + x**2)), 
@@ -170,8 +170,8 @@ def arctan(inp):
 __all__ += ['arcsin', 'arccos', 'arctan']
 
 st_sinh = (lambda x: \
-stochastic.discreteDistribution(sinh(x.values), x.probabilities.copy())._update(x) \
-if isinstance(x, stochastic.discreteDistribution)\
+distribution.stochasticDistribution(sinh(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, distribution.stochasticDistribution)\
 else np.sinh(x))\
 if hasStochastic\
 else np.sinh
@@ -179,14 +179,14 @@ else np.sinh
 def sinh(inp):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([sinh(elem) for elem in inp])        
-    if hasStochastic and  isinstance(inp, stochastic.discreteDistribution):
-        return stochastic.discreteDistribution(sinh(inp.values), inp.probabilities.copy())._update(inp)        
+    if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
+        return distribution.stochasticDistribution(sinh(inp.values), inp.probabilities.copy())._update(inp)        
     if not isinstance(inp, oofun): return np.sinh(inp)
     return oofun(st_sinh, inp, d = lambda x: Diag(np.cosh(x)), vectorized = True, criticalPoints = False)
 
 st_cosh = (lambda x: \
-stochastic.discreteDistribution(cosh(x.values), x.probabilities.copy())._update(x) \
-if isinstance(x, stochastic.discreteDistribution)\
+distribution.stochasticDistribution(cosh(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, distribution.stochasticDistribution)\
 else np.cosh(x))\
 if hasStochastic\
 else np.cosh
@@ -194,16 +194,16 @@ else np.cosh
 def cosh(inp):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([cosh(elem) for elem in inp])        
-    if hasStochastic and  isinstance(inp, stochastic.discreteDistribution):
-        return stochastic.discreteDistribution(cosh(inp.values), inp.probabilities.copy())._update(inp)                
+    if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
+        return distribution.stochasticDistribution(cosh(inp.values), inp.probabilities.copy())._update(inp)                
     if not isinstance(inp, oofun): return np.cosh(inp)
     return oofun(st_cosh, inp, d = lambda x: Diag(np.sinh(x)), vectorized = True, _interval_=ZeroCriticalPointsInterval(inp, np.cosh))
     
 __all__ += ['sinh', 'cosh']
 
 st_tanh = (lambda x: \
-stochastic.discreteDistribution(tanh(x.values), x.probabilities.copy())._update(x) \
-if isinstance(x, stochastic.discreteDistribution)\
+distribution.stochasticDistribution(tanh(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, distribution.stochasticDistribution)\
 else np.tanh(x))\
 if hasStochastic\
 else np.tanh
@@ -212,14 +212,14 @@ else np.tanh
 def tanh(inp):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([tanh(elem) for elem in inp])       
-    if hasStochastic and  isinstance(inp, stochastic.discreteDistribution):
-        return stochastic.discreteDistribution(tanh(inp.values), inp.probabilities.copy())._update(inp)              
+    if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
+        return distribution.stochasticDistribution(tanh(inp.values), inp.probabilities.copy())._update(inp)              
     if not isinstance(inp, oofun): return np.tanh(inp)
     return oofun(st_tanh, inp, d = lambda x: Diag(1.0/np.cosh(x)**2), vectorized = True, criticalPoints = False)
     
 st_arctanh = (lambda x: \
-stochastic.discreteDistribution(arctanh(x.values), x.probabilities.copy())._update(x) \
-if isinstance(x, stochastic.discreteDistribution)\
+distribution.stochasticDistribution(arctanh(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, distribution.stochasticDistribution)\
 else np.arctanh(x))\
 if hasStochastic\
 else np.arctanh
@@ -227,8 +227,8 @@ else np.arctanh
 def arctanh(inp):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([arctanh(elem) for elem in inp])        
-    if hasStochastic and  isinstance(inp, stochastic.discreteDistribution):
-        return stochastic.discreteDistribution(arctanh(inp.values), inp.probabilities.copy())._update(inp)          
+    if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
+        return distribution.stochasticDistribution(arctanh(inp.values), inp.probabilities.copy())._update(inp)          
     if not isinstance(inp, oofun): return np.arctanh(inp)
     r = oofun(st_arctanh, inp, d = lambda x: Diag(1.0/(1.0-x**2)), vectorized = True, criticalPoints = False)
     r.getDefiniteRange = get_box1_DefiniteRange
@@ -238,8 +238,8 @@ def arctanh(inp):
 __all__ += ['tanh', 'arctanh']
 
 st_arcsinh = (lambda x: \
-stochastic.discreteDistribution(arcsinh(x.values), x.probabilities.copy())._update(x) \
-if isinstance(x, stochastic.discreteDistribution)\
+distribution.stochasticDistribution(arcsinh(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, distribution.stochasticDistribution)\
 else np.arcsinh(x))\
 if hasStochastic\
 else np.arcsinh
@@ -247,14 +247,14 @@ else np.arcsinh
 def arcsinh(inp):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([arcsinh(elem) for elem in inp])        
-    if hasStochastic and  isinstance(inp, stochastic.discreteDistribution):
-        return stochastic.discreteDistribution(arcsinh(inp.values), inp.probabilities.copy())._update(inp)      
+    if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
+        return distribution.stochasticDistribution(arcsinh(inp.values), inp.probabilities.copy())._update(inp)      
     if not isinstance(inp, oofun): return np.arcsinh(inp)
     return oofun(st_arcsinh, inp, d = lambda x: Diag(1.0/np.sqrt(1+x**2)), vectorized = True, criticalPoints = False)
 
 st_arccosh = (lambda x: \
-stochastic.discreteDistribution(arccosh(x.values), x.probabilities.copy())._update(x) \
-if isinstance(x, stochastic.discreteDistribution)\
+distribution.stochasticDistribution(arccosh(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, distribution.stochasticDistribution)\
 else np.arccosh(x))\
 if hasStochastic\
 else np.arccosh
@@ -262,8 +262,8 @@ else np.arccosh
 def arccosh(inp):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([arccosh(elem) for elem in inp])        
-    if hasStochastic and  isinstance(inp, stochastic.discreteDistribution):
-        return stochastic.discreteDistribution(arccosh(inp.values), inp.probabilities.copy())._update(inp)      
+    if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
+        return distribution.stochasticDistribution(arccosh(inp.values), inp.probabilities.copy())._update(inp)      
     if not isinstance(inp, oofun): return np.arccosh(inp)
     r = oofun(st_arccosh, inp, d = lambda x: Diag(1.0/np.sqrt(x**2-1.0)), vectorized = True)
     F0, shift = 0.0, 1.0
@@ -281,8 +281,8 @@ def angle(inp1, inp2):
     return arccos(sum(inp1*inp2)/sqrt(sum(inp1**2)*sum(inp2**2)))
 
 st_exp = (lambda x: \
-stochastic.discreteDistribution(exp(x.values), x.probabilities.copy())._update(x) \
-if isinstance(x, stochastic.discreteDistribution)\
+distribution.stochasticDistribution(exp(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, distribution.stochasticDistribution)\
 else np.exp(x))\
 if hasStochastic\
 else np.exp
@@ -290,14 +290,14 @@ else np.exp
 def exp(inp):
     if isinstance(inp, ooarray):
         return ooarray([exp(elem) for elem in inp])         
-    if hasStochastic and  isinstance(inp, stochastic.discreteDistribution):
-        return stochastic.discreteDistribution(exp(inp.values), inp.probabilities.copy())._update(inp)      
+    if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
+        return distribution.stochasticDistribution(exp(inp.values), inp.probabilities.copy())._update(inp)      
     if not isinstance(inp, oofun): return np.exp(inp)
     return oofun(st_exp, inp, d = lambda x: Diag(np.exp(x)), vectorized = True, criticalPoints = False)
 
 st_sqrt = (lambda x: \
-stochastic.discreteDistribution(sqrt(x.values), x.probabilities.copy())._update(x) \
-if isinstance(x, stochastic.discreteDistribution)\
+distribution.stochasticDistribution(sqrt(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, distribution.stochasticDistribution)\
 else np.sqrt(x))\
 if hasStochastic\
 else np.sqrt
@@ -305,8 +305,8 @@ else np.sqrt
 def sqrt(inp, attachConstraints = True):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([sqrt(elem) for elem in inp])
-    if hasStochastic and  isinstance(inp, stochastic.discreteDistribution):
-        return stochastic.discreteDistribution(sqrt(inp.values), inp.probabilities.copy())._update(inp)      
+    if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
+        return distribution.stochasticDistribution(sqrt(inp.values), inp.probabilities.copy())._update(inp)      
     if not isinstance(inp, oofun): 
         return np.sqrt(inp)
 #    def fff(x):
@@ -321,8 +321,8 @@ def sqrt(inp, attachConstraints = True):
 __all__ += ['angle', 'exp', 'sqrt']
 
 st_abs = (lambda x: \
-stochastic.discreteDistribution(abs(x.values), x.probabilities.copy())._update(x) \
-if isinstance(x, stochastic.discreteDistribution)\
+distribution.stochasticDistribution(abs(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, distribution.stochasticDistribution)\
 else np.abs(x))\
 if hasStochastic\
 else np.abs
@@ -330,8 +330,8 @@ else np.abs
 def abs(inp):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([abs(elem) for elem in inp])
-    if hasStochastic and  isinstance(inp, stochastic.discreteDistribution):
-        return stochastic.discreteDistribution(abs(inp.values), inp.probabilities.copy())._update(inp)      
+    if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
+        return distribution.stochasticDistribution(abs(inp.values), inp.probabilities.copy())._update(inp)      
     if not isinstance(inp, oofun): return np.abs(inp)
     
     return oofun(st_abs, inp, d = lambda x: Diag(np.sign(x)), vectorized = True, _interval_ = ZeroCriticalPointsInterval(inp, np.abs))
@@ -362,8 +362,8 @@ def log_interval(logfunc, inp):
     return interval
 
 st_log = (lambda x: \
-stochastic.discreteDistribution(log(x.values), x.probabilities.copy())._update(x) \
-if isinstance(x, stochastic.discreteDistribution)\
+distribution.stochasticDistribution(log(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, distribution.stochasticDistribution)\
 else np.log(x))\
 if hasStochastic\
 else np.log
@@ -371,16 +371,16 @@ else np.log
 def log(inp):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([log(elem) for elem in inp])    
-    if hasStochastic and  isinstance(inp, stochastic.discreteDistribution):
-        return stochastic.discreteDistribution(log(inp.values), inp.probabilities.copy())._update(inp)      
+    if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
+        return distribution.stochasticDistribution(log(inp.values), inp.probabilities.copy())._update(inp)      
     if not isinstance(inp, oofun): return np.log(inp)
     r = oofun(st_log, inp, d = lambda x: Diag(1.0/x), vectorized = True, _interval_ = log_interval(np.log, inp))
     r.attach((inp>1e-300)('log_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
 
 st_log10 = (lambda x: \
-stochastic.discreteDistribution(log10(x.values), x.probabilities.copy())._update(x) \
-if isinstance(x, stochastic.discreteDistribution)\
+distribution.stochasticDistribution(log10(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, distribution.stochasticDistribution)\
 else np.log10(x))\
 if hasStochastic\
 else np.log10
@@ -389,16 +389,16 @@ INV_LOG_10 = 1.0 / np.log(10)
 def log10(inp):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([log10(elem) for elem in inp])    
-    if hasStochastic and  isinstance(inp, stochastic.discreteDistribution):
-        return stochastic.discreteDistribution(log10(inp.values), inp.probabilities.copy())._update(inp)              
+    if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
+        return distribution.stochasticDistribution(log10(inp.values), inp.probabilities.copy())._update(inp)              
     if not isinstance(inp, oofun): return np.log10(inp)
     r = oofun(st_log10, inp, d = lambda x: Diag(INV_LOG_10 / x), vectorized = True, _interval_ = log_interval(np.log10, inp))
     r.attach((inp>1e-300)('log10_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
 
 st_log2 = (lambda x: \
-stochastic.discreteDistribution(log2(x.values), x.probabilities.copy())._update(x) \
-if isinstance(x, stochastic.discreteDistribution)\
+distribution.stochasticDistribution(log2(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, distribution.stochasticDistribution)\
 else np.log2(x))\
 if hasStochastic\
 else np.log2
@@ -407,8 +407,8 @@ INV_LOG_2 = 1.0 / np.log(2)
 def log2(inp):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([log2(elem) for elem in inp])    
-    if hasStochastic and  isinstance(inp, stochastic.discreteDistribution):
-        return stochastic.discreteDistribution(log2(inp.values), inp.probabilities.copy())._update(inp)       
+    if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
+        return distribution.stochasticDistribution(log2(inp.values), inp.probabilities.copy())._update(inp)       
     if not isinstance(inp, oofun): return np.log2(inp)
     r = oofun(st_log2, inp, d = lambda x: Diag(INV_LOG_2/x), vectorized = True, _interval_ = log_interval(np.log2, inp))
     r.attach((inp>1e-300)('log2_domain_zero_bound_%d' % r._id, tol=-1e-7))
@@ -443,7 +443,7 @@ def cross(a, b):
         return np.array([[0, -y[2], y[1]], [y[2], 0, -y[0]], [-y[1], y[0], 0]])
    
     r = oofun(lambda x, y: np.cross(x, y), [a, b], d=(lambda x, y: -aux_d(x, y), lambda x, y: aux_d(y, x)))
-    r.getOrder = lambda *args, **kwargs: (inp1.getOrder(*args, **kwargs) if isinstance(inp1, oofun) else 0) + (inp2.getOrder(*args, **kwargs) if isinstance(inp2, oofun) else 0)
+    r.getOrder = lambda *args, **kwargs: (a.getOrder(*args, **kwargs) if isinstance(a, oofun) else 0) + (b.getOrder(*args, **kwargs) if isinstance(b, oofun) else 0)
     return r
 
 __all__ += ['dot', 'cross']
@@ -496,34 +496,41 @@ def sum(inp, *args, **kwargs):
         if len(INP) == 0:
             return r0
         #f = lambda *args: PythonSum(args) + r0#r0 + PythonSum(args)
+        
         def f(*args):
-#            if len(args)>=3 and isinstance(args[2], np.ndarray):
-#                print args[2].shape
-            rr = PythonSum(args) + r0
-            return rr
-#           if type(rr) == np.ndarray and rr.dtype.type in (object, np.object_):
-#               return np.array([elem + r0 for elem in np.atleast_1d(rr)]) # may be in SP
-#           else:
-#               return rr + r0    
-
-#            args1, args2, args3 = [], [], []
-#            for arg in args:
-#                if type(arg) != np.ndarray: 
-#                    args1.append(arg)
-#                elif arg.dtype.type not in (object, np.object_):
-#                    args2.append(arg)
-#                else:
-#                    args3.append(arg)
-#                s1 = PythonSum(args1) + r0
-#                s2 = PythonSum(args2)
-#                ss = s1 + s2
-#                if len(args3) == 0:
-#                    return ss
-#                else:
-#                    s3 = PythonSum(args3)
-#                return np.array([elem + ss for elem in np.atleast_1d(s3)]) # may be in SP
-                
+            if not hasStochastic:
+                return PythonSum(args) + r0
+            Args, Args_st = [], {}
+            for elem in args:
+                if isinstance(elem, distribution.stochasticDistribution):
+                    stDep = frozenset(elem.stochDep.keys())
+                    tmp = Args_st.get(stDep, None)
+                    if tmp is None:
+                        Args_st[stDep] = [elem]
+                    else:
+                        Args_st[stDep].append(elem)
+                else:
+                    Args.append(elem)
+            r = PythonSum(Args) + r0
+            if len(Args_st) == 0:
+                return r
             
+            # temporary
+            for key, val in Args_st.items():
+                maxDistributionSize = val[0].maxDistributionSize
+                break
+            stValues = Args_st.values()
+#            stValues = Args_st.values()
+#            T = list(set(stValues))[0]
+#            maxDistributionSize = next(iter(T)).maxDistributionSize
+            r1 = 0.0
+            for elem in stValues:
+                tmp = PythonSum(elem)
+                r1 = tmp + r1 
+                r1.reduce(maxDistributionSize)
+            r1 = r1 + r
+            r1.maxDistributionSize = maxDistributionSize
+            return r1 
             
         r = oofun(f, INP, _isSum = True)
         r._summation_elements = INP if np.isscalar(r0) and r0 == 0.0 else INP + [r0]
@@ -935,7 +942,7 @@ def hstack(tup): # overload for oofun[ind]
         return np.hstack(tup)
     if not any(c):
         return np.hstack(tup)
-    an_oofun_ind = np.where(c)[0][0]
+    #an_oofun_ind = np.where(c)[0][0]
     f = lambda *x: np.hstack(x)
     
     
