@@ -3,12 +3,12 @@ __docformat__ = "restructuredtext en"
 from time import time, clock
 from numpy import isscalar,  array_equal
 from ooMisc import isSolved
-from setDefaultIterFuncs import USER_DEMAND_STOP, BUTTON_ENOUGH_HAS_BEEN_PRESSED, IS_NAN_IN_X, SMALL_DELTA_X, IS_MAX_ITER_REACHED, IS_MAX_CPU_TIME_REACHED, IS_MAX_TIME_REACHED, IS_MAX_FUN_EVALS_REACHED
+from setDefaultIterFuncs import USER_DEMAND_STOP, IS_NAN_IN_X, SMALL_DELTA_X, IS_MAX_ITER_REACHED, IS_MAX_CPU_TIME_REACHED, IS_MAX_TIME_REACHED, IS_MAX_FUN_EVALS_REACHED
 
 has_Tkinter = True
 try:
     import Tkinter
-except:
+except ImportError:
     has_Tkinter = False
 
 NoneType = type(None)
@@ -45,7 +45,7 @@ def ooIter(p, *args,  **kwargs):
         p.iterTime.append(p.currtime - p.timeStart)
 
         # TODO: rework it
-        if p.probType not in ('GLP', 'MILP') and not p.solver.__name__.startswith('interalg') \
+        if p.probType not in ('GLP', 'MILP') and p.solver.__name__ not in ('de', 'pswarm', 'interalg') \
         and ((p.iter == 1 and array_equal(p.xk,  p.x0)) or condEqualLastPoints):
             elems = [getattr(p.iterValues,  fn) for fn in dir(p.iterValues)] + [p.iterTime, p.iterCPUTime]#dir(p.iterValues)
             for elem in elems:
@@ -57,7 +57,7 @@ def ooIter(p, *args,  **kwargs):
 
         #TODO: turn off xtol and ftol for artifically iterfcn funcs
 
-        if not p.userStop and (not condEqualLastPoints or p.probType == 'GLP'):
+        if not p.userStop and (not condEqualLastPoints or p.probType == 'GLP' or p.solver.__name__ in ('de', 'pswarm', 'interalg')):
             for key, fun in p.kernelIterFuncs.items():
                 r =  fun(p)
                 if r is not False:
@@ -92,7 +92,8 @@ def ooIter(p, *args,  **kwargs):
                             p.msg = r[1]
                         p.stopdict[p.istop] = True
                         p.userStop = True
-    if not p.solver.properTextOutput: p.iterPrint()
+    if not p.solver.properTextOutput: 
+        p.iterPrint()
     T, cpuT = 0., 0.
 
     if p.plot and (p.iter == 0 or p.iter <2 or p.isFinished or \
