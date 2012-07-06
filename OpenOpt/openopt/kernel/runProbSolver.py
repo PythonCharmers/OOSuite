@@ -1,16 +1,13 @@
 __docformat__ = "restructuredtext en"
 from time import time, clock
-from numpy import asfarray, copy, inf, nan, isfinite, ones, ndim, all, atleast_1d, any, isnan, \
+from numpy import asfarray, nan, ones, all, atleast_1d, any, isnan, \
 array_equal, asscalar, asarray, where, ndarray, isscalar, matrix, seterr, isinf
 from setDefaultIterFuncs import stopcase,  SMALL_DELTA_X,  SMALL_DELTA_F, IS_MAX_ITER_REACHED
 from check import check
 from oologfcn import OpenOptException
 from openopt import __version__ as version
-import copy
-import os, string
-from ooMisc import isSolved, killThread
+from ooMisc import isSolved
 #from baseProblem import ProbDefaults
-from baseSolver import baseSolver
 from nonOptMisc import getSolverFromStringName, EmptyClass
 
 try:
@@ -240,8 +237,9 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     
     try:
         if isConverter:
+            pass
             # TODO: will R be somewhere used?
-            R = converter(solverName, **solver_params)
+            #R = converter(solverName, **solver_params)
         else:
             nErr = check(p)
             if nErr: p.err("prob check results: " +str(nErr) + "ERRORS!")#however, I guess this line will be never reached.
@@ -440,10 +438,12 @@ class OpenOptResult:
             self.eigenvalues, self.eigenvectors = p.eigenvalues, p.eigenvectors
               
         if p.isFDmodel:
+            from FuncDesigner import oopoint
             self.xf = dict([(v, asscalar(val) if isinstance(val, ndarray) and val.size ==1 else v.aux_domain[val] if 'aux_domain' in v.__dict__ else val) for v, val in p.xf.items()])
             if not hasattr(self, '_xf'):
                 #self._xf = dict([(v.name, asscalar(val) if isinstance(val, ndarray) and val.size ==1 else val) for v, val in p.xf.items()])
                 self._xf = dict([(v.name, val) for v, val in self.xf.items()])
+            self.xf = oopoint(self.xf, maxDistributionSize = p.maxDistributionSize)
         else:
             self.xf = p.xf
         #if len(p.solutions) == 0 and p.isFeas(p.xk): p.solutions = [p.xk]

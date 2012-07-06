@@ -213,7 +213,8 @@ def setNonLinFuncsNumber(p,  userFunctionType):
     fv = getattr(p.user, userFunctionType)
     
     if p.isFDmodel:
-        X = p._x0
+        from FuncDesigner import oopoint
+        X = oopoint(p._x0, maxDistributionSize = p.maxDistributionSize)
         kwargs = {'Vars': p.freeVars, 'fixedVarsScheduleID':p._FDVarsID, 'fixedVars': p.fixedVars}
     else:
         X = p.x0
@@ -244,6 +245,14 @@ def setNonLinFuncsNumber(p,  userFunctionType):
         else:  FV = fv
         
         tmp = FV(*(X, ) + args, **kwargs)
+        if p.isFDmodel:
+            #from FuncDesigner.baseClasses import Stochastic
+            
+            #if isinstance(tmp, Stochastic):
+            if 'quantified' in dir(tmp):
+                p.err('''
+                Optimization problem objective and constraints cannot be of type Stochastic, 
+                you can handle only functions on them like mean(X), std(X), var(X), P(X<Y) etc''')
         setattr(p, 'n'+userFunctionType, asfarray(tmp).size)
 
 def economyMult(M, V):

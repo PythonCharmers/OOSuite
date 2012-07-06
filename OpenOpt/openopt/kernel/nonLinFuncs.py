@@ -74,10 +74,10 @@ class nonLinFuncs:
         # TODO: handle it in prob prepare
         if not hasattr(p, 'n'+userFunctionType): setNonLinFuncsNumber(p,  userFunctionType)
 
-        if ind is None:
-            nFuncsToObtain = getattr(p, 'n'+ userFunctionType)
-        else:
-            nFuncsToObtain = len(ind)
+#        if ind is None:
+#            nFuncsToObtain = getattr(p, 'n'+ userFunctionType)
+#        else:
+#            nFuncsToObtain = len(ind)
 
         if x.shape[0] != p.n and (x.ndim<2 or x.shape[1] != p.n): 
             p.err('x with incorrect shape passed to non-linear function')
@@ -123,12 +123,16 @@ class nonLinFuncs:
         else:
             Funcs = getFuncsAndExtractIndexes(p, funcs2, ind, userFunctionType)
 
-        agregate_counter = 0
+#        agregate_counter = 0
         
         Args = () if p.isFDmodel else args
             
         if nXvectors == 1:
-            X = p._vector2point(x) if p.isFDmodel else x
+            if p.isFDmodel:
+                X = p._vector2point(x) 
+                X._p = p
+            else:
+                X = x
         
         if nXvectors > 1: # and hence getDerivative isn't involved
             #temporary, to be fixed
@@ -140,10 +144,12 @@ class nonLinFuncs:
                 assert ind is None
                 if p.hasVectorizableFuncs: # TODO: get rid of box-bound constraints
                     from FuncDesigner.ooPoint import ooPoint as oopoint, multiarray
-                    X = dict([(oov, x[:, i].view(multiarray)) for i, oov in enumerate(p._freeVarsList)])
+                    X = oopoint([(oov, x[:, i].view(multiarray)) for i, oov in enumerate(p._freeVarsList)])
+                    X.maxDistributionSize = p.maxDistributionSize
+                    X._p = p
                 if len(p.unvectorizableFuncs) != 0:
                     XX = [p._vector2point(x[i]) for i in range(nXvectors)]
-                    
+                    for _X in XX: _X._p = p
                 r = hstack([[fun(xx) for xx in XX] if funcs[i] in p.unvectorizableFuncs else fun(X) for i, fun in enumerate(Funcs)]).reshape(1, -1)
 
 

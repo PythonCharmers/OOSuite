@@ -2,7 +2,7 @@ __docformat__ = "restructuredtext en"
 from numpy import *
 from oologfcn import *
 from oographics import Graphics
-from setDefaultIterFuncs import setDefaultIterFuncs, IS_MAX_FUN_EVALS_REACHED, denyingStopFuncs
+from setDefaultIterFuncs import setDefaultIterFuncs, denyingStopFuncs
 from nonLinFuncs import nonLinFuncs
 from residuals import residuals
 from ooIter import ooIter
@@ -77,7 +77,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
     #if iprint<0 -- no output
     #if iprint==0 -- final output only
 
-    maxDistributionSize = 1500 # used in stochastic problems
+    maxDistributionSize = 0 # used in stochastic problems
 
     maxIter = 1000
     maxFunEvals = 10000 # TODO: move it to NinLinProblem class?
@@ -215,7 +215,6 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         return all(isfinite(self.ub)) and all(isfinite(self.lb))
 
     def __isNoMoreThanBoxBounded__(self): # TODO: make this function 'lazy'
-        s = ((), [], array([]), None)
         return self.b.size ==0 and self.beq.size==0 and (self._baseClassName == 'Matrix' or (not self.userProvided.c and not self.userProvided.h))
 
 #    def __1stBetterThan2nd__(self,  f1, f2,  r1=None,  r2=None):
@@ -441,11 +440,11 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             #Z = self._vector2point(zeros(self.n))
             if len(self._fixedVars) < len(self._freeVars) and 'isdisjoint' in dir(set()):
                 areFixed = lambda dep: dep.issubset(self._fixedVars)
-                isFixed = lambda v: v in self._fixedVars
+                #isFixed = lambda v: v in self._fixedVars
                 Z = dict([(v, zeros_like(self._x0[v]) if v not in self._fixedVars else self._x0[v]) for v in self._x0.keys()])
             else:
                 areFixed = lambda dep: dep.isdisjoint(self._freeVars)
-                isFixed = lambda v: v not in self._freeVars
+                #isFixed = lambda v: v not in self._freeVars
                 Z = dict([(v, zeros_like(self._x0[v]) if v in self._freeVars else self._x0[v]) for v in self._x0.keys()])
            
             #p.isFixed = isFixed
@@ -459,8 +458,6 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             oovD = self._oovarsIndDict
             LB = {}
             UB = {}
-            
-            probtol = self.contol
             
             """                                    gather attached constraints                                    """
             

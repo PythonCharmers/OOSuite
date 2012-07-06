@@ -139,7 +139,7 @@ def setStartVectorAndTranslators(p):
 #            #r.append((oov, x[I] if J - I == 1 else x[I:J]))
 #            r.append((oov, x[oovar_indexes[i]:oovar_indexes[i+1]]))
         r = oopoint(r+tmp, skipArrayCast = True)
-        
+        r.maxDistributionSize = p.maxDistributionSize
         p._FDtranslator['prevVal'] = r 
         p._FDtranslator['prevX'] = copy(x)
         return r
