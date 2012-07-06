@@ -1,10 +1,10 @@
 # created by Dmitrey
 
-from numpy import nan, asarray, isfinite, empty, zeros, inf, any, array, prod, atleast_1d, \
+from numpy import asarray, empty, inf, any, array, \
 asfarray, isscalar, ndarray, int16, int32, int64, float64, tile, vstack, searchsorted, logical_or, where, \
-asanyarray, string_, arange, log2, logical_and, ceil
-from FDmisc import FuncDesignerException, checkSizes, isPyPy
-from ooFun import oofun, Len, BooleanOOFun, AND, OR, NOT, EQUIVALENT
+asanyarray, arange, log2, logical_and, ceil
+from FDmisc import FuncDesignerException, isPyPy
+from ooFun import oofun, BooleanOOFun, AND, OR, NOT, EQUIVALENT
 #from FuncDesigner import IMPLICATION
 from ooarray import ooarray
 #from FuncDesigner.Interval import adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain
@@ -59,11 +59,34 @@ class oovar(oofun):
     #_interval_ = _interval
     
     def _getFuncCalcEngine(self, x, **kwargs):
-        if hasattr(x, 'xf'):return x.xf[self]
+        if hasattr(x, 'xf'):
+            #return x.xf[self]
+            if x.probType == 'MOP':
+                s = 'evaluation of MOP result on arguments is unimplemented yet, use r.solutions'
+                raise FuncDesignerException(s)
+            return self._getFuncCalcEngine(x.xf, **kwargs) # essential for SP
         r = x.get(self, None)
         if r is not None: 
             if isinstance(r, Stochastic):
+                sz = getattr(x, 'maxDistributionSize', 0)
+                if sz == 0:
+                    s = '''
+                    if one of function arguments is stochastic distribution 
+                    without resolving into quantified value 
+                    (e.g. uniform(-10,10) instead of uniform(-10,10, 100), 100 is number of point to emulate)
+                    then you should evaluate the function 
+                    onto oopoint with assigned parameter maxDistributionSize'''
+                    raise FuncDesignerException(s)
+                if not r.quantified:
+                    r = r._yield_quantified(sz)
+                r = r.copy()
                 r.stochDep = {self:1}
+                r.maxDistributionSize = sz
+                if r.size > sz:
+                    r.reduce(sz)
+                tmp = getattr(x, '_p', None)
+                if tmp is not None:
+                    r._p = tmp
             return r
         r = x.get(self.name, None)
         if r is not None: 
@@ -121,7 +144,6 @@ class oovar(oofun):
         else:
             assert other is not None, 'bug in FD kernel: called nlh with incorrect domain type'
             T2 = empty((m, 2)) 
-            sd = d.size
             mx = 0.5 * (lx + ux) 
 
             ind = logical_and(mx==other, lx != ux)

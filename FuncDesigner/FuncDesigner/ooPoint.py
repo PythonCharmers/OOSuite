@@ -23,6 +23,7 @@ else:
     div = operator.truediv
 
 class multiarray(ndarray):
+    __array_priority__ = 5
     __add__ = lambda self, other: multiarray_op(self, other, operator.add)
     __radd__ = lambda self, other: self.__add__(other)
     __mul__ = lambda self, other: multiarray_op(self, other, operator.mul)
@@ -35,11 +36,15 @@ class multiarray(ndarray):
 
 def multiarray_op(x, y, op):
     if isinstance(y, multiarray):
-        r = op(x.view(ndarray), y.view(ndarray)).view(multiarray)
-        #assert r.shape != (30, 30)
-        return r
+        #or isscalar(y) or isscalar(x) or 
+        r = op(x.view(ndarray), y.view(ndarray))
+    elif isscalar(y) or (isinstance(y, ndarray) and y.size == 1):
+        r = op(x.view(ndarray), y).view(multiarray)
+    elif isscalar(x) or (isinstance(x, ndarray) and x.size == 1):
+        r = op(x, y.view(ndarray))
     else:
-        return array([(elem + y) for elem in x.view(ndarray)]).view(multiarray)
+        r =  array([(elem + y) for elem in x.view(ndarray)])
+    return r.view(multiarray)
 #        try:
 #            return array([(elem + y) for elem in x.view(ndarray)]).view(multiarray)
 #        except:
@@ -65,6 +70,11 @@ class ooPoint(dict):
         self.storedIntervals = {}
         self.storedSums = {}
         self.dictOfFixedFuncs = {}
+        
+        for fn in ('isMultiPoint', 'modificationVar', 'useSave', 'useAsMutable', 'maxDistributionSize'):
+            tmp = kwargs.get(fn, None)
+            if tmp is not None:
+                setattr(self, fn, tmp)
         
         if kwargs.get('skipArrayCast', False): 
             Asanyarray = lambda arg: arg

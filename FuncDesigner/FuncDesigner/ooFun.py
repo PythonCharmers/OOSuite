@@ -1,11 +1,11 @@
 # created by Dmitrey
 PythonSum = sum
-from numpy import inf, asfarray, copy, all, any, empty, atleast_2d, zeros, dot, asarray, atleast_1d, empty, \
-ones, ndarray, where, array, nan, ix_, vstack, eye, array_equal, isscalar, diag, log, hstack, sum as npSum, prod, nonzero,\
+from numpy import inf, asfarray, copy, all, any, atleast_2d, zeros, dot, asarray, atleast_1d, \
+ones, ndarray, where, array, nan, vstack, eye, array_equal, isscalar, log, hstack, sum as npSum, prod, nonzero,\
 isnan, asscalar, zeros_like, ones_like, amin, amax, logical_and, logical_or, isinf, logical_not, logical_xor, flipud, \
-tile, float64, searchsorted, int8, int16, int32, int64, log1p, isfinite, log2, string_, asanyarray
+tile, float64, searchsorted, int8, int16, int32, int64, isfinite, log2, string_, asanyarray
 #from logic import AND
-from traceback import extract_stack 
+#from traceback import extract_stack 
 try:
     from bottleneck import nanmin, nanmax
 except ImportError:
@@ -30,7 +30,7 @@ except:
 
 try:
     import scipy
-    from scipy import sparse
+    #from scipy import sparse
     from scipy.sparse import hstack as HstackSP, vstack as VstackSP, isspmatrix_csc, isspmatrix_csr, eye as SP_eye, lil_matrix as SparseMatrixConstructor
     def Hstack(Tuple):
         ind = where([isscalar(elem) or prod(elem.shape)!=0 for elem in Tuple])[0].tolist()
@@ -117,7 +117,7 @@ class oofun:
         print(msg)
     
     def nlh(self):
-        raise FuncDesignerError("probably you have involved boolean operation on continuous function, that is error")
+        raise FuncDesignerException("probably you have involved boolean operation on continuous function, that is error")
     
     def __getattr__(self, attr):
         if attr == '__len__':
@@ -313,7 +313,7 @@ class oofun:
         return r, r0
     
     def _iqg(self, domain, dtype, r0):
-        dep = self._getDep()
+        #dep = self._getDep()
         v = domain.modificationVar
         v_0 = domain[v]
         lb, ub = v_0[0], v_0[1]
@@ -334,13 +334,11 @@ class oofun:
         domain[v] = (v_0[0], middle1)
         domain.localStoredIntervals = {}
         r_l = self.interval(domain, dtype, resetStoredIntervals = False)
-        #print 'r_l:', r_l
-        
 
         domain[v] = (middle2, v_0[1])
         domain.localStoredIntervals = {}
         r_u = self.interval(domain, dtype, resetStoredIntervals = False)
-        #print 'r_u:', r_u
+        
         domain[v] = v_0
         domain.localStoredIntervals = {}
         return r_l, r_u
@@ -514,8 +512,8 @@ class oofun:
                 r2[atleast_1d(logical_and(ind, r2<0.0))] = 0.0
 
                 # adjust inf
-                ind1_zero_minus = logical_and(lb1<0, ub1>=0)
-                ind1_zero_plus = logical_and(lb1<=0, ub1>0)
+#                ind1_zero_minus = logical_and(lb1<0, ub1>=0)
+#                ind1_zero_plus = logical_and(lb1<=0, ub1>0)
                 
                 ind2_zero_minus = logical_and(lb2<0, ub2>=0)
                 ind2_zero_plus = logical_and(lb2<=0, ub2>0)
@@ -912,7 +910,7 @@ class oofun:
             if type(x) == ndarray and x.ndim > 1: raise FuncDesignerException('sum(x) is not implemented yet for arrays with ndim > 1')
             return ones_like(x)        
         def interval(domain, dtype):
-            raise FuncDesignerError('interval calculations are unimplemented for sum(oofun) yet')
+            raise FuncDesignerException('interval calculations are unimplemented for sum(oofun) yet')
 #            lb_ub, definiteRange = self._interval(domain, dtype)
 #            lb, ub = lb_ub[0], lb_ub[1]
             #return vstack((npSum(lb, 0), npSum(ub, 0))), definiteRange
@@ -1078,26 +1076,32 @@ class oofun:
                     x = ooPoint(x)
                     Args = (x,)+args[1:]
                 if self.is_oovar:
-                    if isinstance(x, dict):
-                        tmp = x.get(self, None)
-                        if tmp is not None:
-                            # currently tmp hasn't to be sparse matrix, mb for future
-                            return float(tmp) if isscalar(tmp) and type(tmp)==int else asfarray(tmp) if not isspmatrix(tmp) and not isinstance(tmp, Stochastic) else tmp
-                        elif self.name in x:
-                            tmp = x[self.name]
-                            return float(tmp) if isscalar(tmp) and type(tmp)==int else asfarray(tmp) if not isspmatrix(tmp) and not isinstance(tmp, Stochastic) else tmp
-                        else:
-                            s = 'for oovar ' + self.name + \
-                            " the point involved doesn't contain neither name nor the oovar instance. Maybe you try to get function value or derivative in a point where value for an oovar is missing"
-                            raise FuncDesignerException(s)
-                    elif hasattr(x, 'xf'):
-                        if x.probType == 'MOP': # x is MOP result struct
-                            s = 'evaluation of MOP result on arguments is unimplemented yet, use r.solutions'
-                            raise FuncDesignerException(s)
-                        # TODO: possibility of squeezing
-                        return x.xf[self]
-                    else:
-                        raise FuncDesignerException('Incorrect data type (%s) while obtaining oovar %s value' %(type(x), self.name))
+                    return self._getFuncCalcEngine(*Args, **kwargs)
+#                    if isinstance(x, dict):
+#                        tmp = x.get(self, None)
+#                        if tmp is not None:
+#                            # currently tmp hasn't to be sparse matrix, mb for future
+#                            if isinstance(tmp, Stochastic):
+#                                r = getattr(x, 'maxDistributionSize', inf)
+#                                tmp.maxDistributionSize = r
+#                                return tmp
+#                            else:
+#                                return float(tmp) if isscalar(tmp) and type(tmp)==int else asfarray(tmp) if not isspmatrix(tmp) else tmp
+#                        elif self.name in x:
+#                            tmp = x[self.name]
+#                            return float(tmp) if isscalar(tmp) and type(tmp)==int else asfarray(tmp) if not isspmatrix(tmp) else tmp
+#                        else:
+#                            s = 'for oovar ' + self.name + \
+#                            " the point involved doesn't contain neither name nor the oovar instance. Maybe you try to get function value or derivative in a point where value for an oovar is missing"
+#                            raise FuncDesignerException(s)
+#                    elif hasattr(x, 'xf'):
+#                        if x.probType == 'MOP': # x is MOP result struct
+#                            s = 'evaluation of MOP result on arguments is unimplemented yet, use r.solutions'
+#                            raise FuncDesignerException(s)
+#                        # TODO: possibility of squeezing
+#                        return x.xf[self]
+#                    else:
+#                        raise FuncDesignerException('Incorrect data type (%s) while obtaining oovar %s value' %(type(x), self.name))
             
             else:
                 self.name = args[0]
@@ -1178,13 +1182,28 @@ class oofun:
                 tmp = Tmp[0]
             else:
                 tmp = array([elem for elem in Tmp], object).view(multiarray)
-#                if tmp.shape == (30, 30):
-#                    raise 0
-#                    pass
         
         #if self._c != 0.0: tmp += self._c
         
         #self.outputTotalLength = ([asarray(elem).size for elem in self.fun(*Input)])#self.f_val_prev.size # TODO: omit reassigning
+        
+        #!! TODO: handle case tmp is multiarray of Stochastic
+        if isinstance(tmp, Stochastic):
+            if 'xf' in x.__dict__:
+                maxDistributionSize = getattr(x.xf, 'maxDistributionSize', 0)
+            else:
+                maxDistributionSize = getattr(x, 'maxDistributionSize', 0)
+            if maxDistributionSize == 0:
+                s = '''
+                    if one of function arguments is stochastic distribution 
+                    without resolving into quantified value 
+                    (e.g. uniform(-10,10) instead of uniform(-10,10, 100), 100 is number of point to emulate)
+                    then you should evaluate the function 
+                    onto oopoint with assigned parameter maxDistributionSize'''
+                raise FuncDesignerException(s)
+            if tmp.size > maxDistributionSize:
+                tmp.reduce(maxDistributionSize)
+            tmp.maxDistributionSize = maxDistributionSize
         
         if type(x) == ooPoint: 
             self._point_id = x._id
@@ -1238,7 +1257,6 @@ class oofun:
             if it is still present somewhere in FuncDesigner doc inform developers""")
         elif resultKeysType == 'vars':
             rr = {}
-            tmpDict = Vars if Vars is not None else x
             #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! TODO: remove the cycle!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             
             for oov, val in x.items():
@@ -1432,7 +1450,6 @@ class oofun:
                 if len(self.d) != len(self.input):
                    raise FuncDesignerException('oofun error: num(derivatives) not equal to neither 1 nor num(inputs)')
                    
-                indForDiff = []
                 for i, deriv in enumerate(self.d):
                     inp = self.input[i]
                     if not isinstance(inp, oofun) or inp.discrete: 
@@ -1557,8 +1574,7 @@ class oofun:
         self.disp('    diffInt = ' + str(self.diffInt)) # TODO: ADD other parameters: allowed epsilon, maxDiffLines etc
         self.disp('    |1 - info_user/info_numerical| < maxViolation = '+ str(self.maxViolation))        
         j = -1
-        for i in range(len(self.input)):#var in Vars:
-            var = self.input[i]
+        for i in range(len(self.input)):
             if len(self.input) > 1: self.disp('by input variable number ' + str(i) + ':')
             if isinstance(self.d, tuple) and self.d[i] is None:
                 self.disp('user-provided derivative for input number ' + str(i) + ' is absent, skipping the one;')
@@ -1881,7 +1897,8 @@ class BooleanOOFun(oofun):
     __and__ = AND
     
     #IMPLICATION = IMPLICATION
-    IMPLICATION = lambda *args, **kw: err_func('oofun.IMPLICATION is temporary disabled, use ifThen(...) or IMPLICATION(...) instead')
+    def IMPLICATION(*args, **kw): 
+        raise FuncDesignerException('oofun.IMPLICATION is temporary disabled, use ifThen(...) or IMPLICATION(...) instead')
     __eq__ = EQUIVALENT
     __ne__ = lambda self, arg: NOT(self==arg)
     
@@ -2033,12 +2050,7 @@ def getSmoothNLH(Lf, Uf, lb, ub, tol, m, dataType):
     #Lf, Uf  = Lf.reshape(m, 2*M), Uf.reshape(m, 2*M)
     
     lf1, lf2, uf1, uf2 = Lf[:, 0:M], Lf[:, M:2*M], Uf[:, 0:M], Uf[:, M:2*M]
-    Lf_ = where(logical_or(lf1>lf2, isnan(lf1)), lf2, lf1)
-    Uf_ = where(logical_or(uf1>uf2, isnan(uf2)), uf1, uf2)
-    Lfm, Ufm = nanmin(Lf_, 1), nanmax(Uf_, 1)
-    
-    ind = logical_and(Ufm >= lb, Lfm  <= ub)
-        
+
     UfLfDiff = Uf - Lf
     if UfLfDiff.dtype.type in [int8, int16, int32, int64, int]:
         UfLfDiff = asfarray(UfLfDiff)

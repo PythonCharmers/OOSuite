@@ -14,10 +14,23 @@ from translator import FuncDesignerTranslator as ootranslator
 from ooPoint import ooPoint as oopoint, ooMultiPoint 
 #from logic import *
 from baseClasses import Stochastic as _Stochastic
+from FDmisc import FuncDesignerException, _getDiffVarsID
+
 try:
-    from stochastic import discreteDistribution as discrete, P, mean, var, std
+    import distribution
+    from distribution import P, mean, var, std
 except ImportError:
-    pass
+    def sp_err(self, *args,  **kw): 
+        raise FuncDesignerException('''
+        to use FuncDesigner stochastic programming 
+        you should have FuncDesigner with its stochastic module insalled
+        (this addon is commercial, free for research/educational small-scale problems only).
+        Visit http://openopt.org/StochasticProgramming for more details.
+        ''')
+    class Distribution:
+        __init__ = __getattr__ = sp_err
+    distribution = Distribution()
+    P = mean = var = std = sp_err
     
 from ooarray import ooarray
 
@@ -36,7 +49,6 @@ from dae import dae
 from overloads import *
 from stencils import d, d2
 #from overloads import _sum as sum
-from FDmisc import FuncDesignerException, _getDiffVarsID
 from interpolate import scipy_UnivariateSpline as interpolator
 from integrate import integrator
 
