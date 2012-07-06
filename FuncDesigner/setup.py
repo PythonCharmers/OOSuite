@@ -2,8 +2,6 @@
 
 descr   = """
 """
-
-from os.path import join
 import os
 import sys
 
@@ -26,15 +24,13 @@ except:
     raw_input()
     exit()
 
-from distutils.errors import DistutilsError
-#from numpy.distutils.system_info import system_info, NotFoundError, dict_append, so_ext
-from numpy.distutils.core import setup, Extension
+from numpy.distutils.core import setup
 
 DOC_FILES = []
 
 def configuration(parent_package='',top_path=None, package_name=DISTNAME):
     if os.path.exists('MANIFEST'): os.remove('MANIFEST')
-    pkg_prefix_dir = 'FuncDesigner'
+    #pkg_prefix_dir = 'FuncDesigner'
 
     # Get the version
 
@@ -68,7 +64,7 @@ if __name__ == "__main__":
     #data_files = ['test_data/' + i for i in TEST_DATA_FILES]
     #data_files.extend(['docs/' + i for i in doc_files])
     setup(configuration = configuration,
-        install_requires='numpy', # can also add version specifiers   #namespace_packages=['kernel'],
+        install_requires=['numpy', 'scipy'], # can also add version specifiers   #namespace_packages=['kernel'],
         #py_modules = ['kernel', 'tests', 'examples', 'solvers'],
         packages=setuptools.find_packages(),
         include_package_data = True,
