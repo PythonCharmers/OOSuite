@@ -446,6 +446,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 areFixed = lambda dep: dep.isdisjoint(self._freeVars)
                 #isFixed = lambda v: v not in self._freeVars
                 Z = dict([(v, zeros_like(self._x0[v]) if v in self._freeVars else self._x0[v]) for v in self._x0.keys()])
+            Z = oopoint(Z, maxDistributionSize = self.maxDistributionSize)
            
             #p.isFixed = isFixed
             lb, ub = -inf*ones(self.n), inf*ones(self.n)
