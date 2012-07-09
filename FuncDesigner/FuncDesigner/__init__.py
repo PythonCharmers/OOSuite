@@ -28,7 +28,7 @@ except ImportError:
         Visit http://openopt.org/StochasticProgramming for more details.
         ''')
     class Distribution:
-        __init__ = __getattr__ = sp_err
+        __getattr__ = sp_err
     distribution = Distribution()
     P = mean = var = std = sp_err
     
