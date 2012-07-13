@@ -4,7 +4,6 @@ from LP import LP
 
 class MILP(LP):
     _optionalData = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'intVars', 'boolVars']
-    storeIterPoints = False
     probType = 'MILP'
     expectedArgs = ['f', 'x0']
     allowedGoals = ['minimum', 'min', 'max', 'maximum']

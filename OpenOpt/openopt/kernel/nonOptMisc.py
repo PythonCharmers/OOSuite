@@ -1,6 +1,6 @@
 import os
 from oologfcn import OpenOptException
-from numpy import zeros, hstack, vstack, ndarray, copy, where, prod, isscalar, atleast_2d, eye, diag
+from numpy import zeros, hstack, vstack, ndarray, copy, where, prod, isscalar, atleast_2d, eye, diag, asfarray
 import sys
 syspath = sys.path
 Sep = os.sep
