@@ -380,20 +380,36 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 self.err('Unexpected start point type: ooPoint or Python dict expected, '+ str(type(self.x0)) + ' obtained')
             
             x0 = self.x0.copy()
-            if isinstance(self.fixedVars, dict):
-                x0.update(self.fixedVars)
-                self.fixedVars = set(self.fixedVars.keys())
-            
-            #if not all([not isinstance(val, (list, tuple, ndarray)) or len(val) == 1 for val in self.x0.values()]):
+
             tmp = []
             for key, val in x0.items():
                 if not isinstance(key, (list, tuple, ndarray)):
                     tmp.append((key, val))
-                else:
+                else: # can be only ooarray although
+                    if len(key) != len(val):
+                        self.err('''
+                        for the sake of possible bugs prevention lenght of oovars array 
+                        must be equal to lenght of its start point value, 
+                        assignments like x = oovars(m); startPoint[x] = 0 are forbidden, 
+                        use startPoint[x] = [0]*m or np.zeros(m) instead''')
                     for i in range(len(val)):
                         tmp.append((key[i], val[i]))
             Tmp = dict(tmp)
             
+            if isinstance(self.fixedVars, dict):
+                for key, val in self.fixedVars.items():
+                    if isinstance(key, (list, tuple, ndarray)): # can be only ooarray although
+                        if len(key) != len(val):
+                            self.err('''
+                            for the sake of possible bugs prevention lenght of oovars array 
+                            must be equal to lenght of its start point value, 
+                            assignments like x = oovars(m); fixedVars[x] = 0 are forbidden, 
+                            use fixedVars[x] = [0]*m or np.zeros(m) instead''')
+                        for i in range(len(val)):
+                            Tmp[key[i]] = val[i]
+                    else:
+                        Tmp[key] = val
+                self.fixedVars = set(self.fixedVars.keys())
             # mb other operations will speedup it?
             Keys = set(Tmp.keys()).difference(probDep)
             for key in Keys:
