@@ -1,6 +1,6 @@
 import os
 from oologfcn import OpenOptException
-from numpy import zeros, hstack, vstack, ndarray, copy, where, prod, asarray, atleast_1d, isscalar, atleast_2d, eye, diag
+from numpy import zeros, hstack, vstack, ndarray, copy, where, prod, isscalar, atleast_2d, eye, diag
 import sys
 syspath = sys.path
 Sep = os.sep
@@ -59,6 +59,12 @@ except ImportError:
     isPyPy = False
 
 DenseMatrixConstructor = lambda *args, **kwargs: zeros(*args, **kwargs)
+
+pwSet = set()
+def pWarn(msg):
+    if msg in pwSet: return
+    pwSet.add(msg)
+    print('Warning: ' + msg)
 
 def Eye(n):
     if not scipyInstalled and n>150:

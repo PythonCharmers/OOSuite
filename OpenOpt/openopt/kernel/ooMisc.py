@@ -1,7 +1,7 @@
 __docformat__ = "restructuredtext en"
 from numpy import zeros, ones, copy, isfinite, where, asarray, inf, \
-array, asfarray, dot, ndarray, prod, flatnonzero, max, abs, sqrt, sum, atleast_1d
-from nonOptMisc import scipyAbsentMsg, scipyInstalled, isspmatrix, Hstack, Vstack, SparseMatrixConstructor, coo_matrix, isPyPy
+array, asfarray, dot, ndarray, prod, flatnonzero, max, abs, sqrt, sum, atleast_1d, asscalar
+from nonOptMisc import scipyAbsentMsg, scipyInstalled, isspmatrix, Hstack, Vstack, coo_matrix, isPyPy
 
 Copy = lambda arg: asscalar(arg) if type(arg)==ndarray and arg.size == 1 else arg.copy() if hasattr(arg, 'copy') else copy(arg)
 
@@ -58,8 +58,6 @@ def xBounds2Matrix(p):
     where(IndUB)[0], \
     where(IndEQ)[0]
 
-    initLenB = Len(p.b)
-    initLenBeq = Len(p.beq)
     nLB, nUB, nEQ = Len(indLB), Len(indUB), Len(indEQ)
 
     if  nLB>0 or nUB>0:
@@ -268,8 +266,8 @@ def economyMult(M, V):
         return r
 
 def Find(M):
-    if isinstance(M, np.ndarray): # numpy array or matrix
-        rows, cols = np.where(M)
+    if isinstance(M, ndarray): # numpy array or matrix
+        rows, cols = where(M)
         vals = M[rows,cols]
     else:
         from scipy import sparse as sp
