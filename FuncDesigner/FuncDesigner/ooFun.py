@@ -121,9 +121,7 @@ class oofun:
     
     def __getattr__(self, attr):
         if attr == '__len__':
-#            print '===='
-#            print inspect.stack()
-#            print '----'
+            # TODO: fix it
             if isPyPy:
                 return 1
             else:
@@ -179,13 +177,6 @@ class oofun:
             self._level = max(levels)+1
 
     __hash__ = lambda self: self._id
-    
-    def named(self, name):
-        s = """The function "named" is deprecated and will be removed in future FuncDesigner versions, 
-        instead of my_oofun.named('my name')  you should use my_oofun('my name') or my_oofun(name='my name')"""
-        self.pWarn(s)
-        self.name = name
-        return self
         
     def attach(self, *args,  **kwargs):
         if len(kwargs) != 0:
@@ -1696,6 +1687,9 @@ class oofun:
     __rtruediv__ = __rdiv__
     __truediv__ = __div__
     
+    def IMPLICATION(*args, **kw): 
+        raise FuncDesignerException('oofun.IMPLICATION is temporary disabled, use ifThen(...) or IMPLICATION(...) instead')
+    
     """                                             End of class oofun                                             """
 
 # TODO: make it work for ooSystem as well
@@ -1769,18 +1763,7 @@ def nlh_and(_input, dep, Lx, Ux, p, dataType):
         tmp =  val + P_0.reshape(-1, 1)
         tmp[isnan(tmp)] = inf # when val = -inf summation with P_0 == inf
         R[v] = tmp
-        
-        #assert not any(isnan(R[v]))
-    #print P_0, R, DefiniteRange
-#    if len(R) == 2:
-#    for i in range(len(Lx)):
-#        lx, ux = Lx[i], Ux[i]
-#        a = array([  15.        ,    2.1       ,   15.        ,   35.7       ,        105,    3.        ,    3.        ])
-#        if all(lx <= a) and all(a <= ux):
-#            print '*'*10
-#            print 'P_0:', P_0
-#            print 'R:', R
-#            print '='*10
+
     return P_0, R, DefiniteRange
 
 
@@ -1897,8 +1880,6 @@ class BooleanOOFun(oofun):
     __and__ = AND
     
     #IMPLICATION = IMPLICATION
-    def IMPLICATION(*args, **kw): 
-        raise FuncDesignerException('oofun.IMPLICATION is temporary disabled, use ifThen(...) or IMPLICATION(...) instead')
     __eq__ = EQUIVALENT
     __ne__ = lambda self, arg: NOT(self==arg)
     
