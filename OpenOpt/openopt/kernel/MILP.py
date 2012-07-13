@@ -83,10 +83,3 @@ class MILP(LP):
     
 #    def __init__(self, *args, **kwargs):
 #        LP.__init__(self, *args, **kwargs)
-
-    def objFunc(self, x):
-        return dot(self.f, x) + self._c
-        #return dot(self.f, x)
-
-
-

@@ -63,7 +63,10 @@ class LP(MatrixProblem):
 
             
     def objFunc(self, x):
-        return dot(self.f, x) + self._c
+        if self.isFDmodel:
+            return self._f(self._vector2point(x))
+        else:
+            return dot(self.f, x) + self._c
 
     def lp2nlp(self, solver, **solver_params):
         if self.isConverterInvolved and self.goal in ['max', 'maximum']:
