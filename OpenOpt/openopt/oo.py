@@ -7,6 +7,7 @@ from EIG import EIG as CEIG
 from SDP import SDP as CSDP
 from QP import QP as CQP
 from MILP import MILP as CMILP
+from STAB import STAB as CSTAB
 from NSP import NSP as CNSP
 from NLP import NLP as CNLP
 from MOP import MOP as CMOP
@@ -106,14 +107,41 @@ def LP(*args, **kwargs):
     """
     return CLP(*args, **kwargs)
 
+def STAB(*args, **kwargs):
+    """
+    STAB: constructor for graph stability number problem assignment
+    
+    valid calls are:
+    p = STAB(graph, <params as kwargs>)
+    p = STAB(graph = graph, <params as kwargs>)
+    See also: /examples/stab_*.py
+
+    :Parameters:
+    graph: networkx graph instance
+
+    :Returns:
+    OpenOpt STAB class instance
+
+    Notes
+    -----
+    Solving of OpenOpt STAB problems is performed via
+    r = p.solve(string_name_of_solver)
+    or r = p.manage(string_name_of_solver) (to enable basic GUI)
+    r.solution - desired solution (python list of nodes)
+    r.ff - objFun value (NaN if a problem occured)
+    (see also other r fields)
+    Solvers available for now:  see http://openopt.org/MILP
+    """
+    return CSTAB(*args, **kwargs)
+
 def LCP(*args, **kwargs):
     """
     LCP: constructor for Linear Complementarity Problem assignment
     find w, z: w = Mz + q
     
     valid calls are:
-    p = LP(M, q, <params as kwargs>)
-    p = LP(M=M, q=q, <params as kwargs>)
+    p = LCP(M, q, <params as kwargs>)
+    p = LCP(M=M, q=q, <params as kwargs>)
     See also: /examples/lcp_*.py
 
     :Parameters:
