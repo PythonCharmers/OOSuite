@@ -130,7 +130,9 @@ def STAB(*args, **kwargs):
     r.solution - desired solution (python list of nodes)
     r.ff - objFun value (NaN if a problem occured)
     (see also other r fields)
-    Solvers available for now:  see http://openopt.org/MILP
+    Solvers available for now:  
+       * interalg (BSD license)
+       * MILP solvers at http://openopt.org/MILP
     """
     return CSTAB(*args, **kwargs)
 
