@@ -480,7 +480,12 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 self.constraints.update(_getAllAttachedConstraints(C))
                 
             FF = self.constraints.copy()
-            FF.update(F)
+            for _F in F:
+                if isinstance(_F, (tuple, list, ndarray, set)):
+                    FF.update(_F)
+                else:
+                    FF.add(_F)
+            #FF.update(F)
             unvectorizableFuncs = set()
             unvectorizableVariables = set([var for var, val in self._x0.items() if isinstance(val, _Stochastic) or asarray(val).size > 1])
             hasVectorizableFuncs = False
