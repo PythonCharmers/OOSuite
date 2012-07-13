@@ -33,7 +33,7 @@ except ImportError:
     P = mean = var = std = sp_err
     
 from ooarray import ooarray
-
+from numpy import ndarray
 def IMPLICATION(condition, *args):
     if len(args) == 1 and isinstance(args[0], (tuple, set, list, ndarray)):
         return ooarray([IMPLICATION(condition, elem) for elem in args[0]])
