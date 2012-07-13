@@ -64,7 +64,9 @@ class LP(MatrixProblem):
             
     def objFunc(self, x):
         if self.isFDmodel:
-            return self._f(self._vector2point(x))
+            # TODO: fix it
+            r = self._f(self._vector2point(x))
+            return -r if self.goal in ['max', 'maximum'] else r
         else:
             return dot(self.f, x) + self._c
 
