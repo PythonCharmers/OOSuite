@@ -1,9 +1,6 @@
-from baseProblem import MatrixProblem
-from numpy import asarray, ones, inf, dot, nan, zeros, ceil, floor, argmax, ndarray, copy
+from numpy import dot, ceil, floor, argmax, ndarray, copy
 from setDefaultIterFuncs import SMALL_DELTA_X, SMALL_DELTA_F
 from LP import LP
-
-
 
 class MILP(LP):
     _optionalData = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'intVars', 'boolVars']

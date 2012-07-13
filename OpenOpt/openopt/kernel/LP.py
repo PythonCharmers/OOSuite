@@ -1,5 +1,5 @@
 from baseProblem import MatrixProblem
-from numpy import asarray, ones, inf, dot, nan, zeros, isnan, any, vstack, array, asfarray, atleast_1d
+from numpy import asarray, ones, inf, dot, zeros, asfarray, atleast_1d
 import NLP
 
 class LP(MatrixProblem):

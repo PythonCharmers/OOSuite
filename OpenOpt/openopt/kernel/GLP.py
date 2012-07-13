@@ -1,6 +1,5 @@
-from ooMisc import assignScript
 from baseProblem import NonLinProblem
-from numpy import asarray, ones, inf, array
+from numpy import asarray, ones, inf
 from setDefaultIterFuncs import MAX_NON_SUCCESS 
 
 class GLP(NonLinProblem):
@@ -41,8 +40,6 @@ class GLP(NonLinProblem):
             self.n = len(kwargs['lb'])
         elif 'ub' in kwargs.keys():
             self.n = len(kwargs['ub'])
-        elif 'b' in kwargs.keys():
-            self.n = asarray(b).size
         if hasattr(self, 'n'):
             if not hasattr(self, 'lb'):
                 self.lb = -inf * ones(self.n)
