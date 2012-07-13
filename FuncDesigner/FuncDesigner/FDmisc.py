@@ -1,4 +1,4 @@
-from numpy import asscalar, diag, eye, isscalar, asfarray, ndarray
+from numpy import asscalar, isscalar, asfarray, ndarray, prod
 import numpy as np
 
 scipyInstalled = True
@@ -141,7 +141,7 @@ class diagonal:
 #                    return self.resolve(True)._mul_sparse_matrix(item)
         else:
             #assert SP.isspmatrix(item)
-            if np.prod(item.shape) == 1:
+            if prod(item.shape) == 1:
                 return diagonal(self.diag, scalarMultiplier = self.scalarMultiplier*item[0, 0], size=self.size)
             else:
                 tmp = self.resolve(True)
