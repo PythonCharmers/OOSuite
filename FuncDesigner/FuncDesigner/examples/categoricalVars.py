@@ -113,7 +113,7 @@ solver='interalg'
 p = NLP(annualProfit, startPoint, constraints = constraints, goal = 'max', fTol = 0.05)
 # but let's consider multiextremum problem: search for minimal initial payment and maximal annual profit
 objectives = [
-              # funtion, required accuracy, goal
+              # function, required accuracy, goal
               annualProfit, 0.05,'max', 
               initialPayment, 0.05, 'min'
               ]  
