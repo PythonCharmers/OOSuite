@@ -172,8 +172,8 @@ class nonLinFuncs:
 #                    X = [p._vector2point(x[i]) for i in range(nXvectors)]
 #                    r = hstack([[fun(xx) for xx in X] for fun in Funcs]).reshape(1, -1)
             else:
-                X = [((x[i],) + Args) for i in range(nXvectors)] 
-                r = hstack([[fun(xx) for xx in X] for fun in Funcs]).reshape(1, -1)
+                X = [((x[i],) + Args) for i in range(nXvectors)] #if Args else [x[i]  for i in range(nXvectors)]
+                r = hstack([[fun(*xx) for xx in X] for fun in Funcs]).reshape(1, -1)
                 
         elif not getDerivative:
             r = hstack([fun(*(X, )+Args) for fun in Funcs])
