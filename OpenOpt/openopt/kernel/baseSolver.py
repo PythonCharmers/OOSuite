@@ -20,7 +20,7 @@ class baseSolver:
     passed through ipopt
     cannot be catched by OO
     """
-    __cannotHandleExceptions__ = False
+    useStopByException = True
 
     __optionalDataThatCanBeHandled__ = []
     __isIterPointAlwaysFeasible__ = lambda self, p: p.isUC#TODO: provide possibility of simple True, False

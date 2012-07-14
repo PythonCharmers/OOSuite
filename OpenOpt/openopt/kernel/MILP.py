@@ -1,4 +1,4 @@
-from numpy import dot, ceil, floor, argmax, ndarray, copy
+from numpy import ceil, floor, argmax, ndarray, copy
 from setDefaultIterFuncs import SMALL_DELTA_X, SMALL_DELTA_F
 from LP import LP
 
