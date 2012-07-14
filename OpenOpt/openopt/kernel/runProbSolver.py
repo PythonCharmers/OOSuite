@@ -6,7 +6,12 @@ from setDefaultIterFuncs import stopcase,  SMALL_DELTA_X,  SMALL_DELTA_F, IS_MAX
 from check import check
 from oologfcn import OpenOptException
 from openopt import __version__ as version
-from ooMisc import isSolved
+
+######################
+# don't cjhange to mere ooMisc! 
+from openopt.kernel.ooMisc import isSolved 
+######################
+
 #from baseProblem import ProbDefaults
 from nonOptMisc import getSolverFromStringName, EmptyClass
 

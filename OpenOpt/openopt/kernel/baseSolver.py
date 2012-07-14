@@ -14,11 +14,9 @@ class baseSolver:
     _requiresBestPointDetection = False
     _requiresFiniteBoxBounds = False
 
-    """__cannotHandleExceptions__  is
-    True for ipopt and mb some others,
-    somehow exceptions raised in OO and
-    passed through ipopt
-    cannot be catched by OO
+    """ useStopByException should be turned to False
+    for those solvers where passing exceptions through C/Fortran code is buggy
+    and cannot be catched by OO
     """
     useStopByException = True
 
