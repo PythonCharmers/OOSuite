@@ -1,4 +1,5 @@
-__docformat__ = "restructuredtext en"
+import sys
+sys.path.append('/home/dmitrey/OOSuite/OpenOpt')
 
 from numpy import empty, sin, cos, arange
 from openopt import LLSP
@@ -22,7 +23,7 @@ for j in xrange(M):
 """
 
 p = LLSP(C, d)
-r = p.solve('lsqr')
+r = p.solve('lsmr')
 
 print('f_opt: %f' % r.ff) # 2398301.68347
 #print 'x_opt:', r.xf

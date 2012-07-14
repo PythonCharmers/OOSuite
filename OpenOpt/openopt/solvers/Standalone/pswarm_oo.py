@@ -1,6 +1,6 @@
 #from numpy import asfarray, argmax, sign, inf, log10
 from openopt.kernel.baseSolver import baseSolver
-from numpy import isfinite, asscalar, array, asfarray, ravel #asfarray,  inf,  atleast_1d
+from numpy import isfinite, array, asfarray, ravel #asfarray,  inf,  atleast_1d
 from pswarm_py import pswarm as PSWARM
 from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X,  SMALL_DELTA_F
 
@@ -31,9 +31,10 @@ class pswarm(baseSolver):
     def __solver__(self, p):
 
         #if not p.__isFiniteBoxBounded__(): p.err('this solver requires finite lb, ub: lb <= x <= ub')
-
-        p.kernelIterFuncs.pop(SMALL_DELTA_X)
-        p.kernelIterFuncs.pop(SMALL_DELTA_F)
+        
+        p.kernelIterFuncs.pop(SMALL_DELTA_X, None)
+        p.kernelIterFuncs.pop(SMALL_DELTA_F, None)
+                
         lb, ub = p.lb, p.ub
         lb[lb < -1e20] = -1e20
         ub[ub > 1e20] = 1e20

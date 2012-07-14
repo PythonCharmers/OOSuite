@@ -2,7 +2,6 @@
 from openopt.kernel.baseSolver import baseSolver
 #from numpy import asfarray,  inf,  atleast_1d
 from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X,  SMALL_DELTA_F
-import math
 import numpy as np
 nanPenalty = 1e10
 
@@ -232,18 +231,22 @@ def _eval_pop(pop, p):
     constr_vals = np.zeros(NP)
         
     if p.__isNoMoreThanBoxBounded__():
-        #TODO: omit transpose
-        #print(type(vals))
-        #print(vals)
-        best_i = vals.argmin()
+        best_i = vals.argmin()        
         best = (best_i, vals[best_i], 0, pop[best_i])
     else:
-        for i in range(NP):
-            newPoint = p.point(pop[i])
-            constr_vals[i] = newPoint.mr() + nanPenalty * newPoint.nNaNs()
-            if i == 0 or newPoint.betterThan(bestPoint):
-                bestPoint = newPoint
-                bestPoint.i = i
+        new = 0
+        if new and p.isFDmodel:
+            pass
+#            C = zeros(NP)
+#            for 
+        else:
+            for i in range(NP):
+                newPoint = p.point(pop[i])
+                constr_vals[i] = newPoint.mr() + nanPenalty * newPoint.nNaNs()
+                if i == 0 or newPoint.betterThan(bestPoint):
+                    bestPoint = newPoint
+                    bestPoint.i = i
+            
         best = (bestPoint.i, bestPoint.f(), bestPoint.mr() + nanPenalty * bestPoint.nNaNs(), bestPoint.x)
 
     return best, vals, constr_vals

@@ -1,10 +1,8 @@
-import sys, numpy as np
+import numpy as np
 from openopt.kernel.baseSolver import baseSolver
 from openopt.kernel.setDefaultIterFuncs import *
 from openopt.kernel.ooMisc import LinConst2WholeRepr
-#from openopt.kernel.ooMisc import isSolved
-#from openopt.kernel.nonOptMisc import scipyInstalled, Hstack, Vstack, Find, isspmatrix
-import os
+#import os
 import cplex as CPLEX
 from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X,  SMALL_DELTA_F, IS_NAN_IN_X
 
@@ -15,7 +13,6 @@ class cplex(baseSolver):
     #__alg__ = ""
     #__homepage__ = 'http://www.coin-or.org/'
     #__info__ = ""
-    #__cannotHandleExceptions__ = True
     __optionalDataThatCanBeHandled__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'intVars', 'H', 'QC']
     _canHandleScipySparse = True
     __isIterPointAlwaysFeasible__ = lambda self, p: p.intVars not in ((), [], None)
@@ -53,7 +50,7 @@ class cplex(baseSolver):
         
         LinConst2WholeRepr(p)
         if p.Awhole is not None:
-            m = np.asarray(p.bwhole).size
+            #m = np.asarray(p.bwhole).size
             senses = ''.join(where(p.dwhole == -1, 'L', 'E').tolist())
             P.linear_constraints.add(rhs=np.asarray(p.bwhole).tolist(), senses = senses)
             P.linear_constraints.set_coefficients(zip(*Find(p.Awhole)))

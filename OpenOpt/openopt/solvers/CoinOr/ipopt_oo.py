@@ -1,9 +1,8 @@
 from numpy import *
 import re
 from openopt.kernel.baseSolver import baseSolver
-from openopt.kernel.ooMisc import isSolved
-from openopt.kernel.nonOptMisc import scipyInstalled, Hstack, Vstack, Find, isspmatrix
-import os
+from openopt.kernel.nonOptMisc import Vstack, Find, isspmatrix
+#import os
 #from openopt.kernel.setDefaultIterFuncs import SMALL_DF
 try:
     import pyipopt
@@ -18,7 +17,6 @@ class ipopt(baseSolver):
     __alg__ = "A. Wachter and L. T. Biegler, On the Implementation of a Primal-Dual Interior Point Filter Line Search Algorithm for Large-Scale Nonlinear Programming, Mathematical Programming 106(1), pp. 25-57, 2006 "
     __homepage__ = 'http://www.coin-or.org/'
     __info__ = "requires pyipopt made by Eric Xu You"
-    __cannotHandleExceptions__ = True
     __optionalDataThatCanBeHandled__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'c', 'h']
     _canHandleScipySparse = True
 

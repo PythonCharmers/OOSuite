@@ -17,7 +17,6 @@ class stogo(NLOPT_BASE):
     funcForIterFcnConnection = 'f'
 #    _requiresBestPointDetection = True
     useRand = True
-    __cannotHandleExceptions__ = True
     
     def __init__(self): pass
     def __solver__(self, p):
