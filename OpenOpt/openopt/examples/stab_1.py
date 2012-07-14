@@ -2,7 +2,8 @@
 Simple OpenOpt graph stability number example;
 requires networkx (http://networkx.lanl.gov)
 and FuncDesigner installed.
-Unlike networkx maximal_independent_set() we search for *exact* solution.
+For maximum clique problem you could use STAB on complementary graph, for networkx it's nx.complement(G) 
+Unlike networkx maximum_independent_set() we search for *exact* solution.
 Limitations on time, cputime, "enough" value, basic GUI features are available.
 '''
 from openopt import STAB
@@ -10,10 +11,12 @@ from openopt import STAB
 import networkx as nx
 G = nx.path_graph(15) # [(0,1), (1,2), (2,3), ..., (13,14)]
 # you can use string and other types, e.g. 
-G = nx.Graph(); G.add_node('asdf'); G.add_nodes_from(['a1', 'b2','c3']); G.add_edge('qwerty1','qwerty2')
+# G = nx.Graph(); G.add_node('asdf'); G.add_nodes_from(['a1', 'b2','c3']); G.add_edge('qwerty1','qwerty2')
 p = STAB(G, includedNodes = [1, 5, 8], excludedNodes = [0, 4, 10])
 # or 
-p = STAB(G, includedNodes = ['a1', 'c3'], excludedNodes = ['qwerty1'])
+# p = STAB(G, includedNodes = ['a1', 'c3'], excludedNodes = ['qwerty1'])
+
+# includedNodes and excludedNodes are optional arguments - nodes that must be present or absent in the solution
 
 # solve by BSD- licensed global nonlinear solver interalg (http://openopt.org/interalg):
 r = p.solve('interalg', iprint = 0) # set it to -1 to completely suppress interalg output; may not work for glpk, lpSolve
