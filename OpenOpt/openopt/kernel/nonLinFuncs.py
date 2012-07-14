@@ -18,17 +18,17 @@ class nonLinFuncs:
             x = p._point2vector(x)
         if not getattr(p.userProvided, userFunctionType): return array([])
         if p.istop == USER_DEMAND_EXIT:
-            if p.solver.__cannotHandleExceptions__:
-                return nan
-            else:
+            if p.solver.useStopByException:
                 raise killThread
+            else:
+                return nan                
                 
         if getDerivative and not p.isFDmodel and not DerApproximatorIsInstalled:
             p.err('For the problem you should have DerApproximator installed, see http://openopt.org/DerApproximator')
 
         #userFunctionType should be 'f', 'c', 'h'
         funcs = getattr(p.user, userFunctionType)
-        funcs_num = getattr(p, 'n'+userFunctionType)
+        #funcs_num = getattr(p, 'n'+userFunctionType)
         if IND is not None:
             ind = p.getCorrectInd(IND)
         else: ind = None
@@ -291,12 +291,10 @@ class nonLinFuncs:
         else: ind = None
 
         if p.istop == USER_DEMAND_EXIT:
-            if p.solver.__cannotHandleExceptions__:
-#                if p.solver.__name__ == 'algencan':
-#                    return None
-                return nan
+            if p.solver.useStopByException:
+                raise killThread                
             else:
-                raise killThread
+                return nan
         derivativesType = 'd'+ funcType
         prevKey = p.prevVal[derivativesType]['key']
         if prevKey is not None and p.iter > 0 and array_equal(x, prevKey) and ind is None and not ignorePrev:
