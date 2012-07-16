@@ -1,12 +1,11 @@
-from numpy import diag, array, sqrt,  eye, ones, inf, any, copy, zeros, dot, where, all, tile, sum, nan, isfinite, float64, isnan, log10, \
-max, sign, array_equal, nonzero, ix_, arctan, pi, logical_not, logical_and, atleast_2d, matrix, delete, empty, ndarray, \
-logical_and, logical_not
-from numpy.linalg import norm, solve, LinAlgError
+from numpy import  inf, any, copy, dot, where, all, nan, isfinite, float64, isnan,  \
+max, sign, array_equal, matrix, delete, ndarray
+from numpy.linalg import norm#, solve, LinAlgError
 
 from openopt.kernel.baseSolver import *
-from openopt.kernel.Point import Point
+#from openopt.kernel.Point import Point
 from openopt.kernel.setDefaultIterFuncs import *
-from openopt.solvers.UkrOpt.UkrOptMisc import getBestPointAfterTurn
+#from openopt.solvers.UkrOpt.UkrOptMisc import getBestPointAfterTurn
 from openopt.solvers.UkrOpt.PolytopProjection import PolytopProjection
 
 class gsubg(baseSolver):
@@ -29,17 +28,20 @@ class gsubg(baseSolver):
     show_nnan = False
     doBackwardSearch = True
     new_bs = True
-    approach = 'all active'
-    zhurb = 100
+    
+    maxVectors = 100
+    maxShoots = 15
     sigma = 1e-3
+    
     dual = True
-    ls_direction = 'simple'
-    qpsolver = 'cvxopt_qp'
-    ns = 15
-    dilation = 'auto'
     addASG = False
 
-    def __init__(self): pass
+    def __init__(self): 
+        self.approach = 'all active'
+        self.qpsolver = 'cvxopt_qp'
+        self.ls_direction = 'simple'
+        self.dilation = 'auto'
+        
     def __solver__(self, p):
         assert self.approach == 'all active'
         if not p.isUC: p.warn('Handling of constraints is not implemented properly for the solver %s yet' % self.__name__)
@@ -87,7 +89,7 @@ class gsubg(baseSolver):
         T = self.T
         # alternatively instead of alp=self.alp etc you can use directly self.alp etc
 
-        n = p.n
+        #n = p.n
         x0 = p.x0
         
         if p.nbeq == 0 or any(abs(p._get_AeqX_eq_Beq_residuals(x0))>p.contol): # TODO: add "or Aeqconstraints(x0) out of contol"
@@ -95,7 +97,7 @@ class gsubg(baseSolver):
             x0[x0>p.ub] = p.ub[x0>p.ub]
         
         hs = asarray(h0, T)
-        ls_arr = []
+        #ls_arr = []
 
         """                         Nikolay G. Zhurbenko generalized epsilon-subgradient engine                           """
         bestPoint = Point(asarray(copy(x0), T))
@@ -103,7 +105,7 @@ class gsubg(baseSolver):
         prevIter_best_ls_point = bestPoint
         best_ls_point = bestPoint
         iterStartPoint = bestPoint
-        prevIter_bestPointAfterTurn = bestPoint
+        #prevIter_bestPointAfterTurn = bestPoint
         bestPointBeforeTurn = None
         g = bestPoint._getDirection(self.approach)
         g1 = iterStartPoint._getDirection(self.approach, currBestFeasPoint = bestFeasiblePoint)
@@ -127,7 +129,7 @@ class gsubg(baseSolver):
         
         subGradientNorms, points, values, isConstraint, epsilons, inactive, normedSubGradients, normed_values = [], [], [], [], [], [], [], []
         StoredInfo = [subGradientNorms, points, values, isConstraint, epsilons, inactive, normedSubGradients, normed_values]
-        nMaxVec = self.zhurb
+        nMaxVec = self.maxVectors
         nVec = 0
         ns = 0
         #ScalarProducts = empty((10, 10))
@@ -143,7 +145,7 @@ class gsubg(baseSolver):
             # TODO: improve 2 points obtained from backward line search
             koeffs = None
             
-            while ns < self.ns:
+            while ns < self.maxShoots:
                 
                 ns += 1
                 nAddedVectors = 0
@@ -310,13 +312,13 @@ class gsubg(baseSolver):
 
                 
                 indActive = where(valDistances >= 0)[0]
-                m = len(indActive)
+                #m = len(indActive)
                 product = None
 
                 #print('fTol: %f   m: %d   ns: %d' %(fTol, m, ns))
                 #raise 0
                 if p.debug: p.debugmsg('fTol: %f     ns: %d' %(fTol, ns))
-                Projection = None
+                #Projection = None
                 if nVec > 1:
                     normalizedSubGradients = asfarray(normedSubGradients)
                     product = dot(normalizedSubGradients, normalizedSubGradients.T)
@@ -369,9 +371,9 @@ class gsubg(baseSolver):
                                 
                             #p.debugmsg('g1 shift: %f' % norm(g1/norm(g1)-projection/norm(projection)))
                             g1 = projection
-                            if j == 0: 
-                                Projection = projection
-                                ProjectionVal = sum(koeffs*asfarray(ValDistances))
+                            #if j == 0: 
+                                #Projection = projection
+                                #ProjectionVal = sum(koeffs*asfarray(ValDistances))
                             #hs = 0.4*norm(g1)
                             M = norm(koeffs, inf)
                             # TODO: remove the cycles
@@ -383,7 +385,7 @@ class gsubg(baseSolver):
 
                         if j == 0 or NewPoint.betterThan(best_QP_Point, altLinInEq=True, bestFeasiblePoint = bestFeasiblePoint): 
                             best_proj = g1
-                            best_QP_Point = NewPoint
+                            #best_QP_Point = NewPoint
                         else:
                             g1 = best_proj
                             break
@@ -478,11 +480,11 @@ class gsubg(baseSolver):
 
                 p.debugmsg('ls_forward: %d' %ls)
                 """                          Backward line search                          """
-                maxLS = 500 #if ls == 0 else 5
-                maxDeltaF = p.ftol / 16.0#fTol/4.0 #p.ftol / 16.0
-                maxDeltaX = p.xtol / 2.0 #if m < 2 else hs / 16.0#Xdist/16.0
+                #maxLS = 500 #if ls == 0 else 5
+                #maxDeltaF = p.ftol / 16.0#fTol/4.0 #p.ftol / 16.0
+                #maxDeltaX = p.xtol / 2.0 #if m < 2 else hs / 16.0#Xdist/16.0
                 
-                ls_backward = 0
+                #ls_backward = 0
                     
                 #DEBUG
 #                print '!!!!1:', isPointCovered(oldoldPoint, newPoint, bestFeasiblePoint, fTol), '<<<'
@@ -544,7 +546,7 @@ class gsubg(baseSolver):
                 
                 """                                 Updating hs                                 """
                 step_x = p.norm(best_ls_point.x - prevIter_best_ls_point.x)
-                step_f = abs(best_ls_point.f() - prevIter_best_ls_point.f())
+                #step_f = abs(best_ls_point.f() - prevIter_best_ls_point.f())
                 HS.append(hs_start)
                 assert ls >= 0
                 LS.append(ls)
@@ -558,7 +560,7 @@ class gsubg(baseSolver):
 #                        hs = (mean_ls - j0 + 1)**0.5 * hs_start
 #                    else:
 #                        #hs = hs_start / 16.0
-#                        if (ls == 0 and ls_backward == -maxLS) or self.zhurb!=0:
+#                        if (ls == 0 and ls_backward == -maxLS) or self.maxVectors!=0:
 #                            shift_x = step_x / p.xtol
 #                            shift_f = step_f / p.ftol
 #    #                        print 'shift_x: %e    shift_f: %e' %(shift_x, shift_f)
@@ -570,7 +572,7 @@ class gsubg(baseSolver):
 #                                mp = (0.5, (ls/j0) ** 0.5, 1 - 0.2*RD)
 #                                hs *= max(mp)
 
-                prev_hs = hs
+                #prev_hs = hs
                 if step_x != 0: 
                     hs = 0.5*step_x                  
 #                elif ls  == 0 and nLSBackward > 4:
@@ -611,7 +613,7 @@ class gsubg(baseSolver):
                 #if p.debug: assert p.isUC
 
                 
-                prevInnerCycleIterStartPoint = iterStartPoint
+                #prevInnerCycleIterStartPoint = iterStartPoint
                 
                 #if ns > 3: raise 0
                 if best_ls_point_with_start.betterThan(iterStartPoint, altLinInEq=True, bestFeasiblePoint = bestFeasiblePoint):
@@ -648,14 +650,17 @@ class gsubg(baseSolver):
             
             isOverHalphPi = product is not None and any(product[indActive].flatten() <= 0)
 
-            if ns == self.ns and isOverHalphPi:
+            if ns == self.maxShoots and isOverHalphPi:
                 p.istop = 16
-                p.msg = 'Max linesearch directions number has been exceeded'
+                p.msg = '''
+                Max linesearch directions number has been exceeded 
+                (probably solution has been obtained), 
+                you could increase gsubg parameter "maxShoots" (current value: %d)''' % self.maxShoots
                 best_ls_point = best_ls_point_with_start
 
             """                Some final things for gsubg main cycle                """
             prevIter_best_ls_point = best_ls_point_with_start
-            prevIterPoint = iterStartPoint
+            #prevIterPoint = iterStartPoint
             
             
             # TODO: mb move it inside inner loop
