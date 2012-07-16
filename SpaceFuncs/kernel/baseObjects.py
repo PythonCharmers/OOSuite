@@ -1,5 +1,5 @@
 # created by Dmitrey
-from numpy import isscalar, all, asfarray, ndarray, array, asscalar, asarray, pi, atleast_1d, asscalar, sin, cos
+from numpy import isscalar, all, ndarray, array, asscalar, asarray, pi, sin, cos
 from FuncDesigner.ooFun import oofun
 from FuncDesigner import  ooarray, dot, sum, sqrt, cross, norm
 from misc import SpaceFuncsException, pWarn, SF_error
@@ -205,9 +205,10 @@ class LineSegment(baseGeometryObject):
     def plot(self):
         if not pylabInstalled: 
             raise SpaceFuncsException('to plot you should have matplotlib installed')
-        pylab.plot([self.points[0][0], self.points[1][0]], [self.points[0][1], self.points[1][1]], self.color)
+        r = pylab.plot([self.points[0][0], self.points[1][0]], [self.points[0][1], self.points[1][1]], self.color)
         self.points[0].plot()
         self.points[1].plot()
+        return r
     
     # TODO: rework it
     _spaceDimension = lambda self: self.points[0]._spaceDimension()
