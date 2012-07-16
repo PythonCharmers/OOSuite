@@ -651,7 +651,7 @@ class gsubg(baseSolver):
             isOverHalphPi = product is not None and any(product[indActive].flatten() <= 0)
 
             if ns == self.maxShoots and isOverHalphPi:
-                p.istop = 16
+                p.istop = 17
                 p.msg = '''
                 Max linesearch directions number has been exceeded 
                 (probably solution has been obtained), 
