@@ -385,7 +385,7 @@ class gsubg(baseSolver):
 
                         if j == 0 or NewPoint.betterThan(best_QP_Point, altLinInEq=True, bestFeasiblePoint = bestFeasiblePoint): 
                             best_proj = g1
-                            #best_QP_Point = NewPoint
+                            best_QP_Point = NewPoint
                         else:
                             g1 = best_proj
                             break
