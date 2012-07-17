@@ -466,7 +466,25 @@ def floor(inp):
     r.criticalPoints = False#lambda arg_infinum, arg_supremum: [np.floor(arg_infinum)]
     return r
 
-__all__ += ['ceil', 'floor']
+st_sign = (lambda x: \
+distribution.stochasticDistribution(sign(x.values), x.probabilities.copy())._update(x) \
+if isinstance(x, distribution.stochasticDistribution)\
+else np.sign(x))\
+if hasStochastic\
+else np.sign
+
+def sign(inp):
+    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
+        return ooarray([sign(elem) for elem in inp])
+    if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
+        return distribution.stochasticDistribution(sign(inp.values), inp.probabilities.copy())._update(inp)      
+    if not isinstance(inp, oofun): 
+        return np.sign(inp)
+    r = oofun(st_sign, inp, vectorized = True)
+    r.criticalPoints = False
+    return r
+
+__all__ += ['ceil', 'floor', 'sign']
 
 def sum(inp, *args, **kwargs):
     if type(inp) == np.ndarray and inp.dtype != object:

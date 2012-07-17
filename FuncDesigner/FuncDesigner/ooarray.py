@@ -1,6 +1,7 @@
 from baseClasses import OOArray
 from ooFun import oofun
 from numpy import isscalar, asscalar, ndarray, asarray, atleast_1d, array
+from FDmisc import FuncDesignerException
 
 class ooarray(OOArray):
     __array_priority__ = 25 # !!! it should exceed oofun.__array_priority__ !!!
