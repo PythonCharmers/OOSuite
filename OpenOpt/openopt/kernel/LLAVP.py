@@ -1,6 +1,6 @@
 from ooMisc import assignScript
 from baseProblem import MatrixProblem
-from numpy import asfarray, ones, inf, dot, nan, zeros, any, all, isfinite, eye, sign
+from numpy import asfarray, ones, inf, dot, nan, zeros, any, isfinite, sign
 from ooMisc import norm
 import NSP
 

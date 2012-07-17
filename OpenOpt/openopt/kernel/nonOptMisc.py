@@ -132,6 +132,9 @@ def solver_import(solverPath, solverName):
 def oosolver(solverName, *args,  **kwargs):
     if args != ():
         raise OpenOptException("Error: oosolver() doesn't consume any *args, use **kwargs only")
+    from baseSolver import baseSolver
+    if isinstance(solverName, baseSolver):
+        return solverName
     try:
         if ':' in solverName:
             # TODO: make it more properly
@@ -148,7 +151,7 @@ def oosolver(solverName, *args,  **kwargs):
                 solverClassInstance.fieldsForProbInstance[key] = value
         solverClassInstance.isInstalled = True
     except ImportError:
-        from baseSolver import baseSolver
+        
         solverClassInstance = baseSolver()
         solverClassInstance.__name__ = solverName
         solverClassInstance.fieldsForProbInstance = {}

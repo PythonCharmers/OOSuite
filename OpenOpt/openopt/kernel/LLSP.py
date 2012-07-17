@@ -1,6 +1,5 @@
-from ooMisc import assignScript
 from baseProblem import MatrixProblem
-from numpy import asfarray, ones, inf, dot, nan, zeros, any, all, isfinite, eye, vstack
+from numpy import ones, inf, dot, zeros, any, all, isfinite, eye
 from ooMisc import norm
 import NLP
 
@@ -35,7 +34,7 @@ class LLSP(MatrixProblem):
                     Icorrect data type for LLSP constructor, 
                     first argument should be numpy ndarray, 
                     scipy sparse matrix, FuncDesigner oofun or list of oofuns'''
-                    p.err(s)
+                    self.err(s)
                 self.C = [self.C]
             
 
@@ -87,7 +86,7 @@ class LLSP(MatrixProblem):
 ff = lambda x, LLSPprob: LLSPprob.objFunc(x)
 def dff(x, p):
     r = p.matMultVec(p.C.T, p.matMultVec(p.C,x)  - p.d)
-    if p.damp is not None and p.damp != 0: r += p.damp*(x - LLSPprob.X)
+    if p.damp is not None and p.damp != 0: r += p.damp*(x - p.X)
     if p.f is not None and all(isfinite(p.f)) : r += p.f
     return r
 

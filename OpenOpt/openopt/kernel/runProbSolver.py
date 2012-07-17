@@ -57,8 +57,6 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     if type(solver_str_or_instance) is str and ':' in solver_str_or_instance:
         isConverter = True
         probTypeToConvert,  solverName = solver_str_or_instance.split(':', 1)
-        converterName = p.probType.lower()+'2'+probTypeToConvert
-        converter = getattr(p, converterName)
         p.solver = getSolverFromStringName(p, solverName)
         solver_params = {}
         #return converter(solverName, *args, **kwargs)
