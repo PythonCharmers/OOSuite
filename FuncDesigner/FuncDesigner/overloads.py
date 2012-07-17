@@ -480,7 +480,7 @@ def sign(inp):
         return distribution.stochasticDistribution(sign(inp.values), inp.probabilities.copy())._update(inp)      
     if not isinstance(inp, oofun): 
         return np.sign(inp)
-    r = oofun(st_sign, inp, vectorized = True)
+    r = oofun(st_sign, inp, vectorized = True, d = lambda x: 0.0)
     r.criticalPoints = False
     return r
 
