@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
-from numpy import inf, copy, abs, all, floor, log10, asfarray, asscalar, argsort
+from numpy import inf, copy, floor, log10, asfarray, asscalar, argsort
 
 TkinterIsInstalled = True
 try:
-    from Tkinter import Tk, Toplevel, Button, Entry, Menubutton, Label, Frame, StringVar, DISABLED, ACTIVE, END, IntVar, \
-    Radiobutton, Canvas, Image, PhotoImage
+    from Tkinter import Tk, Button, Entry, Label, Frame, StringVar, DISABLED, END, IntVar, \
+    Radiobutton, Canvas
     from tkFileDialog import asksaveasfilename, askopenfile 
     from tkMessageBox import showerror
 except ImportError:
@@ -69,7 +69,7 @@ class mfa:
         RootFrame.pack()
         
         self.NameEntriesList, self.LB_EntriesList, self.UB_EntriesList, self.TolEntriesList, self.ValueEntriesList = [], [], [], [], []
-        self.calculated_points = S.get('calculated_points', {})
+        self.calculated_points = S.get('calculated_points', [])
 
         # Title
         #root.wm_title(' FuncDesigner ' + fdversion + ' Manager')
@@ -83,7 +83,7 @@ class mfa:
 
         #                                                   Upper Frame
         UpperFrame = Frame(RootFrame)
-        UpperFrame.pack(side = 'top', expand=True, fill = 'x')
+        
         
         ProjectNameFrame = Frame(UpperFrame)#, relief = 'ridge', bd=2)
         Label(ProjectNameFrame,  text = 'Project name:').pack(side = 'left')
@@ -107,10 +107,12 @@ class mfa:
         ObjectiveToleranceFrame = Frame(UpperFrame, relief = 'ridge', bd=2)
         ObjectiveToleranceFrame.pack(side='left')
         Label(ObjectiveToleranceFrame, text='Objective function tolerance:').pack(side = 'left')
-        ObTolEntry = Entry(ObjectiveToleranceFrame)
-        ObTolEntry.pack(side='left')
-        self.ObTolEntry = ObTolEntry
-            
+        ObjTolEntry = Entry(ObjectiveToleranceFrame)
+        ObjTolEntry.pack(side='left')
+        self.ObjTolEntry = ObjTolEntry
+        
+        UpperFrame.pack(side = 'top', expand=True, fill = 'x')
+        
         #                                                   Variables Frame
         varsRoot = Frame(RootFrame)
        
@@ -188,11 +190,11 @@ class mfa:
                                           #C.pack(side = 'bottom', expand=True, fill='both'), 
                                           r1.config(state=DISABLED), 
                                           r2.config(state=DISABLED), 
-                                          ObTolEntry.config(state=DISABLED), 
+                                          ObjTolEntry.config(state=DISABLED), 
                                           ObjEntry.pack(side='right', ipady=4),
                                           NN_Label.pack(side='right'), \
                                           self.startOptimization(root, varsRoot, AddVar, currValues, ValsColumnName, ObjEntry, ExperimentNumber, Next, NN, 
-                                                            goal.get(), float(ObTolEntry.get()), C)))
+                                                            goal.get(), float(ObjTolEntry.get()), C)))
         Start.pack(side = 'bottom', fill='x')
         self.Start = Start
         
@@ -258,7 +260,7 @@ class mfa:
         p.args = (Tol, self, ObjEntry, p, root, ExperimentNumber, Next, NN, objtol, C)
         #p.graphics.rate = -inf
         #p.f_iter = 2
-        solver = oosolver('bobyqa', __cannotHandleExceptions__ = True)
+        solver = oosolver('bobyqa', useStopByException = False)
         p.solve(solver, iprint = 1, goal = goal)#, plot=1, xlabel='nf')
         self.solved = True
         if p.stopcase >= 0:
@@ -268,7 +270,7 @@ class mfa:
         Next.destroy()
         #reverse = True if goal == 'min' else False
         
-        calculated_items = self.calculated_points.items()
+        calculated_items = self.calculated_points.items() if isinstance(self.calculated_points, dict) else self.calculated_points
         vals = [calculated_items[i][1] for i in range(len(calculated_items))]
         ind = argsort(vals)
         j = ind[0] if goal == 'min' else ind[-1]
@@ -278,7 +280,7 @@ class mfa:
             self.ValueEntriesList[i].delete(0, END)
             self.ValueEntriesList[i].insert(0, text_coords[i])
         ObjEntry.delete(0, END)
-        obj_tol = self.ObTolEntry.get()
+        obj_tol = self.ObjTolEntry.get()
         val = float(val) * 1e4 * objtol
         ObjEntry.insert(0, str(val))
         ObjEntry.config(state=DISABLED)
@@ -307,7 +309,7 @@ class mfa:
         
         self.create(S)
         
-        self.ObTolEntry.insert(0, S['ObjTol'])
+        self.ObjTolEntry.insert(0, S['ObjTol'])
         self.ProjectNameEntry.insert(0, S.get('ProjectName', ''))
         self.goal.set(S['goal'])
         self.ExperimentNumber.set(len(self.calculated_points))
@@ -332,7 +334,7 @@ class mfa:
         tols = [s.get() for s in self.TolEntriesList]
         values = [s.get() for s in self.ValueEntriesList]
         goal = self.goal.get()
-        ObjTol = self.ObTolEntry.get()
+        ObjTol = self.ObjTolEntry.get()
         calculated_points = self.calculated_points
         ProjectName = self.ProjectNameEntry.get()
         S = {'names':names, 'lbs':lbs, 'ubs':ubs, 'tols':tols, 'values':values, 'goal':goal, \
@@ -370,9 +372,9 @@ class mfa:
         ws.write(0, 0, 'Name')
         ws.write(0, 1, self.ProjectNameEntry.get())
         ws.write(1, 0, 'Goal')
-        ws.write(1, 1, self.goal.get())
+        ws.write(1, 1, self.goal.get() + 'imum')
         ws.write(2, 0, 'Objective Tolerance')
-        ws.write(2, 1, self.ObTolEntry.get())
+        ws.write(2, 1, self.ObjTolEntry.get())
         
         names = [s.get() for s in self.NameEntriesList]
         lbs = [s.get() for s in self.LB_EntriesList]
@@ -390,11 +392,14 @@ class mfa:
             ws.write(7, i+1, float(tols[i]))
         
         
-        ws.write(9, 0, 'Exp number')
+        ws.write(9, 0, 'Exp Number')
         ws.write(9, len(names)+1, 'Objective')
         # TODO: minor code cleanup
-        for i in range(len(self.calculated_points)):
-            key,  val = self.calculated_points[i]
+        CP = self.calculated_points
+        if isinstance(CP, dict):
+            CP = CP.items()
+        for i in range(len(CP)):
+            key,  val = CP[i]
             ws.write(10+i, 0, i+1)
             coords = key.split()
             for j, coordVal in enumerate(coords):
@@ -443,7 +448,10 @@ def objective(x, Tol, mfa, ObjEntry, p, root, ExperimentNumber, Next, NN, objtol
 #    r = abs(x[0]* Tol[0] / xtolScaleFactor-0.13) + abs(x[1]* Tol[1] /xtolScaleFactor-0.15) #+ 0.0001 * rand(1)
 
     r *= 1e-4 / objtol
-    calculated_points.append((Key, asscalar(copy(r)))) 
+    if isinstance(calculated_points, list):
+        calculated_points.append((Key, asscalar(copy(r)))) 
+    else: # dict
+        calculated_points[Key] = asscalar(copy(r))
     
 #    rr = []
 #    for i, val in enumerate(p.iterValues.f):
