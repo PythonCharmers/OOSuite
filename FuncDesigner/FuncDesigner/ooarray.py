@@ -14,13 +14,16 @@ class ooarray(OOArray):
         #if obj.dtype != object:obj = np.asfarray(obj) #TODO: FIXME !
 
         obj._id = oofun._id
-        self.name = 'unnamed_ooarray_%d' % obj._id
+        obj.name = 'unnamed_ooarray_%d' % obj._id
         oofun._id += 1
         
         return obj
     
-    def __init__(self, *args, **kw):
-        pass
+#    def __init__(self, *args, **kw):
+#        self._id = oofun._id
+#        self.name = 'unnamed_ooarray_%d' % self._id
+#        oofun._id += 1
+
     
     __hash__ = lambda self: self._id
     

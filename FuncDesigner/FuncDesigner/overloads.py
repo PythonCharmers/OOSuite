@@ -957,7 +957,7 @@ __all__ += ['det3']
 def hstack(tup): # overload for oofun[ind]
     c = [isinstance(t, (oofun, ooarray)) for t in tup]
     if any([isinstance(t, ooarray) for t in tup]):
-        return np.hstack(tup)
+        return ooarray(np.hstack(tup))
     if not any(c):
         return np.hstack(tup)
     #an_oofun_ind = np.where(c)[0][0]
