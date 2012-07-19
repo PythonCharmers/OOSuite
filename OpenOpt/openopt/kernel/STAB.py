@@ -1,12 +1,11 @@
 from baseProblem import MatrixProblem
-from numpy import isfinite
 
 class STAB(MatrixProblem):
     _optionalData = []
     probType = 'STAB'
     expectedArgs = ['graph']
     allowedGoals = ['graph stability number']
-    showGoal = True
+    showGoal = False
     
     def solve(self, *args, **kw):
         if len(args) > 1:
