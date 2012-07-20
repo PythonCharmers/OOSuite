@@ -1,14 +1,14 @@
 PythonSum = sum
-from numpy import tile, isnan, array, atleast_1d, asarray, logical_and, all, searchsorted, logical_or, any, \
-nan, isinf, arange, vstack, inf, where, logical_not, take, argmax, argmin, min, abs, hstack, empty, insert, \
-isfinite, append, atleast_2d, prod, logical_xor, argsort, asfarray, ones, log2, zeros, log1p, array_split
+from numpy import isnan, array, atleast_1d, asarray, logical_and, all, logical_or, any, \
+arange, vstack, inf, where, logical_not, take, abs, hstack, empty, \
+isfinite, argsort, ones, zeros, log1p, array_split
 
 from interalgLLR import *
 
 try:
-    from bottleneck import nanargmin, nanmin, nanargmax, nanmax
+    from bottleneck import nanargmin, nanmin
 except ImportError:
-    from numpy import nanmin, nanargmin, nanargmax, nanmax
+    from numpy import nanmin, nanargmin
 
 
 def r43_seq(Arg):
@@ -33,10 +33,11 @@ def r43_seq(Arg):
                 if any(ind):
                     t1 = a[ind]
                     t2 = o[ind]
-                    
+                    t_diff = t1-t2
+                    t_diff[t_diff<1e-200] = 1e-200
                     # TODO: check discrete cases
-                    Tmp = (ff-t2) / (t1-t2)
-                    Tmp[t1==t2] = 0.0 # for discrete cases
+                    Tmp = (ff-t2) / t_diff
+
                     tmp[ind] *= Tmp
                     tmp[ff<o] = 0.0
                     
@@ -46,9 +47,11 @@ def r43_seq(Arg):
                 if any(ind):
                     t1 = a[ind]
                     t2 = o[ind]
-                    # TODO: check discrete cases
-                    Tmp = (t1-ff) / (t1-t2)
-                    Tmp[t1==t2] = 0.0 # for discrete cases
+                    t_diff = t1-t2
+                    t_diff[t_diff<1e-200] = 1e-200
+                    
+                    Tmp = (t1-ff) / t_diff
+
                     tmp[ind] *= Tmp
                     tmp[a<ff] = 0.0
             else: # finite val
@@ -65,8 +68,12 @@ def r43_seq(Arg):
                 _uf[_uf>ff] = ff
                 
                 r20 = a[ind] - o[ind]
+                r20[r20<1e-200] = 1e-200
+                _diff = _uf - _lf
+                _diff[_diff<1e-200] = 1e-200
+                
                 Tmp = 1.0 - (_uf - _lf) / r20
-                Tmp[r20==0] = 0.0 # for discrete cases
+                
                 tmp[ind] *= Tmp
                 #raise('unimplemented yet')    
 #            if any(tmp<0) or any(tmp>1):
@@ -159,33 +166,28 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nN
     
     #y, e = func4(y, e, o, a, fo)
     
-    newNLH = False
     
     assert p.solver.dataHandling == 'raw', '"sorted" mode is unimplemented for MOP yet'
     
     if nlhf is None:
-        tnlh_curr = nlhc
+        new_nodes_tnlh_all = nlhc
     elif nlhc is None: 
-        tnlh_curr = nlhf
+        new_nodes_tnlh_all = nlhf
     else:
-        tnlh_curr = nlhf + nlhc
+        new_nodes_tnlh_all = nlhf + nlhc
 
     asdf1 = [t.func for t in p.targets]
-    r5F, r5Coords = getr4Values(vv, y, e, tnlh_curr, asdf1, C, p.contol, dataType, p) 
+    r5F, r5Coords = getr4Values(vv, y, e, new_nodes_tnlh_all, asdf1, C, p.contol, dataType, p) 
     
     nIncome, nOutcome = r44(Solutions, r5Coords, r5F, targets, p.solver.sigma)
     fo = 0 # unused for MOP
     
     # TODO: better of nlhc for unconstrained probs
-    
-    
-    
+
     if len(_in) != 0:
         an = hstack((nodes,  _in))
     else:
         an = atleast_1d(nodes)
-    
-#    if nIncome != 0 or not hasattr(an[0], 'tnlh_all'):
 
     hasNewParetoNodes = False if nIncome == 0 else True
     if hasNewParetoNodes:
@@ -195,7 +197,7 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nN
         nlhf2 = r43(targets, Solutions.F, ol2, al2, p.pool, p.nProc)
         tnlh_all = asarray(nlhc2) if nlhf2 is None else nlhf2 if nlhc2[0] is None else asarray(nlhc2) + nlhf2
     else:
-        tnlh_all = vstack([tnlh_curr] + [node.tnlh_all for node in _in]) if len(_in) != 0 else tnlh_curr
+        tnlh_all = vstack([new_nodes_tnlh_all] + [node.tnlh_all for node in _in]) if len(_in) != 0 else new_nodes_tnlh_all
         
     for i, node in enumerate(nodes):
         node.tnlh_all = tnlh_all[i]
@@ -272,7 +274,7 @@ def r44(Solutions, r5Coords, r5F, targets, sigma):
     #sf = asarray(Solutions.F)
     nIncome, nOutcome = 0, 0
     m= len(r5Coords)
-    n = len(r5Coords[0])
+    #n = len(r5Coords[0])
     # TODO: mb use inplace r5Coords / r5F modification instead?
     for j in range(m):
         if isnan(r5F[0][0]):
