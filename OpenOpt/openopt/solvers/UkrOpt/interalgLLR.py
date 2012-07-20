@@ -1,6 +1,6 @@
 from numpy import tile, isnan, array, atleast_1d, asarray, logical_and, all, logical_or, any, nan, isinf, \
-arange, vstack, inf, where, logical_not, take, argmax, argmin, abs, hstack, empty, insert, isfinite, append, atleast_2d, \
-prod, sqrt, int16, int32, int64, log2, log, searchsorted, cumprod
+arange, vstack, inf, where, logical_not, take, abs, hstack, empty, \
+prod, int16, int32, int64, log2, searchsorted, cumprod
 from FuncDesigner import oopoint
 from interalgT import *
 
@@ -220,9 +220,6 @@ def func3(an, maxActiveNodes):
     else:
         an1, _in = an, array([], object)
         
-    # Changes!
-    l0 = len(an1)
-
     if getattr(an1[0], 'tnlh_curr_best', None) is not None:
         #t0 = an1[0].tnlh_curr_best
         tnlh_curr_best_values = asarray([node.tnlh_curr_best for node in an1])
@@ -251,7 +248,6 @@ def func3(an, maxActiveNodes):
         an1 = tmp1
         _in = hstack((tmp2, _in))
         
-    l1 = len(an1)
     # changes end
     #print maxActiveNodes, len(an1), len(_in)
     
@@ -408,7 +404,6 @@ def func2(y, e, t, vv, tnlhf_curr):
         indBool = where(BoolVars)[0]
         if len(indBool) != n:
             #boolCoords = list(set(indBool) & set(t))
-            S = set(indBool)
             boolCoords = where([t[j] in indBool for j in range(m)])[0]
             new_y[w, t] = th
             new_e[w, t] = th
@@ -741,7 +736,7 @@ def func11(y, e, nlhc, indTC, residual, o, a, _s, p):
     else:
         
         residual = None
-        nlhf = log2(asarray(a)-asarray(o))#-log2(p.fTol)
+        nlhf = log2(asarray(a)-asarray(o)+1e-300)#-log2(p.fTol)
 #        nlhf[a==inf] = 1e300# to make it not inf and nan
 #        nlhf[o==-inf] = 1e300# to make it not inf and nan
         if nlhf.ndim == 3: # in MOP

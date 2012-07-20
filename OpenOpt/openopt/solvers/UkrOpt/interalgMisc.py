@@ -68,7 +68,7 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
         
         tmp[tmp>fo_prev] = fo_prev
 
-        tnlh_curr = tnlh_fixed_local - log2(tmp - o)
+        tnlh_curr = tnlh_fixed_local - log2(tmp - o+1e-300)
         tnlh_curr_best = nanmin(tnlh_curr, 1)
         for i, node in enumerate(nodes):
             node.tnlh_curr = tnlh_curr[i]
@@ -142,6 +142,15 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
         if not isSNLE or p.maxSolutions == 1:
             astnlh = argsort(NN)
             an = an[astnlh]
+        
+        # Changes
+#        if NN.size != 0:
+#            ind = searchsorted(NN, an[0].tnlh_curr_best+1)
+#            tmp1, tmp2 = an[:ind], an[ind:]
+#            arr = [node.key for node in tmp1]
+#            Ind = argsort(arr)
+#            an = hstack((tmp1[Ind], tmp2))
+        #print [node.tnlh_curr_best for node in an[:10]]
     
     else: #if p.solver.dataHandling == 'sorted':
         if isSNLE and p.maxSolutions != 1: 
@@ -161,7 +170,6 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
 #                    #print arr[0]
 #                    assert all(arr[1:]>= arr[:-1])
 
-        
     if maxSolutions != 1:
         Solutions = r46(o, a, PointCoords, PointVals, fTol, varTols, Solutions)
         
@@ -200,7 +208,7 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
 
 def r46(o, a, PointCoords, PointVals, fTol, varTols, Solutions):
     solutions, coords = Solutions.solutions, Solutions.coords
-    n = o.shape[1] / 2
+    #n = o.shape[1] / 2
     
     #L1, L2 = o[:, :n], o[:, n:]
     #omin = where(logical_or(L1 > L2, isnan(L1)), L2, L1)
