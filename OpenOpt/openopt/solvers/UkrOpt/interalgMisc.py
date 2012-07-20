@@ -1,12 +1,12 @@
-from numpy import tile, isnan, array, atleast_1d, asarray, logical_and, all, searchsorted, logical_or, any, nan, isinf, \
-arange, vstack, inf, where, logical_not, take, argmax, argmin, min, abs, hstack, empty, insert, isfinite, append, atleast_2d, \
-prod, logical_xor, argsort, asfarray
+from numpy import isnan, array, atleast_1d, asarray, all, searchsorted, logical_or, any, nan, \
+vstack, inf, where, logical_not, min, abs, hstack, insert, append, \
+logical_xor, argsort
 from interalgLLR import *
 
 try:
-    from bottleneck import nanargmin, nanmin, nanargmax, nanmax
+    from bottleneck import nanmin, nanmax
 except ImportError:
-    from numpy import nanmin, nanargmin, nanargmax, nanmax
+    from numpy import nanmin, nanmax
 
        
 #    o = hstack([r[v][0].lb for v in vv] + [r[v][1].lb for v in vv])
@@ -65,10 +65,13 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
         tnlh_fixed_local = vstack([node.tnlhf for node in nodes])#tnlh_fixed[:len(nodes)]
 
         tmp = a.copy()
+
         
         tmp[tmp>fo_prev] = fo_prev
-
-        tnlh_curr = tnlh_fixed_local - log2(tmp - o+1e-300)
+        tmp2 = tmp - o
+        tmp2[tmp2<1e-300] = 1e-300
+        tmp2[o > fo_prev] = nan
+        tnlh_curr = tnlh_fixed_local - log2(tmp2)
         tnlh_curr_best = nanmin(tnlh_curr, 1)
         for i, node in enumerate(nodes):
             node.tnlh_curr = tnlh_curr[i]
