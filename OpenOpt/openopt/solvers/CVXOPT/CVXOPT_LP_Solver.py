@@ -1,10 +1,10 @@
-from numpy import asarray,  ones, all, isfinite, copy, nan, concatenate, array, dot
-from openopt.kernel.ooMisc import WholeRepr2LinConst, xBounds2Matrix
+from numpy import asarray,  ones, nan, concatenate, array
+from openopt.kernel.ooMisc import xBounds2Matrix
 from cvxopt_misc import *
 import cvxopt.solvers as cvxopt_solvers
 from cvxopt.base import matrix
 from openopt.kernel.setDefaultIterFuncs import SOLVED_WITH_UNIMPLEMENTED_OR_UNKNOWN_REASON,  IS_MAX_ITER_REACHED, IS_MAX_TIME_REACHED, FAILED_WITH_UNIMPLEMENTED_OR_UNKNOWN_REASON, UNDEFINED
-import os
+#import os
 
 def CVXOPT_LP_Solver(p, solverName):
     #os.close(1); os.close(2)
@@ -18,8 +18,6 @@ def CVXOPT_LP_Solver(p, solverName):
         cvxopt_solvers.options['MSK_IPAR_LOG'] = 0
     xBounds2Matrix(p)
     #WholeRepr2LinConst(p)
-
-    f = copy(p.f).reshape(-1,1)
 
     # CVXOPT have some problems with x0 so currently I decided to avoid using the one
     #if  p.x0.size>0 and p.x0.flatten()[0] != None and all(isfinite(p.x0)):

@@ -1,5 +1,5 @@
 from openopt.kernel.baseSolver import baseSolver
-from CVXOPT_LP_Solver import CVXOPT_LP_Solver
+from openopt import OpenOptException
 
 class glpk(baseSolver):
     __name__ = 'glpk'
@@ -10,7 +10,12 @@ class glpk(baseSolver):
     __optionalDataThatCanBeHandled__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'intVars', 'binVars']
     _canHandleScipySparse = True
     
-    def __init__(self): pass
+    def __init__(self): 
+        try:
+            import cvxopt
+        except ImportError:
+            raise OpenOptException('for solver glpk cvxopt is required, but it was not found')
 
     def __solver__(self, p):
+        from CVXOPT_LP_Solver import CVXOPT_LP_Solver
         return CVXOPT_LP_Solver(p, 'glpk')
