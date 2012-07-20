@@ -1,6 +1,5 @@
 from interalgLLR import *
-from interalgT import r42
-from numpy import inf, prod, searchsorted, all, sum
+from numpy import inf, prod, all, sum
 
 
 def r14IP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, CBKPMV, itn, g, nNodes,  \
@@ -25,7 +24,6 @@ def r14IP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, CBKPMV, itn, g, 
         for definite (real) range only, no NaN values in integrand are allowed''')
 
     o, a = o.reshape(2*n, m).T, a.reshape(2*n, m).T
-    r42(o, a)
 
     if itn == 0: 
         # TODO: fix it
@@ -80,7 +78,7 @@ def r14IP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, CBKPMV, itn, g, 
         p._residual += residuals.sum()
         p._volume += v.sum()
 #        print '1: %e' %  v.sum()
-        volume_0 = p._volume
+        #volume_0 = p._volume
         #print 'iter:', p.iter, 'nNodes:', len(an), 'F:', p._F, 'div:', ao_diff / (required_sigma / prod(p.ub-p.lb))
         an = asarray(an, object)
         an = an[where(logical_not(r10))[0]]

@@ -1,43 +1,15 @@
 from numpy import isnan, take, any, all, logical_or, logical_and, logical_not, atleast_1d, where, \
-asarray, inf, nan, argmin, argsort, tile, searchsorted, isfinite
+asarray, argmin, argsort, isfinite
 from bisect import bisect_right
 from FuncDesigner.Interval import adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain
 try:
-    from bottleneck import nanargmin, nanmin, nanargmax, nanmax
+    from bottleneck import nanmin
 except ImportError:
-    from numpy import nanmin, nanargmin, nanargmax, nanmax
-
-def r42(o, a):
-#    n_where_lx_2 = where(y <=-0.5)[0].size
-#    n_where_ux_2 = where(e >=-0.5)[0].size
-#    nn = n_where_lx_2 + n_where_ux_2
-    m, N = o.shape
-    n = N / 2
-    o_l, o_u = o[:, :n], o[:, n:]
-    a_l, a_u = a[:, :n], a[:, n:]
-    o_m = where(logical_or(o_l < o_u, isnan(o_u)), o_l, o_u)
-    a_m = where(logical_or(a_l < a_u, isnan(a_l)), a_u, a_l)
-    o_M = nanmax(o_m, 1)
-    a_M = nanmin(a_m, 1)
-    # TODO: make it matrix-vector componentwise
-    o_M = tile(o_M.reshape(m, 1), (1, 2*n))
-    ind = o < o_M
-    if any(ind):
-        o[ind] = o_M[ind]
-    a_M = tile(a_M.reshape(m, 1), (1, 2*n))        
-    ind = a > a_M
-    if any(ind):
-        a[ind] = a_M[ind]
-
-#    n_where_lx_2 = where(y <=-0.5)[0].size
-#    n_where_ux_2 = where(e >=-0.5)[0].size
-#    nn2 = n_where_lx_2 + n_where_ux_2
-#    print nn, nn2
-#    assert nn == nn2
+    from numpy import nanmin
 
 
 def adjustDiscreteVarBounds(y, e, p):
-    n = p.n
+    #n = p.n
     # TODO: remove the cycle, use vectorization
     for i in p._discreteVarsNumList:
         v = p._freeVarsList[i]
@@ -145,7 +117,8 @@ def func5(an, nn, g, p):
     return an, g
 
 def func4(p, y, e, o, a, fo, tnlhf_curr = None):
-    if fo is None and tnlhf_curr is None: return # used in IP
+    if fo is None and tnlhf_curr is None: return False# used in IP
+    if y.size == 0: return False
     cs = (y + e)/2
     n = y.shape[1]
     

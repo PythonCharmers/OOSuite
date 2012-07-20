@@ -1,15 +1,14 @@
 from numpy import empty, where, logical_and, logical_not, take, logical_or, isnan, zeros, log2, isfinite, \
-int8, int16, int32, int64, inf, isinf, asfarray, hstack, vstack, prod, all, any, asarray, tile, zeros_like
+int8, int16, int32, int64, isinf, asfarray, vstack, any, asarray, tile
 from interalgLLR import func8, func10
 from interalgT import adjustDiscreteVarBounds
 from FuncDesigner import oopoint
 from FuncDesigner.ooFun import getSmoothNLH
-from FuncDesigner.Interval import adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain
 
 try:
-    from bottleneck import nanargmin, nanmin, nanargmax, nanmax
+    from bottleneck import nanmin, nanmax
 except ImportError:
-    from numpy import nanmin, nanargmin, nanargmax, nanmax
+    from numpy import nanmin, nanmax
     
 def processConstraints(C0, y, e, p, dataType):
     n = p.n
@@ -21,7 +20,7 @@ def processConstraints(C0, y, e, p, dataType):
     
     if len(p._discreteVarsNumList):
         adjustDiscreteVarBounds(y, e, p)
-        
+
     for f, r16, r17, tol in C0:
         if p.solver.dataHandling == 'sorted': tol = 0
         
@@ -31,9 +30,6 @@ def processConstraints(C0, y, e, p, dataType):
             
         DefiniteRange = logical_and(DefiniteRange, definiteRange)
         o, a  = o.reshape(2*n, m).T, a.reshape(2*n, m).T
-        
-        if not f.isUncycled:
-            r42(o, a)
         
         lf1, lf2, uf1, uf2 = o[:, 0:n], o[:, n:2*n], a[:, 0:n], a[:, n:2*n]
         o_ = where(logical_or(lf1>lf2, isnan(lf1)), lf2, lf1)
@@ -136,7 +132,10 @@ def processConstraints2(C0, y, e, p, dataType):
     indT.fill(False)
     if len(p._discreteVarsNumList):
         adjustDiscreteVarBounds(y, e, p)
-    
+#    print '-'*10
+#    print 'p.iter:', p.iter
+#    print 'y:', y
+#    print 'e:', e
     for c, f, lb, ub, tol in C0:
         m = y.shape[0] # is changed in the cycle
         if m == 0: 
@@ -146,26 +145,23 @@ def processConstraints2(C0, y, e, p, dataType):
         if p.solver.dataHandling == 'sorted': tol = 0
 
         New = 1
-        
+
         if New:
 #            for v in p._discreteVarsList:
 #                adjust_ux_WithDiscreteDomain(e, v)
 #                adjust_lx_WithDiscreteDomain(y, v)
             T0, res, DefiniteRange2 = c.nlh(y, e, p, dataType)
             DefiniteRange = logical_and(DefiniteRange, DefiniteRange2)
-            # TODO: rework it
-            #T0 = -log2(T0)
-            assert T0.ndim <= 1
-            #T02 = hstack((T0, T0))
+            
+            assert T0.ndim <= 1, 'unimplemented yet'
             nlh_0 += T0
             
             # TODO: rework it for case len(p._freeVarsList) >> 1
             for j, v in enumerate(p._freeVarsList):
                 tmp = res.get(v, None)
                 if tmp is None:
-                    pass
+                    continue
                 else:
-                    #tmp = -log2(tmp)
                     nlh[:, n+j] += tmp[:, tmp.shape[1]/2:].flatten() - T0
                     nlh[:, j] += tmp[:, :tmp.shape[1]/2].flatten() - T0
         else:
@@ -196,8 +192,9 @@ def processConstraints2(C0, y, e, p, dataType):
                     
                     tmp = -log2(getSmoothNLH(o, a, lb, ub, tol, m, dataType))
 
-                    nlh[:, n+j] += tmp[:, tmp.shape[1]/2:].flatten() - T0
                     nlh[:, j] += tmp[:, :tmp.shape[1]/2].flatten() - T0
+                    nlh[:, n+j] += tmp[:, tmp.shape[1]/2:].flatten() - T0
+                    
                     
     #                if isFiniteT0:
     #                    nlh[:, n+j] -= T0
@@ -256,9 +253,6 @@ def processConstraints2(C0, y, e, p, dataType):
         # !! matrix - vector
         nlh += nlh_0.reshape(-1, 1)
         
-#    print nlh
-#    from numpy import diff
-#    print diff(nlh)
     residual = None
     return y, e, nlh, residual, DefiniteRange, indT
 
