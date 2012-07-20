@@ -299,7 +299,8 @@ def updateNodes(nodesToUpdate, fo):
 
     o_tmp = array([node.o for node in nodesToUpdate])
     Tmp -= o_tmp
-    
+    Tmp[Tmp<1e-300] = 1e-300
+    Tmp[o_tmp>fo] = nan
     tnlh_all_new =  - log2(Tmp)
     
     del Tmp, a_tmp

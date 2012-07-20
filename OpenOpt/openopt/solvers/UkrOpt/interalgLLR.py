@@ -736,7 +736,9 @@ def func11(y, e, nlhc, indTC, residual, o, a, _s, p):
     else:
         
         residual = None
-        nlhf = log2(asarray(a)-asarray(o)+1e-300)#-log2(p.fTol)
+        tmp = asarray(a)-asarray(o)
+        tmp[tmp<1e-300] = 1e-300
+        nlhf = log2(tmp)#-log2(p.fTol)
 #        nlhf[a==inf] = 1e300# to make it not inf and nan
 #        nlhf[o==-inf] = 1e300# to make it not inf and nan
         if nlhf.ndim == 3: # in MOP
