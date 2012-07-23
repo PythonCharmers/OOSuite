@@ -7,8 +7,9 @@ from check import check
 from oologfcn import OpenOptException
 from openopt import __version__ as version
 
+
 ######################
-# don't cjhange to mere ooMisc! 
+# don't change to mere ooMisc! 
 from openopt.kernel.ooMisc import isSolved 
 ######################
 
@@ -67,6 +68,10 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
         elif type(solver_str_or_instance) is str:
             p.solver = getSolverFromStringName(p, solver_str_or_instance)
         else: # solver_str_or_instance is oosolver
+            if not solver_str_or_instance.isInstalled:
+                p.err('''
+                solver %s seems to be uninstalled yet, 
+                check http://openopt.org/%s for install instructions''' % (solver_str_or_instance.__name__, p.probType))
             p.solver = solver_str_or_instance
             for key, value  in solver_str_or_instance.fieldsForProbInstance.items():
                 setattr(p, key, value)
@@ -132,10 +137,15 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     if not type(p.callback) in (list,  tuple): p.callback = [p.callback]
     if hasattr(p, 'xlabel'): p.graphics.xlabel = p.xlabel
     if p.graphics.xlabel == 'nf': p.iterValues.nf = [] # iter ObjFunc evaluation number
-
-    p._Prepare()
     
-   
+    T = time()
+    C = clock()
+    p._Prepare()
+    T = time() - T
+    C = clock() - C
+    if T > 1 or C > 1:
+        p.disp('Initialization: Time = %0.1f CPUTime = %0.1f' % (T, C))
+        
     for fn in ['FunEvals', 'Iter', 'Time', 'CPUTime']:
         if hasattr(p,'min'+fn) and hasattr(p,'max'+fn) and getattr(p,'max'+fn) < getattr(p,'min'+fn):
             p.warn('min' + fn + ' (' + str(getattr(p,'min'+fn)) +') exceeds ' + 'max' + fn + '(' + str(getattr(p,'max'+fn)) +'), setting latter to former')
