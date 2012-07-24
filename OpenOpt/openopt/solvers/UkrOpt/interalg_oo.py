@@ -1,13 +1,11 @@
-import numpy
-from numpy import isfinite, all, argmax, where, delete, array, asarray, inf, argmin, hstack, vstack, arange, amin, \
-logical_and, float64, ceil, amax, inf, ndarray, isinf, any, logical_or, nan, logical_not, asanyarray, searchsorted, \
-logical_xor, empty
-from numpy.linalg import norm, solve, LinAlgError
+import numpy as np
+
+#from numpy.linalg import norm, solve#, LinAlgError
 from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X,  SMALL_DELTA_F, MAX_NON_SUCCESS, IS_NAN_IN_X
 from openopt.kernel.baseSolver import *
-from openopt.kernel.Point import Point
+
 from openopt.solvers.UkrOpt.interalgMisc import *
-from FuncDesigner import sum as fd_sum, abs as fd_abs, max as fd_max, oopoint
+from FuncDesigner import sum as fd_sum, abs as fd_abs, oopoint
 from ii_engine import *
 from interalgCons import processConstraints, processConstraints2
 from interalgODE import interalg_ODE_routine
@@ -16,10 +14,10 @@ from interalgLLR import adjustr4WithDiscreteVariables
 
 bottleneck_is_present = False
 try:
-    from bottleneck import nanargmin, nanargmax, nanmin
+    from bottleneck import nanmin
     bottleneck_is_present = True
 except ImportError:
-    from numpy import nanmin, nanargmin, nanargmax
+    from numpy import nanmin
 
 
 
@@ -31,7 +29,7 @@ class interalg(baseSolver):
     __optionalDataThatCanBeHandled__ = ['lb', 'ub', 'c', 'h', 'A', 'Aeq', 'b', 'beq', 'discreteVars']
     iterfcnConnected = True
     fStart = None
-    dataType = float64
+    dataType = np.float64
     #maxMem = '150MB'
     maxNodes = 150000
     maxActiveNodes = 150
@@ -50,7 +48,7 @@ class interalg(baseSolver):
     def __solver__(self, p):
         
         isMOP = p.probType == 'MOP'
-        isOpt = p.probType in ['NLP', 'NSP', 'GLP', 'MINLP']
+        #isOpt = p.probType in ['NLP', 'NSP', 'GLP', 'MINLP']
         isODE = p.probType == 'ODE'
         isSNLE = p.probType in ('NLSP', 'SNLE')
         if self.intervalObtaining == 'auto':
@@ -85,7 +83,7 @@ class interalg(baseSolver):
 
         
         for val in p._x0.values():
-            if isinstance(val,  (list, tuple, ndarray)) and len(val) > 1:
+            if isinstance(val,  (list, tuple, np.ndarray)) and len(val) > 1:
                 p.pWarn('''
                 solver %s currently can handle only single-element variables, 
                 use oovars(n) instead of oovar(size=n),
@@ -96,7 +94,7 @@ class interalg(baseSolver):
         x0 = dict([(v, p._x0[v]) for v in vv])
         
         for val in x0.values():
-            if isinstance(val,  (list, tuple, ndarray)) and len(val) > 1:
+            if isinstance(val,  (list, tuple, np.ndarray)) and len(val) > 1:
                 p.err('''
                 solver %s currently can handle only single-element variables, 
                 use oovars(n) instead of oovar(size=n)'''% self.__name__)
@@ -118,7 +116,7 @@ class interalg(baseSolver):
         
         maxSolutions = p.maxSolutions
         if maxSolutions == 0: maxSolutions = 10**50
-        if maxSolutions != 1 and p.fEnough != -inf:
+        if maxSolutions != 1 and p.fEnough != -np.inf:
             p.warn('''
             using the solver interalg with non-single solutions mode 
             is not ajusted with fEnough stop criterium yet, it will be omitted
@@ -133,7 +131,7 @@ class interalg(baseSolver):
         Solutions = Solution()
         Solutions.maxNum = maxSolutions
         Solutions.solutions = []
-        Solutions.coords = array([]).reshape(0, n)
+        Solutions.coords = np.array([]).reshape(0, n)
         p.solutions = Solutions
         
         dataType = self.dataType
@@ -141,7 +139,7 @@ class interalg(baseSolver):
             if not hasattr(numpy, dataType):
                 p.pWarn('your architecture has no type "%s", float64 will be used instead')
                 dataType = 'float64'
-            dataType = getattr(numpy, dataType)
+            dataType = getattr(np, dataType)
 
         lb, ub = asarray(p.lb, dataType).copy(), asarray(p.ub, dataType).copy()
 
@@ -163,11 +161,11 @@ class interalg(baseSolver):
         xRecord = 0.5 * (lb + ub)
         adjustr4WithDiscreteVariables(xRecord.reshape(1, -1), p)
 
-        r40 = inf
+        r40 = np.inf
         
         y = lb.reshape(1, -1)
         e = ub.reshape(1, -1)
-        r41 = inf
+        r41 = np.inf
 
         # TODO: maybe rework it, especially for constrained case
         fStart = self.fStart
@@ -191,11 +189,11 @@ class interalg(baseSolver):
         elif not isODE:
             asdf1 = p.user.f[0]
             
-            if p.fOpt is not None:  fOpt = p.fOpt
+            #if p.fOpt is not None:  fOpt = p.fOpt
             if p.goal in ('max', 'maximum'):
                 asdf1 = -asdf1
                 if p.fOpt is not None:
-                    fOpt = -p.fOpt
+                    p.fOpt = -p.fOpt
             
             if fStart is not None and fStart < r40: 
                 r41 = fStart
@@ -233,14 +231,14 @@ class interalg(baseSolver):
                 self.dataHandling = 'raw'
             else:
                 r = p.user.f[0].interval(domain, self.dataType)
-                M = max((max(atleast_1d(abs(r.lb))), max(atleast_1d(abs(r.ub)))))
+                M = np.max((np.max(np.atleast_1d(np.abs(r.lb))), np.max(np.atleast_1d(np.abs(r.ub)))))
                 for (c, func, lb, ub, tol) in p._FD.nonBoxCons:#[Elem[1] for Elem in p._FD.nonBoxCons]:
                     
                     if isinstance(c, BooleanOOFun) and not isinstance(c, SmoothFDConstraint): continue
                     
                     r = func.interval(domain, self.dataType)
-                    M = max((M, max(atleast_1d(abs(r.lb)))))
-                    M = max((M, max(atleast_1d(abs(r.ub)))))
+                    M = np.max((M, np.max(np.atleast_1d(np.abs(r.lb)))))
+                    M = np.max((M, np.max(np.atleast_1d(np.abs(r.ub)))))
                 self.dataHandling = 'raw' if M < 1e5 else 'sorted'
                 #print M
                     
@@ -249,7 +247,7 @@ class interalg(baseSolver):
         # TODO: is it required yet?
         if not isMOP and not p.hasLogicalConstraints:
             p._isOnlyBoxBounded = p.__isNoMoreThanBoxBounded__() 
-            if isODE or (asdf1.isUncycled and p._isOnlyBoxBounded and all(isfinite(p.user.f[0].interval(domain).lb))):
+            if isODE or (asdf1.isUncycled and p._isOnlyBoxBounded and np.all(np.isfinite(p.user.f[0].interval(domain).lb))):
                 #maxNodes = 1
                 self.dataHandling = 'sorted'
                 
@@ -262,9 +260,9 @@ class interalg(baseSolver):
 #            p.warn('maxActiveNodes should be at least 2 while you have provided %d. Setting it to 2.' % self.maxActiveNodes)
         self.maxNodes = int(self.maxNodes)
 
-        _in = array([], object)
+        _in = np.array([], object)
         
-        g = inf
+        g = np.inf
         C = p._FD.nonBoxConsWithTolShift
         C0 = p._FD.nonBoxCons
 #        if isOpt:
@@ -305,7 +303,7 @@ class interalg(baseSolver):
         pnc = 0
         an = []
         maxNodes = self.maxNodes
-        _s = nan
+        _s = np.nan
         
         if isODE or (isIP and p.n == 1):
             interalg_ODE_routine(p, self)
@@ -328,11 +326,11 @@ class interalg(baseSolver):
             else:
                 an = _in
                 fo = 0.0 if isSNLE or isMOP else min((r41, r40 - (fTol if Solutions.maxNum == 1 else 0.0))) 
-            pnc = max((len(atleast_1d(an)), pnc))
+            pnc = max((len(np.atleast_1d(an)), pnc))
             
             if isIP:
                 y, e, _in, _s = \
-                    func12(an, self.maxActiveNodes, p, Solutions, vv, varTols, inf)
+                    func12(an, self.maxActiveNodes, p, Solutions, vv, varTols, np.inf)
             else:
                 y, e, _in, _s = \
                 func12(an, self.maxActiveNodes, p, Solutions, vv, varTols, fo)
@@ -356,7 +354,7 @@ class interalg(baseSolver):
 #        ff = p._bestPoint.f()
 #        p.xk = p._bestPoint.x
         if isIP: 
-            p.xk = array([nan]*p.n)
+            p.xk = np.array([np.nan]*p.n)
             p.rk = p._residual
             p.fk = p._F
         
@@ -380,7 +378,7 @@ class interalg(baseSolver):
             
         # TODO: simplify it
         if not isMOP:
-            tmp = [nanmin(hstack((ff, g, o.flatten()))), numpy.asscalar(array((ff)))]
+            tmp = [nanmin(np.hstack((ff, g, o.flatten()))), np.asscalar(np.array(ff))]
             if p.goal in ['max', 'maximum']: tmp = (-tmp[1], -tmp[0])
             p.extras['extremumBounds'] = tmp if not isIP else 'unimplemented for IP yet'
         
@@ -393,7 +391,7 @@ class interalg(baseSolver):
                 for j, goal in enumerate(p.user.f):
                     s[goal] = Solutions.F[i][j]
                 s.useAsMutable = False
-            p.solutions.values = asarray(Solutions.F)
+            p.solutions.values = np.asarray(Solutions.F)
             p.solutions.coords = Solutions.coords
         if not isMOP and p.maxSolutions == 1: delattr(p, 'solutions')
         if isSNLE and p.maxSolutions != 1:
@@ -408,7 +406,7 @@ class interalg(baseSolver):
             s = 'Solution with required tolerance %0.1e \n is%s guarantied' \
             %(fTol, '' if p.extras['isRequiredPrecisionReached'] else ' NOT')
             if not isIP and p.maxSolutions == 1:
-                s += ' (obtained precision: %0.1e)' % abs(tmp[1]-tmp[0])
+                s += ' (obtained precision: %0.1e)' % np.abs(tmp[1]-tmp[0])
             if not p.extras['isRequiredPrecisionReached'] and pnc == self.maxNodes: s += '\nincrease maxNodes (current value %d)' % self.maxNodes
             p.info(s)
 

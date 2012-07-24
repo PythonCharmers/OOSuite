@@ -142,80 +142,21 @@ def processConstraints2(C0, y, e, p, dataType):
             return y.reshape(0, n), e.reshape(0, n), nlh.reshape(0, 2*n), None, True, False
             #return y.reshape(0, n), e.reshape(0, n), nlh.reshape(0, 2*n), residual.reshape(0, 2*n), True, False
         
-        if p.solver.dataHandling == 'sorted': tol = 0
-
-        New = 1
-
-        if New:
-#            for v in p._discreteVarsList:
-#                adjust_ux_WithDiscreteDomain(e, v)
-#                adjust_lx_WithDiscreteDomain(y, v)
-            T0, res, DefiniteRange2 = c.nlh(y, e, p, dataType)
-            DefiniteRange = logical_and(DefiniteRange, DefiniteRange2)
-            
-            assert T0.ndim <= 1, 'unimplemented yet'
-            nlh_0 += T0
-            
-            # TODO: rework it for case len(p._freeVarsList) >> 1
-            for j, v in enumerate(p._freeVarsList):
-                tmp = res.get(v, None)
-                if tmp is None:
-                    continue
-                else:
-                    nlh[:, n+j] += tmp[:, tmp.shape[1]/2:].flatten() - T0
-                    nlh[:, j] += tmp[:, :tmp.shape[1]/2].flatten() - T0
-        else:
-            domain = oopoint([(v, (y[:, k], e[:, k])) for k, v in enumerate(p._freeVarsList)], skipArrayCast=True)
-            domain.isMultiPoint = True
-            domain.dictOfFixedFuncs = p.dictOfFixedFuncs
-            
-            r, r0 = f.iqg(domain, dataType)
-            dep = f._getDep().intersection(domain.keys()) # TODO: Improve it
-            
-            o, a = r0.lb, r0.ub
-            
-            # using tile to make shape like it was divided into 2 boxes
-            # todo: optimize it
-            tmp = getSmoothNLH(tile(o, (2, 1)), tile(a, (2, 1)), lb, ub, tol, m, dataType)
-            #T02 = tmp
-            #tmp, res0 = getNLH(tile(o, (2, 1)), tile(a, (2, 1)), lb, ub, tol, m, zeros((m, 2)), dataType)
-            T0 = -log2(tmp[:, tmp.shape[1]/2:].flatten())
-            #isFiniteT0 = all(isfinite(T0))        
-            for j, v in enumerate(p._freeVarsList):
-                if v in dep:
-                    o, a = vstack((r[v][0].lb, r[v][1].lb)), vstack((r[v][0].ub, r[v][1].ub))
-                    
-                    # TODO: 1) FIX IT it for matrix definiteRange
-                    # 2) seems like DefiniteRange = (True, True) for any variable is enough for whole range to be defined in the involved node
-                    DefiniteRange = logical_and(DefiniteRange, r[v][0].definiteRange)
-                    DefiniteRange = logical_and(DefiniteRange, r[v][1].definiteRange)
-                    
-                    tmp = -log2(getSmoothNLH(o, a, lb, ub, tol, m, dataType))
-
-                    nlh[:, j] += tmp[:, :tmp.shape[1]/2].flatten() - T0
-                    nlh[:, n+j] += tmp[:, tmp.shape[1]/2:].flatten() - T0
-                    
-                    
-    #                if isFiniteT0:
-    #                    nlh[:, n+j] -= T0
-    #                    nlh[:, j] -= T0
-                        
-                    #nlh[:, n+j] += (tmp[:, tmp.shape[1]/2:]-T0).flatten()
-                    #nlh[:, j] += (tmp[:, :tmp.shape[1]/2]-T0).flatten()
-                    
-        #                residual[:, n+j] += res[:, 0]
-        #                residual[:, j] += res[:, 1]
-                else:#if not isFiniteT0:
-                    #pass
-                    # TODO: get rid of it
-                    nlh[:, j] += T0.flatten()
-                    nlh[:, n+j] += T0.flatten()
-        #                residual[:, n+j] += res0[:, 0]
-        #                residual[:, j] += res0[:, 0]
-    #            if isFiniteT0:
-    #                nlh[:, j] += T0.flatten()
-    #                nlh[:, n+j] += T0.flatten()
-
+        T0, res, DefiniteRange2 = c.nlh(y, e, p, dataType)
+        DefiniteRange = logical_and(DefiniteRange, DefiniteRange2)
+        
+        assert T0.ndim <= 1, 'unimplemented yet'
+        nlh_0 += T0
+        
+        # TODO: rework it for case len(p._freeVarsList) >> 1
+        for j, v in enumerate(p._freeVarsList):
+            tmp = res.get(v, None)
+            if tmp is None:
+                continue
+            else:
+                nlh[:, n+j] += tmp[:, tmp.shape[1]/2:].flatten() - T0
+                nlh[:, j] += tmp[:, :tmp.shape[1]/2].flatten() - T0
+        
         ind = where(logical_and(any(isfinite(nlh), 1), isfinite(nlh_0)))[0]
         lj = ind.size
         if lj != m:
@@ -248,10 +189,9 @@ def processConstraints2(C0, y, e, p, dataType):
             
             # copy() is used because += and -= operators are involved on nlh in this cycle and probably some other computations
             nlh_l[ind_u], nlh_u[ind_l] = nlh_u[ind_u].copy(), nlh_l[ind_l].copy()        
-        
-    if New:
-        # !! matrix - vector
-        nlh += nlh_0.reshape(-1, 1)
+
+    # !! matrix - vector
+    nlh += nlh_0.reshape(-1, 1)
         
     residual = None
     return y, e, nlh, residual, DefiniteRange, indT
