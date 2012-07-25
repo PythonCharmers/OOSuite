@@ -132,7 +132,7 @@ def solver_import(solverPath, solverName):
 def oosolver(solverName, *args,  **kwargs):
     if args != ():
         raise OpenOptException("Error: oosolver() doesn't consume any *args, use **kwargs only")
-    from baseSolver import baseSolver
+    from openopt.kernel.baseSolver import baseSolver
     if isinstance(solverName, baseSolver):
         return solverName
     try:

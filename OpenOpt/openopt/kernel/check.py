@@ -1,5 +1,5 @@
 __docformat__ = "restructuredtext en"
-from numpy import array, isfinite, any, asarray
+from numpy import isfinite, any, asarray
 def check(p):
     """
     this func is called from runProbSolver(), you don't need to call the one

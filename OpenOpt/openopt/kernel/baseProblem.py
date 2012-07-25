@@ -914,7 +914,8 @@ class NonLinProblem(baseProblem, nonLinFuncs, Args):
         for s in ('f', 'df', 'd2f', 'c', 'dc', 'd2c', 'h', 'dh', 'd2h'):
             derivativeOrder = len(s)-1
             self.nEvals[Copy(s)] = 0
-            if hasattr(self, s) and getattr(self, s) not in (None, (), []) :
+            Attr = getattr(self, s, None)
+            if Attr is not None and (not isinstance(Attr, (list, tuple)) or len(Attr) != 0) :
                 setattr(self.userProvided, s, True)
 
                 A = getattr(self,s)

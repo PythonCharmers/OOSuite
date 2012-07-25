@@ -49,7 +49,7 @@ class STAB(MatrixProblem):
             constraints =  [x[node2index[i]]+x[node2index[j]] <=1 for i, j in edges]
             P = openopt.MILP
             
-        p = P(objective, startPoint, constraints = constraints, fixedVars = fixedVars, goal = 'max', debug=1)
+        p = P(objective, startPoint, constraints = constraints, fixedVars = fixedVars, goal = 'max')
         
         for key, val in kw.items():
             setattr(p, key, val)
