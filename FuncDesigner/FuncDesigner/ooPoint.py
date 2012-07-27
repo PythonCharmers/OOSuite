@@ -33,6 +33,7 @@ class multiarray(ndarray):
     # TODO: rdiv, rpow
     __pow__ = lambda self, other: multiarray_op(self, other, operator.pow)
     __rpow__ = lambda self, other: multiarray_op(other, self, operator.rpow)
+    toarray = lambda self: self.view(ndarray)
 
 def multiarray_op(x, y, op):
     if isinstance(y, multiarray):
