@@ -1,6 +1,6 @@
 from Polytope import Polytope
 from FuncDesigner import ooarray, sqrt, angle, abs, sum
-from numpy import arange
+from numpy import arange, isscalar
 from misc import SpaceFuncsException
 
 pylabInstalled = False
@@ -37,7 +37,8 @@ class Polygon(Polytope):
                                              [(self.vertices[self.nVertices-2]-self.vertices[self.nVertices-1], self.vertices[0]-self.vertices[self.nVertices-1])]])
 
     def _area(self):
-        if self._spaceDimension() is not 2:
+        D = self._spaceDimension()
+        if isscalar(D) and D != 2:
             raise SpaceFuncsException('polygon area is not implemented for space dimension > 2 yet')
         x, y = self._coords(0), self._coords(1)
         x.append(x[0])

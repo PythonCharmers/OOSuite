@@ -1,7 +1,7 @@
 # created by Dmitrey
 from numpy import isscalar, all, ndarray, array, asscalar, asarray, pi, sin, cos
 import numpy as np
-from FuncDesigner.ooFun import oofun
+from FuncDesigner import oofun
 from FuncDesigner import  ooarray, dot, sum, sqrt, cross, norm
 from misc import SpaceFuncsException, pWarn, SF_error
 from baseGeometryObject import baseGeometryObject
@@ -42,14 +42,9 @@ class Point(ooarray, baseGeometryObject):
     else Point(ooarray.__call__(self, *args, **kw)) if self.size is not 1 or not isinstance(self.view(ndarray)[0], oofun)\
     else Point(asscalar(self)(*args, **kw))
        
-    _spaceDimension = lambda self: self.size if self.size is not 1 or not isinstance(self.view(ndarray)[0], oofun) else asscalar(self).size
-#    def _spaceDimension(self):
-#        r = self.size if self.size is not 1 or not isinstance(self.view(ndarray)[0], oofun) else self.view(ndarray)[0].size
-#        print '_spaceDimension:', r
-#        raise 0
-#        return r
+    _spaceDimension = lambda self: self.size if self.size is not 1 or not isinstance(self.view(ndarray).flatten()[0], oofun) else asscalar(self).size
     
-    __getitem__ = lambda self, ind: self.view(ndarray)[ind] if self.size is not 1 else asscalar(self)[ind]
+    __getitem__ = lambda self, ind: self.view(ndarray).flatten()[ind] if self.size is not 1 else asscalar(self)[ind]
 #    def __get__(self, ind):
 #        raise 0
     __getslice__ = lambda self, ind1, ind2: self.view(ndarray)[ind1:ind2] if self.size is not 1 else asscalar(self)[ind1:ind2]
@@ -279,7 +274,8 @@ class Circle(baseGeometryObject):
     def _area(self):
         return pi * self.radius ** 2
     
-    __contains__ = contains = lambda self, point, tol = 1e-6: _contains(self, point, tol)
+    contains = __contains__ = lambda self, point, tol = 1e-6: _contains(self, point, tol)
+
 
 class Sphere(baseGeometryObject):
     def __init__(self, center, radius, *args, **kw):
@@ -361,7 +357,6 @@ def _contains(obj, p, tol):
         if isinstance(p, ndarray) and str(p.dtype) != 'object':
             return -tol <= p.distance(obj.center) - obj.radius <= tol
         else:
-            return p.distance(obj.center) == obj.radius
-        
+            return (p.distance(obj.center) == obj.radius)(tol=tol)
         
         
