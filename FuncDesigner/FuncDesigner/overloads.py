@@ -486,6 +486,211 @@ def sign(inp):
 
 __all__ += ['ceil', 'floor', 'sign']
 
+
+def sum_engine(r0, *args):
+    if not hasStochastic:
+        return PythonSum(args) + r0
+    Args, Args_st = [], {}
+    for elem in args:
+        if isinstance(elem, distribution.stochasticDistribution):
+            stDep = frozenset(elem.stochDep.keys())
+            tmp = Args_st.get(stDep, None)
+            if tmp is None:
+                Args_st[stDep] = [elem]
+            else:
+                Args_st[stDep].append(elem)
+        else:
+            Args.append(elem)
+    r = PythonSum(Args) + r0
+    if len(Args_st) == 0:
+        return r
+    
+    # temporary
+    for key, val in Args_st.items():
+        maxDistributionSize = val[0].maxDistributionSize
+        break
+    stValues = Args_st.values()
+#            stValues = Args_st.values()
+#            T = list(set(stValues))[0]
+#            maxDistributionSize = next(iter(T)).maxDistributionSize
+    r1 = 0.0
+    for elem in stValues:
+        tmp = PythonSum(elem)
+        r1 = tmp + r1 
+        r1.reduce(maxDistributionSize)
+    r1 = r1 + r
+    r1.maxDistributionSize = maxDistributionSize
+    return r1 
+
+def sum_interval(R0, r, INP, domain, dtype):
+   
+    v = domain.modificationVar
+    if v is not None:
+        # self already must be in domain.storedSums
+        R, DefiniteRange = domain.storedSums[r][None]
+        if not np.all(np.isfinite(R)):
+            R = np.asarray(R0, dtype).copy()
+            if domain.isMultiPoint:
+                R = np.tile(R, (1, len(domain.values()[0][0])))
+            DefiniteRange = True
+            #####################
+            # !!! don't use sum([inp._interval(domain, dtype) for ...]) here
+            # to reduce memory consumption
+            for inp in INP:
+                arg_lb_ub, definiteRange = inp._interval(domain, dtype)
+                DefiniteRange = logical_and(DefiniteRange, definiteRange)
+                if R.shape == arg_lb_ub.shape:
+                    R += arg_lb_ub
+                else:
+                    R = R + arg_lb_ub
+            #####################
+            return R, DefiniteRange
+
+        R=R.copy()
+        for inp in r.storedSumsFuncs[v]:
+            # TODO: mb rework definiteRange processing ?
+            arg_lb_ub, definiteRange = inp._interval(domain, dtype)
+            R += arg_lb_ub
+
+        R -= domain.storedSums[r][v]
+        
+        # To supress inf-inf=nan, however, it doesn't work properly yet, other code is used
+        if np.any(np.isinf(arg_lb_ub)):
+            R[arg_lb_ub == np.inf] = np.inf
+            R[arg_lb_ub == -np.inf] = -np.inf
+        
+        return R, definiteRange
+    else:
+        domain.storedSums[r] = {}        
+
+    #assert np.asarray(r0).ndim <= 1
+    #R = np.asarray(R0, dtype).copy()
+    R = np.asarray(R0).copy()
+    if domain.isMultiPoint:
+        R = np.tile(R, (1, len(list(domain.values())[0][0])))
+
+    #####################
+    # !!! don't use sum([inp._interval(domain, dtype) for ...]) here
+    # to reduce memory consumption
+    DefiniteRange = True
+#            R_ = []
+    for inp in INP:
+        arg_lb_ub, definiteRange = inp._interval(domain, dtype)
+        Tmp = inp._getDep() if not inp.is_oovar else [inp]
+        for oov in Tmp:
+            tmp = domain.storedSums[r].get(oov, None)
+            if tmp is None:
+                domain.storedSums[r][oov] = arg_lb_ub.copy()
+            else:
+                try:
+                    domain.storedSums[r][oov] += arg_lb_ub
+                except:
+                    # may be of different shape, e.g. for a fixed variable
+                    domain.storedSums[r][oov] = domain.storedSums[r][oov] + arg_lb_ub
+        
+        DefiniteRange = logical_and(DefiniteRange, definiteRange)
+#                R_.append(arg_lb_ub)
+        if R.shape == arg_lb_ub.shape:
+            R += arg_lb_ub
+        else:
+            R = R + arg_lb_ub
+
+    #R = np.sum(np.dstack(R_), 2).reshape(arg_lb_ub.shape)
+
+    #print R.shape
+    #####################
+    
+    if v is None:
+        domain.storedSums[r][None] = R, DefiniteRange
+        
+    return R, DefiniteRange
+
+
+def sum_derivative(r0, INP, point, fixedVarsScheduleID, Vars=None, fixedVars = None, useSparse = 'auto'):
+    # TODO: handle involvePrevData
+    # TODO: handle fixed vars
+    
+    r = {}
+    
+    # TODO: rework it, don't recalculate each time
+    #Size = np.amax((1, np.asarray(r0).size))
+    
+    for elem in INP:
+        if not elem.is_oovar and (elem.input is None or len(elem.input)==0 or elem.input[0] is None): 
+            continue # TODO: get rid if None, use [] instead
+        if elem.discrete: continue
+        if elem.is_oovar:
+            if (fixedVars is not None and elem in fixedVars) or (Vars is not None and elem not in Vars): continue
+            sz = np.asarray(point[elem]).size
+            tmpres = Eye(sz) 
+            r_val = r.get(elem, None)
+            if r_val is not None:
+                if sz != 1 and isinstance(r_val, np.ndarray) and not isinstance(tmpres, np.ndarray): # i.e. tmpres is sparse matrix
+                    tmpres = tmpres.toarray()
+                elif not np.isscalar(r_val) and not isinstance(r_val, np.ndarray) and isinstance(tmpres, np.ndarray):
+                    r[elem] = r_val.toarray()
+                Tmp = tmpres.resolve(True) if isspmatrix(r[elem]) and type(tmpres) == DiagonalType else tmpres
+                try:
+                    r[elem] += Tmp
+                except:
+                    r[elem] = r[elem] + Tmp
+            else:
+                # TODO: check it for oovars with size > 1
+                r[elem] = Copy(tmpres)
+        else:
+            tmp = elem._D(point, fixedVarsScheduleID, Vars, fixedVars, useSparse = useSparse)
+            for key, val in tmp.items():
+                r_val = r.get(key, None)
+                if r_val is not None:
+                    if not np.isscalar(val) and isinstance(r_val, np.ndarray) and not isinstance(val, np.ndarray): # i.e. tmpres is sparse matrix
+                        val = val.toarray()
+                    elif not np.isscalar(r_val) and not isinstance(r_val, np.ndarray) and isinstance(val, np.ndarray):
+                        r[key] = r_val.toarray()
+                    
+                    if isspmatrix(r_val) and type(val) == DiagonalType:
+                        val = val.resolve(True)
+                    elif isspmatrix(val) and type(r_val) == DiagonalType:
+                        r[key] = r_val.resolve(True)
+                    
+                    # TODO: rework it
+                    try:
+                        r[key] += val
+                    except:
+                        r[key] = r_val + val
+                else:
+                    r[key] = Copy(val)
+    if useSparse is False:
+        for key, val in r.items():
+            #if np.isscalar(val): val = np.asfarray(val)
+            if not isinstance(val, np.ndarray) and not np.isscalar(val): # i.e. sparse matrix
+                r[key] = val.toarray()
+                
+    # TODO: rework it
+    Size = np.asarray(r0).size
+    for elem in r.values():
+        if not np.isscalar(elem) and elem.ndim >= 1:
+            Size  = np.max((Size, elem.shape[0]))
+    #Size = np.amax([np.atleast_2d(elem).shape[0] for elem in r.values()])
+        
+    if Size != 1:
+        for key, val in r.items():
+            if not isinstance(val, diagonal):
+                if np.isscalar(val) or np.prod(val.shape) <= 1:
+                    tmp = np.empty((Size, 1))
+                    tmp.fill(val if np.isscalar(val) else val.item())
+                    r[key] = tmp
+                elif val.shape[0] != Size:
+                    tmp = np.tile(val, (Size, 1))
+                    r[key] = tmp
+#                    elif np.asarray(val).size !=1:
+#                        raise_except('incorrect size in FD sum kernel')
+    return r
+
+def sum_getOrder(INP, *args, **kwargs):
+    orders = [0]+[inp.getOrder(*args, **kwargs) for inp in INP]
+    return np.max(orders)
+
+
 def sum(inp, *args, **kwargs):
     if type(inp) == np.ndarray and inp.dtype != object:
         return np.sum(inp, *args, **kwargs)
@@ -513,44 +718,8 @@ def sum(inp, *args, **kwargs):
             INP.append(elem)
         if len(INP) == 0:
             return r0
-        #f = lambda *args: PythonSum(args) + r0#r0 + PythonSum(args)
         
-        def f(*args):
-            if not hasStochastic:
-                return PythonSum(args) + r0
-            Args, Args_st = [], {}
-            for elem in args:
-                if isinstance(elem, distribution.stochasticDistribution):
-                    stDep = frozenset(elem.stochDep.keys())
-                    tmp = Args_st.get(stDep, None)
-                    if tmp is None:
-                        Args_st[stDep] = [elem]
-                    else:
-                        Args_st[stDep].append(elem)
-                else:
-                    Args.append(elem)
-            r = PythonSum(Args) + r0
-            if len(Args_st) == 0:
-                return r
-            
-            # temporary
-            for key, val in Args_st.items():
-                maxDistributionSize = val[0].maxDistributionSize
-                break
-            stValues = Args_st.values()
-#            stValues = Args_st.values()
-#            T = list(set(stValues))[0]
-#            maxDistributionSize = next(iter(T)).maxDistributionSize
-            r1 = 0.0
-            for elem in stValues:
-                tmp = PythonSum(elem)
-                r1 = tmp + r1 
-                r1.reduce(maxDistributionSize)
-            r1 = r1 + r
-            r1.maxDistributionSize = maxDistributionSize
-            return r1 
-            
-        r = oofun(f, INP, _isSum = True)
+        r = oofun(lambda *args: sum_engine(r0, *args), INP, _isSum = True)
         r._summation_elements = INP if np.isscalar(r0) and r0 == 0.0 else INP + [r0]
 
         r.storedSumsFuncs = {}
@@ -562,189 +731,19 @@ def sum(inp, *args, **kwargs):
                 r.storedSumsFuncs[v].add(inp)
                                 
         # TODO:  check for fixed inputs
-        #f = lambda *args: r0 + np.sum(args)
         
-        def getOrder(*args, **kwargs):
-            orders = [0]+[inp.getOrder(*args, **kwargs) for inp in INP]
-            return np.max(orders)
-        r.getOrder = getOrder
+        r.getOrder = lambda *args, **kw: sum_getOrder(INP, *args, **kw)
         
         R0 = np.tile(r0, (2, 1))
 
-        def interval(domain, dtype):
-           
-            v = domain.modificationVar
-            if v is not None:
-                # self already must be in domain.storedSums
-                R, DefiniteRange = domain.storedSums[r][None]
-                if not np.all(np.isfinite(R)):
-                    R = np.asarray(R0, dtype).copy()
-                    if domain.isMultiPoint:
-                        R = np.tile(R, (1, len(domain.values()[0][0])))
-                    DefiniteRange = True
-                    #####################
-                    # !!! don't use sum([inp._interval(domain, dtype) for ...]) here
-                    # to reduce memory consumption
-                    for inp in INP:
-                        arg_lb_ub, definiteRange = inp._interval(domain, dtype)
-                        DefiniteRange = logical_and(DefiniteRange, definiteRange)
-                        if R.shape == arg_lb_ub.shape:
-                            R += arg_lb_ub
-                        else:
-                            R = R + arg_lb_ub
-                    #####################
-                    return R, DefiniteRange
-
-                R=R.copy()
-                for inp in r.storedSumsFuncs[v]:
-                    # TODO: mb rework definiteRange processing ?
-                    arg_lb_ub, definiteRange = inp._interval(domain, dtype)
-                    R += arg_lb_ub
-
-                R -= domain.storedSums[r][v]
-                
-                # To supress inf-inf=nan, however, it doesn't work properly yet, other code is used
-                if np.any(np.isinf(arg_lb_ub)):
-                    R[arg_lb_ub == np.inf] = np.inf
-                    R[arg_lb_ub == -np.inf] = -np.inf
-                
-                return R, definiteRange
-            else:
-                domain.storedSums[r] = {}        
-
-            #assert np.asarray(r0).ndim <= 1
-            #R = np.asarray(R0, dtype).copy()
-            R = np.asarray(R0).copy()
-            if domain.isMultiPoint:
-                R = np.tile(R, (1, len(list(domain.values())[0][0])))
-
-            #####################
-            # !!! don't use sum([inp._interval(domain, dtype) for ...]) here
-            # to reduce memory consumption
-            DefiniteRange = True
-#            R_ = []
-            for inp in INP:
-                arg_lb_ub, definiteRange = inp._interval(domain, dtype)
-                Tmp = inp._getDep() if not inp.is_oovar else [inp]
-                for oov in Tmp:
-                    tmp = domain.storedSums[r].get(oov, None)
-                    if tmp is None:
-                        domain.storedSums[r][oov] = arg_lb_ub.copy()
-                    else:
-                        try:
-                            domain.storedSums[r][oov] += arg_lb_ub
-                        except:
-                            # may be of different shape, e.g. for a fixed variable
-                            domain.storedSums[r][oov] = domain.storedSums[r][oov] + arg_lb_ub
-                
-                DefiniteRange = logical_and(DefiniteRange, definiteRange)
-#                R_.append(arg_lb_ub)
-                if R.shape == arg_lb_ub.shape:
-                    R += arg_lb_ub
-                else:
-                    R = R + arg_lb_ub
-
-            #R = np.sum(np.dstack(R_), 2).reshape(arg_lb_ub.shape)
-
-            #print R.shape
-            #####################
-            
-            if v is None:
-                domain.storedSums[r][None] = R, DefiniteRange
-                
-            return R, DefiniteRange
-            
-        r._interval_ = interval
+        r._interval_ = lambda *args, **kw: sum_interval(R0, r, INP, *args, **kw)
         r.vectorized = True
-        
-        def _D(point, fixedVarsScheduleID, Vars=None, fixedVars = None, useSparse = 'auto'):
-            # TODO: handle involvePrevData
-            # TODO: handle fixed vars
-            
-            
-            r = {}
-            
-            # TODO: rework it, don't recalculate each time
-            #Size = np.amax((1, np.asarray(r0).size))
-            
-            for elem in INP:
-                if not elem.is_oovar and (elem.input is None or len(elem.input)==0 or elem.input[0] is None): 
-                    continue # TODO: get rid if None, use [] instead
-                if elem.discrete: continue
-                if elem.is_oovar:
-                    if (fixedVars is not None and elem in fixedVars) or (Vars is not None and elem not in Vars): continue
-                    sz = np.asarray(point[elem]).size
-                    tmpres = Eye(sz) 
-                    r_val = r.get(elem, None)
-                    if r_val is not None:
-                        if sz != 1 and isinstance(r_val, np.ndarray) and not isinstance(tmpres, np.ndarray): # i.e. tmpres is sparse matrix
-                            tmpres = tmpres.toarray()
-                        elif not np.isscalar(r_val) and not isinstance(r_val, np.ndarray) and isinstance(tmpres, np.ndarray):
-                            r[elem] = r_val.toarray()
-                        Tmp = tmpres.resolve(True) if isspmatrix(r[elem]) and type(tmpres) == DiagonalType else tmpres
-                        try:
-                            r[elem] += Tmp
-                        except:
-                            r[elem] = r[elem] + Tmp
-                    else:
-                        # TODO: check it for oovars with size > 1
-                        r[elem] = Copy(tmpres)
-                else:
-                    tmp = elem._D(point, fixedVarsScheduleID, Vars, fixedVars, useSparse = useSparse)
-                    for key, val in tmp.items():
-                        r_val = r.get(key, None)
-                        if r_val is not None:
-                            if not np.isscalar(val) and isinstance(r_val, np.ndarray) and not isinstance(val, np.ndarray): # i.e. tmpres is sparse matrix
-                                val = val.toarray()
-                            elif not np.isscalar(r_val) and not isinstance(r_val, np.ndarray) and isinstance(val, np.ndarray):
-                                r[key] = r_val.toarray()
-                            
-                            if isspmatrix(r_val) and type(val) == DiagonalType:
-                                val = val.resolve(True)
-                            elif isspmatrix(val) and type(r_val) == DiagonalType:
-                                r[key] = r_val.resolve(True)
-                            
-                            # TODO: rework it
-                            try:
-                                r[key] += val
-                            except:
-                                r[key] = r_val + val
-                        else:
-                            r[key] = Copy(val)
-            if useSparse is False:
-                for key, val in r.items():
-                    #if np.isscalar(val): val = np.asfarray(val)
-                    if not isinstance(val, np.ndarray) and not np.isscalar(val): # i.e. sparse matrix
-                        r[key] = val.toarray()
-                        
-            # TODO: rework it
-            Size = np.asarray(r0).size
-            for elem in r.values():
-                if not np.isscalar(elem) and elem.ndim >= 1:
-                    Size  = np.max((Size, elem.shape[0]))
-            #Size = np.amax([np.atleast_2d(elem).shape[0] for elem in r.values()])
-                
-            if Size != 1:
-                for key, val in r.items():
-                    if not isinstance(val, diagonal):
-                        if np.isscalar(val) or np.prod(val.shape) <= 1:
-                            tmp = np.empty((Size, 1))
-                            tmp.fill(val if np.isscalar(val) else val.item())
-                            r[key] = tmp
-                        elif val.shape[0] != Size:
-                            tmp = np.tile(val, (Size, 1))
-                            r[key] = tmp
-#                    elif np.asarray(val).size !=1:
-#                        raise_except('incorrect size in FD sum kernel')
-            return r
-        r._D = _D
+
+        r._D = lambda *args, **kw: sum_derivative(r0, INP, *args, **kw)
         return r
     else: 
         return inp.sum(*args, **kwargs)#np.sum(inp, *args, **kwargs)
     
-    if len(args) != 0 or len(kwargs) != 0:
-        raise FuncDesignerException('oofun for sum(x, *args,**kwargs) is not implemented yet')
-    return inp.sum()
     
 def prod(inp, *args, **kwargs):
     if not isinstance(inp, oofun): return np.prod(inp, *args, **kwargs)

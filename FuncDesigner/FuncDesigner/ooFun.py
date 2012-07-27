@@ -152,7 +152,7 @@ class oofun:
         self.attachedConstraints = set()
         self.args = ()
         oofun._id += 1 # CHECK: it should be int32! Other types cannot be has keys!
-        
+
         if 'name' not in kwargs.keys():
             self.name = 'unnamed_oofun_' + str(oofun._unnamedFunNumber)
             oofun._unnamedFunNumber += 1
@@ -342,27 +342,24 @@ class oofun:
     def __add__(self, other):
         if isinstance(other, Stochastic):
             return other.__add__(self)
-        #stk = extract_stack() 
-#        import inspect
-#        tmp = inspect.stack()
-#        print('len(tmp):', len(tmp))
+        
         for frame_tuple in inspect.stack():
             frame = frame_tuple[0]
             if 'func_code' in dir(frame) and 'func_code' in dir(npSum) and frame.f_code is npSum.func_code:
                 pWarn('''
                 seems like you use numpy.sum() on FuncDesigner object(s), 
                 using FuncDesigner.sum() instead is highly recommended''')
-
-#            elif frame.f_code is PythonSum.func_code:
-#                print("python sum!") 
-        
 #
-#        for S in stk:
-#            if not S[0].endswith('ooFun.py') and not S[0].endswith('overloads.py') and \
-#            S[2] == '<module>' and S[3] is not None and 'sum(' in S[3]:
-#                pWarn('''
-#                seems like you use Python sum() on FuncDesigner object(s), 
-#                using FuncDesigner.sum() instead is highly recommended''')                
+##            elif frame.f_code is PythonSum.func_code:
+##                print("python sum!") 
+#        
+##
+##        for S in stk:
+##            if not S[0].endswith('ooFun.py') and not S[0].endswith('overloads.py') and \
+##            S[2] == '<module>' and S[3] is not None and 'sum(' in S[3]:
+##                pWarn('''
+##                seems like you use Python sum() on FuncDesigner object(s), 
+##                using FuncDesigner.sum() instead is highly recommended''')                
         
         if not isinstance(other, (oofun, list, ndarray, tuple)) and not isscalar(other):
             raise FuncDesignerException('operation oofun_add is not implemented for the type ' + str(type(other)))
@@ -1727,14 +1724,66 @@ def nlh_and(_input, dep, Lx, Ux, p, dataType):
                   else (0, {}, None) if elem is True 
                   else (inf, {}, None) if elem is False 
                   else raise_except()) for elem in _input]
-    
+                  
+    for T0, res, DefiniteRange2 in elems_nlh:
+        DefiniteRange = logical_and(DefiniteRange, DefiniteRange2)
+        
     for T0, res, DefiniteRange2 in elems_nlh:
         if T0 is None or T0 is True: continue
         if T0 is False or all(T0 == inf):
             return inf, {}, DefiniteRange
         if all(isnan(T0)):
-            raise 'unimplemented for non-oofun input yet'
-        #T0 = asarray(T0)
+            raise FuncDesignerException('unimplemented for non-oofun or fixed oofun input yet')
+
+        T_0_vect = T0.reshape(-1, 1) if type(T0) == ndarray else T0
+        
+        if type(T0) == ndarray:
+            if P_0.shape == T0.shape:
+                P_0 += T0
+            elif P_0.size == T0.size:
+                P_0 += T0.reshape(P_0.shape)
+            else:
+                P_0 = P_0 + T0
+        else:
+            P_0 += T0
+        
+        for v, val in res.items():
+            r = R.get(v, None)
+            if r is None:
+                R[v] = val - T_0_vect
+            else:
+                r += (val if r.shape == val.shape else val.reshape(r.shape)) - T_0_vect
+        
+    P_0_shape = P_0.shape
+    P_0 = P_0.reshape(-1, 1)
+    for v, val in R.items():
+        # TODO: check it
+        #assert all(isfinite(val))
+        tmp =  val + P_0
+        tmp[isnan(tmp)] = inf # when val = -inf summation with P_0 == inf
+        R[v] = tmp
+
+    return P_0.reshape(P_0_shape), R, DefiniteRange
+
+
+def nlh_xor(_input, dep, Lx, Ux, p, dataType):
+    P_0 = array(0.0)
+    R = {}
+    DefiniteRange = True
+    
+    elems_nlh = [(elem.nlh(Lx, Ux, p, dataType) if isinstance(elem, oofun) \
+                  else (0, {}, None) if elem is True 
+                  else (inf, {}, None) if elem is False 
+                  else raise_except()) for elem in _input]
+                  
+    for T0, res, DefiniteRange2 in elems_nlh:
+        DefiniteRange = logical_and(DefiniteRange, DefiniteRange2)
+
+    for T0, res, DefiniteRange2 in elems_nlh:
+        if T0 is None: continue
+        if all(isnan(T0)):
+            raise FuncDesignerException('unimplemented for non-oofun or fixed oofun input yet')
+
         T_0_vect = T0.reshape(-1, 1) if type(T0) == ndarray else T0
         
         if type(T0) == ndarray:
@@ -1754,17 +1803,17 @@ def nlh_and(_input, dep, Lx, Ux, p, dataType):
             else:
                 r += (val if r.shape == val.shape else val.reshape(r.shape)) - T_0_vect
         DefiniteRange = logical_and(DefiniteRange2, DefiniteRange)
+        
+    P_0_shape = P_0.shape
+    P_0 = P_0.reshape(-1, 1)
     for v, val in R.items():
-        
         # TODO: check it
-        
         #assert all(isfinite(val))
-        
-        tmp =  val + P_0.reshape(-1, 1)
+        tmp =  val + P_0
         tmp[isnan(tmp)] = inf # when val = -inf summation with P_0 == inf
         R[v] = tmp
 
-    return P_0, R, DefiniteRange
+    return P_0.reshape(P_0_shape), R, DefiniteRange
 
 
 #def nlh_not(_input_bool_oofun, dep, Lx, Ux, p, dataType):
@@ -2018,7 +2067,7 @@ class SmoothFDConstraint(BaseFDConstraint):
             DefiniteRange = logical_and(DefiniteRange, r[v][1].definiteRange)
             
             tmp = getSmoothNLH(Lf, Uf, self.lb, self.ub, tol, m, dataType) #- T02
-            tmp[isnan(tmp)] = 0.0
+            #tmp[isnan(tmp)] = inf
             res[v] = tmp 
         return T0, res, DefiniteRange
         
