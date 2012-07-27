@@ -1,5 +1,5 @@
 from baseClasses import OOArray
-from ooFun import oofun
+from ooFun import oofun, Constraint
 from numpy import isscalar, asscalar, ndarray, asarray, atleast_1d, array
 from FDmisc import FuncDesignerException
 
