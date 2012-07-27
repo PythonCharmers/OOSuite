@@ -1,5 +1,6 @@
 # created by Dmitrey
 from numpy import isscalar, all, ndarray, array, asscalar, asarray, pi, sin, cos
+import numpy as np
 from FuncDesigner.ooFun import oofun
 from FuncDesigner import  ooarray, dot, sum, sqrt, cross, norm
 from misc import SpaceFuncsException, pWarn, SF_error
@@ -175,7 +176,10 @@ class Line(baseGeometryObject):
         r = Line(self.basePoint.projection(obj), (self.basePoint+self.direction).projection(obj))
         r.direction /= norm(r.direction)
         return r
-
+    
+    __contains__ = contains = lambda self, point, tol = 1e-6: _contains(self, point, tol)
+    
+    
 class LineSegment(baseGeometryObject):
     # TODO: mb rewrite it with _AttributesDict?
     #_AttributesDict = baseGeometryObject._AttributesDict.copy()
@@ -230,6 +234,8 @@ class Plane(baseGeometryObject):
     __call__ = lambda self, *args, **kw: Plane(self.basePoint(*args, **kw), directions = [d(*args, **kw) for d in self.directions])
 
     _spaceDimension = lambda self: self.basePoint._spaceDimension()
+    
+    __contains__ = contains = lambda self, point, tol = 1e-6: _contains(self, point, tol)
 
 
 class Circle(baseGeometryObject):
@@ -272,6 +278,8 @@ class Circle(baseGeometryObject):
         
     def _area(self):
         return pi * self.radius ** 2
+    
+    __contains__ = contains = lambda self, point, tol = 1e-6: _contains(self, point, tol)
 
 class Sphere(baseGeometryObject):
     def __init__(self, center, radius, *args, **kw):
@@ -291,6 +299,8 @@ class Sphere(baseGeometryObject):
         else: raise AttributeError('no such field "%s" in circle instance' % attr)
         setattr(self, attr, r)
         return r
+    
+    __contains__ = contains = lambda self, point, tol = 1e-6: _contains(self, point, tol)
 
 def skewLinesNearestPoints(line1, line2):
     assert isinstance(line1, Line) and isinstance(line2, Line)
@@ -337,3 +347,21 @@ _perpendicularToPlane=lambda point, plane:\
     else Line(point, point.projection(plane))
     
 #TODO: intersection of plane & line
+
+
+def _contains(obj, p, tol):
+    assert isinstance(p, Point), 'implemented only for Point yet'
+    if isinstance(obj, (Line, Plane)):
+        P = p.projection(obj)
+        if isinstance(P, ndarray) and str(p.dtype) != 'object':
+            return norm(p - P) <= tol
+        else:
+            return (p == P)(tol=tol)
+    elif isinstance(obj, (Circle, Sphere)):
+        if isinstance(p, ndarray) and str(p.dtype) != 'object':
+            return -tol <= p.distance(obj.center) - obj.radius <= tol
+        else:
+            return p.distance(obj.center) == obj.radius
+        
+        
+        
