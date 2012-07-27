@@ -1,8 +1,7 @@
 # created by Dmitrey
 from numpy import isscalar, all, ndarray, array, asscalar, asarray, pi, sin, cos
 import numpy as np
-from FuncDesigner import oofun
-from FuncDesigner import  ooarray, dot, sum, sqrt, cross, norm
+from FuncDesigner import  ooarray, dot, sum, sqrt, cross, norm, oofun
 from misc import SpaceFuncsException, pWarn, SF_error
 from baseGeometryObject import baseGeometryObject
 
@@ -252,8 +251,8 @@ class Circle(baseGeometryObject):
         self.color = kw.get('color', 'k')
         #self.expected_kwargs |= set(('linewidth', 'linestyle', 'edgecolor', 'fill', 'transparency', 'facecolor'))
 
-    __call__ = lambda self, *args, **kw: Circle(self.center(*args, **kw), self.radius(*args, **kw) if not isscalar(self.radius) else self.radius)
-    #__call__ = lambda self, *args, **kw: Circle(self.center, self.radius)
+    __call__ = lambda self, *args, **kw: Circle(self.center(*args, **kw) if isinstance(self.center, (oofun, ooarray)) else self.center, \
+                                                self.radius(*args, **kw) if isinstance(self.radius, (oofun, ooarray)) else self.radius)
 
     def __getattr__(self, attr):
         if attr in ('S', 'area'): r = self._area() 
@@ -284,7 +283,9 @@ class Sphere(baseGeometryObject):
         self.center = Point(center)
         self.radius = radius
         
-    __call__ = lambda self, *args, **kw: Circle(self.center(*args, **kw), self.radius(*args, **kw))
+    __call__ = lambda self, *args, **kw: Sphere(self.center(*args, **kw) if isinstance(self.center, (oofun, ooarray)) else self.center, \
+                                                self.radius(*args, **kw) if isinstance(self.radius, (oofun, ooarray)) else self.radius)
+
         
     _area = lambda self: (4 * pi) * self.radius ** 2
     _volume = lambda self: (4.0 / 3 * pi) * self.radius ** 3
@@ -292,7 +293,7 @@ class Sphere(baseGeometryObject):
     def __getattr__(self, attr):
         if attr in ('S', 'area'): r = self._area() 
         elif attr in ('V', 'volume'): r = self._volume() 
-        else: raise AttributeError('no such field "%s" in circle instance' % attr)
+        else: raise AttributeError('no such field "%s" in sphere instance' % attr)
         setattr(self, attr, r)
         return r
     
