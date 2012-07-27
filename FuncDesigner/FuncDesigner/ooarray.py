@@ -161,10 +161,12 @@ class ooarray(OOArray):
     def __pow__(self, other):
         if isinstance(other, ndarray) and other.size > 1 and self.size > 1:
             return ooarray([self[i]**other[i] for i in range(self.size)])
-        if any([isinstance(elem, oofun) for elem in atleast_1d(self)]):
-        #if self.dtype == object:
-            return ooarray([elem**other for elem in self.tolist()])
             
+        Self = atleast_1d(self.view(ndarray))
+        if any([isinstance(elem, oofun) for elem in Self]):
+        #if self.dtype == object:
+            return ooarray([elem**other for elem in Self])
+
         # TODO: is this part of code trigger any time?
         return self.view(ndarray)**other
     
