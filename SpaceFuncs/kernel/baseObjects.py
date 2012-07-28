@@ -1,6 +1,6 @@
 # created by Dmitrey
-from numpy import isscalar, all, ndarray, array, asscalar, asarray, pi, sin, cos
-import numpy as np
+from numpy import all, ndarray, array, asscalar, asarray, pi, sin, cos
+#import numpy as np
 from FuncDesigner import  ooarray, dot, sum, sqrt, cross, norm, oofun
 from misc import SpaceFuncsException, pWarn, SF_error
 from baseGeometryObject import baseGeometryObject
@@ -232,7 +232,7 @@ class Plane(baseGeometryObject):
     __contains__ = contains = lambda self, point, tol = 1e-6: _contains(self, point, tol)
 
 
-class Circle(baseGeometryObject):
+class Ring(baseGeometryObject):
     def __init__(self, center, radius, *args, **kw):
         assert len(args) == 0
         baseGeometryObject.__init__(self, *args, **kw)
@@ -251,8 +251,6 @@ class Circle(baseGeometryObject):
         self.color = kw.get('color', 'k')
         #self.expected_kwargs |= set(('linewidth', 'linestyle', 'edgecolor', 'fill', 'transparency', 'facecolor'))
 
-    __call__ = lambda self, *args, **kw: Circle(self.center(*args, **kw) if isinstance(self.center, (oofun, ooarray)) else self.center, \
-                                                self.radius(*args, **kw) if isinstance(self.radius, (oofun, ooarray)) else self.radius)
 
     def __getattr__(self, attr):
         if attr in ('S', 'area'): r = self._area() 
@@ -265,7 +263,7 @@ class Circle(baseGeometryObject):
     def plot(self):
         if not pylabInstalled: 
             raise SpaceFuncsException('to plot you should have matplotlib installed')
-        cir = pylab.Circle(self.center, radius=self.radius, alpha = 1.0 - self.transparency, lw = 1, fc='w', fill=False, \
+        cir = pylab.Circle(self.center, radius=self.radius, alpha = 1.0 - self.transparency, lw = 1, fc='w', fill=self.fill, \
                            ec = self.edgecolor, color = self.color)
         pylab.gca().add_patch(cir)
         if self.plotCenter: self.center.plot()
@@ -273,7 +271,34 @@ class Circle(baseGeometryObject):
     def _area(self):
         return pi * self.radius ** 2
     
+    #contains = __contains__ = lambda self, point, tol = 1e-6: _contains(self, point, tol)
+
+class Circle(Ring):
+    def __init__(self, center, radius, *args, **kw):
+        assert len(args) == 0
+        Ring.__init__(self, center, radius, *args, **kw)
+        
+        self.fill = kw.get('fill', False)
+        # transparency and facecolor are ignored for fill = False
+
+    __call__ = lambda self, *args, **kw: Circle(self.center(*args, **kw) if isinstance(self.center, (oofun, ooarray)) else self.center, \
+                                                self.radius(*args, **kw) if isinstance(self.radius, (oofun, ooarray)) else self.radius)
+
     contains = __contains__ = lambda self, point, tol = 1e-6: _contains(self, point, tol)
+
+class Disk(Ring):
+    def __init__(self, center, radius, *args, **kw):
+        assert len(args) == 0
+        Ring.__init__(self, center, radius, *args, **kw)
+        
+        self.fill = kw.get('fill', True)
+        # transparency and facecolor are ignored for fill = False
+
+    __call__ = lambda self, *args, **kw: Disk(self.center(*args, **kw) if isinstance(self.center, (oofun, ooarray)) else self.center, \
+                                                self.radius(*args, **kw) if isinstance(self.radius, (oofun, ooarray)) else self.radius)
+
+    contains = __contains__ = lambda self, point, tol = 1e-6: _contains(self, point, tol, inside = True)
+
 
 
 class Sphere(baseGeometryObject):
@@ -346,7 +371,7 @@ _perpendicularToPlane=lambda point, plane:\
 #TODO: intersection of plane & line
 
 
-def _contains(obj, p, tol):
+def _contains(obj, p, tol, inside = False):
     assert isinstance(p, Point), 'implemented only for Point yet'
     if isinstance(obj, (Line, Plane)):
         P = p.projection(obj)
@@ -354,10 +379,11 @@ def _contains(obj, p, tol):
             return norm(p - P) <= tol
         else:
             return (p == P)(tol=tol)
-    elif isinstance(obj, (Circle, Sphere)):
+    elif isinstance(obj, (Disk, Sphere)):
         if isinstance(p, ndarray) and str(p.dtype) != 'object':
-            return -tol <= p.distance(obj.center) - obj.radius <= tol
+            return p.distance(obj.center) - obj.radius <= tol if inside else -tol <= p.distance(obj.center) - obj.radius <= tol
         else:
-            return (p.distance(obj.center) == obj.radius)(tol=tol)
-        
+            return (p.distance(obj.center) <= obj.radius if inside else p.distance(obj.center) == obj.radius)(tol=tol)
+    else:
+        assert 0, 'method contains() is unimplemented for type %s' % type(obj)
         
