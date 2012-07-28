@@ -263,8 +263,8 @@ class Ring(baseGeometryObject):
     def plot(self):
         if not pylabInstalled: 
             raise SpaceFuncsException('to plot you should have matplotlib installed')
-        cir = pylab.Circle(self.center, radius=self.radius, alpha = 1.0 - self.transparency, lw = 1, fc='w', fill=self.fill, \
-                           ec = self.edgecolor, color = self.color)
+        cir = pylab.Circle(self.center, radius=self.radius, alpha = 1.0 - self.transparency, lw = self.linewidth, fc='w', fill=self.fill, \
+                           ec = self.edgecolor, color = self.color, linestyle = self.linestyle)
         pylab.gca().add_patch(cir)
         if self.plotCenter: self.center.plot()
         
