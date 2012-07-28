@@ -223,7 +223,8 @@ class interalg(baseSolver):
 
         domain = oopoint([(v, [p.lb[i], p.ub[i]]) for i,  v in enumerate(vv)], skipArrayCast=True)
         domain.dictOfFixedFuncs = p.dictOfFixedFuncs
-        from FuncDesigner.ooFun import BooleanOOFun, SmoothFDConstraint
+        #from FuncDesigner.ooFun import BooleanOOFun, SmoothFDConstraint
+        
         if self.dataHandling == 'auto':
             if isIP or isODE:
                 self.dataHandling = 'sorted'
@@ -233,8 +234,11 @@ class interalg(baseSolver):
                 r = p.user.f[0].interval(domain, self.dataType)
                 M = np.max((np.max(np.atleast_1d(np.abs(r.lb))), np.max(np.atleast_1d(np.abs(r.ub)))))
                 for (c, func, lb, ub, tol) in p._FD.nonBoxCons:#[Elem[1] for Elem in p._FD.nonBoxCons]:
-                    
-                    if isinstance(c, BooleanOOFun) and not isinstance(c, SmoothFDConstraint): continue
+
+                    # !!!!!!!!!!!!!!!!!!!! check it - mb 2nd condition is incorrect
+                    #if isinstance(c, BooleanOOFun) and not isinstance(c, SmoothFDConstraint): continue
+                    if hasattr(c,'_unnamedBooleanOOFunNumber'):
+                        continue
                     
                     r = func.interval(domain, self.dataType)
                     M = np.max((M, np.max(np.atleast_1d(np.abs(r.lb)))))
