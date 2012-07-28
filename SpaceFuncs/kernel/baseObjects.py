@@ -301,16 +301,12 @@ class Disk(Ring):
 
 
 
-class Sphere(baseGeometryObject):
+class Orb(baseGeometryObject):
     def __init__(self, center, radius, *args, **kw):
         assert len(args) == 0
         baseGeometryObject.__init__(self, *args, **kw)
         self.center = Point(center)
         self.radius = radius
-        
-    __call__ = lambda self, *args, **kw: Sphere(self.center(*args, **kw) if isinstance(self.center, (oofun, ooarray)) else self.center, \
-                                                self.radius(*args, **kw) if isinstance(self.radius, (oofun, ooarray)) else self.radius)
-
         
     _area = lambda self: (4 * pi) * self.radius ** 2
     _volume = lambda self: (4.0 / 3 * pi) * self.radius ** 3
@@ -322,7 +318,37 @@ class Sphere(baseGeometryObject):
         setattr(self, attr, r)
         return r
     
+    #__contains__ = contains = lambda self, point, tol = 1e-6: _contains(self, point, tol)
+
+class Sphere(Orb):
+    __call__ = lambda self, *args, **kw: Sphere(self.center(*args, **kw) if isinstance(self.center, (oofun, ooarray)) else self.center, \
+                                                self.radius(*args, **kw) if isinstance(self.radius, (oofun, ooarray)) else self.radius)
     __contains__ = contains = lambda self, point, tol = 1e-6: _contains(self, point, tol)
+    def __getattr__(self, attr):
+        if attr == 'ball': 
+            r = Ball(self.center, self.radius) 
+        elif attr == 'shpere':
+            r = self
+        else: 
+            return Orb.__getattr__(self, attr)
+        setattr(self, attr, r)
+        return r
+
+
+class Ball(Orb):
+    __call__ = lambda self, *args, **kw: Ball(self.center(*args, **kw) if isinstance(self.center, (oofun, ooarray)) else self.center, \
+                                                self.radius(*args, **kw) if isinstance(self.radius, (oofun, ooarray)) else self.radius)
+    __contains__ = contains = lambda self, point, tol = 1e-6: _contains(self, point, tol, inside = True)
+    def __getattr__(self, attr):
+        if attr == 'sphere': 
+            r = Sphere(self.center, self.radius) 
+        elif attr == 'ball':
+            r = self
+        else: 
+            return Orb.__getattr__(self, attr)
+        setattr(self, attr, r)
+        return r
+    
 
 def skewLinesNearestPoints(line1, line2):
     assert isinstance(line1, Line) and isinstance(line2, Line)
@@ -379,7 +405,7 @@ def _contains(obj, p, tol, inside = False):
             return norm(p - P) <= tol
         else:
             return (p == P)(tol=tol)
-    elif isinstance(obj, (Disk, Sphere)):
+    elif isinstance(obj, (Ring, Orb)):
         if isinstance(p, ndarray) and str(p.dtype) != 'object':
             return p.distance(obj.center) - obj.radius <= tol if inside else -tol <= p.distance(obj.center) - obj.radius <= tol
         else:
