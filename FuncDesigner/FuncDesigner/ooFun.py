@@ -863,8 +863,9 @@ class oofun:
     
     def __getslice__(self, ind1, ind2):# overload for oofun[ind1:ind2]
     
-        #raise FuncDesignerException('oofun slicing is not implemented yet')
-        
+        #TODO: mb check if size is known then use it instead of None?
+        if ind2 is not None or ind1 is not None: 
+            raise FuncDesignerException('you should provide full slice coords, e.g. x[3:10], not x[3:]')
         assert not isinstance(ind1, oofun) and not isinstance(ind2, oofun), 'slicing by oofuns is unimplemented yet'
         f = lambda x: x[ind1:ind2]
         def d(x):
@@ -933,8 +934,11 @@ class oofun:
     
     # TODO: fix it for discrete problems like MILP, MINLP
     def __gt__(self, other): # overload for >
-        if self.is_oovar and not isinstance(other, oofun):
+    
+        if self.is_oovar and not isinstance(other, (oofun, OOArray)) and (not isinstance(other, ndarray) and str(other.dtype) =='object'):
             r = BoxBoundConstraint(self, lb = other)
+        elif isinstance(other, OOArray) or (isinstance(other, ndarray) and str(other.dtype) =='object'):
+            return other.__le__(self)
         else:
             r = Constraint(self - other, lb=0.0) # do not perform check for other == 0, copy should be returned, not self!
         return r
@@ -946,8 +950,10 @@ class oofun:
     def __lt__(self, other): # overload for <
         # TODO:
         #(self.is_oovar or self.is_oovarSlice)
-        if self.is_oovar and not isinstance(other, oofun):
+        if self.is_oovar and not isinstance(other, (oofun, OOArray)) and (not isinstance(other, ndarray) and str(other.dtype) =='object'):
             r = BoxBoundConstraint(self, ub = other)
+        elif isinstance(other, OOArray) or (isinstance(other, ndarray) and str(other.dtype) =='object'):
+            return other.__ge__(self)
         else:
             r = Constraint(self - other, ub = 0.0) # do not perform check for other == 0, copy should be returned, not self!
         return r            
@@ -2156,6 +2162,7 @@ def getSmoothNLH(Lf, Uf, lb, ub, tol, m, dataType):
 
 class Constraint(SmoothFDConstraint):
     def __init__(self, *args, **kwargs):
+        
         SmoothFDConstraint.__init__(self, *args, **kwargs)
         
         
