@@ -16,6 +16,7 @@ class gsubg(baseSolver):
     __optionalDataThatCanBeHandled__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'c', 'h']
     iterfcnConnected = True
     _canHandleScipySparse = True
+    _requiresBestPointDetection = True
 
     #gsubg default parameters
     h0 = 1.0
@@ -44,7 +45,7 @@ class gsubg(baseSolver):
         
     def __solver__(self, p):
         assert self.approach == 'all active'
-        if not p.isUC: p.warn('Handling of constraints is not implemented properly for the solver %s yet' % self.__name__)
+        #if not p.isUC: p.warn('Handling of constraints is not implemented properly for the solver %s yet' % self.__name__)
         
         dilation = self.dilation
         assert dilation in ('auto', True, False, 0, 1)
@@ -366,7 +367,7 @@ class gsubg(baseSolver):
                             threshold = 1e-9 # for to prevent small numerical issues
                             if j == 0 and any(dot(normalizedSubGradients, projection) < ValDistances * (1-threshold*sign(ValDistances)) - threshold):
                                 p.istop = 16
-                                p.msg = 'optimal solution wrt required fTol has been obtained'
+                                p.msg = 'optimal solution wrt required fTol = %g has been obtained' % p.fTol
                                 return
                                 
                             #p.debugmsg('g1 shift: %f' % norm(g1/norm(g1)-projection/norm(projection)))
