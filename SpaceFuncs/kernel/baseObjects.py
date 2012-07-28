@@ -286,6 +286,16 @@ class Circle(Ring):
 
     contains = __contains__ = lambda self, point, tol = 1e-6: _contains(self, point, tol)
 
+    def __getattr__(self, attr):
+        if attr == 'disk': 
+            r = Disk(self.center, self.radius) 
+        elif attr == 'circle':
+            r = self
+        else: 
+            return Ring.__getattr__(self, attr)
+        setattr(self, attr, r)
+        return r
+
 class Disk(Ring):
     def __init__(self, center, radius, *args, **kw):
         assert len(args) == 0
@@ -298,7 +308,16 @@ class Disk(Ring):
                                                 self.radius(*args, **kw) if isinstance(self.radius, (oofun, ooarray)) else self.radius)
 
     contains = __contains__ = lambda self, point, tol = 1e-6: _contains(self, point, tol, inside = True)
-
+    
+    def __getattr__(self, attr):
+        if attr == 'circle': 
+            r = Circle(self.center, self.radius) 
+        elif attr == 'disk':
+            r = self
+        else: 
+            return Ring.__getattr__(self, attr)
+        setattr(self, attr, r)
+        return r
 
 
 class Orb(baseGeometryObject):
