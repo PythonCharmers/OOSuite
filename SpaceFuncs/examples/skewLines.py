@@ -1,6 +1,4 @@
 from SpaceFuncs import *
-from FuncDesigner import dot, sum
-
 
 # 3D example
 p1, p2 = Point(0, 2, 1), Point(4, 0, 5)
