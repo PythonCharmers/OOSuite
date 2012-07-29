@@ -148,7 +148,7 @@ class Line(baseGeometryObject):
         else:
             assert len(args) == 2
             #self.direction = (args[1] if isinstance(args[1], point) else point(args[1])) - self.basePoint
-            self.direction = array(args[1]).view(ooarray) - (self.basePoint).view(ooarray)#if isinstance(args[1], point) else point(args[1])) - self.basePoint
+            self.direction = (array(args[1]) - self.basePoint).view(ooarray)#if isinstance(args[1], point) else point(args[1])) - self.basePoint
         if type(self.direction) in (Point, ndarray): self.direction = self.direction.view(ooarray)
         
     __call__ = lambda self, *args, **kw: Line(self.basePoint(*args, **kw), direction = self.direction(*args, **kw))
