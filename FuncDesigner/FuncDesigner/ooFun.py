@@ -935,7 +935,7 @@ class oofun:
     # TODO: fix it for discrete problems like MILP, MINLP
     def __gt__(self, other): # overload for >
     
-        if self.is_oovar and not isinstance(other, (oofun, OOArray)) and (not isinstance(other, ndarray) and str(other.dtype) =='object'):
+        if self.is_oovar and not isinstance(other, (oofun, OOArray)) and not (isinstance(other, ndarray) and str(other.dtype) =='object'):
             r = BoxBoundConstraint(self, lb = other)
         elif isinstance(other, OOArray) or (isinstance(other, ndarray) and str(other.dtype) =='object'):
             return other.__le__(self)
@@ -950,7 +950,7 @@ class oofun:
     def __lt__(self, other): # overload for <
         # TODO:
         #(self.is_oovar or self.is_oovarSlice)
-        if self.is_oovar and not isinstance(other, (oofun, OOArray)) and (not isinstance(other, ndarray) and str(other.dtype) =='object'):
+        if self.is_oovar and not isinstance(other, (oofun, OOArray)) and not(isinstance(other, ndarray) and str(other.dtype) =='object'):
             r = BoxBoundConstraint(self, ub = other)
         elif isinstance(other, OOArray) or (isinstance(other, ndarray) and str(other.dtype) =='object'):
             return other.__ge__(self)
