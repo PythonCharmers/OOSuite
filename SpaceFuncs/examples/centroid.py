@@ -66,10 +66,7 @@ for circle in circles:
 
 # For features beyond it use matplotlib: 
 import pylab
-xx, yy = x(r).tolist(), y(r).tolist()
-xx.append(xx[0])
-yy.append(yy[0])
-pylab.scatter(xx, yy, color='b', s = 80)
+pylab.scatter(x(r), y(r), color='b', s = 80)
 pylab.scatter(Target[0], Target[1], color='r', marker = (5, 1, 0), s = 80)
 solutionCentroid = Centroid(r)
 pylab.scatter(solutionCentroid[0], solutionCentroid[1], color='b', marker = (5, 1, 0), s = 80)
