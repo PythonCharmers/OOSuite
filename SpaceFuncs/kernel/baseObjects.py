@@ -15,6 +15,7 @@ except ImportError:
 class Point(ooarray, baseGeometryObject):
     __array_priority__ = 100
     pointCounter = array(0)
+    weight = None
     def __init__(self, *args, **kw):
         ooarray.__init__(self)#, *args, **kw)
         baseGeometryObject.__init__(self, *args, **kw)
@@ -38,8 +39,8 @@ class Point(ooarray, baseGeometryObject):
     __call__ = lambda self, *args, **kw: \
     self._name(args[0]) \
     if len(args) == 1 and type(args[0]) == str \
-    else Point(ooarray.__call__(self, *args, **kw)) if self.size is not 1 or not isinstance(self.view(ndarray)[0], oofun)\
-    else Point(asscalar(self)(*args, **kw))
+    else Point(ooarray.__call__(self, *args, **kw) if self.size is not 1 or not isinstance(self.view(ndarray)[0], oofun)\
+    else asscalar(self)(*args, **kw), weight = self.__dict__.get('weight', None))
        
     _spaceDimension = lambda self: self.size if self.size is not 1 or not isinstance(self.view(ndarray).flatten()[0], oofun) else asscalar(self).size
     

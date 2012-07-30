@@ -1,7 +1,7 @@
 from baseGeometryObject import baseGeometryObject
 from baseObjects import Point
 from numpy import ndarray
-from FuncDesigner import oofun, ooarray
+from FuncDesigner import ooarray, sum
 
 table = {'M':'centroid'}
 table = dict([(key, '_'+val) for key, val in table.items()] + [(val, '_'+val) for key, val in table.items()])
@@ -19,7 +19,15 @@ class Polytope(baseGeometryObject):
                                                    else Point(args[i]) for i in range(len(args))]
         self.nVertices = len(self.vertices)
 
-    _centroid = lambda self: sum(self.vertices)/ float(self.nVertices)
+    #_centroid = lambda self: sum(self.vertices)/ float(self.nVertices)
+    def _centroid(self):
+        tmp = [v.weight is not None for v in self.vertices]
+        if all(tmp):
+            return sum([v*v.weight for  v in self.vertices]) / sum([v.weight for v in self.vertices])
+        elif not any(tmp):
+            return sum(self.vertices)/ float(self.nVertices)
+        else:
+            assert 0, 'to get centroid you should either provide weight for all vertices or for noone'
     
     def _spaceDimension(self):
         # TODO: rework it

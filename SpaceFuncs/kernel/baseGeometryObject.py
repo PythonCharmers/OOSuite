@@ -3,7 +3,7 @@ class baseGeometryObject:
     _AttributesDict = {'spaceDimension': '_spaceDimension'}
     
     def __init__(self, *args, **kw):
-        pass
+        self.__dict__.update(kw)
 
     #__call__ = lambda self, *args, **kwargs: ChangeName(self, args[0]) #if len(args) == 1 and type(args[0]) == str else tmp(*args, **kwargs)
         
