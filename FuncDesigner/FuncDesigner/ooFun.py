@@ -899,10 +899,11 @@ class oofun:
             if type(x) == ndarray and x.ndim > 1: raise FuncDesignerException('sum(x) is not implemented yet for arrays with ndim > 1')
             return ones_like(x)        
         def interval(domain, dtype):
-            raise FuncDesignerException('interval calculations are unimplemented for sum(oofun) yet')
-#            lb_ub, definiteRange = self._interval(domain, dtype)
-#            lb, ub = lb_ub[0], lb_ub[1]
-            #return vstack((npSum(lb, 0), npSum(ub, 0))), definiteRange
+            if type(domain) == ooPoint and domain.isMultiPoint:
+                raise FuncDesignerException('interval calculations are unimplemented for sum(oofun) yet')
+            lb_ub, definiteRange = self._interval(domain, dtype)
+            lb, ub = lb_ub[0], lb_ub[1]
+            return vstack((npSum(lb, 0), npSum(ub, 0))), definiteRange
         r = oofun(npSum, self, getOrder = self.getOrder, _interval_ = interval, d=d)
         return r
     
