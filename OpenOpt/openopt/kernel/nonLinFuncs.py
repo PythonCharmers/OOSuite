@@ -145,13 +145,15 @@ class nonLinFuncs:
                 if p.hasVectorizableFuncs: # TODO: get rid of box-bound constraints
                     from FuncDesigner.ooPoint import ooPoint as oopoint, multiarray
                     X = oopoint([(oov, x[:, i].view(multiarray)) for i, oov in enumerate(p._freeVarsList)])
+                    X.update(p.dictOfFixedFuncs)
                     X.maxDistributionSize = p.maxDistributionSize
                     X._p = p
                 if len(p.unvectorizableFuncs) != 0:
                     XX = [p._vector2point(x[i]) for i in range(nXvectors)]
-                    for _X in XX: _X._p = p
+                    for _X in XX: 
+                        _X._p = p
+                        _X.update(p.dictOfFixedFuncs)
                 r = hstack([[fun(xx) for xx in XX] if funcs[i] in p.unvectorizableFuncs else fun(X) for i, fun in enumerate(Funcs)]).reshape(1, -1)
-
 
 #                X = [p._vector2point(x[i]) for i in range(nXvectors)]
 #                r = hstack([[fun(xx) for xx in X] for fun in Funcs]).reshape(1, -1)
@@ -255,6 +257,7 @@ class nonLinFuncs:
 #            raise 0
 #            r = r.A # if _dense_numpy_matrix !
         #assert p.iter != 176 or userFunctionType != 'f' or not getDerivative
+        
         if nXvectors > 1 and type(r) != ndarray and not isscalar(r):
             r = r.view(ndarray).flatten() # multiarray
         if nXvectors == 1 and (not getDerivative or prod(r.shape) == 1): # DO NOT REPLACE BY r.size - r may be sparse!
@@ -276,7 +279,7 @@ class nonLinFuncs:
         if userFunctionType == 'f' and hasattr(p, 'solver') and p.solver.funcForIterFcnConnection=='f' and hasattr(p, 'f_iter') and not getDerivative:
             if p.nEvals['f']%p.f_iter == 0 or nXvectors > 1:
                 p.iterfcn(x, r)
-
+        
         return r
 
 
