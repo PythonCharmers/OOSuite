@@ -730,7 +730,7 @@ class oofun:
                 # TODO: fix it wrt int32, int64 etc
                 other = asarray(other, dtype='float' if type(other) == int else type(other)).copy()
             
-            f = lambda x: asanyarray(x, dtype='float') ** other
+            f = lambda x: asanyarray(x) ** other
             d = lambda x: d_x(x, other)
             input = self
             def interval(domain, dtype):
@@ -768,7 +768,7 @@ class oofun:
 #                        t_min[logical_and(IND, atleast_1d(logical_and(lb<0, ub >= 0)))] = 0.0
                 return vstack((t_min, t_max)), definiteRange
         else:
-            f = lambda x, y: asanyarray(x, dtype='float') ** y
+            f = lambda x, y: asanyarray(x) ** y
             d = (d_x, d_y)
             input = [self, other]
             def interval(domain, dtype): 
