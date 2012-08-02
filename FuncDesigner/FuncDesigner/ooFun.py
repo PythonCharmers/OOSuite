@@ -1137,13 +1137,6 @@ class oofun:
         if isinstance(x, ooPoint) and x.isMultiPoint:
             cond_same_point = False
         else:
-#            print '---------'
-#            print self
-#            print x
-#            print self._f_key_prev
-#            if self._f_key_prev is not None:
-#                print  [elem for elem in dep if not isinstance((x if isinstance(x, dict) else x.xf)[elem],  Stochastic)]
-#            print '========='
             cond_same_point = CondSamePointByID or \
             (self._f_val_prev is not None and (self._isFixed or (self.isCostly and  all([array_equal((x if isinstance(x, dict) else x.xf)[elem], self._f_key_prev[elem]) for elem in (dep & set((x if isinstance(x, dict) else x.xf).keys()))]))))
             
@@ -1186,8 +1179,6 @@ class oofun:
                 tmp = Tmp[0]
             else:
                 tmp = array([elem for elem in Tmp], object).view(multiarray)
-#                if tmp.ndim > 1:
-#                    print ('!', tmp.ndim)
         
         #if self._c != 0.0: tmp += self._c
         
