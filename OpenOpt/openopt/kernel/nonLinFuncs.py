@@ -154,7 +154,7 @@ class nonLinFuncs:
                         _X._p = p
                         _X.update(p.dictOfFixedFuncs)
                 r = hstack([[fun(xx) for xx in XX] if funcs[i] in p.unvectorizableFuncs else fun(X) for i, fun in enumerate(Funcs)]).reshape(1, -1)
-
+                
 #                X = [p._vector2point(x[i]) for i in range(nXvectors)]
 #                r = hstack([[fun(xx) for xx in X] for fun in Funcs]).reshape(1, -1)
 
@@ -177,8 +177,10 @@ class nonLinFuncs:
                 X = [((x[i],) + Args) for i in range(nXvectors)] #if Args else [x[i]  for i in range(nXvectors)]
                 r = hstack([[fun(*xx) for xx in X] for fun in Funcs]).reshape(1, -1)
                 
+                
         elif not getDerivative:
             r = hstack([fun(*(X, )+Args) for fun in Funcs])
+            #print(x.shape, r.shape, x, r)
 #            if not ignorePrev and ind is None:
 #                p.prevVal[userFunctionType]['key'] = copy(x_0)
 #                p.prevVal[userFunctionType]['val'] = r.copy()                
@@ -237,8 +239,10 @@ class nonLinFuncs:
             r = hstack(r) if not getDerivative else vstack(r)
             #assert r.size != 30
         #if type(r) == matrix: r = r.A
-            
-        if userFunctionType == 'f' and p.isObjFunValueASingleNumber and prod(r.shape) > 1 and (type(r) == ndarray or min(r.shape) > 1): 
+        
+        if type(r) != ndarray and not isscalar(r):
+            r = r.view(ndarray).flatten() # multiarray
+        elif userFunctionType == 'f' and p.isObjFunValueASingleNumber and prod(r.shape) > 1 and (type(r) == ndarray or min(r.shape) > 1): 
             r = r.sum(0)
             
         if userFunctionType == 'f' and p.isObjFunValueASingleNumber:
@@ -258,8 +262,7 @@ class nonLinFuncs:
 #            r = r.A # if _dense_numpy_matrix !
         #assert p.iter != 176 or userFunctionType != 'f' or not getDerivative
         
-        if nXvectors > 1 and type(r) != ndarray and not isscalar(r):
-            r = r.view(ndarray).flatten() # multiarray
+
         if nXvectors == 1 and (not getDerivative or prod(r.shape) == 1): # DO NOT REPLACE BY r.size - r may be sparse!
             r = r.flatten() if type(r) == ndarray else r.toarray().flatten() if not isscalar(r) else atleast_1d(r)
 

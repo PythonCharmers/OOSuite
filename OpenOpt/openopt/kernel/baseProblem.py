@@ -503,12 +503,22 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     FF.add(_F)
             #FF.update(F)
             unvectorizableFuncs = set()
-            unvectorizableVariables = set([var for var, val in self._x0.items() if isinstance(val, _Stochastic) or asarray(val).size > 1])
+            #unvectorizableVariables = set([var for var, val in self._x0.items() if isinstance(val, _Stochastic) or asarray(val).size > 1])
+            unvectorizableVariables = set([])
+            
+            
+            cond = False
+            #debug
+#            unvectorizableVariables = set(self._x0.keys())
+#            hasVectorizableFuncs = False
+#            cond = True
+            #debug end
+            
             hasVectorizableFuncs = False
             if len(unvectorizableVariables) != 0:
                 for ff in FF:
                     _dep = ff._getDep()
-                    if len(_dep & unvectorizableVariables) != 0:
+                    if cond or len(_dep & unvectorizableVariables) != 0:
                         unvectorizableFuncs.add(ff)
                     else:
                         hasVectorizableFuncs = True
