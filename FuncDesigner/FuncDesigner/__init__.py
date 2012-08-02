@@ -23,7 +23,7 @@ except ImportError:
     def sp_err(self, *args,  **kw): 
         raise FuncDesignerException('''
         to use FuncDesigner stochastic programming 
-        you should have FuncDesigner with its stochastic module insalled
+        you should have FuncDesigner with its stochastic module installed
         (this addon is commercial, free for research/educational small-scale problems only).
         Visit http://openopt.org/StochasticProgramming for more details.
         ''')
