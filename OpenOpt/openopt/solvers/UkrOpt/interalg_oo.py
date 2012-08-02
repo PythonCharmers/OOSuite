@@ -136,7 +136,7 @@ class interalg(baseSolver):
         
         dataType = self.dataType
         if type(dataType) == str:
-            if not hasattr(numpy, dataType):
+            if not hasattr(np, dataType):
                 p.pWarn('your architecture has no type "%s", float64 will be used instead')
                 dataType = 'float64'
             dataType = getattr(np, dataType)
