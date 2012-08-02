@@ -149,7 +149,6 @@ class oovar(oofun):
             ind = logical_and(mx==other, lx != ux)
             if any(ind):
                 p.pWarn('seems like a categorical variables bug in FuncDesigner kernel, inform developers')
-#                print 'asdf'
 #                mx[ind] += 1e-15 + 1e-15*abs(mx[ind])
 
             prev = 0
