@@ -980,8 +980,9 @@ class oofun:
             ind = searchsorted(self.aux_domain, other, 'left')
             if self.aux_domain[ind] != other:
                 raise FuncDesignerException('compared value %s is absent in oovar %s domain' %(other, self.name))
-            return self == ind
-            #return False 
+            r = (self == ind)(tol=0.99)
+#            if self.is_oovar: r.nlh = lambda Lx, Ux, p, dataType: self.nlh(Lx, Ux, p, dataType, ind)
+            return r
             
         if 'startswith' in dir(other): return False
         #if self.is_oovar and not isinstance(other, oofun):
