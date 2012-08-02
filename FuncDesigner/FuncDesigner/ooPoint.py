@@ -32,15 +32,14 @@ class multiarray(ndarray):
     __truediv__ = __div__
     # TODO: rdiv, rpow
     __pow__ = lambda self, other: multiarray_op(self, other, operator.pow)
-    __rpow__ = lambda self, other: multiarray_op(other, self, operator.rpow)
+    __rpow__ = lambda self, other: multiarray_op(other, self, operator.pow)
     toarray = lambda self: self.view(ndarray)
-    #sum = lambda self: atleast_2d(self).sum(axis = 1)
+
     def sum(self, *args, **kw):
         if any([v is not None for v in args]): # somehow triggered from pswarm
             raise FuncDesignerException('arguments for FD multiarray sum are not implemened yet')
         if any([v is not None for v in kw.values()]):
             raise FuncDesignerException('keyword arguments for FD multiarray sum are not implemened yet')
-        #print('in multiarray sum')
         return np_sum(atleast_2d(self.view(ndarray)), 0).view(multiarray)
 
 def multiarray_op(x, y, op):
@@ -55,12 +54,12 @@ def multiarray_op(x, y, op):
                 r = op(X, Y)
                 #r = multiarray([op(x[i], y[i]) for i, X in enumerate(x)])
         else:
-            r = op(x.reshape(-1, 1) if isinstance(x, ndarray) else x, y.view(ndarray))
+            r = op(x.reshape(-1, 1) if isinstance(x, ndarray) and x.size != 1 else x, y.view(ndarray))
     elif isinstance(x, multiarray): # and y is not multiarray here
-        r = op(x.view(ndarray), y.reshape(-1, 1) if isinstance(y, ndarray) else y)
+        r = op(x.view(ndarray), y.reshape(-1, 1) if isinstance(y, ndarray) and y.size != 1 else y)
     else: # neither x nor y are multiarrays
         raise FuncDesignerException('bug in FuncDesigner kernel')
-    return r.view(multiarray)
+    return r.view(multiarray)#.flatten()
     
 
 def ooMultiPoint(*args, **kw):

@@ -13,7 +13,8 @@ except ImportError:
     
 from FDmisc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scipyInstalled, \
 raise_except, DiagonalType, isPyPy
-from ooPoint import ooPoint, multiarray
+from ooPoint import ooPoint
+from FuncDesigner.ooPoint import multiarray
 from Interval import Interval, adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain
 import inspect
 from baseClasses import OOArray, Stochastic
@@ -1136,8 +1137,15 @@ class oofun:
         if isinstance(x, ooPoint) and x.isMultiPoint:
             cond_same_point = False
         else:
+#            print '---------'
+#            print self
+#            print x
+#            print self._f_key_prev
+#            if self._f_key_prev is not None:
+#                print  [elem for elem in dep if not isinstance((x if isinstance(x, dict) else x.xf)[elem],  Stochastic)]
+#            print '========='
             cond_same_point = CondSamePointByID or \
-            (self._f_val_prev is not None and (self._isFixed or (self.isCostly and  all([array_equal((x if isinstance(x, dict) else x.xf)[elem], self._f_key_prev[elem]) for elem in dep]))))
+            (self._f_val_prev is not None and (self._isFixed or (self.isCostly and  all([array_equal((x if isinstance(x, dict) else x.xf)[elem], self._f_key_prev[elem]) for elem in (dep & set((x if isinstance(x, dict) else x.xf).keys()))]))))
             
         if cond_same_point:
             self.same += 1
@@ -1151,7 +1159,8 @@ class oofun:
             
         Input = self._getInput(*args, **kwargs) 
         
-        if not isinstance(x, ooPoint) or not x.isMultiPoint or (self.vectorized and not any([isinstance(inp, Stochastic) for inp in Input])):
+        #if not isinstance(x, ooPoint) or not x.isMultiPoint or (self.vectorized and not any([isinstance(inp, Stochastic) for inp in Input])):
+        if not isinstance(x, ooPoint) or not x.isMultiPoint or self.vectorized:
             if self.args != ():
                 Input += self.args
             Tmp = self.fun(*Input)
@@ -1177,6 +1186,8 @@ class oofun:
                 tmp = Tmp[0]
             else:
                 tmp = array([elem for elem in Tmp], object).view(multiarray)
+#                if tmp.ndim > 1:
+#                    print ('!', tmp.ndim)
         
         #if self._c != 0.0: tmp += self._c
         
@@ -1200,10 +1211,10 @@ class oofun:
                 tmp.reduce(maxDistributionSize)
             tmp.maxDistributionSize = maxDistributionSize
         
-        if type(x) == ooPoint: 
-            self._point_id = x._id
         
-        if (type(x) == ooPoint and not x.isMultiPoint) or self.isCostly or self._isFixed:
+        if ((type(x) == ooPoint and not x.isMultiPoint) and not (isinstance(tmp, ndarray) and type(tmp) != ndarray)) or self._isFixed:# or self.isCostly:
+            if type(x) == ooPoint: 
+                self._point_id = x._id
             #self._f_val_prev = copy(tmp) 
             self._f_val_prev = tmp.copy() if isinstance(tmp, (ndarray, Stochastic)) else tmp
             self._f_key_prev = dict([(elem, copy((x if isinstance(x, dict) else x.xf)[elem])) for elem in dep]) if self.isCostly else None

@@ -6,6 +6,7 @@ from ooFun import atleast_oofun, Vstack, Copy
 from ooarray import ooarray
 from Interval import TrigonometryCriticalPoints, nonnegative_interval, ZeroCriticalPointsInterval, box_1_interval
 from numpy import atleast_1d, logical_and
+from FuncDesigner.ooPoint import multiarray
 
 try:
     from scipy.sparse import isspmatrix, lil_matrix as Zeros
@@ -42,9 +43,12 @@ try:
 except:
     hasStochastic = False
 
+#hasStochastic = False
+
 st_sin = (lambda x: \
 distribution.stochasticDistribution(sin(x.values), x.probabilities.copy())._update(x) \
 if isinstance(x, distribution.stochasticDistribution)\
+else np.array([sin(elem) for elem in x.view(np.ndarray)]).view(multiarray) if isinstance(x, multiarray) and isinstance(x[0], distribution.stochasticDistribution)
 else np.sin(x))\
 if hasStochastic\
 else np.sin
@@ -64,6 +68,7 @@ def sin(inp):
 st_cos = (lambda x: \
 distribution.stochasticDistribution(cos(x.values), x.probabilities.copy())._update(x) \
 if isinstance(x, distribution.stochasticDistribution)\
+else np.array([cos(elem) for elem in x.view(np.ndarray)]).view(multiarray) if isinstance(x, multiarray) and isinstance(x[0], distribution.stochasticDistribution)
 else np.cos(x))\
 if hasStochastic\
 else np.cos
@@ -84,6 +89,7 @@ def cos(inp):
 st_tan = (lambda x: \
 distribution.stochasticDistribution(tan(x.values), x.probabilities.copy())._update(x) \
 if isinstance(x, distribution.stochasticDistribution)\
+else np.array([tan(elem) for elem in x.view(np.ndarray)]).view(multiarray) if isinstance(x, multiarray) and isinstance(x[0], distribution.stochasticDistribution)
 else np.tan(x))\
 if hasStochastic\
 else np.tan
@@ -110,6 +116,7 @@ get_box1_DefiniteRange = lambda lb, ub: logical_and(np.all(lb >= -1.0), np.all(u
 st_arcsin = (lambda x: \
 distribution.stochasticDistribution(arcsin(x.values), x.probabilities.copy())._update(x) \
 if isinstance(x, distribution.stochasticDistribution)\
+else np.array([arcsin(elem) for elem in x.view(np.ndarray)]).view(multiarray) if isinstance(x, multiarray) and isinstance(x[0], distribution.stochasticDistribution)
 else np.arcsin(x))\
 if hasStochastic\
 else np.arcsin
@@ -131,6 +138,7 @@ def arcsin(inp):
 st_arccos = (lambda x: \
 distribution.stochasticDistribution(arccos(x.values), x.probabilities.copy())._update(x) \
 if isinstance(x, distribution.stochasticDistribution)\
+else np.array([arccos(elem) for elem in x.view(np.ndarray)]).view(multiarray) if isinstance(x, multiarray) and isinstance(x[0], distribution.stochasticDistribution)
 else np.arccos(x))\
 if hasStochastic\
 else np.arccos
@@ -152,6 +160,7 @@ def arccos(inp):
 st_arctan = (lambda x: \
 distribution.stochasticDistribution(arctan(x.values), x.probabilities.copy())._update(x) \
 if isinstance(x, distribution.stochasticDistribution)\
+else np.array([arctan(elem) for elem in x.view(np.ndarray)]).view(multiarray) if isinstance(x, multiarray) and isinstance(x[0], distribution.stochasticDistribution)
 else np.arctan(x))\
 if hasStochastic\
 else np.arctan
@@ -172,6 +181,7 @@ __all__ += ['arcsin', 'arccos', 'arctan']
 st_sinh = (lambda x: \
 distribution.stochasticDistribution(sinh(x.values), x.probabilities.copy())._update(x) \
 if isinstance(x, distribution.stochasticDistribution)\
+else np.array([sinh(elem) for elem in x.view(np.ndarray)]).view(multiarray) if isinstance(x, multiarray) and isinstance(x[0], distribution.stochasticDistribution)
 else np.sinh(x))\
 if hasStochastic\
 else np.sinh
@@ -184,12 +194,26 @@ def sinh(inp):
     if not isinstance(inp, oofun): return np.sinh(inp)
     return oofun(st_sinh, inp, d = lambda x: Diag(np.cosh(x)), vectorized = True, criticalPoints = False)
 
-st_cosh = (lambda x: \
-distribution.stochasticDistribution(cosh(x.values), x.probabilities.copy())._update(x) \
-if isinstance(x, distribution.stochasticDistribution)\
-else np.cosh(x))\
+
+def asdf(x):
+    return distribution.stochasticDistribution(cosh(x.values), x.probabilities.copy())._update(x) \
+        if isinstance(x, distribution.stochasticDistribution)\
+        else np.array([cosh(elem) for elem in x.view(np.ndarray)]).view(multiarray) if isinstance(x, multiarray)\
+        else np.cosh(x)
+
+st_cosh = (asdf)\
 if hasStochastic\
 else np.cosh
+
+
+#st_cosh = \
+#(lambda x: \
+#distribution.stochasticDistribution(cosh(x.values), x.probabilities.copy())._update(x) \
+#if isinstance(x, distribution.stochasticDistribution)\
+#else np.array([cosh(elem) for elem in x.view(np.ndarray)]).view(multiarray) if isinstance(x, multiarray) and isinstance(x[0], distribution.stochasticDistribution)
+#else np.cosh(x))\
+#if hasStochastic\
+#else np.cosh
 
 def cosh(inp):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
@@ -204,6 +228,7 @@ __all__ += ['sinh', 'cosh']
 st_tanh = (lambda x: \
 distribution.stochasticDistribution(tanh(x.values), x.probabilities.copy())._update(x) \
 if isinstance(x, distribution.stochasticDistribution)\
+else np.array([tanh(elem) for elem in x.view(np.ndarray)]).view(multiarray) if isinstance(x, multiarray) and isinstance(x[0], distribution.stochasticDistribution)
 else np.tanh(x))\
 if hasStochastic\
 else np.tanh
@@ -220,6 +245,7 @@ def tanh(inp):
 st_arctanh = (lambda x: \
 distribution.stochasticDistribution(arctanh(x.values), x.probabilities.copy())._update(x) \
 if isinstance(x, distribution.stochasticDistribution)\
+else np.array([arctanh(elem) for elem in x.view(np.ndarray)]).view(multiarray) if isinstance(x, multiarray) and isinstance(x[0], distribution.stochasticDistribution)
 else np.arctanh(x))\
 if hasStochastic\
 else np.arctanh
@@ -240,6 +266,7 @@ __all__ += ['tanh', 'arctanh']
 st_arcsinh = (lambda x: \
 distribution.stochasticDistribution(arcsinh(x.values), x.probabilities.copy())._update(x) \
 if isinstance(x, distribution.stochasticDistribution)\
+else np.array([arcsinh(elem) for elem in x.view(np.ndarray)]).view(multiarray) if isinstance(x, multiarray) and isinstance(x[0], distribution.stochasticDistribution)
 else np.arcsinh(x))\
 if hasStochastic\
 else np.arcsinh
@@ -255,6 +282,7 @@ def arcsinh(inp):
 st_arccosh = (lambda x: \
 distribution.stochasticDistribution(arccosh(x.values), x.probabilities.copy())._update(x) \
 if isinstance(x, distribution.stochasticDistribution)\
+else np.array([arccosh(elem) for elem in x.view(np.ndarray)]).view(multiarray) if isinstance(x, multiarray) and isinstance(x[0], distribution.stochasticDistribution)
 else np.arccosh(x))\
 if hasStochastic\
 else np.arccosh
@@ -283,6 +311,7 @@ def angle(inp1, inp2):
 st_exp = (lambda x: \
 distribution.stochasticDistribution(exp(x.values), x.probabilities.copy())._update(x) \
 if isinstance(x, distribution.stochasticDistribution)\
+else np.array([exp(elem) for elem in x.view(np.ndarray)]).view(multiarray) if isinstance(x, multiarray) and isinstance(x[0], distribution.stochasticDistribution)
 else np.exp(x))\
 if hasStochastic\
 else np.exp
@@ -298,6 +327,7 @@ def exp(inp):
 st_sqrt = (lambda x: \
 distribution.stochasticDistribution(sqrt(x.values), x.probabilities.copy())._update(x) \
 if isinstance(x, distribution.stochasticDistribution)\
+else np.array([sqrt(elem) for elem in x.view(np.ndarray)]).view(multiarray) if isinstance(x, multiarray) and isinstance(x[0], distribution.stochasticDistribution)
 else np.sqrt(x))\
 if hasStochastic\
 else np.sqrt
@@ -323,6 +353,7 @@ __all__ += ['angle', 'exp', 'sqrt']
 st_abs = (lambda x: \
 distribution.stochasticDistribution(abs(x.values), x.probabilities.copy())._update(x) \
 if isinstance(x, distribution.stochasticDistribution)\
+else np.array([abs(elem) for elem in x.view(np.ndarray)]).view(multiarray) if isinstance(x, multiarray) and isinstance(x[0], distribution.stochasticDistribution)
 else np.abs(x))\
 if hasStochastic\
 else np.abs
@@ -364,6 +395,7 @@ def log_interval(logfunc, inp):
 st_log = (lambda x: \
 distribution.stochasticDistribution(log(x.values), x.probabilities.copy())._update(x) \
 if isinstance(x, distribution.stochasticDistribution)\
+else np.array([log(elem) for elem in x.view(np.ndarray)]).view(multiarray) if isinstance(x, multiarray) and isinstance(x[0], distribution.stochasticDistribution)
 else np.log(x))\
 if hasStochastic\
 else np.log
@@ -381,6 +413,7 @@ def log(inp):
 st_log10 = (lambda x: \
 distribution.stochasticDistribution(log10(x.values), x.probabilities.copy())._update(x) \
 if isinstance(x, distribution.stochasticDistribution)\
+else np.array([log10(elem) for elem in x.view(np.ndarray)]).view(multiarray) if isinstance(x, multiarray) and isinstance(x[0], distribution.stochasticDistribution)
 else np.log10(x))\
 if hasStochastic\
 else np.log10
@@ -399,6 +432,7 @@ def log10(inp):
 st_log2 = (lambda x: \
 distribution.stochasticDistribution(log2(x.values), x.probabilities.copy())._update(x) \
 if isinstance(x, distribution.stochasticDistribution)\
+else np.array([log2(elem) for elem in x.view(np.ndarray)]).view(multiarray) if isinstance(x, multiarray) and isinstance(x[0], distribution.stochasticDistribution)
 else np.log2(x))\
 if hasStochastic\
 else np.log2
@@ -469,6 +503,7 @@ def floor(inp):
 st_sign = (lambda x: \
 distribution.stochasticDistribution(sign(x.values), x.probabilities.copy())._update(x) \
 if isinstance(x, distribution.stochasticDistribution)\
+else np.array([sign(elem) for elem in x.view(np.ndarray)]).view(multiarray) if isinstance(x, multiarray) and isinstance(x[0], distribution.stochasticDistribution)
 else np.sign(x))\
 if hasStochastic\
 else np.sign
@@ -501,6 +536,7 @@ def sum_engine(r0, *args):
                 Args_st[stDep].append(elem)
         else:
             Args.append(elem)
+    #print Args,  r0
     r = PythonSum(Args) + r0
     if len(Args_st) == 0:
         return r
