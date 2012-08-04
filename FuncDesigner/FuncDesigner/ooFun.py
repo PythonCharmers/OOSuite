@@ -120,6 +120,8 @@ class oofun:
     def nlh(self):
         raise FuncDesignerException("probably you have involved boolean operation on continuous function, that is error")
     
+    lh = nlh
+    
     def __getattr__(self, attr):
         if attr == '__len__':
             # TODO: fix it
@@ -1778,7 +1780,9 @@ def nlh_and(_input, dep, Lx, Ux, p, dataType):
 
 def nlh_xor(_input, dep, Lx, Ux, p, dataType):
     P_0 = array(0.0)
+    num_inf_0 = array(0)
     R = {}
+    R_inf = {}
     DefiniteRange = True
     
     elems_nlh = [(elem.nlh(Lx, Ux, p, dataType) if isinstance(elem, oofun) \
@@ -1788,7 +1792,9 @@ def nlh_xor(_input, dep, Lx, Ux, p, dataType):
                   
     for T0, res, DefiniteRange2 in elems_nlh:
         DefiniteRange = logical_and(DefiniteRange, DefiniteRange2)
-
+    
+    
+    
     for T0, res, DefiniteRange2 in elems_nlh:
         if T0 is None: continue
         if all(isnan(T0)):
@@ -1796,15 +1802,21 @@ def nlh_xor(_input, dep, Lx, Ux, p, dataType):
 
         T_0_vect = T0.reshape(-1, 1) if type(T0) == ndarray else T0
         
+        T_inf = where(isfinite(T0), 0, 1)
+        T0 = where(isfinite(T0), T0, 0.0)
         if type(T0) == ndarray:
             if P_0.shape == T0.shape:
                 P_0 += T0
+                num_inf_0 += T_inf
             elif P_0.size == T0.size:
                 P_0 += T0.reshape(P_0.shape)
+                num_inf_0 += T_inf.reshape(P_0.shape)
             else:
                 P_0 = P_0 + T0
+                num_inf_0 = num_inf_0 + T_inf
         else:
             P_0 += T0
+            num_inf_0 += T_inf
         
         for v, val in res.items():
             r = R.get(v, None)
@@ -1812,8 +1824,11 @@ def nlh_xor(_input, dep, Lx, Ux, p, dataType):
                 R[v] = val - T_0_vect
             else:
                 r += (val if r.shape == val.shape else val.reshape(r.shape)) - T_0_vect
-        DefiniteRange = logical_and(DefiniteRange2, DefiniteRange)
-        
+                
+    #for T0, res, DefiniteRange2 in elems_nlh:
+#R_inf[v] = num_inf
+#R_inf[v] += 
+
     P_0_shape = P_0.shape
     P_0 = P_0.reshape(-1, 1)
     for v, val in R.items():
@@ -1893,8 +1908,29 @@ def NOT(_bool_oofun):
         
     #if other is True: return False
     r = BooleanOOFun(logical_not, [_bool_oofun], vectorized = True)
-    r.nlh = lambda *arguments: nlh_not(_bool_oofun, r._getDep(), *arguments)
+        
     r.oofun = r
+#    def eq_nlh(_bool_oofun, dep, *arguments):
+#        T, R, DefiniteRange = nlh_not(_bool_oofun, dep, *arguments)
+#        T2, R2, DefiniteRange2 = _bool_oofun.lh(*arguments)
+#        
+#        if 0 or not all(T==T2):
+#        
+#            print('T:', T)
+#            print('T2:', T2)
+#            print('R:', R)
+#            print('R2:', R2)
+#            #raw_input()
+#            assert 0
+#        return T, R, DefiniteRange
+    if 1 and _bool_oofun.is_oovar:
+        r.lh = lambda *arguments: nlh_not(_bool_oofun, r._getDep(), *arguments)
+        r.nlh = _bool_oofun.lh
+    else:
+        #if _bool_oofun.is_oovar:
+            #r.nlh = lambda *arguments: eq_nlh(_bool_oofun, r._getDep(), *arguments) 
+        #else:
+        r.nlh = lambda *arguments: nlh_not(_bool_oofun, r._getDep(), *arguments)
     return r
 
 NAND = lambda *args, **kw: NOT(AND(*args, **kw))
@@ -2035,6 +2071,11 @@ class SmoothFDConstraint(BaseFDConstraint):
                 setattr(self, key, asfarray(kwargs[key]))
             else:
                 raise FuncDesignerException('Unexpected key in FuncDesigner constraint constructor kwargs')
+    
+    def lh(self, *args, **kw): # overwritten in ooVar, mb something else
+        if '_invert' not in self.__dict__:
+            self._invert = NOT(self)
+        return self._invert.nlh(*args, **kw)
     
     def nlh(self, Lx, Ux, p, dataType):
         m = Lx.shape[0] # is changed in the cycle
