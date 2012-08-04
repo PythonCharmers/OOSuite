@@ -146,15 +146,16 @@ class nonLinFuncs:
                     from FuncDesigner.ooPoint import ooPoint as oopoint, multiarray
                     
                     # TODO: new
-                    #xx = []
-                    #counter = 0
-                    #for i, oov in enumerate(p._freeVarsList):
-                        #xx.append((oov, x[:, counter: counter + p._optVarSizes[i]].view(multiarray)))
-                    #X = oopoint(xx)
+                    xx = []
+                    counter = 0
+                    for i, oov in enumerate(p._freeVarsList):
+                        xx.append((oov, x[:, counter: counter + p._optVarSizes[i]].view(multiarray)))
+                    X = oopoint(xx)
                     
                     #prev
-                    assert len(p._freeVarsList) == len(p._optVarSizes), 'vectorization is not implemented for the case of oovar(siz=n), use oovars(n) instead'
-                    X = oopoint([(oov, x[:, i].view(multiarray)) for i, oov in enumerate(p._freeVarsList)])
+                    #assert len(p._freeVarsList) == len(p._optVarSizes), 'vectorization is not implemented for the case of oovar(siz=n), use oovars(n) instead'
+                    #assert all(array(p._optVarSizes.values()) == 1), 'vectorization is not implemented for the case of oovar(siz=n), use oovars(n) instead'
+                    #X = oopoint([(oov, x[:, i].view(multiarray)) for i, oov in enumerate(p._freeVarsList)])
                     
                     X.update(p.dictOfFixedFuncs)
                     X.maxDistributionSize = p.maxDistributionSize
