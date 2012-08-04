@@ -149,7 +149,9 @@ class nonLinFuncs:
                     xx = []
                     counter = 0
                     for i, oov in enumerate(p._freeVarsList):
-                        xx.append((oov, x[:, counter: counter + p._optVarSizes[i]].view(multiarray)))
+                        s = p._optVarSizes[oov]
+                        xx.append((oov, x[:, counter: counter + s].view(multiarray)))
+                        counter += s
                     X = oopoint(xx)
                     
                     #prev
