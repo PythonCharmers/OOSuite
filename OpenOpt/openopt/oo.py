@@ -8,6 +8,7 @@ from SDP import SDP as CSDP
 from QP import QP as CQP
 from MILP import MILP as CMILP
 from STAB import STAB as CSTAB
+from TSP import TSP as CTSP
 from NSP import NSP as CNSP
 from NLP import NLP as CNLP
 from MOP import MOP as CMOP
@@ -135,6 +136,36 @@ def STAB(*args, **kwargs):
        * MILP solvers at http://openopt.org/MILP
     """
     return CSTAB(*args, **kwargs)
+
+def TSP(*args, **kwargs):
+    """
+    TSP: constructor for traveling salesman problem assignment
+    
+    valid calls are:
+    p = TSP(graph, <params as kwargs>)
+    p = TSP(graph = graph, <params as kwargs>)
+    See also: /examples/tsp_*.py
+
+    :Parameters:
+    graph: networkx graph instance
+
+    :Returns:
+    OpenOpt TSP class instance
+
+    Notes
+    -----
+    Solving of OpenOpt TSP problems is performed via
+    r = p.solve(string_name_of_solver)
+    or r = p.manage(string_name_of_solver) (to enable basic GUI)
+    r.solution - desired solution (python list of edges)
+    r.ff - objFun value (NaN if a problem occured)
+    (see also other r fields)
+    Solvers available for now:  
+       * interalg (BSD license)
+       * MILP solvers at http://openopt.org/MILP
+    """
+    return CTSP(*args, **kwargs)
+
 
 def LCP(*args, **kwargs):
     """
