@@ -136,6 +136,8 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,
     
     if p.nProc != 1 and getattr(p, 'pool', None) is None:
         p.pool = Pool(processes = p.nProc)
+    elif p.nProc == 1:
+        p.pool = None
     
     ol, al = [], []
     targets = p.targets # TODO: check it
