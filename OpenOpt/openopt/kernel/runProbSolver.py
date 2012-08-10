@@ -301,7 +301,7 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     p.contol = p.primalConTol
 
     # Solving finished
-    if hasattr(p, '_bestPoint'):
+    if hasattr(p, '_bestPoint') and not any(isnan(p._bestPoint.x)):
         p.iterfcn(p._bestPoint)
     if p.probType != 'EIG':
         if not hasattr(p, 'xf') and not hasattr(p, 'xk'): p.xf = p.xk = ones(p.n)*nan
