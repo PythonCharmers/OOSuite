@@ -89,8 +89,8 @@ class TSP(MatrixProblem):
         if is_interalg_raw_mode:
             for i in range(n-1):
                 u[1+i].domain = np.arange(2, n+1)
-        for i in range(m):
-            u('u' + str(i))
+        for i in range(1, u.size):
+            u[i]('u' + str(i))
         cr_values = dict([(obj[0], []) for obj in objective])
         constraints = []
         EdgesDescriptors, EdgesCoords = [], []
@@ -127,7 +127,7 @@ class TSP(MatrixProblem):
                 rr = -rr
             else:
                 if objective[0][2] not in ('max', 'maximum'):
-                    self.err('unimplemented for fixed value goal yet, only min/max is possible for now')
+                    self.err('unimplemented for fixed value goal in TSP yet, only min/max is possible for now')
                     
             ind = rr.argsort()
             W = W[ind]
@@ -166,11 +166,10 @@ class TSP(MatrixProblem):
             dictTo[To].append(i)
         
         engine = fd.XOR
-        #print(new, is_interalg_raw_mode)
+
         for node, edges_inds in dictFrom.items():
             if not new:
                 # !!!!!!!!!! TODO for interalg_raw_mode: and if all edges have sign similar to goal
-                
                 if 1 and is_interalg_raw_mode:
                     c = engine([x[j] for j in edges_inds])
                 else:
@@ -198,7 +197,6 @@ class TSP(MatrixProblem):
                     nEdges = fd.sum([x[j] for j in edges_inds]) 
                     c =  nEdges >= 1 if self.allowRevisit else nEdges == 1
             constraints.append(c)
-
         
         # MTZ
         for i, edge in enumerate(EdgesCoords):
@@ -207,18 +205,19 @@ class TSP(MatrixProblem):
             if ii != 0 and jj != 0:
                 if new:
                     x_ind, x_val = edge_ind2x_ind_val[i]
-                    c = fd.ifThen((x[x_ind] == x_val)(tol=0.99999), u[ii] - u[jj]  <= - 1.0)
+                    c = fd.ifThen((x[x_ind] == x_val)(tol=0.5), u[ii] - u[jj]  <= - 1.0)
                 elif is_interalg_raw_mode:
                     c = fd.ifThen(x[i], u[ii] - u[jj]  <= - 1.0)#u[jj] - u[ii]  >= 1)
                 else:
                     c = u[ii] - u[jj] + 1 <= (n-1) * (1-x[i])
                 constraints.append(c)
-                    
+                
         FF = []
         
         for obj in objective:
             optCrName = obj[0]
             tmp = cr_values[optCrName]
+
             if len(tmp) == 0:
                 self.err('seems like graph edgs have no attribute "%s" to perform optimization on it' % optCrName)
             elif len(tmp) != m:
@@ -239,12 +238,13 @@ class TSP(MatrixProblem):
         
         startPoint = {x:[0]*(m if not new else n)}#, u0:1}
         startPoint.update(dict([(U, n) for U in u[1:]]))
-        
+
         p = P(FF if isMOP else F, startPoint, constraints = constraints)#, fixedVars = fixedVars)
         
         #print ('init Time in solve(): %0.1f' % (time()-T))
         KW.pop('objective', None)
         r = p.solve(solver, **KW)
+
         if P != oo.MOP:
             if new:
                 x_ind_val2edge_ind = dict([(elem[1], elem[0]) for elem in edge_ind2x_ind_val.items()])
