@@ -307,13 +307,15 @@ class interalg(baseSolver):
         pnc = 0
         an = []
         maxNodes = self.maxNodes
-        _s = np.nan
+        
+        # TODO: change for constrained probs
+        _s = atleast_1d(inf)
         
         if isODE or (isIP and p.n == 1):
             interalg_ODE_routine(p, self)
             return
-        
-        for itn in range(p.maxIter+10):
+
+        while 1:
             if len(C0) != 0: 
                 Func = processConstraints if self.intervalObtaining == 1 else processConstraints2
                 y, e, nlhc, residual, definiteRange, indT = Func(C0, y, e, p, dataType)
@@ -322,7 +324,7 @@ class interalg(baseSolver):
             
             if y.size != 0:
                 an, g, fo, _s, Solutions, xRecord, r41, r40 = \
-                pb(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, \
+                pb(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, \
                              nNodes, r41, fTol, Solutions, varTols, _in, \
                              dataType, maxNodes, _s, indT, xRecord)
                 if _s is None:

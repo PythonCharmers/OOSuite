@@ -2,7 +2,7 @@ from interalgLLR import *
 from numpy import inf, prod, all, sum
 
 
-def r14IP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, CBKPMV, itn, g, nNodes,  \
+def r14IP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, CBKPMV, g, nNodes,  \
          frc, fTol, Solutions, varTols, _in, dataType, \
          maxNodes, _s, indTC, xRecord):
 
@@ -25,11 +25,6 @@ def r14IP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, CBKPMV, itn, g, 
 
     o, a = o.reshape(2*n, m).T, a.reshape(2*n, m).T
 
-    if itn == 0: 
-        # TODO: fix it
-        #_s = atleast_1d(nanmax(a-o))
-        _s = atleast_1d(inf)
-        
     nodes = func11(y, e, None, indTC, None, o, a, _s, p)
 
     #OLD

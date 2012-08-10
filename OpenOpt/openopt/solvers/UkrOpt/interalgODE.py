@@ -1,7 +1,6 @@
-from numpy import asfarray, cumsum, diff, empty, hstack, asscalar, linspace, asarray, max, abs, floor, atleast_1d, where, \
-logical_not, argsort, logical_and, vstack, any, sum, array, nan, all
-from numpy.linalg import norm
-from openopt import NLP
+from numpy import hstack,  asarray, abs, atleast_1d, where, \
+logical_not, argsort, vstack, sum, array, nan, all
+
 from FuncDesigner import oopoint
 
 def interalg_ODE_routine(p, solver):

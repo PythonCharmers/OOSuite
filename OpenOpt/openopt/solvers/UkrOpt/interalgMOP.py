@@ -124,7 +124,7 @@ def r43(targets, SolutionsF, lf, uf, pool, nProc):
         return vstack(r)
 
 
-def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNodes,  \
+def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
          r41, fTol, Solutions, varTols, _in, dataType, \
          maxNodes, _s, indTC, xRecord):
 
@@ -133,13 +133,9 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nN
     if len(p._discreteVarsNumList):
         adjustDiscreteVarBounds(y, e, p)
     
-    if itn == 0: 
-        # TODO: change for constrained probs
-        _s = atleast_1d(inf)
-        if p.nProc != 1:
-            p.pool = Pool(processes = p.nProc)
-        else:
-            p.pool = None
+    
+    if p.nProc != 1 and getattr(p, 'pool', None) is None:
+        p.pool = Pool(processes = p.nProc)
     
     ol, al = [], []
     targets = p.targets # TODO: check it
@@ -330,12 +326,11 @@ def r44(Solutions, r5Coords, r5F, targets, sigma):
                     r36olution_better = f > F
                 else:
                     r36olution_better = abs(f - val) > abs(F - val)
-                    #assert 0, 'unimplemented yet'
                 r48 = logical_or(r48, r36olution_better)
 
             r49 = logical_not(r48)
             remove_s = any(r49)
-            if remove_s:# and False :
+            if remove_s:
                 r50 = where(r49)[0]
                 nOutcome += r50.size
                 Solutions.coords[r50[0]] = r5Coords[j]

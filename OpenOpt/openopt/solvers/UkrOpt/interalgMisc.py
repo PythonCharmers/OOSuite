@@ -15,7 +15,7 @@ except ImportError:
 #    # TODO: rework all(definiteRange)
 #    return o, a, all(definiteRange)
 
-def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNodes,  \
+def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
          r41, fTol, Solutions, varTols, _in, dataType, \
          maxNodes, _s, indTC, xRecord):
 
@@ -24,10 +24,7 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
     maxSolutions, solutions, coords = Solutions.maxNum, Solutions.solutions, Solutions.coords
     if len(p._discreteVarsNumList):
         adjustDiscreteVarBounds(y, e, p)
-    
-    if itn == 0: 
-        # TODO: change for constrained probs
-        _s = atleast_1d(inf)
+
     
     o, a, r41 = r45(y, e, vv, p, asdf1, dataType, r41, nlhc)
     fo_prev = float(0 if isSNLE else min((r41, r40 - (fTol if maxSolutions == 1 else 0))))
@@ -145,7 +142,7 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, itn, g, nNode
         if not isSNLE or p.maxSolutions == 1:
             astnlh = argsort(NN)
             an = an[astnlh]
-        
+#        print(an[0].nlhc, an[0].tnlh_curr_best)
         # Changes
 #        if NN.size != 0:
 #            ind = searchsorted(NN, an[0].tnlh_curr_best+1)
