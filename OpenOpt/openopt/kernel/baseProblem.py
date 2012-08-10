@@ -411,9 +411,10 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                         Tmp[key] = val
                 self.fixedVars = set(self.fixedVars.keys())
             # mb other operations will speedup it?
-            Keys = set(Tmp.keys()).difference(probDep)
-            for key in Keys:
-                Tmp.pop(key)
+            if self.probType != 'ODE':
+                Keys = set(Tmp.keys()).difference(probDep)
+                for key in Keys:
+                    Tmp.pop(key)
 
             self.x0 = Tmp
             self._categoricalVars = set()
