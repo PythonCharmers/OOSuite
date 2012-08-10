@@ -3,7 +3,7 @@ PythonSum = sum
 from numpy import inf, asfarray, copy, all, any, atleast_2d, zeros, dot, asarray, atleast_1d, \
 ones, ndarray, where, array, nan, vstack, eye, array_equal, isscalar, log, hstack, sum as npSum, prod, nonzero,\
 isnan, asscalar, zeros_like, ones_like, amin, amax, logical_and, logical_or, isinf, logical_not, logical_xor, flipud, \
-tile, float64, searchsorted, int8, int16, int32, int64, isfinite, log2, string_, asanyarray
+tile, float64, searchsorted, int8, int16, int32, int64, isfinite, log2, string_, asanyarray, log1p
 #from logic import AND
 #from traceback import extract_stack 
 try:
@@ -1728,7 +1728,7 @@ def _getAllAttachedConstraints(oofuns):
 #    return T.flatten(), R, DefiniteRange
 
 def nlh_and(_input, dep, Lx, Ux, p, dataType):
-    P_0 = array(0.0)
+    nlh_0 = array(0.0)
     R = {}
     DefiniteRange = True
     
@@ -1746,18 +1746,24 @@ def nlh_and(_input, dep, Lx, Ux, p, dataType):
             return inf, {}, DefiniteRange
         if all(isnan(T0)):
             raise FuncDesignerException('unimplemented for non-oofun or fixed oofun input yet')
-
-        T_0_vect = T0.reshape(-1, 1) if type(T0) == ndarray else T0
         
         if type(T0) == ndarray:
-            if P_0.shape == T0.shape:
-                P_0 += T0
-            elif P_0.size == T0.size:
-                P_0 += T0.reshape(P_0.shape)
+            if nlh_0.shape == T0.shape:
+                nlh_0 += T0
+            elif nlh_0.size == T0.size:
+                nlh_0 += T0.reshape(nlh_0.shape)
             else:
-                P_0 = P_0 + T0
+                nlh_0 = nlh_0 + T0
         else:
-            P_0 += T0
+            nlh_0 += T0
+        
+        # debug 
+#    if not any(isfinite(nlh_0)):
+#        return inf, {}, DefiniteRange
+#    for T0, res, DefiniteRange2 in elems_nlh:
+        #debug end
+        
+        T_0_vect = T0.reshape(-1, 1) if type(T0) == ndarray else T0
         
         for v, val in res.items():
             r = R.get(v, None)
@@ -1766,79 +1772,158 @@ def nlh_and(_input, dep, Lx, Ux, p, dataType):
             else:
                 r += (val if r.shape == val.shape else val.reshape(r.shape)) - T_0_vect
         
-    P_0_shape = P_0.shape
-    P_0 = P_0.reshape(-1, 1)
+    nlh_0_shape = nlh_0.shape
+    nlh_0 = nlh_0.reshape(-1, 1)
     for v, val in R.items():
         # TODO: check it
         #assert all(isfinite(val))
-        tmp =  val + P_0
-        tmp[isnan(tmp)] = inf # when val = -inf summation with P_0 == inf
+        tmp =  val + nlh_0
+        tmp[isnan(tmp)] = inf # when val = -inf summation with nlh_0 == inf
         R[v] = tmp
 
-    return P_0.reshape(P_0_shape), R, DefiniteRange
+    return nlh_0.reshape(nlh_0_shape), R, DefiniteRange
 
 
 def nlh_xor(_input, dep, Lx, Ux, p, dataType):
-    P_0 = array(0.0)
-    num_inf_0 = array(0)
-    R = {}
+    nlh_0 = array(0.0)
+    nlh_list = []
+    nlh_list_m = {}
+    num_inf_m = {}
+    S_finite = array(0.0)
+    num_inf_0 = atleast_1d(0)
+    num_inf_elems = []
+    R_diff = {}
     R_inf = {}
+    #S_finite_diff = {}
+    
     DefiniteRange = True
     
-    elems_nlh = [(elem.nlh(Lx, Ux, p, dataType) if isinstance(elem, oofun) \
-                  else (0, {}, None) if elem is True 
-                  else (inf, {}, None) if elem is False 
+#    elems_nlh = [(elem.nlh(Lx, Ux, p, dataType) if isinstance(elem, oofun) \
+#                  else (0, {}, None) if elem is True 
+#                  else (inf, {}, None) if elem is False 
+#                  else raise_except()) for elem in _input]
+
+    elems_lh = [(elem.lh(Lx, Ux, p, dataType) if isinstance(elem, oofun) \
+                  else (inf, {}, None) if elem is True 
+                  else (0, {}, None) if elem is False 
                   else raise_except()) for elem in _input]
-                  
-    for T0, res, DefiniteRange2 in elems_nlh:
+
+
+    for T0, res, DefiniteRange2 in elems_lh:
         DefiniteRange = logical_and(DefiniteRange, DefiniteRange2)
-    
-    
-    
-    for T0, res, DefiniteRange2 in elems_nlh:
-        if T0 is None: continue
+
+    for j, (T0, res, DefiniteRange2) in enumerate(elems_lh):
+        if T0 is None: 
+            raise FuncDesignerException('probably bug in FD kernel')
+            # !!!!!!!!!!!!!!!!! check "len(elems_lh)" below while calculating P_t
+            #continue
         if all(isnan(T0)):
             raise FuncDesignerException('unimplemented for non-oofun or fixed oofun input yet')
 
-        T_0_vect = T0.reshape(-1, 1) if type(T0) == ndarray else T0
+        #T_0_vect = T0.reshape(-1, 1) if type(T0) == ndarray else T0
         
         T_inf = where(isfinite(T0), 0, 1)
+        num_inf_elems.append(T_inf)
         T0 = where(isfinite(T0), T0, 0.0)
+        two_pow_t0 = 2.0 ** T0
         if type(T0) == ndarray:
-            if P_0.shape == T0.shape:
-                P_0 += T0
+            if nlh_0.shape == T0.shape:
+                nlh_0 += T0
                 num_inf_0 += T_inf
-            elif P_0.size == T0.size:
-                P_0 += T0.reshape(P_0.shape)
-                num_inf_0 += T_inf.reshape(P_0.shape)
+                S_finite += two_pow_t0
+            elif nlh_0.size == T0.size:
+                nlh_0 += T0.reshape(nlh_0.shape)
+                num_inf_0 += T_inf.reshape(nlh_0.shape)
+                S_finite += two_pow_t0.reshape(nlh_0.shape)
             else:
-                P_0 = P_0 + T0
+                nlh_0 = nlh_0 + T0
                 num_inf_0 = num_inf_0 + T_inf
+                S_finite = S_finite + two_pow_t0.reshape(nlh_0.shape)
         else:
-            P_0 += T0
+            nlh_0 += T0
             num_inf_0 += T_inf
+            S_finite += two_pow_t0
+            
+        nlh_list.append(T0)
         
         for v, val in res.items():
-            r = R.get(v, None)
+            T_inf_v = where(isfinite(val), 0, 1)
+            val_noninf = where(isfinite(val), val, 0)
+            T0v = val_noninf - T0.reshape(-1, 1)
+            
+            r = nlh_list_m.get(v, None)
             if r is None:
-                R[v] = val - T_0_vect
+                nlh_list_m[v] = [(j, T0v)]
+                num_inf_m[v] = [(j, T_inf_v.copy())]
+                #num_inf_m[v] = T_inf_v.copy()
             else:
-                r += (val if r.shape == val.shape else val.reshape(r.shape)) - T_0_vect
+                r.append((j, T0v))
+                num_inf_m[v].append((j, T_inf_v.copy()))
+                #num_inf_m[v] +=T_inf_v
                 
-    #for T0, res, DefiniteRange2 in elems_nlh:
-#R_inf[v] = num_inf
-#R_inf[v] += 
+            r = R_inf.get(v, None)
+            if r is None:
+                R_inf[v] = T_inf_v - T_inf.reshape(-1, 1)
+                R_diff[v] = T0v.copy()
+            else:
+                # TODO: check for 1st elem of size 1
+                r += (T_inf_v if r.shape == T_inf_v.shape else T_inf_v.reshape(r.shape))  - T_inf
+                R_diff[v] += T0v
+                
+        
+    nlh_1 = [nlh_0 - elem for elem in nlh_list]
+    # !!! TODO: speedup it via matrix insted of sequence of vectors
+    num_infs = [num_inf_0 - t for t in num_inf_elems]
 
-    P_0_shape = P_0.shape
-    P_0 = P_0.reshape(-1, 1)
+    S1 = PythonSum([2.0 ** where(num_infs[j] == 0, -t, -inf) for j, t in enumerate(nlh_1)])
+    S2 = atleast_1d(len(elems_lh)  * 2.0 ** (-nlh_0))
+    S2[num_inf_0 != 0] = 0
+    #nlh_t = -log(S2 - S1 + 1.0)
+    #nlh_t = -log1p(S2 - S1) * 1.4426950408889634
+    nlh_t = -log2(S1-S2)
+#    assert not any(isnan(nlh_t))
+#    if not all(isfinite(nlh_t)):
+#        print('='*10)
+#        print(nlh_t)
+#        print(elems_lh)
+#        raise 0
+    #print(elems_lh)
+#    print(R_inf)
+    #raise 0
+    R = {}
+    nlh_0 = nlh_0.reshape(-1, 1)
+    num_inf_0 = num_inf_0.reshape(-1, 1)
+
+    for v, nlh_diff in R_diff.items():
+        nlh = nlh_0 + nlh_diff
+        nlh_1 = [nlh - elem.reshape(-1, 1) for elem in nlh_list]
+        
+        for j, val in nlh_list_m[v]:
+            nlh_1[j] -= val
+        Tmp = R_inf[v] + num_inf_0
+        num_infs = [Tmp] * len(nlh_1)
+        for j, num_inf in num_inf_m[v]:
+            num_infs[j] = num_inf
+        
+        num_infs2 = [Tmp - elem for elem in num_infs]
+        #num_infs = num_inf - num_inf_m[v]
+        S1 = PythonSum([2.0 ** where(num_infs2[j] == 0, -elem, -inf) for j, elem in enumerate(nlh_1)])
+        S2 = atleast_1d(len(elems_lh)  * 2.0 ** (-nlh))
+        S2[Tmp.reshape(S2.shape) != 0] = 0
+        R[v] = -log2(S1 - S2)
+        #R[v] = -log1p(S2 - S1) * 1.4426950408889634
+        
     for v, val in R.items():
-        # TODO: check it
-        #assert all(isfinite(val))
-        tmp =  val + P_0
-        tmp[isnan(tmp)] = inf # when val = -inf summation with P_0 == inf
-        R[v] = tmp
-
-    return P_0.reshape(P_0_shape), R, DefiniteRange
+        val[isnan(val)] = inf
+        val[val < 0.0] = 0.0
+#    print('-'*10)
+#    #print(Lx, Ux)
+#    print('elems_lh:', elems_lh)
+#    print(nlh_t, R, DefiniteRange)
+    #raw_input()
+#    if nlh_t.size > 2:
+#        raise 0
+    return nlh_t, R, DefiniteRange
 
 
 #def nlh_not(_input_bool_oofun, dep, Lx, Ux, p, dataType):
@@ -1871,9 +1956,9 @@ def reverse_l2P(l2P):
 
 def AND(*args):
     Args = args[0] if len(args) == 1 and isinstance(args[0], (ndarray, tuple, list, set)) else args
-    for arg in Args:
-        if isinstance(arg, SmoothFDConstraint) and arg.lb == arg.ub and arg.tol == 0 and not arg.alt_nlh_func:
-            pass
+#    for arg in Args:
+#        if isinstance(arg, SmoothFDConstraint) and arg.lb == arg.ub and arg.tol == 0 and not arg.alt_nlh_func:
+#            pass
             #raise FuncDesignerException('equality constraint for smooth func inside logical FD func should have user-assigned tolerance')
     assert not isinstance(args[0], ndarray), 'unimplemented yet' 
     for arg in Args:
@@ -1894,7 +1979,30 @@ def alt_AND_engine(*input):
     return tmp
 
 # TODO: multiple args
-XOR = lambda arg1, arg2: (arg1 & ~arg2) | (~arg1 & arg2)
+XOR_prev = lambda arg1, arg2: (arg1 & ~arg2) | (~arg1 & arg2)
+
+def XOR(*args):
+    Args = args[0] if len(args) == 1 and isinstance(args[0], (ndarray, tuple, list, set)) else args
+#    for arg in Args:
+#        if isinstance(arg, SmoothFDConstraint) and arg.lb == arg.ub and arg.tol == 0 and not arg.alt_nlh_func:
+#            pass
+            #raise FuncDesignerException('equality constraint for smooth func inside logical FD func should have user-assigned tolerance')
+    assert not isinstance(args[0], ndarray), 'unimplemented yet' 
+    for arg in Args:
+        if not isinstance(arg, oofun):
+            raise FuncDesignerException('FuncDesigner logical XOR currently is implemented for oofun instances only')
+    #if other is True: return self
+    
+    #f = lambda *args: logical_xor(hstack([asarray(elem).reshape(-1, 1) for elem in args]))
+    r = BooleanOOFun(f_xor, Args, vectorized = True)
+    r.nlh = lambda *arguments: nlh_xor(Args, r._getDep(), *arguments)
+    r.oofun = r # is it required?
+    return r
+def f_xor(*args):
+    r = sum(array(args), 0)
+    return r == 1
+
+
 EQUIVALENT = lambda arg1, arg2: ((arg1 & arg2) | (~arg1 & ~arg2))
     
 def NOT(_bool_oofun):
@@ -1908,28 +2016,12 @@ def NOT(_bool_oofun):
         
     #if other is True: return False
     r = BooleanOOFun(logical_not, [_bool_oofun], vectorized = True)
-        
     r.oofun = r
-#    def eq_nlh(_bool_oofun, dep, *arguments):
-#        T, R, DefiniteRange = nlh_not(_bool_oofun, dep, *arguments)
-#        T2, R2, DefiniteRange2 = _bool_oofun.lh(*arguments)
-#        
-#        if 0 or not all(T==T2):
-#        
-#            print('T:', T)
-#            print('T2:', T2)
-#            print('R:', R)
-#            print('R2:', R2)
-#            #raw_input()
-#            assert 0
-#        return T, R, DefiniteRange
-    if 1 and _bool_oofun.is_oovar:
+
+    if _bool_oofun.is_oovar:
         r.lh = lambda *arguments: nlh_not(_bool_oofun, r._getDep(), *arguments)
         r.nlh = _bool_oofun.lh
     else:
-        #if _bool_oofun.is_oovar:
-            #r.nlh = lambda *arguments: eq_nlh(_bool_oofun, r._getDep(), *arguments) 
-        #else:
         r.nlh = lambda *arguments: nlh_not(_bool_oofun, r._getDep(), *arguments)
     return r
 

@@ -51,7 +51,12 @@ class ooarray(OOArray):
            
         if len(args) != 0 and isinstance(args[0], str):
             self.name = args[0]
-            #return self
+            for i, elem in enumerate(self.view(ndarray)):
+                if isinstance(elem, oofun):
+                    elem(self.name + '_' + str(i))
+            args = args[1:]
+            if len(args) == 0:
+                return self
         tmp = asarray([asscalar(asarray(self[i](*args, **kwargs))) if isinstance(self[i], oofun) else self[i] for i in range(self.size)])
         if tmp.dtype != object:
             return array(tmp, dtype = float).flatten()
