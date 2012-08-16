@@ -1,9 +1,9 @@
 # created by Dmitrey
 from numpy import copy, isnan, array, argmax, abs, vstack, zeros, any, isfinite, all, where, asscalar, \
-sign, dot, sqrt, array_equal, nanmax, inf, hstack, isscalar, logical_or, matrix, asfarray, prod, arange, ndarray, asarray, sum
+dot, sqrt, nanmax, isscalar, logical_or, matrix, prod, arange, ndarray, asarray, sum
 from ooMisc import norm
 from nonOptMisc import Copy, isPyPy
-from pointProjection import pointProjection
+#from pointProjection import pointProjection
 empty_arr = array(())
 try:
     from scipy.sparse import isspmatrix, csr_matrix
@@ -286,7 +286,7 @@ class Point:
 #            assert point2compare.f() >= bestFeasiblePoint.f()
 #            mr += (self.f()  - bestFeasiblePoint.f()) / fTol
 #            point2compareResidual += (point2compare.f() - bestFeasiblePoint.f()) / fTol
-        criticalResidualValue = max((contol, point2compareResidual))
+        #criticalResidualValue = max((contol, point2compareResidual))
         self_nNaNs, point2compare_nNaNs = self.nNaNs(), point2compare.nNaNs()
 
         if point2compare_nNaNs  > self_nNaNs: return True
@@ -630,7 +630,7 @@ class Point:
                     #if p.debug: assert array_equal(self.dh(ind).flatten(), self.dmr())
                     self.dType = 'h'
                 else:
-                    p.err('error in getRalgDirection (unknown residual type ' + fname + ' ), you should report the bug')
+                    self.p.err('error in getDirection (unknown residual type ' + fname + ' ), you should report the bug')
                 self.direction = d.flatten()
 
             if type(self.direction) != ndarray: self.direction = self.direction.A.flatten()
