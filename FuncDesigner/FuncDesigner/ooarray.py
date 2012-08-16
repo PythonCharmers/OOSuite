@@ -186,7 +186,7 @@ class ooarray(OOArray):
         if r.size == 1: return asscalar(r)==0
         
         # TODO: rework it
-        return ooarray([Constraint(elem) for elem in r.tolist()])
+        return ooarray([Constraint(elem, lb=0.0, ub=0.0) for elem in r.tolist()])
         #else: raise FuncDesignerException('unimplemented yet')
     
     
