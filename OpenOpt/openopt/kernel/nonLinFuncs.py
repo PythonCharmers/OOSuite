@@ -163,7 +163,9 @@ class nonLinFuncs:
                     for _X in XX: 
                         _X._p = p
                         _X.update(p.dictOfFixedFuncs)
-                r = hstack([[fun(xx) for xx in XX] if funcs[i] in p.unvectorizableFuncs else fun(X) for i, fun in enumerate(Funcs)])
+                #print [[fun(xx).shape for xx in XX] if funcs[i] in p.unvectorizableFuncs else fun(X).shape for i, fun in enumerate(Funcs)]
+                r = vstack([[fun(xx) for xx in XX] if funcs[i] in p.unvectorizableFuncs else fun(X) for i, fun in enumerate(Funcs)]).T
+                
                 
 #                X = [p._vector2point(x[i]) for i in range(nXvectors)]
 #                r = hstack([[fun(xx) for xx in X] for fun in Funcs]).reshape(1, -1)
@@ -184,11 +186,24 @@ class nonLinFuncs:
 #                    X = [p._vector2point(x[i]) for i in range(nXvectors)]
 #                    r = hstack([[fun(xx) for xx in X] for fun in Funcs]).reshape(1, -1)
             else:
-                X = [((x[i],) + Args) for i in range(nXvectors)] #if Args else [x[i]  for i in range(nXvectors)]
-                r = hstack([[fun(*xx) for xx in X] for fun in Funcs])
+                X = [(x[i],) + Args for i in range(nXvectors)] 
+                
+                #r = hstack([[fun(*xx) for xx in X] for fun in Funcs])
+                R = []
+                for xx in X:
+                    tmp = [fun(*xx) for fun in Funcs]
+                    r =hstack(tmp[0]) if len(tmp) == 1 and isinstance(tmp[0], (list, tuple)) else hstack(tmp) if len(tmp) > 1 else tmp[0]
+                    R.append(r)
+                
+                R = hstack(R)#.T
+                r = R
+                #print(R.shape, userFunctionType)
+                
                 
         elif not getDerivative:
-            r = hstack([fun(*(X, )+Args) for fun in Funcs])
+            tmp = [fun(*(X, )+Args) for fun in Funcs]
+            r = hstack(tmp[0]) if len(tmp) == 1 and isinstance(tmp[0], (list, tuple)) else hstack(tmp) if len(tmp) > 1 else tmp[0]
+                
             #print(x.shape, r.shape, x, r)
 #            if not ignorePrev and ind is None:
 #                p.prevVal[userFunctionType]['key'] = copy(x_0)
@@ -258,7 +273,7 @@ class nonLinFuncs:
                 p.err('implicit summation in objective is no longer available to prevent possibly hidden bugs')
 #            if r.size == 1:
 #                r = r.item()
-            
+        
         if userFunctionType == 'f' and p.isObjFunValueASingleNumber:
             if getDerivative and r.ndim > 1:
                 if min(r.shape) > 1:
@@ -270,7 +285,7 @@ class nonLinFuncs:
                 #if not hasattr(r, 'flatten'): 
                     #raise 0
                 r = r.flatten()
-                
+
         if userFunctionType != 'f' and nXvectors != 1:
             r = r.reshape(nXvectors, int(r.size/nXvectors))
 #        if type(r) == matrix: 
@@ -279,7 +294,7 @@ class nonLinFuncs:
 
         if nXvectors == 1 and (not getDerivative or prod(r.shape) == 1): # DO NOT REPLACE BY r.size - r may be sparse!
             r = r.flatten() if type(r) == ndarray else r.toarray().flatten() if not isscalar(r) else atleast_1d(r)
-
+        
         if p.invertObjFunc and userFunctionType=='f':
             r = -r
 
@@ -299,7 +314,7 @@ class nonLinFuncs:
         if userFunctionType == 'f' and hasattr(p, 'solver') and p.solver.funcForIterFcnConnection=='f' and hasattr(p, 'f_iter') and not getDerivative:
             if p.nEvals['f']%p.f_iter == 0 or nXvectors > 1:
                 p.iterfcn(x, r)
-        
+
         return r
 
 

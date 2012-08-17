@@ -251,7 +251,8 @@ def setNonLinFuncsNumber(p,  userFunctionType):
                 p.err('''
                 Optimization problem objective and constraints cannot be of type Stochastic, 
                 you can handle only functions on them like mean(X), std(X), var(X), P(X<Y) etc''')
-        setattr(p, 'n'+userFunctionType, asfarray(tmp).size)
+        setattr(p, 'n'+userFunctionType, \
+                sum([asarray(elem).size for elem in tmp]) if isinstance(tmp, (list, tuple)) else asarray(tmp).size)
 
 def economyMult(M, V):
     #return dot(M, V)

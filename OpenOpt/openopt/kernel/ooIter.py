@@ -8,7 +8,8 @@ from numpy import isscalar,  array_equal
 from openopt.kernel.ooMisc import isSolved 
 ######################
 
-from setDefaultIterFuncs import USER_DEMAND_STOP, IS_NAN_IN_X, SMALL_DELTA_X, IS_MAX_ITER_REACHED, IS_MAX_CPU_TIME_REACHED, IS_MAX_TIME_REACHED, IS_MAX_FUN_EVALS_REACHED
+from setDefaultIterFuncs import USER_DEMAND_STOP, IS_NAN_IN_X, SMALL_DELTA_X, IS_MAX_ITER_REACHED, \
+IS_MAX_CPU_TIME_REACHED, IS_MAX_TIME_REACHED, IS_MAX_FUN_EVALS_REACHED
 
 has_Tkinter = True
 try:
@@ -35,7 +36,7 @@ def ooIter(p, *args,  **kwargs):
             p.GUI_root.wait_variable(p.statusTextVariable)
 
     if not hasattr(p, 'timeStart'): return#called from check 1st derivatives
-
+    
     p.currtime = time()
     if not p.iter:
         p.lastDrawTime = p.currtime
@@ -58,7 +59,8 @@ def ooIter(p, *args,  **kwargs):
                     elem.pop(-1)
 
             #TODO: handle case x0 = x1 = x2 = ...
-            if not (p.isFinished and condEqualLastPoints): return
+            if not (p.isFinished and condEqualLastPoints): 
+                return
 
         #TODO: turn off xtol and ftol for artifically iterfcn funcs
 
@@ -111,9 +113,9 @@ def ooIter(p, *args,  **kwargs):
     if p.plot:
         p.timeElapsedForPlotting.append(T+p.timeElapsedForPlotting[-1])
         p.cpuTimeElapsedForPlotting.append(cpuT+p.cpuTimeElapsedForPlotting[-1])
-
-    p.iter += 1
     
+    p.iter += 1
+
     if p.isFinished: p.finalIterFcnFinished = True
     if p.istop and not p.solver.iterfcnConnected and not p.isFinished and p.solver.useStopByException:
         p.debugmsg('exit solver via exception; istop=%d' % p.istop)

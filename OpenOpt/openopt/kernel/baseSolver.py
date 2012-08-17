@@ -50,7 +50,9 @@ class baseSolver:
             elif 'xk' in kwargs.keys(): p.xk = kwargs['xk']
             elif not hasattr(p, 'xk'): p.err('iterfcn must get x value, if you see it inform oo developers')
             if p._baseClassName == 'NonLin': 
-                p.nNaNs = len(where(isnan(p.c(p.xk)))[0]) + len(where(isnan(p.h(p.xk)))[0])
+                C = p.c(p.xk)
+                H = p.h(p.xk)
+                p.nNaNs = len(where(isnan(C))[0]) + len(where(isnan(H))[0])
             if p.solver._requiresBestPointDetection:
                 currPoint = p.point(p.xk)
                 if p.iter == 0 or currPoint.betterThan(p._bestPoint): p._bestPoint = currPoint
