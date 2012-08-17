@@ -1155,7 +1155,7 @@ class oofun:
             
         Input = self._getInput(*args, **kwargs) 
         
-        #if not isinstance(x, ooPoint) or not x.isMultiPoint or (self.vectorized and not any([isinstance(inp, Stochastic) for inp in Input])):
+#        if not isinstance(x, ooPoint) or not x.isMultiPoint or (self.vectorized and not any([isinstance(inp, Stochastic) for inp in Input])):
         if not isinstance(x, ooPoint) or not x.isMultiPoint or self.vectorized:
             if self.args != ():
                 Input += self.args
