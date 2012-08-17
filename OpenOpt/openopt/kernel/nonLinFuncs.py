@@ -148,9 +148,11 @@ class nonLinFuncs:
                     # TODO: new
                     xx = []
                     counter = 0
+                    #xT = x.T
                     for i, oov in enumerate(p._freeVarsList):
                         s = p._optVarSizes[oov]
-                        xx.append((oov, x[:, counter: counter + s].view(multiarray)))
+                        xx.append((oov, (x[:, counter: counter + s].flatten() if s == 1 else x[:, counter: counter + s]).view(multiarray)))
+                        #print('nlf:', x[:, counter: counter + s].view(multiarray).shape)
                         counter += s
                     X = oopoint(xx)
                     X.update(p.dictOfFixedFuncs)
@@ -251,8 +253,11 @@ class nonLinFuncs:
             r = r.view(ndarray).flatten() if userFunctionType == 'f' else r.view(ndarray)
         #elif userFunctionType == 'f' and p.isObjFunValueASingleNumber and prod(r.shape) > 1 and (type(r) == ndarray or min(r.shape) > 1): 
             #r = r.sum(0)
-        elif userFunctionType == 'f' and p.isObjFunValueASingleNumber and not isscalar(r) and prod(r.shape) > 1 and not getDerivative and nXvectors == 1:
-            p.err('implicit summation in objective is no longer available to prevent possibly hidden bugs')
+        elif userFunctionType == 'f' and p.isObjFunValueASingleNumber and not isscalar(r):
+            if prod(r.shape) > 1 and not getDerivative and nXvectors == 1:
+                p.err('implicit summation in objective is no longer available to prevent possibly hidden bugs')
+#            if r.size == 1:
+#                r = r.item()
             
         if userFunctionType == 'f' and p.isObjFunValueASingleNumber:
             if getDerivative and r.ndim > 1:
@@ -271,8 +276,6 @@ class nonLinFuncs:
 #        if type(r) == matrix: 
 #            raise 0
 #            r = r.A # if _dense_numpy_matrix !
-        #assert p.iter != 176 or userFunctionType != 'f' or not getDerivative
-        
 
         if nXvectors == 1 and (not getDerivative or prod(r.shape) == 1): # DO NOT REPLACE BY r.size - r may be sparse!
             r = r.flatten() if type(r) == ndarray else r.toarray().flatten() if not isscalar(r) else atleast_1d(r)
@@ -289,7 +292,10 @@ class nonLinFuncs:
         if getDerivative:
             assert x.size == p.n#TODO: add python list possibility here
             x = x_0 # for to suppress numerical instability effects while x +/- delta_x
-            
+        
+        #if userFunctionType == 'f' and p.isObjFunValueASingleNumber and r.size == 1:
+            #r = r.item()
+        
         if userFunctionType == 'f' and hasattr(p, 'solver') and p.solver.funcForIterFcnConnection=='f' and hasattr(p, 'f_iter') and not getDerivative:
             if p.nEvals['f']%p.f_iter == 0 or nXvectors > 1:
                 p.iterfcn(x, r)
