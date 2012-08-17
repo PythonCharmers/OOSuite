@@ -39,6 +39,7 @@ class de(baseSolver):
     differenceFactor = 0.8
     crossoverRate = 0.5
     hndvi = 1
+    seed = 15
     
 
     __info__ = """
@@ -92,7 +93,7 @@ class de(baseSolver):
         #constraints = lambda x: np.hstack((p.c(x), p._get_AX_Less_B_residuals(x)))
         
         #################################################
-        np.random.seed()
+        np.random.seed(self.seed)
         
         #initialize population
         pop = np.random.rand(NP,D)*(ub-lb) + lb
@@ -178,6 +179,7 @@ class de(baseSolver):
             
             #CHECK CONSTRAINTS
             pop = _correct_box_constraints(lb,ub,pop)
+            
             best, vals, constr_vals = _eval_pop(pop, p)
             
             #SELECTION
@@ -210,9 +212,10 @@ class de(baseSolver):
                 best = old_best
             
             xk = best[3]
-            
+#            p.iterfcn(xk)
             if best[1] != 0:
                 fk = best[1]
+                #print(p.f(xk), fk, p.f(xk) - fk)
                 p.iterfcn(xk, fk)
             else:
                 p.iterfcn(xk)
@@ -226,29 +229,67 @@ class de(baseSolver):
                 return
 
 def _eval_pop(pop, p):
+    
     NP = pop.shape[0]
-    vals = p.f(pop)
+    
+    
+#    P = p.point(pop)
+#    constr_vals = P.mr()
+#    nNaNs = P.nNaNs()
+#    for i in range(NP):
+#        newPoint = p.point(pop[i])
+#        #constr_vals[i] = newPoint.mr() 
+#        constr_vals[i] = newPoint.nNaNs() 
+#        
+#    #print(R.shape, constr_vals.shape)
+#    assert all(constr_vals == nNaNs)         
+
+    
+    
+    
     constr_vals = np.zeros(NP)
-        
+    vals = p.f(pop)
+    vals[np.isnan(vals)] = np.inf
+    
     if p.__isNoMoreThanBoxBounded__():
+        #vals = p.f(pop)
         best_i = vals.argmin()        
         best = (best_i, vals[best_i], 0, pop[best_i])
     else:
-        new = 0
-        if new and p.isFDmodel:
-            pass
-#            C = zeros(NP)
-#            for 
+        
+#        new = 1
+#        
+#        if new:# and p.isFDmodel:
+            # TODO: handle nanPenalty * newPoint.nNaNs()
+            #vals = np.empty(pop.shape[0])
+            #vals.fill(np.nan)
+        P = p.point(pop)
+        constr_vals = P.mr(checkBoxBounds = False) + nanPenalty * P.nNaNs()
+        ind = constr_vals < p.contol
+        if not np.any(ind):
+            j = np.argmin(constr_vals)
+            bestPoint = p.point(pop[j])
+            bestPoint.i = j
         else:
-            for i in range(NP):
-                newPoint = p.point(pop[i])
-                constr_vals[i] = newPoint.mr() + nanPenalty * newPoint.nNaNs()
-                if i == 0 or newPoint.betterThan(bestPoint):
-                    bestPoint = newPoint
-                    bestPoint.i = i
-            
+            IND = np.where(ind)[0]
+            P2 = pop[IND]
+            #F = vals[IND]#p.point(P2).f()
+            #F = p.point(P2).f()
+            #vals[IND] = F
+            F = vals[IND]
+            J = np.nanargmin(F)
+            bestPoint = p.point(P2[J], f=F[J])# TODO: other fields
+            bestPoint.i = IND[J]
+#        else:
+#            #vals = p.f(pop)#; assert np.all(vals == p.point(pop).f())
+#            for i in range(NP):
+#                newPoint = p.point(pop[i])
+#                constr_vals[i] = newPoint.mr() + nanPenalty * newPoint.nNaNs()
+#                if i == 0 or newPoint.betterThan(bestPoint):
+#                    bestPoint = newPoint
+#                    bestPoint.i = i
         best = (bestPoint.i, bestPoint.f(), bestPoint.mr() + nanPenalty * bestPoint.nNaNs(), bestPoint.x)
-
+    #print(bestPoint.f(), bestPoint.mr())
     return best, vals, constr_vals
    
     
