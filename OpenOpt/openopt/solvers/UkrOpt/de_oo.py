@@ -39,7 +39,7 @@ class de(baseSolver):
     differenceFactor = 0.8
     crossoverRate = 0.5
     hndvi = 1
-    seed = 151515
+    seed = 150880
     
 
     __info__ = """
@@ -97,6 +97,8 @@ class de(baseSolver):
         
         #initialize population
         pop = np.random.rand(NP,D)*(ub-lb) + lb
+        if np.any(np.isfinite(p.x0)):
+            pop[0] = np.copy(p.x0)
         
         #evaluate  population 
         best, vals, constr_vals = _eval_pop(pop, p)
@@ -231,22 +233,7 @@ class de(baseSolver):
 def _eval_pop(pop, p):
     
     NP = pop.shape[0]
-    
-    
-#    P = p.point(pop)
-#    constr_vals = P.mr()
-#    nNaNs = P.nNaNs()
-#    for i in range(NP):
-#        newPoint = p.point(pop[i])
-#        #constr_vals[i] = newPoint.mr() 
-#        constr_vals[i] = newPoint.nNaNs() 
-#        
-#    #print(R.shape, constr_vals.shape)
-#    assert all(constr_vals == nNaNs)         
 
-    
-    
-    
     constr_vals = np.zeros(NP)
     vals = p.f(pop)
     vals[np.isnan(vals)] = np.inf
@@ -263,6 +250,7 @@ def _eval_pop(pop, p):
             # TODO: handle nanPenalty * newPoint.nNaNs()
             #vals = np.empty(pop.shape[0])
             #vals.fill(np.nan)
+        
         P = p.point(pop)
         constr_vals = P.mr(checkBoxBounds = False) + nanPenalty * P.nNaNs()
         ind = constr_vals < p.contol
@@ -273,23 +261,24 @@ def _eval_pop(pop, p):
         else:
             IND = np.where(ind)[0]
             P2 = pop[IND]
-            #F = vals[IND]#p.point(P2).f()
-            #F = p.point(P2).f()
-            #vals[IND] = F
             F = vals[IND]
             J = np.nanargmin(F)
             bestPoint = p.point(P2[J], f=F[J])# TODO: other fields
             bestPoint.i = IND[J]
+            
 #        else:
-#            #vals = p.f(pop)#; assert np.all(vals == p.point(pop).f())
-#            for i in range(NP):
-#                newPoint = p.point(pop[i])
-#                constr_vals[i] = newPoint.mr() + nanPenalty * newPoint.nNaNs()
-#                if i == 0 or newPoint.betterThan(bestPoint):
-#                    bestPoint = newPoint
-#                    bestPoint.i = i
+            #vals = p.f(pop)#; assert np.all(vals == p.point(pop).f())
+            
+#        for i in range(NP):
+#            newPoint = p.point(pop[i])
+#            constr_vals[i] = newPoint.mr(checkBoxBounds = False) + nanPenalty * newPoint.nNaNs()
+#            if i == 0 or newPoint.betterThan(bestPoint):
+#                bestPoint = newPoint
+#                bestPoint.i = i
+                
         best = (bestPoint.i, bestPoint.f(), bestPoint.mr() + nanPenalty * bestPoint.nNaNs(), bestPoint.x)
-    #print(bestPoint.f(), bestPoint.mr())
+        
+#    print(bestPoint.f(), bestPoint.mr(), constr_vals)
     return best, vals, constr_vals
    
     
