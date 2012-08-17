@@ -39,7 +39,7 @@ class de(baseSolver):
     differenceFactor = 0.8
     crossoverRate = 0.5
     hndvi = 1
-    seed = 15
+    seed = 151515
     
 
     __info__ = """
