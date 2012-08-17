@@ -32,6 +32,9 @@ class residuals:
 
     def _get_AX_Less_B_residuals(self, x):
         if self.A is not None and self.A.size > 0: 
+            if x.ndim > 1: # multiarray
+                return (self.matmult(self.A, x.T) - self.b.reshape(-1, 1)).T if not hasattr(self, '_A') else \
+                (self._A._mul_sparse_matrix(csr_matrix(x.T)).toarray().T - self.b.reshape(-1, 1)).T
             return self.matmult(self.A, x).flatten() - self.b if not hasattr(self, '_A') else \
             self._A._mul_sparse_matrix(csr_matrix((x, (arange(self.n), zeros(self.n))), shape=(self.n, 1))).toarray().flatten() - self.b
             #return self.matmult(self.A, x).flatten() - self.b if not hasattr(self, '_A') else self._A._mul_sparse_matrix(csr_matrix(x).reshape((self.n, 1))).toarray().flatten() - self.b
@@ -39,6 +42,9 @@ class residuals:
 
     def _get_AeqX_eq_Beq_residuals(self, x):
         if self.Aeq is not None and self.Aeq.size>0 : 
+            if x.ndim > 1: # multiarray
+                return (self.matmult(self.Aeq, x.T) - self.beq.reshape(-1, 1)).T if not hasattr(self, '_Aeq') else \
+                (self._Aeq._mul_sparse_matrix(csr_matrix(x.T)).toarray().T - self.beq.reshape(-1, 1)).T
             return self.matmult(self.Aeq, x).flatten() - self.beq if not hasattr(self, '_Aeq') else \
             self._Aeq._mul_sparse_matrix(csr_matrix((x, (arange(self.n), zeros(self.n))), shape=(self.n, 1))).toarray().flatten() - self.beq
         else: return empty_arr.copy()

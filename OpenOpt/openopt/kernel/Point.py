@@ -22,6 +22,7 @@ class Point:
     def __init__(self, p, x, *args, **kwargs):
         self.p = p
         self.x = copy(x)
+        self.isMultiArray = self.x.ndim > 1
         for i, arg in enumerate(args):
             setattr(self, '_' + self.__expectedArgs__[i], args[i])
         for name, val in kwargs.items():
@@ -45,7 +46,13 @@ class Point:
     def c(self, ind=None):
         if not self.p.userProvided.c: return empty_arr.copy()
         if ind is None:
-            if not hasattr(self, '_c'): self._c = self.p.c(self.x)
+            if not hasattr(self, '_c'): 
+                self._c = self.p.c(self.x)
+                self._nNaNs_C = isnan(self._c).sum(self._c.ndim-1)
+                if self.isMultiArray:
+                    tmp = self._c
+                    delattr(self, '_c')
+                    return tmp
             return copy(self._c)
         else:
             if hasattr(self, '_c'): return copy(self._c[ind])
@@ -58,7 +65,6 @@ class Point:
             if not hasattr(self, '_dc'): self._dc = self.p.dc(self.x)
             return Copy(self._dc)
         else:
-            
             if hasattr(self, '_dc'): return Copy(self._dc[ind])
             else: return Copy(self.p.dc(self.x, ind))
 
@@ -66,7 +72,13 @@ class Point:
     def h(self, ind=None):
         if not self.p.userProvided.h: return empty_arr.copy()
         if ind is None:
-            if not hasattr(self, '_h'): self._h = self.p.h(self.x)
+            if not hasattr(self, '_h'): 
+                self._h = self.p.h(self.x)
+                self._nNaNs_H = isnan(self._h).sum(self._h.ndim-1)
+                if self.isMultiArray:
+                    tmp = self._h
+                    delattr(self, '_h')
+                    return tmp
             return copy(self._h)
         else:
             if hasattr(self, '_h'): return copy(self._h[ind])
@@ -74,7 +86,6 @@ class Point:
 
     def dh(self, ind=None):
         if not self.p.userProvided.h: return empty_arr.copy().reshape(0, self.p.n)
-        #raise 0
         if ind is None:
             if not hasattr(self, '_dh'): self._dh = self.p.dh(self.x)
             return Copy(self._dh)
@@ -112,40 +123,46 @@ class Point:
         if not hasattr(self, '_ub'): self._ub = self.x - self.p.ub
         return copy(self._ub)
 
-    def mr(self, retAll = False):
+    def mr(self, retAll = False, checkBoxBounds = True):
         # returns max residual
+        
         if not hasattr(self, '_mr'):
             r, fname, ind = 0, None, 0
-            ineqs = ['lin_ineq', 'lb', 'ub']
+            if self.isMultiArray: 
+                r = zeros(self.x.shape[0])
+            ineqs = ['lin_ineq', 'lb', 'ub'] if checkBoxBounds else ['lin_ineq']
             eqs = ['lin_eq']
             if self.p._baseClassName == 'NonLin':
                 ineqs.append('c')
                 eqs.append('h')
-            elif self.p.probType in ['MILP', 'MINLP']:
-                pass
+#            elif self.p.probType in ['MILP', 'MINLP']:
+#                pass
                 #ineqs.append('intConstraints')
             for field in ineqs:
-                fv = array(getattr(self, field)()).flatten()
+                fv = array(getattr(self, field)())#.flatten()
                 if fv.size > 0:
-                    #ind_max = argmax(fv)
-                    #val_max = fv[ind_max
-                    val_max = nanmax(fv)
-                    if not isnan(val_max):
+                    val_max = nanmax(fv, fv.ndim-1)
+                    r = where(r < val_max, val_max, r) # handles nan ok
+                    if not self.isMultiArray and not isnan(val_max):
                         ind_max = where(fv==val_max)[0][0]
                         if r < val_max:
                             r, ind, fname = val_max, ind_max, field
             for field in eqs:
-                fv = array(getattr(self, field)()).flatten()
+                fv = array(getattr(self, field)())#.flatten()
                 if fv.size > 0:
                     fv = abs(fv)
-                    ind_max = argmax(fv)
-                    val_max = fv[ind_max]
-                    if r < val_max:
-                        r, ind, fname = val_max, ind_max, field
-            self._mr, self._mrName,  self._mrInd= r, fname, ind
+                    val_max = nanmax(fv, fv.ndim-1)
+                    r = where(r < val_max, val_max, r) # handles nan ok
+                    if not self.isMultiArray and not isnan(val_max):
+                        ind_max = argmax(fv)
+                        #val_max = fv[ind_max]
+                        if r < val_max:
+                            r, ind, fname = val_max, ind_max, field
+            if not self.isMultiArray:
+                self._mr, self._mrName,  self._mrInd= r, fname, ind
         if retAll:
             return asscalar(copy(self._mr)), self._mrName, asscalar(copy(self._mrInd))
-        else: return asscalar(copy(self._mr))
+        else: return asscalar(copy(self._mr)) if not self.isMultiArray else r
 
     def sum_of_all_active_constraints(self):
         if not hasattr(self, '_sum_of_all_active_constraints'):
@@ -269,7 +286,7 @@ class Point:
         if self.p.isUC:
             return self.f() < point2compare.f()
 
-        contol = self.p.contol
+        #contol = self.p.contol
 
         if altLinInEq:
             mr, point2compareResidual = self.mr_alt(bestFeasiblePoint=bestFeasiblePoint), point2compare.mr_alt(bestFeasiblePoint=bestFeasiblePoint)
@@ -298,7 +315,7 @@ class Point:
             elif point2compareResidual > self.p.contol and point2compareResidual > mr: return True
         else: # got here means self_nNaNs = point2compare_nNaNs but not equal to 0
             if mr == 0 and point2compareResidual == 0: 
-                if not self.p.solver.__name__.startswith('interalg'):
+                if self.p.solver.__name__ not in ('interalg', 'de'):
                     self.p.err('you should provide at least one active constraint in each point from R^n where some constraints are undefined')
             return mr < point2compareResidual
 
@@ -343,11 +360,15 @@ class Point:
 
     def nNaNs(self):
         # returns number of nans in constraints
-        if self.p._baseClassName != 'NonLin': return 0
-        r = 0
-        c, h = self.c(), self.h()
-        r += len(where(isnan(c))[0])
-        r += len(where(isnan(h))[0])
+        if self.p._baseClassName != 'NonLin': 
+            return 0
+        hasC, hasH = self.p.userProvided.c, self.p.userProvided.h
+        if hasH and not hasattr(self, '_nNaNs_H'):
+            self.h()
+        if hasC and not hasattr(self, '_nNaNs_C'):
+            self.c()
+        r = (self._nNaNs_C if hasC else 0) + (self._nNaNs_H if hasH else 0)
+        #r = len(where(isnan(c))[0])
         return r
     
     def linePoint(self, alp, point2, ls=None):

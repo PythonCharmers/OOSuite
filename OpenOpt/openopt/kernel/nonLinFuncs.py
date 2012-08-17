@@ -136,11 +136,11 @@ class nonLinFuncs:
         
         if nXvectors > 1: # and hence getDerivative isn't involved
             #temporary, to be fixed
-            assert userFunctionType == 'f' and p.isObjFunValueASingleNumber
+            if userFunctionType == 'f':
+               assert p.isObjFunValueASingleNumber
             
 
             if p.isFDmodel:
-                #new 2
                 assert ind is None
                 if p.hasVectorizableFuncs: # TODO: get rid of box-bound constraints
                     from FuncDesigner.ooPoint import ooPoint as oopoint, multiarray
@@ -153,12 +153,6 @@ class nonLinFuncs:
                         xx.append((oov, x[:, counter: counter + s].view(multiarray)))
                         counter += s
                     X = oopoint(xx)
-                    
-                    #prev
-                    #assert len(p._freeVarsList) == len(p._optVarSizes), 'vectorization is not implemented for the case of oovar(siz=n), use oovars(n) instead'
-                    #assert all(array(p._optVarSizes.values()) == 1), 'vectorization is not implemented for the case of oovar(siz=n), use oovars(n) instead'
-                    #X = oopoint([(oov, x[:, i].view(multiarray)) for i, oov in enumerate(p._freeVarsList)])
-                    
                     X.update(p.dictOfFixedFuncs)
                     X.maxDistributionSize = p.maxDistributionSize
                     X._p = p
@@ -167,7 +161,7 @@ class nonLinFuncs:
                     for _X in XX: 
                         _X._p = p
                         _X.update(p.dictOfFixedFuncs)
-                r = hstack([[fun(xx) for xx in XX] if funcs[i] in p.unvectorizableFuncs else fun(X) for i, fun in enumerate(Funcs)]).reshape(1, -1)
+                r = hstack([[fun(xx) for xx in XX] if funcs[i] in p.unvectorizableFuncs else fun(X) for i, fun in enumerate(Funcs)])
                 
 #                X = [p._vector2point(x[i]) for i in range(nXvectors)]
 #                r = hstack([[fun(xx) for xx in X] for fun in Funcs]).reshape(1, -1)
@@ -189,8 +183,7 @@ class nonLinFuncs:
 #                    r = hstack([[fun(xx) for xx in X] for fun in Funcs]).reshape(1, -1)
             else:
                 X = [((x[i],) + Args) for i in range(nXvectors)] #if Args else [x[i]  for i in range(nXvectors)]
-                r = hstack([[fun(*xx) for xx in X] for fun in Funcs]).reshape(1, -1)
-                
+                r = hstack([[fun(*xx) for xx in X] for fun in Funcs])
                 
         elif not getDerivative:
             r = hstack([fun(*(X, )+Args) for fun in Funcs])
@@ -254,10 +247,12 @@ class nonLinFuncs:
             #assert r.size != 30
         #if type(r) == matrix: r = r.A
         
-        if type(r) != ndarray and not isscalar(r):
-            r = r.view(ndarray).flatten() # multiarray
-        elif userFunctionType == 'f' and p.isObjFunValueASingleNumber and prod(r.shape) > 1 and (type(r) == ndarray or min(r.shape) > 1): 
-            r = r.sum(0)
+        if type(r) != ndarray and not isscalar(r): # multiarray
+            r = r.view(ndarray).flatten() if userFunctionType == 'f' else r.view(ndarray)
+        #elif userFunctionType == 'f' and p.isObjFunValueASingleNumber and prod(r.shape) > 1 and (type(r) == ndarray or min(r.shape) > 1): 
+            #r = r.sum(0)
+        elif userFunctionType == 'f' and p.isObjFunValueASingleNumber and not isscalar(r) and prod(r.shape) > 1 and not getDerivative and nXvectors == 1:
+            p.err('implicit summation in objective is no longer available to prevent possibly hidden bugs')
             
         if userFunctionType == 'f' and p.isObjFunValueASingleNumber:
             if getDerivative and r.ndim > 1:
@@ -270,7 +265,9 @@ class nonLinFuncs:
                 #if not hasattr(r, 'flatten'): 
                     #raise 0
                 r = r.flatten()
-            
+                
+        if userFunctionType != 'f' and nXvectors != 1:
+            r = r.reshape(nXvectors, int(r.size/nXvectors))
 #        if type(r) == matrix: 
 #            raise 0
 #            r = r.A # if _dense_numpy_matrix !
