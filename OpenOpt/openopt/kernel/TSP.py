@@ -132,7 +132,7 @@ class TSP(MatrixProblem):
             ind = rr.argsort()
             W = W[ind]
             out_nodes = Out_nodes[ind]
-            #print (W)
+
             lc = 0
             for i, w in enumerate(W):
                 if new:
@@ -182,7 +182,6 @@ class TSP(MatrixProblem):
                 self.err('input graph has node %s that has no edge from any other node; solution is impossible' % node)
             
             if new:
-                # TODO: mb use xor when it will be implemented
                 x_inds, x_vals = [], []
                 for elem in edges_inds:
                     x_ind, x_val = edge_ind2x_ind_val[elem]
@@ -191,7 +190,6 @@ class TSP(MatrixProblem):
                 c = engine([(x[x_ind] == x_val)(tol = 0.5) for x_ind, x_val in zip(x_inds, x_vals)])
             else:
                 if 0 and is_interalg_raw_mode:
-                    #print('1')
                     c = engine([x[j] for j in edges_inds])
                 else:            
                     nEdges = fd.sum([x[j] for j in edges_inds]) 

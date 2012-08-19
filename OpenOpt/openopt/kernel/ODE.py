@@ -1,6 +1,5 @@
 from baseProblem import NonLinProblem
-from numpy import any, diff
-#from numpy.linalg import norm
+
 
 class ODE(NonLinProblem):
     probType = 'ODE'

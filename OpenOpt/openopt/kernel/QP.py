@@ -1,8 +1,8 @@
 import NLP
 
-from ooMisc import assignScript, isspmatrix
+from ooMisc import isspmatrix
 from baseProblem import MatrixProblem
-from numpy import asfarray, ones, inf, dot, asfarray, nan, zeros, isfinite, all, ravel
+from numpy import asfarray, dot, nan, zeros, isfinite, all, ravel
 
 
 class QP(MatrixProblem):
