@@ -235,7 +235,7 @@ def _eval_pop(pop, p):
     NP = pop.shape[0]
 
     constr_vals = np.zeros(NP)
-    vals = p.f(pop)
+    vals = p.f(pop).flatten()
     vals[np.isnan(vals)] = np.inf
     
     if p.__isNoMoreThanBoxBounded__():
