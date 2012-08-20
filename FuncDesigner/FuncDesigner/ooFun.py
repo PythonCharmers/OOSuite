@@ -968,10 +968,8 @@ class oofun:
     __eq__ = lambda self, other: self.eq(other)
   
     def eq(self, other):
-#        print '!', other, type(other)
-#        print other in (None, (), []), (other is None or other is () or other is [])
-        if other in (None, (), []): return False
-        #if other is None or other is () or (type(other) == list and len(other) == 0): return False
+        #if other in (None, (), []): return False
+        if other is None or other is () or (type(other) == list and len(other) == 0): return False
         if type(other) in (str, string_): 
             if 'aux_domain' not in self.__dict__:
                 if not self.is_oovar:
@@ -982,10 +980,11 @@ class oofun:
             ind = searchsorted(self.aux_domain, other, 'left')
             if self.aux_domain[ind] != other:
                 raise FuncDesignerException('compared value %s is absent in oovar %s domain' %(other, self.name))
-            r = (self == ind)(tol=0.99)
-#            if self.is_oovar: r.nlh = lambda Lx, Ux, p, dataType: self.nlh(Lx, Ux, p, dataType, ind)
+            r = (self == ind)(tol=0.5)
+            # TODO: use it instead
+            #if self.is_oovar: r.nlh = lambda Lx, Ux, p, dataType: self.nlh(Lx, Ux, p, dataType, ind)
             return r
-            
+        
         if 'startswith' in dir(other): return False
         #if self.is_oovar and not isinstance(other, oofun):
             #raise FuncDesignerException('Constraints like this: "myOOVar = <some value>" are not implemented yet and are not recommended; for openopt use freeVars / fixedVars instead')
@@ -996,11 +995,27 @@ class oofun:
                     raise FuncDesignerException('bool oovar can be compared with [0,1] only')
                 r.nlh = self.nlh if other == 1.0 else (~self).nlh
                 r.alt_nlh_func = True
-            elif self.domain is not int and self.domain is not 'int' and type(other) in (str, string_):
-                r.nlh = lambda Lx, Ux, p, dataType: self.nlh(Lx, Ux, p, dataType, other)
-                r.alt_nlh_func = True
+            elif self.domain is not int and self.domain is not 'int':# and type(other) in (str, string_):
+                pass
+#                if self.is_oovar:
+#                    self.formAuxDomain()
+#                    ind = searchsorted(self.aux_domain, other, 'left')
+#                    #r.nlh = lambda Lx, Ux, p, dataType: self.nlh(Lx, Ux, p, dataType, ind)
+#                    r.nlh = lambda Lx, Ux, p, dataType: self.nlh(Lx, Ux, p, dataType, ind)
+                
+           #                print (self.domain, other)
+#                r_nlh = r.nlh
+#                def nlh_c(Lx, Ux, p, dataType):
+#                    r1 = nlh2(Lx, Ux, p, dataType)
+#                    r2 = r_nlh(Lx, Ux, p, dataType)
+#                    print(r1)
+#                    print(r2)
+#                    raw_input()
+#                #r.nlh = lambda Lx, Ux, p, dataType: self.nlh(Lx, Ux, p, dataType, other)
+#                r.nlh = nlh_c
+##                r.nlh = lambda Lx, Ux, p, dataType: self.nlh(Lx, Ux, p, dataType, other)
+##                r.alt_nlh_func = True
         return r  
-
 
     """                                             getInput                                              """
     def _getInput(self, *args, **kwargs):
@@ -2044,7 +2059,7 @@ def OR(*args):
 class BooleanOOFun(oofun):
     _unnamedBooleanOOFunNumber = 0
     discrete = True
-    alt_nlh_func = False
+    #alt_nlh_func = False
     # an oofun that returns True/False
     def __init__(self, func, _input, *args, **kwargs):
         oofun.__init__(self, func, _input, *args, **kwargs)
