@@ -35,11 +35,13 @@ except ImportError:
 from ooarray import ooarray
 from numpy import ndarray
 def IMPLICATION(condition, *args):
+    if condition is False: 
+        return True
     if len(args) == 1 and isinstance(args[0], (tuple, set, list, ndarray)):
-        return ooarray([IMPLICATION(condition, elem) for elem in args[0]])
+        return ooarray([IMPLICATION(condition, elem) for elem in args[0]]) if condition is not True else args[0]
     elif len(args) > 1:
-        return ooarray([IMPLICATION(condition, elem) for elem in args])
-    return NOT(condition & NOT(args[0]))
+        return ooarray([IMPLICATION(condition, elem) for elem in args]) if condition is not True else args
+    return NOT(condition & NOT(args[0])) if condition is not True else args[0]
     
 ifThen = IMPLICATION
 
