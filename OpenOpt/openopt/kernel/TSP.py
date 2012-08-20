@@ -166,9 +166,10 @@ class TSP(MatrixProblem):
             dictTo[To].append(i)
         
         engine = fd.XOR
-
-        for node, edges_inds in dictFrom.items():
-            if not new:
+        
+        # number of outcoming edges = 1
+        if not new:
+            for node, edges_inds in dictFrom.items():
                 # !!!!!!!!!! TODO for interalg_raw_mode: and if all edges have sign similar to goal
                 if 1 and is_interalg_raw_mode:
                     c = engine([x[j] for j in edges_inds])
@@ -177,6 +178,7 @@ class TSP(MatrixProblem):
                     c =  nEdges >= 1 if self.allowRevisit else nEdges == 1
                 constraints.append(c)
 
+        # number of incoming edges = 1
         for node, edges_inds in dictTo.items():
             if len(edges_inds) == 0:
                 self.err('input graph has node %s that has no edge from any other node; solution is impossible' % node)
@@ -209,7 +211,8 @@ class TSP(MatrixProblem):
                 else:
                     c = u[ii] - u[jj] + 1 <= (n-1) * (1-x[i])
                 constraints.append(c)
-                
+        
+        # handling objective(s)
         FF = []
         
         for obj in objective:
@@ -224,9 +227,11 @@ class TSP(MatrixProblem):
                 F = []
                 lc = 0
                 for X in x:
+                    #domain = X.aux_domain
                     domain = X.domain
                     vals = [tmp[i] for i in range(lc, lc + domain.size)]
                     lc += domain.size
+                    #F = sum(x)
                     F.append(fd.interpolator(domain, vals, k=1, s=0.00000001)(X))
                 F = fd.sum(F)
             else:
