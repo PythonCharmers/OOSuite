@@ -567,6 +567,10 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 if isinstance(c, ooarray):
                     for elem in c: 
                         self.handleConstraint(elem, *handleConstraint_args) 
+                elif c is True:
+                    continue
+                elif c is False:
+                    self.err('one of elements from constraints is "False", solution is impossible')
                 elif not hasattr(c, 'isConstraint'): 
                     self.err('The type ' + str(type(c)) + ' is inappropriate for problem constraints')
                 else:
