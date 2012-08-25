@@ -3,6 +3,7 @@
 from numpy import asarray, empty, inf, any, array, \
 asfarray, isscalar, ndarray, int16, int32, int64, float64, tile, vstack, searchsorted, logical_or, where, \
 asanyarray, arange, log2, logical_and, ceil
+import numpy as np
 from FDmisc import FuncDesignerException, isPyPy
 from ooFun import oofun, BooleanOOFun, AND, OR, NOT, EQUIVALENT
 #from FuncDesigner import IMPLICATION
@@ -285,41 +286,72 @@ def get_P(v, Lx, Ux, p, dataType, other=None, goal_is_nlh = True):
         assert other is not None, 'bug in FD kernel: called nlh with incorrect domain type'
         mx = 0.5 * (lx + ux) 
 
-        ind = logical_and(mx==other, lx != ux)
-        if any(ind):
-            p.pWarn('seems like a categorical variables bug in FuncDesigner kernel, inform developers')
-#                mx[ind] += 1e-15 + 1e-15*abs(mx[ind])
-
-        I = searchsorted(d, lx, 'right') -  1
-        J = searchsorted(d, mx, 'right') - 1
-        K = searchsorted(d, ux, 'right') - 1
-        
-        D0, D1, D2 = d[I], d[J], d[K]
-        
-        d1, d2 = D0, D1
-#        if goal_is_nlh:
-        tmp1 = asfarray(J-I+where(d2==other, 1, 0))
-        tmp1[logical_or(other<d1, other>d2)] = inf
-#        else:
-#            tmp1 = asfarray(J-I+where(d2==other, 0, 1))
-#            tmp1[logical_or(other<d1, other>d2)] = 0
-        
-        d1, d2 = D1, D2
-#        if goal_is_nlh:
-        tmp2 =  asfarray(K-J+where(d2==other, 1, 0))
-        tmp2[logical_or(other<d1, other>d2)] = inf
-#        else:
-#            tmp2 =  asfarray(K-J+where(d2==other, 0, 1))
-#            tmp2[logical_or(other<d1, other>d2)] = 0
-        if goal_is_nlh:
-            T2 = log2(vstack((tmp1, tmp2)).T)
+       
+        prev = 0
+        if prev:
+            ind = logical_and(mx==other, lx != ux)
+            if any(ind):
+                p.pWarn('seems like a categorical variables bug in FuncDesigner kernel, inform developers')
+                
+#                mx[ind] += 1e-15 + 1e-15*abs(mx[ind])            
+            I = searchsorted(d, lx, 'right') -  1
+            J = searchsorted(d, mx, 'right') - 1
+            #assert np.all(searchsorted(d, mx, 'right') == searchsorted(d, mx, 'left'))
+            K = searchsorted(d, ux, 'right') - 1
+            
+            D0, D1, D2 = d[I], d[J], d[K]
+            
+            d1, d2 = D0, D1
+    #        if goal_is_nlh:
+            tmp1 = asfarray(J-I+1+where(d2==other, 1, 0))
+            tmp1[logical_or(other<d1, other>d2)] = inf
+    #        else:
+    #            tmp1 = asfarray(J-I+where(d2==other, 0, 1))
+    #            tmp1[logical_or(other<d1, other>d2)] = 0
+            
+            d1, d2 = D1, D2
+    #        if goal_is_nlh:
+            tmp2 =  asfarray(K-J+1+where(d2==other, 1, 0))
+            tmp2[logical_or(other<d1, other>d2)] = inf
+    #        else:
+    #            tmp2 =  asfarray(K-J+where(d2==other, 0, 1))
+    #            tmp2[logical_or(other<d1, other>d2)] = 0
+            if goal_is_nlh:
+                T2 = log2(vstack((tmp1, tmp2)).T)
+            else:
+                T2 = log2(vstack((tmp1, tmp2)).T)
+            
+            d1, d2 = D0, D2
+            tmp = asfarray(K-I+where(d2==other, 1, 0))
+            tmp[logical_or(other<d1, other>d2)] = inf
+            T0 = log2(tmp)
         else:
-            T2 = log2(vstack((tmp1, tmp2)).T)
-        
-        d1, d2 = D0, D2
-        tmp = asfarray(K-I+where(d2==other, 1, 0))
-        tmp[logical_or(other<d1, other>d2)] = inf
-        T0 = log2(tmp)
+            assert np.all(d == array(d, int)) and len(d) == d[-1]-d[0]+1, 'bug in FD kernel'
+            #assert np.all(1e-6 < np.abs(np.array(mx, int)-mx))
+            assert goal_is_nlh, 'unimplemented yet'
+            
+            tmp = ux - lx
+            tmp[other < lx] = inf
+            tmp[other > ux] = inf
+            tmp[logical_and(tmp==0, other == lx)] = 0.0
+            T0 = log2(tmp+1)
+            
+            floor_mx = np.floor(mx)
+            tmp1 = floor_mx - lx
+            tmp1[other < lx] = inf
+            tmp1[other > floor_mx] = inf
+            tmp1[logical_and(tmp1==0, other == lx)] = 0.0
+            
+            ceil_mx = np.ceil(mx)
+            tmp2 = ux - ceil_mx 
+            tmp2[other > ux] = inf
+            tmp2[other < ceil_mx] = inf
+            tmp2[logical_and(tmp2==0, other == ux)] = 0.0
+            if goal_is_nlh:
+                T2 = log2(vstack((tmp1, tmp2)).T + 1.0)
+            else:
+                assert 0, 'unimplemented yet'
+                #T2 = log2(vstack((tmp1, tmp2)).T)
 
     res = T2
     

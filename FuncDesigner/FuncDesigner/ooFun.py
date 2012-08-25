@@ -971,6 +971,7 @@ class oofun:
         #if other in (None, (), []): return False
         if other is None or other is () or (type(other) == list and len(other) == 0): return False
         if type(other) in (str, string_): 
+        #if self.domain is not None and self.domain is not bool and self.domain is not 'bool':
             if 'aux_domain' not in self.__dict__:
                 if not self.is_oovar:
                     raise FuncDesignerException('comparing with non-numeric data is allowed for string oovars, not for oofuns')
@@ -980,9 +981,11 @@ class oofun:
             ind = searchsorted(self.aux_domain, other, 'left')
             if self.aux_domain[ind] != other:
                 raise FuncDesignerException('compared value %s is absent in oovar %s domain' %(other, self.name))
-            r = (self == ind)(tol=0.5)
+            #r = (self == ind)(tol=0.5)
+            r = Constraint(self - ind, ub = 0.0, lb = 0.0, tol=0.5)
+            #print (self, other)
             # TODO: use it instead
-            #if self.is_oovar: r.nlh = lambda Lx, Ux, p, dataType: self.nlh(Lx, Ux, p, dataType, ind)
+            if self.is_oovar: r.nlh = lambda Lx, Ux, p, dataType: self.nlh(Lx, Ux, p, dataType, ind)
             return r
         
         if 'startswith' in dir(other): return False
@@ -999,9 +1002,12 @@ class oofun:
                 pass
 #                if self.is_oovar:
 #                    self.formAuxDomain()
+#                    print('2', other)
 #                    ind = searchsorted(self.aux_domain, other, 'left')
 #                    #r.nlh = lambda Lx, Ux, p, dataType: self.nlh(Lx, Ux, p, dataType, ind)
+#                    r = Constraint(self - ind, ub = 0.0, lb = 0.0)
 #                    r.nlh = lambda Lx, Ux, p, dataType: self.nlh(Lx, Ux, p, dataType, ind)
+                    
                 
            #                print (self.domain, other)
 #                r_nlh = r.nlh
@@ -2173,9 +2179,9 @@ class SmoothFDConstraint(BaseFDConstraint):
     def __init__(self, *args, **kwargs):
         BaseFDConstraint.__init__(self, *args, **kwargs)
         self.lb, self.ub = -inf, inf
-        for key in kwargs.keys():
-            if key in ['lb', 'ub']:
-                setattr(self, key, asfarray(kwargs[key]))
+        for key, val in kwargs.items():
+            if key in ['lb', 'ub', 'tol']:
+                setattr(self, key, asfarray(val))
             else:
                 raise FuncDesignerException('Unexpected key in FuncDesigner constraint constructor kwargs')
     

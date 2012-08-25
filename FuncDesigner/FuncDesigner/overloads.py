@@ -580,7 +580,9 @@ def sum_interval(R0, r, INP, domain, dtype):
         if not np.all(np.isfinite(R)):
             R = np.asarray(R0, dtype).copy()
             if domain.isMultiPoint:
-                R = np.tile(R, (1, len(domain.values()[0][0])))
+                R = np.tile(R, (1, len(list(domain.values())[0][0])))
+                #R = np.tile(R, (1, len(domain.values()[0][0])))
+                #print (R.shape)
             DefiniteRange = True
             #####################
             # !!! don't use sum([inp._interval(domain, dtype) for ...]) here
