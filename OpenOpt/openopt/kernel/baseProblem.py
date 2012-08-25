@@ -419,18 +419,13 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             self.x0 = Tmp
             self._categoricalVars = set()
             for key, val in self.x0.items():
-                if type(val) in (str, unicode, string_):
+                #if key.domain is not None and key.domain is not bool and key.domain is not 'bool':
+                if type(val) in (str, string_):
                     self._categoricalVars.add(key)
                     key.formAuxDomain()
-#                    if key.domain.size > 2:
-#                        self.pWarn('''
-#                        current implementation of categorical variables with domain size > 2 
-#                        that is performed via casting to discrete variable with domain of same lenght
-#                        seems to be unstable yet
-#                        (may yield incorrect results) and thus is not recommended yet. 
-#                        It is intended to be fixed in next OpenOpt stable release
-#                        (casting to several boolean oovars is intended instead)''')
                     self.x0[key] = searchsorted(key.aux_domain, val, 'left')
+                elif key.domain is not None and key.domain is not bool and key.domain is not 'bool' and key.domain is not int and val not in key.domain:
+                    self.x0[key] = key.domain[0]
             
             self.x0 = oopoint(self.x0)
             self.x0.maxDistributionSize = self.maxDistributionSize
