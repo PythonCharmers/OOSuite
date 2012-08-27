@@ -5,6 +5,30 @@ from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X,  SMALL_DELTA_F
 import numpy as np
 nanPenalty = 1e10
 
+# In PyPy np.random is unimplemented yet
+try:
+    from np import random
+    Rand = random.rand
+    Seed = random.seed
+    Randint = random.randint
+except:# ImportError, AttributeError
+    import random
+    Seed = random.seed
+    def Rand(*shape):
+        r = np.empty(np.prod(shape))
+        for i in range(r.size):
+            r[i] = random.random()
+        return r.reshape(shape)
+    def Randint(low, high=None, size = None):
+        assert high is None, 'unimplemented yet'
+        if size is None:
+            return random.randint(0, low-1)
+        a = np.empty(np.prod(size), dtype=int)
+        for i in range(a.size):
+            a[i] = random.randint(0, low-1)
+        return a.reshape(size)
+
+
 class de(baseSolver):
     __name__ = 'de'
     __license__ = "BSD"
@@ -93,10 +117,10 @@ class de(baseSolver):
         #constraints = lambda x: np.hstack((p.c(x), p._get_AX_Less_B_residuals(x)))
         
         #################################################
-        np.random.seed(self.seed)
+        Seed(self.seed)
         
         #initialize population
-        pop = np.random.rand(NP,D)*(ub-lb) + lb
+        pop = Rand(NP,D)*(ub-lb) + lb
         if np.any(np.isfinite(p.x0)):
             pop[0] = np.copy(p.x0)
         
@@ -133,7 +157,7 @@ class de(baseSolver):
             
             #BASE VECTOR
             if useRandBaseVectStrat: #random base vector
-                beta = old_pop[np.random.randint(NP, size=NP)]
+                beta = old_pop[Randint(NP, size=NP)]
             else: #best vector
                 beta = np.ones((NP,D),'d')
                 beta = beta*best[3] #TODO: I think there is a better way to create such matrix
@@ -143,12 +167,12 @@ class de(baseSolver):
             
             #DIFFERENCE
             if useRandSearchDirStrat: #random search
-                r1_ints = np.random.randint(NP, size=(num_ind,NP))
-                r2_ints = np.random.randint(NP, size=(num_ind,NP))
+                r1_ints = Randint(NP, size=(num_ind,NP))
+                r2_ints = Randint(NP, size=(num_ind,NP))
                 barycenter1 = ((old_pop[r1_ints]).sum(0))/num_ind
                 barycenter2 = ((old_pop[r2_ints]).sum(0))/num_ind
             else: #directed search
-                r_ints = np.random.randint(NP, size=(2*num_ind))
+                r_ints = Randint(NP, size=(2*num_ind))
                 list = [ (j,constr_vals[j],vals[j]) for j in r_ints]
                 list_arr = np.array(list, dtype=[('i', int),
                                                   ('constr_val', float),
@@ -254,14 +278,17 @@ def _eval_pop(pop, p):
         P = p.point(pop)
         constr_vals = P.mr(checkBoxBounds = False) + nanPenalty * P.nNaNs()
         ind = constr_vals < p.contol
+        
         if not np.any(ind):
             j = np.argmin(constr_vals)
             bestPoint = p.point(pop[j])
             bestPoint.i = j
         else:
             IND = np.where(ind)[0]
-            P2 = pop[IND]
-            F = vals[IND]
+            P2 = np.atleast_2d(pop[IND])
+            #print(pop)
+            #print(P2)
+            F = np.atleast_1d(vals[IND])
             J = np.nanargmin(F)
             bestPoint = p.point(P2[J], f=F[J])# TODO: other fields
             bestPoint.i = IND[J]
@@ -275,7 +302,7 @@ def _eval_pop(pop, p):
 #            if i == 0 or newPoint.betterThan(bestPoint):
 #                bestPoint = newPoint
 #                bestPoint.i = i
-                
+        #print(bestPoint.x.shape)
         best = (bestPoint.i, bestPoint.f(), bestPoint.mr() + nanPenalty * bestPoint.nNaNs(), bestPoint.x)
         
 #    print(bestPoint.f(), bestPoint.mr(), constr_vals)
