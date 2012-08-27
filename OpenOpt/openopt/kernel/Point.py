@@ -44,7 +44,8 @@ class Point:
         return Copy(self._df)
 
     def c(self, ind=None):
-        if not self.p.userProvided.c: return empty_arr.copy()
+        if not self.p.userProvided.c: 
+            return empty_arr.copy()
         if ind is None:
             if not hasattr(self, '_c'): 
                 self._c = self.p.c(self.x)
@@ -409,6 +410,7 @@ class Point:
             if any(ind):
                 _c[ind] = p.c(r.x, where(ind)[0])
             r._c = _c
+            r._nNaNs_C = isnan(_c).sum(_c.ndim-1)
         
         # TODO: mb same for h?
         return r
