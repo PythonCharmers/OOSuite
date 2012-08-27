@@ -6,26 +6,49 @@ import numpy as np
 nanPenalty = 1e10
 
 # In PyPy np.random is unimplemented yet
+#global asdf
+#asdf = 0
 try:
+#    import asdfgh
     from np import random
     Rand = random.rand
     Seed = random.seed
     Randint = random.randint
 except:# ImportError, AttributeError
+ 
     import random
     Seed = random.seed
     def Rand(*shape):
+        
         r = np.empty(np.prod(shape))
         for i in range(r.size):
             r[i] = random.random()
+        
+        #change
+#        global asdf
+#        r = np.sin(np.arange(r.size) + asdf)
+#        asdf += 1
+        
         return r.reshape(shape)
     def Randint(low, high=None, size = None):
         assert high is None, 'unimplemented yet'
         if size is None:
+            
+            #change
+#            global asdf
+#            asdf += 1
+#            return asdf % low
+            
             return random.randint(0, low-1)
-        a = np.empty(np.prod(size), dtype=int)
+        a = np.empty(np.prod(size) if not np.isscalar(size) else size, dtype=int)
         for i in range(a.size):
             a[i] = random.randint(0, low-1)
+            
+#            #change
+#            asdf += 1
+#            a[i] = (asdf+i) % low
+            
+            
         return a.reshape(size)
 
 
@@ -121,6 +144,7 @@ class de(baseSolver):
         
         #initialize population
         pop = Rand(NP,D)*(ub-lb) + lb
+        
         if np.any(np.isfinite(p.x0)):
             pop[0] = np.copy(p.x0)
         
@@ -157,7 +181,10 @@ class de(baseSolver):
             
             #BASE VECTOR
             if useRandBaseVectStrat: #random base vector
-                beta = old_pop[Randint(NP, size=NP)]
+                try:
+                    beta = old_pop[Randint(NP, size=NP)]
+                except:
+                    beta = np.array([old_pop[Randint(NP)] for j in range(NP)])
             else: #best vector
                 beta = np.ones((NP,D),'d')
                 beta = beta*best[3] #TODO: I think there is a better way to create such matrix
@@ -169,8 +196,13 @@ class de(baseSolver):
             if useRandSearchDirStrat: #random search
                 r1_ints = Randint(NP, size=(num_ind,NP))
                 r2_ints = Randint(NP, size=(num_ind,NP))
-                barycenter1 = ((old_pop[r1_ints]).sum(0))/num_ind
-                barycenter2 = ((old_pop[r2_ints]).sum(0))/num_ind
+                try:
+                    barycenter1 = (old_pop[r1_ints]).sum(0)
+                    barycenter2 = (old_pop[r2_ints]).sum(0)
+                except: # PyPy
+                    assert self.hndvi == 1, 'unimplemented for PyPy yet'
+                    barycenter1 = np.array([old_pop[j] for j in r1_ints[0]])
+                    barycenter2 = np.array([old_pop[j] for j in r2_ints[0]])
             else: #directed search
                 r_ints = Randint(NP, size=(2*num_ind))
                 list = [ (j,constr_vals[j],vals[j]) for j in r_ints]
@@ -182,13 +214,23 @@ class de(baseSolver):
                 best_arr = np.array([j for (j,c,f) in best_list], 'i')
                 worst_list = list_arr[num_ind:2*num_ind]
                 worst_arr = np.array([j for (j,c,f) in worst_list], 'i')
-                barycenter1 = ((old_pop[worst_arr]).sum(0))/num_ind
-                barycenter2 = ((old_pop[best_arr]).sum(0))/num_ind
-            
+                
+                try:
+                    barycenter1 = ((old_pop[worst_arr]).sum(0))/num_ind
+                    barycenter2 = ((old_pop[best_arr]).sum(0))/num_ind
+                except: # PyPy
+                    assert self.hndvi == 1, 'unimplemented for PyPy yet'
+                    barycenter1 = np.array([old_pop[j] for j in worst_arr[0]])
+                    barycenter2 = np.array([old_pop[j] for j in best_arr[0]])
+
+            if num_ind != 1:
+                barycenter1 /= num_ind
+                barycenter2 /= num_ind
+
             delta = barycenter2 - barycenter1 #should be (NP,D)-shape array
             
             if useRandDiffFactorStrat:
-                Ft = np.random.rand(NP,D)
+                Ft = Rand(NP,D)
                 Ft = Ft*F
             else:
                 Ft = F
@@ -197,13 +239,14 @@ class de(baseSolver):
             
             #CROSSOVER
             cross_v = np.ones((NP,D))
-            const_v = np.random.rand(NP,D)
+            const_v = Rand(NP,D)
             const_v = np.ceil(const_v - Cr) 
             cross_v = cross_v - const_v
             
             pop = old_pop*const_v + pop*cross_v
             
             #CHECK CONSTRAINTS
+            
             pop = _correct_box_constraints(lb,ub,pop)
             
             best, vals, constr_vals = _eval_pop(pop, p)
@@ -247,6 +290,7 @@ class de(baseSolver):
                 p.iterfcn(xk)
                 
             newPoint = p.point(xk)
+            
             if i==0 or newPoint.betterThan(bestPoint):
                 bestPoint = newPoint
             
@@ -285,13 +329,17 @@ def _eval_pop(pop, p):
             bestPoint.i = j
         else:
             IND = np.where(ind)[0]
-            P2 = np.atleast_2d(pop[IND])
-            #print(pop)
-            #print(P2)
-            F = np.atleast_1d(vals[IND])
+            #print(IND, pop.shape)
+            try:
+                P2 = np.atleast_2d(pop[IND])
+                F = np.atleast_1d(vals[IND])
+            except: # PyPy
+                P2 = np.atleast_2d([pop[j] for j in IND])
+                F = np.atleast_1d([vals[j] for j in IND])
             J = np.nanargmin(F)
             bestPoint = p.point(P2[J], f=F[J])# TODO: other fields
-            bestPoint.i = IND[J]
+            #bestPoint.i = IND[J]
+            bestPoint.i = np.where(ind)[0]
             
 #        else:
             #vals = p.f(pop)#; assert np.all(vals == p.point(pop).f())
@@ -305,7 +353,6 @@ def _eval_pop(pop, p):
         #print(bestPoint.x.shape)
         best = (bestPoint.i, bestPoint.f(), bestPoint.mr() + nanPenalty * bestPoint.nNaNs(), bestPoint.x)
         
-#    print(bestPoint.f(), bestPoint.mr(), constr_vals)
     return best, vals, constr_vals
    
     
