@@ -9,7 +9,6 @@ nanPenalty = 1e10
 #global asdf
 #asdf = 0
 try:
-#    import asdfgh
     from np import random
     Rand = random.rand
     Seed = random.seed
@@ -24,10 +23,11 @@ except:# ImportError, AttributeError
         for i in range(r.size):
             r[i] = random.random()
         
-        #change
+#        #change
 #        global asdf
-#        r = np.sin(np.arange(r.size) + asdf)
-#        asdf += 1
+#        for i in range(r.size):
+#            asdf += 1
+#            r[i] = np.sin(asdf)
         
         return r.reshape(shape)
     def Randint(low, high=None, size = None):
@@ -44,9 +44,10 @@ except:# ImportError, AttributeError
         for i in range(a.size):
             a[i] = random.randint(0, low-1)
             
-#            #change
+            #change
+#            global asdf
 #            asdf += 1
-#            a[i] = (asdf+i) % low
+#            a[i] = asdf % low
             
             
         return a.reshape(size)
@@ -150,6 +151,7 @@ class de(baseSolver):
         
         #evaluate  population 
         best, vals, constr_vals = _eval_pop(pop, p)
+        Best = p.point(best[2], f=best[0], mr = best[1], mrName = None, mrInd = 0)
         
         if self.baseVectorStrategy == 'random':
             useRandBaseVectStrat = True 
@@ -177,8 +179,8 @@ class de(baseSolver):
             old_pop = pop
             old_vals = vals
             old_constr_vals = constr_vals
-            old_best = best
-            
+            Old_best = Best
+
             #BASE VECTOR
             if useRandBaseVectStrat: #random base vector
                 try:
@@ -187,8 +189,8 @@ class de(baseSolver):
                     beta = np.array([old_pop[Randint(NP)] for j in range(NP)])
             else: #best vector
                 beta = np.ones((NP,D),'d')
-                beta = beta*best[3] #TODO: I think there is a better way to create such matrix
-            
+                beta = beta*best[2] #TODO: I think there is a better way to create such matrix
+
             num_ind = self.hndvi #half of the number of individuals that take part
             #                      in differential creation
             
@@ -228,7 +230,7 @@ class de(baseSolver):
                 barycenter2 /= num_ind
 
             delta = barycenter2 - barycenter1 #should be (NP,D)-shape array
-            
+
             if useRandDiffFactorStrat:
                 Ft = Rand(NP,D)
                 Ft = Ft*F
@@ -240,16 +242,18 @@ class de(baseSolver):
             #CROSSOVER
             cross_v = np.ones((NP,D))
             const_v = Rand(NP,D)
+
             const_v = np.ceil(const_v - Cr) 
             cross_v = cross_v - const_v
             
             pop = old_pop*const_v + pop*cross_v
-            
+
             #CHECK CONSTRAINTS
             
             pop = _correct_box_constraints(lb,ub,pop)
             
             best, vals, constr_vals = _eval_pop(pop, p)
+            Best = p.point(best[2], f=best[0], mr = best[1], mrName = None, mrInd = 0)
             
             #SELECTION
             bool_constr_v = old_constr_vals < constr_vals #true when the old individual is better
@@ -277,25 +281,11 @@ class de(baseSolver):
             constr_vals = old_constr_vals*old_sel_v + constr_vals*sel_v
             #END SELECTION
             
-            if (old_best[2] < best[2]) or ((old_best[2] == best[2]) and (old_best[1] < best[1])):
-                best = old_best
-            
-            xk = best[3]
-#            p.iterfcn(xk)
-            if best[1] != 0:
-                fk = best[1]
-                #print(p.f(xk), fk, p.f(xk) - fk)
-                p.iterfcn(xk, fk)
-            else:
-                p.iterfcn(xk)
+            if Old_best.betterThan(Best):
+                Best = Old_best
                 
-            newPoint = p.point(xk)
-            
-            if i==0 or newPoint.betterThan(bestPoint):
-                bestPoint = newPoint
-            
+            p.iterfcn(Best)
             if p.istop: 
-                p.iterfcn(bestPoint)
                 return
 
 def _eval_pop(pop, p):
@@ -308,8 +298,8 @@ def _eval_pop(pop, p):
     
     if p.__isNoMoreThanBoxBounded__():
         #vals = p.f(pop)
-        best_i = vals.argmin()        
-        best = (best_i, vals[best_i], 0, pop[best_i])
+        #best_i = vals.argmin()        
+        best = (vals[best_i], 0, pop[best_i])
     else:
         
 #        new = 1
@@ -326,7 +316,7 @@ def _eval_pop(pop, p):
         if not np.any(ind):
             j = np.argmin(constr_vals)
             bestPoint = p.point(pop[j])
-            bestPoint.i = j
+            #bestPoint.i = j
         else:
             IND = np.where(ind)[0]
             #print(IND, pop.shape)
@@ -339,19 +329,9 @@ def _eval_pop(pop, p):
             J = np.nanargmin(F)
             bestPoint = p.point(P2[J], f=F[J])# TODO: other fields
             #bestPoint.i = IND[J]
-            bestPoint.i = np.where(ind)[0]
-            
-#        else:
-            #vals = p.f(pop)#; assert np.all(vals == p.point(pop).f())
-            
-#        for i in range(NP):
-#            newPoint = p.point(pop[i])
-#            constr_vals[i] = newPoint.mr(checkBoxBounds = False) + nanPenalty * newPoint.nNaNs()
-#            if i == 0 or newPoint.betterThan(bestPoint):
-#                bestPoint = newPoint
-#                bestPoint.i = i
-        #print(bestPoint.x.shape)
-        best = (bestPoint.i, bestPoint.f(), bestPoint.mr() + nanPenalty * bestPoint.nNaNs(), bestPoint.x)
+            #bestPoint.i = np.where(ind)[0]
+
+        best = (bestPoint.f(), bestPoint.mr() + nanPenalty * bestPoint.nNaNs(), bestPoint.x)
         
     return best, vals, constr_vals
    
