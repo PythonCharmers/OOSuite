@@ -12,7 +12,7 @@ from openopt.kernel.Point import Point
 
 from iterPrint import ooTextOutput
 from ooMisc import setNonLinFuncsNumber, assignScript, norm
-from nonOptMisc import isspmatrix, scipyInstalled, scipyAbsentMsg, csr_matrix, Vstack, Hstack, EmptyClass
+from nonOptMisc import isspmatrix, scipyInstalled, scipyAbsentMsg, csr_matrix, Vstack, Hstack, EmptyClass, isPyPy
 from copy import copy as Copy
 try:
     from DerApproximator import check_d1
@@ -515,17 +515,22 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
 #            hasVectorizableFuncs = False
 #            cond = True
             #debug end
-            
-            hasVectorizableFuncs = False
-            if len(unvectorizableVariables) != 0:
-                for ff in FF:
-                    _dep = ff._getDep()
-                    if cond or len(_dep & unvectorizableVariables) != 0:
-                        unvectorizableFuncs.add(ff)
-                    else:
-                        hasVectorizableFuncs = True
+
+            if isPyPy:
+                hasVectorizableFuncs = False
+                unvectorizableFuncs = FF
             else:
-                hasVectorizableFuncs = True
+                hasVectorizableFuncs = False
+                if len(unvectorizableVariables) != 0:
+                    for ff in FF:
+                        _dep = ff._getDep()
+                        if cond or len(_dep & unvectorizableVariables) != 0:
+                            unvectorizableFuncs.add(ff)
+                        else:
+                            hasVectorizableFuncs = True
+                else:
+                    hasVectorizableFuncs = True
+            
             self.unvectorizableFuncs = unvectorizableFuncs
             self.hasVectorizableFuncs = hasVectorizableFuncs
             
