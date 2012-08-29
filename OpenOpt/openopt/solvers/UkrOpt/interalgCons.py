@@ -1,16 +1,14 @@
 from numpy import empty, where, logical_and, logical_not, take, logical_or, isnan, zeros, log2, isfinite, \
-int8, int16, int32, int64, isinf, asfarray, vstack, any, asarray, tile
+int8, int16, int32, int64, isinf, asfarray, any, asarray
 from interalgLLR import func8, func10
 from interalgT import adjustDiscreteVarBounds
-from FuncDesigner import oopoint
-from FuncDesigner.ooFun import getSmoothNLH
 
 try:
     from bottleneck import nanmin, nanmax
 except ImportError:
     from numpy import nanmin, nanmax
     
-def processConstraints(C0, y, e, p, dataType):
+def processConstraints(C0, y, e, _s, p, dataType):
     n = p.n
     m = y.shape[0]
     r15 = empty(m, bool)
@@ -119,9 +117,10 @@ def processConstraints(C0, y, e, p, dataType):
         y = take(y, ind, axis=0, out=y[:lj])
         e = take(e, ind, axis=0, out=e[:lj])
         nlh = take(nlh, ind, axis=0, out=nlh[:lj])
-    return y, e, nlh, None, DefiniteRange, None# indT ; todo: rework it!
+        _s = _s[ind]
+    return y, e, nlh, None, DefiniteRange, None, _s# indT ; todo: rework it!
 
-def processConstraints2(C0, y, e, p, dataType):
+def processConstraints2(C0, y, e, _s, p, dataType):
     n = p.n
     m = y.shape[0]
     nlh = zeros((m, 2*n))
@@ -132,15 +131,12 @@ def processConstraints2(C0, y, e, p, dataType):
     indT.fill(False)
     if len(p._discreteVarsNumList):
         adjustDiscreteVarBounds(y, e, p)
-#    print '-'*10
-#    print 'p.iter:', p.iter
-#    print 'y:', y
-#    print 'e:', e
+
     for c, f, lb, ub, tol in C0:
         m = y.shape[0] # is changed in the cycle
         if m == 0: 
-            return y.reshape(0, n), e.reshape(0, n), nlh.reshape(0, 2*n), None, True, False
-            #return y.reshape(0, n), e.reshape(0, n), nlh.reshape(0, 2*n), residual.reshape(0, 2*n), True, False
+            return y.reshape(0, n), e.reshape(0, n), nlh.reshape(0, 2*n), None, True, False, _s
+            #return y.reshape(0, n), e.reshape(0, n), nlh.reshape(0, 2*n), residual.reshape(0, 2*n), True, False, _s
         
         T0, res, DefiniteRange2 = c.nlh(y, e, p, dataType)
         DefiniteRange = logical_and(DefiniteRange, DefiniteRange2)
@@ -166,6 +162,7 @@ def processConstraints2(C0, y, e, p, dataType):
             nlh_0 = nlh_0[ind]
     #            residual = take(residual, ind, axis=0, out=residual[:lj])
             indT = indT[ind]
+            _s = _s[ind]
             if asarray(DefiniteRange).size != 1: 
                 DefiniteRange = take(DefiniteRange, ind, axis=0, out=DefiniteRange[:lj])
 
@@ -174,6 +171,7 @@ def processConstraints2(C0, y, e, p, dataType):
         ind = logical_not(isfinite((nlh)))
         if any(ind):
             indT[any(ind, 1)] = True
+            
             ind_l,  ind_u = ind[:, :ind.shape[1]/2], ind[:, ind.shape[1]/2:]
             tmp_l, tmp_u = 0.5 * (y[ind_l] + e[ind_l]), 0.5 * (y[ind_u] + e[ind_u])
             y[ind_l], e[ind_u] = tmp_l, tmp_u
@@ -183,8 +181,7 @@ def processConstraints2(C0, y, e, p, dataType):
                     adjustDiscreteVarBounds(tmp_l, tmp_u, p)
                 else:
                     adjustDiscreteVarBounds(y, e, p)
-#                adjustDiscreteVarBounds(y, e, p)
-            
+
             nlh_l, nlh_u = nlh[:, nlh.shape[1]/2:], nlh[:, :nlh.shape[1]/2]
             
             # copy() is used because += and -= operators are involved on nlh in this cycle and probably some other computations
@@ -194,7 +191,8 @@ def processConstraints2(C0, y, e, p, dataType):
     nlh += nlh_0.reshape(-1, 1)
         
     residual = None
-    return y, e, nlh, residual, DefiniteRange, indT
+
+    return y, e, nlh, residual, DefiniteRange, indT, _s
 
 #def updateNLH(c, y, e, nlh, p):
 

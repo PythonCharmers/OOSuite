@@ -360,17 +360,18 @@ def func1(tnlhf, tnlhf_curr, residual, y, e, o, a, _s_prev, p, indT):
         else:
             assert 0
 
-        
-
-   
     if any(ind):
+        r10 = where(ind)[0]
+        #print('r10:', r10)
 #        print _s_prev
 #        print ((_s_prev -d)*n)[r10]
 #        print('ind length: %d' % len(where(ind)[0]))
 #        print where(ind)[0].size
-        bs = e[ind] - y[ind]
-        t[ind] = nanargmax(bs, 1) # ordinary numpy.argmax can be used as well
-    #print t, _s
+        #bs = e[ind] - y[ind]
+        #t[ind] = nanargmax(bs, 1) # ordinary numpy.argmax can be used as well
+        bs = e[r10] - y[r10]
+        t[r10] = nanargmax(bs, 1) # ordinary numpy.argmax can be used as well
+
     return t, _s, indD
     
 def func13(o, a): 
@@ -457,6 +458,7 @@ def func12(an, maxActiveNodes, p, Solutions, vv, varTols, fo):
         asarray([t.o for t in an1Candidates]), \
         asarray([t.a for t in an1Candidates]), \
         asarray([t._s for t in an1Candidates])
+
         
         if p.probType == 'MOP':
             tnlhf_curr = asarray([t.tnlh_all for t in an1Candidates])
@@ -474,19 +476,14 @@ def func12(an, maxActiveNodes, p, Solutions, vv, varTols, fo):
             #residual = asarray([t.residual for t in an1Candidates]) 
             residual = None
             
-            #R = dict([(Attr, array([getattr(node, Attr) for node in an1Candidates])) for Attr in ('nlhf','nlhc', 'tnlhf', 'tnlh_all') ])
-            
-            indT = func4(p, yc, ec, oc, ac, fo, tnlhf_curr)#, tuple(R.values()))
-            #indT = False
-#            print dir(an1Candidates[0])
-#            raw_input()
+            indT = func4(p, yc, ec, oc, ac, fo, tnlhf_curr)
+
             if indtc[0] is not None:
                 indT = logical_or(indT, indtc)
         else:
             residual = None
             indT = None
         t, _s, indD = func1(tnlhf, tnlhf_curr, residual, yc, ec, oc, ac, SIc, p, indT)
-#        print 't:', t
 
         new = 0
         nn = 0
@@ -654,6 +651,7 @@ def func12(an, maxActiveNodes, p, Solutions, vv, varTols, fo):
         if NewD and indD is not None: 
             s4d = _s[indD]
             sf = _s[logical_not(indD)]
+
             _s = hstack((s4d, s4d, sf))
             yf, ef = yc[logical_not(indD)], ec[logical_not(indD)]
             yc, ec = yc[indD], ec[indD]
@@ -662,6 +660,7 @@ def func12(an, maxActiveNodes, p, Solutions, vv, varTols, fo):
             _s = tile(_s, 2)
 
         yc, ec, tnlhf_curr_local = func2(yc, ec, t, vv, tnlhf_curr)
+
         if NewD and indD is not None:
             yc = vstack((yc, yf))
             ec = vstack((ec, ef))
@@ -760,7 +759,7 @@ def func11(y, e, nlhc, indTC, residual, o, a, _s, p):
             assert p.probType in ('GLP', 'NLP', 'NSP', 'SNLE', 'NLSP', 'MINLP')
         
 #            residual = None
-        
+
             return [si(Fields, Tmp[i], y[i], e[i], nlhf[i], 
                           nlhc[i] if nlhc is not None else None, 
                           indTC[i] if indTC is not None else None, 

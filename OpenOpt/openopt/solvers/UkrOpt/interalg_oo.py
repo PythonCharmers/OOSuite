@@ -244,7 +244,6 @@ class interalg(baseSolver):
                     M = np.max((M, np.max(np.atleast_1d(np.abs(r.lb)))))
                     M = np.max((M, np.max(np.atleast_1d(np.abs(r.ub)))))
                 self.dataHandling = 'raw' if M < 1e5 else 'sorted'
-                #print M
                     
             #self.dataHandling = 'sorted' if isIP or (p.__isNoMoreThanBoxBounded__() and n < 50) else 'raw'
             
@@ -318,7 +317,7 @@ class interalg(baseSolver):
         while 1:
             if len(C0) != 0: 
                 Func = processConstraints if self.intervalObtaining == 1 else processConstraints2
-                y, e, nlhc, residual, definiteRange, indT = Func(C0, y, e, p, dataType)
+                y, e, nlhc, residual, definiteRange, indT, _s = Func(C0, y, e, _s, p, dataType)
             else:
                 nlhc, residual, definiteRange, indT = None, None, True, None
             

@@ -20,7 +20,7 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
          maxNodes, _s, indTC, xRecord):
 
     isSNLE = p.probType in ('NLSP', 'SNLE')
-    
+
     maxSolutions, solutions, coords = Solutions.maxNum, Solutions.solutions, Solutions.coords
     if len(p._discreteVarsNumList):
         adjustDiscreteVarBounds(y, e, p)
@@ -31,7 +31,7 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
     if fo_prev > 1e300:
         fo_prev = 1e300
     y, e, o, a, _s, nlhc, residual = func7(y, e, o, a, _s, nlhc, residual)    
-    
+
     if y.size == 0:
         return _in, g, fo_prev, _s, Solutions, xRecord, r41, r40
     
@@ -140,8 +140,10 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
             NN = NN[ind]
 
         if not isSNLE or p.maxSolutions == 1:
+            #pass
             astnlh = argsort(NN)
             an = an[astnlh]
+            
 #        print(an[0].nlhc, an[0].tnlh_curr_best)
         # Changes
 #        if NN.size != 0:
@@ -189,17 +191,10 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
         p.istop, p.msg = 1000, 'required solution has been obtained'
         return an, g, fo, None, Solutions, xRecord, r41, r40
     
-#    print 'p.iter:', p.iter
-#    print '1:', len(an)
-#    print min([node.key for node in an])
-#    print 'p.iter:',p.iter, 'fo:', fo, 'g:', g
-#    print 'min(keys):', min([node.key for node in an])
     an, g = func9(an, fo, g, p)
-#    print 'g_new:', g
-#    print '2:', len(an)
 
     nn = maxNodes#1 if asdf1.isUncycled and all(isfinite(o)) and p._isOnlyBoxBounded and not p.probType.startswith('MI') else maxNodes
-    
+
     an, g = func5(an, nn, g, p)
     nNodes.append(len(an))
 
