@@ -298,7 +298,8 @@ def _eval_pop(pop, p):
     
     if p.__isNoMoreThanBoxBounded__():
         #vals = p.f(pop)
-        #best_i = vals.argmin()        
+        best_i = vals.argmin()        
+        
         best = (vals[best_i], 0, pop[best_i])
     else:
         
