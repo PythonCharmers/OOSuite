@@ -37,20 +37,18 @@ p = MINLP(F, startPoint, fTol = 0.0005, constraints = constraints)
 # for those variables that haven't assigned bounds, 
 # it affects only solvers that demand finite box bounds on variables
 
-r = p.solve('interalg', iprint = 100)
+r = p.solve('interalg', dataHandling = 'sorted', iprint = 100)
 print(r(x, y, z))
-'''
-------------------------- OpenOpt 0.37 -------------------------
+''' results for Intel Atom 1.6 GHz:
+------------------------- OpenOpt 0.39 -------------------------
 solver: interalg   problem: unnamed    type: MINLP   goal: minimum
  iter   objFunVal   log10(MaxResidual/ConTol)   
-    0  9.890e-01                      6.70 
-  100  -2.616e-01                     -0.37 
+    0  1.079e+00                      6.70 
 OpenOpt info: Solution with required tolerance 5.0e-04 
- is guarantied (obtained precision: 5.0e-04)
-  190  -2.669e-01                     -0.15 
+ is guarantied (obtained precision: 4.8e-05)
+   70  -2.672e-01                     -0.14 
 istop: 1000 (solution has been obtained)
-Solver:   Time Elapsed = 12.42 	CPU Time Elapsed = 11.86
-objFunValue: -0.26687054 (feasible, max(residuals/requiredTolerances) = 0.709678)
-[[-0.63549995422337446, -0.31006431453795402, 0.0947155871999006, 0.0004902022309690152, 
--0.69999999999999996, -0.99903866874298164, 0.89991287060890723], 1.0, 4.0]
+Solver:   Time Elapsed = 14.81 	CPU Time Elapsed = 14.0
+objFunValue: -0.26721888 (feasible, max(residuals/requiredTolerances) = 0.725122)
+[[-0.63521194458007812, -0.3106536865234375, 0.0905609130859375, 0.001522064208984375, -0.69999999999999996, -0.99993896484375, 0.90000152587890625], 1.0, 4.0]
 '''
