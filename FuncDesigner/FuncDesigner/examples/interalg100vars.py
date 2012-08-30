@@ -50,5 +50,5 @@ OpenOpt info: Solution with required tolerance 5.0e-02
   427  -1.722e+00                     -0.76 
 istop: 1000 (solution has been obtained)
 Solver:   Time Elapsed = 190.9 	CPU Time Elapsed = 189.13
-objFunValue: -1.7220354 (feasible, max(residuals/requiredTolerances) = 0.171915)
+objFunValue: -1.7168538 (feasible, max(residuals/requiredTolerances) = 0.0799645)
 '''
