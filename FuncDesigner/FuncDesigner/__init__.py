@@ -51,7 +51,7 @@ from dae import dae
 from overloads import *
 from stencils import d, d2
 #from overloads import _sum as sum
-from interpolate import scipy_UnivariateSpline as interpolator
+from interpolate import scipy_InterpolatedUnivariateSpline as interpolator
 from integrate import integrator
 
 

@@ -8,13 +8,13 @@ try:
 except:
     scipyInstalled = False
 
-def scipy_UnivariateSpline(*args, **kwargs):
+def scipy_InterpolatedUnivariateSpline(*args, **kwargs):
     if not scipyInstalled:
-        raise FuncDesignerException('to use scipy_UnivariateSpline you should have scipy installed, see scipy.org')
+        raise FuncDesignerException('to use scipy_InterpolatedUnivariateSpline you should have scipy installed, see scipy.org')
     assert len(args)>1 
     assert not isinstance(args[0], oofun) and not isinstance(args[1], oofun), \
     'init scipy splines from oovar/oofun content is not implemented yet'
-    univariate_spline = interpolate.UnivariateSpline(*args, **kwargs)
+    univariate_spline = interpolate.InterpolatedUnivariateSpline(*args, **kwargs)
     
     return FuncDesignerSplineGenerator(univariate_spline, *args, **kwargs)
     
@@ -25,16 +25,16 @@ class FuncDesignerSplineGenerator:
     def __call__(self, INP):
         us = self._un_sp
         if not isinstance(INP, oofun):
-            raise FuncDesignerException('for scipy_UnivariateSpline input should be oovar/oofun,other cases not implemented yet')
+            raise FuncDesignerException('for scipy_InterpolatedUnivariateSpline input should be oovar/oofun,other cases not implemented yet')
         def d(x):
             x = np.asfarray(x)
             #if x.size != 1:
-                #raise FuncDesignerException('for scipy_UnivariateSpline input should be oovar/oofun with output size = 1,other cases not implemented yet')
+                #raise FuncDesignerException('for scipy_InterpolatedUnivariateSpline input should be oovar/oofun with output size = 1,other cases not implemented yet')
             return us.__call__(x, 1)
         def f(x):
             x = np.asfarray(x)
             #if x.size != 1:
-                #raise FuncDesignerException('for scipy_UnivariateSpline input should be oovar/oofun with output size = 1,other cases not implemented yet')            
+                #raise FuncDesignerException('for scipy_InterpolatedUnivariateSpline input should be oovar/oofun with output size = 1,other cases not implemented yet')            
             tmp = us.__call__(x.flatten() if x.ndim > 1 else x)
             return tmp if x.ndim <= 1 else tmp.reshape(x.shape)
         r = oofun(f, INP, d = d, isCostly=True, vectorized=True)
@@ -67,7 +67,7 @@ class FuncDesignerSplineGenerator:
         elif 'k' in kwargs:
             k = kwargs['k']
         else:
-            k = 3 # default for UnivariateSpline
+            k = 3 # default for InterpolatedUnivariateSpline
             
         self._k = k
     
