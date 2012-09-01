@@ -3,7 +3,7 @@ PythonSum = sum
 from numpy import inf, asfarray, copy, all, any, atleast_2d, zeros, dot, asarray, atleast_1d, \
 ones, ndarray, where, array, nan, vstack, eye, array_equal, isscalar, log, hstack, sum as npSum, prod, nonzero,\
 isnan, asscalar, zeros_like, ones_like, amin, amax, logical_and, logical_or, isinf, logical_not, logical_xor, flipud, \
-tile, float64, searchsorted, int8, int16, int32, int64, isfinite, log2, string_, asanyarray, log1p
+tile, float64, searchsorted, int8, int16, int32, int64, isfinite, log2, string_, asanyarray
 #from logic import AND
 #from traceback import extract_stack 
 try:
@@ -447,6 +447,7 @@ class oofun:
         r.vectorized = True
         def _interval(domain, dtype):
             r, definiteRange = self._interval(domain, dtype)
+            assert r.shape[0] == 2
             return -flipud(r), definiteRange
             #return (-r[1], -r[0])
         r._interval_ = _interval
@@ -1883,12 +1884,13 @@ def nlh_xor(_input, dep, Lx, Ux, p, dataType):
                 #num_inf_m[v] +=T_inf_v
                 
             r = R_inf.get(v, None)
+            T_inf = T_inf.reshape(-1, 1)
             if r is None:
-                R_inf[v] = T_inf_v - T_inf.reshape(-1, 1)
+                R_inf[v] = T_inf_v - T_inf#.reshape(-1, 1)
                 R_diff[v] = T0v.copy()
             else:
                 # TODO: check for 1st elem of size 1
-                r += (T_inf_v if r.shape == T_inf_v.shape else T_inf_v.reshape(r.shape))  - T_inf
+                r += (T_inf_v if r.shape == T_inf_v.shape else T_inf_v.reshape(r.shape))  - T_inf#.reshape(-1, 1)
                 R_diff[v] += T0v
                 
         

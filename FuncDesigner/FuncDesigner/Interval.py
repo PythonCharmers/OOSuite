@@ -1,6 +1,7 @@
-from numpy import ndarray, asscalar, isscalar, hstack, amax, amin, floor, ceil, pi, \
-arange, copy as Copy, logical_and, where, asarray, any, atleast_1d, empty_like, nan, logical_not, vstack, \
-searchsorted, array
+from numpy import ndarray, asscalar, isscalar, floor, pi, \
+copy as Copy, logical_and, where, asarray, any, atleast_1d, vstack, \
+searchsorted
+import numpy as np
 
 try:
     from bottleneck import nanmin, nanmax
@@ -102,10 +103,12 @@ def nonnegative_interval(inp, func, domain, dtype, F0, shift = 0.0):
     ind = lb < th
     if any(ind):
         t_min_max[0][atleast_1d(logical_and(lb < th, ub >= th))] = F0
-        
-        # TODO: rework it with matrix operations
-        definiteRange = False
-        
+        if definiteRange is not False:
+            if definiteRange is True:
+                definiteRange = np.empty_like(lb)
+                definiteRange.fill(True)
+            definiteRange[ind] = False
+            
     return t_min_max, definiteRange
 
 def box_1_interval(inp, func, domain, dtype, F_l, F_u):
@@ -116,12 +119,20 @@ def box_1_interval(inp, func, domain, dtype, F_l, F_u):
     ind = lb < -1
     if any(ind):
         t_min_max[0][atleast_1d(logical_and(lb < -1, ub >= -1))] = F_l
-        definiteRange = False
+        if definiteRange is not False:
+            if definiteRange is True:
+                definiteRange = np.empty_like(lb)
+                definiteRange.fill(True)
+            definiteRange[ind] = False
         
     ind = ub > 1
     if any(ind):
         t_min_max[0][atleast_1d(logical_and(lb < 1, ub >= 1))] = F_u
-        definiteRange = False
+        if definiteRange is not False:
+            if definiteRange is True:
+                definiteRange = np.empty_like(lb)
+                definiteRange.fill(True)
+            definiteRange[ind] = False
         
     return t_min_max, definiteRange
         
@@ -143,7 +154,7 @@ def box_1_interval(inp, func, domain, dtype, F_l, F_u):
 #        
 #    else:
 #        t_min, t_max = func(lb), func(ub)
-    return vstack((t_min, t_max)), definiteRange
+#    return vstack((t_min, t_max)), definiteRange
 
 def adjust_lx_WithDiscreteDomain(Lx, v):
     if v.domain is bool or v.domain is 'bool':

@@ -101,7 +101,7 @@ def tan(inp):
         return distribution.stochasticDistribution(tan(inp.values), inp.probabilities.copy())._update(inp)       
     if not isinstance(inp, oofun): return np.tan(inp)
     # TODO: move it outside of tan definition
-    def interval(arg_inf, arg_sup):
+    def interval(*args):
         raise 'interval for tan is unimplemented yet'
     r = oofun(st_tan, inp, d = lambda x: Diag(1.0 / np.cos(x) ** 2), vectorized = True, interval = interval)
     return r
