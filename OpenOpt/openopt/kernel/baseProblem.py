@@ -315,7 +315,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             self._FD = EmptyClass()
             self._FD.nonBoxConsWithTolShift = []
             self._FD.nonBoxCons = []
-            from FuncDesigner import _getAllAttachedConstraints, _getDiffVarsID, ooarray, oopoint, oofun, _Stochastic
+            from FuncDesigner import _getAllAttachedConstraints, _getDiffVarsID, ooarray, oopoint, oofun#, _Stochastic
             self._FDVarsID = _getDiffVarsID()
             
             probDep = set()
