@@ -10,7 +10,7 @@ from openopt import *
 from numpy import sin, cos
 import networkx as nx
 
-N = 5
+N = 15
 
 G = nx.Graph()
 G.add_edges_from(\
@@ -37,7 +37,8 @@ print(r.nodes)
 print(r.edges)
 print(r.Edges)
 '''
-Solver:   Time Elapsed = 0.05 	CPU Time Elapsed = 0.04
+Solver:   Time Elapsed = 0.05 	CPU Time Elapsed = 0.04 
+# (glpk takes 5 sec for N = 15, Intel Atom 1.6 GHz)
 objFunValue: 5.1628774 (feasible, MaxResidual = 0)
 [2, 0, 4, 1, 3, 2]
 [(2, 0), (0, 4), (4, 1), (1, 3), (3, 2)]

@@ -42,6 +42,7 @@ print(r.edges) # (node_from, node_to)
 print(r.Edges) # full info on edges; unavailable for solver sa yet
 '''
 Solver:   Time Elapsed = 0.04 	CPU Time Elapsed = 0.04
+# for N = 13 (full-13 graph) lpSolve Time Elapsed = 1.76 	CPU Time Elapsed = 1.74
 objFunValue: 231.72217 (feasible, MaxResidual = 0)
 ['node 3', 'node 4', 'node 1', 'node 0', 'node 2']
 [('node 3', 'node 4'), ('node 4', 'node 1'), ('node 1', 'node 0'), ('node 0', 'node 2'), ('node 2', 'node 3')]
@@ -50,5 +51,4 @@ objFunValue: 231.72217 (feasible, MaxResidual = 0)
 ('node 1', 'node 0', {'cost': 5.6829419696157935, 'time': 3.5587967901940627}), 
 ('node 0', 'node 2', {'cost': 4.1677063269057157, 'time': 12.6960172766018}), 
 ('node 2', 'node 3', {'cost': 1.8386098604504726, 'time': 0.78837914911982798})]
-for N = 13 (full-13 graph) lpSolve Time Elapsed = 1.76 	CPU Time Elapsed = 1.74
 '''
