@@ -21,6 +21,7 @@ G.add_edges_from(\
 # for nonlinear objective and constraints functions like arctan, abs etc should be imported from FuncDesigner
 constraints = lambda values: (2 * values['time'] + 3 * values['cost'] > 100, 8 * values['time'] + 15*values['cost'] > 150)
 objective = lambda values: values['time'] + 10*values['cost'] 
+# objective and constraint funcs are applied on sums of all values for all involved edges, not for each standalone edge
 
 p = TSP(G, objective = objective, constraints = constraints, start = 'node 3', returnToStart=False)
 
