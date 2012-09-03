@@ -7,10 +7,8 @@ class TSP(MatrixProblem):
     expectedArgs = ['graph', 'objective']
     allowedGoals = ['min', 'max', 'minimum', 'maximum']
     showGoal = True
-    allowRevisit = False
+    allowRevisit = False # True is unimplemented properly yet
     _init = False
-
-    # !!!!!!!!!!!!!! TODO: handle it
     start = None 
     returnToStart = True
     
