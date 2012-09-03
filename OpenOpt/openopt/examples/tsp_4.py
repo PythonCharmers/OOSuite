@@ -20,10 +20,10 @@ G.add_edges_from(\
                  [(i,j,{'time': 4.5*(cos(i)-sin(j)+1)**2, 'cost':(i-j)**2 + sin(i) + cos(j)+1, 'way': 'railroad'}) for i in range(int(2*N/3)) for j in range(int(N)) if i != j ])
 
 G.add_edges_from(\
-                 [(i,j,{'time': 4.5*(cos(4*i)-sin(3*j)+1)**2, 'cost':(i-2*j)**2 + sin(10+i) + cos(2*j)+1, 'way': 'aircraft'}) for i in range(int(2*N/3)) for j in range(int(N)) if i != j ])
+                 [(i,j,{'time': 4.5*(cos(4*i)-sin(3*j)+1)**2, 'cost':(i-2*j)**2 + sin(10+i) + cos(2*j)+1, 'way': 'car'}) for i in range(int(2*N/3)) for j in range(int(N)) if i != j ])
 
 G.add_edges_from(\
-                 [(i,j,{'time': +(4.5*(cos(i)+cos(j)+1)**2 + abs(i - j)), 'cost': (0.2*i + 0.1*j)**2, 'way': 'railroad'}) for i in range(int(N)) for j in range(int(N)) if i != j ])
+                 [(i,j,{'time': +(4.5*(cos(i)+cos(j)+1)**2 + abs(i - j)), 'cost': (0.2*i + 0.1*j)**2, 'way': 'bike'}) for i in range(int(N)) for j in range(int(N)) if i != j ])
 
 objective = [
               # name, tol, goal
