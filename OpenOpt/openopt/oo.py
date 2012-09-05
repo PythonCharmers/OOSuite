@@ -8,6 +8,7 @@ from SDP import SDP as CSDP
 from QP import QP as CQP
 from MILP import MILP as CMILP
 from STAB import STAB as CSTAB
+from MCP import MCP as CMCP
 from TSP import TSP as CTSP
 from NSP import NSP as CNSP
 from NLP import NLP as CNLP
@@ -136,6 +137,37 @@ def STAB(*args, **kwargs):
        * MILP solvers at http://openopt.org/MILP
     """
     return CSTAB(*args, **kwargs)
+
+
+def MCP(*args, **kwargs):
+    """
+    MCP: constructor for maximum clique problem assignment
+    
+    valid calls are:
+    p = MCP(graph, <params as kwargs>)
+    p = MCP(graph = graph, <params as kwargs>)
+    See also: /examples/mcp_*.py
+
+    :Parameters:
+    graph: networkx graph instance
+
+    :Returns:
+    OpenOpt MCP class instance
+
+    Notes
+    -----
+    Solving of OpenOpt MCP problems is performed via
+    r = p.solve(string_name_of_solver)
+    or r = p.manage(string_name_of_solver) (to enable basic GUI)
+    r.solution - desired solution (python list of nodes)
+    r.ff - objFun value (NaN if a problem occured)
+    (see also other r fields)
+    Solvers available for now:  
+       * interalg (BSD license)
+       * MILP solvers at http://openopt.org/MILP
+    """
+    return CMCP(*args, **kwargs)
+
 
 def TSP(*args, **kwargs):
     """
