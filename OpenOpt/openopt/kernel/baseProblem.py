@@ -537,7 +537,6 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             for v in self._freeVars:
                 d = v.domain
                 if d is bool or d is 'bool':
-                    #v.domain = array([0, 1])
                     self.constraints.update([v>0, v<1])
                 elif d is not None and d is not int and d is not 'int':
                     # TODO: mb add integer domains?
@@ -564,6 +563,24 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
 
 
             inplaceLinearRender = self.solver.__name__ == 'interalg'
+            
+            if inplaceLinearRender and hasattr(self, 'f'):
+                D_kwargs2 = D_kwargs.copy()
+                D_kwargs2['useSparse'] = False
+                if type(self.f) in [list, tuple, set]:
+                    ff = []
+                    for f in self.f:
+                        if f.getOrder(self.freeVars, self.fixedVars) < 2:
+                            D = f.D(Z, **D_kwargs2)
+                            f2 = linear_render(f, D, Z)
+                            ff.append(f2)
+                        else:
+                            ff.append(f)
+                    self.f = ff
+                else: # self.f is oofun
+                    if self.f.getOrder(self.freeVars, self.fixedVars) < 2:
+                        D = self.f.D(Z, **D_kwargs2)
+                        self.f = linear_render(self.f, D, Z)
             
             handleConstraint_args = (StartPointVars, areFixed, oovD, A, b, Aeq, beq, Z, D_kwargs, LB, UB, inplaceLinearRender)
             for c in self.constraints:
@@ -640,7 +657,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         self._baseProblemIsPrepared = True
 
     def handleConstraint(self, c, StartPointVars, areFixed, oovD, A, b, Aeq, beq, Z, D_kwargs, LB, UB, inplaceLinearRender):
-        import FuncDesigner as fd
+        #import FuncDesigner as fd
         from FuncDesigner.ooFun import SmoothFDConstraint, BooleanOOFun
         if not isinstance(c, SmoothFDConstraint) and isinstance(c, BooleanOOFun): 
             self.hasLogicalConstraints = True
@@ -705,21 +722,19 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         broadcast(formDictOfFixedFuncs, f, self.useAttachedConstraints, self.dictOfFixedFuncs, areFixed, self._x0)
             #self.dictOfFixedFuncs[f] = f(self.x0)
 
-        if self.probType in ['LP', 'MILP', 'LLSP', 'LLAVP'] and f.getOrder(self.freeVars, self.fixedVars) > 1:
+        f_order = f.getOrder(self.freeVars, self.fixedVars)
+        if self.probType in ['LP', 'MILP', 'LLSP', 'LLAVP'] and f_order > 1:
             self.err('for LP/MILP/LLSP/LLAVP all constraints have to be linear, while ' + f.name + ' is not')
         
-        
-        f_order = f.getOrder(self.freeVars, self.fixedVars)
-        
         if not f.is_oovar and f_order < 2:
-            D = f.D(Z, **D_kwargs)
+            D_kwargs2 = D_kwargs.copy()
+            D_kwargs2['useSparse'] = False
+            D = f.D(Z, **D_kwargs2)
             if inplaceLinearRender:
                 # interalg only
                 if any([asarray(val).size > 1 for val in D.values()]):
                     self.err('currently interalg can handle only FuncDesigner.oovars(n), not FuncDesigner.oovar() with size > 1')
-                ff = f(Z)
-                f = fd.sum([v * (val if type(val) != ndarray or val.ndim < 2 else val.flatten()) for v, val in D.items()]) \
-                + (ff if isscalar(ff) or ff.ndim <= 1 else asscalar(ff))
+                f = linear_render(f, D, Z)
         else:
             D = 0
         
@@ -1024,3 +1039,13 @@ def maximize(p, *args, **kwargs):
             p.err('ambiguous goal has been requested: function "maximize", goal: %s' %  kwargs['goal'])
     p.goal = 'maximum'
     return runProbSolver(p, *args, **kwargs)            
+
+
+def linear_render(f, D, Z):
+    import FuncDesigner as fd
+    if f.is_oovar: 
+        return f
+    ff = f(Z)
+    f = fd.sum([v * (val if type(val) != ndarray or val.ndim < 2 else val.flatten()) for v, val in D.items()]) \
+    + (ff if isscalar(ff) or ff.ndim <= 1 else asscalar(ff))
+    return f
