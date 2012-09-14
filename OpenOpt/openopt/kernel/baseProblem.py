@@ -679,6 +679,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         # TODO: omit it for interalg
         if tol not in (0, probtol, -probtol):
             scaleFactor = abs(probtol / tol)
+            print('scaleFactor:', scaleFactor)
             f *= scaleFactor
             #c.oofun = f#c.oofun * scaleFactor
             _lb, _ub = _lb * scaleFactor, _ub * scaleFactor
@@ -717,7 +718,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 ff = f(Z)
                 f = fd.sum([v * (val if type(val) != ndarray or val.ndim < 2 else val.flatten()) for v, val in D.items()]) \
                 + (ff if isscalar(ff) or ff.ndim <= 1 else asscalar(ff))
-                c.oofun = f
+                #c.oofun = f
         else:
             D = 0
         
@@ -791,7 +792,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
 #            self._FD.nonBoxCons.append((f0, lb_0, ub_0, Contol))
             self._FD.nonBoxConsWithTolShift.append((c, f, _lb - Contol, _ub + Contol))
             self._FD.nonBoxCons.append((c, f, _lb, _ub, Contol))
-            
+#            if tol not in (0, probtol, -probtol):
+#                print('!', f, _lb, _ub, Contol)
         return False
 
 def formDictOfFixedFuncs(oof, dictOfFixedFuncs, areFixed, startPoint):
