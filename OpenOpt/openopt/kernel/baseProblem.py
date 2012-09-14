@@ -562,7 +562,10 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             else:
                 broadcast(formDictOfFixedFuncs, self.f, self.useAttachedConstraints, self.dictOfFixedFuncs, areFixed, self._x0)
 
-            handleConstraint_args = (StartPointVars, areFixed, oovD, A, b, Aeq, beq, Z, D_kwargs, LB, UB)
+
+            inplaceLinearRender = self.solver.__name__ == 'interalg'
+            
+            handleConstraint_args = (StartPointVars, areFixed, oovD, A, b, Aeq, beq, Z, D_kwargs, LB, UB, inplaceLinearRender)
             for c in self.constraints:
                 if isinstance(c, ooarray):
                     for elem in c: 
@@ -636,7 +639,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             
         self._baseProblemIsPrepared = True
 
-    def handleConstraint(self, c, StartPointVars, areFixed, oovD, A, b, Aeq, beq, Z, D_kwargs, LB, UB):
+    def handleConstraint(self, c, StartPointVars, areFixed, oovD, A, b, Aeq, beq, Z, D_kwargs, LB, UB, inplaceLinearRender):
         import FuncDesigner as fd
         from FuncDesigner.ooFun import SmoothFDConstraint, BooleanOOFun
         if not isinstance(c, SmoothFDConstraint) and isinstance(c, BooleanOOFun): 
@@ -679,7 +682,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         # TODO: omit it for interalg
         if tol not in (0, probtol, -probtol):
             scaleFactor = abs(probtol / tol)
-            print('scaleFactor:', scaleFactor)
+            
             f *= scaleFactor
             #c.oofun = f#c.oofun * scaleFactor
             _lb, _ub = _lb * scaleFactor, _ub * scaleFactor
@@ -707,7 +710,6 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         
         
         f_order = f.getOrder(self.freeVars, self.fixedVars)
-        inplaceLinearRender = self.solver.__name__ == 'interalg'
         
         if not f.is_oovar and f_order < 2:
             D = f.D(Z, **D_kwargs)
@@ -718,7 +720,6 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 ff = f(Z)
                 f = fd.sum([v * (val if type(val) != ndarray or val.ndim < 2 else val.flatten()) for v, val in D.items()]) \
                 + (ff if isscalar(ff) or ff.ndim <= 1 else asscalar(ff))
-                #c.oofun = f
         else:
             D = 0
         
