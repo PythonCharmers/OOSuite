@@ -706,11 +706,14 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         
         
         f_order = f.getOrder(self.freeVars, self.fixedVars)
-        inplaceLinearRender = self.solver.__name__ == 'interalg'
+        inplaceLinearRender = 0#self.solver.__name__ == 'interalg'
         
         if not f.is_oovar and f_order < 2:
             D = f.D(Z, **D_kwargs)
             if inplaceLinearRender:
+                # interalg only
+                if any([val.size > 1 for val in D.values()]):
+                    self.err('currently interalg can handle only FuncDesigner.oovars(n), not FuncDesigner.oovar() with size > 1')
                 f = fd.sum([v * val for v, val in D.items()]) + f(Z)
                 c.oofun = f
         else:
