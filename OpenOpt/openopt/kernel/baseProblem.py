@@ -516,7 +516,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
 #            cond = True
             #debug end
 
-            if isPyPy:
+            if 1 and isPyPy:
                 hasVectorizableFuncs = False
                 unvectorizableFuncs = FF
             else:
@@ -637,6 +637,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         self._baseProblemIsPrepared = True
 
     def handleConstraint(self, c, StartPointVars, areFixed, oovD, A, b, Aeq, beq, Z, D_kwargs, LB, UB):
+        import FuncDesigner as fd
         from FuncDesigner.ooFun import SmoothFDConstraint, BooleanOOFun
         if not isinstance(c, SmoothFDConstraint) and isinstance(c, BooleanOOFun): 
             self.hasLogicalConstraints = True
@@ -644,7 +645,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         probtol = self.contol
         f, tol = c.oofun, c.tol
         _lb, _ub = c.lb, c.ub
-        f0, lb_0, ub_0 = f, copy(_lb), copy(_ub)
+        #f0, lb_0, ub_0 = f, copy(_lb), copy(_ub)
+        lb_0, ub_0 = copy(_lb), copy(_ub)
         Name = f.name
         
         dep = set([f]) if f.is_oovar else f._getDep()
@@ -686,15 +688,13 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             Contol = asscalar(copy(probtol))
             Contol2 = Contol 
             
-        #Contol = tol if tol != 0 else copy(self.contol)
         if isFixed:
             # TODO: get rid of self.contol, use separate contols for each constraint
             
-            if not c(self._x0, tol=Contol):
+            if not c(self._x0, tol=Contol2):
                 s = """'constraint "%s" with all-fixed optimization variables it depends on is infeasible in start point, 
                 hence the problem is infeasible, maybe you should change start point'""" % c.name
                 self.err(s)
-            # TODO: check doesn't constraint value exeed self.contol
             return True
 
         from FuncDesigner import broadcast
@@ -703,6 +703,18 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
 
         if self.probType in ['LP', 'MILP', 'LLSP', 'LLAVP'] and f.getOrder(self.freeVars, self.fixedVars) > 1:
             self.err('for LP/MILP/LLSP/LLAVP all constraints have to be linear, while ' + f.name + ' is not')
+        
+        
+        f_order = f.getOrder(self.freeVars, self.fixedVars)
+        inplaceLinearRender = self.solver.__name__ == 'interalg'
+        
+        if not f.is_oovar and f_order < 2:
+            D = f.D(Z, **D_kwargs)
+            if inplaceLinearRender:
+                f = fd.sum([v * val for v, val in D.items()]) + f(Z)
+                c.oofun = f
+        else:
+            D = 0
         
         # TODO: simplify condition of box-bounded oovar detection
         if f.is_oovar:
@@ -746,20 +758,20 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                         UB[f] = min((val, UB[f]))
                     
         elif _lb == _ub:
-            if f.getOrder(self.freeVars, self.fixedVars) < 2:
-                Aeq.append(self._pointDerivative2array(f.D(Z, **D_kwargs)))      
+            if f_order < 2:
+                Aeq.append(self._pointDerivative2array(D))      
                 beq.append(-f(Z)+_lb)
             elif self.h is None: self.h = [f-_lb]
             else: self.h.append(f-_lb)
         elif isfinite(_ub):
-            if f.getOrder(self.freeVars, self.fixedVars) < 2:
-                A.append(self._pointDerivative2array(f.D(Z, **D_kwargs)))                       
+            if f_order < 2:
+                A.append(self._pointDerivative2array(D))                       
                 b.append(-f(Z)+_ub)
             elif self.c is None: self.c = [f - _ub]
             else: self.c.append(f - _ub)
         elif isfinite(_lb):
-            if f.getOrder(self.freeVars, self.fixedVars) < 2:
-                A.append(-self._pointDerivative2array(f.D(Z, **D_kwargs)))                       
+            if f_order < 2:
+                A.append(-self._pointDerivative2array(D))                       
                 b.append(f(Z) - _lb)                        
             elif self.c is None: self.c = [- f + _lb]
             else: self.c.append(- f + _lb)
