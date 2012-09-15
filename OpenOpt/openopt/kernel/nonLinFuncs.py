@@ -152,7 +152,7 @@ class nonLinFuncs:
                     for i, oov in enumerate(p._freeVarsList):
                         s = p._optVarSizes[oov]
                         xx.append((oov, (x[:, counter: counter + s].flatten() if s == 1 else x[:, counter: counter + s]).view(multiarray)))
-                        #print('nlf:', x[:, counter: counter + s].view(multiarray).shape)
+#                        xx.append((oov, multiarray(x[:, counter: counter + s].flatten() if s == 1 else x[:, counter: counter + s])))
                         counter += s
                     X = oopoint(xx)
                     X.update(p.dictOfFixedFuncs)
@@ -357,8 +357,8 @@ class nonLinFuncs:
             else:
                 Funcs = getFuncsAndExtractIndexes(p, funcs, ind, funcType)
             
-            if ind is None: derivativesNumber = nFuncs
-            else: derivativesNumber = len(ind)
+#            if ind is None: derivativesNumber = nFuncs
+#            else: derivativesNumber = len(ind)
                 
             #derivatives = empty((derivativesNumber, p.n))
             derivatives = []
