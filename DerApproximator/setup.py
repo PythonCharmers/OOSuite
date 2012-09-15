@@ -30,7 +30,10 @@ except:
 import string, shutil
 from distutils.errors import DistutilsError
 #from numpy.distutils.system_info import system_info, NotFoundError, dict_append, so_ext
-from numpy.distutils.core import setup, Extension
+try:
+    from numpy.distutils.core import setup, Extension
+except:
+    from distutils.core import setup, Extension
 import os, sys
 
 DOC_FILES = []
@@ -61,6 +64,11 @@ def configuration(parent_package='',top_path=None, package_name=DISTNAME):
 
     return config
 
+try:
+    import numpypy
+    isPyPy = True
+except:
+    isPyPy = False
 
 if __name__ == "__main__":
     # setuptools version of config script
@@ -71,7 +79,7 @@ if __name__ == "__main__":
     #data_files = ['test_data/' + i for i in TEST_DATA_FILES]
     #data_files.extend(['docs/' + i for i in doc_files])
     setup(configuration = configuration,
-        install_requires='numpy', # can also add version specifiers   #namespace_packages=['kernel'],
+        install_requires=('' if isPyPy else 'numpy'), # can also add version specifiers   #namespace_packages=['kernel'],
         #py_modules = ['kernel', 'tests', 'examples', 'solvers'],
         packages=setuptools.find_packages(),
         include_package_data = True,
