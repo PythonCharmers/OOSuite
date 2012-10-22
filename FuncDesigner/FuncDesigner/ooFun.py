@@ -868,7 +868,7 @@ class oofun:
     def __getslice__(self, ind1, ind2):# overload for oofun[ind1:ind2]
     
         #TODO: mb check if size is known then use it instead of None?
-        if ind2 is not None or ind1 is not None: 
+        if ind2 is  None or ind1 is None: 
             raise FuncDesignerException('you should provide full slice coords, e.g. x[3:10], not x[3:]')
         assert not isinstance(ind1, oofun) and not isinstance(ind2, oofun), 'slicing by oofuns is unimplemented yet'
         f = lambda x: x[ind1:ind2]
