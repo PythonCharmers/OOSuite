@@ -36,7 +36,7 @@ p = NLP(objective, startPoint, constraints = constraints)
 #solver = 'scipy_cobyla' # ~ 20 sec
 solver = 'algencan' # ~ 0.8 sec
 
-r = p.minimize(solver, iprint = 1, maxDistributionSize=100, implicitBounds = 100, maxIter = 500, useSparse=False)
+r = p.minimize(solver, iprint = 1, maxDistributionSize=100, implicitBounds = 100, maxIter = 500)
 #istop: 2 (|| gradient F(X[k]) || < gtol)
 #Solver:   Time Elapsed = 0.82 	CPU Time Elapsed = 0.8
 #objFunValue: 6764.5968 (feasible, MaxResidual = 1.71237e-09)
