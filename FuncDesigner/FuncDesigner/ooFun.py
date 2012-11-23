@@ -463,6 +463,9 @@ class oofun:
     def __div__(self, other):
         if isinstance(other, OOArray):
             return other.__rdiv__(self)
+        if isinstance(other, list): other = asarray(other)
+        if isscalar(other) or type(other) == ndarray:
+            return self * (1.0 / other) # to make available using _prod_elements
         if isinstance(other, oofun):
             r = oofun(lambda x, y: x/y, [self, other])
             def aux_dx(x, y):
@@ -523,6 +526,7 @@ class oofun:
 
             r._interval_ = interval
         else:
+            # TODO: mb remove it?
             other = array(other,'float')# TODO: handle float128
             r = oofun(lambda a: a/other, self, discrete = self.discrete)# TODO: involve sparsity if possible!
             r.getOrder = self.getOrder
