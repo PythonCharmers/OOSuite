@@ -126,6 +126,11 @@ class ooarray(OOArray):
         else:
             raise FuncDesignerException('unimplemented yet')
 
+    def __rdiv__(self, other):
+        if self.size == 1:
+            return other / asscalar(self)
+        return ooarray([1.0 / elem for elem in self.view(ndarray)]) * other
+
     def __add__(self, other):
         if isinstance(other, list):
             other = ooarray(other)

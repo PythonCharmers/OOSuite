@@ -662,61 +662,80 @@ def sum_derivative(r0, INP, point, fixedVarsScheduleID, Vars=None, fixedVars = N
     # TODO: handle fixed vars
     
     r = {}
-    
-    # TODO: rework it, don't recalculate each time
-    #Size = np.amax((1, np.asarray(r0).size))
+   
+    isSP = hasattr(point, 'maxDistributionSize') and point.maxDistributionSize != 0
     
     for elem in INP:
         if not elem.is_oovar and (elem.input is None or len(elem.input)==0 or elem.input[0] is None): 
             continue # TODO: get rid if None, use [] instead
         if elem.discrete: continue
+        
+        # TODO: code cleanup 
         if elem.is_oovar:
             if (fixedVars is not None and elem in fixedVars) or (Vars is not None and elem not in Vars): continue
             sz = np.asarray(point[elem]).size
             tmpres = Eye(sz) 
             r_val = r.get(elem, None)
-            if r_val is not None:
-                if sz != 1 and isinstance(r_val, np.ndarray) and not isinstance(tmpres, np.ndarray): # i.e. tmpres is sparse matrix
-                    tmpres = tmpres.toarray()
-                elif not np.isscalar(r_val) and not isinstance(r_val, np.ndarray) and isinstance(tmpres, np.ndarray):
-                    r[elem] = r_val.toarray()
-                Tmp = tmpres.resolve(True) if isspmatrix(r[elem]) and type(tmpres) == DiagonalType else tmpres
-                try:
-                    r[elem] += Tmp
-                except:
-                    r[elem] = r[elem] + Tmp
+            if isSP:
+                if r_val is not None:
+                    r_val.append(tmpres)
+                else:
+                    r[elem] = [tmpres]
             else:
-                # TODO: check it for oovars with size > 1
-                r[elem] = Copy(tmpres)
+                if r_val is not None:
+                    if sz != 1 and isinstance(r_val, np.ndarray) and not isinstance(tmpres, np.ndarray): # i.e. tmpres is sparse matrix
+                        tmpres = tmpres.toarray()
+                    elif not np.isscalar(r_val) and not isinstance(r_val, np.ndarray) and isinstance(tmpres, np.ndarray):
+                        r[elem] = r_val.toarray()
+                    Tmp = tmpres.resolve(True) if isspmatrix(r[elem]) and type(tmpres) == DiagonalType else tmpres
+                    try:
+                        r[elem] += Tmp
+                    except:
+                        r[elem] = r[elem] + Tmp
+                else:
+                    # TODO: check it for oovars with size > 1
+                    r[elem] = tmpres
         else:
             tmp = elem._D(point, fixedVarsScheduleID, Vars, fixedVars, useSparse = useSparse)
             for key, val in tmp.items():
                 r_val = r.get(key, None)
-                if r_val is not None:
-                    if not np.isscalar(val) and isinstance(r_val, np.ndarray) and not isinstance(val, np.ndarray): # i.e. tmpres is sparse matrix
-                        val = val.toarray()
-                    elif not np.isscalar(r_val) and not isinstance(r_val, np.ndarray) and isinstance(val, np.ndarray):
-                        r[key] = r_val.toarray()
-                    
-                    if isspmatrix(r_val) and type(val) == DiagonalType:
-                        val = val.resolve(True)
-                    elif isspmatrix(val) and type(r_val) == DiagonalType:
-                        r[key] = r_val.resolve(True)
-                    
-                    # TODO: rework it
-                    try:
-                        r[key] += val
-                    except:
-                        r[key] = r_val + val
+                if isSP:
+                    if r_val is not None:
+                        r_val.append(val)
+                    else:
+                        r[key] = [val]
                 else:
-                    r[key] = Copy(val)
+                    if r_val is not None:
+                        if not np.isscalar(val) and isinstance(r_val, np.ndarray) and not isinstance(val, np.ndarray): # i.e. tmpres is sparse matrix
+                            val = val.toarray()
+                        elif not np.isscalar(r_val) and not isinstance(r_val, np.ndarray) and isinstance(val, np.ndarray):
+                            r[key] = r_val.toarray()
+                        
+                        if isspmatrix(r_val) and type(val) == DiagonalType:
+                            val = val.resolve(True)
+                        elif isspmatrix(val) and type(r_val) == DiagonalType:
+                            r[key] = r_val.resolve(True)
+                        
+                        # TODO: rework it
+                        try:
+                            r[key] += val
+                        except:
+                            r[key] = r_val + val
+                    else:
+                        r[key] = Copy(val)
+    
+    if isSP:
+        for key, val in r.items():
+            r[key] = sum_engine(0.0, *val)
+            
+    
     if useSparse is False:
         for key, val in r.items():
             #if np.isscalar(val): val = np.asfarray(val)
-            if not isinstance(val, np.ndarray) and not np.isscalar(val): # i.e. sparse matrix
+            if hasattr(val, 'toarray'): # i.e. sparse matrix
                 r[key] = val.toarray()
-                
-    # TODO: rework it
+
+    # TODO: rework it, don't recalculate each time
     Size = np.asarray(r0).size
     for elem in r.values():
         if not np.isscalar(elem) and elem.ndim >= 1:
@@ -735,6 +754,7 @@ def sum_derivative(r0, INP, point, fixedVarsScheduleID, Vars=None, fixedVars = N
                     r[key] = tmp
 #                    elif np.asarray(val).size !=1:
 #                        raise_except('incorrect size in FD sum kernel')
+    #print(r)
     return r
 
 def sum_getOrder(INP, *args, **kwargs):
@@ -789,7 +809,6 @@ def sum(inp, *args, **kwargs):
 
         r._interval_ = lambda *args, **kw: sum_interval(R0, r, INP, *args, **kw)
         r.vectorized = True
-
         r._D = lambda *args, **kw: sum_derivative(r0, INP, *args, **kw)
         return r
     else: 

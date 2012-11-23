@@ -7,7 +7,8 @@ try:
     import scipy.sparse as SP
 except:
     scipyInstalled = False
-
+    
+from baseClasses import Stochastic
 
 class FuncDesignerException(BaseException):
     def __init__(self,  msg):
@@ -173,7 +174,7 @@ DiagonalType = type(diagonal(np.array([0, 0])))
 Eye = lambda n: 1.0 if n == 1 else diagonal(None, size=n)
 
 def Diag(x, *args, **kw):
-    if isscalar(x): return x
+    if isscalar(x) or (type(x)==ndarray and x.size == 1) or isinstance(x, Stochastic): return x
     else: return diagonal(asfarray(x) if x is not None else x, *args,  **kw)
 
 class fixedVarsScheduleID:

@@ -8,7 +8,7 @@
 
 from FDmisc import FuncDesignerException
 from baseClasses import Stochastic
-from numpy import asanyarray, ndarray, isscalar, array, atleast_2d, sum as np_sum
+from numpy import asanyarray, ndarray, isscalar, atleast_2d, sum as np_sum
 try:
     from scipy.sparse import isspmatrix
 except ImportError:

@@ -76,6 +76,7 @@ class oofun:
     #isDifferentiable = True
     discrete = False
     _isSum = False
+    _isProd = False
     
     stencil = 3 # used for DerApproximator
     
@@ -343,8 +344,8 @@ class oofun:
     # overload "a+b"
     # @checkSizes
     def __add__(self, other):
-        if isinstance(other, Stochastic):
-            return other.__add__(self)
+#        if isinstance(other, Stochastic):
+#            return other.__add__(self)
         
         for frame_tuple in inspect.stack():
             frame = frame_tuple[0]
@@ -405,7 +406,8 @@ class oofun:
             r._interval_ = interval
         else:
             if isscalar(other) and other == 0: return self # sometimes triggers from other parts of FD engine 
-            if isinstance(other,  (OOArray, Stochastic)): return other + self
+            #if isinstance(other,  (OOArray, Stochastic)): return other + self
+            if isinstance(other,  OOArray): return other + self
             if isinstance(other,  ndarray): other = other.copy() 
 #            if other.size == 1:
 #                #r = oofun(lambda *ARGS, **KWARGS: None, input = self.input)
@@ -459,6 +461,8 @@ class oofun:
 
     # overload "a/b"
     def __div__(self, other):
+        if isinstance(other, OOArray):
+            return other.__rdiv__(self)
         if isinstance(other, oofun):
             r = oofun(lambda x, y: x/y, [self, other])
             def aux_dx(x, y):
@@ -543,7 +547,8 @@ class oofun:
     def __rdiv__(self, other):
         
         # without the code it somehow doesn't fork in either Python3 or latest numpy
-        if isinstance(other,  Stochastic) or (isinstance(other, OOArray) and any([isinstance(elem, oofun) for elem in atleast_1d(other)])):
+        #if isinstance(other,  Stochastic) or (isinstance(other, OOArray) and any([isinstance(elem, oofun) for elem in atleast_1d(other)])):
+        if isinstance(other, OOArray) and any([isinstance(elem, oofun) for elem in atleast_1d(other)]):
             return other.__div__(self)
        
         other = array(other, 'float') # TODO: sparse matrices handling!
@@ -577,27 +582,20 @@ class oofun:
 
     # overload "a*b"
     def __mul__(self, other):
-        if isinstance(other, (OOArray, Stochastic)):
+        if isinstance(other, OOArray):#if isinstance(other, (OOArray, Stochastic)):
             return other.__mul__(self)
-        def aux_d(x, y):
-            Xsize, Ysize = Len(x), Len(y)
-            if Xsize == 1:
-                return Copy(y)
-            elif Ysize == 1:
-#                # OLD
-#                r = empty(Xsize)
-#                r.fill(y)
-#                return Diag(r)
-                # NEW
-                return Diag(None, scalarMultiplier = y, size = Xsize)
-            elif Xsize == Ysize:
-                return Diag(y)
-            else:
-                raise FuncDesignerException('for oofun multiplication a*b should be size(a)=size(b) or size(a)=1 or size(b)=1')                    
         
-        if isinstance(other, oofun):
+        isOtherOOFun = isinstance(other, oofun)
+        if isinstance(other, list): other = asarray(other)
+        
+        if self._isProd:
+            if not isOtherOOFun and not isinstance(self._prod_elements[-1], (oofun, OOArray)):
+                assert len(self._prod_elements) == 2, 'bug in FD kernel'
+                return self._prod_elements[0] * (other * self._prod_elements[-1])
+        
+        if isOtherOOFun:
             r = oofun(lambda x, y: x*y, [self, other])
-            r.d = (lambda x, y: aux_d(x, y), lambda x, y: aux_d(y, x))
+            r.d = (lambda x, y: mul_aux_d(x, y), lambda x, y: mul_aux_d(y, x))
             r.getOrder = lambda *args, **kwargs: self.getOrder(*args, **kwargs) + other.getOrder(*args, **kwargs)
         else:
             other = other.copy() if isinstance(other,  ndarray) else asarray(other)
@@ -610,107 +608,19 @@ class oofun:
                 r._D = lambda *args, **kwargs: dict([(key, value * other) for key, value in self._D(*args, **kwargs).items()])
                 r.d = raise_except
             else:
-                r.d = lambda x: aux_d(x, other)
-        isOtherOOFun = isinstance(other, oofun)
+                r.d = lambda x: mul_aux_d(x, other)
         
-        def interval(domain, dtype):
-#            # changes
-            if domain.isMultiPoint and isOtherOOFun and self.is_oovar and (self.domain is bool or self.domain is 'bool'):
-                #ind_nz = where(domain[self][1]!=0)[0]
-                lb_ub, definiteRange = other._interval(domain, dtype)
-                n = domain[self][1].size
-                R = zeros((2, n), dtype)
-                ind = domain[self][0]!=0
-                R[0][ind] = lb_ub[0][ind]
-                ind = domain[self][1]!=0
-                R[1][ind] = lb_ub[1][ind]
-                return R, definiteRange
-#                    if ind_nz.size == 0:
-#                        n = domain[self][1].size
-#                        R = zeros((2, n), dtype)
-#                        definiteRange = empty(n, bool)
-#                        definiteRange.fill(True)# TODO: sometimes it may be wrong
-#                        return R, definiteRange
-                    
-                    # TODO: implement it
-#                    subdomain = ooPoint([(v, (d[0][ind_nz], d[1][ind_nz])) for v, d in domain.items()], skipArrayCast=True)
-#                    subdomain.isMultiPoint = True
-#                    #subdomain.modificationVar = domain.modificationVar
-#                    #subdomain.useSave = domain.useSave
-#                    #subdomain.localStoredIntervals = {}
-#                    lb_ub, definiteRange2 = other._interval(subdomain, dtype)
-#                    R[:, ind_nz] = lb_ub.copy()
-#                    definiteRange[ind_nz] = definiteRange2
-#                    return R, definiteRange
-#                    
-#                elif isOtherOOFun:
-#                    # TODO: implement it
-#                    pass
-#            
-#            # changes end
-            
-            lb1_ub1, definiteRange = self._interval(domain, dtype)
-            lb1, ub1 = lb1_ub1[0], lb1_ub1[1]
-            
-            if isOtherOOFun:
-                lb2_ub2, definiteRange2 = other._interval(domain, dtype)
-                definiteRange = logical_and(definiteRange, definiteRange2)
-                lb2, ub2 = lb2_ub2[0], lb2_ub2[1]
-            else:
-                lb2, ub2 = other, other # TODO: improve it
-                
-            if all(lb2 >= 0) and all(lb1 >= 0):
-                t_min, t_max = atleast_1d(lb1 * lb2), atleast_1d(ub1 * ub2)
-            elif isscalar(other):
-                t_min, t_max = (lb1 * other, ub1 * other) if other >= 0 else (ub1 * other, lb1 * other)
-            else:
-                if isOtherOOFun:
-                    t = vstack((lb1 * lb2, ub1 * lb2, \
-                                lb1 * ub2, ub1 * ub2))# TODO: improve it
-                else:
-                    t = vstack((lb1 * other, ub1 * other))# TODO: improve it
-                t_min, t_max = atleast_1d(nanmin(t, 0)), atleast_1d(nanmax(t, 0))
-            #assert isinstance(t_min, ndarray) and isinstance(t_max, ndarray), 'Please update numpy to more recent version'
-            
-            if any(isinf(lb1)) or any(isinf(lb2)) or any(isinf(ub1)) or any(isinf(ub2)):
-                ind1_zero_minus = logical_and(lb1<0, ub1>=0)
-                ind1_zero_plus = logical_and(lb1<=0, ub1>0)
-                
-                ind2_zero_minus = logical_and(lb2<0, ub2>=0)
-                ind2_zero_plus = logical_and(lb2<=0, ub2>0)
-                
-                has_plus_inf_1 = logical_or(logical_and(ind1_zero_minus, lb2==-inf), logical_and(ind1_zero_plus, ub2==inf))
-                has_plus_inf_2 = logical_or(logical_and(ind2_zero_minus, lb1==-inf), logical_and(ind2_zero_plus, ub1==inf))
-                
-                # !!!! lines with zero should be before lines with inf !!!!
-                ind = logical_or(logical_and(lb1==-inf, ub2==0), logical_and(lb2==-inf, ub1==0))
-                t_max[atleast_1d(logical_and(ind, t_max<0.0))] = 0.0
-                
-                t_max[atleast_1d(logical_or(has_plus_inf_1, has_plus_inf_2))] = inf
-                t_max[atleast_1d(logical_or(logical_and(lb1==0, ub2==inf), logical_and(lb2==0, ub1==inf)))] = inf
-                
-                has_minus_inf_1 = logical_or(logical_and(ind1_zero_plus, lb2==-inf), logical_and(ind1_zero_minus, ub2==inf))
-                has_minus_inf_2 = logical_or(logical_and(ind2_zero_plus, lb1==-inf), logical_and(ind2_zero_minus, ub1==inf))
-                # !!!! lines with zero should be before lines with -inf !!!!
-                t_min[atleast_1d(logical_or(logical_and(lb1==0, ub2==inf), logical_and(lb2==0, ub1==inf)))] = 0.0
-                t_min[atleast_1d(logical_or(logical_and(lb1==-inf, ub2==0), logical_and(lb2==-inf, ub1==0)))] = 0.0
-                
-                t_min[atleast_1d(logical_or(has_minus_inf_1, has_minus_inf_2))] = -inf
-            
-#            assert not any(isnan(t_min)) and not any(isnan(t_max))
-           
-            return vstack((t_min, t_max)), definiteRange
-                
-        r._interval_ = interval
+        r._interval_ = lambda *args, **kw: mul_interval(self, other, isOtherOOFun, *args, **kw)
         r.vectorized = True
         #r.isCostly = True
+        r._isProd = True
+        r._prod_elements = [self, other]
         return r
 
     __rmul__ = lambda self, other: self.__mul__(other)
 
     def __pow__(self, other):
-
-        if isinstance(other, (OOArray, Stochastic)):
+        if isinstance(other, OOArray):#if isinstance(other, (OOArray, Stochastic)):
             return other.__rpow__(self)
 #            if 'size' not in self.__dict__ or (isscalar(self.size) and self.size == 1):
 #                return ooarray([self ** other[i] for i in range(other.size)])
@@ -1374,7 +1284,13 @@ class oofun:
                 t1 = derivativeSelf[ac]
                 
                 for key, val in elem_d.items():
-                    if type(t1) == DiagonalType and type(val) == DiagonalType:
+                    #if isinstance(t1, Stochastic) or isinstance(val, Stochastic):
+                        #rr = t1 * val
+                    if isinstance(t1, Stochastic):
+                        rr = t1 * val
+                    elif isinstance(val, Stochastic):
+                        rr = val * t1
+                    elif type(t1) == DiagonalType and type(val) == DiagonalType:
                         rr = t1 * val
                     elif type(t1) == DiagonalType or type(val) == DiagonalType:
                         if isspmatrix(t1): # thus val is DiagonalType
@@ -2357,3 +2273,100 @@ def atleast_oofun(arg):
         #return oofun(lambda *args, **kwargs: arg(*args,  **kwargs), input=None, discrete=True)
         raise FuncDesignerException('incorrect type for the function _atleast_oofun')
 
+def mul_aux_d(x, y):
+    Xsize, Ysize = Len(x), Len(y)
+    if Xsize == 1:
+        return Copy(y)
+    elif Ysize == 1:
+        return Diag(None, scalarMultiplier = y, size = Xsize)
+    elif Xsize == Ysize:
+        return Diag(y)
+    else:
+        raise FuncDesignerException('for oofun multiplication a*b should be size(a)=size(b) or size(a)=1 or size(b)=1')   
+
+def mul_interval(self, other, isOtherOOFun, domain, dtype):#*args, **kw):
+    if domain.isMultiPoint and isOtherOOFun and self.is_oovar and (self.domain is bool or self.domain is 'bool'):
+        #ind_nz = where(domain[self][1]!=0)[0]
+        lb_ub, definiteRange = other._interval(domain, dtype)
+        n = domain[self][1].size
+        R = zeros((2, n), dtype)
+        ind = domain[self][0]!=0
+        R[0][ind] = lb_ub[0][ind]
+        ind = domain[self][1]!=0
+        R[1][ind] = lb_ub[1][ind]
+        return R, definiteRange
+#                    if ind_nz.size == 0:
+#                        n = domain[self][1].size
+#                        R = zeros((2, n), dtype)
+#                        definiteRange = empty(n, bool)
+#                        definiteRange.fill(True)# TODO: sometimes it may be wrong
+#                        return R, definiteRange
+            
+            # TODO: implement it
+#                    subdomain = ooPoint([(v, (d[0][ind_nz], d[1][ind_nz])) for v, d in domain.items()], skipArrayCast=True)
+#                    subdomain.isMultiPoint = True
+#                    #subdomain.modificationVar = domain.modificationVar
+#                    #subdomain.useSave = domain.useSave
+#                    #subdomain.localStoredIntervals = {}
+#                    lb_ub, definiteRange2 = other._interval(subdomain, dtype)
+#                    R[:, ind_nz] = lb_ub.copy()
+#                    definiteRange[ind_nz] = definiteRange2
+#                    return R, definiteRange
+#                    
+#                elif isOtherOOFun:
+#                    # TODO: implement it
+#                    pass
+#            
+#            # changes end
+    
+    lb1_ub1, definiteRange = self._interval(domain, dtype)
+    lb1, ub1 = lb1_ub1[0], lb1_ub1[1]
+    
+    if isOtherOOFun:
+        lb2_ub2, definiteRange2 = other._interval(domain, dtype)
+        definiteRange = logical_and(definiteRange, definiteRange2)
+        lb2, ub2 = lb2_ub2[0], lb2_ub2[1]
+    else:
+        lb2, ub2 = other, other # TODO: improve it
+        
+    if all(lb2 >= 0) and all(lb1 >= 0):
+        t_min, t_max = atleast_1d(lb1 * lb2), atleast_1d(ub1 * ub2)
+    elif isscalar(other):
+        t_min, t_max = (lb1 * other, ub1 * other) if other >= 0 else (ub1 * other, lb1 * other)
+    else:
+        if isOtherOOFun:
+            t = vstack((lb1 * lb2, ub1 * lb2, \
+                        lb1 * ub2, ub1 * ub2))# TODO: improve it
+        else:
+            t = vstack((lb1 * other, ub1 * other))# TODO: improve it
+        t_min, t_max = atleast_1d(nanmin(t, 0)), atleast_1d(nanmax(t, 0))
+    #assert isinstance(t_min, ndarray) and isinstance(t_max, ndarray), 'Please update numpy to more recent version'
+    
+    if any(isinf(lb1)) or any(isinf(lb2)) or any(isinf(ub1)) or any(isinf(ub2)):
+        ind1_zero_minus = logical_and(lb1<0, ub1>=0)
+        ind1_zero_plus = logical_and(lb1<=0, ub1>0)
+        
+        ind2_zero_minus = logical_and(lb2<0, ub2>=0)
+        ind2_zero_plus = logical_and(lb2<=0, ub2>0)
+        
+        has_plus_inf_1 = logical_or(logical_and(ind1_zero_minus, lb2==-inf), logical_and(ind1_zero_plus, ub2==inf))
+        has_plus_inf_2 = logical_or(logical_and(ind2_zero_minus, lb1==-inf), logical_and(ind2_zero_plus, ub1==inf))
+        
+        # !!!! lines with zero should be before lines with inf !!!!
+        ind = logical_or(logical_and(lb1==-inf, ub2==0), logical_and(lb2==-inf, ub1==0))
+        t_max[atleast_1d(logical_and(ind, t_max<0.0))] = 0.0
+        
+        t_max[atleast_1d(logical_or(has_plus_inf_1, has_plus_inf_2))] = inf
+        t_max[atleast_1d(logical_or(logical_and(lb1==0, ub2==inf), logical_and(lb2==0, ub1==inf)))] = inf
+        
+        has_minus_inf_1 = logical_or(logical_and(ind1_zero_plus, lb2==-inf), logical_and(ind1_zero_minus, ub2==inf))
+        has_minus_inf_2 = logical_or(logical_and(ind2_zero_plus, lb1==-inf), logical_and(ind2_zero_minus, ub1==inf))
+        # !!!! lines with zero should be before lines with -inf !!!!
+        t_min[atleast_1d(logical_or(logical_and(lb1==0, ub2==inf), logical_and(lb2==0, ub1==inf)))] = 0.0
+        t_min[atleast_1d(logical_or(logical_and(lb1==-inf, ub2==0), logical_and(lb2==-inf, ub1==0)))] = 0.0
+        
+        t_min[atleast_1d(logical_or(has_minus_inf_1, has_minus_inf_2))] = -inf
+    
+#            assert not any(isnan(t_min)) and not any(isnan(t_max))
+   
+    return vstack((t_min, t_max)), definiteRange
