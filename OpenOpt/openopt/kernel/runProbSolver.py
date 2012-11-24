@@ -469,7 +469,7 @@ class OpenOptResult:
 
         self.elapsed = dict()
         self.elapsed['solver_time'] = round(100.0*(time() - p.timeStart))/100.0
-        self.elapsed['solver_cputime'] = clock() - p.cpuTimeStart
+        self.elapsed['solver_cputime'] = round(100.0*(clock() - p.cpuTimeStart))/100.0
 
         for fn in ('ff', 'istop', 'duals', 'isFeasible', 'msg', 'stopcase', 'iterValues',  'special', 'extras', 'solutions'):
             if hasattr(p, fn):  setattr(self, fn, getattr(p, fn))
