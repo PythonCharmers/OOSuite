@@ -133,26 +133,29 @@ def processConstraints2(C0, y, e, _s, p, dataType):
         y, e, indT = truncateByPlane(y, e, indT, p.Aeq[i], p.beq[i])
         y, e, indT = truncateByPlane(y, e, indT, -p.Aeq[i], -p.beq[i])
    
-    m = y.shape[0]
-    nlh = zeros((m, 2*n))
-    nlh_0 = zeros(m)
     
     DefiniteRange = True
     if len(p._discreteVarsNumList):
         y, e = adjustDiscreteVarBounds(y, e, p)
 
+    m = y.shape[0]
+    nlh = zeros((m, 2*n))
+    nlh_0 = zeros(m)
+    
+    
     for c, f, lb, ub, tol in C0:
+        
         m = y.shape[0] # is changed in the cycle
         if m == 0: 
             return y.reshape(0, n), e.reshape(0, n), nlh.reshape(0, 2*n), None, True, False, _s
             #return y.reshape(0, n), e.reshape(0, n), nlh.reshape(0, 2*n), residual.reshape(0, 2*n), True, False, _s
-        
+        assert nlh.shape[0] == y.shape[0]
         T0, res, DefiniteRange2 = c.nlh(y, e, p, dataType)
         DefiniteRange = logical_and(DefiniteRange, DefiniteRange2)
         
         assert T0.ndim <= 1, 'unimplemented yet'
         nlh_0 += T0
-        
+        assert nlh.shape[0] == m
         # TODO: rework it for case len(p._freeVarsList) >> 1
         for j, v in enumerate(p._freeVarsList):
             tmp = res.get(v, None)
@@ -161,7 +164,7 @@ def processConstraints2(C0, y, e, _s, p, dataType):
             else:
                 nlh[:, n+j] += tmp[:, tmp.shape[1]/2:].flatten() - T0
                 nlh[:, j] += tmp[:, :tmp.shape[1]/2].flatten() - T0
-        
+        assert nlh.shape[0] == m
         ind = where(logical_and(any(isfinite(nlh), 1), isfinite(nlh_0)))[0]
         lj = ind.size
         if lj != m:
@@ -174,7 +177,7 @@ def processConstraints2(C0, y, e, _s, p, dataType):
             _s = _s[ind]
             if asarray(DefiniteRange).size != 1: 
                 DefiniteRange = take(DefiniteRange, ind, axis=0, out=DefiniteRange[:lj])
-
+        assert nlh.shape[0] == y.shape[0]
 
 
         ind = logical_not(isfinite((nlh)))
