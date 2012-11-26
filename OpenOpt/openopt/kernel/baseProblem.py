@@ -1046,6 +1046,8 @@ def linear_render(f, D, Z):
     if f.is_oovar: 
         return f
     ff = f(Z)
+    name, tol, _id = f.name, f.tol, f._id
     f = fd.sum([v * (val if type(val) != ndarray or val.ndim < 2 else val.flatten()) for v, val in D.items()]) \
     + (ff if isscalar(ff) or ff.ndim <= 1 else asscalar(ff))
+    f.name, f.tol, f._id = name, tol, _id
     return f
