@@ -136,7 +136,7 @@ def processConstraints2(C0, y, e, _s, p, dataType):
     
     DefiniteRange = True
     if len(p._discreteVarsNumList):
-        y, e = adjustDiscreteVarBounds(y, e, p)
+        adjustDiscreteVarBounds(y, e, p)
 
     m = y.shape[0]
     nlh = zeros((m, 2*n))
@@ -190,9 +190,9 @@ def processConstraints2(C0, y, e, _s, p, dataType):
             # TODO: mb implement it
             if len(p._discreteVarsNumList):
                 if tmp_l.ndim > 1:
-                    y, e = adjustDiscreteVarBounds(tmp_l, tmp_u, p)
+                    adjustDiscreteVarBounds(tmp_l, tmp_u, p)
                 else:
-                    y, e = adjustDiscreteVarBounds(y, e, p)
+                    adjustDiscreteVarBounds(y, e, p)
 
             nlh_l, nlh_u = nlh[:, nlh.shape[1]/2:], nlh[:, :nlh.shape[1]/2]
             
