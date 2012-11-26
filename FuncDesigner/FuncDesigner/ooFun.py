@@ -14,7 +14,7 @@ except ImportError:
 from FDmisc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scipyInstalled, \
 raise_except, DiagonalType, isPyPy
 from ooPoint import ooPoint
-from FuncDesigner.ooPoint import multiarray
+from FuncDesigner.multiarray import multiarray
 from Interval import Interval, adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain
 import inspect
 from baseClasses import OOArray, Stochastic
@@ -1216,8 +1216,10 @@ class oofun:
             
     def _D(self, x, fixedVarsScheduleID, Vars=None, fixedVars = None, useSparse = 'auto'):
         if self.is_oovar: 
-            return {} if (fixedVars is not None and self in fixedVars) or (Vars is not None and self not in Vars) \
-            else {self:Eye(asarray(x[self]).size)}
+            if (fixedVars is not None and self in fixedVars) or (Vars is not None and self not in Vars):
+                return {} 
+            tmp = x[self]
+            return {self:Eye(asarray(tmp).size)} if not isinstance(tmp, multiarray) else {self: ones_like(tmp)}
             
         if self.input[0] is None: return {} # fixed oofun. TODO: implement input = [] properly
             
@@ -1444,7 +1446,7 @@ class oofun:
                         tmp = tmp.T
                         
                 ac = 0
-                if isinstance(tmp, ndarray) and hasattr(tmp, 'toarray'): tmp = tmp.A # is dense matrix
+                if isinstance(tmp, ndarray) and hasattr(tmp, 'toarray') and not isinstance(tmp, multiarray): tmp = tmp.A # is dense matrix
                 
                 #if not isinstance(tmp, ndarray) and not isscalar(tmp) and type(tmp) != DiagonalType:
                 if len(Input) == 1:

@@ -3,7 +3,8 @@ from numpy import ndarray
 class OOArray(ndarray):
     pass
 
-
+class MultiArray(ndarray):
+    pass
 
 def distrib_err_fcn(*args, **kw):
     from FDmisc import FuncDesignerException

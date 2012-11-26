@@ -6,7 +6,7 @@ from ooFun import atleast_oofun, Vstack, Copy
 from ooarray import ooarray
 from Interval import TrigonometryCriticalPoints, nonnegative_interval, ZeroCriticalPointsInterval, box_1_interval
 from numpy import atleast_1d, logical_and
-from FuncDesigner.ooPoint import multiarray
+from FuncDesigner.multiarray import multiarray
 
 try:
     from scipy.sparse import isspmatrix, lil_matrix as Zeros

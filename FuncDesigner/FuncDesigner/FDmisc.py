@@ -1,5 +1,6 @@
 from numpy import asscalar, isscalar, asfarray, ndarray, prod
 import numpy as np
+from baseClasses import MultiArray
 
 scipyInstalled = True
 try:
@@ -35,7 +36,7 @@ class diagonal:
     __array_priority__ = 150000# set it greater than 1 to prevent invoking numpy array __mul__ etc
     
     def __init__(self, arr, scalarMultiplier=1.0, size=0):
-        #assert arr.ndim <= 1
+        assert arr.ndim <= 1
         self.diag = arr.copy() if arr is not None else None # may be None, then n has to be provided
         self.scalarMultiplier = scalarMultiplier if isscalar(scalarMultiplier) \
         else asscalar(scalarMultiplier) if type(scalarMultiplier) == ndarray\
@@ -174,8 +175,10 @@ DiagonalType = type(diagonal(np.array([0, 0])))
 Eye = lambda n: 1.0 if n == 1 else diagonal(None, size=n)
 
 def Diag(x, *args, **kw):
-    if isscalar(x) or (type(x)==ndarray and x.size == 1) or isinstance(x, Stochastic): return x
-    else: return diagonal(asfarray(x) if x is not None else x, *args,  **kw)
+    if isscalar(x) or (type(x)==ndarray and x.size == 1) or isinstance(x, (Stochastic, MultiArray)): 
+        return x
+    else: 
+        return diagonal(asfarray(x) if x is not None else x, *args,  **kw)
 
 class fixedVarsScheduleID:
     fixedVarsScheduleID = 0
