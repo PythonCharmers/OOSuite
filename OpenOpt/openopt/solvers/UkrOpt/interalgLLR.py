@@ -1,6 +1,7 @@
 from numpy import tile, isnan, array, atleast_1d, asarray, logical_and, all, logical_or, any, nan, isinf, \
 arange, vstack, inf, where, logical_not, take, abs, hstack, empty, \
 prod, int16, int32, int64, log2, searchsorted, cumprod
+import numpy as np
 from FuncDesigner import oopoint
 from interalgT import *
 
@@ -212,13 +213,12 @@ def r2(PointVals, PointCoords, dataType):
     r8 = atleast_1d(PointVals)[r23] 
     return r7, r8
     
-def func3(an, maxActiveNodes):
-    
+def func3(an, maxActiveNodes, dataHandling):
     m = len(an)
-    if m > maxActiveNodes:
-        an1, _in = an[:maxActiveNodes], an[maxActiveNodes:]
-    else:
-        an1, _in = an, array([], object)
+    if m <= maxActiveNodes:
+        return an, array([], object)
+    
+    an1, _in = an[:maxActiveNodes], an[maxActiveNodes:]    
         
     if getattr(an1[0], 'tnlh_curr_best', None) is not None:
         #t0 = an1[0].tnlh_curr_best
@@ -247,6 +247,20 @@ def func3(an, maxActiveNodes):
         tmp1, tmp2 = an1[:M], an1[M:]
         an1 = tmp1
         _in = hstack((tmp2, _in))
+        
+    # TODO: implement it for MOP as well
+    cond_min_uf = 0 and dataHandling == 'raw' and hasattr(an[0], 'key')            
+    
+    if cond_min_uf:
+        num_nlh = min((max((1, int(0.8*maxActiveNodes))), an1.size))
+        num_uf = min((maxActiveNodes - num_nlh, int(maxActiveNodes/2)))
+        if num_uf < 15:
+            num_uf = 15
+        #an1, _in = an[:num_nlh], an[num_nlh:]    
+        Ind = np.argsort([node.key for node in _in])
+        min_uf_nodes = _in[Ind[:num_uf]]
+        _in = _in[Ind[num_uf:]]
+        an1 = np.hstack((an1, min_uf_nodes))
         
     # changes end
     #print maxActiveNodes, len(an1), len(_in)
@@ -450,7 +464,7 @@ def func12(an, maxActiveNodes, p, Solutions, vv, varTols, fo):
         
     
     while True:
-        an1Candidates, _in = func3(_in, maxActiveNodes)
+        an1Candidates, _in = func3(_in, maxActiveNodes, p.solver.dataHandling)
 
         #print nanmax(2**(-an1Candidates[0].tnlh_curr)) ,  nanmax(2**(-an1Candidates[-1].tnlh_curr))
         yc, ec, oc, ac, SIc = asarray([t.y for t in an1Candidates]), \
@@ -494,7 +508,7 @@ def func12(an, maxActiveNodes, p, Solutions, vv, varTols, fo):
             Midles = 0.5*(yc[w, t] + ec[w, t])
             arr_1, arr2 = arr[w, t], arr[w, n+t]
             Arr = hstack((arr_1, arr2))
-            ind = argsort(Arr)
+            ind = np.argsort(Arr)
             Ind = set(ind[:maxActiveNodes])
             tag_all, tag_1, tag_2 = [], [], []
             sn = []

@@ -1,5 +1,6 @@
 from numpy import isnan, take, any, all, logical_or, logical_and, logical_not, atleast_1d, where, \
 asarray, argmin, argsort, isfinite
+import numpy as np
 from bisect import bisect_right
 from FuncDesigner.Interval import adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain
 try:
@@ -13,15 +14,18 @@ def adjustDiscreteVarBounds(y, e, p):
     # TODO: remove the cycle, use vectorization
     for i in p._discreteVarsNumList:
         v = p._freeVarsList[i]
+        #y += 100
         adjust_lx_WithDiscreteDomain(y[:, i], v)
         adjust_ux_WithDiscreteDomain(e[:, i], v)
         
     ind = any(y>e, 1)
+    # TODO:  is it triggered?
     if any(ind):
         ind = where(logical_not(ind))[0]
         s = ind.size
         y = take(y, ind, axis=0, out=y[:s])
         e = take(e, ind, axis=0, out=e[:s])
+    return y, e
     
     
 def func7(y, e, o, a, _s, nlhc, residual):
@@ -172,3 +176,77 @@ def func4(p, y, e, o, a, fo, tnlhf_curr = None):
         
     return indT
 
+
+def TruncateByCuttingPlane(f, f_val, y, e, lb, ub, point, gradient):
+    gradient_squared_norm = np.sum(gradient**2)
+    #gradient_norm = np.sqrt(np.sum(gradient**2))
+    #normed_gradient = gradient / gradient_norm
+    gradient_multiplier = gradient / gradient_squared_norm
+    delta_l = gradient_multiplier * (f_val - lb)
+    H = point + delta_l
+    
+def truncateByPlane(y, e, indT, A, b):
+    #!!!!!!!!!!!!!!!!!!!
+    # TODO: indT
+    #!!!!!!!!!!!!!!!!!!!
+    
+    assert np.asarray(b).size <= 1, 'unimplemented yet'
+    m, n = y.shape
+    if m == 0:
+        assert e.size == 0, 'bug in interalg engine'
+        return y, e, indT
+    # TODO: remove the cycle
+#    for i in range(m):
+#        l, u = y[i], e[i]
+    ind_positive = where(A > 0)[0]
+    ind_negative = where(A < 0)[0]
+    
+    # TODO: check summation axis
+    S1 = A[ind_positive] * y[:, ind_positive]
+   
+    S2 = A[ind_negative] * e[:, ind_negative]
+    
+    s1, s2 = np.sum(S1, 1), np.sum(S2, 1)
+
+    #S = np.sum(S1, 1) + np.sum(S2, 1)
+    S = s1 + s2
+    
+    for _i, i in enumerate(ind_positive):
+        u = e[:, i]
+        s = S - S1[:, _i]
+        alt_ub = (b - s) / A[i]
+        ind = u > alt_ub
+        e[ind, i] = alt_ub[ind]
+        indT[ind] = True
+#        print('+', where(ind)[0].size)
+    
+    for _i, i in enumerate(ind_negative):
+        l = y[:, i]
+        s = S - S2[:, _i]
+        alt_lb = (b - s) / A[i]
+        ind = l < alt_lb
+        y[ind, i] = alt_lb[ind]
+        indT[ind] = True
+#        print('-', l.size, where(ind)[0].size)
+
+    ind = np.all(e>=y, 1)
+    if not np.all(ind):
+        j = where(ind)[0]
+        lj = j.size
+        y = take(y, j, axis=0, out=y[:lj])
+        e = take(e, j, axis=0, out=e[:lj])
+        indT = indT[ind]
+    return y, e, indT
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    

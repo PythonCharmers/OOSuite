@@ -131,7 +131,7 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,
     assert p.probType == 'MOP'
     
     if len(p._discreteVarsNumList):
-        adjustDiscreteVarBounds(y, e, p)
+        y, e = adjustDiscreteVarBounds(y, e, p)
     
     
     if p.nProc != 1 and getattr(p, 'pool', None) is None:

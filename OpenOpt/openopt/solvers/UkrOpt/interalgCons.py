@@ -1,7 +1,7 @@
 from numpy import empty, where, logical_and, logical_not, take, logical_or, isnan, zeros, log2, isfinite, \
 int8, int16, int32, int64, isinf, asfarray, any, asarray
 from interalgLLR import func8, func10
-from interalgT import adjustDiscreteVarBounds
+from interalgT import adjustDiscreteVarBounds, truncateByPlane
 
 try:
     from bottleneck import nanmin, nanmax
@@ -17,7 +17,7 @@ def processConstraints(C0, y, e, _s, p, dataType):
     DefiniteRange = True
     
     if len(p._discreteVarsNumList):
-        adjustDiscreteVarBounds(y, e, p)
+        y, e = adjustDiscreteVarBounds(y, e, p)
 
     for f, r16, r17, tol in C0:
         if p.solver.dataHandling == 'sorted': tol = 0
@@ -123,14 +123,23 @@ def processConstraints(C0, y, e, _s, p, dataType):
 def processConstraints2(C0, y, e, _s, p, dataType):
     n = p.n
     m = y.shape[0]
+    indT = empty(m, bool)
+    indT.fill(False)
+    
+    for i in range(p.nb):
+        y, e, indT = truncateByPlane(y, e, indT, p.A[i], p.b[i])
+    for i in range(p.nbeq):
+        # TODO: handle it via one func
+        y, e, indT = truncateByPlane(y, e, indT, p.Aeq[i], p.beq[i])
+        y, e, indT = truncateByPlane(y, e, indT, -p.Aeq[i], -p.beq[i])
+   
+    m = y.shape[0]
     nlh = zeros((m, 2*n))
     nlh_0 = zeros(m)
     
     DefiniteRange = True
-    indT = empty(m, bool)
-    indT.fill(False)
     if len(p._discreteVarsNumList):
-        adjustDiscreteVarBounds(y, e, p)
+        y, e = adjustDiscreteVarBounds(y, e, p)
 
     for c, f, lb, ub, tol in C0:
         m = y.shape[0] # is changed in the cycle
@@ -178,9 +187,9 @@ def processConstraints2(C0, y, e, _s, p, dataType):
             # TODO: mb implement it
             if len(p._discreteVarsNumList):
                 if tmp_l.ndim > 1:
-                    adjustDiscreteVarBounds(tmp_l, tmp_u, p)
+                    y, e = adjustDiscreteVarBounds(tmp_l, tmp_u, p)
                 else:
-                    adjustDiscreteVarBounds(y, e, p)
+                    y, e = adjustDiscreteVarBounds(y, e, p)
 
             nlh_l, nlh_u = nlh[:, nlh.shape[1]/2:], nlh[:, :nlh.shape[1]/2]
             

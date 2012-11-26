@@ -9,7 +9,7 @@ from FuncDesigner import sum as fd_sum, abs as fd_abs, oopoint
 from ii_engine import *
 from interalgCons import processConstraints, processConstraints2
 from interalgODE import interalg_ODE_routine
-from interalgMOP import r14MOP
+
 from interalgLLR import adjustr4WithDiscreteVariables
 
 bottleneck_is_present = False
@@ -48,6 +48,8 @@ class interalg(baseSolver):
     def __solver__(self, p):
         
         isMOP = p.probType == 'MOP'
+        if isMOP:
+            from interalgMOP import r14MOP
         #isOpt = p.probType in ['NLP', 'NSP', 'GLP', 'MINLP']
         isODE = p.probType == 'ODE'
         isSNLE = p.probType in ('NLSP', 'SNLE')
@@ -137,7 +139,7 @@ class interalg(baseSolver):
         dataType = self.dataType
         if type(dataType) == str:
             if not hasattr(np, dataType):
-                p.pWarn('your architecture has no type "%s", float64 will be used instead')
+                p.pWarn('your architecture has no type "%s", float64 will be used instead' % dataType)
                 dataType = 'float64'
             dataType = getattr(np, dataType)
 

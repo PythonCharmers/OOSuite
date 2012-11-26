@@ -1,6 +1,11 @@
 from numpy import isnan, array, atleast_1d, asarray, all, searchsorted, logical_or, any, nan, \
-vstack, inf, where, logical_not, min, abs, hstack, insert, append, \
-logical_xor, argsort
+vstack, inf, where, logical_not, min, abs, hstack, insert, logical_xor, argsort
+try:
+    from numpy import append
+except ImportError:
+    def append(*args, **kw):
+        raise ImportError('function append() is absent in PyPy yet')
+        
 from interalgLLR import *
 
 try:
@@ -23,7 +28,7 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
 
     maxSolutions, solutions, coords = Solutions.maxNum, Solutions.solutions, Solutions.coords
     if len(p._discreteVarsNumList):
-        adjustDiscreteVarBounds(y, e, p)
+        y, e = adjustDiscreteVarBounds(y, e, p)
 
     
     o, a, r41 = r45(y, e, vv, p, asdf1, dataType, r41, nlhc)
