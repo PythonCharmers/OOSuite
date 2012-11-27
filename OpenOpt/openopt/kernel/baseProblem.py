@@ -12,7 +12,7 @@ from openopt.kernel.Point import Point
 
 from iterPrint import ooTextOutput
 from ooMisc import setNonLinFuncsNumber, assignScript, norm
-from nonOptMisc import isspmatrix, scipyInstalled, scipyAbsentMsg, csr_matrix, Vstack, Hstack, EmptyClass, isPyPy
+from nonOptMisc import isspmatrix, scipyInstalled, scipyAbsentMsg, csr_matrix, Vstack, Hstack, EmptyClass, isPyPy, oosolver
 from copy import copy as Copy
 try:
     from DerApproximator import check_d1
@@ -150,6 +150,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
     fOpt = None # optimal value, if known
     implicitBounds = inf
     
+    convex = 'unknown' # used in interalg
+    _linear_objective = False # used in interalg
 
     def __init__(self, *args, **kwargs):
         # TODO: add the field to ALL classes
@@ -562,7 +564,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 broadcast(formDictOfFixedFuncs, self.f, self.useAttachedConstraints, self.dictOfFixedFuncs, areFixed, self._x0)
 
 
-            inplaceLinearRender = self.solver.__name__ == 'interalg'
+            inplaceLinearRender = oosolver(self.solver).__name__ == 'interalg'
             
             if inplaceLinearRender and hasattr(self, 'f'):
                 D_kwargs2 = D_kwargs.copy()
@@ -574,6 +576,9 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                             D = f.D(Z, **D_kwargs2)
                             f2 = linear_render(f, D, Z)
                             ff.append(f2)
+                            if self.isObjFunValueASingleNumber:
+                                assert len(self.f) == 1, 'bug in FD kernel'
+                                p._linear_objective = True
                         else:
                             ff.append(f)
                     self.f = ff
