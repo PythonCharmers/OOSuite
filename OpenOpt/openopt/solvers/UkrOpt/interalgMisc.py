@@ -7,6 +7,7 @@ except ImportError:
         raise ImportError('function append() is absent in PyPy yet')
         
 from interalgLLR import *
+from interalgT import truncateByPlane
 
 try:
     from bottleneck import nanmin, nanmax
@@ -36,6 +37,34 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
     if fo_prev > 1e300:
         fo_prev = 1e300
     y, e, o, a, _s, nlhc, residual = func7(y, e, o, a, _s, nlhc, residual)    
+    
+    # CHANGES
+    # Curreetly works only for linear objective w/o constant part
+    #p.convex = True
+    
+    if p._linear_objective and fo_prev < 1e300:# and p.convex is True:
+        # TODO: rework it
+        #cs = dict([(key, val.view(multiarray)) for key, val in cs.items()])
+        #cs = dict([(key, 0) for key, val in p._x0.items()])
+        
+        d = p._linear_objective_factor
+        # TODO: handle indT corrently
+        indT2 = np.empty(y.shape[0])
+        indT2.fill(False)
+
+        #y, e, indT2 = truncateByPlane(y, e, indT2, np.hstack([d[v][0] for v in vv]), fo_prev)
+        #y, e, indT2, ind_t = truncateByPlane(y, e, indT2, np.hstack([d[oov] for oov in vv]), fo_prev)
+        y, e, indT2, ind_t = truncateByPlane(y, e, indT2, d, fo_prev - p._linear_objective_scalar)
+        if ind_t is not True:
+            lj = ind_t.size
+            o = take(o, ind_t, axis=0, out=o[:lj])
+            a = take(a, ind_t, axis=0, out=a[:lj])
+            nlhc = take(nlhc, ind_t, axis=0, out=nlhc[:lj])
+            _s = _s[ind_t]
+            indTC = np.logical_or(indTC[ind_t], indT2)
+            #residual = residual[ind_t]
+        
+    # CHANGES END
 
     if y.size == 0:
         return _in, g, fo_prev, _s, Solutions, xRecord, r41, r40

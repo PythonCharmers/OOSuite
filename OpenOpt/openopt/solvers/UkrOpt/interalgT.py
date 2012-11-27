@@ -17,10 +17,12 @@ def adjustDiscreteVarBounds(y, e, p):
         #y += 100
         adjust_lx_WithDiscreteDomain(y[:, i], v)
         adjust_ux_WithDiscreteDomain(e[:, i], v)
-        
+
     ind = any(y>e, 1)
+
     # TODO:  is it triggered?
     if any(ind):
+        #print('asdf')
         ind = where(logical_not(ind))[0]
         s = ind.size
         y = take(y, ind, axis=0, out=y[:s])
@@ -189,12 +191,12 @@ def truncateByPlane(y, e, indT, A, b):
     #!!!!!!!!!!!!!!!!!!!
     # TODO: indT
     #!!!!!!!!!!!!!!!!!!!
-    
+    ind_trunc = True
     assert np.asarray(b).size <= 1, 'unimplemented yet'
     m, n = y.shape
     if m == 0:
         assert e.size == 0, 'bug in interalg engine'
-        return y, e, indT
+        return y, e, indT, ind_trunc
     # TODO: remove the cycle
 #    for i in range(m):
 #        l, u = y[i], e[i]
@@ -231,12 +233,12 @@ def truncateByPlane(y, e, indT, A, b):
 
     ind = np.all(e>=y, 1)
     if not np.all(ind):
-        j = where(ind)[0]
-        lj = j.size
-        y = take(y, j, axis=0, out=y[:lj])
-        e = take(e, j, axis=0, out=e[:lj])
-        indT = indT[ind]
-    return y, e, indT
+        ind_trunc = where(ind)[0]
+        lj = ind_trunc.size
+        y = take(y, ind_trunc, axis=0, out=y[:lj])
+        e = take(e, ind_trunc, axis=0, out=e[:lj])
+        indT = indT[ind_trunc]
+    return y, e, indT, ind_trunc
 
     
     

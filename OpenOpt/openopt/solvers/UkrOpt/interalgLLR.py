@@ -3,6 +3,7 @@ arange, vstack, inf, where, logical_not, take, abs, hstack, empty, \
 prod, int16, int32, int64, log2, searchsorted, cumprod
 import numpy as np
 from FuncDesigner import oopoint
+from FuncDesigner.multiarray import multiarray
 from interalgT import *
 
 try:
@@ -99,7 +100,7 @@ def func8(domain, func, dataType):
     #assert TMP.lb.dtype == dataType
     return asarray(TMP.lb, dtype=dataType), asarray(TMP.ub, dtype=dataType), TMP.definiteRange
 
-def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p):
+def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p, fo = inf):
     #print where(y), where(e!=1)
     n = y.shape[1]
     # TODO: rework it wrt nlh
@@ -167,7 +168,6 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p):
     if isMOP:
         return array(FF).T.reshape(m, len(func)).tolist(), wr4.tolist()
     else:
-        #print F
         return atleast_1d(F) , wr4
 
 
