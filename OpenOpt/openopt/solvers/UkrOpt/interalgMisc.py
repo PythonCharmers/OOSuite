@@ -42,7 +42,7 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
     # Curreetly works only for linear objective w/o constant part
     #p.convex = True
     
-    if p._linear_objective and fo_prev < 1e300:# and p.convex is True:
+    if 1 and p._linear_objective and fo_prev < 1e300:# and p.convex is True:
         # TODO: rework it
         #cs = dict([(key, val.view(multiarray)) for key, val in cs.items()])
         #cs = dict([(key, 0) for key, val in p._x0.items()])
@@ -54,7 +54,8 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
 
         #y, e, indT2 = truncateByPlane(y, e, indT2, np.hstack([d[v][0] for v in vv]), fo_prev)
         #y, e, indT2, ind_t = truncateByPlane(y, e, indT2, np.hstack([d[oov] for oov in vv]), fo_prev)
-        y, e, indT2, ind_t = truncateByPlane(y, e, indT2, d, fo_prev - p._linear_objective_scalar)
+        th = fo_prev - p._linear_objective_scalar
+        y, e, indT2, ind_t = truncateByPlane(y, e, indT2, d if p.goal in ('min', 'minimum') else -d, th if p.goal in ('min', 'minimum') else -th)
         if ind_t is not True:
             lj = ind_t.size
             o = take(o, ind_t, axis=0, out=o[:lj])
