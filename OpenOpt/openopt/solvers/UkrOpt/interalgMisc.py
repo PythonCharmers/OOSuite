@@ -54,8 +54,11 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
 
         #y, e, indT2 = truncateByPlane(y, e, indT2, np.hstack([d[v][0] for v in vv]), fo_prev)
         #y, e, indT2, ind_t = truncateByPlane(y, e, indT2, np.hstack([d[oov] for oov in vv]), fo_prev)
-        th = fo_prev - p._linear_objective_scalar
-        y, e, indT2, ind_t = truncateByPlane(y, e, indT2, d if p.goal in ('min', 'minimum') else -d, th if p.goal in ('min', 'minimum') else -th)
+        th = (fo_prev - p._linear_objective_scalar) if p.goal in ('min', 'minimum') else (fo_prev + p._linear_objective_scalar)
+#        print('==')
+#        print(y.sum())
+        y, e, indT2, ind_t = truncateByPlane(y, e, indT2, d if p.goal in ('min', 'minimum') else -d, th)
+#        print(y.sum())
         if ind_t is not True:
             lj = ind_t.size
             o = take(o, ind_t, axis=0, out=o[:lj])
