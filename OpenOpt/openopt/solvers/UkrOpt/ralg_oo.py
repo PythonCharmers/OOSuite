@@ -1,5 +1,5 @@
-from numpy import diag, array, sqrt,  eye, ones, inf, any, copy, zeros, dot, where, all, tile, sum, nan, isfinite, float64, isnan, log10, \
-max, sign, array_equal, nonzero, ix_, arctan, pi, logical_not, logical_and, atleast_2d, matrix
+from numpy import diag, array, sqrt,  eye, ones, inf, any, copy, zeros, dot, where, all, sum, isfinite, float64, isnan, log10, \
+max, sign, array_equal, logical_and, matrix
 from openopt.kernel.ooMisc import norm
 
 try:
@@ -19,7 +19,7 @@ import openopt
 #    cond = lambda Matrix: 1
 
 from openopt.kernel.baseSolver import *
-from openopt.kernel.Point import Point
+#from openopt.kernel.Point import Point
 from openopt.kernel.ooMisc import economyMult, Len
 from openopt.kernel.setDefaultIterFuncs import *
 from openopt.solvers.UkrOpt.UkrOptMisc import getBestPointAfterTurn
