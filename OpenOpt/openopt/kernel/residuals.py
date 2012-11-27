@@ -149,18 +149,18 @@ class residuals:
         else:
             return g
 
-    def _getLagrangeresiduals(self, x, lm):
-        #lm is Lagrange multipliers
-        residuals = self.getresiduals(x)
-        r = 0
-
-        for field in ['c', 'h', 'A', 'Aeq', 'lb', 'ub']:
-            fv = getattr(residuals, field)
-            if fv not in ([], ()) and fv.size>0: r += self.dotwise(fv, getattr(lm, field))
-        return r
-        #return r.nonLinInEq * lm.nonLinInEq + r.nonLinEq * lm.nonLinEq + \
-                   #r.aX_Less_b * lm.aX_Less_b + r.aeqX_ineq_beq * lm.aeqX_ineq_beq + \
-                   #r.res_lb * lm.res_lb + r.res_ub * lm.res_ub
+#    def _getLagrangeresiduals(self, x, lm):
+#        #lm is Lagrange multipliers
+#        residuals = self.getresiduals(x)
+#        r = 0
+#
+#        for field in ['c', 'h', 'A', 'Aeq', 'lb', 'ub']:
+#            fv = getattr(residuals, field)
+#            if fv not in ([], ()) and fv.size>0: r += self.dotwise(fv, getattr(lm, field))
+#        return r
+#        #return r.nonLinInEq * lm.nonLinInEq + r.nonLinEq * lm.nonLinEq + \
+#                   #r.aX_Less_b * lm.aX_Less_b + r.aeqX_ineq_beq * lm.aeqX_ineq_beq + \
+#                   #r.res_lb * lm.res_lb + r.res_ub * lm.res_ub
 
     def isFeas(self, x):
         if any(isnan(self._get_nonLinEq_residuals(x))) or any(isnan(self._get_nonLinInEq_residuals(x))):

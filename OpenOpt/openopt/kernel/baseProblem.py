@@ -576,9 +576,6 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                             D = f.D(Z, **D_kwargs2)
                             f2 = linear_render(f, D, Z)
                             ff.append(f2)
-                            if self.isObjFunValueASingleNumber:
-                                assert len(self.f) == 1, 'bug in FD kernel'
-                                p._linear_objective = True
                         else:
                             ff.append(f)
                     self.f = ff
@@ -586,7 +583,11 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     if self.f.getOrder(self.freeVars, self.fixedVars) < 2:
                         D = self.f.D(Z, **D_kwargs2)
                         self.f = linear_render(self.f, D, Z)
-            
+                        if self.isObjFunValueASingleNumber:
+                            self._linear_objective = True
+                            self._linear_objective_factor = self._pointDerivative2array(D).flatten()
+                            self._linear_objective_scalar = self.f(Z)
+                                
             handleConstraint_args = (StartPointVars, areFixed, oovD, A, b, Aeq, beq, Z, D_kwargs, LB, UB, inplaceLinearRender)
             for c in self.constraints:
                 if isinstance(c, ooarray):
