@@ -189,7 +189,7 @@ def TruncateByCuttingPlane(f, f_val, y, e, lb, ub, point, gradient):
     
 def truncateByPlane(y, e, indT, A, b):
     #!!!!!!!!!!!!!!!!!!!
-    # TODO: indT
+    # TODO: vectorize it by matrix A
     #!!!!!!!!!!!!!!!!!!!
     ind_trunc = True
     assert np.asarray(b).size <= 1, 'unimplemented yet'
@@ -201,35 +201,100 @@ def truncateByPlane(y, e, indT, A, b):
 #    for i in range(m):
 #        l, u = y[i], e[i]
     ind_positive = where(A > 0)[0]
+    
     ind_negative = where(A < 0)[0]
     
-    # TODO: check summation axis
-    S1 = A[ind_positive] * y[:, ind_positive]
-   
-    S2 = A[ind_negative] * e[:, ind_negative]
-    
+    A1 = A[ind_positive] 
+    S1 = A1 * y[:, ind_positive]
+    A2 = A[ind_negative]
+    S2 = A2 * e[:, ind_negative]
     s1, s2 = np.sum(S1, 1), np.sum(S2, 1)
-
-    #S = np.sum(S1, 1) + np.sum(S2, 1)
     S = s1 + s2
     
-    for _i, i in enumerate(ind_positive):
-        u = e[:, i]
-        s = S - S1[:, _i]
-        alt_ub = (b - s) / A[i]
-        ind = u > alt_ub
-        e[ind, i] = alt_ub[ind]
-        indT[ind] = True
-#        print('+', where(ind)[0].size)
+    if ind_positive.size != 0:
+        S1_ = b - S.reshape(-1, 1) + S1
+        Alt_ub = S1_ / A1
+#        ind = e[:, ind_positive] > Alt_ub
+#        #e[:, ind_positive[ind]] = Alt_ub[ind]
+#        e[:, np.tile(ind_positive,(ind.shape[0],1))[ind]] = Alt_ub[ind]
+#        #e[:, ind_positive.reshape(ind.shape)[ind]] = Alt_ub[ind]
+#        
+#        indT[np.any(ind, 1)] = True
+        
+        for _i, i in enumerate(ind_positive):
+            #s = S - S1[:, _i]
+            #alt_ub = (b - s) / A[i]
+            #alt_ub = S1_[:, _i] / A[i]
+            alt_ub = Alt_ub[:, _i]
+            ind = e[:, i] > alt_ub
+            e[ind, i] = alt_ub[ind]
+            indT[ind] = True
     
-    for _i, i in enumerate(ind_negative):
-        l = y[:, i]
-        s = S - S2[:, _i]
-        alt_lb = (b - s) / A[i]
-        ind = l < alt_lb
-        y[ind, i] = alt_lb[ind]
-        indT[ind] = True
-#        print('-', l.size, where(ind)[0].size)
+    if ind_negative.size != 0:
+        S2_ = b - S.reshape(-1, 1) + S2
+        Alt_lb = S2_ / A2
+        for _i, i in enumerate(ind_negative):
+            #s = S - S2[:, _i]
+            #alt_lb = (b - s) / A[i]
+            #alt_lb = S2_[:, _i] / A[i]
+            alt_lb = Alt_lb[:, _i]
+            ind = y[:, i] < alt_lb
+            y[ind, i] = alt_lb[ind]
+            indT[ind] = True
+
+    ind = np.all(e>=y, 1)
+    if not np.all(ind):
+        ind_trunc = where(ind)[0]
+        lj = ind_trunc.size
+        y = take(y, ind_trunc, axis=0, out=y[:lj])
+        e = take(e, ind_trunc, axis=0, out=e[:lj])
+        indT = indT[ind_trunc]
+            
+    return y, e, indT, ind_trunc
+
+    
+def truncateByPlane2(y, e, indT, A, b):
+    ind_trunc = True
+    assert np.asarray(b).size <= 1, 'unimplemented yet'
+    m, n = y.shape
+    if m == 0:
+        assert e.size == 0, 'bug in interalg engine'
+        return y, e, indT, ind_trunc
+    # TODO: remove the cycle
+#    for i in range(m):
+#        l, u = y[i], e[i]
+    ind_positive = where(A > 0)
+    ind_negative = where(A < 0)
+    
+    S1 = A[ind_positive] * y[ind_positive]
+    S2 = A[ind_negative] * e[ind_negative]
+    s1, s2 = np.sum(S1, 1), np.sum(S2, 1)
+    S = s1 + s2
+    
+    alt_b1 = np.min((b - S.reshape(-1, 1) + S1) / A[ind_positive], 1)
+    ind1 = e[ind_positive]>alt_b1
+    e[ind_positive[ind1]] = alt_b1[ind1]
+    alt_b2 = np.max((b - S.reshape(-1, 1) + S2) / A[ind_negative], 1)
+    ind2 = y[ind_negative]<alt_b2
+    y[ind_negative[ind2]] = alt_b2[ind2]
+    #y[y[ind_negative]<alt_b2] = alt_b2
+    
+    # TODO:
+    indT
+    
+#    for _i, i in enumerate(ind_positive):
+#        s = S - S1[:, _i]
+#        alt_ub = (b - s) / A[i]
+#        ind = e[:, i] > alt_ub
+#        e[ind, i] = alt_ub[ind]
+#        indT[ind] = True
+#    
+#    for _i, i in enumerate(ind_negative):
+#        s = S - S2[:, _i]
+#        alt_lb = (b - s) / A[i]
+#        ind = y[:, i] < alt_lb
+#        y[ind, i] = alt_lb[ind]
+#        indT[ind] = True
 
     ind = np.all(e>=y, 1)
     if not np.all(ind):
@@ -239,9 +304,6 @@ def truncateByPlane(y, e, indT, A, b):
         e = take(e, ind_trunc, axis=0, out=e[:lj])
         indT = indT[ind_trunc]
     return y, e, indT, ind_trunc
-
-    
-    
     
     
     
