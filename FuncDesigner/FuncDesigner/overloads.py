@@ -472,7 +472,7 @@ def dot(inp1, inp2):
             r.fill(y)
             r = Diag(r)
         else:
-            r = y
+            r = np.asarray(y)
         return r
         
     r = oofun(lambda x, y: x * y if x.size == 1 or y.size == 1 else np.dot(x, y), [inp1, inp2], d=(lambda x, y: aux_d(x, y), lambda x, y: aux_d(y, x)))
