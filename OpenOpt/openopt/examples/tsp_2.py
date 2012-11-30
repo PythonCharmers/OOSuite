@@ -25,7 +25,7 @@ objective = lambda values: values['time'] + 10*values['cost']
 
 p = TSP(G, objective = objective, constraints = constraints, start = 'node 3', returnToStart=False)
 
-r = p.solve('lpSolve') # also you can use some other solvers - sa, interlag, OpenOpt MILP solvers
+r = p.solve('lpSolve') # also you can use some other solvers - sa, interalg, OpenOpt MILP solvers
 
 # if your solver is cplex or interalg, you can provide some stop criterion, 
 # e.g. maxTime, maxCPUTime, fEnough etc, for example 

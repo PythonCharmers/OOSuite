@@ -28,7 +28,7 @@ constraints = lambda values: (2 * values['time'] + 3 * values['cost'] > 100, 8 *
 
 p = TSP(G, objective = objective, constraints = constraints, startNode = 2, returnToStart=True)
 
-solver = 'glpk' # also you can use some other solvers - sa, interlag, OpenOpt MILP solvers
+solver = 'glpk' # also you can use some other solvers - sa, interalg, OpenOpt MILP solvers
 r = p.solve(solver) 
 
 # if your solver is cplex or interalg, you can provide some stop criterion, 

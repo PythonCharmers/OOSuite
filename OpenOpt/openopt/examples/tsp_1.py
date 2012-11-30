@@ -20,7 +20,7 @@ G.add_edges_from(\
 # parameter "start" (node identifier, number or string) is optional
 p = TSP(G, objective = 'time', start = 2) #, [optional] returnToStart={True}|False, constraints = ..., etc
 
-r = p.solve('glpk') # also you can use some other solvers - sa, interlag, OpenOpt MILP solvers
+r = p.solve('glpk') # also you can use some other solvers - sa, interalg, OpenOpt MILP solvers
 
 # if your solver is cplex or interalg, you can provide some stop criterion, 
 # e.g. maxTime, maxCPUTime, fEnough etc, for example 
