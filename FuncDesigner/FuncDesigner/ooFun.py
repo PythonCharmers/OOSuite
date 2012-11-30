@@ -118,10 +118,8 @@ class oofun:
     def disp(self, msg): 
         print(msg)
     
-    def nlh(self):
-        raise FuncDesignerException("probably you have involved boolean operation on continuous function, that is error")
-    
-    lh = nlh
+    nlh = lambda self, *args, **kw: raise_except("probably you have involved boolean operation on continuous function, that is error")
+    lh = lambda self, *args, **kw: raise_except("probably you have involved boolean operation on continuous function, that is error")
     
     def __getattr__(self, attr):
         if attr == '__len__':
@@ -258,12 +256,18 @@ class oofun:
         return r
             
     
-    def iqg(self, domain, dtype = float):
+    def iqg(self, domain, dtype = float, lb=None, ub=None):
         if type(domain) != ooPoint:
             domain = ooPoint(domain, skipArrayCast=True)
             domain.isMultiPoint=True
         domain.useSave = True
         r0 = self.interval(domain, dtype, resetStoredIntervals = False)
+        
+        # TODO: rework it with indexation of required data
+        if lb is not None and ub is not None:
+            if all(logical_or(logical_or(r0.ub < lb, r0.lb > ub), all(logical_and(r0.lb >= lb, r0.ub <= ub)))):
+                return {}, r0
+                
         domain.useAsMutable = True
         
         # TODO: get rid of useSave
@@ -2142,25 +2146,26 @@ class SmoothFDConstraint(BaseFDConstraint):
         domain.isMultiPoint = True
         domain.dictOfFixedFuncs = p.dictOfFixedFuncs
         
-        r, r0 = self.oofun.iqg(domain, dataType)
+        r, r0 = self.oofun.iqg(domain, dataType, self.lb, self.ub)
         Lf, Uf = r0.lb, r0.ub
         tmp = getSmoothNLH(tile(Lf, (2, 1)), tile(Uf, (2, 1)), self.lb, self.ub, tol, m, dataType)
         T02 = tmp
         T0 = T02[:, tmp.shape[1]/2:].flatten()
         
-        dep = selfDep.intersection(domain.keys()) # TODO: Improve it
         res = {}
-        for v in dep:
-            Lf, Uf = vstack((r[v][0].lb, r[v][1].lb)), vstack((r[v][0].ub, r[v][1].ub))
-            
-            # TODO: 1) FIX IT it for matrix definiteRange
-            # 2) seems like DefiniteRange = (True, True) for any variable is enough for whole range to be defined in the involved node
-            DefiniteRange = logical_and(DefiniteRange, r[v][0].definiteRange)
-            DefiniteRange = logical_and(DefiniteRange, r[v][1].definiteRange)
-            
-            tmp = getSmoothNLH(Lf, Uf, self.lb, self.ub, tol, m, dataType) #- T02
-            #tmp[isnan(tmp)] = inf
-            res[v] = tmp 
+        if len(r):
+            dep = selfDep.intersection(domain.keys()) # TODO: Improve it
+            for v in dep:
+                Lf, Uf = vstack((r[v][0].lb, r[v][1].lb)), vstack((r[v][0].ub, r[v][1].ub))
+                
+                # TODO: 1) FIX IT it for matrix definiteRange
+                # 2) seems like DefiniteRange = (True, True) for any variable is enough for whole range to be defined in the involved node
+                DefiniteRange = logical_and(DefiniteRange, r[v][0].definiteRange)
+                DefiniteRange = logical_and(DefiniteRange, r[v][1].definiteRange)
+                
+                tmp = getSmoothNLH(Lf, Uf, self.lb, self.ub, tol, m, dataType) #- T02
+                #tmp[isnan(tmp)] = inf
+                res[v] = tmp 
         return T0, res, DefiniteRange
         
 def getSmoothNLH(Lf, Uf, lb, ub, tol, m, dataType):
