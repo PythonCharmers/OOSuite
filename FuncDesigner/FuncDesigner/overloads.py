@@ -10,9 +10,8 @@ from FuncDesigner.multiarray import multiarray
 
 try:
     from scipy.sparse import isspmatrix, lil_matrix as Zeros
-    lambda *args, **kwargs: scipy.sparse.lil_matrix(*args, **kwargs)
     scipyInstalled = True
-except:
+except ImportError:
     scipyInstalled = False
     isspmatrix = lambda *args, **kw: False
     Zeros = np.zeros 
@@ -473,12 +472,12 @@ def dot(inp1, inp2):
             r.fill(y)
             r = Diag(r)
         else:
-            r = np.copy(y)
+            r = y
         return r
         
     r = oofun(lambda x, y: x * y if x.size == 1 or y.size == 1 else np.dot(x, y), [inp1, inp2], d=(lambda x, y: aux_d(x, y), lambda x, y: aux_d(y, x)))
     r.getOrder = lambda *args, **kwargs: (inp1.getOrder(*args, **kwargs) if isinstance(inp1, oofun) else 0) + (inp2.getOrder(*args, **kwargs) if isinstance(inp2, oofun) else 0)
-    r.isCostly = True
+    #r.isCostly = True
     return r
 
 def cross(a, b):

@@ -263,15 +263,16 @@ class oofun:
         domain.useSave = True
         r0 = self.interval(domain, dtype, resetStoredIntervals = False)
         
+        # TODO: get rid of useSave
+        domain.useSave = False
+        
         # TODO: rework it with indexation of required data
         if lb is not None and ub is not None:
+#            print ('!', len(where(logical_or(logical_or(r0.ub < lb, r0.lb > ub), all(logical_and(r0.lb >= lb, r0.ub <= ub))))[0]), asarray(r0.lb).size)
             if all(logical_or(logical_or(r0.ub < lb, r0.lb > ub), all(logical_and(r0.lb >= lb, r0.ub <= ub)))):
                 return {}, r0
                 
         domain.useAsMutable = True
-        
-        # TODO: get rid of useSave
-        domain.useSave = False
         
         r = {}
         Dep = (self._getDep() if not self.is_oovar else set([self])).intersection(domain.keys())
@@ -1065,7 +1066,7 @@ class oofun:
 
     def _getFuncCalcEngine(self, *args, **kwargs):
         x = args[0]
-        
+        #print(hasattr(x,'p'))
         dep = self._getDep()
         
         CondSamePointByID = True if type(x) == ooPoint and not x.isMultiPoint and self._point_id == x._id else False
