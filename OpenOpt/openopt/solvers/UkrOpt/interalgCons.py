@@ -157,13 +157,14 @@ def processConstraints2(C0, y, e, _s, p, dataType):
         nlh_0 += T0
         assert nlh.shape[0] == m
         # TODO: rework it for case len(p._freeVarsList) >> 1
-        for j, v in enumerate(p._freeVarsList):
-            tmp = res.get(v, None)
-            if tmp is None:
-                continue
-            else:
-                nlh[:, n+j] += tmp[:, tmp.shape[1]/2:].flatten() - T0
-                nlh[:, j] += tmp[:, :tmp.shape[1]/2].flatten() - T0
+        if len(res):
+            for j, v in enumerate(p._freeVarsList):
+                tmp = res.get(v, None)
+                if tmp is None:
+                    continue
+                else:
+                    nlh[:, n+j] += tmp[:, tmp.shape[1]/2:].flatten() - T0
+                    nlh[:, j] += tmp[:, :tmp.shape[1]/2].flatten() - T0
         assert nlh.shape[0] == m
         ind = where(logical_and(any(isfinite(nlh), 1), isfinite(nlh_0)))[0]
         lj = ind.size
