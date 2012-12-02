@@ -36,7 +36,7 @@ class diagonal:
     __array_priority__ = 150000# set it greater than 1 to prevent invoking numpy array __mul__ etc
     
     def __init__(self, arr, scalarMultiplier=1.0, size=0):
-        assert arr.ndim <= 1
+        #assert arr is None or arr.ndim <= 1
         self.diag = arr.copy() if arr is not None else None # may be None, then n has to be provided
         self.scalarMultiplier = scalarMultiplier if isscalar(scalarMultiplier) \
         else asscalar(scalarMultiplier) if type(scalarMultiplier) == ndarray\
