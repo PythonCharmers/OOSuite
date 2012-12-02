@@ -253,9 +253,15 @@ def truncateByPlane(y, e, indT, A, b):
     return y, e, indT, ind_trunc
 
     
-def truncateByPlane2(y, e, indT, A, b):
+def truncateByPlane2(cs, y, e, indT, gradient, fo, p):
+    
+#    #debug
+#    t = np.array([ 0.63056964, -1.        , -1.        , -1.        , -1.        ,       -1.        , -1.        ])
+#    cond_present_1 = np.any([logical_and([u>=t for u in e], [l<=t for l in y])])
+#    print(cond_present_1)
+    
     ind_trunc = True
-    assert np.asarray(b).size <= 1, 'unimplemented yet'
+    assert np.asarray(fo).size <= 1, 'unimplemented yet'
     m, n = y.shape
     if m == 0:
         assert e.size == 0, 'bug in interalg engine'
@@ -263,24 +269,42 @@ def truncateByPlane2(y, e, indT, A, b):
     # TODO: remove the cycle
 #    for i in range(m):
 #        l, u = y[i], e[i]
-    ind_positive = where(A > 0)
-    ind_negative = where(A < 0)
+
+    oovarsIndDict = p._oovarsIndDict
+    ind = np.array([oovarsIndDict[oov][0] for oov in gradient.keys()])
+    y2, e2 = y[:, ind], e[:, ind]
+    A = np.vstack([np.asarray(elem).reshape(1, -1) for elem in gradient.values()]).T
+    cs = 0.5 * (y2 + e2)
+    #print(gradient.values())
+    b = np.sum(A * cs, 1) + fo
+
+#    ind_positive = where(A > 0)
+#    ind_negative = where(A < 0)
     
-    S1 = A[ind_positive] * y[ind_positive]
-    S2 = A[ind_negative] * e[ind_negative]
+    A_positive = where(A>0, A, 0)
+    A_negative = where(A<0, A, 0)
+    #S1 = A[ind_positive] * y2[ind_positive]
+    #S2 = A[ind_negative] * e2[ind_negative]
+    S1 = A_positive * y2
+    S2 = A_negative * e2
     s1, s2 = np.sum(S1, 1), np.sum(S2, 1)
     S = s1 + s2
     
-    alt_b1 = np.min((b - S.reshape(-1, 1) + S1) / A[ind_positive], 1)
-    ind1 = e[ind_positive]>alt_b1
-    e[ind_positive[ind1]] = alt_b1[ind1]
-    alt_b2 = np.max((b - S.reshape(-1, 1) + S2) / A[ind_negative], 1)
-    ind2 = y[ind_negative]<alt_b2
-    y[ind_negative[ind2]] = alt_b2[ind2]
-    #y[y[ind_negative]<alt_b2] = alt_b2
+    alt_fo1 = where(A_positive != 0, (b.reshape(-1, 1) - S.reshape(-1, 1) + S1) / A_positive, np.inf)
+    ind1 = logical_and(e2 > alt_fo1, A_positive != 0)
+    e2[ind1] = alt_fo1[ind1]
     
-    # TODO:
-    indT
+    alt_fo2 = where(A_negative != 0, (b.reshape(-1, 1) - S.reshape(-1, 1) + S2) / A_negative, -np.inf)
+    ind2 = logical_and(y2 < alt_fo2, A_negative != 0)
+    y2[ind2] = alt_fo2[ind2]
+    
+    
+    # TODO: check it
+    y[:, ind], e[:, ind] = y2, e2
+    
+    # TODO: check indT
+    indT[np.any(ind1, 1)] = True
+    indT[np.any(ind2, 1)] = True
     
 #    for _i, i in enumerate(ind_positive):
 #        s = S - S1[:, _i]
@@ -303,6 +327,10 @@ def truncateByPlane2(y, e, indT, A, b):
         y = take(y, ind_trunc, axis=0, out=y[:lj])
         e = take(e, ind_trunc, axis=0, out=e[:lj])
         indT = indT[ind_trunc]
+        
+#    cond_present_2 = np.any([logical_and([u>=t for u in e], [l<=t for l in y])])
+#    print('!', cond_present_2)
+    
     return y, e, indT, ind_trunc
     
     
