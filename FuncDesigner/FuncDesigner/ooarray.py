@@ -125,12 +125,18 @@ class ooarray(OOArray):
                 return ooarray([s[i] / o[i] for i in range(self.size)])
         else:
             raise FuncDesignerException('unimplemented yet')
-
+            
+    __truediv__ = __div__
+    __floordiv__ = __div__
+    
     def __rdiv__(self, other):
+        print('asdf')
         if self.size == 1:
             return other / asscalar(self)
         return ooarray([1.0 / elem for elem in self.view(ndarray)]) * other
-
+    
+    __rtruediv__ = __rdiv__
+    
     def __add__(self, other):
         if isinstance(other, list):
             other = ooarray(other)

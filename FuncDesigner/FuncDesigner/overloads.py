@@ -467,13 +467,11 @@ def dot(inp1, inp2):
     
     def aux_d(x, y):
         if y.size == 1: 
-            #r = np.empty(x.size) - use it?
             r = np.empty_like(x)
             r.fill(y)
-            r = Diag(r)
+            return Diag(r)
         else:
-            r = np.asarray(y)
-        return r
+            return y
         
     r = oofun(lambda x, y: x * y if x.size == 1 or y.size == 1 else np.dot(x, y), [inp1, inp2], d=(lambda x, y: aux_d(x, y), lambda x, y: aux_d(y, x)))
     r.getOrder = lambda *args, **kwargs: (inp1.getOrder(*args, **kwargs) if isinstance(inp1, oofun) else 0) + (inp2.getOrder(*args, **kwargs) if isinstance(inp2, oofun) else 0)
@@ -673,7 +671,7 @@ def sum_derivative(r0, INP, point, fixedVarsScheduleID, Vars=None, fixedVars = N
         if elem.is_oovar:
             if (fixedVars is not None and elem in fixedVars) or (Vars is not None and elem not in Vars): continue
             sz = np.asarray(point[elem]).size
-            tmpres = Eye(sz) 
+            tmpres = Eye(sz) if not isinstance(point[elem], multiarray) else np.ones(sz)
             r_val = r.get(elem, None)
             if isSP:
                 if r_val is not None:
@@ -731,7 +729,7 @@ def sum_derivative(r0, INP, point, fixedVarsScheduleID, Vars=None, fixedVars = N
     if useSparse is False:
         for key, val in r.items():
             #if np.isscalar(val): val = np.asfarray(val)
-            if hasattr(val, 'toarray'): # i.e. sparse matrix
+            if hasattr(val, 'toarray'):# and not isinstance(val, multiarray): # i.e. sparse matrix
                 r[key] = val.toarray()
 
     # TODO: rework it, don't recalculate each time

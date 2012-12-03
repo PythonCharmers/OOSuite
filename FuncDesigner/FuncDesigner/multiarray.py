@@ -21,7 +21,7 @@ class multiarray(MultiArray):
     __rpow__ = lambda self, other: multiarray_op(other, self, operator.pow)
     
     # TODO: check it!
-    toarray = lambda self: self.view(ndarray)
+    #toarray = lambda self: self.view(ndarray)
 
     def sum(self, *args, **kw):
         if any([v is not None for v in args]): # somehow triggered from pswarm

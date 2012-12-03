@@ -637,9 +637,9 @@ class oofun:
 #                return ooarray([self[i] ** other[i] for i in range(other.size)])
 
         d_x = lambda x, y: \
-            (y * x ** (y - 1) if (isscalar(x) or x.size == 1) else Diag(y * x ** (y - 1))) if y is not 2 else Diag(2 * x)
+            (y * x ** (y - 1) if (isscalar(x) or x.size == 1 or isinstance(x, multiarray)) else Diag(y * x ** (y - 1))) if y is not 2 else Diag(2 * x)
 
-        d_y = lambda x, y: x ** y * log(x) if (isscalar(y) or y.size == 1) else Diag(x ** y * log(x))
+        d_y = lambda x, y: x ** y * log(x) if (isscalar(y) or y.size == 1) and not isinstance(x, multiarray) else Diag(x ** y * log(x))
         
 
         if not isinstance(other, oofun):
@@ -1066,7 +1066,7 @@ class oofun:
 
     def _getFuncCalcEngine(self, *args, **kwargs):
         x = args[0]
-        #print(hasattr(x,'p'))
+        
         dep = self._getDep()
         
         CondSamePointByID = True if type(x) == ooPoint and not x.isMultiPoint and self._point_id == x._id else False
@@ -1094,6 +1094,17 @@ class oofun:
             return tmp.copy() if isinstance(tmp, (ndarray, Stochastic)) else tmp 
             
         self.evals += 1
+        
+        #TODO: add condition "and self in x._p.dictOfLinearFuncs" instead of self._order == 1
+        use_line_points = hasattr(x,'_p') and x._p.solver.useLinePoints and self._order == 1
+        if use_line_points:
+            _linePointDescriptor = getattr(x, '_linePointDescriptor', None)
+            if _linePointDescriptor is not None:
+                #point1, alp, point2 = _linePointDescriptor
+                alp = _linePointDescriptor
+                r1, r2 = self._p._firstLinePointDict[self], self._p._secondLinePointDict[self]
+                #assert r1 is not None and r2 is not None
+                return r1 * (1-alp) + r2 * alp
         
         if type(self.args) != tuple:
             self.args = (self.args, )
@@ -1158,7 +1169,8 @@ class oofun:
             self._f_val_prev = tmp.copy() if isinstance(tmp, (ndarray, Stochastic)) else tmp
             self._f_key_prev = dict([(elem, copy((x if isinstance(x, dict) else x.xf)[elem])) for elem in dep]) if self.isCostly else None
         r = tmp
-
+        if use_line_points:
+            self._p._currLinePointDict[self] = r
         return r
 
 
@@ -1312,8 +1324,8 @@ class oofun:
                             else:
                                 rr = (val * t1.T).T
                     elif isscalar(val) or isscalar(t1) or prod(t1.shape)==1 or prod(val.shape)==1:
-                        rr = (t1 if isscalar(t1) or prod(t1.shape)>1 else asscalar(t1) if type(t1)==ndarray else t1[0, 0]) \
-                        * (val if isscalar(val) or prod(val.shape)>1 else asscalar(val) if type(val)==ndarray else val[0, 0])
+                        rr = (t1 if isscalar(t1) or prod(t1.shape)>1 else asscalar(t1) if isinstance(t1, ndarray) else t1[0, 0]) \
+                        * (val if isscalar(val) or prod(val.shape)>1 else asscalar(val) if isinstance(val, ndarray) else val[0, 0])
                     else:
                         if val.ndim < 2: val = atleast_2d(val)
                         if useSparse is False:
