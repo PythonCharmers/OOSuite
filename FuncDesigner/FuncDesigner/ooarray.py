@@ -130,7 +130,6 @@ class ooarray(OOArray):
     __floordiv__ = __div__
     
     def __rdiv__(self, other):
-        print('asdf')
         if self.size == 1:
             return other / asscalar(self)
         return ooarray([1.0 / elem for elem in self.view(ndarray)]) * other
