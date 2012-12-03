@@ -41,13 +41,13 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
     # CHANGES
     # Curreetly works only for linear objective w/o constant part
     #p.convex = True
-    
-    if 1 and (p._linear_objective or p.convex in (1, True)) and fo_prev < 1e300:# and p.convex is True:
+
+    if 0 and (p._linear_objective or p.convex in (1, True)) and fo_prev < 1e300:# and p.convex is True:
         # TODO: rework it
         #cs = dict([(key, val.view(multiarray)) for key, val in cs.items()])
         #cs = dict([(key, 0) for key, val in p._x0.items()])
         
-        
+
         # TODO: handle indT corrently
         indT2 = np.empty(y.shape[0])
         indT2.fill(False)
@@ -62,6 +62,7 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
             th = fo_prev + (p._linear_objective_scalar if p.goal not in ('min', 'minimum') else - p._linear_objective_scalar)
             y, e, indT2, ind_t = truncateByPlane(y, e, indT2, d if p.goal in ('min', 'minimum') else -d, th)
         elif p.convex in (1, True):
+
             assert p.goal in ('min', 'minimum') 
             wr4 = (y+e) / 2
             adjustr4WithDiscreteVariables(wr4, p)
@@ -70,9 +71,11 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
             #cs = dict([(key, val.view(multiarray)) for key, val in cs.items()])
             
             #TODO: add other args
+            centerValues = asdf1(cs)
             gradient = asdf1.D(cs)
-            
-            y, e, indT2, ind_t = truncateByPlane2(cs, y, e, indT2, gradient, fo_prev, p)
+
+            y, e, indT2, ind_t = truncateByPlane2(cs, centerValues, y, e, indT2, gradient, fo_prev, p)
+
         else:
             assert 0, 'bug in FD kernel'
 #        print(y.sum())

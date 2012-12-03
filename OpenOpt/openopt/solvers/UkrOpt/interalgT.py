@@ -253,8 +253,7 @@ def truncateByPlane(y, e, indT, A, b):
     return y, e, indT, ind_trunc
 
     
-def truncateByPlane2(cs, y, e, indT, gradient, fo, p):
-    
+def truncateByPlane2(cs, centerValues, y, e, indT, gradient, fo, p):
 #    #debug
 #    t = np.array([ 0.63056964, -1.        , -1.        , -1.        , -1.        ,       -1.        , -1.        ])
 #    cond_present_1 = np.any([logical_and([u>=t for u in e], [l<=t for l in y])])
@@ -273,10 +272,12 @@ def truncateByPlane2(cs, y, e, indT, gradient, fo, p):
     oovarsIndDict = p._oovarsIndDict
     ind = np.array([oovarsIndDict[oov][0] for oov in gradient.keys()])
     y2, e2 = y[:, ind], e[:, ind]
+    
+    #print(gradient)
     A = np.vstack([np.asarray(elem).reshape(1, -1) for elem in gradient.values()]).T
     cs = 0.5 * (y2 + e2)
     #print(gradient.values())
-    b = np.sum(A * cs, 1) + fo
+    b = np.sum(A * cs, 1) - centerValues.view(np.ndarray) + fo
 
 #    ind_positive = where(A > 0)
 #    ind_negative = where(A < 0)

@@ -128,10 +128,16 @@ def processConstraints2(C0, y, e, _s, p, dataType):
     
     for i in range(p.nb):
         y, e, indT, ind_trunc = truncateByPlane(y, e, indT, p.A[i], p.b[i])
+        if ind_trunc is not True:
+            _s = _s[ind_trunc]
     for i in range(p.nbeq):
         # TODO: handle it via one func
         y, e, indT, ind_trunc = truncateByPlane(y, e, indT, p.Aeq[i], p.beq[i])
+        if ind_trunc is not True:
+            _s = _s[ind_trunc]
         y, e, indT, ind_trunc = truncateByPlane(y, e, indT, -p.Aeq[i], -p.beq[i])
+        if ind_trunc is not True:
+            _s = _s[ind_trunc]
    
     
     DefiniteRange = True
