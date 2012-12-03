@@ -388,13 +388,14 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 if not isinstance(key, (list, tuple, ndarray)):
                     tmp.append((key, val))
                 else: # can be only ooarray although
-                    if len(key) != len(val):
+                    val = atleast_1d(val)
+                    if len(key) != val.size:
                         self.err('''
                         for the sake of possible bugs prevention lenght of oovars array 
                         must be equal to lenght of its start point value, 
                         assignments like x = oovars(m); startPoint[x] = 0 are forbidden, 
                         use startPoint[x] = [0]*m or np.zeros(m) instead''')
-                    for i in range(len(val)):
+                    for i in range(val.size):
                         tmp.append((key[i], val[i]))
             Tmp = dict(tmp)
             
@@ -563,7 +564,10 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             else:
                 broadcast(formDictOfFixedFuncs, self.f, self.useAttachedConstraints, self.dictOfFixedFuncs, areFixed, self._x0)
 
-
+            if oosolver(self.solver).useLinePoints:
+                self._firstLinePointDict = {}
+                self._secondLinePointDict = {}
+                self._currLinePointDict = {}
             inplaceLinearRender = oosolver(self.solver).__name__ == 'interalg'
             
             if inplaceLinearRender and hasattr(self, 'f'):
@@ -990,6 +994,10 @@ class NonLinProblem(baseProblem, nonLinFuncs, Args):
             if derivativeOrder == 0:
                 setattr(self, s, lambda x, IND=None, userFunctionType= s, ignorePrev=False, getDerivative=False: \
                         self.wrapped_func(x, IND, userFunctionType, ignorePrev, getDerivative))
+                
+#                setattr(self, s, lambda x, IND=None, userFunctionType= s, ignorePrev=False, getDerivative=False, \
+#                        _linePointDescriptor = None: \
+#                        self.wrapped_func(x, IND, userFunctionType, ignorePrev, getDerivative, _linePointDescriptor))
             elif derivativeOrder == 1:
                 setattr(self, s, lambda x, ind=None, funcType=s[-1], ignorePrev = False, useSparse=self.useSparse:
                         self.wrapped_1st_derivatives(x, ind, funcType, ignorePrev, useSparse))

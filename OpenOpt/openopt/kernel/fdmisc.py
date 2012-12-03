@@ -1,7 +1,7 @@
 # Handling of FuncDesigner probs
 from numpy import hstack, vstack, atleast_1d, cumsum, asarray, zeros,  ndarray,\
 prod, ones, copy, nan, flatnonzero, array_equal, asanyarray
-from nonOptMisc import scipyInstalled, Hstack, Vstack, isspmatrix, SparseMatrixConstructor, DenseMatrixConstructor, Vstack
+from nonOptMisc import scipyInstalled, Hstack, Vstack, isspmatrix, SparseMatrixConstructor, DenseMatrixConstructor
 
 try:
     # available since numpy 1.6.x

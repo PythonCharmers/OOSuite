@@ -29,11 +29,12 @@ class Point:
             setattr(self, '_' + name, val)
         #assert self.x is not None
 
-    def f(self):
+    def f(self):#, _linePointDescriptor = None):
         if not hasattr(self, '_f'): 
             # TODO: rework this: self.p.probType!='IP'
             if self.p._baseClassName == 'NonLin' and self.p.probType!='IP':
-                self._f = self.p.f(self.x) if self.p.isObjFunValueASingleNumber else self.p.F(self.x)
+                func = self.p.f if self.p.isObjFunValueASingleNumber else self.p.F
+                self._f = func(self.x)#, _linePointDescriptor = _linePointDescriptor)
             else:
                 self._f = self.p.objFunc(self.x)
         return copy(self._f)
@@ -375,7 +376,7 @@ class Point:
     def linePoint(self, alp, point2, ls=None):
         # returns alp * point1 + (1-alp) * point2
         # where point1 is self, alp is real number
-        assert isscalar(alp)
+        #assert isscalar(alp)
         p = self.p
         r = p.point(self.x * (1-alp) + point2.x * alp)
         
@@ -413,6 +414,8 @@ class Point:
             r._nNaNs_C = isnan(_c).sum(_c.ndim-1)
         
         # TODO: mb same for h?
+        
+        #r._linePointDescriptor = alp # (self, alp, point2)
         return r
 
 

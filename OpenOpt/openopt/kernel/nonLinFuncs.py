@@ -12,7 +12,7 @@ except:
 class nonLinFuncs:
     def __init__(self): pass
 
-    def wrapped_func(p, x, IND, userFunctionType, ignorePrev, getDerivative):
+    def wrapped_func(p, x, IND, userFunctionType, ignorePrev, getDerivative):#, _linePointDescriptor = None):
         if isinstance(x, dict):
             if not p.isFDmodel: p.err('calling the function with argument of type dict is allowed for FuncDesigner models only')
             x = p._point2vector(x)
@@ -131,6 +131,7 @@ class nonLinFuncs:
             if p.isFDmodel:
                 X = p._vector2point(x) 
                 X._p = p
+                #X._linePointDescriptor = _linePointDescriptor
             else:
                 X = x
         
@@ -193,12 +194,11 @@ class nonLinFuncs:
                 R = []
                 for xx in X:
                     tmp = [fun(*xx) for fun in Funcs]
-                    r =hstack(tmp[0]) if len(tmp) == 1 and isinstance(tmp[0], (list, tuple)) else hstack(tmp) if len(tmp) > 1 else tmp[0]
-                    R.append(r)
+                    r_ = hstack(tmp[0]) if len(tmp) == 1 and isinstance(tmp[0], (list, tuple)) else hstack(tmp) if len(tmp) > 1 else tmp[0]
+                    R.append(r_)
                 
-                R = hstack(R)#.T
-                r = R
-                #print(R.shape, userFunctionType)
+                r = hstack(R)#.T
+                #print(r.shape, userFunctionType)
                 
                 
         elif not getDerivative:
@@ -283,8 +283,6 @@ class nonLinFuncs:
                 # TODO: omit cast to dense array. Somewhere bug triggers?
                 if hasattr(r, 'toarray'):
                     r=r.toarray()
-                #if not hasattr(r, 'flatten'): 
-                    #raise 0
                 r = r.flatten()
 
         if userFunctionType != 'f' and nXvectors != 1:
