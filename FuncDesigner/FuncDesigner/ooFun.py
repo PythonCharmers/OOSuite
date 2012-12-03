@@ -1096,15 +1096,15 @@ class oofun:
         self.evals += 1
         
         #TODO: add condition "and self in x._p.dictOfLinearFuncs" instead of self._order == 1
-        use_line_points = hasattr(x,'_p') and x._p.solver.useLinePoints and self._order == 1
-        if use_line_points:
-            _linePointDescriptor = getattr(x, '_linePointDescriptor', None)
-            if _linePointDescriptor is not None:
-                #point1, alp, point2 = _linePointDescriptor
-                alp = _linePointDescriptor
-                r1, r2 = self._p._firstLinePointDict[self], self._p._secondLinePointDict[self]
-                #assert r1 is not None and r2 is not None
-                return r1 * (1-alp) + r2 * alp
+        #use_line_points = hasattr(x,'_p') and x._p.solver.useLinePoints and self._order == 1
+#        if use_line_points:
+#            _linePointDescriptor = getattr(x, '_linePointDescriptor', None)
+#            if _linePointDescriptor is not None:
+#                #point1, alp, point2 = _linePointDescriptor
+#                alp = _linePointDescriptor
+#                r1, r2 = self._p._firstLinePointDict[self], self._p._secondLinePointDict[self]
+#                #assert r1 is not None and r2 is not None
+#                return r1 * (1-alp) + r2 * alp
         
         if type(self.args) != tuple:
             self.args = (self.args, )
@@ -1169,8 +1169,8 @@ class oofun:
             self._f_val_prev = tmp.copy() if isinstance(tmp, (ndarray, Stochastic)) else tmp
             self._f_key_prev = dict([(elem, copy((x if isinstance(x, dict) else x.xf)[elem])) for elem in dep]) if self.isCostly else None
         r = tmp
-        if use_line_points:
-            self._p._currLinePointDict[self] = r
+#        if use_line_points:
+#            self._p._currLinePointDict[self] = r
         return r
 
 
