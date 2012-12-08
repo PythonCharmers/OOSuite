@@ -1,6 +1,8 @@
 from baseClasses import OOArray
+from FuncDesigner.multiarray import multiarray
 from ooFun import oofun, Constraint
-from numpy import isscalar, asscalar, ndarray, asarray, atleast_1d, array
+from numpy import isscalar, asscalar, ndarray, asarray, atleast_1d, asanyarray
+import numpy as np
 from FDmisc import FuncDesignerException
 
 class ooarray(OOArray):
@@ -57,13 +59,17 @@ class ooarray(OOArray):
             args = args[1:]
             if len(args) == 0:
                 return self
-        tmp = asarray([asscalar(asarray(self[i](*args, **kwargs))) if isinstance(self[i], oofun) else self[i] for i in range(self.size)])
-        if tmp.dtype != object:
-            return array(tmp, dtype = float).flatten()
+        #tmp = asarray([asscalar(asarray(self[i](*args, **kwargs))) if isinstance(self[i], oofun) else self[i] for i in range(self.size)])
+        Tmp = [self[i](*args, **kwargs) if isinstance(self[i], oofun) else self[i] for i in range(self.size)]
+        tmp = asanyarray(Tmp)
+        if np.any([isinstance(elem, multiarray) for elem in Tmp]):
+            tmp = tmp.T.view(multiarray)
+        if tmp.ndim == 2 or tmp.dtype != object:
+            return tmp
         else:
             #tmp = tmp.flatten()
             return ooarray(tmp)
-        #return ooarray(tmp, dtype=float if tmp.dtype != object else object).flatten()
+
 
     def __mul__(self, other):
         if self.size == 1:

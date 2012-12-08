@@ -60,25 +60,23 @@ class multiarray(MultiArray):
             raise FuncDesignerException('arguments for FD multiarray sum are not implemened yet')
         if any([v is not None for v in kw.values()]):
             raise FuncDesignerException('keyword arguments for FD multiarray sum are not implemened yet')
-        return np.sum(np.atleast_2d(self.view(ndarray)), 0).view(multiarray)
+        tmp = self.reshape(-1, 1) if self.ndim < 2 else self
+        return np.sum(tmp.view(ndarray), 1).view(multiarray)
 
 def multiarray_op(x, y, op):
     if isinstance(y, multiarray):
+        Y = y.reshape(-1, 1) if y.ndim < 2 else y
         if isinstance(x, multiarray):
-            if x.size == y.size:
-                r = op(x.view(ndarray), y.view(ndarray))
-            else:
-                assert x.ndim <= 1 or y.ndim <= 1, 'unimplemented yet'
-                assert x.ndim < 3 and y.ndim < 3, 'unimplemented yet'
-                X, Y = np.atleast_2d(x).view(ndarray), np.atleast_2d(y).view(ndarray)
-                r = op(X, Y)
-                #r = multiarray([op(x[i], y[i]) for i, X in enumerate(x)])
+            assert x.ndim < 3 and y.ndim < 3, 'unimplemented yet'
+            X = x.reshape(-1, 1) if x.ndim < 2 else x
+            r = op(X.view(ndarray), Y.view(ndarray))
         else:
-            r = op(x.reshape(-1, 1) if isinstance(x, ndarray) and x.size != 1 else x, y.view(ndarray))
+            r = op(x.reshape(-1, 1) if isinstance(x, ndarray) and x.size != 1 else x, Y.view(ndarray).T).T
     elif isinstance(x, multiarray): # and y is not multiarray here
-        r = op(x.view(ndarray), y.reshape(-1, 1) if isinstance(y, ndarray) and y.size != 1 else y)
+        X = x.reshape(-1, 1) if x.ndim < 2 else x
+        r = op(X.view(ndarray), y.reshape(1, -1) if isinstance(y, ndarray) and y.size != 1 else y)
     else: # neither x nor y are multiarrays
         raise FuncDesignerException('bug in FuncDesigner kernel')
-    return r.view(multiarray)#.flatten()
+    return r.view(multiarray)
 
 
