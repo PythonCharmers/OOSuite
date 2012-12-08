@@ -8,18 +8,49 @@ if 'div' in operator.__dict__:
 else:
     div = operator.truediv
 
+# TODO: rework buggy multiarray.size
+#delattr(multiarray, 'size')
+
 class multiarray(MultiArray):
     __array_priority__ = 5
     __add__ = lambda self, other: multiarray_op(self, other, operator.add)
     __radd__ = lambda self, other: self.__add__(other)
+    
+    __sub__ = lambda self, other: multiarray_op(self, -other, operator.add)
+    __rsub__ = lambda self, other: multiarray_op(-self, other, operator.add)
+    
     __mul__ = lambda self, other: multiarray_op(self, other, operator.mul)
     __rmul__ = lambda self, other: self.__mul__(other)
     __div__ = lambda self, other: multiarray_op(self, other, div)
+    __rdiv__ = lambda self, other: multiarray_op(other, self, div)
+    
     __truediv__ = __div__
+    __rtruediv__ = __rdiv__
     # TODO: rdiv, rpow
     __pow__ = lambda self, other: multiarray_op(self, other, operator.pow)
     __rpow__ = lambda self, other: multiarray_op(other, self, operator.pow)
     
+    def __getitem__(self, ind): 
+        return self.view(np.ndarray)[:, ind].view(multiarray)  if type(ind) in (int, np.int32, np.int64, np.int16, np.int8) \
+        else self.__getslice__(ind.start, ind.stop) if type(ind) != tuple \
+        else self.__getslice__(ind[0], ind[1])
+        
+        
+    def __getslice__(self, ind1, ind2):
+        #TODO: mb check if size is known then use it instead of None?
+        cond_1 = ind1 is None
+        cond_2 = ind2 is None or (type(ind2) == slice and ind2.start is None and ind2.stop is None and ind2.step is None)
+        if cond_1 and cond_2:
+            return self
+            
+        if cond_1: 
+            ind1 = 0
+        if cond_2: 
+            ind2 = self.shape[1]
+            
+        return self.view(np.ndarray)[:, ind1:ind2].view(multiarray)
+        
+        
     # TODO: check it!
     #toarray = lambda self: self.view(ndarray)
 
@@ -48,4 +79,5 @@ def multiarray_op(x, y, op):
     else: # neither x nor y are multiarrays
         raise FuncDesignerException('bug in FuncDesigner kernel')
     return r.view(multiarray)#.flatten()
-    
+
+

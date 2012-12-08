@@ -622,19 +622,20 @@ def sum_interval(R0, r, INP, domain, dtype):
     # to reduce memory consumption
     DefiniteRange = True
 #            R_ = []
+    D = domain.storedSums[r]
     for inp in INP:
         arg_lb_ub, definiteRange = inp._interval(domain, dtype)
         Tmp = inp._getDep() if not inp.is_oovar else [inp]
         for oov in Tmp:
-            tmp = domain.storedSums[r].get(oov, None)
+            tmp = D.get(oov, None)
             if tmp is None:
-                domain.storedSums[r][oov] = arg_lb_ub.copy()
+                D[oov] = arg_lb_ub.copy()
             else:
                 try:
-                    domain.storedSums[r][oov] += arg_lb_ub
+                    D[oov] += arg_lb_ub
                 except:
                     # may be of different shape, e.g. for a fixed variable
-                    domain.storedSums[r][oov] = domain.storedSums[r][oov] + arg_lb_ub
+                    D[oov] = D[oov] + arg_lb_ub
         
         DefiniteRange = logical_and(DefiniteRange, definiteRange)
 #                R_.append(arg_lb_ub)
@@ -671,7 +672,7 @@ def sum_derivative(r0, INP, point, fixedVarsScheduleID, Vars=None, fixedVars = N
         if elem.is_oovar:
             if (fixedVars is not None and elem in fixedVars) or (Vars is not None and elem not in Vars): continue
             sz = np.asarray(point[elem]).size
-            tmpres = Eye(sz) if not isinstance(point[elem], multiarray) else np.ones(sz)
+            tmpres = Eye(sz) if not isinstance(point[elem], multiarray) else np.ones(sz).view(multiarray)
             r_val = r.get(elem, None)
             if isSP:
                 if r_val is not None:

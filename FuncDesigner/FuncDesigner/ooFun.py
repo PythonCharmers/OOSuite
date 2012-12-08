@@ -268,7 +268,14 @@ class oofun:
         
         # TODO: rework it with indexation of required data
         if lb is not None and ub is not None:
-#            print ('!', len(where(logical_or(logical_or(r0.ub < lb, r0.lb > ub), all(logical_and(r0.lb >= lb, r0.ub <= ub))))[0]), asarray(r0.lb).size)
+            
+            #debug start
+#            ind = logical_or(logical_or(r0.ub < lb, r0.lb > ub), all(logical_and(r0.lb >= lb, r0.ub <= ub)))
+#            sz = where(ind)[0]
+#            if sz.size != asarray(r0.lb).size:
+#                print('!', sz.size, asarray(r0.lb).size)
+            #debug end
+            
             if all(logical_or(logical_or(r0.ub < lb, r0.lb > ub), all(logical_and(r0.lb >= lb, r0.ub <= ub)))):
                 return {}, r0
                 
@@ -392,7 +399,7 @@ class oofun:
             elif Ysize == 1:
                 return Eye(Xsize)
             elif Xsize == Ysize:
-                return Eye(Ysize)
+                return Eye(Ysize) if not isinstance(x, multiarray) else ones(Ysize).view(multiarray)
             else:
                 raise FuncDesignerException('for oofun summation a+b should be size(a)=size(b) or size(a)=1 or size(b)=1')        
 
@@ -752,7 +759,7 @@ class oofun:
                 r = zeros(x.shape)
                 r[_ind] = 1
                 return r
-        elif type(ind) != int:
+        elif type(ind) not in (int, int32, int64, int16, int8):
             # Python 3 slice
             return self.__getslice__(ind.start, ind.stop)
         else:
@@ -1236,7 +1243,7 @@ class oofun:
             if (fixedVars is not None and self in fixedVars) or (Vars is not None and self not in Vars):
                 return {} 
             tmp = x[self]
-            return {self:Eye(asarray(tmp).size)} if not isinstance(tmp, multiarray) else {self: ones_like(tmp)}
+            return {self:Eye(asarray(tmp).size)} if not isinstance(tmp, multiarray) else {self: ones_like(tmp).view(multiarray)}
             
         if self.input[0] is None: return {} # fixed oofun. TODO: implement input = [] properly
             
@@ -1309,7 +1316,7 @@ class oofun:
                 for key, val in elem_d.items():
                     #if isinstance(t1, Stochastic) or isinstance(val, Stochastic):
                         #rr = t1 * val
-                    if isinstance(t1, Stochastic):
+                    if isinstance(t1, Stochastic) or ((isscalar(val) or isinstance(val, multiarray)) and (isscalar(t1) or isinstance(t1, multiarray))):
                         rr = t1 * val
                     elif isinstance(val, Stochastic):
                         rr = val * t1
