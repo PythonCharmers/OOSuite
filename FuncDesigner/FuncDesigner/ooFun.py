@@ -219,7 +219,7 @@ class oofun:
             #Tmp = self.fun(array(tmp))
             return vstack((nanmin(Tmp, 0), nanmax(Tmp, 0))), definiteRange
         else:
-            raise FuncDesignerException('interval calculations are unimplemented for the oofun yet')
+            raise FuncDesignerException('interval calculations are unimplemented for the oofun (%s) yet' % self.name)
     
     def interval(self, domain, dtype = float, resetStoredIntervals = True):
         if type(domain) != ooPoint:
@@ -960,7 +960,7 @@ class oofun:
 #        self.inputOOVarTotalLength = 0
         r = []
         for item in self.input:
-            tmp = item._getFuncCalcEngine(*args, **kwargs) if isinstance(item, oofun) else item
+            tmp = item._getFuncCalcEngine(*args, **kwargs) if isinstance(item, oofun) else item(*args, **kwargs) if isinstance(item, OOArray) else item
             r.append(tmp if type(tmp) not in (list, tuple, Stochastic) else asanyarray(tmp))
         return tuple(r)
 
