@@ -225,17 +225,40 @@ def oovars(*args, **kw):
         but you should ensure you haven't operations like k*a or a+val in your code, 
         it may work in completely different way (e.g. k*a will produce Python list of k a instances)
         ''')
+    lb = kw.pop('lb', None)
+    ub = kw.pop('ub', None)
+    
     if len(args) == 1:
         if type(args[0]) in (int, int16, int32, int64):
-            return ooarray([oovar(**kw) for i in range(args[0])])
+            r = ooarray([oovar(**kw) for i in range(args[0])])
         elif type(args[0]) in [list, tuple]:
-            return ooarray([oovar(name=args[0][i], **kw) for i in range(len(args[0]))])
+            r = ooarray([oovar(name=args[0][i], **kw) for i in range(len(args[0]))])
         elif type(args[0]) == str:
-            return ooarray([oovar(name=s, **kw) for s in args[0].split()])
+            r = ooarray([oovar(name=s, **kw) for s in args[0].split()])
         else:
             raise FuncDesignerException('incorrect args number for oovars constructor')
     else:
-        return ooarray([oovar(name=args[i], **kw) for i in range(len(args))])
+        r = ooarray([oovar(name=args[i], **kw) for i in range(len(args))])
+        
+    if lb is not None:
+        if np.isscalar(lb) or (isinstance(lb, np.ndarray) and lb.size == 1):
+            for v in r.view(np.ndarray):
+               v.lb = lb
+        else:
+            assert type(lb) in (list, tuple, ndarray)
+            for i, v in enumerate(r):
+               v.lb = lb[i]
+
+    if ub is not None:
+        if np.isscalar(ub) or (isinstance(ub, np.ndarray) and ub.size == 1):
+            for v in r.view(np.ndarray):
+               v.ub = ub
+        else:
+            assert type(ub) in (list, tuple, ndarray)
+            for i, v in enumerate(r):
+               v.ub = ub[i]
+
+    return r
 
 
 

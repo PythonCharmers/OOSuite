@@ -170,13 +170,14 @@ class oofun:
         else: 
             self.input = [None] # TODO: get rid of None, use input = [] instead
 
-        if input is not None:
-            levels = [0]
-            for elem in self.input: # if a
-                if isinstance(elem, oofun):
-                    elem._usedIn += 1
-                    levels.append(elem._level)
-            self._level = max(levels)+1
+        # TODO: fix it for ooarray!
+#        if input is not None:
+#            levels = [0]
+#            for elem in self.input: # if a
+#                if isinstance(elem, oofun):
+#                    elem._usedIn += 1
+#                    levels.append(elem._level)
+#            self._level = max(levels)+1
 
     __hash__ = lambda self: self._id
         
@@ -971,7 +972,7 @@ class oofun:
         elif self.input is None:
             self.dep = None
         else:
-            if type(self.input) not in (list, tuple):
+            if type(self.input) not in (list, tuple) and not isinstance(self.input, OOArray):
                 self.input = [self.input]
             #OLD
 #            r = set()
@@ -990,14 +991,25 @@ class oofun:
             r_oovars = []
             r_oofuns = []
             isUncycled = True
-            for oofunInstance in self.input:
-                if not isinstance(oofunInstance, oofun): continue
-                if oofunInstance.is_oovar:
-                    r_oovars.append(oofunInstance)
+            Tmp = set()
+            for Elem in self.input:
+                if isinstance(Elem, OOArray):
+                    for _elem in Elem:
+                        if isinstance(_elem, oofun):
+                            Tmp.add(_elem)
+#                        _tmp = _elem._getDep()
+#                        if _tmp is not None or (isinstance(_tmp, oofun) and _tmp.is_oovar):
+#                            Tmp.add(_tmp)
+                    
+            #Tmp.update([[_elem._getDep() for _elem in Elem] for Elem in self.input if isinstance(Elem, OOArray)])
+            for Elem in (list(Tmp) + self.input):
+                if not isinstance(Elem, oofun): continue
+                if Elem.is_oovar:
+                    r_oovars.append(Elem)
                     continue
                 
-                tmp = oofunInstance._getDep()
-                if not oofunInstance.isUncycled: isUncycled = False
+                tmp = Elem._getDep()
+                if not Elem.isUncycled: isUncycled = False
                 if tmp is None or len(tmp)==0: continue # TODO: remove None, use [] instead
                 r_oofuns.append(tmp)
             r = set(r_oovars)
