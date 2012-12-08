@@ -1598,7 +1598,13 @@ class oofun:
                 else:
                     self._order = 1
             else:
-                orders = [(inp.getOrder(Vars, fixedVars) if isinstance(inp, oofun) else 0) for inp in self.input]
+#                orders = [(inp.getOrder(Vars, fixedVars) if isinstance(inp, oofun) else 0) for inp in self.input]
+                orders = []
+                for inp in self.input:
+                    if isinstance(inp, oofun):
+                        orders.append(inp.getOrder(Vars, fixedVars))
+                    elif isinstance(inp, OOArray):
+                        orders += [(elem.getOrder(Vars, fixedVars) if isinstance(elem, oofun) else 0) for elem in inp.view(ndarray)]
                 self._order = inf if any(asarray(orders) != 0) else 0
 
         return self._order
