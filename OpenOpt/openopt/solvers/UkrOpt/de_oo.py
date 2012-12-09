@@ -358,4 +358,10 @@ def _correct_box_constraints(lb, ub, pop):
         check_ub = diff_ub > 0.0 
         scale /= 2
 
+    # temporary fix
+    ind = np.where(pop<lb)
+    pop[ind] = lb[ind[1]]
+    ind = np.where(pop>ub)
+    pop[ind] = ub[ind[1]]
+
     return pop
