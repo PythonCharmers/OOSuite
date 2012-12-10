@@ -165,8 +165,8 @@ class nonLinFuncs:
                     for _X in XX: 
                         _X._p = p
                         _X.update(p.dictOfFixedFuncs)
-                #print [[fun(xx).shape for xx in XX] if funcs[i] in p.unvectorizableFuncs else fun(X).shape for i, fun in enumerate(Funcs)]
-                r = vstack([[fun(xx) for xx in XX] if funcs[i] in p.unvectorizableFuncs else fun(X) for i, fun in enumerate(Funcs)]).T
+
+                r = vstack([[fun(xx) for xx in XX] if funcs[i] in p.unvectorizableFuncs else fun(X).T for i, fun in enumerate(Funcs)]).T
                 
                 
 #                X = [p._vector2point(x[i]) for i in range(nXvectors)]
@@ -264,7 +264,7 @@ class nonLinFuncs:
             r = hstack(r) if not getDerivative else vstack(r)
             #assert r.size != 30
         #if type(r) == matrix: r = r.A
-        
+
         if type(r) != ndarray and not isscalar(r): # multiarray
             r = r.view(ndarray).flatten() if userFunctionType == 'f' else r.view(ndarray)
         #elif userFunctionType == 'f' and p.isObjFunValueASingleNumber and prod(r.shape) > 1 and (type(r) == ndarray or min(r.shape) > 1): 
