@@ -547,7 +547,6 @@ def sum_engine(r0, *args):
                 Args_st[stDep].append(elem)
         else:
             Args.append(elem)
-    #print Args,  r0
     r = PythonSum(Args) + r0
     if len(Args_st) == 0:
         return r
@@ -651,7 +650,7 @@ def sum_interval(R0, r, INP, domain, dtype):
     return R, DefiniteRange
 
 
-def sum_derivative(r0, INP, dep, point, fixedVarsScheduleID, Vars=None, fixedVars = None, useSparse = 'auto'):
+def sum_derivative(r_, r0, INP, dep, point, fixedVarsScheduleID, Vars=None, fixedVars = None, useSparse = 'auto'):
     # TODO: handle involvePrevData
     # TODO: handle fixed vars
     
@@ -731,16 +730,25 @@ def sum_derivative(r0, INP, dep, point, fixedVarsScheduleID, Vars=None, fixedVar
 
     # TODO: rework it, don't recalculate each time
     Size = np.asarray(r0).size
-    for v in dep:
-        elem = point[v]
-        if not np.isscalar(elem):
-            Size  = PythonMax((Size, np.asarray(elem).size))
+    for elem in r.values():
+        if not np.isscalar(elem) and elem.ndim >= 1:
+            Size  = np.max((Size, elem.shape[0]))
+   
+#    
+#    Size0 = np.asarray(r0).size
+#    Size_vars = 1
+#    if Size0 == 1:
+#        for v in dep:
+#            elem = point[v]
+#            if type(elem) == np.ndarray and Size_vars < elem.size:
+#                Size_vars = elem.size
+#    
+#    if Size0 == 1 and Size_vars != 1:
+#        Size_ = r
+#        for elem in r.values():
+#            if not np.isscalar(elem) and elem.ndim >= 1:
+#                Size  = PythonMax((Size, elem.shape[0]))
 
-#    for elem in r.values():
-#        if not np.isscalar(elem) and elem.ndim >= 1:
-#            Size  = PythonMax((Size, elem.shape[0]))
-    #Size = np.amax([np.atleast_2d(elem).shape[0] for elem in r.values()])
-        
     if Size != 1:
         for key, val in r.items():
             if not isinstance(val, diagonal):
@@ -753,7 +761,6 @@ def sum_derivative(r0, INP, dep, point, fixedVarsScheduleID, Vars=None, fixedVar
                     r[key] = tmp
 #                    elif np.asarray(val).size !=1:
 #                        raise_except('incorrect size in FD sum kernel')
-    #print(r)
     return r
 
 def sum_getOrder(INP, *args, **kwargs):
@@ -809,7 +816,8 @@ def sum(inp, *args, **kwargs):
         r._interval_ = lambda *args, **kw: sum_interval(R0, r, INP, *args, **kw)
         r.vectorized = True
         r_dep = r._getDep()
-        r._D = lambda *args, **kw: sum_derivative(r0, INP, r_dep, *args, **kw)
+        r._D = lambda *args, **kw: sum_derivative(r, r0, INP, r_dep, *args, **kw)
+#        r.isCostly = True
         return r
     else: 
         return inp.sum(*args, **kwargs)#np.sum(inp, *args, **kwargs)
