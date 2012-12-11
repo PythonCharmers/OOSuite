@@ -730,9 +730,15 @@ def sum_derivative(r_, r0, INP, dep, point, fixedVarsScheduleID, Vars=None, fixe
 
     # TODO: rework it, don't recalculate each time
     Size = np.asarray(r0).size
-    for elem in r.values():
-        if not np.isscalar(elem) and elem.ndim >= 1:
-            Size  = np.max((Size, elem.shape[0]))
+    if Size == 1 and not point.isMultiPoint:
+        if r_._lastFuncVarsID == fixedVarsScheduleID:
+            if not np.isscalar(r_._f_val_prev):
+                Size = r_._f_val_prev.size
+        else:
+            Size = np.asarray(r_._getFuncCalcEngine(point, fixedVarsScheduleID = fixedVarsScheduleID)).size
+#            for elem in r.values():
+#                if not np.isscalar(elem) and elem.ndim >= 1:
+#                    Size  = np.max((Size, elem.shape[0]))
    
 #    
 #    Size0 = np.asarray(r0).size
@@ -747,9 +753,9 @@ def sum_derivative(r_, r0, INP, dep, point, fixedVarsScheduleID, Vars=None, fixe
 #        Size_ = r
 #        for elem in r.values():
 #            if not np.isscalar(elem) and elem.ndim >= 1:
-#                Size  = PythonMax((Size, elem.shape[0]))
+#                Size_  = PythonMax((Size, elem.shape[0]))
 
-    if Size != 1:
+    if Size != 1 and not point.isMultiPoint:
         for key, val in r.items():
             if not isinstance(val, diagonal):
                 if np.isscalar(val) or np.prod(val.shape) <= 1:
