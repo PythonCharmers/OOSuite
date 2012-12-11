@@ -1,4 +1,5 @@
 PythonSum = sum
+PythonMax = max
 from ooFun import oofun
 import numpy as np
 from FDmisc import FuncDesignerException, Diag, Eye, raise_except, diagonal, DiagonalType
@@ -573,20 +574,19 @@ def sum_interval(R0, r, INP, domain, dtype):
     v = domain.modificationVar
     if v is not None:
         # self already must be in domain.storedSums
-        R, DefiniteRange = domain.storedSums[r][None]
+        R, DefiniteRange = domain.storedSums[r][-1]
         if not np.all(np.isfinite(R)):
             R = np.asarray(R0, dtype).copy()
             if domain.isMultiPoint:
                 R = np.tile(R, (1, len(list(domain.values())[0][0])))
                 #R = np.tile(R, (1, len(domain.values()[0][0])))
-                #print (R.shape)
             DefiniteRange = True
             #####################
             # !!! don't use sum([inp._interval(domain, dtype) for ...]) here
             # to reduce memory consumption
             for inp in INP:
                 arg_lb_ub, definiteRange = inp._interval(domain, dtype)
-                DefiniteRange = logical_and(DefiniteRange, definiteRange)
+#                DefiniteRange = logical_and(DefiniteRange, definiteRange)
                 if R.shape == arg_lb_ub.shape:
                     R += arg_lb_ub
                 else:
@@ -598,6 +598,7 @@ def sum_interval(R0, r, INP, domain, dtype):
         for inp in r.storedSumsFuncs[v]:
             # TODO: mb rework definiteRange processing ?
             arg_lb_ub, definiteRange = inp._interval(domain, dtype)
+            DefiniteRange = logical_and(DefiniteRange, definiteRange)
             R += arg_lb_ub
 
         R -= domain.storedSums[r][v]
@@ -607,7 +608,7 @@ def sum_interval(R0, r, INP, domain, dtype):
             R[arg_lb_ub == np.inf] = np.inf
             R[arg_lb_ub == -np.inf] = -np.inf
         
-        return R, definiteRange
+        return R, DefiniteRange
     else:
         domain.storedSums[r] = {}        
 
@@ -638,24 +639,19 @@ def sum_interval(R0, r, INP, domain, dtype):
                     D[oov] = D[oov] + arg_lb_ub
         
         DefiniteRange = logical_and(DefiniteRange, definiteRange)
-#                R_.append(arg_lb_ub)
         if R.shape == arg_lb_ub.shape:
             R += arg_lb_ub
         else:
             R = R + arg_lb_ub
-
-    #R = np.sum(np.dstack(R_), 2).reshape(arg_lb_ub.shape)
-
-    #print R.shape
     #####################
     
     if v is None:
-        domain.storedSums[r][None] = R, DefiniteRange
+        domain.storedSums[r][-1] = R, DefiniteRange
         
     return R, DefiniteRange
 
 
-def sum_derivative(r0, INP, point, fixedVarsScheduleID, Vars=None, fixedVars = None, useSparse = 'auto'):
+def sum_derivative(r0, INP, dep, point, fixedVarsScheduleID, Vars=None, fixedVars = None, useSparse = 'auto'):
     # TODO: handle involvePrevData
     # TODO: handle fixed vars
     
@@ -735,9 +731,14 @@ def sum_derivative(r0, INP, point, fixedVarsScheduleID, Vars=None, fixedVars = N
 
     # TODO: rework it, don't recalculate each time
     Size = np.asarray(r0).size
-    for elem in r.values():
-        if not np.isscalar(elem) and elem.ndim >= 1:
-            Size  = np.max((Size, elem.shape[0]))
+    for v in dep:
+        elem = point[v]
+        if not np.isscalar(elem):
+            Size  = PythonMax((Size, np.asarray(elem).size))
+
+#    for elem in r.values():
+#        if not np.isscalar(elem) and elem.ndim >= 1:
+#            Size  = PythonMax((Size, elem.shape[0]))
     #Size = np.amax([np.atleast_2d(elem).shape[0] for elem in r.values()])
         
     if Size != 1:
@@ -807,7 +808,8 @@ def sum(inp, *args, **kwargs):
 
         r._interval_ = lambda *args, **kw: sum_interval(R0, r, INP, *args, **kw)
         r.vectorized = True
-        r._D = lambda *args, **kw: sum_derivative(r0, INP, *args, **kw)
+        r_dep = r._getDep()
+        r._D = lambda *args, **kw: sum_derivative(r0, INP, r_dep, *args, **kw)
         return r
     else: 
         return inp.sum(*args, **kwargs)#np.sum(inp, *args, **kwargs)
