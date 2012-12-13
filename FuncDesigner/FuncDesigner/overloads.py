@@ -728,45 +728,29 @@ def sum_derivative(r_, r0, INP, dep, point, fixedVarsScheduleID, Vars=None, fixe
             if hasattr(val, 'toarray'):# and not isinstance(val, multiarray): # i.e. sparse matrix
                 r[key] = val.toarray()
 
-    # TODO: rework it, don't recalculate each time
-    Size = np.asarray(r0).size
-    if Size == 1 and not point.isMultiPoint:
-        if r_._lastFuncVarsID == fixedVarsScheduleID:
-            if not np.isscalar(r_._f_val_prev):
-                Size = r_._f_val_prev.size
-        else:
-            Size = np.asarray(r_._getFuncCalcEngine(point, fixedVarsScheduleID = fixedVarsScheduleID)).size
-#            for elem in r.values():
-#                if not np.isscalar(elem) and elem.ndim >= 1:
-#                    Size  = np.max((Size, elem.shape[0]))
-   
-#    
-#    Size0 = np.asarray(r0).size
-#    Size_vars = 1
-#    if Size0 == 1:
-#        for v in dep:
-#            elem = point[v]
-#            if type(elem) == np.ndarray and Size_vars < elem.size:
-#                Size_vars = elem.size
-#    
-#    if Size0 == 1 and Size_vars != 1:
-#        Size_ = r
-#        for elem in r.values():
-#            if not np.isscalar(elem) and elem.ndim >= 1:
-#                Size_  = PythonMax((Size, elem.shape[0]))
+    if not isSP:
+        # TODO: rework it, don't recalculate each time
+        Size = np.asarray(r0).size
+        if Size == 1 and not point.isMultiPoint:
+            if r_._lastFuncVarsID == fixedVarsScheduleID:
+                if not np.isscalar(r_._f_val_prev):
+                    Size = r_._f_val_prev.size
+            else:
+                Size = np.asarray(r_._getFuncCalcEngine(point, Vars = Vars, fixedVars = fixedVars, fixedVarsScheduleID = fixedVarsScheduleID)).size
 
-    if Size != 1 and not point.isMultiPoint:
-        for key, val in r.items():
-            if not isinstance(val, diagonal):
-                if np.isscalar(val) or np.prod(val.shape) <= 1:
-                    tmp = np.empty((Size, 1))
-                    tmp.fill(val if np.isscalar(val) else val.item())
-                    r[key] = tmp
-                elif val.shape[0] != Size:
-                    tmp = np.tile(val, (Size, 1))
-                    r[key] = tmp
-#                    elif np.asarray(val).size !=1:
-#                        raise_except('incorrect size in FD sum kernel')
+        if Size != 1 and not point.isMultiPoint:
+            for key, val in r.items():
+                if not isinstance(val, diagonal):
+                    if np.isscalar(val) or np.prod(val.shape) <= 1:
+                        tmp = np.empty((Size, 1))
+                        tmp.fill(val if np.isscalar(val) else val.item())
+                        r[key] = tmp
+                    elif val.shape[0] != Size:
+                        tmp = np.tile(val, (Size, 1))
+                        r[key] = tmp
+    #                    elif np.asarray(val).size !=1:
+    #                        raise_except('incorrect size in FD sum kernel')
+    
     return r
 
 def sum_getOrder(INP, *args, **kwargs):

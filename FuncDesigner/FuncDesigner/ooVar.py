@@ -257,7 +257,9 @@ def oovars(*args, **kw):
             assert type(ub) in (list, tuple, ndarray)
             for i, v in enumerate(r):
                v.ub = ub[i]
-
+               
+    r._is_array_of_oovars = True
+    
     return r
 
 

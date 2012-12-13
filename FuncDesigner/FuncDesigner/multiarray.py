@@ -32,6 +32,11 @@ class multiarray(MultiArray):
     __rpow__ = lambda self, other: multiarray_op(other, self, operator.pow)
     
     def __getitem__(self, ind): 
+#        if self.ndim <= 1:
+#            if ind is 0:
+#                return self
+#            else:
+#                print('multiarray ind:', ind)
         return self.view(np.ndarray)[:, ind].view(multiarray)  if type(ind) in (int, np.int32, np.int64, np.int16, np.int8) \
         else self.__getslice__(ind.start, ind.stop) if type(ind) != tuple \
         else self.__getslice__(ind[0], ind[1])

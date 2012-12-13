@@ -3,7 +3,7 @@ PythonSum = sum
 from numpy import inf, asfarray, copy, all, any, atleast_2d, zeros, dot, asarray, atleast_1d, \
 ones, ndarray, where, array, nan, vstack, eye, array_equal, isscalar, log, hstack, sum as npSum, prod, nonzero,\
 isnan, asscalar, zeros_like, ones_like, amin, amax, logical_and, logical_or, isinf, logical_not, logical_xor, flipud, \
-tile, float64, searchsorted, int8, int16, int32, int64, isfinite, log2, string_, asanyarray
+tile, float64, searchsorted, int8, int16, int32, int64, isfinite, log2, string_, asanyarray, bool_
 #from logic import AND
 #from traceback import extract_stack 
 try:
@@ -96,6 +96,7 @@ class oofun:
     criticalPoints = None
     vectorized = False
     getDefiniteRange = None
+    _neg_elem = None # used in render into quadratic 
 
     _usedIn = 0
     _level = 0
@@ -257,15 +258,18 @@ class oofun:
         return r
             
     
-    def iqg(self, domain, dtype = float, lb=None, ub=None):
+    def iqg(self, domain, dtype = float, lb=None, ub=None, UB = None):
         if type(domain) != ooPoint:
             domain = ooPoint(domain, skipArrayCast=True)
             domain.isMultiPoint=True
         domain.useSave = True
         r0 = self.interval(domain, dtype, resetStoredIntervals = False)
         
+        r0.lb, r0.ub = atleast_1d(r0.lb).copy(), atleast_1d(r0.ub).copy() # is copy required?
+        
         # TODO: get rid of useSave
         domain.useSave = False
+        
         
         # TODO: rework it with indexation of required data
         if lb is not None and ub is not None:
@@ -276,19 +280,118 @@ class oofun:
 #            if sz.size != asarray(r0.lb).size:
 #                print('!', sz.size, asarray(r0.lb).size)
             #debug end
+            ind = logical_or(logical_or(r0.ub < lb, r0.lb > ub), all(logical_and(r0.lb >= lb, r0.ub <= ub)))
+        elif UB is not None:
+            #print(where(r0.lb > UB)[0].size, asarray(r0.lb).size)
+            ind = r0.lb > UB
+        else:
+            ind = None
+        
+        useSlicing = False
+        
+#        print('-'*20)
+#        print(r0.lb.size)
+        if ind is not None:
             
-            if all(logical_or(logical_or(r0.ub < lb, r0.lb > ub), all(logical_and(r0.lb >= lb, r0.ub <= ub)))):
+            if all(ind):
                 return {}, r0
+            j = where(~ind)[0]
+            if 1 and j.size < 0.85*ind.size:  # at least 15% of values to skip
+                useSlicing = True
+                tmp = []
+                for key, val in domain.storedIntervals.items():
+                    Interval, definiteRange = val
+                    if type(definiteRange) not in (bool, bool_):
+                        definiteRange = definiteRange[j]
+                    tmp.append((key, (Interval[:, j], definiteRange)))
+                _storedIntervals = dict(tmp)
+                
+                Tmp = []
+                for key, val in domain.storedSums.items():
+                    # TODO: rework it
+                    R0, DefiniteRange0 = val.pop(-1)
+                    #R0, DefiniteRange0 = val[-1]
+                    R0 = R0[:, j]
+                    if type(DefiniteRange0) not in (bool, bool_):
+                        DefiniteRange0 = DefiniteRange0[j]
+                    tmp = []
+                    for k,v in val.items():
+                        # TODO: rework it
+#                        if k is (-1): continue
+                        v = v[:, j]
+                        tmp.append((k,v))
+                    val = dict(tmp)
+                    val[-1] = (R0, DefiniteRange0)
+                    Tmp.append((key,val))
+                _storedSums = dict(Tmp)
+                #domain.storedSums = dict(tmp)
+                
+                Tmp = []
+                for key, val in domain.items():
+                    lb_,ub_ = val
+                    # TODO: rework it when lb, ub will be implemented as 2-dimensional
+                    Tmp.append((key, (lb_[j],ub_[j])))
+                dictOfFixedFuncs = domain.dictOfFixedFuncs
+                domain2 = ooPoint(Tmp, skipArrayCast=True)
+                domain2.storedSums = _storedSums
+                domain2.storedIntervals = _storedIntervals
+                domain2.dictOfFixedFuncs = dictOfFixedFuncs
+                domain2.isMultiPoint=True
+                domain = domain2
                 
         domain.useAsMutable = True
         
         r = {}
         Dep = (self._getDep() if not self.is_oovar else set([self])).intersection(domain.keys())
-        #Dep = self._getDep().intersection(domain.keys())
+        
+##        #debug
+#        if useSlicing:
+##            print('ind', ind)
+##            print('r0.ub:', r0.ub)
+#            r1 = {}
+#            for i, v in enumerate(Dep):
+#                domain.modificationVar = v
+#                r_l, r_u = self._iqg(domain, dtype, r0)
+#                
+#                domain2.useAsMutable = True
+#                domain2.modificationVar = v
+#                r_l2, r_u2 = self._iqg(domain2, dtype, r0)
+#                if useSlicing and not (r_l is r0):# r_l is r0 when array_equal(lb, ub)
+#                    lf1, lf2, uf1, uf2 = r_l2.lb, r_u2.lb, r_l2.ub, r_u2.ub
+#                    Lf1, Lf2, Uf1, Uf2 = Copy(r0.lb), Copy(r0.lb), Copy(r0.ub), Copy(r0.ub)
+#                    Lf1[:, j], Lf2[:, j], Uf1[:, j], Uf2[:, j] = lf1, lf2, uf1, uf2
+#                    r_l2.lb, r_u2.lb, r_l2.ub, r_u2.ub = Lf1, Lf2, Uf1, Uf2
+#    #                if type(r0.definiteRange) not in (bool, bool_) and r0.definiteRange.size != 1:
+#    #                    d1, d2 = r_l.definiteRange, r_u.definiteRange
+#    #                    D1, D2 = Copy(r0.definiteRange), Copy(r0.definiteRange)
+#    #                    D1[:, j], D2[:, j] = d1, d2
+#    #                    r_l.definiteRange, r_u.definiteRange = D1, D2
+#                from numpy.linalg import norm
+#                if norm(r_u2.ub- r_u.ub) > 1e-7: 
+#                    print('uu')
+#                    print(r_u2.ub, r_u.ub)
+#                    print(r_u2.ub - r_u.ub)
+##                    raise 0                    
+#                input()
+
+#            domain = domain2 
+##        #debug end
         
         for i, v in enumerate(Dep):
             domain.modificationVar = v
             r_l, r_u = self._iqg(domain, dtype, r0)
+            if useSlicing and r_l is not r0:# r_l is r0 when array_equal(lb, ub)
+                lf1, lf2, uf1, uf2 = r_l.lb, r_u.lb, r_l.ub, r_u.ub
+                Lf1, Lf2, Uf1, Uf2 = Copy(r0.lb), Copy(r0.lb), Copy(r0.ub), Copy(r0.ub)
+                Lf1[:, j], Lf2[:, j], Uf1[:, j], Uf2[:, j] = lf1, lf2, uf1, uf2
+                r_l.lb, r_u.lb, r_l.ub, r_u.ub = Lf1, Lf2, Uf1, Uf2
+                if type(r0.definiteRange) not in (bool, bool_):
+                    print('!')
+                    d1, d2 = r_l.definiteRange, r_u.definiteRange
+                    D1, D2 = atleast_1d(r0.definiteRange).copy(), atleast_1d(r0.definiteRange).copy()
+                    D1[j], D2[j] = d1, d2
+                    r_l.definiteRange, r_u.definiteRange = D1, D2
+                
             r[v] = r_l, r_u
             if not self.isUncycled:
                 lf1, lf2, uf1, uf2 = r_l.lb, r_u.lb, r_l.ub, r_u.ub
@@ -307,10 +410,9 @@ class oofun:
                 r2.lb[r2.lb < L] = L[r2.lb < L]
                 r1.ub[r1.ub > U] = U[r1.ub > U]
                 r2.ub[r2.ub > U] = U[r2.ub > U]
-            r0.lb, r0.ub = atleast_1d(r0.lb).copy(), atleast_1d(r0.ub).copy() # is it required?
+            
             r0.lb[r0.lb < L] = L[r0.lb < L]
             r0.ub[r0.ub > U] = U[r0.ub > U]
-            
             
         # for more safety
         domain.useSave = True
@@ -453,7 +555,13 @@ class oofun:
     
     # overload "-a"
     def __neg__(self): 
+        if self._neg_elem is not None:
+            return self._neg_elem
+        if self._isSum:
+            from overloads import sum as FDsum
+            return FDsum([-elem for elem in self._summation_elements])
         r = oofun(lambda a: -a, self, d = lambda a: -Eye(Len(a)))
+        r._neg_elem = self
         r._getFuncCalcEngine = lambda *args,  **kwargs: -self._getFuncCalcEngine(*args,  **kwargs)
         r.getOrder = self.getOrder
         r._D = lambda *args, **kwargs: dict([(key, -value) for key, value in self._D(*args, **kwargs).items()])
@@ -1182,14 +1290,21 @@ class oofun:
         
         
         if ((type(x) == ooPoint and not x.isMultiPoint) and not (isinstance(tmp, ndarray) and type(tmp) != ndarray)) or self._isFixed:# or self.isCostly:
-            if type(x) == ooPoint: 
-                self._point_id = x._id
-            #self._f_val_prev = copy(tmp) 
-            self._f_val_prev = tmp.copy() if isinstance(tmp, (ndarray, Stochastic)) else tmp
-            self._f_key_prev = dict([(elem, copy((x if isinstance(x, dict) else x.xf)[elem])) for elem in dep]) if self.isCostly else None
+
+            # TODO: rework it (for input with ooarays)
+            try:
+                self._f_key_prev = dict([(elem, copy((x if isinstance(x, dict) else x.xf)[elem])) for elem in dep]) if self.isCostly else None
+                self._f_val_prev = tmp.copy() if isinstance(tmp, (ndarray, Stochastic)) else tmp
+                if type(x) == ooPoint: 
+                    self._point_id = x._id                
+            except:
+                pass
+            
         r = tmp
 #        if use_line_points:
 #            self._p._currLinePointDict[self] = r
+#        if fixedVarsScheduleID != -1: 
+#            self._lastSize = tmp.size
         return r
 
 

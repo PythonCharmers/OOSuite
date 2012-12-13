@@ -7,6 +7,7 @@ from FDmisc import FuncDesignerException
 
 class ooarray(OOArray):
     __array_priority__ = 25 # !!! it should exceed oofun.__array_priority__ !!!
+    _is_array_of_oovars = False
     def __new__(self, *args, **kwargs):
         #assert len(kwargs) == 0
         tmp = args[0] if len(args) == 1 else args
@@ -60,6 +61,11 @@ class ooarray(OOArray):
             if len(args) == 0:
                 return self
         #tmp = asarray([asscalar(asarray(self[i](*args, **kwargs))) if isinstance(self[i], oofun) else self[i] for i in range(self.size)])
+        
+        # TODO: get rid of self in args[0]
+        if self._is_array_of_oovars and isinstance(args[0], dict) and self in args[0] and len(args) == 1 and len(kwargs) == 0:
+            return args[0][self]
+            
         Tmp = [self[i](*args, **kwargs) if isinstance(self[i], oofun) else self[i] for i in range(self.size)]
         tmp = asanyarray(Tmp)
         if np.any([isinstance(elem, multiarray) for elem in Tmp]):
