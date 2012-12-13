@@ -10,7 +10,7 @@ from openopt import *
 from numpy import sin, cos
 import networkx as nx
 
-N = 15
+N = 5
 
 G = nx.Graph()
 G.add_edges_from(\
