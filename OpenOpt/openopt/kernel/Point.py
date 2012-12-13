@@ -1,6 +1,6 @@
 # created by Dmitrey
 from numpy import copy, isnan, array, argmax, abs, vstack, zeros, any, isfinite, all, where, asscalar, \
-dot, sqrt, nanmax, isscalar, logical_or, matrix, prod, arange, ndarray, asarray, sum
+dot, sqrt, nanmax, logical_or, matrix, prod, arange, ndarray, asarray, sum
 from ooMisc import norm
 from nonOptMisc import Copy, isPyPy
 #from pointProjection import pointProjection
