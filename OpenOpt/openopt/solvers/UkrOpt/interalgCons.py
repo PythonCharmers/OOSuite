@@ -6,6 +6,7 @@ def processConstraints(C0, y, e, _s, p, dataType):
     m = y.shape[0]
     indT = empty(m, bool)
     indT.fill(False)
+#    isSNLE = p.probType in ('NLSP', 'SNLE')
     
     for i in range(p.nb):
         y, e, indT, ind_trunc = truncateByPlane(y, e, indT, p.A[i], p.b[i])

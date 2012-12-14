@@ -110,7 +110,6 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p, fo = inf):
         adjustr4WithDiscreteVariables(wr4, p)
         #cs = dict([(oovar, asarray((y[:, i]+e[:, i])/2, dataType)) for i, oovar in enumerate(vv)])
         cs = dict([(oovar, asarray(wr4[:, i], dataType)) for i, oovar in enumerate(vv)])
-        
     else:
         tnlh = tnlh.copy()
         tnlh[atleast_1d(tnlh<1e-300)] = 1e-300 # to prevent division by zero
@@ -143,14 +142,14 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p, fo = inf):
     isMOP = p.probType =='MOP'
     if not any(r15):
         F = empty(m, dataType)
-        F.fill(2**31-2 if dataType in (int32, int64, int) else nan) 
+        F.fill(2**31-2 if dataType in (int16, int32, int64, int) else nan) 
         if isMOP:
             FF = [F for k in range(p.nf)]
     elif all(r15):
         if isMOP:
             FF = [fun(cs, **kw) for fun in func]
         else:
-            F = func(cs, **kw)
+            F = func(cs, **kw) if func is not None else zeros(m) # func is None for SNLE
     else:
         #cs = dict([(oovar, (y[r15, i] + e[r15, i])/2) for i, oovar in enumerate(vv)])
         #cs = ooPoint(cs, skipArrayCast = True)
@@ -158,13 +157,13 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p, fo = inf):
         if isMOP:
             FF = []
             for fun in func:
-                tmp = fun(cs)
+                tmp = fun(cs, **kw) 
                 F = empty(m, dataType)
-                F.fill(2**31-15 if dataType in (int32, int64, int) else nan)
+                F.fill(2**31-15 if dataType in (int16, int32, int64, int) else nan)
                 F[r15] = tmp[r15]    
                 FF.append(F)
         else:
-            tmp = asarray(func(cs), dataType)
+            tmp = asarray(func(cs, **kw), dataType) if func is not None else zeros(m) # func is None for SNLE
             F = empty(m, dataType)
             F.fill(2**31-15 if dataType in (int16, int32, int64, int) else nan)
             F[r15] = tmp[r15]
@@ -696,8 +695,8 @@ def func12(an, maxActiveNodes, p, Solutions, vv, varTols, fo):
                 yc = take(yc, j, axis=0, out=yc[:lj])
                 ec = take(ec, j, axis=0, out=ec[:lj])
                 _s = _s[j]
-                if tnlhf_curr_local is not None:
-                    tnlhf_curr_local = tnlhf_curr_local[j]
+#                if tnlhf_curr_local is not None:
+#                    tnlhf_curr_local = tnlhf_curr_local[j]
         y.append(yc)
         e.append(ec)
         S.append(_s)

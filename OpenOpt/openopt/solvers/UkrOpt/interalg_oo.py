@@ -66,6 +66,14 @@ class interalg(baseSolver):
         if not p.isFDmodel:
             p.err('solver %s can handle only FuncDesigner problems' % self.__name__)
        
+        dataType = self.dataType
+        if type(dataType) == str:
+            if not hasattr(np, dataType):
+                p.pWarn('your architecture has no type "%s", float64 will be used instead' % dataType)
+                dataType = 'float64'
+            dataType = getattr(np, dataType)
+            self.dataType = dataType
+       
         isIP = p.probType == 'IP'
         if isIP:
             pb = r14IP
@@ -133,13 +141,6 @@ class interalg(baseSolver):
         Solutions.coords = np.array([]).reshape(0, n)
         p.solutions = Solutions
         
-        dataType = self.dataType
-        if type(dataType) == str:
-            if not hasattr(np, dataType):
-                p.pWarn('your architecture has no type "%s", float64 will be used instead' % dataType)
-                dataType = 'float64'
-            dataType = getattr(np, dataType)
-
         lb, ub = asarray(p.lb, dataType).copy(), asarray(p.ub, dataType).copy()
 
         fTol = p.fTol
@@ -172,6 +173,7 @@ class interalg(baseSolver):
         # TODO: remove it after proper SNLE handling implementation
         if isSNLE:
             r41 = 0.0
+#            asdf1 = None
             eqs = [fd_abs(elem) for elem in p.user.f]
             asdf1 = fd_sum(eqs)
             
@@ -211,14 +213,14 @@ class interalg(baseSolver):
                     p.warn('user-provided fOpt seems to be incorrect, ')
                 r41 = p.fOpt
 
-        if isSNLE:
-            if self.dataHandling == 'raw':
-                p.pWarn('''
-                    this interalg data handling approach ("%s") 
-                    is unimplemented for SNLE yet, dropping to "sorted"'''%self.dataHandling)
-            
-            # handles 'auto' as well
-            self.dataHandling ='sorted'
+#        if isSNLE:
+#            if self.dataHandling == 'raw':
+#                p.pWarn('''
+#                    this interalg data handling approach ("%s") 
+#                    is unimplemented for SNLE yet, dropping to "sorted"'''%self.dataHandling)
+#            
+#            # handles 'auto' as well
+#            self.dataHandling ='sorted'
 
         domain = oopoint([(v, [p.lb[i], p.ub[i]]) for i,  v in enumerate(vv)], skipArrayCast=True)
         domain.dictOfFixedFuncs = p.dictOfFixedFuncs

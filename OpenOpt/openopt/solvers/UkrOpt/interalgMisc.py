@@ -238,7 +238,7 @@ def r45(y, e, vv, p, asdf1, dataType, r41, nlhc):
     m, n = e.shape
     o, a = o.reshape(2*n, m).T, a.reshape(2*n, m).T
 
-    if asdf1.isUncycled and p.probType not in ('SNLE', 'NLSP') and not p.probType.startswith('MI') \
+    if p.probType not in ('SNLE', 'NLSP') and asdf1.isUncycled and not p.probType.startswith('MI') \
     and len(p._discreteVarsList)==0:# for SNLE fo = 0
         # TODO: 
         # handle constraints with restricted domain and matrix definiteRange
