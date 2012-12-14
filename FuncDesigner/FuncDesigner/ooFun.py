@@ -296,7 +296,8 @@ class oofun:
             if all(ind):
                 return {}, r0
             j = where(~ind)[0]
-            if 1 and j.size < 0.85*ind.size:  # at least 15% of values to skip
+            #DOESN'T WORK FOR FIXED OOVARS AND DefiniteRange != TRUE YET
+            if 0 and j.size < 0.85*ind.size:  # at least 15% of values to skip
                 useSlicing = True
                 tmp = []
                 for key, val in domain.storedIntervals.items():
