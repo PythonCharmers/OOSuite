@@ -7,7 +7,7 @@ from openopt.kernel.baseSolver import *
 from openopt.solvers.UkrOpt.interalgMisc import *
 from FuncDesigner import sum as fd_sum, abs as fd_abs, oopoint
 from ii_engine import *
-from interalgCons import processConstraints, processConstraints2
+from interalgCons import processConstraints
 from interalgODE import interalg_ODE_routine
 
 from interalgLLR import adjustr4WithDiscreteVariables
@@ -43,7 +43,6 @@ class interalg(baseSolver):
 
     def __init__(self): 
         self.dataHandling = 'auto'
-        self.intervalObtaining = 'auto'
         
     def __solver__(self, p):
         
@@ -53,9 +52,7 @@ class interalg(baseSolver):
         #isOpt = p.probType in ['NLP', 'NSP', 'GLP', 'MINLP']
         isODE = p.probType == 'ODE'
         isSNLE = p.probType in ('NLSP', 'SNLE')
-        if self.intervalObtaining == 'auto':
-            self.intervalObtaining=2 
-        
+
         if not p.__isFiniteBoxBounded__() and not isODE: 
             p.err('''
             solver %s requires finite lb, ub: 
@@ -318,8 +315,7 @@ class interalg(baseSolver):
 
         while 1:
             if len(C0) != 0: 
-                Func = processConstraints if self.intervalObtaining == 1 else processConstraints2
-                y, e, nlhc, residual, definiteRange, indT, _s = Func(C0, y, e, _s, p, dataType)
+                y, e, nlhc, residual, definiteRange, indT, _s = processConstraints(C0, y, e, _s, p, dataType)
             else:
                 nlhc, residual, definiteRange, indT = None, None, True, None
             

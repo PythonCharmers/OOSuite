@@ -7,7 +7,6 @@ except ImportError:
         raise ImportError('function append() is absent in PyPy yet')
         
 from interalgLLR import *
-from interalgT import truncateByPlane
 
 try:
     from bottleneck import nanmin, nanmax
@@ -37,61 +36,6 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
     if fo_prev > 1e300:
         fo_prev = 1e300
     y, e, o, a, _s, indTC, nlhc, residual = func7(y, e, o, a, _s, indTC, nlhc, residual)    
-
-    
-    # CHANGES
-    # Curreetly works only for linear objective w/o constant part
-    #p.convex = True
-
-    if 0 and (p._linear_objective or p.convex in (1, True)) and fo_prev < 1e300:# and p.convex is True:
-        # TODO: rework it
-        #cs = dict([(key, val.view(multiarray)) for key, val in cs.items()])
-        #cs = dict([(key, 0) for key, val in p._x0.items()])
-        
-
-        # TODO: handle indT corrently
-        indT2 = np.empty(y.shape[0])
-        indT2.fill(False)
-
-        #y, e, indT2 = truncateByPlane(y, e, indT2, np.hstack([d[v][0] for v in vv]), fo_prev)
-        #y, e, indT2, ind_t = truncateByPlane(y, e, indT2, np.hstack([d[oov] for oov in vv]), fo_prev)
-        
-#        print('==')
-#        print(y.sum())
-        if p._linear_objective:
-            d = p._linear_objective_factor
-            th = fo_prev + (p._linear_objective_scalar if p.goal not in ('min', 'minimum') else - p._linear_objective_scalar)
-            y, e, indT2, ind_t = truncateByPlane(y, e, indT2, d if p.goal in ('min', 'minimum') else -d, th)
-        elif p.convex in (1, True):
-
-            assert p.goal in ('min', 'minimum') 
-            wr4 = (y+e) / 2
-            adjustr4WithDiscreteVariables(wr4, p)
-            #cs = dict([(oovar, asarray((y[:, i]+e[:, i])/2, dataType)) for i, oovar in enumerate(vv)])
-            cs = dict([(oovar, asarray(wr4[:, i], dataType).view(multiarray)) for i, oovar in enumerate(vv)])            
-            #cs = dict([(key, val.view(multiarray)) for key, val in cs.items()])
-            
-            #TODO: add other args
-            centerValues = asdf1(cs)
-            gradient = asdf1.D(cs)
-
-            y, e, indT2, ind_t = truncateByPlane2(cs, centerValues, y, e, indT2, gradient, fo_prev, p)
-
-        else:
-            assert 0, 'bug in FD kernel'
-#        print(y.sum())
-        if ind_t is not True:
-            lj = ind_t.size
-            o = take(o, ind_t, axis=0, out=o[:lj])
-            a = take(a, ind_t, axis=0, out=a[:lj])
-            if nlhc is not None:
-                nlhc = take(nlhc, ind_t, axis=0, out=nlhc[:lj])
-                indTC = np.logical_or(indTC[ind_t], indT2)
-            _s = _s[ind_t]
-            
-            #residual = residual[ind_t]
-        
-    # CHANGES END
 
     if y.size == 0:
         return _in, g, fo_prev, _s, Solutions, xRecord, r41, r40
@@ -284,35 +228,7 @@ def r46(o, a, PointCoords, PointVals, fTol, varTols, Solutions):
 
 
 def r45(y, e, vv, p, asdf1, dataType, r41, nlhc):
-    Case = p.solver.intervalObtaining
-
-    if Case == 1:
-        ip = func10(y, e, vv)
-        #o, a = func8(ip, asdf1 + 1e10*p._cons_obj if p._cons_obj is not None else asdf1, dataType)
-        o, a, definiteRange = func8(ip, asdf1, dataType)
-    elif Case == 2:
-#        o2, a2, definiteRange2 = func82(y, e, vv, asdf1 + p._cons_obj if p._cons_obj is not None else asdf1, dataType)
-#        o, a, definiteRange = o2, a2, definiteRange2
-        f = asdf1 
-        o, a, definiteRange = func82(y, e, vv, f, dataType, p)
-    elif Case == 3:
-        # Used for debug
-        ip = func10(y, e, vv)
-        o, a, definiteRange = func8(ip, asdf1, dataType)
-        
-        f = asdf1
-        o2, a2, definiteRange2 = func82(y, e, vv, f, dataType, p)
-        from numpy import allclose
-        lf, lf2 = o.copy(), o2.copy()
-        lf[isnan(lf)] = 0.123
-        lf2[isnan(lf2)] = 0.123
-        if not allclose(lf, lf2, atol=1e-10):
-            raise 0
-        uf, uf2 = a.copy(), a2.copy()
-        uf[isnan(uf)] = 0.123
-        uf2[isnan(uf2)] = 0.123
-        if not allclose(uf, uf2, atol=1e-10):
-            raise 0
+    o, a, definiteRange = func82(y, e, vv, asdf1, dataType, p, r41)
     
     if p.debug and any(a + 1e-15 < o):  
         p.warn('interval lower bound exceeds upper bound, it seems to be FuncDesigner kernel bug')

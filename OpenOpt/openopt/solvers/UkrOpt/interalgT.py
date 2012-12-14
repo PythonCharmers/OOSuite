@@ -339,10 +339,55 @@ def truncateByPlane2(cs, centerValues, y, e, indT, gradient, fo, p):
     
     
     
+def  truncateByConvexFunc():
+    if 0 and (p._linear_objective or p.convex in (1, True)) and fo_prev < 1e300:# and p.convex is True:
+    # TODO: rework it
+    #cs = dict([(key, val.view(multiarray)) for key, val in cs.items()])
+    #cs = dict([(key, 0) for key, val in p._x0.items()])
     
-    
-    
-    
-    
-    
-    
+
+        # TODO: handle indT corrently
+        indT2 = np.empty(y.shape[0])
+        indT2.fill(False)
+
+        #y, e, indT2 = truncateByPlane(y, e, indT2, np.hstack([d[v][0] for v in vv]), fo_prev)
+        #y, e, indT2, ind_t = truncateByPlane(y, e, indT2, np.hstack([d[oov] for oov in vv]), fo_prev)
+        
+    #        print('==')
+    #        print(y.sum())
+        if p._linear_objective:
+            d = p._linear_objective_factor
+            th = fo_prev + (p._linear_objective_scalar if p.goal not in ('min', 'minimum') else - p._linear_objective_scalar)
+            y, e, indT2, ind_t = truncateByPlane(y, e, indT2, d if p.goal in ('min', 'minimum') else -d, th)
+        elif p.convex in (1, True):
+
+            assert p.goal in ('min', 'minimum') 
+            wr4 = (y+e) / 2
+            adjustr4WithDiscreteVariables(wr4, p)
+            #cs = dict([(oovar, asarray((y[:, i]+e[:, i])/2, dataType)) for i, oovar in enumerate(vv)])
+            cs = dict([(oovar, asarray(wr4[:, i], dataType).view(multiarray)) for i, oovar in enumerate(vv)])            
+            #cs = dict([(key, val.view(multiarray)) for key, val in cs.items()])
+            
+            #TODO: add other args
+            centerValues = asdf1(cs)
+            gradient = asdf1.D(cs)
+            y, e, indT2, ind_t = truncateByPlane2(cs, centerValues, y, e, indT2, gradient, fo_prev, p)
+        else:
+            assert 0, 'bug in FD kernel'
+            
+        if ind_t is not True:
+            lj = ind_t.size
+            o = take(o, ind_t, axis=0, out=o[:lj])
+            a = take(a, ind_t, axis=0, out=a[:lj])
+            if nlhc is not None:
+                nlhc = take(nlhc, ind_t, axis=0, out=nlhc[:lj])
+                indTC = np.logical_or(indTC[ind_t], indT2)
+            _s = _s[ind_t]
+            #residual = residual[ind_t]
+        
+
+
+
+
+
+

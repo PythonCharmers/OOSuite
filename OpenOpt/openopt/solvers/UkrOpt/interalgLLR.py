@@ -3,7 +3,6 @@ arange, vstack, inf, where, logical_not, take, abs, hstack, empty, \
 prod, int16, int32, int64, log2, searchsorted, cumprod
 import numpy as np
 from FuncDesigner import oopoint
-from FuncDesigner.multiarray import multiarray
 from interalgT import *
 
 try:
@@ -20,22 +19,23 @@ except ImportError:
 #    Args = [(yl[i], el[i], vv, lf, uf) for s in ss]
 #    R = func82_seq(y, e, vv, f, dataType)
     
-def func82(y, e, vv, f, dataType, p):
+def func82(y, e, vv, f, dataType, p, Th = None):
     domain = oopoint([(v, (y[:, i], e[:, i])) for i, v in enumerate(vv)], skipArrayCast=True, isMultiPoint=True)
     domain.dictOfFixedFuncs = p.dictOfFixedFuncs
-    r, r0 = f.iqg(domain, dataType)
-    dep = f._getDep() # TODO: Rework it for fixed vars
+    #print(Th)
+    r, r0 = f.iqg(domain, dataType, UB = Th)
     o_l, o_u, a_l, a_u = [], [], [], []
     definiteRange = r0.definiteRange
     for v in vv:
-        # !!!! TODO: rework and optimize it
-        if v in dep:
-            o_l.append(r[v][0].lb)
-            o_u.append(r[v][1].lb)
-            a_l.append(r[v][0].ub)
-            a_u.append(r[v][1].ub)
-            definiteRange = logical_and(definiteRange, r[v][0].definiteRange)
-            definiteRange = logical_and(definiteRange, r[v][1].definiteRange)
+        # TODO: rework and optimize it
+        tmp = r.get(v, None)
+        if tmp is not None:
+            o_l.append(tmp[0].lb)
+            o_u.append(tmp[1].lb)
+            a_l.append(tmp[0].ub)
+            a_u.append(tmp[1].ub)
+            definiteRange = logical_and(definiteRange, tmp[0].definiteRange)
+            definiteRange = logical_and(definiteRange, tmp[1].definiteRange)
         else:
             o_l.append(r0.lb)
             o_u.append(r0.lb)
@@ -127,11 +127,14 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p, fo = inf):
     cs.update(p.dictOfFixedFuncs)
     
     m = y.shape[0]
+    
+    kw =  {'Vars': p.freeVars} if p.freeVars is None or (p.fixedVars is not None and len(p.freeVars) < len(p.fixedVars)) else {'fixedVars': p.fixedVars}
+    kw['fixedVarsScheduleID'] = p._FDVarsID
     if len(C) != 0:
         r15 = empty(m, bool)
         r15.fill(True)
         for _c, f, r16, r17 in C:
-            c = f(cs)
+            c = f(cs, **kw)
             ind = logical_and(c  >= r16, c <= r17) # here r16 and r17 are already shifted by required tolerance
             r15 = logical_and(r15, ind)
     else:
@@ -145,9 +148,9 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p, fo = inf):
             FF = [F for k in range(p.nf)]
     elif all(r15):
         if isMOP:
-            FF = [fun(cs) for fun in func]
+            FF = [fun(cs, **kw) for fun in func]
         else:
-            F = func(cs)
+            F = func(cs, **kw)
     else:
         #cs = dict([(oovar, (y[r15, i] + e[r15, i])/2) for i, oovar in enumerate(vv)])
         #cs = ooPoint(cs, skipArrayCast = True)
@@ -662,6 +665,7 @@ def func12(an, maxActiveNodes, p, Solutions, vv, varTols, fo):
             return NEW_lx, NEW_ux, NEW__in, NEW__s
         
         NewD = 1
+        
         if NewD and indD is not None: 
             s4d = _s[indD]
             sf = _s[logical_not(indD)]
