@@ -294,6 +294,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             return False        
         if isinstance(fds, (oofun, ooarray)):
             return True
+        if isinstance(fds, dict):
+            return True if isinstance(list(fds.keys())[0], (oofun, ooarray)) else False
         if isinstance(fds, (list, tuple, ndarray)):
             if isinstance(fds[0], (oofun, ooarray)):
                 return True
