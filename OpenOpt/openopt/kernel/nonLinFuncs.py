@@ -143,7 +143,7 @@ class nonLinFuncs:
 
             if p.isFDmodel:
                 assert ind is None
-                if p.hasVectorizableFuncs: # TODO: get rid of box-bound constraints
+                if isPyPy or p.hasVectorizableFuncs: # TODO: get rid of box-bound constraints
                     from FuncDesigner.ooPoint import ooPoint as oopoint
                     from FuncDesigner.multiarray import multiarray
                     
