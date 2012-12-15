@@ -22,7 +22,7 @@ startPoint = {x: 3, y: 4*ones(N), z: 5*zeros(2*N)}
 timeArray = arange(0, 1, 0.01) # 0, 0.01, 0.02, 0.03, ..., 0.99
 
 # assign ODE. 3rd argument (here "t") is time variable that is involved in differentiation.
-myODE = ode(equations, startPoint, t, timeArray)
+myODE = ode(equations, startPoint, {t: timeArray})
 
 r = myODE.solve()
 X,  Y,  Z = r(x, y, z) # X.size = 100, Y.shape = (50, 100), Z.shape = (100, 100)

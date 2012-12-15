@@ -1,42 +1,52 @@
 from time import time
-from numpy import linspace, pi, hstack
+from numpy import linspace
 from FuncDesigner import *
 
-sigma = 1e-15
+sigma = 1e-1
 StartTime, EndTime = 0, 10
-times = linspace(StartTime, EndTime, 1000) # 1000 points between StartTime, EndTime
+times = linspace(StartTime, EndTime, 10000) # 1000 points between StartTime, EndTime
 
 # required accuracy
 # I use so big value for good graphical visualization below, elseware 2 lines are almost same and difficult to view
-ftol = 0.00005 # this value is used by interalg only, not by scipy_lsoda
+ftol = 0.001 # this value is used by interalg only, not by scipy_lsoda
 
 t = oovar()
-f = exp(-(t-4.321)**2/(2*sigma)) / sqrt(2*pi*sigma) + 0.1*sin(t)
-# optional, for graphic visualisation and exact residual calculation:
-from scipy.special import erf
-exact_sol = lambda t: 0.5*erf((t-4.321)/sigma) - 0.1*cos(t) # + const, that is a function from y0
+f = 1 + t + 1000*(2*t - 9)/(1000000*(t - 4.5)**4 + 1)
 
+# optional, for graphic visualisation and exact residual calculation - let's check IP result:
+exact_sol = lambda t: t + t**2 / 2 + arctan(1000*(t-4.5)**2)# + const, that is a function from y0
 y = oovar()
+domain = {t: (times[0], times[-1])}
+from openopt import IP
+p = IP(f, domain, ftol = ftol)
+r = p.solve('interalg', iprint = 100, maxIter = 1e4, maxActiveNodes = 100000)
+print('time elapsed: %f' % r.elapsed['solver_time'])
+
 equations = {y: f} # i.e. dy/dt = f
 startPoint = {y: 0} # y(t=0) = 0
 
 # assign ODE. 3rd argument (here "t") is time variable that is involved in differentiation
-myODE = ode(equations, startPoint, t, times, ftol = ftol)
+myODE = ode(equations, startPoint, {t: times}, ftol = ftol)
 T = time()
 r = myODE.solve('interalg', iprint = -1)
 print('Time elapsed with user-defined solution time intervals: %0.1f' % (time()-T))
 Y = r(y)
-print('result in final time point: %f sec' % Y[-1])
-
+print('result in final time point: %f' % Y[-1])
+realSolution = exact_sol(times) - exact_sol(times[0]) + startPoint[y] 
+print('max difference from real solution: %0.9f (required: %0.9f)' \
+      % (max(abs(realSolution - Y)), ftol))
 
 # now let interalg choose time points by itself
 # we provide 4th argument as only 2 time points (startTime, endTime)
-myODE = ode(equations, startPoint, t, (times[0], times[-1]), ftol = ftol)# 
+myODE = ode(equations, startPoint, {t: (times[0], times[-1])}, ftol = ftol)# 
 T = time()
 r = myODE.solve('interalg', iprint = -1)
 print('Time elapsed with automatic solution time intervals: %0.1f' % (time()-T))
 Y = r(y)
-print('result in final time point: %f sec' % Y[-1])
+print('result in final time point: %f' % Y[-1])
+
+#t = t(r)
+
 
 '''
 Time elapsed with user-defined solution time intervals: 11.2
@@ -65,7 +75,6 @@ and supremums[i] - infinums[i] <= ftol
 # as you'll see, less time intervals are created where function is close to constanct
 # and vise versa, more time intervals (with less size) are created
 # near most problem regions, where function values change very intensively
-# the peak near 4.321 (peak of our erf()) is near 750000 and doesn't fit into the resized picture
 from pylab import hist, show, grid
 hist(r(t), 5000)
 grid('on')
