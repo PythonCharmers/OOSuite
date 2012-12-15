@@ -464,7 +464,7 @@ class nonLinFuncs:
             result = ind
         else:
             try:
-                result = atleast_1d(ind, int32).tolist()
+                result = atleast_1d(asarray(ind, dtype=int32)).tolist()
             except:
                 raise ValueError('%s is an unknown func index type!'%type(ind))
         return result
