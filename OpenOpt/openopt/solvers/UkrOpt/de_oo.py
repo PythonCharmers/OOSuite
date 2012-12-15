@@ -116,7 +116,7 @@ class de(baseSolver):
 
     def __init__(self):pass
     def __solver__(self, p):
-        
+
         #def DE2arr(func, lb, ub, itermax=1000, NP=100, F=0.8, Cr=0.5, strategy=(1, 1, 1, 1), constraints=None):
         
         if not p.__isFiniteBoxBounded__(): p.err('this solver requires finite lb, ub: lb <= x <= ub')
@@ -126,7 +126,7 @@ class de(baseSolver):
         
         lb, ub = p.lb, p.ub
         D = p.n#dimension
-        
+
         if isinstance(self.population,str):
             NP = 10*D
         else:
@@ -148,11 +148,12 @@ class de(baseSolver):
         
         if np.any(np.isfinite(p.x0)):
             pop[0] = np.copy(p.x0)
-        
+
         #evaluate  population 
         best, vals, constr_vals = _eval_pop(pop, p)
+
         Best = p.point(best[2], f=best[0], mr = best[1], mrName = None, mrInd = 0)
-        
+
         if self.baseVectorStrategy == 'random':
             useRandBaseVectStrat = True 
         elif self.baseVectorStrategy == 'best':
@@ -291,18 +292,18 @@ class de(baseSolver):
 def _eval_pop(pop, p):
     
     NP = pop.shape[0]
-
+    
     constr_vals = np.zeros(NP)
     vals = p.f(pop).flatten()
-    vals[np.isnan(vals)] = np.inf
     
+    if vals.size == 1:
+        vals = np.array([vals]*NP)
+    vals[np.isnan(vals)] = np.inf
+
     if p.__isNoMoreThanBoxBounded__():
-        #vals = p.f(pop)
         best_i = vals.argmin()        
-        
         best = (vals[best_i], 0, pop[best_i])
     else:
-        
 #        new = 1
 #        
 #        if new:# and p.isFDmodel:
@@ -311,9 +312,11 @@ def _eval_pop(pop, p):
             #vals.fill(np.nan)
         
         P = p.point(pop)
+
         constr_vals = P.mr(checkBoxBounds = False) + nanPenalty * P.nNaNs()
+
         ind = constr_vals < p.contol
-        
+
         if not np.any(ind):
             j = np.argmin(constr_vals)
             bestPoint = p.point(pop[j])
@@ -333,7 +336,10 @@ def _eval_pop(pop, p):
             #bestPoint.i = np.where(ind)[0]
 
         best = (bestPoint.f(), bestPoint.mr() + nanPenalty * bestPoint.nNaNs(), bestPoint.x)
-        
+#    print(vals, constr_vals)
+#    from openopt.kernel.ooMisc import isSolved 
+#    raise isSolved
+
     return best, vals, constr_vals
    
     
@@ -360,8 +366,10 @@ def _correct_box_constraints(lb, ub, pop):
 
     # temporary fix
     ind = np.where(pop<lb)
-    pop[ind] = lb[ind[1]]
+    if ind[0].size:
+        pop[ind] = lb[ind[1]]
     ind = np.where(pop>ub)
-    pop[ind] = ub[ind[1]]
+    if ind[0].size:
+        pop[ind] = ub[ind[1]]
 
     return pop
