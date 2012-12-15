@@ -1,11 +1,14 @@
-"""finite-difference derivatives approximation"""
+"""
+finite-difference derivatives approximation
+made by Dmitrey
+"""
 
 try:
     import numpypy as numpy
 except:
     pass
 
-from numpy import isfinite, nan, empty, ndarray, abs, asarray, isnan, array, all, ndarray
+from numpy import isfinite, empty, ndarray, abs, asarray, isnan, array, all
 from numpy import float32, float64
 floatTypes = [float32, float64, float]
 try:
@@ -272,7 +275,7 @@ def check_d1(fun, fun_d, vars, func_name='func', diffInt=1.5e-8, pointVal = None
             if abs(Diff[i,j]) < maxViolation: continue
             counter += 1
             k = Diff.shape[1]*i+j
-            nSpaces = ns - floor(log10(k+1))+2
+            #nSpaces = ns - floor(log10(k+1))+2
             if useDoubleColumn:  ss = str(i) + ' / ' + str(j)
             else: ss = ''
 
