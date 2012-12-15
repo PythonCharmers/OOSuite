@@ -13,12 +13,6 @@ try:
 except ImportError:
     from numpy import nanmin, nanmax
 
-       
-#    o = hstack([r[v][0].lb for v in vv] + [r[v][1].lb for v in vv])
-#    a = hstack([r[v][0].ub for v in vv] + [r[v][1].ub for v in vv])
-#    definiteRange = hstack([r[v][0].definiteRange for v in vv] + [r[v][1].definiteRange for v in vv])
-#    # TODO: rework all(definiteRange)
-#    return o, a, all(definiteRange)
 
 def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
          r41, fTol, Solutions, varTols, _in, dataType, \

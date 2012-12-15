@@ -9,15 +9,15 @@ def processConstraints(C0, y, e, _s, p, dataType):
 #    isSNLE = p.probType in ('NLSP', 'SNLE')
     
     for i in range(p.nb):
-        y, e, indT, ind_trunc = truncateByPlane(y, e, indT, p.A[i], p.b[i])
+        y, e, indT, ind_trunc = truncateByPlane(y, e, indT, p.A[i], p.b[i]+p.contol)
         if ind_trunc is not True:
             _s = _s[ind_trunc]
     for i in range(p.nbeq):
         # TODO: handle it via one func
-        y, e, indT, ind_trunc = truncateByPlane(y, e, indT, p.Aeq[i], p.beq[i])
+        y, e, indT, ind_trunc = truncateByPlane(y, e, indT, p.Aeq[i], p.beq[i]+p.contol)
         if ind_trunc is not True:
             _s = _s[ind_trunc]
-        y, e, indT, ind_trunc = truncateByPlane(y, e, indT, -p.Aeq[i], -p.beq[i])
+        y, e, indT, ind_trunc = truncateByPlane(y, e, indT, -p.Aeq[i], -p.beq[i]+p.contol)
         if ind_trunc is not True:
             _s = _s[ind_trunc]
    
