@@ -197,7 +197,7 @@ class TSP(MatrixProblem):
             r.Edges = [(r.nodes[i], r.nodes[i+1], graph[r.nodes[i]][r.nodes[i+1]][0]) for i in range(n-1)] 
             if self.returnToStart:
                 r.edges.append((r.nodes[-2], r.nodes[0]))
-                print(r.nodes[-1], r.nodes[0], type(r.nodes[-1]), type(r.nodes[0]), graph[2])
+                #print(r.nodes[-1], r.nodes[0], type(r.nodes[-1]), type(r.nodes[0]), graph[2])
                 r.Edges.append((r.nodes[-2], r.nodes[0], graph[r.nodes[-2]][r.nodes[0]][0]))
             #r.xf = r.xk = r.nodes
             # TODO: Edges
