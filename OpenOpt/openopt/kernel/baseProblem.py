@@ -324,7 +324,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             
             probDep = set()
             updateDep = lambda Dep, elem: [updateDep(Dep, f) for f in elem] if isinstance(elem, (tuple, list, set, ndarray))\
-            else Dep.update(elem._getDep()) if isinstance(elem, oofun) else None
+            else Dep.update({elem} if elem.is_oovar else elem._getDep()) if isinstance(elem, oofun) else None
             
             if self.probType in ['SLE', 'NLSP', 'SNLE', 'LLSP']:
                 equations = self.C if self.probType in ('SLE', 'LLSP') else self.f
@@ -1062,7 +1062,11 @@ def linear_render(f, D, Z):
         return f
     ff = f(Z)
     name, tol, _id = f.name, f.tol, f._id
-    f = fd.sum([v * (val if type(val) != ndarray or val.ndim < 2 else val.flatten()) for v, val in D.items()]) \
-    + (ff if isscalar(ff) or ff.ndim <= 1 else asscalar(ff))
+    tmp = [v * (val if type(val) != ndarray or val.ndim < 2 else val.flatten()) for v, val in D.items()]
+    c = ff if isscalar(ff) or ff.ndim <= 1 else asscalar(ff)
+    if c != 0: tmp.append(c)
+    f = tmp[0] if len(tmp) == 1 else tmp[0]+tmp[1] if len(tmp) == 2 else fd.sum(tmp)
+#    f = fd.sum([v * (val if type(val) != ndarray or val.ndim < 2 else val.flatten()) for v, val in D.items()]) \
+#    + (ff if isscalar(ff) or ff.ndim <= 1 else asscalar(ff))
     f.name, f.tol, f._id = name, tol, _id
     return f
