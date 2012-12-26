@@ -18,6 +18,7 @@ from FuncDesigner.multiarray import multiarray
 from Interval import Interval, adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain
 import inspect
 from baseClasses import OOArray, Stochastic
+from boundsurf import boundsurf
 
 Copy = lambda arg: asscalar(arg) if type(arg)==ndarray and arg.size == 1 else arg.copy() if hasattr(arg, 'copy') else copy(arg)
 Len = lambda x: 1 if isscalar(x) else x.size if type(x)==ndarray else x.values.size if isinstance(x, Stochastic) else len(x)
@@ -172,11 +173,11 @@ class oofun:
             self.input = [None] # TODO: get rid of None, use input = [] instead
 
         # TODO: fix it for ooarray!
-#        if input is not None:
-#            levels = [0]
-#            for elem in self.input: # if a
-#                if isinstance(elem, oofun):
-#                    elem._usedIn += 1
+        if input is not None:
+            #levels = [0]
+            for elem in self.input: # if a
+                if isinstance(elem, oofun):
+                    elem._usedIn += 1
 #                    levels.append(elem._level)
 #            self._level = max(levels)+1
 
@@ -233,29 +234,45 @@ class oofun:
         
         return Interval(lb_ub[0], lb_ub[1], definiteRange)
     
-    def _interval(self, domain, dtype):
+    def _interval(self, domain, dtype, allowBoundSurf = False):
         tmp = domain.dictOfFixedFuncs.get(self, None)
         if tmp is not None:
             return tile(tmp, (2, 1)), True
             
         v = domain.modificationVar
-
+        
+        r = None
         if v is None or ((v not in self._getDep() or self.is_oovar) and self is not v): 
             r = domain.storedIntervals.get(self, None)
-            if r is not None: 
-                return r
-        
-        if v is not None:
+
+        if r is None and v is not None:
             r = domain.localStoredIntervals.get(self, None)
-            if r is not None: 
-                return r
-       
-        r = self._interval_(domain, dtype)
-        if domain.useSave:
-            domain.storedIntervals[self] = r 
-        if v is not None:
-            domain.localStoredIntervals[self] = r
+        
+        if r is None:
+            # TODO: rework it
+            r = self._interval_(domain, dtype)
+#            if allowBoundSurf:
+#                try:
+#                    r = self._interval_(domain, dtype, allowBoundSurf=allowBoundSurf)
+#                except:
+#                    r = self._interval_(domain, dtype)
+#            else:
+#                r = self._interval_(domain, dtype)
+                
+            if domain.useSave:
+                domain.storedIntervals[self] = r 
+            if v is not None and self._usedIn > 1:
+                domain.localStoredIntervals[self] = r
+        if r[0].__class__ == boundsurf: # TODO: replace it by type(r[0]) after dropping Python2 support
+            if allowBoundSurf:
+#                print('/', r[0])
+                return r[0], r[1]
+            else:
+#                print('!', r[0].resolve(domain)[0])
+                return r[0].resolve(domain)
+#        print('>', r[0])
         return r
+        #return r if allowBoundSurf or type(r) != boundsurf else r.resolve()
             
     
     def iqg(self, domain, dtype = float, lb=None, ub=None, UB = None):
@@ -292,7 +309,6 @@ class oofun:
 #        print('-'*20)
 #        print(r0.lb.size)
         if ind is not None:
-            
             if all(ind):
                 return {}, r0
             j = where(~ind)[0]
@@ -515,9 +531,8 @@ class oofun:
             
             # TODO: move it outside the func, to prevent recreation each time
             def interval(domain, dtype): 
-                domain1, definiteRange1 = self._interval(domain, dtype)
-                domain2, definiteRange2 = other._interval(domain, dtype)
-                #return domain1[0] + domain2[0], domain1[1] + domain2[1]
+                domain1, definiteRange1 = self._interval(domain, dtype, allowBoundSurf = True)
+                domain2, definiteRange2 = other._interval(domain, dtype, allowBoundSurf = True)
                 return domain1 + domain2, logical_and(definiteRange1, definiteRange2)
             r._interval_ = interval
         else:
@@ -543,7 +558,7 @@ class oofun:
             # TODO: move it outside 
             Other2 = tile(other, (2, 1))
             def interval(domain, dtype): 
-                r, definiteRange = self._interval(domain, dtype)
+                r, definiteRange = self._interval(domain, dtype, allowBoundSurf = True)
                 return r + Other2, definiteRange
             r._interval_ = interval
             
@@ -570,9 +585,13 @@ class oofun:
         r.criticalPoints = False
         r.vectorized = True
         def _interval(domain, dtype):
-            r, definiteRange = self._interval(domain, dtype)
-            assert r.shape[0] == 2
-            return -flipud(r), definiteRange
+            r, definiteRange = self._interval(domain, dtype, allowBoundSurf=True)
+            if type(r) == ndarray:
+                assert r.shape[0] == 2
+                return -flipud(r), definiteRange
+            else:
+                #assert type(r) == boundsurf
+                return -r, definiteRange
             #return (-r[1], -r[0])
         r._interval_ = _interval
         return r
@@ -2452,6 +2471,7 @@ def mul_aux_d(x, y):
 def mul_interval(self, other, isOtherOOFun, domain, dtype):#*args, **kw):
     if domain.isMultiPoint and isOtherOOFun and self.is_oovar and (self.domain is bool or self.domain is 'bool'):
         #ind_nz = where(domain[self][1]!=0)[0]
+        # TODO: add handling allowBoundSurf here
         lb_ub, definiteRange = other._interval(domain, dtype)
         n = domain[self][1].size
         R = zeros((2, n), dtype)
@@ -2484,7 +2504,11 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):#*args, **kw):
 #            
 #            # changes end
     
-    lb1_ub1, definiteRange = self._interval(domain, dtype)
+    lb1_ub1, definiteRange = self._interval(domain, dtype, allowBoundSurf = not isOtherOOFun)
+    if lb1_ub1.__class__ == boundsurf:# TODO: replace it by type(r[0]) after dropping Python2 support
+        assert isscalar(other) or other.size==1, 'bug in FD kernel'
+        return lb1_ub1 * other, definiteRange
+            
     lb1, ub1 = lb1_ub1[0], lb1_ub1[1]
     
     if isOtherOOFun:

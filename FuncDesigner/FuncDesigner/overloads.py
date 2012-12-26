@@ -8,6 +8,7 @@ from ooarray import ooarray
 from Interval import TrigonometryCriticalPoints, nonnegative_interval, ZeroCriticalPointsInterval, box_1_interval
 from numpy import atleast_1d, logical_and
 from FuncDesigner.multiarray import multiarray
+from boundsurf import boundsurf
 
 try:
     from scipy.sparse import isspmatrix, lil_matrix as Zeros
@@ -574,7 +575,11 @@ def sum_interval(R0, r, INP, domain, dtype):
     if v is not None:
         # self already must be in domain.storedSums
         R, DefiniteRange = domain.storedSums[r][-1]
-        if not np.all(np.isfinite(R)):
+        
+        # TODO: replace it by type(R) after dropping Python2 support
+        cond_isfinite = np.all(np.isfinite(R)) if R.__class__ != boundsurf else R.isfinite()
+        
+        if not cond_isfinite:
             R = np.asarray(R0, dtype).copy()
             if domain.isMultiPoint:
                 R = np.tile(R, (1, len(list(domain.values())[0][0])))
@@ -624,7 +629,7 @@ def sum_interval(R0, r, INP, domain, dtype):
 #            R_ = []
     D = domain.storedSums[r]
     for inp in INP:
-        arg_lb_ub, definiteRange = inp._interval(domain, dtype)
+        arg_lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
         Tmp = inp._getDep() if not inp.is_oovar else [inp]
         for oov in Tmp:
             tmp = D.get(oov, None)
@@ -638,7 +643,7 @@ def sum_interval(R0, r, INP, domain, dtype):
                     D[oov] = D[oov] + arg_lb_ub
         
         DefiniteRange = logical_and(DefiniteRange, definiteRange)
-        if R.shape == arg_lb_ub.shape:
+        if type(R) == np.ndarray == type(arg_lb_ub) and R.shape == arg_lb_ub.shape:
             R += arg_lb_ub
         else:
             R = R + arg_lb_ub

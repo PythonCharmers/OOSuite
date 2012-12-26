@@ -11,6 +11,8 @@ from ooarray import ooarray
 #from FuncDesigner.Interval import adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain
 from baseClasses import Stochastic
 
+from boundsurf import boundsurf, surf
+
 f_none = lambda *args, **kw: None
 class oovar(oofun):
     is_oovar = True
@@ -52,8 +54,16 @@ class oovar(oofun):
 #            assert dtype in (float, float64),  'other types unimplemented yet'
 #            middle = 0.5 * (supremum+infinum)
 #            return (vstack((infinum, middle)), True), (vstack((middle, supremum)), True)
-
-        return vstack((infinum, supremum)), True
+        #if 0 and allowBoundSurf:
+#        rr = boundsurf(lowerSurf({self:1.0}, 0), upperSurf({self:1.0}, 0), True).resolve(domain)
+#        assert np.all(rr[0]==vstack((infinum, supremum)))
+        if 1 and domain.isMultiPoint:
+            return boundsurf(surf({self:1.0}, 0), surf({self:1.0}, 0), True), True
+        else:
+            return vstack((infinum, supremum)), True
+        
+        #else:
+            #return vstack((infinum, supremum)), True
     
     #def _interval_(self, domain, dtype):
         #return self._interval()
