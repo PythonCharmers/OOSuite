@@ -105,8 +105,9 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p, fo = inf):
     n = y.shape[1]
     # TODO: rework it wrt nlh
     #cs = dict([(key, asarray((val[0]+val[1])/2, dataType)) for key, val in domain.items()])
+    wr4_0 = (y+e) / 2
     if tnlh is None:# or p.probType =='MOP':
-        wr4 = (y+e) / 2
+        wr4 = wr4_0
         adjustr4WithDiscreteVariables(wr4, p)
         #cs = dict([(oovar, asarray((y[:, i]+e[:, i])/2, dataType)) for i, oovar in enumerate(vv)])
         cs = dict([(oovar, asarray(wr4[:, i], dataType)) for i, oovar in enumerate(vv)])
@@ -118,6 +119,8 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p, fo = inf):
         wr4 = (y * tnlh_l_inv + e * tnlh_u_inv) / (tnlh_l_inv + tnlh_u_inv)
         ind = tnlh_l_inv == tnlh_u_inv # especially important for tnlh_l_inv == tnlh_u_inv = 0
         wr4[ind] = (y[ind] + e[ind]) / 2
+        wr4_1 = (wr4 + wr4_0)/2
+        wr4 = vstack((wr4, wr4_0, wr4_1))
         adjustr4WithDiscreteVariables(wr4, p)
         cs = dict([(oovar, asarray(wr4[:, i], dataType)) for i, oovar in enumerate(vv)])
         
@@ -125,7 +128,7 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p, fo = inf):
     cs.isMultiPoint = True
     cs.update(p.dictOfFixedFuncs)
     
-    m = y.shape[0]
+    m = wr4.shape[0]
     
     kw =  {'Vars': p.freeVars} if p.freeVars is None or (p.fixedVars is not None and len(p.freeVars) < len(p.fixedVars)) else {'fixedVars': p.fixedVars}
     kw['fixedVarsScheduleID'] = p._FDVarsID
