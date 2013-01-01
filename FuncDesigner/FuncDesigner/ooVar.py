@@ -57,8 +57,8 @@ class oovar(oofun):
         #if 0 and allowBoundSurf:
 #        rr = boundsurf(lowerSurf({self:1.0}, 0), upperSurf({self:1.0}, 0), True).resolve(domain)
 #        assert np.all(rr[0]==vstack((infinum, supremum)))
-        return vstack((infinum, supremum)), True
-#        return boundsurf(surf({self:1.0}, 0), surf({self:1.0}, 0), True, domain), True
+#        return vstack((infinum, supremum)), True
+        return boundsurf(surf({self:1.0}, 0), surf({self:1.0}, 0), True, domain), True
 #        if 1 and domain.isMultiPoint:
 #            return boundsurf(surf({self:1.0}, 0), surf({self:1.0}, 0), True), True
 #        else:

@@ -1,3 +1,4 @@
+PythonSum = sum
 from numpy import asscalar, isscalar, asfarray, ndarray, prod
 import numpy as np
 from baseClasses import MultiArray
@@ -179,6 +180,14 @@ def Diag(x, *args, **kw):
         return x
     else: 
         return diagonal(asfarray(x) if x is not None else x, *args,  **kw)
+
+def dictSum(dicts):
+    r = {}
+    K = set().union(*[set(d.keys()) for d in dicts])
+    for k in K:
+        elems = (d.get(k, None) for d in dicts)
+        r[k] = PythonSum(elem for elem in elems if elem is not None)
+    return r
 
 class fixedVarsScheduleID:
     fixedVarsScheduleID = 0

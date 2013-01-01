@@ -269,7 +269,7 @@ class oofun:
                 return r[0], r[1]
             else:
 #                print('!', r[0].resolve(domain)[0])
-                return r[0].resolve(domain)
+                return r[0].resolve()
 #        print('>', r[0])
         return r
         #return r if allowBoundSurf or type(r) != boundsurf else r.resolve()
@@ -403,7 +403,6 @@ class oofun:
                 Lf1[:, j], Lf2[:, j], Uf1[:, j], Uf2[:, j] = lf1, lf2, uf1, uf2
                 r_l.lb, r_u.lb, r_l.ub, r_u.ub = Lf1, Lf2, Uf1, Uf2
                 if type(r0.definiteRange) not in (bool, bool_):
-                    print('!')
                     d1, d2 = r_l.definiteRange, r_u.definiteRange
                     D1, D2 = atleast_1d(r0.definiteRange).copy(), atleast_1d(r0.definiteRange).copy()
                     D1[j], D2[j] = d1, d2
@@ -793,8 +792,14 @@ class oofun:
             d = lambda x: d_x(x, other)
             input = self
             def interval(domain, dtype):
-                lb_ub, definiteRange = self._interval(domain, dtype)
-                
+#                print('asdf1', other, isscalar(other), other == 2)
+                allowBoundSurf = True if isscalar(other) and other == 2 else False
+#                allowBoundSurf = False
+                lb_ub, definiteRange = self._interval(domain, dtype, allowBoundSurf = allowBoundSurf)
+#                print((lb_ub**2)**2)
+                if allowBoundSurf and lb_ub.__class__ == boundsurf:
+#                    print(((lb_ub**2)**2).resolve())
+                    return lb_ub**2, definiteRange
                 Tmp = lb_ub ** other
                 #Tmp = vstack((lb**other, ub**other))
                 
@@ -2318,7 +2323,7 @@ class SmoothFDConstraint(BaseFDConstraint):
         domain = ooPoint(domainData, skipArrayCast=True)
         domain.isMultiPoint = True
         domain.dictOfFixedFuncs = p.dictOfFixedFuncs
-        
+        #print(domain)
         r, r0 = self.oofun.iqg(domain, dataType, self.lb, self.ub)
         Lf, Uf = r0.lb, r0.ub
         tmp = getSmoothNLH(tile(Lf, (2, 1)), tile(Uf, (2, 1)), self.lb, self.ub, tol, m, dataType)

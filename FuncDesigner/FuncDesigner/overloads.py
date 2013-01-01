@@ -2,13 +2,13 @@ PythonSum = sum
 PythonMax = max
 from ooFun import oofun
 import numpy as np
-from FDmisc import FuncDesignerException, Diag, Eye, raise_except, diagonal, DiagonalType
+from FDmisc import FuncDesignerException, Diag, Eye, raise_except, diagonal, DiagonalType, dictSum
 from ooFun import atleast_oofun, Vstack, Copy
 from ooarray import ooarray
 from Interval import TrigonometryCriticalPoints, nonnegative_interval, ZeroCriticalPointsInterval, box_1_interval
 from numpy import atleast_1d, logical_and
 from FuncDesigner.multiarray import multiarray
-from boundsurf import boundsurf
+from boundsurf import boundsurf, surf
 
 try:
     from scipy.sparse import isspmatrix, lil_matrix as Zeros
@@ -570,16 +570,18 @@ def sum_engine(r0, *args):
     return r1 
 
 def sum_interval(R0, r, INP, domain, dtype):
-   
+
     v = domain.modificationVar
     if v is not None:
+        
         # self already must be in domain.storedSums
         R, DefiniteRange = domain.storedSums[r][-1]
         
         # TODO: replace it by type(R) after dropping Python2 support
-        cond_isfinite = np.all(np.isfinite(R)) if R.__class__ != boundsurf else R.isfinite()
+        has_infs = not (np.all(np.isfinite(R)) if R.__class__ != boundsurf else R.isfinite())
         
-        if not cond_isfinite:
+        if has_infs:
+            # TODO: implement allowBoundSurf = True here
             R = np.asarray(R0, dtype).copy()
             if domain.isMultiPoint:
                 R = np.tile(R, (1, len(list(domain.values())[0][0])))
@@ -591,30 +593,53 @@ def sum_interval(R0, r, INP, domain, dtype):
             for inp in INP:
                 arg_lb_ub, definiteRange = inp._interval(domain, dtype)
 #                DefiniteRange = logical_and(DefiniteRange, definiteRange)
-                if R.shape == arg_lb_ub.shape:
+                if type(R)==type(arg_lb_ub)==np.ndarray and R.shape == arg_lb_ub.shape:
                     R += arg_lb_ub
                 else:
                     R = R + arg_lb_ub
             #####################
             return R, DefiniteRange
 
-        R=R.copy()
+        #R = R.copy() - domain.storedSums[r][v]
+        R = (R - domain.storedSums[r][v])# not inplace!
+#        if R.__class__ == boundsurf:
+#            R = R.resolve()[0] 
+        R2 = np.zeros((2, 1))
+        B = []
         for inp in r.storedSumsFuncs[v]:
             # TODO: mb rework definiteRange processing ?
-            arg_lb_ub, definiteRange = inp._interval(domain, dtype)
+            arg_lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
             DefiniteRange = logical_and(DefiniteRange, definiteRange)
-            R += arg_lb_ub
 
-        R -= domain.storedSums[r][v]
+            if type(arg_lb_ub) == np.ndarray:
+                if R2.shape == arg_lb_ub.shape:
+                    R2 += arg_lb_ub
+                else:
+                    R2 = R2  + arg_lb_ub
+            else:
+                B.append(arg_lb_ub)
+
+        if R.__class__ == boundsurf:
+            B.append(R)
+            R = boundsurf_sum(B, R2, DefiniteRange, domain)
+            R.definiteRange = logical_and(R.definiteRange, DefiniteRange)
+        elif len(B):
+            R = boundsurf_sum(B, R+R2, DefiniteRange, domain)#.resolve()[0]
+        else:
+            R = R + R2
+        if R.__class__ == boundsurf:
+            R = R.resolve()[0]
+
+        #R -= domain.storedSums[r][v]
         
-        # To supress inf-inf=nan, however, it doesn't work properly yet, other code is used
-        if np.any(np.isinf(arg_lb_ub)):
-            R[arg_lb_ub == np.inf] = np.inf
-            R[arg_lb_ub == -np.inf] = -np.inf
+#        # To supress inf-inf=nan, however, it doesn't work properly yet, other code is used
+#        if np.any(np.isinf(arg_lb_ub)):
+#            R[arg_lb_ub == np.inf] = np.inf
+#            R[arg_lb_ub == -np.inf] = -np.inf
         
         return R, DefiniteRange
-    else:
-        domain.storedSums[r] = {}        
+    
+    D = {}
 
     #assert np.asarray(r0).ndim <= 1
     #R = np.asarray(R0, dtype).copy()
@@ -626,8 +651,7 @@ def sum_interval(R0, r, INP, domain, dtype):
     # !!! don't use sum([inp._interval(domain, dtype) for ...]) here
     # to reduce memory consumption
     DefiniteRange = True
-#            R_ = []
-    D = domain.storedSums[r]
+    B = []
     for inp in INP:
         arg_lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
         Tmp = inp._getDep() if not inp.is_oovar else [inp]
@@ -636,24 +660,62 @@ def sum_interval(R0, r, INP, domain, dtype):
             if tmp is None:
                 D[oov] = arg_lb_ub.copy()
             else:
-                try:
+                if type(tmp)==type(arg_lb_ub)==np.ndarray and  tmp.shape == arg_lb_ub.shape:
                     D[oov] += arg_lb_ub
-                except:
+                    # tmp += arg_lb_ub is not used here because tmp can be boundsurf 
+                    # and inplace operations are unimplemented yet
+                else:
                     # may be of different shape, e.g. for a fixed variable
-                    D[oov] = D[oov] + arg_lb_ub
+                    D[oov] = tmp + arg_lb_ub
         
         DefiniteRange = logical_and(DefiniteRange, definiteRange)
-        if type(R) == np.ndarray == type(arg_lb_ub) and R.shape == arg_lb_ub.shape:
+        if arg_lb_ub.__class__ == boundsurf:
+            B.append(arg_lb_ub)
+        elif type(R) == np.ndarray == type(arg_lb_ub) and R.shape == arg_lb_ub.shape:
             R += arg_lb_ub
         else:
             R = R + arg_lb_ub
     #####################
-    
-    if v is None:
-        domain.storedSums[r][-1] = R, DefiniteRange
+    if len(B):
+        R = boundsurf_sum(B, R, DefiniteRange, domain).resolve()[0]
+        D = dict((k, v.resolve()[0] if v.__class__ == boundsurf else v) for k, v in D.items())
+#    if R.__class__ == boundsurf and R.Size() > 15:
+#        R.render(domain)
         
+    if v is None: 
+        D[-1] = R, DefiniteRange
+        
+    domain.storedSums[r] = D
+#    print(R)
+    
     return R, DefiniteRange
 
+#def sum_with_boundsurf(inputs, domain, dtype):
+#    B = []
+#    s = np.array([[0.0], [0.0]])
+#    DefiniteRange = True
+#    for inp in inputs:
+#        arg_lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
+#        if type(arg_lb_ub) != boundsurf:
+#            if type(arg_lb_ub) == np.ndarray and s.shape == arg_lb_ub.shape:
+#                s += arg_lb_ub
+#            else:
+#                s = s + arg_lb_ub
+#        else:
+#            B.append(arg_lb_ub)
+#        DefiniteRange = np.logical_and(DefiniteRange, definiteRange)
+#    if len(B) == 0:
+#        return s, DefiniteRange
+#    return boundsurf_sum(B, s, DefiniteRange, domain)
+
+    
+def boundsurf_sum(B, s, DefiniteRange, domain):
+    L = PythonSum([b.l.c for b in B]) + s[0]
+    U = PythonSum([b.u.c for b in B]) + s[1]
+    
+    Ld = dictSum([b.l.d for b in B])
+    Ud = dictSum([b.u.d for b in B])
+    return boundsurf(surf(Ld, L), surf(Ud, U), DefiniteRange, domain)
 
 def sum_derivative(r_, r0, INP, dep, point, fixedVarsScheduleID, Vars=None, fixedVars = None, useSparse = 'auto'):
     # TODO: handle involvePrevData
