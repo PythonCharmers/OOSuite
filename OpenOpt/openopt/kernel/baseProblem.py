@@ -420,7 +420,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 Keys = set(Tmp.keys()).difference(probDep)
                 for key in Keys:
                     Tmp.pop(key)
-
+                    
+            self.probDep = probDep
             self.x0 = Tmp
             self._categoricalVars = set()
             for key, val in self.x0.items():
@@ -1062,7 +1063,7 @@ def linear_render(f, D, Z):
         return f
     ff = f(Z)
     name, tol, _id = f.name, f.tol, f._id
-    tmp = [v * (val if type(val) != ndarray or val.ndim < 2 else val.flatten()) for v, val in D.items()]
+    tmp = [(v if isscalar(val) and val == 1.0 else v * (val if type(val) != ndarray or val.ndim < 2 else val.flatten())) for v, val in D.items()]
     c = ff if isscalar(ff) or ff.ndim <= 1 else asscalar(ff)
     if c != 0: tmp.append(c)
     f = tmp[0] if len(tmp) == 1 else tmp[0]+tmp[1] if len(tmp) == 2 else fd.sum(tmp)

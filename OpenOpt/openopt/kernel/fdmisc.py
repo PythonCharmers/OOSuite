@@ -113,7 +113,7 @@ def setStartVectorAndTranslators(p):
     from FuncDesigner import oopoint
     startDictData = []
     if fixedVars is not None:
-        for v in fixedVars:
+        for v in p.probDep & p._fixedVars:
             val = startPoint.get(v, 'absent')
             if val == 'absent':
                 p.err('value for fixed variable %s is absent in start point' % v.name)
