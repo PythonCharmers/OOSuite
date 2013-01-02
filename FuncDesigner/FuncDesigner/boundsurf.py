@@ -117,6 +117,8 @@ class boundsurf:
     def copy(self):
         return self
     
+    abs = lambda self: boundsurf_abs(self)
+    
     def __pow__(self, other):
         assert np.isscalar(other) and other == 2, 'unimplemented yet'
         L, U = self.l, self.u
@@ -135,24 +137,15 @@ class boundsurf:
         
         l1, u1 = np.abs(r_l), np.abs(r_u)
         ind = u1 > l1
-        #tmp2 = 2 * abs_max
         tmp2 = 2 * abs_min
         Ld, Ud = L.d, U.d
         dep = set(Ld.keys()) | set(Ud.keys()) 
-        d_new = {}
-        
-        for v in dep:
-            #t = tmp2 * np.where(ind, Ud.get(v, 0), Ld.get(v, 0))
-            t = tmp2 * np.where(ind, Ld.get(v, 0), Ud.get(v, 0))
-            #t[ind_0] = 0.0
-            d_new[v] = t
-            
+        d_new = dict((v, tmp2 * np.where(ind, Ld.get(v, 0), Ud.get(v, 0))) for v in dep)
         L_new = surf(d_new, 0.0)
         _min = L_new.resolve(self.domain, GREATER)
         L_new.c = abs_min**2 - _min
 
-        R = boundsurf(L_new, surf({}, new_u_resolved), 
-        self.definiteRange, self.domain)
+        R = boundsurf(L_new, surf({}, new_u_resolved), self.definiteRange, self.domain)
 
         return R
         
@@ -168,28 +161,51 @@ def boundsurf_mult(b1, b2):
     return r
     
 def boundsurf_abs(b):
-    
+#    print(b.resolve())
     r, definiteRange = b.resolve()
     lf, uf = r
+
     assert lf.ndim <= 1, 'unimplemented yet'
     sz = lf.size
     
     ind_l = lf >= 0#np.where(lf >= 0)[0]
     if np.all(ind_l):
-        return b
+        return b, b.definiteRange
     
     ind_u = uf <= 0#np.where(uf <= 0)[0]
     if np.all(ind_u):
-        return -b
-    l_ind, u_ind = np.where(ind_l), np.where(ind_u)
-    d_l, c_l, d_u, c_u = b.l.d, b.l.c, b.u.d, b.u.c
-    #ind = ~(ind_l | ind_u)
+        return -b, b.definiteRange
+    l_ind, u_ind = np.where(ind_l)[0], np.where(ind_u)[0]
 
-#    Ld = dict((k, f_abs(sz)) for k in set(d_l.keys()) | set(d_u.keys()))
-#    Ud = 
+    d_l, c_l, d_u, c_u = b.l.d, b.l.c, b.u.d, b.u.c
+#    ind = ~(ind_l | ind_u)
+
+    Ld = dict((k, f_abs(b, l_ind, u_ind, sz, k)) for k in set(d_l.keys()) | set(d_u.keys()))
+    c = np.zeros(sz)
+#    c = b.l.c
+#    if np.isscalar(c) or c.size == 1:
+#        c = np.tile(c, sz)
+    l_c = b.l.c
+    if np.isscalar(l_c) or l_c.size == 1:
+        l_c = np.tile(l_c, sz)
+    c[ind_l] = l_c[ind_l]
+    u_c = b.u.c
+    if np.isscalar(u_c) or u_c.size == 1:
+        u_c = np.tile(u_c, sz)
+    c[ind_u] = -u_c[ind_u]
     
-    ind = np.where(np.sign(lf) != np.sign(uf))
+    M = np.max(np.abs(r), axis = 0)
+    R = boundsurf(surf(Ld, c), surf({}, M), b.definiteRange, b.domain)
+    
+    return R, b.definiteRange
+    
 
 def f_abs(b, l_ind, u_ind, sz, k):
     l =  np.zeros(sz)
-    l[l_ind] = b.l.d[k][l_ind]
+    if l_ind.size:
+        tmp = b.l.d[k]
+        l[l_ind] = tmp[l_ind] if type(tmp) == np.ndarray and tmp.size > 1 else tmp
+    if u_ind.size:
+        tmp = -b.u.d[k]
+        l[u_ind] = tmp[u_ind] if type(tmp) == np.ndarray and tmp.size > 1 else tmp
+    return l

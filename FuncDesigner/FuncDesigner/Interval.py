@@ -2,6 +2,7 @@ from numpy import ndarray, asscalar, isscalar, floor, pi, \
 copy as Copy, logical_and, where, asarray, any, atleast_1d, vstack, \
 searchsorted
 import numpy as np
+from boundsurf import boundsurf
 
 try:
     from bottleneck import nanmin, nanmax
@@ -73,7 +74,11 @@ def TrigonometryCriticalPoints(lb_ub):
 
 def ZeroCriticalPointsInterval(inp, func):
     def interval(domain, dtype):
-        lb_ub, definiteRange = inp._interval(domain, dtype)
+        is_abs = func == np.abs
+        allowBoundSurf = is_abs
+        lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = allowBoundSurf)
+        if is_abs and lb_ub.__class__ == boundsurf:
+            return lb_ub.abs()
         lb, ub = lb_ub[0], lb_ub[1]
         ind1, ind2 = lb < 0.0, ub > 0.0
         ind = logical_and(ind1, ind2)

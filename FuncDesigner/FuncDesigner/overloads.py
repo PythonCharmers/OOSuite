@@ -627,7 +627,7 @@ def sum_interval(R0, r, INP, domain, dtype):
             R = boundsurf_sum(B, R+R2, DefiniteRange, domain)#.resolve()[0]
         else:
             R = R + R2
-        if R.__class__ == boundsurf:
+        if R.__class__ == boundsurf:# and R.Size() > 5:
             R = R.resolve()[0]
 
         #R -= domain.storedSums[r][v]
@@ -677,7 +677,10 @@ def sum_interval(R0, r, INP, domain, dtype):
             R = R + arg_lb_ub
     #####################
     if len(B):
-        R = boundsurf_sum(B, R, DefiniteRange, domain).resolve()[0]
+        R = boundsurf_sum(B, R, DefiniteRange, domain)
+
+        if 1 or R.Size() > 5:
+            R = R.resolve()[0]
         D = dict((k, v.resolve()[0] if v.__class__ == boundsurf else v) for k, v in D.items())
 #    if R.__class__ == boundsurf and R.Size() > 15:
 #        R.render(domain)
@@ -686,7 +689,6 @@ def sum_interval(R0, r, INP, domain, dtype):
         D[-1] = R, DefiniteRange
         
     domain.storedSums[r] = D
-#    print(R)
     
     return R, DefiniteRange
 
