@@ -24,6 +24,10 @@ class TSP(MatrixProblem):
         self._init = True
 
     def solve(self, *args, **kw):
+        import FuncDesigner as fd, openopt as oo 
+        # Temporary walkaround, TODO: fix it
+        tmp_oofun_id = fd.oofun._id
+        
         if len(args) > 1:
             self.err('''
             incorrect number of arguments for solve(), 
@@ -48,7 +52,7 @@ class TSP(MatrixProblem):
         isMOP = nCriteria > 1
         mainCr = objective[0][0]
          
-        import FuncDesigner as fd, openopt as oo 
+        
         solverName = solver if type(solver) == str else solver.__name__
         is_interalg = solverName == 'interalg'
         is_glp = solverName == 'sa'
@@ -201,6 +205,9 @@ class TSP(MatrixProblem):
                 r.Edges.append((r.nodes[-2], r.nodes[0], graph[r.nodes[-2]][r.nodes[0]][0]))
             #r.xf = r.xk = r.nodes
             # TODO: Edges
+            
+            # Temporary walkaround, TODO: fix it
+            fd.oofun._id = tmp_oofun_id
             return r
             
         
@@ -243,11 +250,11 @@ class TSP(MatrixProblem):
             From, To = edge
             dictFrom[From].append(i)
             dictTo[To].append(i)
-        
-        
+
         engine = fd.XOR
         
         # number of outcoming edges = 1
+        
         if not interalg_gdp:
             for node, edges_inds in dictFrom.items():
                 # !!!!!!!!!! TODO for interalg_raw_mode: and if all edges have sign similar to goal
@@ -335,7 +342,7 @@ class TSP(MatrixProblem):
         for param in ('start', 'returnToStart'):
             KW.pop(param, None)
         r = p.solve(solver, **KW)
-
+        
         if P != oo.MOP:
             r.ff = p.ff
             if interalg_gdp:
@@ -345,6 +352,8 @@ class TSP(MatrixProblem):
                 SolutionEdges = [(EdgesCoords[i][0], EdgesCoords[i][1], EdgesDescriptors[i]) for i in range(m) if r.xf[x[i]] == 1]
             if len(SolutionEdges) == 0: 
                 r.nodes = r.edges = r.Edges = []
+                # Temporary walkaround, TODO: fix it
+                fd.oofun._id = tmp_oofun_id
                 return r
                 
             S = dict([(elem[0], elem) for elem in SolutionEdges])
@@ -384,6 +393,9 @@ class TSP(MatrixProblem):
                 r.solutions = MOPsolutions([[(EdgesCoords[i][0], EdgesCoords[i][1], EdgesDescriptors[i]) for i in range(m) if Point[x[i]] == 1] for Point in r.solutions])
                 
             r.solutions.values = tmp_v
+            
+        # Temporary walkaround, TODO: fix it
+        fd.oofun._id = tmp_oofun_id
         return r
 
 class MOPsolutions(list):
