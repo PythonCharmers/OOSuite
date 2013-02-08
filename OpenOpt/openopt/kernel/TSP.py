@@ -25,8 +25,6 @@ class TSP(MatrixProblem):
 
     def solve(self, *args, **kw):
         import FuncDesigner as fd, openopt as oo 
-        # Temporary walkaround, TODO: fix it
-        tmp_oofun_id = fd.oofun._id
         
         if len(args) > 1:
             self.err('''
@@ -206,8 +204,6 @@ class TSP(MatrixProblem):
             #r.xf = r.xk = r.nodes
             # TODO: Edges
             
-            # Temporary walkaround, TODO: fix it
-            fd.oofun._id = tmp_oofun_id
             return r
             
         
@@ -352,8 +348,6 @@ class TSP(MatrixProblem):
                 SolutionEdges = [(EdgesCoords[i][0], EdgesCoords[i][1], EdgesDescriptors[i]) for i in range(m) if r.xf[x[i]] == 1]
             if len(SolutionEdges) == 0: 
                 r.nodes = r.edges = r.Edges = []
-                # Temporary walkaround, TODO: fix it
-                fd.oofun._id = tmp_oofun_id
                 return r
                 
             S = dict([(elem[0], elem) for elem in SolutionEdges])
@@ -394,8 +388,6 @@ class TSP(MatrixProblem):
                 
             r.solutions.values = tmp_v
             
-        # Temporary walkaround, TODO: fix it
-        fd.oofun._id = tmp_oofun_id
         return r
 
 class MOPsolutions(list):

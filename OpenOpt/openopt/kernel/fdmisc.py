@@ -146,7 +146,7 @@ def setStartVectorAndTranslators(p):
 
     oovarsIndDict = dict([(oov, (oovar_indexes[i], oovar_indexes[i+1])) for i, oov in enumerate(freeVars)])
 
-    def pointDerivative2array(pointDerivarive, useSparse = 'auto',  func=None, point=None): 
+    def pointDerivative2array(pointDerivative, useSparse = 'auto',  func=None, point=None): 
         
         # useSparse can be True, False, 'auto'
         if not scipyInstalled and useSparse == 'auto':
@@ -154,7 +154,7 @@ def setStartVectorAndTranslators(p):
         if useSparse is True and not scipyInstalled:
             p.err('to handle sparse matrices you should have module scipy installed') 
 
-        if len(pointDerivarive) == 0: 
+        if len(pointDerivative) == 0: 
             if func is not None:
                 funcLen = func(point).size
                 if useSparse is not False:
@@ -164,7 +164,7 @@ def setStartVectorAndTranslators(p):
             else:
                 p.err('unclear error, maybe you have constraint independend on any optimization variables') 
 
-        Items = pointDerivarive.items()
+        Items = pointDerivative.items()
         key, val = Items[0] if type(Items) == list else next(iter(Items))
         
         if isinstance(val, float) or (isinstance(val, ndarray) and val.shape == ()):
@@ -178,18 +178,22 @@ def setStartVectorAndTranslators(p):
         # 1. Calculate number of zero/nonzero elements
         involveSparse = useSparse
         if useSparse == 'auto':
-            nTotal = n * funcLen#sum([prod(elem.shape) for elem in pointDerivarive.values()])
-            nNonZero = sum([(elem.size if isspmatrix(elem) else count_nonzero(elem)) for elem in pointDerivarive.values()])
+            nTotal = n * funcLen#sum([prod(elem.shape) for elem in pointDerivative.values()])
+            nNonZero = sum([(elem.size if isspmatrix(elem) else count_nonzero(elem)) for elem in pointDerivative.values()])
             involveSparse = 4*nNonZero < nTotal and nTotal > 1000
+
+#        tmp_ = list(pointDerivative.keys())
+#        tmp_.sort()
+#        print(tmp_)
 
         if involveSparse:# and newStyle:
             # USE STACK
             r2 = []
-            hasSparse = False
+#            hasSparse = False
  
-            if len(freeVars) > 5 * len(pointDerivarive):
+            if len(freeVars) > 5 * len(pointDerivative):
                 ind_Z = 0
-                derivative_items = list(pointDerivarive.items())
+                derivative_items = list(pointDerivative.items())
                 derivative_items.sort(key=lambda elem: elem[0]._id)
                 for oov, val in derivative_items:
                     ind_start, ind_end = oovarsIndDict[oov]
@@ -206,23 +210,22 @@ def setStartVectorAndTranslators(p):
                 zeros_start_ind = 0
                 zeros_end_ind = 0           
                 for i, var in enumerate(freeVars):
-                    if var in pointDerivarive:#i.e. one of its keys
+                    if var in pointDerivative:#i.e. one of its keys
                         if zeros_end_ind != zeros_start_ind:
                             r2.append(SparseMatrixConstructor((funcLen, zeros_end_ind - zeros_start_ind)))
                             zeros_start_ind = zeros_end_ind
                         
-                        tmp = pointDerivarive[var]
+                        tmp = pointDerivative[var]
                         if isspmatrix(tmp): 
-                            hasSparse = True
+                            pass
+#                            hasSparse = True
                         else:
                             tmp = asarray(tmp) # else bug with scipy sparse hstack
                         if tmp.ndim < 2:
                             tmp = tmp.reshape(funcLen, prod(tmp.shape) // funcLen)
                         r2.append(tmp)
                     else:
-                        zeros_end_ind  += oovar_sizes[i]
-                        hasSparse = True
-                        
+                        zeros_end_ind  += oovar_sizes[i]                        
                 if zeros_end_ind != zeros_start_ind:
                     r2.append(SparseMatrixConstructor((funcLen, zeros_end_ind - zeros_start_ind)))
                     
@@ -236,8 +239,15 @@ def setStartVectorAndTranslators(p):
                 r = DenseMatrixConstructor(n)
             else:
                 r = SparseMatrixConstructor((funcLen, n)) if involveSparse else DenseMatrixConstructor((funcLen, n)) 
-                #r = DenseMatrixConstructor((funcLen, n)) 
-            for key, val in pointDerivarive.items():
+            derivative_items = list(pointDerivative.items())
+            
+            # temporary walkaround for a bug in Python or numpy
+            # TODO: remove it in future
+            derivative_items.sort(key=lambda elem: elem[0])
+            #            derivative_items.sort(key=lambda elem: elem[0]._id)
+            ######################################
+            
+            for key, val in derivative_items:#pointDerivative.items():
                 # TODO: remove indexes, do as above for sparse 
                 indexes = oovarsIndDict[key]
                 if not involveSparse and isspmatrix(val): val = val.A
