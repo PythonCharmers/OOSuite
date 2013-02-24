@@ -100,7 +100,14 @@ def ZeroCriticalPointsInterval(inp, func):
 #    return [tmp]
 
 def nonnegative_interval(inp, func, domain, dtype, F0, shift = 0.0):
-    lb_ub, definiteRange = inp._interval(domain, dtype)
+
+    lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
+    if lb_ub.__class__ == boundsurf:
+        if 1 and func == np.sqrt:
+            return lb_ub ** 0.5, definiteRange
+        else:
+            lb_ub = lb_ub.resolve()[0]
+            
     lb, ub = lb_ub[0], lb_ub[1]
     
     t_min_max = func(lb_ub)
@@ -109,7 +116,7 @@ def nonnegative_interval(inp, func, domain, dtype, F0, shift = 0.0):
     if any(ind):
         t_min_max[0][atleast_1d(logical_and(lb < th, ub >= th))] = F0
         if definiteRange is not False:
-            if definiteRange is True:
+            if type(definiteRange) != np.ndarray:
                 definiteRange = np.empty_like(lb)
                 definiteRange.fill(True)
             definiteRange[ind] = False

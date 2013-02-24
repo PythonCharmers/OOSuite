@@ -570,12 +570,12 @@ def sum_engine(r0, *args):
     return r1 
 
 def sum_interval(R0, r, INP, domain, dtype):
-    if len(INP) < 10:
+    if len(INP) <= 10:
         B = []
         _r = [R0]
         DefiniteRange = True
         for inp in INP:
-            arg_lb_ub, definiteRange = inp._interval(domain, dtype)
+            arg_lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
             DefiniteRange = np.logical_and(DefiniteRange, definiteRange)
             if arg_lb_ub.__class__ == boundsurf:
                 B.append(arg_lb_ub)
@@ -595,7 +595,7 @@ def sum_interval(R0, r, INP, domain, dtype):
         has_infs = not (np.all(np.isfinite(R)) if R.__class__ != boundsurf else R.isfinite())
         
         if has_infs:
-            # TODO: implement allowBoundSurf = True here
+            # !!!!!!!!!!!!!!!!!!!!!!!!!!!!   TODO: implement allowBoundSurf = True here
             R = np.asarray(R0, dtype).copy()
             if domain.isMultiPoint:
                 R = np.tile(R, (1, len(list(domain.values())[0][0])))

@@ -9,6 +9,9 @@ class surf:
         self.c = c # (multiarray of) constant(s)
         #self.Type = Type # False for lower, True for upper
 
+    def value(self, point):
+        return self.c + PythonSum(point[k]*v for k, v in self.d.items())
+
     def resolve(self, domain, cmp):
         r = PythonSum(np.where(cmp(v, 0), domain[k][0], domain[k][1])*v for k, v in self.d.items())
         return r + self.c
@@ -55,7 +58,6 @@ class boundsurf:
     __array_priority__ = 15
     isRendered = False
     def __init__(self, lowersurf, uppersurf, definiteRange, domain):
-        #print('b')
         self.l = lowersurf
         self.u = uppersurf
         self.definiteRange = definiteRange
@@ -120,7 +122,11 @@ class boundsurf:
     abs = lambda self: boundsurf_abs(self)
     
     def __pow__(self, other):
-        assert np.isscalar(other) and other == 2, 'unimplemented yet'
+        # TODO: rework it
+        assert np.isscalar(other) and other in (2, 0.5), 'unimplemented yet'
+        if other == 0.5:
+            return boundsurf_sqrt(self)
+            
         L, U = self.l, self.u
         
         #L.render()
@@ -209,3 +215,37 @@ def f_abs(b, l_ind, u_ind, sz, k):
         tmp = -b.u.d[k]
         l[u_ind] = tmp[u_ind] if type(tmp) == np.ndarray and tmp.size > 1 else tmp
     return l
+
+
+def boundsurf_sqrt(b):
+    L, U = b.l, b.u
+    
+    #L.render()
+    
+    R0, definiteRange = b.resolve()
+    assert R0.shape[0]==2, 'unimplemented yet'
+    
+    r_l, r_u = R0
+    ind_negative = r_l < 0
+    
+    if np.any(ind_negative):
+        r_l[ind_negative] = 0.0
+        if type(definiteRange) == bool or definiteRange.shape != r_l.shape:
+            definiteRange2 = np.empty(r_l.shape, bool)
+            definiteRange2.fill(definiteRange)
+            definiteRange = definiteRange2
+        definiteRange[ind_negative] = False
+    
+    new_u_resolved = np.sqrt(r_u)
+    new_l_resolved = np.sqrt(r_l)
+    
+    
+    tmp2 = 0.5 / new_u_resolved
+    Ud = U.d
+    d_new = dict((v, tmp2 * Ud[v]) for v in Ud)
+    U_new = surf(d_new, 0.0)
+    _max = U_new.resolve(b.domain, LESS)
+    U_new.c = new_u_resolved - _max
+
+    R = boundsurf(surf({}, new_l_resolved), U_new, definiteRange, b.domain)
+    return R
