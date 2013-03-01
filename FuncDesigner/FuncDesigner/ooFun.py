@@ -699,19 +699,27 @@ class oofun:
         r = oofun(lambda x: other/x, self, discrete = self.discrete)
         r.d = lambda x: Diag((- other) / x**2)
         def interval(domain, dtype):
-            arg_lb_ub, definiteRange = self._interval(domain, dtype)
+            arg_lb_ub, definiteRange = self._interval(domain, dtype, allowBoundSurf = True)
+            if arg_lb_ub.__class__ == boundsurf:
+                arg_lb_ub_resolved = arg_lb_ub.resolve()[0]
+                if all(arg_lb_ub_resolved >= 0):
+                    return other * arg_lb_ub ** (-1), definiteRange
+                else:
+                    arg_lb_ub = arg_lb_ub_resolved
             arg_infinum, arg_supremum = arg_lb_ub[0], arg_lb_ub[1]
             if other.size != 1: 
                 raise FuncDesignerException('this case for interval calculations is unimplemented yet')
             r = vstack((other / arg_supremum, other / arg_infinum))
             r1, r2 = amin(r, 0), amax(r, 0)
             ind_zero_minus = logical_and(arg_infinum<0, arg_supremum>=0)
-            r1[atleast_1d(logical_and(ind_zero_minus, other>0))] = -inf
-            r2[atleast_1d(logical_and(ind_zero_minus, other<0))] = inf
-            
+            if any(ind_zero_minus):
+                r1[atleast_1d(logical_and(ind_zero_minus, other>0))] = -inf
+                r2[atleast_1d(logical_and(ind_zero_minus, other<0))] = inf
+                
             ind_zero_plus = logical_and(arg_infinum<=0, arg_supremum>0)
-            r1[atleast_1d(logical_and(ind_zero_plus, other<0))] = -inf
-            r2[atleast_1d(logical_and(ind_zero_plus, other>0))] = inf
+            if any(ind_zero_plus):
+                r1[atleast_1d(logical_and(ind_zero_plus, other<0))] = -inf
+                r2[atleast_1d(logical_and(ind_zero_plus, other>0))] = inf
 
             return vstack((r1, r2)), definiteRange
             
@@ -785,26 +793,29 @@ class oofun:
                 else:
                     other = asarray(other, dtype= type(other))# with same type, mb float128
             elif not isinstance(other, ndarray): 
-                # TODO: fix it wrt int32, int64 etc
-                other = asarray(other, dtype='float' if type(other) == int else type(other)).copy()
+                other = asarray(other, dtype='float' if type(other) in (int, int8, int16, int32, int64) else type(other)).copy()
             
             f = lambda x: asanyarray(x) ** other
             d = lambda x: d_x(x, other)
             input = self
             def interval(domain, dtype):
-#                print('asdf1', other, isscalar(other), other == 2)
-                allowBoundSurf = True if isscalar(other) and other == 2 else False
-#                allowBoundSurf = False
-                lb_ub, definiteRange = self._interval(domain, dtype, allowBoundSurf = allowBoundSurf)
-#                print((lb_ub**2)**2)
-                if allowBoundSurf and lb_ub.__class__ == boundsurf:
-#                    print(((lb_ub**2)**2).resolve())
-                    return lb_ub**2, definiteRange
+                lb_ub, definiteRange = self._interval(domain, dtype, allowBoundSurf = True)
+                if lb_ub.__class__ == boundsurf:
+                    lb_ub_resolved = lb_ub.resolve()[0]
+
+                allowBoundSurf = True if isscalar(other) and other in (2, 0.5) else False
+                if other == -1 and all(lb_ub_resolved >= 0):
+                    allowBoundSurf = True
+                    
+                if lb_ub.__class__ == boundsurf:
+                    if allowBoundSurf:
+                        return lb_ub**other, definiteRange
+                    else:
+                        lb_ub = lb_ub_resolved
+                    
                 Tmp = lb_ub ** other
-                #Tmp = vstack((lb**other, ub**other))
                 
                 t_min, t_max = nanmin(Tmp, 0), nanmax(Tmp, 0)
-                #lb2, ub2 = other._interval(domain, dtype) if isinstance(other, oofun) else other, other # TODO: improve it
                 lb, ub = lb_ub[0], lb_ub[1]
                 ind = lb < 0.0
                 if any(ind):

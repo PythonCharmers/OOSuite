@@ -114,7 +114,9 @@ class boundsurf:
 #            return boundsurf(self.l+other.l, self.u+other.u)
         else:
             assert 0, 'unimplemented yet'
-            
+    
+    __rmul__ = lambda self, other: self.__mul__(other)
+    
     # TODO: rework it if __iadd_, __imul__ etc will be created
     def copy(self):
         return self
@@ -123,36 +125,52 @@ class boundsurf:
     
     def __pow__(self, other):
         # TODO: rework it
-        assert np.isscalar(other) and other in (2, 0.5), 'unimplemented yet'
+        assert np.isscalar(other) and other in (-1, 2, 0.5), 'unimplemented yet'
         if other == 0.5:
             return boundsurf_sqrt(self)
-            
-        L, U = self.l, self.u
         
-        #L.render()
+        L, U = self.l, self.u
         
         R0 = self.resolve()[0]#L.resolve(self.domain, GREATER), U.resolve(self.domain, LESS)
         assert R0.shape[0]==2, 'unimplemented yet'
-        abs_R0 = np.abs(R0)
-        abs_R0.sort(axis=0)
-        abs_min, abs_max = abs_R0
         r_l, r_u = R0
-        ind_0 = np.where(np.sign(r_l) != np.sign(r_u))[0]
-        abs_min[ind_0] = 0.0
-        new_u_resolved = abs_max**2
+
         
-        l1, u1 = np.abs(r_l), np.abs(r_u)
-        ind = u1 > l1
-        tmp2 = 2 * abs_min
-        Ld, Ud = L.d, U.d
-        dep = set(Ld.keys()) | set(Ud.keys()) 
-        d_new = dict((v, tmp2 * np.where(ind, Ld.get(v, 0), Ud.get(v, 0))) for v in dep)
-        L_new = surf(d_new, 0.0)
-        _min = L_new.resolve(self.domain, GREATER)
-        L_new.c = abs_min**2 - _min
+        if other == 2:
+            abs_R0 = np.abs(R0)
+            abs_R0.sort(axis=0)
+            abs_min, abs_max = abs_R0
+            ind_0 = np.where(np.sign(r_l) != np.sign(r_u))[0]
+            abs_min[ind_0] = 0.0
+            new_u_resolved = abs_max**2
+            
+            l1, u1 = np.abs(r_l), np.abs(r_u)
+            ind = u1 > l1
+            tmp2 = 2 * abs_min
+            Ld, Ud = L.d, U.d
+            dep = set(Ld.keys()) | set(Ud.keys()) 
+            d_new = dict((v, tmp2 * np.where(ind, Ld.get(v, 0), Ud.get(v, 0))) for v in dep)
+            L_new = surf(d_new, 0.0)
+            _min = L_new.resolve(self.domain, GREATER)
+            L_new.c = abs_min**2 - _min
 
-        R = boundsurf(L_new, surf({}, new_u_resolved), self.definiteRange, self.domain)
+            R = boundsurf(L_new, surf({}, new_u_resolved), self.definiteRange, self.domain)
+        else:
+            assert other == -1, 'unimplemented yet'
+            assert np.all(R0>=0), 'bug in FD kernel (unimplemented yet)'
+            R2 = 1.0 / R0
+            #R2.sort(axis=0)
+            #new_l_resolved, new_u_resolved = R2
+            new_u_resolved, new_l_resolved = R2 # assuming R >= 0
+            
+            tmp2 = -1.0 / r_u ** 2
+            Ld = L.d
+            d_new = dict((v, tmp2 * Ld[v]) for v in Ld)
+            L_new = surf(d_new, 0.0)
+            _min = L_new.resolve(self.domain, GREATER)
+            L_new.c = new_l_resolved - _min
 
+            R = boundsurf(L_new, surf({}, new_u_resolved), self.definiteRange, self.domain)
         return R
         
 
@@ -219,12 +237,8 @@ def f_abs(b, l_ind, u_ind, sz, k):
 
 def boundsurf_sqrt(b):
     L, U = b.l, b.u
-    
-    #L.render()
-    
     R0, definiteRange = b.resolve()
     assert R0.shape[0]==2, 'unimplemented yet'
-    
     r_l, r_u = R0
     ind_negative = r_l < 0
     
@@ -239,8 +253,8 @@ def boundsurf_sqrt(b):
     new_u_resolved = np.sqrt(r_u)
     new_l_resolved = np.sqrt(r_l)
     
-    
     tmp2 = 0.5 / new_u_resolved
+    tmp2[new_u_resolved == 0.0] = 0.0
     Ud = U.d
     d_new = dict((v, tmp2 * Ud[v]) for v in Ud)
     U_new = surf(d_new, 0.0)
@@ -249,3 +263,4 @@ def boundsurf_sqrt(b):
 
     R = boundsurf(surf({}, new_l_resolved), U_new, definiteRange, b.domain)
     return R
+
