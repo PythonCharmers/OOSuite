@@ -93,7 +93,7 @@ class boundsurf:
         else:
             assert 0, 'unimplemented yet'
             
-    __radd__ = lambda self, other: self.__add__(other)
+    __radd__ = __add__
     
     def __neg__(self):
         l, u = self.l, self.u
@@ -115,10 +115,14 @@ class boundsurf:
         else:
             assert 0, 'unimplemented yet'
     
-    __rmul__ = lambda self, other: self.__mul__(other)
+    __rmul__ = __mul__
     
     # TODO: rework it if __iadd_, __imul__ etc will be created
     def copy(self):
+        assert '__iadd__' not in self.__dict__
+        assert '__imul__' not in self.__dict__
+        assert '__idiv__' not in self.__dict__
+        assert '__isub__' not in self.__dict__
         return self
     
     abs = lambda self: boundsurf_abs(self)
@@ -157,7 +161,7 @@ class boundsurf:
             R = boundsurf(L_new, surf({}, new_u_resolved), self.definiteRange, self.domain)
         else:
             assert other == -1, 'unimplemented yet'
-            assert np.all(R0>=0), 'bug in FD kernel (unimplemented yet)'
+            assert np.all(R0>0), 'bug in FD kernel (unimplemented yet)'
             R2 = 1.0 / R0
             #R2.sort(axis=0)
             #new_l_resolved, new_u_resolved = R2

@@ -566,7 +566,7 @@ class oofun:
         r.vectorized = True
         return r
     
-    __radd__ = lambda self, other: self.__add__(other)
+    __radd__ = __add__
     
     # overload "-a"
     def __neg__(self): 
@@ -769,7 +769,7 @@ class oofun:
         r._prod_elements = [self, other]
         return r
 
-    __rmul__ = lambda self, other: self.__mul__(other)
+    __rmul__ = __mul__
 
     def __pow__(self, other):
         if isinstance(other, OOArray):#if isinstance(other, (OOArray, Stochastic)):
@@ -804,7 +804,7 @@ class oofun:
                     lb_ub_resolved = lb_ub.resolve()[0]
 
                 allowBoundSurf = True if isscalar(other) and other in (2, 0.5) else False
-                if other == -1 and all(lb_ub_resolved >= 0):
+                if other == -1 and all(lb_ub_resolved > 0):
                     allowBoundSurf = True
                     
                 if lb_ub.__class__ == boundsurf:

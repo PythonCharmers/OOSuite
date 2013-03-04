@@ -14,14 +14,14 @@ else:
 class multiarray(MultiArray):
     __array_priority__ = 5
     __add__ = lambda self, other: multiarray_op(self, other, operator.add)
-    __radd__ = lambda self, other: self.__add__(other)
+    __radd__ = __add__
     
     __sub__ = lambda self, other: multiarray_op(self, other, operator.sub)
     __rsub__ = lambda self, other: multiarray_op(-self, other, operator.add)
     
-    
     __mul__ = lambda self, other: multiarray_op(self, other, operator.mul)
-    __rmul__ = lambda self, other: self.__mul__(other)
+    __rmul__ = __mul__
+
     __div__ = lambda self, other: multiarray_op(self, other, div)
     __rdiv__ = lambda self, other: multiarray_op(other, self, div)
     

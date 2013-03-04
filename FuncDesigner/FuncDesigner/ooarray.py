@@ -173,12 +173,14 @@ class ooarray(OOArray):
             r = asscalar(r)
         return r
 
-    # TODO: check why it doesn't work with oofuns
-    def __radd__(self, other):
-        return self + other
-        
-    def __rmul__(self, other):
-        return self * other
+#    # TODO: check why it doesn't work with oofuns
+#    def __radd__(self, other):
+#        return self + other
+#        
+#    def __rmul__(self, other):
+#        return self * other
+    __radd__ = __add__
+    __rmul__ = __mul__
 
     # TODO : fix it
 #    def __rdiv__(self, other):
