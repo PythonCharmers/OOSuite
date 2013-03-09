@@ -169,7 +169,7 @@ class boundsurf:
             
             tmp2 = -1.0 / r_u ** 2
             Ld = L.d
-            d_new = dict((v, tmp2 * Ld[v]) for v in Ld)
+            d_new = dict((v, tmp2 * val) for v, val in Ld.items())
             L_new = surf(d_new, 0.0)
             _min = L_new.resolve(self.domain, GREATER)
             L_new.c = new_l_resolved - _min
@@ -260,7 +260,7 @@ def boundsurf_sqrt(b):
     tmp2 = 0.5 / new_u_resolved
     tmp2[new_u_resolved == 0.0] = 0.0
     Ud = U.d
-    d_new = dict((v, tmp2 * Ud[v]) for v in Ud)
+    d_new = dict((v, tmp2 * val) for v, val in Ud.items())
     U_new = surf(d_new, 0.0)
     _max = U_new.resolve(b.domain, LESS)
     U_new.c = new_u_resolved - _max

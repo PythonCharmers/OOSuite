@@ -4,6 +4,8 @@ from numpy import inf, asfarray, copy, all, any, atleast_2d, zeros, dot, asarray
 ones, ndarray, where, array, nan, vstack, eye, array_equal, isscalar, log, hstack, sum as npSum, prod, nonzero,\
 isnan, asscalar, zeros_like, ones_like, amin, amax, logical_and, logical_or, isinf, logical_not, logical_xor, flipud, \
 tile, float64, searchsorted, int8, int16, int32, int64, isfinite, log2, string_, asanyarray, bool_
+from operator import le as LESS,  gt as GREATER
+
 #from logic import AND
 #from traceback import extract_stack 
 try:
@@ -18,7 +20,7 @@ from FuncDesigner.multiarray import multiarray
 from Interval import Interval, adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain
 import inspect
 from baseClasses import OOArray, Stochastic
-from boundsurf import boundsurf
+from boundsurf import boundsurf, surf
 
 Copy = lambda arg: asscalar(arg) if type(arg)==ndarray and arg.size == 1 else arg.copy() if hasattr(arg, 'copy') else copy(arg)
 Len = lambda x: 1 if isscalar(x) else x.size if type(x)==ndarray else x.values.size if isinstance(x, Stochastic) else len(x)
@@ -86,6 +88,8 @@ class oofun:
     same = 0
     same_d = 0
     evals_d  = 0
+    
+    engine_convexity = nan # nan for undefined, 0 for linear, +1 for convex, -1 for concave
 
     # finite-difference aproximation step
     diffInt = 1.5e-8
@@ -112,8 +116,6 @@ class oofun:
     _d_key_prev = None
     _d_val_prev = None
     __array_priority__ = 15# set it greater than 1 to prevent invoking numpy array __mul__ etc
-    
-    hasDefiniteRange = True
     
     pWarn = lambda self, msg: pWarn(msg)
     
@@ -200,28 +202,61 @@ class oofun:
     
     def _interval_(self, domain, dtype):
         criticalPointsFunc = self.criticalPoints
-        if len(self.input) == 1 and criticalPointsFunc is not None:
-            arg_lb_ub, definiteRange = self.input[0]._interval(domain, dtype)
-            arg_infinum, arg_supremum = arg_lb_ub[0], arg_lb_ub[1]
-            if (not isscalar(arg_infinum) and arg_infinum.size > 1) and not self.vectorized:
-                raise FuncDesignerException('not implemented for vectorized oovars yet')
-            tmp = [arg_lb_ub]
-            if criticalPointsFunc is not False:
-                tmp += criticalPointsFunc(arg_lb_ub)
-            Tmp = self.fun(vstack(tmp))
-            
-            if self.getDefiniteRange is not None:
-                definiteRange = logical_and(definiteRange, self.getDefiniteRange(arg_infinum, arg_supremum))
-            
-            if not self.hasDefiniteRange:
-                # TODO: rework it as matrix operations
-                definiteRange = False #logical_and(definiteRange, a)
-
-            #indDefinite = all(isfinite)
-            #Tmp = self.fun(array(tmp))
-            return vstack((nanmin(Tmp, 0), nanmax(Tmp, 0))), definiteRange
-        else:
+        if criticalPointsFunc is None:
             raise FuncDesignerException('interval calculations are unimplemented for the oofun (%s) yet' % self.name)
+        
+        arg_lb_ub, definiteRange = self.input[0]._interval(domain, dtype, allowBoundSurf = True)
+        if arg_lb_ub.__class__ == boundsurf:
+            engine_convexity = self.engine_convexity
+            if criticalPointsFunc is False and engine_convexity is not nan:
+                L, U = arg_lb_ub.l, arg_lb_ub.u
+                R0 = arg_lb_ub.resolve()[0]
+                assert R0.shape[0]==2, 'unimplemented yet'
+                r_l, r_u = R0
+                
+                R2 = self.fun(R0)
+                
+                # TODO: implement check for monotone fun (engine) and omit sorting for the case
+                R2.sort(axis=0)
+                
+                new_l_resolved, new_u_resolved = R2
+                if engine_convexity == 1:
+                    tmp2 = self.d(r_l.view(multiarray)).view(ndarray)
+                    Ud = U.d
+                    d_new = dict((v, tmp2 * val) for v, val in Ud.items())
+                    U_new = surf(d_new, 0.0)
+                    _max = U_new.resolve(domain, LESS)
+                    U_new.c = new_u_resolved - _max
+                    R = boundsurf(surf({}, new_l_resolved), U_new, definiteRange, domain)
+                    return R, definiteRange
+                elif engine_convexity == -1:
+                    tmp2 = self.d(r_u.view(multiarray)).view(ndarray)
+                    Ld = L.d
+                    d_new = dict((v, tmp2 * val) for v, val in Ld.items())
+                    L_new = surf(d_new, 0.0)
+                    _min = L_new.resolve(domain, GREATER)
+                    L_new.c = new_l_resolved - _min
+                    R = boundsurf(L_new, surf({}, new_u_resolved), definiteRange, domain)
+                    return R, definiteRange
+                else:
+                    # linear oofuns with engine_convexity = 0 calculate their intervals in other funcs
+                    raise FuncDesignerException('bug in FD kernel')
+            else:
+                arg_lb_ub = arg_lb_ub.resolve()[0]
+                
+        arg_infinum, arg_supremum = arg_lb_ub[0], arg_lb_ub[1]
+        if (not isscalar(arg_infinum) and arg_infinum.size > 1) and not self.vectorized:
+            raise FuncDesignerException('not implemented for vectorized oovars yet')
+        tmp = [arg_lb_ub]
+        if criticalPointsFunc is not False:
+            tmp += criticalPointsFunc(arg_lb_ub)
+        Tmp = self.fun(vstack(tmp))
+        
+        if self.getDefiniteRange is not None:
+            definiteRange = logical_and(definiteRange, self.getDefiniteRange(arg_infinum, arg_supremum))
+
+        return vstack((nanmin(Tmp, 0), nanmax(Tmp, 0))), definiteRange
+        
     
     def interval(self, domain, dtype = float, resetStoredIntervals = True):
         if type(domain) != ooPoint:
@@ -250,27 +285,16 @@ class oofun:
         
         if r is None:
             # TODO: rework it
-            r = self._interval_(domain, dtype)
-#            if allowBoundSurf:
-#                try:
-#                    r = self._interval_(domain, dtype, allowBoundSurf=allowBoundSurf)
-#                except:
-#                    r = self._interval_(domain, dtype)
-#            else:
-#                r = self._interval_(domain, dtype)
-                
+            r = self._interval_(domain, dtype)                
             if domain.useSave:
                 domain.storedIntervals[self] = r 
             if v is not None and self._usedIn > 1:
                 domain.localStoredIntervals[self] = r
         if r[0].__class__ == boundsurf: # TODO: replace it by type(r[0]) after dropping Python2 support
             if allowBoundSurf:
-#                print('/', r[0])
                 return r[0], r[1]
             else:
-#                print('!', r[0].resolve(domain)[0])
                 return r[0].resolve()
-#        print('>', r[0])
         return r
         #return r if allowBoundSurf or type(r) != boundsurf else r.resolve()
             
@@ -483,18 +507,7 @@ class oofun:
             if 'func_code' in dir(frame) and 'func_code' in dir(npSum) and frame.f_code is npSum.func_code:
                 pWarn('''
                 seems like you use numpy.sum() on FuncDesigner object(s), 
-                using FuncDesigner.sum() instead is highly recommended''')
-#
-##            elif frame.f_code is PythonSum.func_code:
-##                print("python sum!") 
-#        
-##
-##        for S in stk:
-##            if not S[0].endswith('ooFun.py') and not S[0].endswith('overloads.py') and \
-##            S[2] == '<module>' and S[3] is not None and 'sum(' in S[3]:
-##                pWarn('''
-##                seems like you use Python sum() on FuncDesigner object(s), 
-##                using FuncDesigner.sum() instead is highly recommended''')                
+                using FuncDesigner.sum() instead is highly recommended''')              
         
         if not isinstance(other, (oofun, list, ndarray, tuple)) and not isscalar(other):
             raise FuncDesignerException('operation oofun_add is not implemented for the type ' + str(type(other)))

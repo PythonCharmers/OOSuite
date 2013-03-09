@@ -336,7 +336,8 @@ def exp(inp):
     if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(exp(inp.values), inp.probabilities.copy())._update(inp)      
     if not isinstance(inp, oofun): return np.exp(inp)
-    return oofun(st_exp, inp, d = lambda x: Diag(np.exp(x)), vectorized = True, criticalPoints = False)
+    return oofun(st_exp, inp, d = lambda x: Diag(np.exp(x)), vectorized = True, 
+    criticalPoints = False, engine_convexity = 1)
 
 st_sqrt = (lambda x: \
 distribution.stochasticDistribution(sqrt(x.values), x.probabilities.copy())._update(x) \
@@ -908,8 +909,6 @@ def norm(*args, **kwargs):
     if len(kwargs) or len(args) > 1:
         return np.linalg.norm(*args, **kwargs)
     r = sqrt(sum(args[0]**2),  attachConstraints=False)
-    if isinstance(r, oofun):
-        r.hasDefiniteRange=True
     return r
 
 __all__ += ['sum', 'prod', 'norm']
