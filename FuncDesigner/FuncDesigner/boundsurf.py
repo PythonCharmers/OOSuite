@@ -69,7 +69,9 @@ class boundsurf:
     def resolve(self):
         l = self.l.resolve(self.domain, GREATER)
         u = self.u.resolve(self.domain, LESS)
-        return np.vstack((l, u)), self.definiteRange
+        r = np.vstack((l, u))
+        assert r.shape[0] == 2, 'bug in FD kernel'
+        return r, self.definiteRange
     
     def render(self):
         if self.isRendered:

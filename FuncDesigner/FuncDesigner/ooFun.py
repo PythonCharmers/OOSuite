@@ -228,7 +228,7 @@ class oofun:
                     new_l_resolved, new_u_resolved = R2
                 
                 if engine_convexity == -1:
-                    tmp2 = self.d(r_l.view(multiarray)).view(ndarray)
+                    tmp2 = self.d(r_l.view(multiarray)).view(ndarray).flatten()
                     Ud = U.d
                     d_new = dict((v, tmp2 * val) for v, val in Ud.items())
                     U_new = surf(d_new, 0.0)
@@ -237,7 +237,7 @@ class oofun:
                     R = boundsurf(surf({}, new_l_resolved), U_new, definiteRange, domain)
                     return R, definiteRange
                 elif engine_convexity == 1:
-                    tmp2 = self.d(r_u.view(multiarray)).view(ndarray)
+                    tmp2 = self.d(r_u.view(multiarray)).view(ndarray).flatten()
                     Ld = L.d
                     d_new = dict((v, tmp2 * val) for v, val in Ld.items())
                     L_new = surf(d_new, 0.0)

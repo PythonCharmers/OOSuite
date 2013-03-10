@@ -9,6 +9,7 @@ from Interval import TrigonometryCriticalPoints, nonnegative_interval, ZeroCriti
 from numpy import atleast_1d, logical_and
 from FuncDesigner.multiarray import multiarray
 from boundsurf import boundsurf, surf
+from operator import le as LESS
 
 try:
     from scipy.sparse import isspmatrix, lil_matrix as Zeros
@@ -337,7 +338,7 @@ def exp(inp):
         return distribution.stochasticDistribution(exp(inp.values), inp.probabilities.copy())._update(inp)      
     if not isinstance(inp, oofun): return np.exp(inp)
     return oofun(st_exp, inp, d = lambda x: Diag(np.exp(x)), vectorized = True, 
-    criticalPoints = False, engine_convexity = 1)
+    criticalPoints = False, engine_convexity = np.nan, engine_monotonity = 1)
 
 st_sqrt = (lambda x: \
 distribution.stochasticDistribution(sqrt(x.values), x.probabilities.copy())._update(x) \
@@ -385,24 +386,44 @@ def abs(inp):
 
 __all__ += ['abs']
 
-def log_interval(logfunc, inp):
+def log_interval(logfunc, derivative, inp):
     def interval(domain, dtype):
-        lb_ub, definiteRange = inp._interval(domain, dtype)
-        lb, ub = lb_ub[0], lb_ub[1]
+        lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
+        isBoundSurf = lb_ub.__class__ == boundsurf
+        if isBoundSurf:
+            lb_ub_resolved = lb_ub.resolve()[0]
+            lb, ub = lb_ub_resolved[0], lb_ub_resolved[1]
+        else:
+            lb, ub = lb_ub[0], lb_ub[1]
+        
         t_min, t_max = atleast_1d(logfunc(lb)), atleast_1d(logfunc(ub))
         
         ind = lb < 0
         if np.any(ind):
-            ind2 = ub>0
+            ind2 = ub>=0
             t_min[atleast_1d(logical_and(ind, ind2))] = -np.inf
             definiteRange = False
-        ind = atleast_1d(ub == 0)
+        ind = atleast_1d(ub < 0)
         if np.any(ind):
             t_max[ind] = np.nan
             t_min[ind] = np.nan
             definiteRange = False
-        #print definiteRange
         # TODO: rework definiteRange with matrix operations
+        
+        if 1 and isBoundSurf and np.all(lb > 0):
+            U = lb_ub.u
+            r_u = ub
+            new_l_resolved = t_min
+            new_u_resolved = t_max
+            
+            tmp2 = derivative(r_u.view(multiarray)).view(np.ndarray).flatten()
+            Ud = U.d
+            d_new = dict((v, tmp2 * val) for v, val in Ud.items())
+            U_new = surf(d_new, 0.0)
+            _max = U_new.resolve(domain, LESS)
+            U_new.c = new_u_resolved - _max
+            R = boundsurf(surf({}, new_l_resolved), U_new, definiteRange, domain)
+            return R, definiteRange
         
         return np.vstack((t_min, t_max)), definiteRange
     return interval
@@ -421,7 +442,9 @@ def log(inp):
     if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(log(inp.values), inp.probabilities.copy())._update(inp)      
     if not isinstance(inp, oofun): return np.log(inp)
-    r = oofun(st_log, inp, d = lambda x: Diag(1.0/x), vectorized = True, _interval_ = log_interval(np.log, inp))
+    d = lambda x: Diag(1.0/x)
+    r = oofun(st_log, inp, d = d, vectorized = True, 
+              _interval_ = log_interval(np.log, d, inp), engine_monotonity = 1, engine_convexity = -1)
     r.attach((inp>1e-300)('log_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
 
@@ -440,7 +463,9 @@ def log10(inp):
     if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(log10(inp.values), inp.probabilities.copy())._update(inp)              
     if not isinstance(inp, oofun): return np.log10(inp)
-    r = oofun(st_log10, inp, d = lambda x: Diag(INV_LOG_10 / x), vectorized = True, _interval_ = log_interval(np.log10, inp))
+    d = lambda x: Diag(INV_LOG_10 / x)
+    r = oofun(st_log10, inp, d = d, vectorized = True, 
+              _interval_ = log_interval(np.log10, d, inp), engine_monotonity = 1, engine_convexity = -1)
     r.attach((inp>1e-300)('log10_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
 
@@ -459,7 +484,9 @@ def log2(inp):
     if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(log2(inp.values), inp.probabilities.copy())._update(inp)       
     if not isinstance(inp, oofun): return np.log2(inp)
-    r = oofun(st_log2, inp, d = lambda x: Diag(INV_LOG_2/x), vectorized = True, _interval_ = log_interval(np.log2, inp))
+    d = lambda x: Diag(INV_LOG_2/x)
+    r = oofun(st_log2, inp, d = d, vectorized = True, 
+              _interval_ = log_interval(np.log2, inp), engine_monotonity = 1, engine_convexity = -1)
     r.attach((inp>1e-300)('log2_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
 
