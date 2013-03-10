@@ -90,6 +90,7 @@ class oofun:
     evals_d  = 0
     
     engine_convexity = nan # nan for undefined, 0 for linear, +1 for convex, -1 for concave
+    engine_monotonity = nan
 
     # finite-difference aproximation step
     diffInt = 1.5e-8
@@ -217,10 +218,16 @@ class oofun:
                 R2 = self.fun(R0)
                 
                 # TODO: implement check for monotone fun (engine) and omit sorting for the case
-                R2.sort(axis=0)
+                engine_monotonity = self.engine_monotonity
+                if engine_monotonity == 1:
+                    new_l_resolved, new_u_resolved = R2
+                elif engine_monotonity == -1:
+                    new_u_resolved, new_l_resolved = R2
+                else:
+                    R2.sort(axis=0)
+                    new_l_resolved, new_u_resolved = R2
                 
-                new_l_resolved, new_u_resolved = R2
-                if engine_convexity == 1:
+                if engine_convexity == -1:
                     tmp2 = self.d(r_l.view(multiarray)).view(ndarray)
                     Ud = U.d
                     d_new = dict((v, tmp2 * val) for v, val in Ud.items())
@@ -229,7 +236,7 @@ class oofun:
                     U_new.c = new_u_resolved - _max
                     R = boundsurf(surf({}, new_l_resolved), U_new, definiteRange, domain)
                     return R, definiteRange
-                elif engine_convexity == -1:
+                elif engine_convexity == 1:
                     tmp2 = self.d(r_u.view(multiarray)).view(ndarray)
                     Ld = L.d
                     d_new = dict((v, tmp2 * val) for v, val in Ld.items())
