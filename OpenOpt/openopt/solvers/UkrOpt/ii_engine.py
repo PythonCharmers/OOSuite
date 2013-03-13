@@ -1,6 +1,6 @@
 from interalgLLR import *
 from numpy import inf, prod, all, sum
-
+from FuncDesigner.boundsurf import boundsurf
 
 def r14IP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, CBKPMV, g, nNodes,  \
          frc, fTol, Solutions, varTols, _in, dataType, \
@@ -13,7 +13,19 @@ def r14IP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, CBKPMV, g, nNode
     if 1:
         ip = func10(y, e, vv)
         ip.dictOfFixedFuncs = p.dictOfFixedFuncs
-        o, a, definiteRange = func8(ip, asdf1, dataType)
+        # prev
+        #o, a, definiteRange = func8(ip, asdf1, dataType)
+        # new
+        tmp = asdf1.interval(ip, allowBoundSurf = True)
+#        print(tmp.__class__)
+        if tmp.__class__ == boundsurf:
+#            print('b')
+            #adjustr4WithDiscreteVariables(wr4, p)
+            cs = dict([(v, asarray(0.5*(val[0] + val[1]), dataType)) for v, val in ip.items()])
+            o, a = tmp.values(cs)
+            definiteRange = tmp.definiteRange
+        else:
+            o, a, definiteRange = tmp.lb, tmp.ub, tmp.definiteRange
     else:
         vv = p._freeVarsList
         o, a, definiteRange = func82(y, e, vv, asdf1, dataType, p)

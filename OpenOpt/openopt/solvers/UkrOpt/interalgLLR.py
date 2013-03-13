@@ -22,7 +22,6 @@ except ImportError:
 def func82(y, e, vv, f, dataType, p, Th = None):
     domain = oopoint([(v, (y[:, i], e[:, i])) for i, v in enumerate(vv)], skipArrayCast=True, isMultiPoint=True)
     domain.dictOfFixedFuncs = p.dictOfFixedFuncs
-    #print(Th)
     r, r0 = f.iqg(domain, dataType, UB = Th)
     o_l, o_u, a_l, a_u = [], [], [], []
     definiteRange = r0.definiteRange
