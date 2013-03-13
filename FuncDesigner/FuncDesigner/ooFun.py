@@ -207,6 +207,7 @@ class oofun:
             raise FuncDesignerException('interval calculations are unimplemented for the oofun (%s) yet' % self.name)
         
         arg_lb_ub, definiteRange = self.input[0]._interval(domain, dtype, allowBoundSurf = True)
+        
         if arg_lb_ub.__class__ == boundsurf:
             engine_convexity = self.engine_convexity
             if criticalPointsFunc is False and engine_convexity is not nan:
@@ -228,7 +229,7 @@ class oofun:
                     new_l_resolved, new_u_resolved = R2
                 
                 if engine_convexity == -1:
-                    tmp2 = self.d(r_l.view(multiarray)).view(ndarray).flatten()
+                    tmp2 = self.d(r_u.view(multiarray)).view(ndarray).flatten()
                     Ud = U.d
                     d_new = dict((v, tmp2 * val) for v, val in Ud.items())
                     U_new = surf(d_new, 0.0)
@@ -237,7 +238,7 @@ class oofun:
                     R = boundsurf(surf({}, new_l_resolved), U_new, definiteRange, domain)
                     return R, definiteRange
                 elif engine_convexity == 1:
-                    tmp2 = self.d(r_u.view(multiarray)).view(ndarray).flatten()
+                    tmp2 = self.d(r_l.view(multiarray)).view(ndarray).flatten()
                     Ld = L.d
                     d_new = dict((v, tmp2 * val) for v, val in Ld.items())
                     L_new = surf(d_new, 0.0)
@@ -265,16 +266,18 @@ class oofun:
         return vstack((nanmin(Tmp, 0), nanmax(Tmp, 0))), definiteRange
         
     
-    def interval(self, domain, dtype = float, resetStoredIntervals = True):
+    def interval(self, domain, dtype = float, resetStoredIntervals = True, allowBoundSurf = False):
         if type(domain) != ooPoint:
             domain = ooPoint(domain, skipArrayCast = True)
-        lb_ub, definiteRange = self._interval(domain, dtype) #if type(domain) != ooPoint else self._interval2(domain, dtype)
+        lb_ub, definiteRange = self._interval(domain, dtype, allowBoundSurf = allowBoundSurf) 
         
         # TODO: MB GET RID OF IT?
         if resetStoredIntervals:
             domain.storedIntervals = {}
-        
-        return Interval(lb_ub[0], lb_ub[1], definiteRange)
+        if lb_ub.__class__ == ndarray:
+            return Interval(lb_ub[0], lb_ub[1], definiteRange)
+        else: # boundsurf
+            return lb_ub
     
     def _interval(self, domain, dtype, allowBoundSurf = False):
         tmp = domain.dictOfFixedFuncs.get(self, None)

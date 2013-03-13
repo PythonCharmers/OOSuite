@@ -338,7 +338,7 @@ def exp(inp):
         return distribution.stochasticDistribution(exp(inp.values), inp.probabilities.copy())._update(inp)      
     if not isinstance(inp, oofun): return np.exp(inp)
     return oofun(st_exp, inp, d = lambda x: Diag(np.exp(x)), vectorized = True, 
-    criticalPoints = False, engine_convexity = np.nan, engine_monotonity = 1)
+    criticalPoints = False, engine_convexity = 1, engine_monotonity = 1)
 
 st_sqrt = (lambda x: \
 distribution.stochasticDistribution(sqrt(x.values), x.probabilities.copy())._update(x) \

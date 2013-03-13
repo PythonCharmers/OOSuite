@@ -9,12 +9,10 @@ class surf:
         self.c = c # (multiarray of) constant(s)
         #self.Type = Type # False for lower, True for upper
 
-    def value(self, point):
-        return self.c + PythonSum(point[k]*v for k, v in self.d.items())
+    value = lambda self, point: self.c + PythonSum(point[k]*v for k, v in self.d.items())
 
-    def resolve(self, domain, cmp):
-        r = PythonSum(np.where(cmp(v, 0), domain[k][0], domain[k][1])*v for k, v in self.d.items())
-        return r + self.c
+    resolve = lambda self, domain, cmp: \
+    self.c + PythonSum(np.where(cmp(v, 0), domain[k][0], domain[k][1])*v for k, v in self.d.items())
     
     def render(self, domain, cmp):
         self.rendered = dict([(k, np.where(cmp(v, 0), domain[k][0], domain[k][1])*v) for k, v in self.d.items()])
@@ -45,7 +43,7 @@ class surf:
         else:
             assert 0, 'unimplemented yet'
             
-    __rmul__ = lambda self, other: self.__mul__(other)
+    __rmul__ = __mul__
             
 #    def __getattr__(self, attr):
 #        if attr == 'resolve_index':
@@ -63,8 +61,7 @@ class boundsurf:
         self.definiteRange = definiteRange
         self.domain = domain
         
-    def Size(self):
-        return max((len(self.l.d), len(self.u.d), 1))
+    Size = lambda self: max((len(self.l.d), len(self.u.d), 1))
         
     def resolve(self):
         l = self.l.resolve(self.domain, GREATER)
@@ -80,9 +77,10 @@ class boundsurf:
         self.u.render(self, self.domain, LESS)
         self.isRendered = True
     
-    def isfinite(self):
-        return np.all(np.isfinite(self.l.c)) and np.all(np.isfinite(self.u.c))
-        
+    values = lambda self, point: (self.l.value(point), self.u.value(point))
+    
+    isfinite = lambda self: np.all(np.isfinite(self.l.c)) and np.all(np.isfinite(self.u.c))
+    
     # TODO: handling fd.sum()
     def __add__(self, other):
         if np.isscalar(other) or (type(other) == np.ndarray and other.size == 1):
@@ -104,7 +102,7 @@ class boundsurf:
         return boundsurf(L, U, self.definiteRange, self.domain)
     
     # TODO: mb rework it
-    __sub__ = lambda self, other: self + (-other)
+    __sub__ = lambda self, other: self.__add__(-other)
         
     def __mul__(self, other):
         if np.isscalar(other) or (type(other) == np.ndarray and other.size == 1):
@@ -170,8 +168,8 @@ class boundsurf:
             new_u_resolved, new_l_resolved = R2 # assuming R >= 0
             
             tmp2 = -1.0 / r_u ** 2
-            Ld = L.d
-            d_new = dict((v, tmp2 * val) for v, val in Ld.items())
+            Ud = U.d
+            d_new = dict((v, tmp2 * val) for v, val in Ud.items())
             L_new = surf(d_new, 0.0)
             _min = L_new.resolve(self.domain, GREATER)
             L_new.c = new_l_resolved - _min
@@ -191,30 +189,26 @@ def boundsurf_mult(b1, b2):
     return r
     
 def boundsurf_abs(b):
-#    print(b.resolve())
     r, definiteRange = b.resolve()
     lf, uf = r
 
     assert lf.ndim <= 1, 'unimplemented yet'
     sz = lf.size
     
-    ind_l = lf >= 0#np.where(lf >= 0)[0]
+    ind_l = lf >= 0
     if np.all(ind_l):
         return b, b.definiteRange
     
-    ind_u = uf <= 0#np.where(uf <= 0)[0]
+    ind_u = uf <= 0
     if np.all(ind_u):
         return -b, b.definiteRange
     l_ind, u_ind = np.where(ind_l)[0], np.where(ind_u)[0]
 
     d_l, c_l, d_u, c_u = b.l.d, b.l.c, b.u.d, b.u.c
-#    ind = ~(ind_l | ind_u)
 
     Ld = dict((k, f_abs(b, l_ind, u_ind, sz, k)) for k in set(d_l.keys()) | set(d_u.keys()))
     c = np.zeros(sz)
-#    c = b.l.c
-#    if np.isscalar(c) or c.size == 1:
-#        c = np.tile(c, sz)
+
     l_c = b.l.c
     if np.isscalar(l_c) or l_c.size == 1:
         l_c = np.tile(l_c, sz)
