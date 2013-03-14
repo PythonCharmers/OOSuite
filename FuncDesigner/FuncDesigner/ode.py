@@ -119,22 +119,22 @@ class ode:
             times = 0.5 * (prob.extras['startTimes'] + prob.extras['endTimes'])
             if len(self._times) != 2:
                 # old
-                from scipy.interpolate import UnivariateSpline
-                if 'ftol' in kwargs.keys():
-                    s = self._kwargs['ftol']
-                elif 'fTol' in kwargs.keys():
-                    s = self._kwargs['fTol']
-                elif 'ftol' in self._kwargs.keys():
-                    s = self._kwargs['ftol']
-                elif 'fTol' in self._kwargs.keys():
-                    s = self._kwargs['fTol']
+                from scipy.interpolate import InterpolatedUnivariateSpline
+#                if 'ftol' in kwargs.keys():
+#                    s = self._kwargs['ftol']
+#                elif 'fTol' in kwargs.keys():
+#                    s = self._kwargs['fTol']
+#                elif 'ftol' in self._kwargs.keys():
+#                    s = self._kwargs['ftol']
+#                elif 'fTol' in self._kwargs.keys():
+#                    s = self._kwargs['fTol']
                     
                 # walkaround a bug with essential slowdown
                 if times[-1] < times[0]:
                     times = times[::-1]
                     res = res[::-1]
                     
-                interp = UnivariateSpline(times, res, k=1, s=s**2) 
+                interp = InterpolatedUnivariateSpline(times, res, k=1)#, s=s**2) 
                 times = self._times
                 res = interp(times)
 
