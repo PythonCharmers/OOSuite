@@ -117,6 +117,8 @@ class ode:
             y_var = list(prob._x0.keys())[0]
             res = 0.5 * (prob.extras[y_var]['infinums'] + prob.extras[y_var]['supremums'])
             times = 0.5 * (prob.extras['startTimes'] + prob.extras['endTimes'])
+            res = hstack((res[0], res, res[-1]))
+            times = hstack((prob.extras['startTimes'][0], times, prob.extras['endTimes'][-1]))            
             if len(self._times) != 2:
                 # old
                 from scipy.interpolate import InterpolatedUnivariateSpline
