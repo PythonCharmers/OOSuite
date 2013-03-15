@@ -2,6 +2,8 @@ from numpy import hstack,  asarray, abs, atleast_1d, where, \
 logical_not, argsort, vstack, sum, array, nan, all
 
 from FuncDesigner import oopoint
+from FuncDesigner.boundsurf import boundsurf
+
 
 def interalg_ODE_routine(p, solver):
     isIP = p.probType == 'IP'
@@ -53,14 +55,29 @@ def interalg_ODE_routine(p, solver):
         else:
             mp = oopoint({t: [r29, r28]}, skipArrayCast = True)
         mp.isMultiPoint = True
-        delta_y = f.interval(mp, dataType)
-        if not all(delta_y.definiteRange):
+        
+        mp.dictOfFixedFuncs = p.dictOfFixedFuncs
+        tmp = f.interval(mp, allowBoundSurf = isIP)
+#        print(tmp.__class__)
+        if tmp.__class__ == boundsurf:
+#            print('b')
+            #adjustr4WithDiscreteVariables(wr4, p)
+            cs = oopoint([(v, asarray(0.5*(val[0] + val[1]), dataType)) for v, val in mp.items()])
+            cs.dictOfFixedFuncs = p.dictOfFixedFuncs
+            o, a = tmp.values(cs)
+            definiteRange = tmp.definiteRange
+        else:
+            o, a, definiteRange = tmp.lb, tmp.ub, tmp.definiteRange
+        
+        if not all(definiteRange):
             p.err('''
             solving ODE with interalg is implemented for definite (real) range only, 
             no NaN values in integrand are allowed''')
         # TODO: perform check on NaNs
-        r34 = atleast_1d(delta_y.ub)
-        r35 = atleast_1d(delta_y.lb)
+        r34 = atleast_1d(a)
+        r35 = atleast_1d(o)
+        
+        
         r36 = atleast_1d(r34 - r35   <= 0.95 * r33 / r37)
         ind = where(r36)[0]
         if isODE:
