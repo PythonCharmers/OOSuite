@@ -23,7 +23,7 @@ f = exp(-(x+0.15)**2/(2*sigma)) / sqrt(2*pi*sigma) + cos(y)*sin(z)*cos(2*x) + 1e
 domain = {x: bounds_x, y: bounds_y,  z: bounds_z}
 p = IP(f, domain, ftol = 0.05)
 r = p.solve('interalg', maxIter = 50000, maxActiveNodes = 150, maxNodes = 500000, iprint = 100)
-print('interalg result: %f' % p._F)
+print('interalg result: %f' % r.ff)
 ''' Solver:   Time Elapsed = 2.03 	CPU Time Elapsed = 2.0
 objFunValue: 0.24019923 (feasible, MaxResidual = 0.0470517)
 interalg result: 0.240199 (usually solution, obtained by interalg, has real residual 10-100 times less 
