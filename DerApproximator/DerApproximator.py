@@ -103,7 +103,7 @@ def get_d1(fun, vars, diffInt=1.5e-8, pointVal = None, args=(), stencil = 3, var
     
     if type(args) != tuple:
         args = (args, )
-    Args = list(tuple([asfarray(v) for v in Vars]) + args)#list(tuple(Vars) + args)
+    Args = list(tuple(asfarray(v) for v in Vars) + args)
 
     if pointVal is None:
         v_0 = atleast_1d(fun(*Args))
@@ -218,7 +218,7 @@ def check_d1(fun, fun_d, vars, func_name='func', diffInt=1.5e-8, pointVal = None
     Diff = 1 - (info_user+1e-8)/(info_numerical + 1e-8) 
     """
     
-    from numpy import floor, ceil, log10, argmax
+    from numpy import ceil, log10, argmax
     
     info_numerical = get_d1(fun, vars, diffInt=diffInt, pointVal = pointVal, args=args, stencil = stencil, varForDifferentiation = varForCheck)
     
@@ -263,7 +263,7 @@ def check_d1(fun, fun_d, vars, func_name='func', diffInt=1.5e-8, pointVal = None
         s = func_name + ' num  ' + ss + '   user-supplied     numerical               RD'
         print(s)
 
-    ns = ceil(log10(d.shape[0]))
+    #ns = ceil(log10(d.shape[0]))
     counter = 0
     fl_info_user = info_user.flatten()
     fl_info_numerical = info_numerical.flatten()
@@ -275,7 +275,6 @@ def check_d1(fun, fun_d, vars, func_name='func', diffInt=1.5e-8, pointVal = None
             if abs(Diff[i,j]) < maxViolation: continue
             counter += 1
             k = Diff.shape[1]*i+j
-            #nSpaces = ns - floor(log10(k+1))+2
             if useDoubleColumn:  ss = str(i) + ' / ' + str(j)
             else: ss = ''
 
