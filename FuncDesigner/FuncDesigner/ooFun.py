@@ -153,12 +153,14 @@ class oofun:
     #def __init__(self, fun, input=[], *args, **kwargs):
         assert len(args) == 0 #and input is not None
         self.fun = fun
+        self.attachedConstraints = set()
+        self.args = ()
         
         #self._broadcast_id = 0
         self._id = oofun._id
-        self.attachedConstraints = set()
-        self.args = ()
+#        print('oofun id %d' % oofun._id)
         oofun._id += 1 # CHECK: it should be int32! Other types cannot be has keys!
+        
 
         if 'name' not in kwargs.keys():
             self.name = 'unnamed_oofun_' + str(oofun._unnamedFunNumber)
@@ -217,6 +219,8 @@ class oofun:
                 r_l, r_u = R0
                 
                 R2 = self.fun(R0)
+                koeffs = (R2[1] - R2[0]) / (r_u - r_l)
+                baseVal = R2[0]
                 
                 # TODO: implement check for monotone fun (engine) and omit sorting for the case
                 engine_monotonity = self.engine_monotonity
@@ -225,26 +229,37 @@ class oofun:
                 elif engine_monotonity == -1:
                     new_u_resolved, new_l_resolved = R2
                 else:
+                    baseVal = baseVal.copy()
                     R2.sort(axis=0)
                     new_l_resolved, new_u_resolved = R2
                 
+                Ld, Ud = L.d, U.d
+
                 if engine_convexity == -1:
                     tmp2 = self.d(r_u.view(multiarray)).view(ndarray).flatten()
-                    Ud = U.d
                     d_new = dict((v, tmp2 * val) for v, val in Ud.items())
                     U_new = surf(d_new, 0.0)
-                    _max = U_new.resolve(domain, LESS)
+                    _max = U_new.maximum(domain)
                     U_new.c = new_u_resolved - _max
-                    R = boundsurf(surf({}, new_l_resolved), U_new, definiteRange, domain)
+                    L_new = surf({}, new_l_resolved)
+                    R = boundsurf(L_new, U_new, definiteRange, domain)
                     return R, definiteRange
                 elif engine_convexity == 1:
                     tmp2 = self.d(r_l.view(multiarray)).view(ndarray).flatten()
-                    Ld = L.d
                     d_new = dict((v, tmp2 * val) for v, val in Ld.items())
                     L_new = surf(d_new, 0.0)
-                    _min = L_new.resolve(domain, GREATER)
+                    _min = L_new.minimum(domain)
                     L_new.c = new_l_resolved - _min
-                    R = boundsurf(L_new, surf({}, new_u_resolved), definiteRange, domain)
+                    
+                    # for some simple cases
+                    if  all(r_l != r_u) and len(Ud) == 1:
+                        d_new = dict((v, koeffs * val) for v, val in Ud.items())
+                        U_new = surf(d_new, 0.0)
+                        _val = U_new.maximum(domain)
+                        U_new.c = new_u_resolved - _val
+                    else:
+                        U_new = surf({}, new_u_resolved)
+                    R = boundsurf(L_new, U_new, definiteRange, domain)
                     return R, definiteRange
                 else:
                     # linear oofuns with engine_convexity = 0 calculate their intervals in other funcs
@@ -2220,7 +2235,7 @@ class BooleanOOFun(oofun):
         # TODO: THIS SHOULD BE USED IN UP-LEVEL ONLY
         self.lb = self.ub = 1
     
-    __hash__ = lambda self: self._id
+#    __hash__ = lambda self: self._id
         
     def size(self, *args, **kwargs): raise FuncDesignerException('currently BooleanOOFun.size() is disabled')
     def D(self, *args, **kwargs): raise FuncDesignerException('currently BooleanOOFun.D() is disabled')

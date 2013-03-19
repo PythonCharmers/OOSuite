@@ -14,6 +14,9 @@ class surf:
     resolve = lambda self, domain, cmp: \
     self.c + PythonSum(np.where(cmp(v, 0), domain[k][0], domain[k][1])*v for k, v in self.d.items())
     
+    minimum = lambda self, domain: self.resolve(domain, GREATER)
+    maximum = lambda self, domain: self.resolve(domain, LESS)
+    
     def render(self, domain, cmp):
         self.rendered = dict([(k, np.where(cmp(v, 0), domain[k][0], domain[k][1])*v) for k, v in self.d.items()])
         self.resolved = PythonSum(self.rendered) + self.c

@@ -192,7 +192,7 @@ class ooarray(OOArray):
             return ooarray([self[i]**other[i] for i in range(self.size)])
             
         Self = atleast_1d(self.view(ndarray))
-        if any([isinstance(elem, oofun) for elem in Self]):
+        if any(isinstance(elem, (ooarray, oofun)) for elem in Self):
         #if self.dtype == object:
             return ooarray([elem**other for elem in Self])
 
