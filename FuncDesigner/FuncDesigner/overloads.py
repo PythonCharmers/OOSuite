@@ -411,18 +411,26 @@ def log_interval(logfunc, derivative, inp):
         # TODO: rework definiteRange with matrix operations
         
         if 1 and isBoundSurf and np.all(lb > 0):
-            U = lb_ub.u
-            r_u = ub
+            L, U = lb_ub.l, lb_ub.u
             new_l_resolved = t_min
             new_u_resolved = t_max
             
-            tmp2 = derivative(r_u.view(multiarray)).view(np.ndarray).flatten()
+            tmp2 = derivative(ub.view(multiarray)).view(np.ndarray).flatten()
             Ud = U.d
             d_new = dict((v, tmp2 * val) for v, val in Ud.items())
             U_new = surf(d_new, 0.0)
-            _max = U_new.resolve(domain, LESS)
-            U_new.c = new_u_resolved - _max
-            R = boundsurf(surf({}, new_l_resolved), U_new, definiteRange, domain)
+            _val = U_new.maximum(domain)
+            U_new.c = new_u_resolved - _val
+            Ld = L.d
+            if 1 and len(Ld) == 1 and all(lb != ub):
+                koeffs = (t_max - t_min) / (ub - lb)
+                d_new = dict((v, koeffs * val) for v, val in Ld.items())
+                L_new = surf(d_new, 0.0)
+                _val = L_new.minimum(domain)
+                L_new.c = new_l_resolved - _val
+            else:
+                L_new = surf({}, new_l_resolved)
+            R = boundsurf(L_new, U_new, definiteRange, domain)
             return R, definiteRange
         
         return np.vstack((t_min, t_max)), definiteRange
