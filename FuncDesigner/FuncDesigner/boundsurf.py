@@ -161,8 +161,8 @@ class boundsurf:
             _val = L_new.minimum(domain)
             L_new.c = abs_min**2 - _val
 
-            if 1 and len(Ud) == 1 and np.all(lb != ub):
-                koeffs = ub + lb #(t_max - t_min) / (ub - lb)
+            if 1 and len(Ud) == 1:# and np.all(lb != ub):
+                koeffs = ub + lb #(ub^2 - lb^2) / (ub - lb)
                 d_new = dict((v, koeffs * val) for v, val in Ud.items())
                 U_new = surf(d_new, 0.0)
                 _val = U_new.maximum(domain)
@@ -180,13 +180,22 @@ class boundsurf:
             new_u_resolved, new_l_resolved = R2 # assuming R >= 0
             
             tmp2 = -1.0 / ub ** 2
-            Ud = U.d
+            Ld, Ud = L.d, U.d
             d_new = dict((v, tmp2 * val) for v, val in Ud.items())
             L_new = surf(d_new, 0.0)
-            _min = L_new.minimum(domain)
-            L_new.c = new_l_resolved - _min
+            _val = L_new.minimum(domain)
+            L_new.c = new_l_resolved - _val
 
-            R = boundsurf(L_new, surf({}, new_u_resolved), self.definiteRange, domain)
+            if 1 and len(Ud) == 1:# and np.all(lb != ub):
+                koeffs = -1.0 /(ub*lb) #(1/ub - 1/lb) / (ub - lb)
+                d_new = dict((v, koeffs * val) for v, val in Ld.items())
+                U_new = surf(d_new, 0.0)
+                _val = U_new.maximum(domain)
+                U_new.c = new_u_resolved - _val
+            else:
+                U_new = surf({}, new_u_resolved)
+
+            R = boundsurf(L_new, U_new, self.definiteRange, domain)
         return R
         
 

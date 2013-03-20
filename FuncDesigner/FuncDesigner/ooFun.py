@@ -252,7 +252,7 @@ class oofun:
                     L_new.c = new_l_resolved - _min
                     
                     # for some simple cases
-                    if  all(r_l != r_u) and len(Ud) == 1:
+                    if all(r_l != r_u) and len(Ud) == 1:
                         d_new = dict((v, koeffs * val) for v, val in Ud.items())
                         U_new = surf(d_new, 0.0)
                         _val = U_new.maximum(domain)
@@ -740,7 +740,7 @@ class oofun:
             arg_lb_ub, definiteRange = self._interval(domain, dtype, allowBoundSurf = True)
             if arg_lb_ub.__class__ == boundsurf:
                 arg_lb_ub_resolved = arg_lb_ub.resolve()[0]
-                if all(arg_lb_ub_resolved >= 0):
+                if all(arg_lb_ub_resolved > 0):
                     return other * arg_lb_ub ** (-1), definiteRange
                 else:
                     arg_lb_ub = arg_lb_ub_resolved
