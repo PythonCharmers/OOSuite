@@ -239,31 +239,40 @@ def f_abs(b, l_ind, u_ind, sz, k):
 
 
 def boundsurf_sqrt(b):
-    L, U = b.l, b.u
+    L, U, domain = b.l, b.u, b.domain
     R0, definiteRange = b.resolve()
     assert R0.shape[0]==2, 'unimplemented yet'
-    r_l, r_u = R0
-    ind_negative = r_l < 0
+    lb, ub = R0
+    ind_negative = lb < 0
     
     if np.any(ind_negative):
-        r_l[ind_negative] = 0.0
-        if type(definiteRange) == bool or definiteRange.shape != r_l.shape:
-            definiteRange2 = np.empty(r_l.shape, bool)
+        lb[ind_negative] = 0.0
+        if type(definiteRange) == bool or definiteRange.shape != lb.shape:
+            definiteRange2 = np.empty(lb.shape, bool)
             definiteRange2.fill(definiteRange)
             definiteRange = definiteRange2
         definiteRange[ind_negative] = False
     
-    new_u_resolved = np.sqrt(r_u)
-    new_l_resolved = np.sqrt(r_l)
+    new_u_resolved = np.sqrt(ub)
+    new_l_resolved = np.sqrt(lb)
     
     tmp2 = 0.5 / new_u_resolved
     tmp2[new_u_resolved == 0.0] = 0.0
     Ud = U.d
     d_new = dict((v, tmp2 * val) for v, val in Ud.items())
     U_new = surf(d_new, 0.0)
-    _max = U_new.resolve(b.domain, LESS)
-    U_new.c = new_u_resolved - _max
-
-    R = boundsurf(surf({}, new_l_resolved), U_new, definiteRange, b.domain)
+    _val = U_new.maximum(domain)
+    U_new.c = new_u_resolved - _val
+    
+    Ld = L.d
+    if 0 and len(Ld) == 1 and np.all(lb != ub):
+        koeffs = (new_u_resolved - new_l_resolved) / (ub - lb)
+        d_new = dict((v, koeffs * val) for v, val in Ld.items())
+        L_new = surf(d_new, 0.0)
+        _val = L_new.minimum(domain)
+        L_new.c = new_l_resolved - _val
+    else:
+        L_new = surf({}, new_l_resolved)
+    R = boundsurf(L_new, U_new, definiteRange, domain)
     return R
 
