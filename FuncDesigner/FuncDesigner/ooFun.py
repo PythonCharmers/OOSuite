@@ -220,39 +220,49 @@ class oofun:
                 R2 = self.fun(R0)
                 koeffs = (R2[1] - R2[0]) / (r_u - r_l)
                 baseVal = R2[0]
-                
-                # TODO: implement check for monotone fun (engine) and omit sorting for the case
+                Ld, Ud = L.d, U.d
+
                 engine_monotonity = self.engine_monotonity
                 if engine_monotonity == 1:
                     new_l_resolved, new_u_resolved = R2
+                    U_dict, L_dict = Ud, Ld
+                    _argmin, _argmax = r_l, r_u
                 elif engine_monotonity == -1:
                     new_u_resolved, new_l_resolved = R2
+                    U_dict, L_dict = Ld, Ud
+                    _argmin, _argmax = r_u, r_l
                 else:
                     baseVal = baseVal.copy()
                     R2.sort(axis=0)
                     new_l_resolved, new_u_resolved = R2
-                
-                Ld, Ud = L.d, U.d
 
                 if engine_convexity == -1:
-                    tmp2 = self.d(r_u.view(multiarray)).view(ndarray).flatten()
-                    d_new = dict((v, tmp2 * val) for v, val in Ud.items())
+                    tmp2 = self.d(_argmax.view(multiarray)).view(ndarray).flatten()
+                    d_new = dict((v, tmp2 * val) for v, val in L_dict.items())
                     U_new = surf(d_new, 0.0)
-                    _max = U_new.maximum(domain)
-                    U_new.c = new_u_resolved - _max
-                    L_new = surf({}, new_l_resolved)
+                    _val = U_new.maximum(domain)
+                    U_new.c = new_u_resolved - _val
+                    
+                    # for some simple cases
+                    if engine_monotonity is not nan and len(U_dict) == 1 and all(r_l != r_u):
+                        d_new = dict((v, koeffs * val) for v, val in U_dict.items())
+                        L_new = surf(d_new, 0.0)
+                        _val = L_new.minimum(domain)
+                        L_new.c = new_l_resolved - _val
+                    else:
+                        L_new = surf({}, new_l_resolved)                        
                     R = boundsurf(L_new, U_new, definiteRange, domain)
                     return R, definiteRange
                 elif engine_convexity == 1:
-                    tmp2 = self.d(r_l.view(multiarray)).view(ndarray).flatten()
-                    d_new = dict((v, tmp2 * val) for v, val in Ld.items())
+                    tmp2 = self.d(_argmin.view(multiarray)).view(ndarray).flatten()
+                    d_new = dict((v, tmp2 * val) for v, val in L_dict.items())
                     L_new = surf(d_new, 0.0)
-                    _min = L_new.minimum(domain)
-                    L_new.c = new_l_resolved - _min
+                    _val = L_new.minimum(domain)
+                    L_new.c = new_l_resolved - _val
                     
                     # for some simple cases
-                    if all(r_l != r_u) and len(Ud) == 1:
-                        d_new = dict((v, koeffs * val) for v, val in Ud.items())
+                    if engine_monotonity is not nan and len(U_dict) == 1 and all(r_l != r_u):
+                        d_new = dict((v, koeffs * val) for v, val in U_dict.items())
                         U_new = surf(d_new, 0.0)
                         _val = U_new.maximum(domain)
                         U_new.c = new_u_resolved - _val
@@ -804,7 +814,6 @@ class oofun:
             other = asarray(other, 'float' if type(other) in (int, int32, int64, int16, int8) else type(other))
         
         f = lambda x: other ** x
-        #d = lambda x: Diag(asarray(other) **x * log(asarray(other)))
         d = lambda x: Diag(other ** x * log(other)) 
         r = oofun(f, self, d=d, criticalPoints = False, vectorized = True)
         if other_is_scalar:
