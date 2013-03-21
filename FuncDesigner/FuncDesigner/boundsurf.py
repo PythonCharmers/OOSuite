@@ -1,5 +1,6 @@
 PythonSum = sum
 import numpy as np
+from numpy import all
 from operator import le as LESS,  gt as GREATER
 
 class surf:
@@ -82,7 +83,7 @@ class boundsurf:
     
     values = lambda self, point: (self.l.value(point), self.u.value(point))
     
-    isfinite = lambda self: np.all(np.isfinite(self.l.c)) and np.all(np.isfinite(self.u.c))
+    isfinite = lambda self: all(np.isfinite(self.l.c)) and all(np.isfinite(self.u.c))
     
     # TODO: handling fd.sum()
     def __add__(self, other):
@@ -173,7 +174,7 @@ class boundsurf:
             R = boundsurf(L_new, U_new, self.definiteRange, domain)
         else:
             assert other == -1, 'unimplemented yet'
-            assert np.all(R0>0), 'bug in FD kernel (unimplemented yet)'
+            assert all(R0>0), 'bug in FD kernel (unimplemented yet)'
             R2 = 1.0 / R0
             #R2.sort(axis=0)
             #new_l_resolved, new_u_resolved = R2
@@ -217,11 +218,11 @@ def boundsurf_abs(b):
     sz = lf.size
     
     ind_l = lf >= 0
-    if np.all(ind_l):
+    if all(ind_l):
         return b, b.definiteRange
     
     ind_u = uf <= 0
-    if np.all(ind_u):
+    if all(ind_u):
         return -b, b.definiteRange
     l_ind, u_ind = np.where(ind_l)[0], np.where(ind_u)[0]
 
@@ -238,9 +239,19 @@ def boundsurf_abs(b):
     if np.isscalar(u_c) or u_c.size == 1:
         u_c = np.tile(u_c, sz)
     c[ind_u] = -u_c[ind_u]
+    L_new = surf(Ld, c)
     
     M = np.max(np.abs(r), axis = 0)
-    R = boundsurf(surf(Ld, c), surf({}, M), b.definiteRange, b.domain)
+    if 1 and len(b.u.d) == 1 and all(lf != uf):
+        koeffs = (np.abs(uf) - np.abs(lf)) / (uf - lf)
+        d_new = dict((v, koeffs * val) for v, val in b.u.d.items())
+        U_new = surf(d_new, 0.0)
+        _val = U_new.maximum(b.domain)
+        U_new.c = M - _val
+    else:
+        U_new = surf({}, M)
+        
+    R = boundsurf(L_new, U_new, b.definiteRange, b.domain)
     
     return R, b.definiteRange
     
@@ -283,7 +294,7 @@ def boundsurf_sqrt(b):
     U_new.c = new_u_resolved - _val
     
     Ld = L.d
-    if 0 and len(Ld) == 1 and np.all(lb != ub):
+    if 1 and len(Ld) == 1 and all(lb != ub):
         koeffs = (new_u_resolved - new_l_resolved) / (ub - lb)
         d_new = dict((v, koeffs * val) for v, val in Ld.items())
         L_new = surf(d_new, 0.0)
