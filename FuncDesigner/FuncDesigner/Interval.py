@@ -1,5 +1,5 @@
-from numpy import ndarray, asscalar, isscalar, floor, pi, \
-copy as Copy, logical_and, where, asarray, any, atleast_1d, vstack, \
+from numpy import ndarray, asscalar, isscalar, floor, pi, inf, nan, \
+copy as Copy, logical_and, logical_or, where, asarray, any, atleast_1d, vstack, \
 searchsorted
 import numpy as np
 from boundsurf import boundsurf
@@ -33,10 +33,6 @@ def ZeroCriticalPoints(lb_ub):
 #    # TODO: check it for rounding errors
 #    return arange(ceil(arg_infinum), ceil(1.0+arg_supremum), dtype=float).tolist()
 
-#def TrigonometryCriticalPoints2(arg_infinum, arg_supremum):
-#    n1, n2 = int(floor(2 * arg_infinum / pi)), int(ceil(2 * arg_supremum / pi))
-#    # 6 instead of  5 for more safety, e.g. small numerical rounding effects
-#    return [i / 2.0 * pi for i in range(n1, amin((n1+6, n2))) if (arg_infinum < (i / 2.0) * pi <  arg_supremum)]
 
 # TODO: split TrigonometryCriticalPoints into (pi/2) *(2k+1) and (pi/2) *(2k)
 def TrigonometryCriticalPoints(lb_ub):
@@ -199,3 +195,139 @@ def adjust_ux_WithDiscreteDomain(Ux, v):
         ind[ind==0] = 1
         Ux[:] = d[ind-1]
         Ux[ind3] = asarray(Tmp, dtype=Ux.dtype)
+
+
+def mul_interval(self, other, isOtherOOFun, domain, dtype):#*args, **kw):
+    if domain.isMultiPoint and isOtherOOFun and self.is_oovar and (self.domain is bool or self.domain is 'bool'):
+        # TODO: add handling allowBoundSurf here
+        lb_ub, definiteRange = other._interval(domain, dtype)
+        n = domain[self][1].size
+        R = np.zeros((2, n), dtype)
+        ind = domain[self][0]!=0
+        R[0][ind] = lb_ub[0][ind]
+        ind = domain[self][1]!=0
+        R[1][ind] = lb_ub[1][ind]
+        return R, definiteRange
+    
+    lb1_ub1, definiteRange = self._interval(domain, dtype, allowBoundSurf = not isOtherOOFun)
+    if lb1_ub1.__class__ == boundsurf:# TODO: replace it by type(r[0]) after dropping Python2 support
+        assert isscalar(other) or other.size==1, 'bug in FD kernel'
+        return lb1_ub1 * other, definiteRange
+            
+    lb1, ub1 = lb1_ub1[0], lb1_ub1[1]
+    
+    if isOtherOOFun:
+        lb2_ub2, definiteRange2 = other._interval(domain, dtype)
+        definiteRange = logical_and(definiteRange, definiteRange2)
+        lb2, ub2 = lb2_ub2[0], lb2_ub2[1]
+    else:
+        lb2, ub2 = other, other # TODO: improve it
+        
+    if np.all(lb2 >= 0) and np.all(lb1 >= 0):
+        t_min, t_max = atleast_1d(lb1 * lb2), atleast_1d(ub1 * ub2)
+    elif isscalar(other):
+        t_min, t_max = (lb1 * other, ub1 * other) if other >= 0 else (ub1 * other, lb1 * other)
+    else:
+        if isOtherOOFun:
+            t = vstack((lb1 * lb2, ub1 * lb2, \
+                        lb1 * ub2, ub1 * ub2))# TODO: improve it
+        else:
+            t = vstack((lb1 * other, ub1 * other))# TODO: improve it
+        t_min, t_max = atleast_1d(nanmin(t, 0)), atleast_1d(nanmax(t, 0))
+    #assert isinstance(t_min, ndarray) and isinstance(t_max, ndarray), 'Please update numpy to more recent version'
+    
+    if any(np.isinf(lb1)) or any(np.isinf(lb2)) or any(np.isinf(ub1)) or any(np.isinf(ub2)):
+        ind1_zero_minus = logical_and(lb1<0, ub1>=0)
+        ind1_zero_plus = logical_and(lb1<=0, ub1>0)
+        
+        ind2_zero_minus = logical_and(lb2<0, ub2>=0)
+        ind2_zero_plus = logical_and(lb2<=0, ub2>0)
+        
+        has_plus_inf_1 = logical_or(logical_and(ind1_zero_minus, lb2==-inf), logical_and(ind1_zero_plus, ub2==inf))
+        has_plus_inf_2 = logical_or(logical_and(ind2_zero_minus, lb1==-inf), logical_and(ind2_zero_plus, ub1==inf))
+        
+        # !!!! lines with zero should be before lines with inf !!!!
+        ind = logical_or(logical_and(lb1==-inf, ub2==0), logical_and(lb2==-inf, ub1==0))
+        t_max[atleast_1d(logical_and(ind, t_max<0.0))] = 0.0
+        
+        t_max[atleast_1d(logical_or(has_plus_inf_1, has_plus_inf_2))] = inf
+        t_max[atleast_1d(logical_or(logical_and(lb1==0, ub2==inf), logical_and(lb2==0, ub1==inf)))] = inf
+        
+        has_minus_inf_1 = logical_or(logical_and(ind1_zero_plus, lb2==-inf), logical_and(ind1_zero_minus, ub2==inf))
+        has_minus_inf_2 = logical_or(logical_and(ind2_zero_plus, lb1==-inf), logical_and(ind2_zero_minus, ub1==inf))
+        # !!!! lines with zero should be before lines with -inf !!!!
+        t_min[atleast_1d(logical_or(logical_and(lb1==0, ub2==inf), logical_and(lb2==0, ub1==inf)))] = 0.0
+        t_min[atleast_1d(logical_or(logical_and(lb1==-inf, ub2==0), logical_and(lb2==-inf, ub1==0)))] = 0.0
+        
+        t_min[atleast_1d(logical_or(has_minus_inf_1, has_minus_inf_2))] = -inf
+    
+#            assert not any(isnan(t_min)) and not any(isnan(t_max))
+   
+    return vstack((t_min, t_max)), definiteRange
+
+def pow_const_interval(self, other, domain, dtype):
+    lb_ub, definiteRange = self._interval(domain, dtype, allowBoundSurf = True)
+    if lb_ub.__class__ == boundsurf:
+        lb_ub_resolved = lb_ub.resolve()[0]
+
+    allowBoundSurf = True if isscalar(other) and other in (2, 0.5) else False
+    if other == -1 and all(lb_ub_resolved > 0):
+        allowBoundSurf = True
+        
+    if lb_ub.__class__ == boundsurf:
+        if allowBoundSurf:
+            return lb_ub**other, definiteRange
+        else:
+            lb_ub = lb_ub_resolved
+        
+    Tmp = lb_ub ** other
+    
+    t_min, t_max = nanmin(Tmp, 0), nanmax(Tmp, 0)
+    lb, ub = lb_ub[0], lb_ub[1]
+    ind = lb < 0.0
+    if any(ind):
+        isNonInteger = other != asarray(other, int) # TODO: rational numbers?
+        
+        # TODO: rework it properly, with matrix operations
+        if any(isNonInteger):
+            definiteRange = False
+        
+        ind_nan = logical_and(logical_and(ind, isNonInteger), ub < 0)
+        if any(ind_nan):
+            t_max[atleast_1d(ind_nan)] = nan
+        
+        #1
+        t_min[atleast_1d(logical_and(ind, logical_and(t_min>0, ub >= 0)))] = 0.0
+        
+#                    #2
+#                    if asarray(other).size == 1:
+#                        IND = not isNonInteger
+#                    else:
+#                        ind2 = logical_not(isNonInteger)
+#                        IND = other[ind2] % 2 == 0
+#                    
+#                    if any(IND):
+#                        t_min[logical_and(IND, atleast_1d(logical_and(lb<0, ub >= 0)))] = 0.0
+    return vstack((t_min, t_max)), definiteRange
+    
+def pow_oofun_interval(self, other, domain, dtype): 
+    # TODO: handle discrete cases
+    lb1_ub1, definiteRange1 = self._interval(domain, dtype)
+    lb1, ub1 = lb1_ub1[0], lb1_ub1[1]
+    lb2_ub2, definiteRange2 = other._interval(domain, dtype)
+    lb2, ub2 = lb2_ub2[0], lb2_ub2[1]
+    T = vstack((lb1 ** lb2, lb1** ub2, ub1**lb1, ub1**ub2))
+    t_min, t_max = nanmin(T, 0), nanmax(T, 0)
+    definiteRange = logical_and(definiteRange1, definiteRange2)
+    ind1 = lb1 < 0
+    # TODO: check it, especially with integer "other"
+    if any(ind1):
+        
+        # TODO: rework it with matrix operations
+        definiteRange = False
+        
+        ind2 = ub1 >= 0
+        t_min[atleast_1d(logical_and(logical_and(ind1, ind2), logical_and(t_min > 0.0, ub2 > 0.0)))] = 0.0
+        t_max[atleast_1d(logical_and(ind1, logical_not(ind2)))] = nan
+        t_min[atleast_1d(logical_and(ind1, logical_not(ind2)))] = nan
+    return vstack((t_min, t_max)), definiteRange

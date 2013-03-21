@@ -416,12 +416,12 @@ def log_interval(logfunc, derivative, inp):
             new_u_resolved = t_max
             
             tmp2 = derivative(ub.view(multiarray)).view(np.ndarray).flatten()
-            Ud = U.d
+            Ld, Ud = L.d, U.d
             d_new = dict((v, tmp2 * val) for v, val in Ud.items())
             U_new = surf(d_new, 0.0)
             _val = U_new.maximum(domain)
             U_new.c = new_u_resolved - _val
-            Ld = L.d
+            
             if 1 and len(Ld) == 1 and np.all(lb != ub):
                 koeffs = (t_max - t_min) / (ub - lb)
                 d_new = dict((v, koeffs * val) for v, val in Ld.items())

@@ -4,9 +4,7 @@ from numpy import inf, asfarray, copy, all, any, atleast_2d, zeros, dot, asarray
 ones, ndarray, where, array, nan, vstack, eye, array_equal, isscalar, log, hstack, sum as npSum, prod, nonzero,\
 isnan, asscalar, zeros_like, ones_like, amin, amax, logical_and, logical_or, isinf, logical_not, logical_xor, flipud, \
 tile, float64, searchsorted, int8, int16, int32, int64, isfinite, log2, string_, asanyarray, bool_
-from operator import le as LESS,  gt as GREATER
 
-#from logic import AND
 #from traceback import extract_stack 
 try:
     from bottleneck import nanmin, nanmax
@@ -17,7 +15,8 @@ from FDmisc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scip
 raise_except, DiagonalType, isPyPy
 from ooPoint import ooPoint
 from FuncDesigner.multiarray import multiarray
-from Interval import Interval, adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain
+from Interval import Interval, adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain, mul_interval,\
+pow_const_interval, pow_oofun_interval
 import inspect
 from baseClasses import OOArray, Stochastic
 from boundsurf import boundsurf, surf
@@ -336,27 +335,16 @@ class oofun:
         # TODO: get rid of useSave
         domain.useSave = False
         
-        
         # TODO: rework it with indexation of required data
         if lb is not None and ub is not None:
-            
-            #debug start
-#            ind = logical_or(logical_or(r0.ub < lb, r0.lb > ub), all(logical_and(r0.lb >= lb, r0.ub <= ub)))
-#            sz = where(ind)[0]
-#            if sz.size != asarray(r0.lb).size:
-#                print('!', sz.size, asarray(r0.lb).size)
-            #debug end
             ind = logical_or(logical_or(r0.ub < lb, r0.lb > ub), all(logical_and(r0.lb >= lb, r0.ub <= ub)))
         elif UB is not None:
-            #print(where(r0.lb > UB)[0].size, asarray(r0.lb).size)
             ind = r0.lb > UB
         else:
             ind = None
         
         useSlicing = False
         
-#        print('-'*20)
-#        print(r0.lb.size)
         if ind is not None:
             if all(ind):
                 return {}, r0
@@ -410,39 +398,6 @@ class oofun:
         r = {}
         Dep = (self._getDep() if not self.is_oovar else set([self])).intersection(domain.keys())
         
-##        #debug
-#        if useSlicing:
-##            print('ind', ind)
-##            print('r0.ub:', r0.ub)
-#            r1 = {}
-#            for i, v in enumerate(Dep):
-#                domain.modificationVar = v
-#                r_l, r_u = self._iqg(domain, dtype, r0)
-#                
-#                domain2.useAsMutable = True
-#                domain2.modificationVar = v
-#                r_l2, r_u2 = self._iqg(domain2, dtype, r0)
-#                if useSlicing and not (r_l is r0):# r_l is r0 when array_equal(lb, ub)
-#                    lf1, lf2, uf1, uf2 = r_l2.lb, r_u2.lb, r_l2.ub, r_u2.ub
-#                    Lf1, Lf2, Uf1, Uf2 = Copy(r0.lb), Copy(r0.lb), Copy(r0.ub), Copy(r0.ub)
-#                    Lf1[:, j], Lf2[:, j], Uf1[:, j], Uf2[:, j] = lf1, lf2, uf1, uf2
-#                    r_l2.lb, r_u2.lb, r_l2.ub, r_u2.ub = Lf1, Lf2, Uf1, Uf2
-#    #                if type(r0.definiteRange) not in (bool, bool_) and r0.definiteRange.size != 1:
-#    #                    d1, d2 = r_l.definiteRange, r_u.definiteRange
-#    #                    D1, D2 = Copy(r0.definiteRange), Copy(r0.definiteRange)
-#    #                    D1[:, j], D2[:, j] = d1, d2
-#    #                    r_l.definiteRange, r_u.definiteRange = D1, D2
-#                from numpy.linalg import norm
-#                if norm(r_u2.ub- r_u.ub) > 1e-7: 
-#                    print('uu')
-#                    print(r_u2.ub, r_u.ub)
-#                    print(r_u2.ub - r_u.ub)
-##                    raise 0                    
-#                input()
-
-#            domain = domain2 
-##        #debug end
-        
         for i, v in enumerate(Dep):
             domain.modificationVar = v
             r_l, r_u = self._iqg(domain, dtype, r0)
@@ -488,7 +443,6 @@ class oofun:
         return r, r0
     
     def _iqg(self, domain, dtype, r0):
-        #dep = self._getDep()
         v = domain.modificationVar
         v_0 = domain[v]
         lb, ub = v_0[0], v_0[1]
@@ -573,18 +527,12 @@ class oofun:
                 return domain1 + domain2, logical_and(definiteRange1, definiteRange2)
             r._interval_ = interval
         else:
+            # TODO: mb rework it?
             if isscalar(other) and other == 0: return self # sometimes triggers from other parts of FD engine 
-            #if isinstance(other,  (OOArray, Stochastic)): return other + self
+            
             if isinstance(other,  OOArray): return other + self
             if isinstance(other,  ndarray): other = other.copy() 
-#            if other.size == 1:
-#                #r = oofun(lambda *ARGS, **KWARGS: None, input = self.input)
-#                r = oofun(lambda a: a+other, self)
-#                #r._D = lambda *args,  **kwargs: self._D(*args,  **kwargs)
-#                r.d = lambda x: aux_d(x, other)
-#                #assert len(r._getDep())>0
-#                #r._c = self._c + other
-#            else:
+
             r = oofun(lambda a: a+other, self, _isSum=True)
             r._summation_elements = [self, other]
             r.d = lambda x: aux_d(x, other)
@@ -810,12 +758,8 @@ class oofun:
     __rmul__ = __mul__
 
     def __pow__(self, other):
-        if isinstance(other, OOArray):#if isinstance(other, (OOArray, Stochastic)):
+        if isinstance(other, OOArray):
             return other.__rpow__(self)
-#            if 'size' not in self.__dict__ or (isscalar(self.size) and self.size == 1):
-#                return ooarray([self ** other[i] for i in range(other.size)])
-#            elif isscalar(self.size):# and is not 1
-#                return ooarray([self[i] ** other[i] for i in range(other.size)])
 
         d_x = lambda x, y: \
             (y * x ** (y - 1) if (isscalar(x) or x.size == 1 or isinstance(x, multiarray)) else Diag(y * x ** (y - 1))) if y is not 2 else Diag(2 * x)
@@ -836,76 +780,13 @@ class oofun:
             f = lambda x: asanyarray(x) ** other
             d = lambda x: d_x(x, other)
             input = self
-            def interval(domain, dtype):
-                lb_ub, definiteRange = self._interval(domain, dtype, allowBoundSurf = True)
-                if lb_ub.__class__ == boundsurf:
-                    lb_ub_resolved = lb_ub.resolve()[0]
-
-                allowBoundSurf = True if isscalar(other) and other in (2, 0.5) else False
-                if other == -1 and all(lb_ub_resolved > 0):
-                    allowBoundSurf = True
-                    
-                if lb_ub.__class__ == boundsurf:
-                    if allowBoundSurf:
-                        return lb_ub**other, definiteRange
-                    else:
-                        lb_ub = lb_ub_resolved
-                    
-                Tmp = lb_ub ** other
-                
-                t_min, t_max = nanmin(Tmp, 0), nanmax(Tmp, 0)
-                lb, ub = lb_ub[0], lb_ub[1]
-                ind = lb < 0.0
-                if any(ind):
-                    isNonInteger = other != asarray(other, int) # TODO: rational numbers?
-                    
-                    # TODO: rework it properly, with matrix operations
-                    if any(isNonInteger):
-                        definiteRange = False
-                    
-                    ind_nan = logical_and(logical_and(ind, isNonInteger), ub < 0)
-                    if any(ind_nan):
-                        t_max[atleast_1d(ind_nan)] = nan
-                    
-                    #1
-                    t_min[atleast_1d(logical_and(ind, logical_and(t_min>0, ub >= 0)))] = 0.0
-                    
-#                    #2
-#                    if asarray(other).size == 1:
-#                        IND = not isNonInteger
-#                    else:
-#                        ind2 = logical_not(isNonInteger)
-#                        IND = other[ind2] % 2 == 0
-#                    
-#                    if any(IND):
-#                        t_min[logical_and(IND, atleast_1d(logical_and(lb<0, ub >= 0)))] = 0.0
-                return vstack((t_min, t_max)), definiteRange
+            interval = lambda *args, **kw: pow_const_interval(self, other, *args, **kw)
         else:
             f = lambda x, y: asanyarray(x) ** y
             d = (d_x, d_y)
             input = [self, other]
-            def interval(domain, dtype): 
-                # TODO: handle discrete cases
-                lb1_ub1, definiteRange1 = self._interval(domain, dtype)
-                lb1, ub1 = lb1_ub1[0], lb1_ub1[1]
-                lb2_ub2, definiteRange2 = other._interval(domain, dtype)
-                lb2, ub2 = lb2_ub2[0], lb2_ub2[1]
-                T = vstack((lb1 ** lb2, lb1** ub2, ub1**lb1, ub1**ub2))
-                t_min, t_max = nanmin(T, 0), nanmax(T, 0)
-                definiteRange = logical_and(definiteRange1, definiteRange2)
-                ind1 = lb1 < 0
-                # TODO: check it, especially with integer "other"
-                if any(ind1):
-                    
-                    # TODO: rework it with matrix operations
-                    definiteRange = False
-                    
-                    ind2 = ub1 >= 0
-                    t_min[atleast_1d(logical_and(logical_and(ind1, ind2), logical_and(t_min > 0.0, ub2 > 0.0)))] = 0.0
-                    t_max[atleast_1d(logical_and(ind1, logical_not(ind2)))] = nan
-                    t_min[atleast_1d(logical_and(ind1, logical_not(ind2)))] = nan
-                return vstack((t_min, t_max)), definiteRange
-                
+            interval = lambda *args, **kw: pow_oofun_interval(self, other, *args, **kw)
+            
         r = oofun(f, input, d = d, _interval_=interval)
         if isinstance(other, oofun) or (not isinstance(other, int) or (type(other) == ndarray and other.flatten()[0] != int)): 
             r.attach((self>0)('pow_domain_%d'%r._id, tol=-1e-7)) # TODO: if "other" is fixed oofun with integer value - omit this
@@ -915,8 +796,8 @@ class oofun:
 
     def __rpow__(self, other):
         assert not isinstance(other, oofun)# if failed - check __pow__implementation
-        
-        if isscalar(other):
+        other_is_scalar = isscalar(other)
+        if other_is_scalar:
             if type(other) == int: # TODO: handle numpy integer types
                 other = float(other)
         elif not isinstance(other, ndarray): 
@@ -924,10 +805,12 @@ class oofun:
         
         f = lambda x: other ** x
         #d = lambda x: Diag(asarray(other) **x * log(asarray(other)))
-        d = lambda x: Diag(other **x * log(other)) 
-        r = oofun(f, self, d=d, criticalPoints = False)
-        #r.isCostly = True
-        r.vectorized = True
+        d = lambda x: Diag(other ** x * log(other)) 
+        r = oofun(f, self, d=d, criticalPoints = False, vectorized = True)
+        if other_is_scalar:
+            r.engine_convexity = 1
+            r.engine_monotonity = 1 if other > 1 else -1 if other >= 0 else nan
+        
         return r
 
     def __xor__(self, other): raise FuncDesignerException('For power of oofuns use a**b, not a^b')
@@ -2362,17 +2245,12 @@ class SmoothFDConstraint(BaseFDConstraint):
         if p.solver.dataHandling == 'sorted': tol = 0
         selfDep = (self.oofun._getDep() if not self.oofun.is_oovar else set([self.oofun]))
         
-        # prev
-        #domainData = [(v, (Lx[:, k], Ux[:, k])) for k, v in enumerate(p._freeVarsList)]
-        
-        # new
         # TODO: improve it
         domainData = [(v, (Lx[:, k], Ux[:, k])) for k, v in enumerate(p._freeVarsList) if v in selfDep]
 
         domain = ooPoint(domainData, skipArrayCast=True)
         domain.isMultiPoint = True
         domain.dictOfFixedFuncs = p.dictOfFixedFuncs
-        #print(domain)
         r, r0 = self.oofun.iqg(domain, dataType, self.lb, self.ub)
         Lf, Uf = r0.lb, r0.ub
         tmp = getSmoothNLH(tile(Lf, (2, 1)), tile(Uf, (2, 1)), self.lb, self.ub, tol, m, dataType)
@@ -2420,12 +2298,10 @@ def getSmoothNLH(Lf, Uf, lb, ub, tol, m, dataType):
         if Uf.dtype.type in [int8, int16, int32, int64, int] or Lf.dtype.type in [int8, int16, int32, int64, int]:
             Uf_t,  Lf_t = asfarray(Uf_t), asfarray(Lf_t)
         
-        
         Uf_t[Uf_t > val + tol] = val + tol
         Lf_t[Lf_t < val - tol] = val - tol
         allowedLineSegmentLength = Uf_t - Lf_t
         tmp = allowedLineSegmentLength / UfLfDiff
-        #tmp[tmp>1] = 1
         tmp[logical_or(isinf(Lf), isinf(Uf))] = 1e-10 #  (to prevent inf/inf=nan); TODO: rework it
         
         tmp[allowedLineSegmentLength == 0.0] = 1.0 # may be encountered if Uf == Lf, especially for integer probs
@@ -2447,11 +2323,9 @@ def getSmoothNLH(Lf, Uf, lb, ub, tol, m, dataType):
         tmp[tmp<1e-300] = 1e-300 # TODO: improve it
         tmp[tmp>1.0] = 1.0
         
-        #tmp[lb-tol> Uf] = 0
         tmp[lb-tol > Uf] = 0
         
         tmp[lb <= Lf] = 1
-        #tmp[lb <= Lf] = 1
         
     elif isfinite(ub) and not isfinite(lb):
         tmp = (ub + tol - Lf ) / UfLfDiff
@@ -2469,7 +2343,6 @@ def getSmoothNLH(Lf, Uf, lb, ub, tol, m, dataType):
         #tmp[ub < Lf] = 0
         
         tmp[ub >= Uf] = 1
-        #tmp[ub >= Uf] = 1
 
     else:
         raise FuncDesignerException('this part of interalg code is unimplemented for double-box-bound constraints yet')
@@ -2521,95 +2394,3 @@ def mul_aux_d(x, y):
         return Diag(y)
     else:
         raise FuncDesignerException('for oofun multiplication a*b should be size(a)=size(b) or size(a)=1 or size(b)=1')   
-
-def mul_interval(self, other, isOtherOOFun, domain, dtype):#*args, **kw):
-    if domain.isMultiPoint and isOtherOOFun and self.is_oovar and (self.domain is bool or self.domain is 'bool'):
-        #ind_nz = where(domain[self][1]!=0)[0]
-        # TODO: add handling allowBoundSurf here
-        lb_ub, definiteRange = other._interval(domain, dtype)
-        n = domain[self][1].size
-        R = zeros((2, n), dtype)
-        ind = domain[self][0]!=0
-        R[0][ind] = lb_ub[0][ind]
-        ind = domain[self][1]!=0
-        R[1][ind] = lb_ub[1][ind]
-        return R, definiteRange
-#                    if ind_nz.size == 0:
-#                        n = domain[self][1].size
-#                        R = zeros((2, n), dtype)
-#                        definiteRange = empty(n, bool)
-#                        definiteRange.fill(True)# TODO: sometimes it may be wrong
-#                        return R, definiteRange
-            
-            # TODO: implement it
-#                    subdomain = ooPoint([(v, (d[0][ind_nz], d[1][ind_nz])) for v, d in domain.items()], skipArrayCast=True)
-#                    subdomain.isMultiPoint = True
-#                    #subdomain.modificationVar = domain.modificationVar
-#                    #subdomain.useSave = domain.useSave
-#                    #subdomain.localStoredIntervals = {}
-#                    lb_ub, definiteRange2 = other._interval(subdomain, dtype)
-#                    R[:, ind_nz] = lb_ub.copy()
-#                    definiteRange[ind_nz] = definiteRange2
-#                    return R, definiteRange
-#                    
-#                elif isOtherOOFun:
-#                    # TODO: implement it
-#                    pass
-#            
-#            # changes end
-    
-    lb1_ub1, definiteRange = self._interval(domain, dtype, allowBoundSurf = not isOtherOOFun)
-    if lb1_ub1.__class__ == boundsurf:# TODO: replace it by type(r[0]) after dropping Python2 support
-        assert isscalar(other) or other.size==1, 'bug in FD kernel'
-        return lb1_ub1 * other, definiteRange
-            
-    lb1, ub1 = lb1_ub1[0], lb1_ub1[1]
-    
-    if isOtherOOFun:
-        lb2_ub2, definiteRange2 = other._interval(domain, dtype)
-        definiteRange = logical_and(definiteRange, definiteRange2)
-        lb2, ub2 = lb2_ub2[0], lb2_ub2[1]
-    else:
-        lb2, ub2 = other, other # TODO: improve it
-        
-    if all(lb2 >= 0) and all(lb1 >= 0):
-        t_min, t_max = atleast_1d(lb1 * lb2), atleast_1d(ub1 * ub2)
-    elif isscalar(other):
-        t_min, t_max = (lb1 * other, ub1 * other) if other >= 0 else (ub1 * other, lb1 * other)
-    else:
-        if isOtherOOFun:
-            t = vstack((lb1 * lb2, ub1 * lb2, \
-                        lb1 * ub2, ub1 * ub2))# TODO: improve it
-        else:
-            t = vstack((lb1 * other, ub1 * other))# TODO: improve it
-        t_min, t_max = atleast_1d(nanmin(t, 0)), atleast_1d(nanmax(t, 0))
-    #assert isinstance(t_min, ndarray) and isinstance(t_max, ndarray), 'Please update numpy to more recent version'
-    
-    if any(isinf(lb1)) or any(isinf(lb2)) or any(isinf(ub1)) or any(isinf(ub2)):
-        ind1_zero_minus = logical_and(lb1<0, ub1>=0)
-        ind1_zero_plus = logical_and(lb1<=0, ub1>0)
-        
-        ind2_zero_minus = logical_and(lb2<0, ub2>=0)
-        ind2_zero_plus = logical_and(lb2<=0, ub2>0)
-        
-        has_plus_inf_1 = logical_or(logical_and(ind1_zero_minus, lb2==-inf), logical_and(ind1_zero_plus, ub2==inf))
-        has_plus_inf_2 = logical_or(logical_and(ind2_zero_minus, lb1==-inf), logical_and(ind2_zero_plus, ub1==inf))
-        
-        # !!!! lines with zero should be before lines with inf !!!!
-        ind = logical_or(logical_and(lb1==-inf, ub2==0), logical_and(lb2==-inf, ub1==0))
-        t_max[atleast_1d(logical_and(ind, t_max<0.0))] = 0.0
-        
-        t_max[atleast_1d(logical_or(has_plus_inf_1, has_plus_inf_2))] = inf
-        t_max[atleast_1d(logical_or(logical_and(lb1==0, ub2==inf), logical_and(lb2==0, ub1==inf)))] = inf
-        
-        has_minus_inf_1 = logical_or(logical_and(ind1_zero_plus, lb2==-inf), logical_and(ind1_zero_minus, ub2==inf))
-        has_minus_inf_2 = logical_or(logical_and(ind2_zero_plus, lb1==-inf), logical_and(ind2_zero_minus, ub1==inf))
-        # !!!! lines with zero should be before lines with -inf !!!!
-        t_min[atleast_1d(logical_or(logical_and(lb1==0, ub2==inf), logical_and(lb2==0, ub1==inf)))] = 0.0
-        t_min[atleast_1d(logical_or(logical_and(lb1==-inf, ub2==0), logical_and(lb2==-inf, ub1==0)))] = 0.0
-        
-        t_min[atleast_1d(logical_or(has_minus_inf_1, has_minus_inf_2))] = -inf
-    
-#            assert not any(isnan(t_min)) and not any(isnan(t_max))
-   
-    return vstack((t_min, t_max)), definiteRange
