@@ -231,13 +231,9 @@ def boundsurf_abs(b):
     Ld = dict((k, f_abs(b, l_ind, u_ind, sz, k)) for k in set(d_l.keys()) | set(d_u.keys()))
     c = np.zeros(sz)
 
-    l_c = b.l.c
-    if np.isscalar(l_c) or l_c.size == 1:
-        l_c = np.tile(l_c, sz)
+    l_c = np.tile(c_l, sz) if np.isscalar(c_l) or c_l.size == 1 else np.copy(c_l)
     c[ind_l] = l_c[ind_l]
-    u_c = b.u.c
-    if np.isscalar(u_c) or u_c.size == 1:
-        u_c = np.tile(u_c, sz)
+    u_c = np.tile(c_u, sz) if np.isscalar(c_u) or c_u.size == 1 else np.copy(c_u)
     c[ind_u] = -u_c[ind_u]
     L_new = surf(Ld, c)
     
