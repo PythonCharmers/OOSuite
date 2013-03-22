@@ -2369,6 +2369,7 @@ class Constraint(SmoothFDConstraint):
 class BoxBoundConstraint(SmoothFDConstraint):
     def __init__(self, *args, **kwargs):
         SmoothFDConstraint.__init__(self, *args, **kwargs)
+    __hash__ = lambda self: self._id
         
 class Derivative(dict):
     def __init__(self):
