@@ -152,7 +152,7 @@ def interalg_ODE_routine(p, solver):
 #        p.rk = r33
 #        p.fk = F
         #p._Residual = 
-        p.iterfcn(asarray([nan]*p.n), fk=F, rk=0)
+        p.iterfcn(asarray([nan]*p.n), fk=F, rk=r33)
     else:
         p.err('incorrect prob type in interalg ODE routine')
 
