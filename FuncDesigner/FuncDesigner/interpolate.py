@@ -37,7 +37,7 @@ class SplineGenerator:
             x = np.asanyarray(x)
             tmp = us.__call__(x.flatten() if x.ndim > 1 else x)
             return tmp if x.ndim <= 1 else tmp.reshape(x.shape)
-        r = oofun(f, INP, d = d, isCostly=0, vectorized=True)
+        r = oofun(f, INP, d = d, isCostly = True, vectorized=True)
 
         
         if self.criticalPoints is not False:
@@ -135,6 +135,7 @@ def spline_interval_analysis_engine(S, domain, dtype, allowBoundSurf):
     
     x, y = S._nonmonotone_x, S._nonmonotone_y
     tmp = S.fun(lb_ub)
+    tmp.sort(axis=0)
     _inf, _sup = tmp[0], tmp[1]
     for i, xx in enumerate(x):
         yy = y[i]
