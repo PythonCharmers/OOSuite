@@ -1259,8 +1259,9 @@ class oofun:
 
             # TODO: rework it (for input with ooarays)
             try:
-                self._f_key_prev = dict([(elem, copy((x if isinstance(x, dict) else x.xf)[elem])) for elem in dep]) if self.isCostly else None
-                self._f_val_prev = tmp.copy() if isinstance(tmp, (ndarray, Stochastic)) else tmp
+                t1 = dict([(elem, copy((x if isinstance(x, dict) else x.xf)[elem])) for elem in dep]) if self.isCostly else None
+                t2 = tmp.copy() if isinstance(tmp, (ndarray, Stochastic)) else tmp
+                self._f_key_prev, self._f_val_prev = t1, t2
                 if type(x) == ooPoint: 
                     self._point_id = x._id                
             except:
@@ -1275,7 +1276,7 @@ class oofun:
 
 
     """                                                getFunc                                             """
-    __call__ = lambda self, *args, **kwargs: self._getFunc(*args, **kwargs)
+    __call__ = _getFunc
 
 
     """                                              derivatives                                           """
@@ -2167,6 +2168,8 @@ class BaseFDConstraint(BooleanOOFun):
     isConstraint = True
     tol = 0.0 
     expected_kwargs = set(['tol', 'name'])
+    __hash__ = lambda self: self._id
+
     #def __getitem__(self, point):
 
     def __call__(self, *args,  **kwargs):
@@ -2226,7 +2229,8 @@ class BaseFDConstraint(BooleanOOFun):
 class SmoothFDConstraint(BaseFDConstraint):
         
     __getitem__ = lambda self, point: self.__call__(point)
-        
+    __hash__ = lambda self: self._id
+
     def __init__(self, *args, **kwargs):
         BaseFDConstraint.__init__(self, *args, **kwargs)
         self.lb, self.ub = -inf, inf
@@ -2361,6 +2365,7 @@ def getSmoothNLH(Lf, Uf, lb, ub, tol, m, dataType):
     return tmp
 
 class Constraint(SmoothFDConstraint):
+    __hash__ = lambda self: self._id    
     def __init__(self, *args, **kwargs):
         
         SmoothFDConstraint.__init__(self, *args, **kwargs)

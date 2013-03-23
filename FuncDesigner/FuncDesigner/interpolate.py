@@ -139,7 +139,7 @@ def spline_interval_analysis_engine(S, domain, dtype, allowBoundSurf):
     _inf, _sup = tmp[0], tmp[1]
     for i, xx in enumerate(x):
         yy = y[i]
-        ind = np.logical_and(lb < xx, xx < ub)
+        ind = np.where(np.logical_and(lb < xx, xx < ub))[0]
         _inf[ind] = np.where(_inf[ind] < yy, _inf[ind], yy)
         _sup[ind] = np.where(_sup[ind] > yy, _sup[ind], yy)
     r = np.vstack((_inf, _sup))
