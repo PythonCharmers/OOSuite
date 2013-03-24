@@ -1,6 +1,6 @@
 from numpy import ndarray, asscalar, isscalar, floor, pi, inf, nan, \
 copy as Copy, logical_and, logical_or, where, asarray, any, atleast_1d, vstack, \
-searchsorted
+searchsorted, logical_not
 import numpy as np
 from boundsurf import boundsurf
 
