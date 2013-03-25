@@ -1,5 +1,5 @@
 from numpy import ndarray, asscalar, isscalar, floor, pi, inf, nan, \
-copy as Copy, logical_and, logical_or, where, asarray, any, atleast_1d, vstack, \
+copy as Copy, logical_and, logical_or, where, asarray, any, all, atleast_1d, vstack, \
 searchsorted, logical_not
 import numpy as np
 from boundsurf import boundsurf
@@ -209,19 +209,35 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):#*args, **kw):
         R[1][ind] = lb_ub[1][ind]
         return R, definiteRange
     
-    lb1_ub1, definiteRange = self._interval(domain, dtype, allowBoundSurf = not isOtherOOFun)
-    if lb1_ub1.__class__ == boundsurf:# TODO: replace it by type(r[0]) after dropping Python2 support
-        assert isscalar(other) or other.size==1, 'bug in FD kernel'
-        return lb1_ub1 * other, definiteRange
-            
-    lb1, ub1 = lb1_ub1[0], lb1_ub1[1]
-    
+    #lb1_ub1, definiteRange = self._interval(domain, dtype, allowBoundSurf = not isOtherOOFun)
+    lb1_ub1, definiteRange = self._interval(domain, dtype, allowBoundSurf = True)
     if isOtherOOFun:
-        lb2_ub2, definiteRange2 = other._interval(domain, dtype)
+        lb2_ub2, definiteRange2 = other._interval(domain, dtype, allowBoundSurf = True)
         definiteRange = logical_and(definiteRange, definiteRange2)
-        lb2, ub2 = lb2_ub2[0], lb2_ub2[1]
+        if type(lb2_ub2) == boundsurf:
+            tmp2 = lb2_ub2.resolve()[0]
+            if (all(tmp2 >= 0) or all(tmp2 <= 0)):
+                tmp1 = lb1_ub1.resolve()[0] if type(lb1_ub1) == boundsurf else lb1_ub1
+                if (all(tmp1 >= 0) or all(tmp1 <= 0)):
+                    # TODO: resolve that one that is better
+                    r = lb1_ub1 * tmp2
+                    #r = 0.5*(lb1_ub1 * tmp2 + lb2_ub2 * tmp1)
+                    #r = lb2_ub2 * tmp1
+                    r.definiteRange = definiteRange
+                    return r, definiteRange
+        else:
+            tmp2 = lb2_ub2
+        
+        lb2, ub2 = tmp2[0], tmp2[1]
     else:
+        if lb1_ub1.__class__ == boundsurf:# TODO: replace it by type(r[0]) after dropping Python2 support
+            assert isscalar(other) or other.size==1, 'bug in FD kernel'
+            return lb1_ub1 * other, definiteRange
         lb2, ub2 = other, other # TODO: improve it
+    
+    if type(lb1_ub1) == boundsurf:
+        lb1_ub1 = lb1_ub1.resolve()[0]
+    lb1, ub1 = lb1_ub1[0], lb1_ub1[1]
         
     if np.all(lb2 >= 0) and np.all(lb1 >= 0):
         t_min, t_max = atleast_1d(lb1 * lb2), atleast_1d(ub1 * ub2)

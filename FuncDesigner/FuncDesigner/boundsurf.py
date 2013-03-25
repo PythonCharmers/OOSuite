@@ -40,7 +40,9 @@ class surf:
             assert 0, 'unimplemented yet'
     
     def __mul__(self, other):
-        if np.isscalar(other) or (type(other) == np.ndarray and other.size == 1):
+        isArray = type(other) == np.ndarray
+        #if np.isscalar(other) or (isArray and other.size == 1):
+        if np.isscalar(other) or isArray:
             return surf(dict([(k, v*other) for k, v in self.d.items()]), self.c * other)
 #        elif type(other) == surf:
 #            return surf(self.l+other.l, self.u+other.u)
@@ -56,7 +58,7 @@ class surf:
 #            raise AttributeError('error in FD engine (class surf)')
             
 
-class boundsurf:
+class boundsurf(object):#object is added for Python2 compatibility
     __array_priority__ = 15
     isRendered = False
     def __init__(self, lowersurf, uppersurf, definiteRange, domain):
@@ -101,19 +103,42 @@ class boundsurf:
     
     def __neg__(self):
         l, u = self.l, self.u
-        L = surf(dict([(k, -v) for k, v in u.d.items()]), -u.c)
-        U = surf(dict([(k, -v) for k, v in l.d.items()]), -l.c)
+        L = surf(dict((k, -v) for k, v in u.d.items()), -u.c)
+        U = surf(dict((k, -v) for k, v in l.d.items()), -l.c)
         return boundsurf(L, U, self.definiteRange, self.domain)
     
     # TODO: mb rework it
     __sub__ = lambda self, other: self.__add__(-other)
         
     def __mul__(self, other):
-        if np.isscalar(other) or (type(other) == np.ndarray and other.size == 1):
+        R = self.resolve()[0]
+        selfPositive = all(R >= 0)
+        selfNegative = all(R <= 0)
+        assert selfPositive or selfNegative, 'unimplemented yet'
+        
+        isArray = type(other) == np.ndarray
+        if np.isscalar(other) or (isArray and other.size == 1):
             if other >= 0:
                 return boundsurf(self.l*other, self.u*other, self.definiteRange, self.domain)
             else:
                 return boundsurf(self.u*other, self.l*other, self.definiteRange, self.domain)
+        elif isArray:
+            assert other.shape[0] == 2, 'bug or unimplemented yet'
+            otherPositive = all(other >= 0)
+            otherNegative = all(other <= 0)
+            assert otherPositive or otherNegative, 'bug or unimplemented yet'
+            
+            if selfPositive: 
+                if otherPositive:
+                    return boundsurf(self.l*other[0], self.u*other[1], self.definiteRange, self.domain)
+                else:#otherNegative
+                    return boundsurf(self.u*other[0], self.l*other[1], self.definiteRange, self.domain)
+            else:#selfNegative
+                if otherNegative:
+                    return boundsurf(self.u*other[1], self.l*other[0], self.definiteRange, self.domain)
+                else:#otherPositive
+                    return boundsurf(self.l*other[1], self.u*other[0], self.definiteRange, self.domain)
+
 #        elif other.__class__ == boundsurf:
 #            return boundsurf(self.l+other.l, self.u+other.u)
         else:
@@ -148,7 +173,7 @@ class boundsurf:
             abs_R0 = np.abs(R0)
             abs_R0.sort(axis=0)
             abs_min, abs_max = abs_R0
-            ind_0 = np.where(np.sign(lb) != np.sign(ub))[0]
+            ind_0 = np.where(np.logical_and(lb<0, ub>0))[0]
             abs_min[ind_0] = 0.0
             new_u_resolved = abs_max**2
             
@@ -200,15 +225,15 @@ class boundsurf:
         return R
         
 
-def boundsurf_mult(b1, b2):
-    d1l, d1u, d2l, d2u = b1.l.d, b1.u.d, b2.l.d, b2.u.d
-    c1l, c1u, c2l, c2u = b1.l.c, b1.u.c, b2.l.c, b2.u.c
-    
-    d_l, d_u = {}, {}
-    c_l, c_u = 0.0, 0.0
-    
-    r = boundsurf(surf(d_l, c_l), surf(d_u, c_u), b1.definiteRange & b2.definiteRange)
-    return r
+#def boundsurf_mult(b1, b2):
+#    d1l, d1u, d2l, d2u = b1.l.d, b1.u.d, b2.l.d, b2.u.d
+#    c1l, c1u, c2l, c2u = b1.l.c, b1.u.c, b2.l.c, b2.u.c
+#    
+#    d_l, d_u = {}, {}
+#    c_l, c_u = 0.0, 0.0
+#    
+#    r = boundsurf(surf(d_l, c_l), surf(d_u, c_u), b1.definiteRange & b2.definiteRange)
+#    return r
     
 def boundsurf_abs(b):
     r, definiteRange = b.resolve()
@@ -226,7 +251,8 @@ def boundsurf_abs(b):
         return -b, b.definiteRange
     l_ind, u_ind = np.where(ind_l)[0], np.where(ind_u)[0]
 
-    d_l, c_l, d_u, c_u = b.l.d, b.l.c, b.u.d, b.u.c
+    L, U = b.l, b.u
+    d_l, c_l, d_u, c_u = L.d, L.c, U.d, U.c
 
     Ld = dict((k, f_abs(b, l_ind, u_ind, sz, k)) for k in set(d_l.keys()) | set(d_u.keys()))
     c = np.zeros(sz)
@@ -238,9 +264,9 @@ def boundsurf_abs(b):
     L_new = surf(Ld, c)
     
     M = np.max(np.abs(r), axis = 0)
-    if 1 and len(b.u.d) == 1 and all(lf != uf):
+    if 1 and len(U.d) == 1 and all(lf != uf):
         koeffs = (np.abs(uf) - np.abs(lf)) / (uf - lf)
-        d_new = dict((v, koeffs * val) for v, val in b.u.d.items())
+        d_new = dict((v, koeffs * val) for v, val in d_u.items())
         U_new = surf(d_new, 0.0)
         _val = U_new.maximum(b.domain)
         U_new.c = M - _val

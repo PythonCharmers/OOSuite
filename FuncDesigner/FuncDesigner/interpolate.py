@@ -75,9 +75,9 @@ class SplineGenerator:
             
         self._k = k
         
-        # TODO: handle 1500 as standalone FD.interpolat() 
+        # TODO: handle 1500 as standalone FD.interpolate() parameter
         if k != 1:
-            xx = np.hstack((np.linspace(_X[0], _X[-1], 1500), _X))
+            xx = np.hstack((np.linspace(_X[0], _X[-1], 1500), _X[1:-1]))
         else:
            xx =  np.copy(_X)
         xx.sort()
