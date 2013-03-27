@@ -1,6 +1,6 @@
 PythonSum = sum
 import numpy as np
-from numpy import all
+from numpy import all, logical_and
 from operator import le as LESS,  gt as GREATER
 
 class surf(object):
@@ -118,21 +118,23 @@ class boundsurf(object):#object is added for Python2 compatibility
         definiteRange = self.definiteRange
         selfPositive = all(R1 >= 0)
         selfNegative = all(R1 <= 0)
-        assert selfPositive or selfNegative, 'unimplemented yet'
         
         isArray = type(other) == np.ndarray
         isBoundSurf = type(other) == boundsurf
         R2 = other.resolve()[0] if isBoundSurf else other
+        R2_is_scalar = np.isscalar(R2)
         
-        if not np.isscalar(R2):
+        if not R2_is_scalar and R2.size != 1:
             assert R2.shape[0] == 2, 'bug or unimplemented yet'
             R2Positive = all(R2 >= 0)
             R2Negative = all(R2 <= 0)
             assert R2Positive or R2Negative, 'bug or unimplemented yet'
             
-        if np.isscalar(R2) or (isArray and R2.size == 1):
+        if R2_is_scalar or (isArray and R2.size == 1):
             rr = (self.l*R2, self.u*R2) if R2 >= 0 else (self.u*R2, self.l*R2)
         elif isArray:
+            assert selfPositive or selfNegative, 'unimplemented yet'
+
             if selfPositive: 
                 rr = (self.l*R2[0], self.u*R2[1]) if R2Positive else (self.u*R2[0], self.l*R2[1])
             else:#selfNegative
@@ -140,7 +142,7 @@ class boundsurf(object):#object is added for Python2 compatibility
             
         elif isBoundSurf:
             assert selfPositive and  R2Positive, 'bug or unimplemented yet'
-            definiteRange = np.logical_and(definiteRange, other.definiteRange)
+            definiteRange = logical_and(definiteRange, other.definiteRange)
             c1, c2 = self.l.c, other.l.c
             l1_res = R1[0] - c1
             l2_res = R2[0] - c2
@@ -186,7 +188,7 @@ class boundsurf(object):#object is added for Python2 compatibility
             abs_R0 = np.abs(R0)
             abs_R0.sort(axis=0)
             abs_min, abs_max = abs_R0
-            ind_0 = np.where(np.logical_and(lb<0, ub>0))[0]
+            ind_0 = np.where(logical_and(lb<0, ub>0))[0]
             abs_min[ind_0] = 0.0
             new_u_resolved = abs_max**2
             
@@ -277,8 +279,13 @@ def boundsurf_abs(b):
     L_new = surf(Ld, c)
     
     M = np.max(np.abs(r), axis = 0)
-    if 1 and len(U.d) == 1 and all(lf != uf):
+    if 1 and len(U.d) == 1:# and all(lf != uf):
         koeffs = (np.abs(uf) - np.abs(lf)) / (uf - lf)
+        ind = lf == uf
+        if any(ind):
+            koeffs[logical_and(ind, lf > 0)] = 1.0
+            koeffs[logical_and(ind, lf < 0)] = -1.0
+            koeffs[logical_and(ind, lf == 0)] = 0.0
         d_new = dict((v, koeffs * val) for v, val in d_u.items())
         U_new = surf(d_new, 0.0)
         _val = U_new.maximum(b.domain)

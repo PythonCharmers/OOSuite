@@ -65,7 +65,7 @@ except:
     Hstack = hstack
     Vstack = vstack
 
-class oofun:
+class oofun(object):
     #TODO:
     #is_oovarSlice = False
     tol = 0.0
@@ -219,6 +219,11 @@ class oofun:
                 
                 R2 = self.fun(R0)
                 koeffs = (R2[1] - R2[0]) / (r_u - r_l)
+                
+                ind = r_u == r_l
+                if any(ind):
+                    koeffs[ind] = self.d(r_l[ind].view(multiarray)).view(ndarray).flatten()
+                    
                 baseVal = R2[0]
                 Ld, Ud = L.d, U.d
 
@@ -244,7 +249,7 @@ class oofun:
                     U_new.c = new_u_resolved - _val
                     
                     # for some simple cases
-                    if engine_monotonity is not nan and len(U_dict) == 1 and all(r_l != r_u):
+                    if engine_monotonity is not nan and len(U_dict) == 1:
                         d_new = dict((v, koeffs * val) for v, val in U_dict.items())
                         L_new = surf(d_new, 0.0)
                         _val = L_new.minimum(domain)
@@ -261,7 +266,7 @@ class oofun:
                     L_new.c = new_l_resolved - _val
                     
                     # for some simple cases
-                    if engine_monotonity is not nan and len(U_dict) == 1 and all(r_l != r_u):
+                    if engine_monotonity is not nan and len(U_dict) == 1:
                         d_new = dict((v, koeffs * val) for v, val in U_dict.items())
                         U_new = surf(d_new, 0.0)
                         _val = U_new.maximum(domain)
@@ -603,6 +608,7 @@ class oofun:
         if isscalar(other) or type(other) == ndarray:
             return self * (1.0 / other) # to make available using _prod_elements
         if isinstance(other, oofun):
+#            return self * (1.0/other)
             r = oofun(lambda x, y: x/y, [self, other])
             def aux_dx(x, y):
                 # TODO: handle float128
