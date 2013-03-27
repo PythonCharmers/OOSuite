@@ -3,8 +3,9 @@ import numpy as np
 from numpy import all
 from operator import le as LESS,  gt as GREATER
 
-class surf:
+class surf(object):
     isRendered = False
+    __array_priority__ = 15
     def __init__(self, d, c):
         self.d = d # dict of variables and linear coefficients on them (probably as multiarrays)
         self.c = c # (multiarray of) constant(s)
@@ -19,12 +20,12 @@ class surf:
     maximum = lambda self, domain: self.resolve(domain, LESS)
     
     def render(self, domain, cmp):
-        self.rendered = dict([(k, np.where(cmp(v, 0), domain[k][0], domain[k][1])*v) for k, v in self.d.items()])
+        self.rendered = dict((k, np.where(cmp(v, 0), domain[k][0], domain[k][1])*v) for k, v in self.d.items())
         self.resolved = PythonSum(self.rendered) + self.c
         self.isRendered = True
     
     def __add__(self, other):
-        if other.__class__ ==surf:
+        if type(other) ==surf:
             if other.isRendered and not self.isRendered:
                 self, other = other, self
             #assert self.__class__ == other.__class__, 'bug in FD kernel (class surf)'
@@ -38,6 +39,8 @@ class surf:
             return surf(self.d, self.c + other)
         else:
             assert 0, 'unimplemented yet'
+    
+    __sub__ = lambda self, other: self.__add__(-other)
     
     def __mul__(self, other):
         isArray = type(other) == np.ndarray
@@ -111,39 +114,49 @@ class boundsurf(object):#object is added for Python2 compatibility
     __sub__ = lambda self, other: self.__add__(-other)
         
     def __mul__(self, other):
-        R = self.resolve()[0]
-        selfPositive = all(R >= 0)
-        selfNegative = all(R <= 0)
+        R1 = self.resolve()[0]
+        definiteRange = self.definiteRange
+        selfPositive = all(R1 >= 0)
+        selfNegative = all(R1 <= 0)
         assert selfPositive or selfNegative, 'unimplemented yet'
         
         isArray = type(other) == np.ndarray
-        if np.isscalar(other) or (isArray and other.size == 1):
-            if other >= 0:
-                return boundsurf(self.l*other, self.u*other, self.definiteRange, self.domain)
-            else:
-                return boundsurf(self.u*other, self.l*other, self.definiteRange, self.domain)
-        elif isArray:
-            assert other.shape[0] == 2, 'bug or unimplemented yet'
-            otherPositive = all(other >= 0)
-            otherNegative = all(other <= 0)
-            assert otherPositive or otherNegative, 'bug or unimplemented yet'
+        isBoundSurf = type(other) == boundsurf
+        R2 = other.resolve()[0] if isBoundSurf else other
+        
+        if not np.isscalar(R2):
+            assert R2.shape[0] == 2, 'bug or unimplemented yet'
+            R2Positive = all(R2 >= 0)
+            R2Negative = all(R2 <= 0)
+            assert R2Positive or R2Negative, 'bug or unimplemented yet'
             
+        if np.isscalar(R2) or (isArray and R2.size == 1):
+            rr = (self.l*R2, self.u*R2) if R2 >= 0 else (self.u*R2, self.l*R2)
+        elif isArray:
             if selfPositive: 
-                if otherPositive:
-                    return boundsurf(self.l*other[0], self.u*other[1], self.definiteRange, self.domain)
-                else:#otherNegative
-                    return boundsurf(self.u*other[0], self.l*other[1], self.definiteRange, self.domain)
+                rr = (self.l*R2[0], self.u*R2[1]) if R2Positive else (self.u*R2[0], self.l*R2[1])
             else:#selfNegative
-                if otherNegative:
-                    return boundsurf(self.u*other[1], self.l*other[0], self.definiteRange, self.domain)
-                else:#otherPositive
-                    return boundsurf(self.l*other[1], self.u*other[0], self.definiteRange, self.domain)
-
-#        elif other.__class__ == boundsurf:
-#            return boundsurf(self.l+other.l, self.u+other.u)
+                rr = (self.u*R2[1], self.l*R2[0]) if R2Negative else (self.l*R2[1], self.u*R2[0])
+            
+        elif isBoundSurf:
+            assert selfPositive and  R2Positive, 'bug or unimplemented yet'
+            definiteRange = np.logical_and(definiteRange, other.definiteRange)
+            c1, c2 = self.l.c, other.l.c
+            l1_res = R1[0] - c1
+            l2_res = R2[0] - c2
+            l1, l2 = self.l - c1, other.l - c2
+            r_l = (c2 + 0.5 * l2_res) * l1 + (c1 + 0.5 * l1_res) * l2 + c1 * c2
+            
+            c1, c2 = self.u.c, other.u.c
+            l1_res = R1[1] - c1
+            l2_res = R2[1] - c2
+            l1, l2 = self.u - c1, other.u - c2
+            r_u = (c2 + 0.5 * l2_res) * l1 + (c1 + 0.5 * l1_res) * l2 + c1 * c2
+            
+            rr = (r_l, r_u)
         else:
-            assert 0, 'unimplemented yet'
-    
+            assert 0, 'bug or unimplemented yet'
+        return boundsurf(rr[0], rr[1], definiteRange, self.domain)
     __rmul__ = __mul__
     
     # TODO: rework it if __iadd_, __imul__ etc will be created

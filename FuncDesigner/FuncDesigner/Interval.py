@@ -216,21 +216,36 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):#*args, **kw):
         definiteRange = logical_and(definiteRange, definiteRange2)
         if type(lb2_ub2) == boundsurf:
             tmp2 = lb2_ub2.resolve()[0]
-            if (all(tmp2 >= 0) or all(tmp2 <= 0)):
+            if all(tmp2 >= 0) or all(tmp2 <= 0):
                 tmp1 = lb1_ub1.resolve()[0] if type(lb1_ub1) == boundsurf else lb1_ub1
-                if (all(tmp1 >= 0) or all(tmp1 <= 0)):
+                if (all(tmp1 >= 0) or all(tmp1 <= 0)) \
+                and not any(logical_and(tmp1==0, np.isinf(tmp2)))\
+                and not any(logical_and(tmp2==0, np.isinf(tmp1))):
                     # TODO: resolve that one that is better
-                    r = lb1_ub1 * tmp2
-                    #r = 0.5*(lb1_ub1 * tmp2 + lb2_ub2 * tmp1)
+                    #r = 0.99*lb1_ub1 * tmp2 + 0.01*lb2_ub2 * tmp1
+                    
+                    r = lb1_ub1 * tmp2 if nanmax(tmp2[1]-tmp2[0]) < nanmax(tmp1[1]-tmp1[0]) else lb2_ub2 * tmp1
                     #r = lb2_ub2 * tmp1
-                    r.definiteRange = definiteRange
-                    return r, definiteRange
+#                    rr = lb1_ub1 * lb2_ub2
+#                    #rr = 0.5*(lb1_ub1 * tmp2 + lb2_ub2 * tmp1)
+#                    from ooPoint import ooPoint as oopoint
+#                    centers = oopoint((v, asarray(0.5*(val[0] + val[1]))) for v, val in domain.items())
+#                    tmp1 = np.linalg.norm(rr.values(centers)[0] - rr.values(centers)[1]) 
+#                    tmp2 = np.linalg.norm(r.values(centers)[0] - r.values(centers)[1])
+#                    print(tmp1-tmp2, tmp1, tmp2)
+#                    tmp1 = np.linalg.norm(rr.resolve()[0][0] - rr.resolve()[0][1]) 
+#                    tmp2 = np.linalg.norm(r.resolve()[0][0] - r.resolve()[0][1])
+#                    print(tmp1-tmp2, tmp1, tmp2)
+#                    print('------')
+
+#                    r.definiteRange = definiteRange
+                    return r, r.definiteRange
         else:
             tmp2 = lb2_ub2
         
         lb2, ub2 = tmp2[0], tmp2[1]
     else:
-        if lb1_ub1.__class__ == boundsurf:# TODO: replace it by type(r[0]) after dropping Python2 support
+        if type(lb1_ub1) == boundsurf:# TODO: replace it by type(r[0]) after dropping Python2 support
             assert isscalar(other) or other.size==1, 'bug in FD kernel'
             return lb1_ub1 * other, definiteRange
         lb2, ub2 = other, other # TODO: improve it
