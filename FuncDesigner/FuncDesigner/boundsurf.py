@@ -1,6 +1,6 @@
 PythonSum = sum
 import numpy as np
-from numpy import all, logical_and
+from numpy import all, any, logical_and
 from operator import le as LESS,  gt as GREATER
 
 class surf(object):
@@ -202,12 +202,16 @@ class boundsurf(object):#object is added for Python2 compatibility
             _val = L_new.minimum(domain)
             L_new.c = abs_min**2 - _val
 
-            if 1 and len(Ud) == 1:# and np.all(lb != ub):
+            if 1 and len(Ud) >= 1: # and np.all(lb != ub):
                 koeffs = ub + lb #(ub^2 - lb^2) / (ub - lb)
                 d_new = dict((v, koeffs * val) for v, val in Ud.items())
                 U_new = surf(d_new, 0.0)
                 _val = U_new.maximum(domain)
                 U_new.c = new_u_resolved - _val
+#            elif len(Ud) > 1:
+#                koeffs = ub + lb #(ub^2 - lb^2) / (ub - lb)                
+#                for v, val in Ud.items():
+#                    
             else:
                 U_new = surf({}, new_u_resolved)
 
@@ -227,7 +231,7 @@ class boundsurf(object):#object is added for Python2 compatibility
             _val = L_new.minimum(domain)
             L_new.c = new_l_resolved - _val
 
-            if 1 and len(Ud) == 1:# and np.all(lb != ub):
+            if 1 and len(Ud) >= 1:# and np.all(lb != ub):
                 koeffs = -1.0 /(ub*lb) #(1/ub - 1/lb) / (ub - lb)
                 d_new = dict((v, koeffs * val) for v, val in Ld.items())
                 U_new = surf(d_new, 0.0)
@@ -279,7 +283,7 @@ def boundsurf_abs(b):
     L_new = surf(Ld, c)
     
     M = np.max(np.abs(r), axis = 0)
-    if 1 and len(U.d) == 1:# and all(lf != uf):
+    if 1 and len(U.d) >= 1:# and all(lf != uf):
         koeffs = (np.abs(uf) - np.abs(lf)) / (uf - lf)
         ind = lf == uf
         if any(ind):
@@ -316,7 +320,7 @@ def boundsurf_sqrt(b):
     lb, ub = R0
     ind_negative = lb < 0
     
-    if np.any(ind_negative):
+    if any(ind_negative):
         lb[ind_negative] = 0.0
         if type(definiteRange) == bool or definiteRange.shape != lb.shape:
             definiteRange2 = np.empty(lb.shape, bool)
@@ -336,8 +340,11 @@ def boundsurf_sqrt(b):
     U_new.c = new_u_resolved - _val
     
     Ld = L.d
-    if 1 and len(Ld) == 1 and all(lb != ub):
+    if 1 and len(Ld) >= 1:# and all(lb != ub):
         koeffs = (new_u_resolved - new_l_resolved) / (ub - lb)
+        ind = np.where(lb == ub)[0]
+        if ind.size != 0:
+            koeffs[ind] = tmp2[ind]
         d_new = dict((v, koeffs * val) for v, val in Ld.items())
         L_new = surf(d_new, 0.0)
         _val = L_new.minimum(domain)

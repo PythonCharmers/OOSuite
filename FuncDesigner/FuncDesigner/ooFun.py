@@ -249,7 +249,7 @@ class oofun(object):
                     U_new.c = new_u_resolved - _val
                     
                     # for some simple cases
-                    if engine_monotonity is not nan and len(U_dict) == 1:
+                    if engine_monotonity is not nan and len(U_dict) >= 1:
                         d_new = dict((v, koeffs * val) for v, val in U_dict.items())
                         L_new = surf(d_new, 0.0)
                         _val = L_new.minimum(domain)
@@ -266,7 +266,7 @@ class oofun(object):
                     L_new.c = new_l_resolved - _val
                     
                     # for some simple cases
-                    if engine_monotonity is not nan and len(U_dict) == 1:
+                    if engine_monotonity is not nan and len(U_dict) >= 1:
                         d_new = dict((v, koeffs * val) for v, val in U_dict.items())
                         U_new = surf(d_new, 0.0)
                         _val = U_new.maximum(domain)
