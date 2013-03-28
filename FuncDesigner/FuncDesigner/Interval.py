@@ -98,7 +98,7 @@ def ZeroCriticalPointsInterval(inp, func):
 def nonnegative_interval(inp, func, domain, dtype, F0, shift = 0.0):
 
     lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
-    if lb_ub.__class__ == boundsurf:
+    if type(lb_ub) == boundsurf:
         if 1 and func == np.sqrt:
             return lb_ub ** 0.5, definiteRange
         else:
@@ -298,14 +298,14 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):#*args, **kw):
 
 def pow_const_interval(self, other, domain, dtype):
     lb_ub, definiteRange = self._interval(domain, dtype, allowBoundSurf = True)
-    if lb_ub.__class__ == boundsurf:
+    if type(lb_ub) == boundsurf:
         lb_ub_resolved = lb_ub.resolve()[0]
 
     allowBoundSurf = True if isscalar(other) and other in (2, 0.5) else False
     if other == -1 and all(lb_ub_resolved > 0):
         allowBoundSurf = True
         
-    if lb_ub.__class__ == boundsurf:
+    if type(lb_ub) == boundsurf:
         if allowBoundSurf:
             return lb_ub**other, definiteRange
         else:
@@ -362,3 +362,4 @@ def pow_oofun_interval(self, other, domain, dtype):
         t_max[atleast_1d(logical_and(ind1, logical_not(ind2)))] = nan
         t_min[atleast_1d(logical_and(ind1, logical_not(ind2)))] = nan
     return vstack((t_min, t_max)), definiteRange
+    

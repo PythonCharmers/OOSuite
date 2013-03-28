@@ -220,11 +220,8 @@ class oofun(object):
                 R2 = self.fun(R0)
                 koeffs = (R2[1] - R2[0]) / (r_u - r_l)
                 
-                ind = r_u == r_l
-                if any(ind):
-                    koeffs[ind] = self.d(r_l[ind].view(multiarray)).view(ndarray).flatten()
+                ind_eq = r_u == r_l
                     
-                baseVal = R2[0]
                 Ld, Ud = L.d, U.d
 
                 engine_monotonity = self.engine_monotonity
@@ -237,7 +234,6 @@ class oofun(object):
                     U_dict, L_dict = Ld, Ud
                     _argmin, _argmax = r_u, r_l
                 else:
-                    baseVal = baseVal.copy()
                     R2.sort(axis=0)
                     new_l_resolved, new_u_resolved = R2
 
@@ -250,6 +246,8 @@ class oofun(object):
                     
                     # for some simple cases
                     if engine_monotonity is not nan and len(U_dict) >= 1:
+                        if any(ind_eq):
+                            koeffs[ind_eq] = tmp2[ind_eq]
                         d_new = dict((v, koeffs * val) for v, val in U_dict.items())
                         L_new = surf(d_new, 0.0)
                         _val = L_new.minimum(domain)
@@ -267,6 +265,8 @@ class oofun(object):
                     
                     # for some simple cases
                     if engine_monotonity is not nan and len(U_dict) >= 1:
+                        if any(ind_eq):
+                            koeffs[ind_eq] = tmp2[ind_eq]
                         d_new = dict((v, koeffs * val) for v, val in U_dict.items())
                         U_new = surf(d_new, 0.0)
                         _val = U_new.maximum(domain)
