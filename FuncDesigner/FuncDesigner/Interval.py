@@ -224,9 +224,13 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):#*args, **kw):
                     # TODO: resolve that one that is better
                     #r = 0.99*lb1_ub1 * tmp2 + 0.01*lb2_ub2 * tmp1
                     
-                    r = lb1_ub1 * tmp2 if nanmax(tmp2[1]-tmp2[0]) < nanmax(tmp1[1]-tmp1[0]) else lb2_ub2 * tmp1
+                    #r = lb1_ub1 * tmp2 if nanmax(tmp2[1]-tmp2[0]) < nanmax(tmp1[1]-tmp1[0]) else lb2_ub2 * tmp1
                     #r = lb2_ub2 * tmp1
-#                    rr = lb1_ub1 * lb2_ub2
+                    # TODO: improve it
+                    if all(tmp1 >= 0) and all(tmp2 >= 0):
+                        r = lb1_ub1 * lb2_ub2
+                    else:
+                        r = lb1_ub1 * tmp2 if nanmax(tmp2[1]-tmp2[0]) < nanmax(tmp1[1]-tmp1[0]) else lb2_ub2 * tmp1
 #                    #rr = 0.5*(lb1_ub1 * tmp2 + lb2_ub2 * tmp1)
 #                    from ooPoint import ooPoint as oopoint
 #                    centers = oopoint((v, asarray(0.5*(val[0] + val[1]))) for v, val in domain.items())

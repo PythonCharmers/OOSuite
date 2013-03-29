@@ -241,8 +241,7 @@ class oofun(object):
                     tmp2 = self.d(_argmax.view(multiarray)).view(ndarray).flatten()
                     d_new = dict((v, tmp2 * val) for v, val in L_dict.items())
                     U_new = surf(d_new, 0.0)
-                    _val = U_new.maximum(domain)
-                    U_new.c = new_u_resolved - _val
+                    U_new.c = new_u_resolved - U_new.maximum(domain)
                     
                     # for some simple cases
                     if engine_monotonity is not nan and len(U_dict) >= 1:
@@ -250,8 +249,7 @@ class oofun(object):
                             koeffs[ind_eq] = tmp2[ind_eq]
                         d_new = dict((v, koeffs * val) for v, val in U_dict.items())
                         L_new = surf(d_new, 0.0)
-                        _val = L_new.minimum(domain)
-                        L_new.c = new_l_resolved - _val
+                        L_new.c = new_l_resolved -  L_new.minimum(domain)
                     else:
                         L_new = surf({}, new_l_resolved)                        
                     R = boundsurf(L_new, U_new, definiteRange, domain)
@@ -260,8 +258,7 @@ class oofun(object):
                     tmp2 = self.d(_argmin.view(multiarray)).view(ndarray).flatten()
                     d_new = dict((v, tmp2 * val) for v, val in L_dict.items())
                     L_new = surf(d_new, 0.0)
-                    _val = L_new.minimum(domain)
-                    L_new.c = new_l_resolved - _val
+                    L_new.c = new_l_resolved - L_new.minimum(domain)
                     
                     # for some simple cases
                     if engine_monotonity is not nan and len(U_dict) >= 1:
@@ -269,8 +266,7 @@ class oofun(object):
                             koeffs[ind_eq] = tmp2[ind_eq]
                         d_new = dict((v, koeffs * val) for v, val in U_dict.items())
                         U_new = surf(d_new, 0.0)
-                        _val = U_new.maximum(domain)
-                        U_new.c = new_u_resolved - _val
+                        U_new.c = new_u_resolved - U_new.maximum(domain)
                     else:
                         U_new = surf({}, new_u_resolved)
                     R = boundsurf(L_new, U_new, definiteRange, domain)

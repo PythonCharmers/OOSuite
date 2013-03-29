@@ -3,6 +3,11 @@ import numpy as np
 from numpy import all, any, logical_and
 from operator import le as LESS,  gt as GREATER
 
+try:
+    from bottleneck import nanmax
+except ImportError:
+    from numpy import nanmax
+
 class surf(object):
     isRendered = False
     __array_priority__ = 15
@@ -146,14 +151,18 @@ class boundsurf(object):#object is added for Python2 compatibility
             c1, c2 = self.l.c, other.l.c
             l1_res = R1[0] - c1
             l2_res = R2[0] - c2
+            cond = nanmax(R1[1]/R1[0]) > nanmax(R2[1]/R2[0])
             l1, l2 = self.l - c1, other.l - c2
-            r_l = (c2 + 0.5 * l2_res) * l1 + (c1 + 0.5 * l1_res) * l2 + c1 * c2
+            #r_l = (c2 + 0.5 * l2_res) * l1 + (c1 + 0.5 * l1_res) * l2 + c1 * c2
+            r_l = (((c2+l2_res) * l1 + c1 * l2) if cond else (c2 * l1 + (c1+l1_res)* l2)) + c1 * c2
             
             c1, c2 = self.u.c, other.u.c
             l1_res = R1[1] - c1
             l2_res = R2[1] - c2
+            cond = nanmax(R1[1]/R1[0]) > nanmax(R2[1]/R2[0])
             l1, l2 = self.u - c1, other.u - c2
-            r_u = (c2 + 0.5 * l2_res) * l1 + (c1 + 0.5 * l1_res) * l2 + c1 * c2
+            #r_u = (c2 + 0.5 * l2_res) * l1 + (c1 + 0.5 * l1_res) * l2 + c1 * c2
+            r_u = (((c2+l2_res) * l1 + c1 * l2) if cond else (c2 * l1 + (c1+l1_res)* l2)) + c1 * c2
             
             rr = (r_l, r_u)
         else:
@@ -183,7 +192,6 @@ class boundsurf(object):#object is added for Python2 compatibility
         assert R0.shape[0]==2, 'unimplemented yet'
         lb, ub = R0
 
-        
         if other == 2:
             abs_R0 = np.abs(R0)
             abs_R0.sort(axis=0)
@@ -199,19 +207,13 @@ class boundsurf(object):#object is added for Python2 compatibility
             dep = set(Ld.keys()) | set(Ud.keys()) 
             d_new = dict((v, tmp2 * np.where(ind, Ld.get(v, 0), Ud.get(v, 0))) for v in dep)
             L_new = surf(d_new, 0.0)
-            _val = L_new.minimum(domain)
-            L_new.c = abs_min**2 - _val
+            L_new.c = abs_min**2 - L_new.minimum(domain)
 
             if 1 and len(Ud) >= 1: # and np.all(lb != ub):
                 koeffs = ub + lb #(ub^2 - lb^2) / (ub - lb)
                 d_new = dict((v, koeffs * val) for v, val in Ud.items())
                 U_new = surf(d_new, 0.0)
-                _val = U_new.maximum(domain)
-                U_new.c = new_u_resolved - _val
-#            elif len(Ud) > 1:
-#                koeffs = ub + lb #(ub^2 - lb^2) / (ub - lb)                
-#                for v, val in Ud.items():
-#                    
+                U_new.c = new_u_resolved - U_new.maximum(domain)
             else:
                 U_new = surf({}, new_u_resolved)
 
@@ -228,15 +230,13 @@ class boundsurf(object):#object is added for Python2 compatibility
             Ld, Ud = L.d, U.d
             d_new = dict((v, tmp2 * val) for v, val in Ud.items())
             L_new = surf(d_new, 0.0)
-            _val = L_new.minimum(domain)
-            L_new.c = new_l_resolved - _val
+            L_new.c = new_l_resolved - L_new.minimum(domain)
 
             if 1 and len(Ud) >= 1:# and np.all(lb != ub):
                 koeffs = -1.0 /(ub*lb) #(1/ub - 1/lb) / (ub - lb)
                 d_new = dict((v, koeffs * val) for v, val in Ld.items())
                 U_new = surf(d_new, 0.0)
-                _val = U_new.maximum(domain)
-                U_new.c = new_u_resolved - _val
+                U_new.c = new_u_resolved - U_new.maximum(domain)
             else:
                 U_new = surf({}, new_u_resolved)
 
@@ -292,8 +292,7 @@ def boundsurf_abs(b):
             koeffs[logical_and(ind, lf == 0)] = 0.0
         d_new = dict((v, koeffs * val) for v, val in d_u.items())
         U_new = surf(d_new, 0.0)
-        _val = U_new.maximum(b.domain)
-        U_new.c = M - _val
+        U_new.c = M - U_new.maximum(b.domain)
     else:
         U_new = surf({}, M)
         
@@ -336,8 +335,7 @@ def boundsurf_sqrt(b):
     Ud = U.d
     d_new = dict((v, tmp2 * val) for v, val in Ud.items())
     U_new = surf(d_new, 0.0)
-    _val = U_new.maximum(domain)
-    U_new.c = new_u_resolved - _val
+    U_new.c = new_u_resolved - U_new.maximum(domain)
     
     Ld = L.d
     if 1 and len(Ld) >= 1:# and all(lb != ub):
@@ -347,8 +345,7 @@ def boundsurf_sqrt(b):
             koeffs[ind] = tmp2[ind]
         d_new = dict((v, koeffs * val) for v, val in Ld.items())
         L_new = surf(d_new, 0.0)
-        _val = L_new.minimum(domain)
-        L_new.c = new_l_resolved - _val
+        L_new.c = new_l_resolved - L_new.minimum(domain)
     else:
         L_new = surf({}, new_l_resolved)
     R = boundsurf(L_new, U_new, definiteRange, domain)
