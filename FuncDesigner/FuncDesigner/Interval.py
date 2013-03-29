@@ -216,9 +216,13 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):#*args, **kw):
         definiteRange = logical_and(definiteRange, definiteRange2)
         if type(lb2_ub2) == boundsurf:
             tmp2 = lb2_ub2.resolve()[0]
-            if all(tmp2 >= 0) or all(tmp2 <= 0):
+            t2_positive = all(tmp2 >= 0)
+            t2_negative = all(tmp2 <= 0)
+            if t2_positive or t2_negative:
                 tmp1 = lb1_ub1.resolve()[0] if type(lb1_ub1) == boundsurf else lb1_ub1
-                if (all(tmp1 >= 0) or all(tmp1 <= 0)) \
+                t1_positive = all(tmp1 >= 0)
+                t1_negative = all(tmp1 <= 0)
+                if (t1_positive or t1_negative) \
                 and not any(logical_and(tmp1==0, np.isinf(tmp2)))\
                 and not any(logical_and(tmp2==0, np.isinf(tmp1))):
                     # TODO: resolve that one that is better
@@ -226,11 +230,12 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):#*args, **kw):
                     
                     #r = lb1_ub1 * tmp2 if nanmax(tmp2[1]-tmp2[0]) < nanmax(tmp1[1]-tmp1[0]) else lb2_ub2 * tmp1
                     #r = lb2_ub2 * tmp1
+                    
                     # TODO: improve it
-                    if all(tmp1 >= 0) and all(tmp2 >= 0):
-                        r = lb1_ub1 * lb2_ub2
-                    else:
-                        r = lb1_ub1 * tmp2 if nanmax(tmp2[1]-tmp2[0]) < nanmax(tmp1[1]-tmp1[0]) else lb2_ub2 * tmp1
+                    r = (lb1_ub1 if t1_positive else -lb1_ub1) * (lb2_ub2 if t2_positive else -lb2_ub2)
+                    if t1_positive != t2_positive:
+                        r = -r
+                        
 #                    #rr = 0.5*(lb1_ub1 * tmp2 + lb2_ub2 * tmp1)
 #                    from ooPoint import ooPoint as oopoint
 #                    centers = oopoint((v, asarray(0.5*(val[0] + val[1]))) for v, val in domain.items())
