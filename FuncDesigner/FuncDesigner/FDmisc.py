@@ -187,6 +187,7 @@ def dictSum(dicts):
     for k in K:
         elems = (d.get(k, None) for d in dicts)
         r[k] = PythonSum(elem for elem in elems if elem is not None)
+#        r[k] = PythonSum(d.get(k) for d in dicts if k in d)
     return r
 
 class fixedVarsScheduleID:

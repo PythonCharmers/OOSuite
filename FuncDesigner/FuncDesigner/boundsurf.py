@@ -30,7 +30,7 @@ class surf(object):
         self.isRendered = True
     
     def __add__(self, other):
-        if type(other) ==surf:
+        if type(other) == surf:
             if other.isRendered and not self.isRendered:
                 self, other = other, self
             #assert self.__class__ == other.__class__, 'bug in FD kernel (class surf)'
@@ -99,7 +99,7 @@ class boundsurf(object):#object is added for Python2 compatibility
     def __add__(self, other):
         if np.isscalar(other) or (type(other) == np.ndarray and other.size == 1):
             return boundsurf(self.l+other, self.u+other, self.definiteRange, self.domain)
-        elif other.__class__ == boundsurf:# TODO: replace it by type(r[0]) after dropping Python2 support
+        elif type(other) == boundsurf:# TODO: replace it by type(r[0]) after dropping Python2 support
             return boundsurf(self.l+other.l, self.u+other.u, self.definiteRange & other.definiteRange, self.domain)
         elif type(other) == np.ndarray:
             assert other.shape[0] == 2, 'unimplemented yet'
@@ -202,7 +202,7 @@ class boundsurf(object):#object is added for Python2 compatibility
             
             l1, u1 = np.abs(lb), np.abs(ub)
             ind = u1 > l1
-            tmp2 = 2 * abs_min
+            tmp2 = 2 * np.where(ind, lb, ub)
             Ld, Ud = L.d, U.d
             dep = set(Ld.keys()) | set(Ud.keys()) 
             d_new = dict((v, tmp2 * np.where(ind, Ld.get(v, 0), Ud.get(v, 0))) for v in dep)

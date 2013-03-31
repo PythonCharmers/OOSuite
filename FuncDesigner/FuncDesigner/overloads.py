@@ -613,14 +613,14 @@ def sum_interval(R0, r, INP, domain, dtype):
         for inp in INP:
             arg_lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
             DefiniteRange = np.logical_and(DefiniteRange, definiteRange)
-            if arg_lb_ub.__class__ == boundsurf:
+            if type(arg_lb_ub) == boundsurf:
                 B.append(arg_lb_ub)
             else:
                 _r.append(arg_lb_ub)
         _r = PythonSum(_r)
         R = _r if len(B) == 0 else boundsurf_sum(B, _r, DefiniteRange, domain)
         return R, DefiniteRange
-            
+        
     v = domain.modificationVar
     if v is not None:
         
@@ -669,7 +669,7 @@ def sum_interval(R0, r, INP, domain, dtype):
             else:
                 B.append(arg_lb_ub)
 
-        if R.__class__ == boundsurf:
+        if type(R) == boundsurf:
             B.append(R)
             R = boundsurf_sum(B, R2, DefiniteRange, domain)
             R.definiteRange = logical_and(R.definiteRange, DefiniteRange)
@@ -677,7 +677,7 @@ def sum_interval(R0, r, INP, domain, dtype):
             R = boundsurf_sum(B, R+R2, DefiniteRange, domain)#.resolve()[0]
         else:
             R = R + R2
-        if R.__class__ == boundsurf:# and R.Size() > 5:
+        if type(R) == boundsurf:# and R.Size() > 5:
             R = R.resolve()[0]
 
         #R -= domain.storedSums[r][v]
@@ -719,7 +719,7 @@ def sum_interval(R0, r, INP, domain, dtype):
                     D[oov] = tmp + arg_lb_ub
         
         DefiniteRange = logical_and(DefiniteRange, definiteRange)
-        if arg_lb_ub.__class__ == boundsurf:
+        if type(arg_lb_ub) == boundsurf:
             B.append(arg_lb_ub)
         elif type(R) == np.ndarray == type(arg_lb_ub) and R.shape == arg_lb_ub.shape:
             R += arg_lb_ub

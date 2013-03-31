@@ -136,7 +136,7 @@ class oofun(object):
             self._getDep()
             return self.isUncycled
         elif attr == 'isCostly':
-            return self.d is None
+            return self.d is None and not self._isSum
         elif attr != 'size': 
             raise AttributeError('you are trying to obtain incorrect attribute "%s" for FuncDesigner oofun "%s"' %(attr, self.name))
         
@@ -802,7 +802,7 @@ class oofun(object):
         r = oofun(f, input, d = d, _interval_=interval)
         if isinstance(other, oofun) or (not isinstance(other, int) or (type(other) == ndarray and other.flatten()[0] != int)): 
             r.attach((self>0)('pow_domain_%d'%r._id, tol=-1e-7)) # TODO: if "other" is fixed oofun with integer value - omit this
-        r.isCostly = True
+#        r.isCostly = True
         r.vectorized = True
         return r
 
