@@ -181,13 +181,22 @@ def Diag(x, *args, **kw):
     else: 
         return diagonal(asfarray(x) if x is not None else x, *args,  **kw)
 
+#def dictSum(dicts):
+#    r = {}
+#    K = set().union(*[set(d.keys()) for d in dicts])
+#    for k in K:
+#        elems = (d.get(k, None) for d in dicts)
+#        r[k] = PythonSum(elem for elem in elems if elem is not None)
+##        r[k] = PythonSum(d.get(k) for d in dicts if k in d)
+#    return r
+
 def dictSum(dicts):
-    r = {}
     K = set().union(*[set(d.keys()) for d in dicts])
-    for k in K:
-        elems = (d.get(k, None) for d in dicts)
-        r[k] = PythonSum(elem for elem in elems if elem is not None)
-#        r[k] = PythonSum(d.get(k) for d in dicts if k in d)
+    R = dict((v, []) for v in K)
+    for d in dicts:
+        for k, val in d.items():
+          R[k].append(val)
+    r = dict((k, PythonSum(val)) for k, val in R.items())
     return r
 
 class fixedVarsScheduleID:
