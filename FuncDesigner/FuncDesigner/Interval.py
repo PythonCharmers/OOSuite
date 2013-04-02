@@ -233,7 +233,7 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):#*args, **kw):
                     r = (lb1_ub1 if t1_positive else -lb1_ub1) * (lb2_ub2 if t2_positive else -lb2_ub2)
                     if t1_positive != t2_positive:
                         r = -r
-            elif type(lb1_ub1) == boundsurf:
+            elif type(lb1_ub1) == boundsurf and all(np.isfinite(tmp1)) and all(np.isfinite(tmp2)):
                 r = 0.25 * ((lb1_ub1 + lb2_ub2) ** 2 - (lb1_ub1 - lb2_ub2) ** 2)
                 return r, r.definiteRange
 #                        
@@ -264,8 +264,10 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):#*args, **kw):
         lb1_ub1 = lb1_ub1.resolve()[0]
     lb1, ub1 = lb1_ub1[0], lb1_ub1[1]
         
-    if np.all(lb2 >= 0) and np.all(lb1 >= 0):
+    if all(lb2 >= 0) and all(lb1 >= 0):
         t_min, t_max = atleast_1d(lb1 * lb2), atleast_1d(ub1 * ub2)
+    elif all(lb2 <= 0) and all(lb1 <= 0):
+        t_min, t_max = atleast_1d(ub1 * ub2), atleast_1d(lb1 * lb2)
     elif isscalar(other):
         t_min, t_max = (lb1 * other, ub1 * other) if other >= 0 else (ub1 * other, lb1 * other)
     else:
