@@ -266,7 +266,7 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):#*args, **kw):
         
     if all(lb2 >= 0) and all(lb1 >= 0):
         t_min, t_max = atleast_1d(lb1 * lb2), atleast_1d(ub1 * ub2)
-    elif all(lb2 <= 0) and all(lb1 <= 0):
+    elif all(ub2 <= 0) and all(ub1 <= 0):
         t_min, t_max = atleast_1d(ub1 * ub2), atleast_1d(lb1 * lb2)
     elif isscalar(other):
         t_min, t_max = (lb1 * other, ub1 * other) if other >= 0 else (ub1 * other, lb1 * other)
