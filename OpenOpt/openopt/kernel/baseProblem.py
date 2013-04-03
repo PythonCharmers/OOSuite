@@ -324,7 +324,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             
             probDep = set()
             updateDep = lambda Dep, elem: [updateDep(Dep, f) for f in elem] if isinstance(elem, (tuple, list, set, ndarray))\
-            else Dep.update({elem} if elem.is_oovar else elem._getDep()) if isinstance(elem, oofun) else None
+            else Dep.update(set([elem]) if elem.is_oovar else elem._getDep()) if isinstance(elem, oofun) else None
             
             if self.probType in ['SLE', 'NLSP', 'SNLE', 'LLSP']:
                 equations = self.C if self.probType in ('SLE', 'LLSP') else self.f
