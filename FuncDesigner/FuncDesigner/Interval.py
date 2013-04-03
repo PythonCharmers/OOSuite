@@ -263,11 +263,19 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):#*args, **kw):
     if type(lb1_ub1) == boundsurf:
         lb1_ub1 = lb1_ub1.resolve()[0]
     lb1, ub1 = lb1_ub1[0], lb1_ub1[1]
-        
-    if all(lb2 >= 0) and all(lb1 >= 0):
+    
+    firstPositive = all(lb1 >= 0)
+    firstNegative = all(ub1 <= 0)
+    secondPositive = all(lb2 >= 0)
+    secondNegative = all(ub2 <= 0)
+    if firstPositive and secondPositive:
         t_min, t_max = atleast_1d(lb1 * lb2), atleast_1d(ub1 * ub2)
-    elif all(ub2 <= 0) and all(ub1 <= 0):
+    elif firstNegative and secondNegative:
         t_min, t_max = atleast_1d(ub1 * ub2), atleast_1d(lb1 * lb2)
+    elif firstPositive and secondNegative:
+        t_min, t_max = atleast_1d(lb2*ub1), atleast_1d(lb1 * ub2)
+    elif firstNegative and secondPositive:
+        t_min, t_max = atleast_1d(lb1 * ub2), atleast_1d(lb2*ub1)
     elif isscalar(other):
         t_min, t_max = (lb1 * other, ub1 * other) if other >= 0 else (ub1 * other, lb1 * other)
     else:
