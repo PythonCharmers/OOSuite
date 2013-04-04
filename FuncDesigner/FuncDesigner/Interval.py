@@ -198,22 +198,25 @@ def adjust_ux_WithDiscreteDomain(Ux, v):
 
 
 def mul_interval(self, other, isOtherOOFun, domain, dtype):#*args, **kw):
-    if domain.isMultiPoint and isOtherOOFun and self.is_oovar and (self.domain is bool or self.domain is 'bool'):
-        # TODO: add handling allowBoundSurf here
-        lb_ub, definiteRange = other._interval(domain, dtype)
-        n = domain[self][1].size
-        R = np.zeros((2, n), dtype)
-        ind = domain[self][0]!=0
-        R[0][ind] = lb_ub[0][ind]
-        ind = domain[self][1]!=0
-        R[1][ind] = lb_ub[1][ind]
-        return R, definiteRange
+#    if domain.isMultiPoint and isOtherOOFun and self.is_oovar and (self.domain is bool or self.domain is 'bool'):
+#        # TODO: add handling allowBoundSurf here
+#        lb_ub, definiteRange = other._interval(domain, dtype)
+#        n = domain[self][1].size
+#        R = np.zeros((2, n), dtype)
+#        ind = domain[self][0]!=0
+#        R[0][ind] = lb_ub[0][ind]
+#        ind = domain[self][1]!=0
+#        R[1][ind] = lb_ub[1][ind]
+#        return R, definiteRange
     
-    #lb1_ub1, definiteRange = self._interval(domain, dtype, allowBoundSurf = not isOtherOOFun)
     lb1_ub1, definiteRange = self._interval(domain, dtype, allowBoundSurf = True)
+
     if isOtherOOFun:
         lb2_ub2, definiteRange2 = other._interval(domain, dtype, allowBoundSurf = True)
         definiteRange = logical_and(definiteRange, definiteRange2)
+        
+        if type(lb2_ub2) != boundsurf and type(lb1_ub1) == boundsurf:
+            lb2_ub2, lb1_ub1 = lb1_ub1, lb2_ub2
         
         if type(lb2_ub2) == boundsurf:
             tmp2 = lb2_ub2.resolve()[0]
@@ -259,7 +262,7 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):#*args, **kw):
             assert isscalar(other) or other.size==1, 'bug in FD kernel'
             return lb1_ub1 * other, definiteRange
         lb2, ub2 = other, other # TODO: improve it
-    
+
     if type(lb1_ub1) == boundsurf:
         lb1_ub1 = lb1_ub1.resolve()[0]
     lb1, ub1 = lb1_ub1[0], lb1_ub1[1]
