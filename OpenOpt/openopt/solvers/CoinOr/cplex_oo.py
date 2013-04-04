@@ -96,7 +96,7 @@ class cplex(baseSolver):
         s = P.solution.get_status()
         p.msg = 'Cplex status: "%s"; exit code: %d' % (P.solution.get_status_string(), s)
         try:
-            p.xf = np.asfarray(P.solution.get_values())
+            p.xf = p.xk = np.asfarray(P.solution.get_values())
             p.istop = 1000
         except CPLEX.exceptions.CplexError:
             p.xf = p.x0 * np.nan
