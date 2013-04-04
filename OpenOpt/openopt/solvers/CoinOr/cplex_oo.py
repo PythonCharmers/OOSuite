@@ -32,7 +32,7 @@ class cplex(baseSolver):
 #        except:
 #            pass
         
-        n = p.f.size 
+        n = p.n
         P = CPLEX.Cplex()
         P.set_results_stream(None)
         
@@ -45,24 +45,25 @@ class cplex(baseSolver):
             for v in p.intVars: tmp[v] = 'I'
             kwargs['types'] = ''.join(tmp.tolist())
         
-        P.variables.add(obj = p.f.tolist(), ub = p.ub.tolist(), lb = p.lb.tolist(), **kwargs)
+        lb, ub = np.copy(p.lb), np.copy(p.ub)
+        lb[lb == -np.inf] = -1e308
+        ub[ub == np.inf] = 1e308
+        P.variables.add(obj = p.f.tolist(), ub = ub.tolist(), lb = lb.tolist(), **kwargs)
         P.objective.set_sense(P.objective.sense.minimize)
         
         LinConst2WholeRepr(p)
         if p.Awhole is not None:
-            #m = np.asarray(p.bwhole).size
             senses = ''.join(where(p.dwhole == -1, 'L', 'E').tolist())
             P.linear_constraints.add(rhs=np.asarray(p.bwhole).tolist(), senses = senses)
             P.linear_constraints.set_coefficients(zip(*Find(p.Awhole)))
         
         if p.probType.endswith('QP') or p.probType == 'SOCP':
-            assert p.probType in ('QP', 'QCQP','SOCP')
+#            assert p.probType in ('QP', 'QCQP','SOCP')
             P.objective.set_quadratic_coefficients(zip(*Find(p.H)))
             if hasattr(p, 'QC'):
                 for q, u, v in p.QC:
                     rows,  cols,  vals = Find(q)
                     quad_expr = CPLEX.SparseTriple(ind1=rows, ind2=cols, val = vals)
-                    #lin_expr = zip(np.arange(np.atleast_1d(u).size), u)
                     lin_expr = CPLEX.SparsePair(ind=np.arange(np.atleast_1d(u).size), val=u)
                     P.quadratic_constraints.add(quad_expr = quad_expr, lin_expr = lin_expr, rhs = -v if isscalar(v) else -asscalar(v))
 
