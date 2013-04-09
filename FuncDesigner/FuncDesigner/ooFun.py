@@ -1306,7 +1306,7 @@ class oofun(object):
                     raise FuncDesignerException('argument fixedVars is expected as oovar or python list/tuple of oovar instances')
                 fixedVars = set([fixedVars])
         r = self._D(x, fixedVarsScheduleID, Vars, fixedVars, useSparse = useSparse)
-        r = dict([(key, (val if type(val)!=DiagonalType else val.resolve(useSparse))) for key, val in r.items()])
+        r = dict((key, (val if type(val)!=DiagonalType else val.resolve(useSparse))) for key, val in r.items())
         is_oofun = isinstance(initialVars, oofun)
         if is_oofun and not initialVars.is_oovar:
             # TODO: handle it with input of type list/tuple/etc as well
@@ -1372,7 +1372,7 @@ class oofun(object):
         if cond_same_point:
             self.same_d += 1
             #return deepcopy(self.d_val_prev)
-            return dict([(key, Copy(val)) for key, val in self._d_val_prev.items()])
+            return dict((key, Copy(val)) for key, val in self._d_val_prev.items())
         else:
             self.evals_d += 1
 
@@ -2130,7 +2130,7 @@ class BooleanOOFun(oofun):
         # TODO: THIS SHOULD BE USED IN UP-LEVEL ONLY
         self.lb = self.ub = 1
     
-#    __hash__ = lambda self: self._id
+    __hash__ = lambda self: self._id
         
     def size(self, *args, **kwargs): raise FuncDesignerException('currently BooleanOOFun.size() is disabled')
     def D(self, *args, **kwargs): raise FuncDesignerException('currently BooleanOOFun.D() is disabled')

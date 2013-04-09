@@ -1,12 +1,13 @@
 # Handling of FuncDesigner probs
 
-from numpy import empty, hstack, vstack, asfarray, all, atleast_1d, cumsum, asarray, zeros,  ndarray, prod, ones, isscalar, nan, array_equal, copy, array
-#from nonOptMisc import scipyInstalled, Hstack, Vstack, Find, isspmatrix, SparseMatrixConstructor, DenseMatrixConstructor, Bmat
+from numpy import hstack, atleast_1d, cumsum, asfarray, asarray, zeros, \
+ndarray, prod, isscalar, nan, array_equal, copy, array
+from nonOptMisc import scipyInstalled, isspmatrix, SparseMatrixConstructor#, DenseMatrixConstructor
 
 from FDmisc import FuncDesignerException
 from ooPoint import ooPoint
 DenseMatrixConstructor = lambda shape: zeros(shape)
-isspmatrix = lambda *args: False
+#isspmatrix = lambda *args: False
 
 class FuncDesignerTranslator:
 #    freeVars = []
@@ -18,15 +19,15 @@ class FuncDesignerTranslator:
         if isinstance(PointOrVariables, dict):
             Point = PointOrVariables
             Variables = Point.keys()
-            self._sizeDict = dict([(v, asarray(PointOrVariables[v]).size) for v in PointOrVariables])
-            self._shapeDict = dict([(v, asarray(PointOrVariables[v]).shape) for v in PointOrVariables])
+            self._sizeDict = dict((v, asarray(PointOrVariables[v]).size) for v in PointOrVariables)
+            self._shapeDict = dict((v, asarray(PointOrVariables[v]).shape) for v in PointOrVariables)
             # TODO: assert v.size (if provided) == PointOrVariables[v]).size
             # and same with shapes
         else:
             assert type(PointOrVariables) in [list, tuple, set]
             Variables = PointOrVariables
-            self._sizeDict = dict([(v, (v.size if hasattr(v, 'size') and isinstance(v.size, int) else 1)) for v in Variables])
-            self._shapeDict = dict([(v, (v.shape if hasattr(v, 'shape') else ())) for v in Variables])
+            self._sizeDict = dict((v, (v.size if hasattr(v, 'size') and isinstance(v.size, int) else 1)) for v in Variables)
+            self._shapeDict = dict((v, (v.shape if hasattr(v, 'shape') else ())) for v in Variables)
             
         self._variables = Variables
         self.n = sum(self._sizeDict.values())
@@ -34,7 +35,7 @@ class FuncDesignerTranslator:
         oovar_sizes = list(self._sizeDict.values()) # FD: for opt oovars only
         oovar_indexes = cumsum([0] + oovar_sizes)
 
-        self.oovarsIndDict = dict([(v, (oovar_indexes[i], oovar_indexes[i+1])) for i, v in enumerate(Variables)])
+        self.oovarsIndDict = dict((v, (oovar_indexes[i], oovar_indexes[i+1])) for i, v in enumerate(Variables))
         
         # TODO: mb use oovarsIndDict here as well (as for derivatives?)
         
@@ -53,14 +54,14 @@ class FuncDesignerTranslator:
             
             # without copy() ipopt and probably others can replace it by noise after closing
             kw = {'skipArrayCast':True} if isComplexArray else {}
-            r = ooPoint([(v, x[oovar_indexes[i]:oovar_indexes[i+1]]) for i, v in enumerate(self._variables)], **kw)
+            r = ooPoint((v, x[oovar_indexes[i]:oovar_indexes[i+1]]) for i, v in enumerate(self._variables), **kw)
             
             self._SavedValues['prevVal'] = r
             self._SavedValues['prevX'] = copy(x)
             return r
         self.vector2point = vector2point
         
-    point2vector = lambda self, point: array(atleast_1d(hstack([(point[v] if v in point else zeros(self._shapeDict[v])) for v in self._variables])), 'float')
+    point2vector = lambda self, point: asfarray(atleast_1d(hstack([(point[v] if v in point else zeros(self._shapeDict[v])) for v in self._variables])))
         
     def pointDerivative2array(self, pointDerivarive, useSparse = False,  func=None, point=None): 
         # useSparse can be True, False, 'auto'
@@ -99,35 +100,37 @@ class FuncDesignerTranslator:
         assert useSparse is False, 'sparsity is not implemented in FD translator yet'
         
         if useSparse is not False and newStyle:
-            r2 = []
-            hasSparse = False
-            zeros_start_ind = 0
-            zeros_end_ind = 0
-            for i, var in enumerate(freeVars):
-                if var in pointDerivarive:#i.e. one of its keys
-                    
-                    if zeros_end_ind != zeros_start_ind:
-                        r2.append(SparseMatrixConstructor((funcLen, zeros_end_ind - zeros_start_ind)))
-                        zeros_start_ind = zeros_end_ind
-                    
-                    tmp = pointDerivarive[var]
-                    if isspmatrix(tmp): 
-                        hasSparse = True
-                    else:
-                        tmp = asarray(tmp) # else bug with scipy sparse hstack
-                    if tmp.ndim < 2:
-                        tmp = tmp.reshape(funcLen, prod(tmp.shape) // funcLen)
-                    r2.append(tmp)
-                else:
-                    zeros_end_ind  += oovar_sizes[i]
-                    hasSparse = True
-                    
-            if zeros_end_ind != zeros_start_ind:
-                r2.append(SparseMatrixConstructor((funcLen, zeros_end_ind - zeros_start_ind)))
-                
-            r3 = Hstack(r2) if hasSparse else hstack(r2)
-            if isspmatrix(r3) and r3.nnz > 0.25 * prod(r3.shape): r3 = r3.A
-            return r3            
+            assert 0, 'unimplemented yet'
+#            r2 = []
+#            hasSparse = False
+#            zeros_start_ind = 0
+#            zeros_end_ind = 0
+#            for i, var in enumerate(freeVars):
+#                if var in pointDerivarive:#i.e. one of its keys
+#                    
+#                    if zeros_end_ind != zeros_start_ind:
+#                        r2.append(SparseMatrixConstructor((funcLen, zeros_end_ind - zeros_start_ind)))
+#                        zeros_start_ind = zeros_end_ind
+#                    
+#                    tmp = pointDerivarive[var]
+#                    if isspmatrix(tmp): 
+#                        hasSparse = True
+#                    else:
+#                        tmp = asarray(tmp) # else bug with scipy sparse hstack
+#                    if tmp.ndim < 2:
+#                        tmp = tmp.reshape(funcLen, prod(tmp.shape) // funcLen)
+#                    r2.append(tmp)
+#                else:
+#                    zeros_end_ind  += oovar_sizes[i]
+#                    hasSparse = True
+#                    
+#            if zeros_end_ind != zeros_start_ind:
+#                r2.append(SparseMatrixConstructor((funcLen, zeros_end_ind - zeros_start_ind)))
+#                
+#            r3 = Hstack(r2) if hasSparse else hstack(r2)
+#            if isspmatrix(r3) and r3.nnz > 0.25 * prod(r3.shape): r3 = r3.A
+#            return r3            
+            
 #            r2 = []
 #            hasSparse = False
 #            for i, var in enumerate(freeVars):
