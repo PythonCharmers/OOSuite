@@ -2,7 +2,7 @@
 
 from numpy import hstack, atleast_1d, cumsum, asfarray, asarray, zeros, \
 ndarray, prod, isscalar, nan, array_equal, copy, array
-from nonOptMisc import scipyInstalled, isspmatrix, SparseMatrixConstructor#, DenseMatrixConstructor
+#from nonOptMisc import scipyInstalled, isspmatrix, SparseMatrixConstructor#, DenseMatrixConstructor
 
 from FDmisc import FuncDesignerException
 from ooPoint import ooPoint
@@ -66,10 +66,11 @@ class FuncDesignerTranslator:
     def pointDerivative2array(self, pointDerivarive, useSparse = False,  func=None, point=None): 
         # useSparse can be True, False, 'auto'
         # !!!!!!!!!!! TODO: implement useSparse = 'auto' properly
-        if useSparse == 'auto' and not scipyInstalled:
-            useSparse = False
-        if useSparse is not False and not scipyInstalled:
-            raise FuncDesignerException('to handle sparse matrices you should have module scipy installed') 
+        assert useSparse is False, 'sparsity is not implemented in FD translator yet'
+#        if useSparse == 'auto' and not scipyInstalled:
+#            useSparse = False
+#        if useSparse is not False and not scipyInstalled:
+#            raise FuncDesignerException('to handle sparse matrices you should have module scipy installed') 
 
         # however, this check is performed in other function (before this one)
         # and those constraints are excluded automaticvally
@@ -79,10 +80,10 @@ class FuncDesignerTranslator:
             if func is not None:
                 assert point is not None
                 funcLen = func(point).size
-                if useSparse:
-                    return SparseMatrixConstructor((funcLen, n))
-                else:
-                    return DenseMatrixConstructor((funcLen, n))
+#                if useSparse:
+#                    return SparseMatrixConstructor((funcLen, n))
+#                else:
+                return DenseMatrixConstructor((funcLen, n))
             else:
                 raise FuncDesignerException('unclear error, maybe you have constraint independend on any optimization variables') 
 
@@ -97,7 +98,6 @@ class FuncDesignerTranslator:
         newStyle = 1
         
         # TODO: remove "useSparse = False", replace by code from FDmisc
-        assert useSparse is False, 'sparsity is not implemented in FD translator yet'
         
         if useSparse is not False and newStyle:
             assert 0, 'unimplemented yet'
@@ -152,20 +152,20 @@ class FuncDesignerTranslator:
             if funcLen == 1:
                 r = DenseMatrixConstructor(n)
             else:
-                if useSparse:
-                    r = SparseMatrixConstructor((n, funcLen))
-                else:
-                    r = DenseMatrixConstructor((n, funcLen))            
+#                if useSparse:
+#                    r = SparseMatrixConstructor((n, funcLen))
+#                else:
+                r = DenseMatrixConstructor((n, funcLen))            
             for key, val in pointDerivarive.items():
                 # TODO: remove indexes, do as above for sparse 
                 indexes = self.oovarsIndDict[key]
-                if not useSparse and isspmatrix(val): val = val.A
+#                if not useSparse and isspmatrix(val): val = val.A
                 if r.ndim == 1:
                     r[indexes[0]:indexes[1]] = val if isscalar(val) else val.flatten()
                 else:
                     r[indexes[0]:indexes[1], :] = val.T
-            if useSparse is True and funcLen == 1: 
-                return SparseMatrixConstructor(r)
+#            if useSparse is True and funcLen == 1: 
+#                return SparseMatrixConstructor(r)
             else: 
                 return r.T if r.ndim > 1 else r.reshape(1, -1)
                 
