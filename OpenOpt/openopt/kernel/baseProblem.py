@@ -330,7 +330,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 equations = self.C if self.probType in ('SLE', 'LLSP') else self.f
                 F = equations
                 updateDep(probDep, equations)
-                ConstraintTags = [(elem if not isinstance(elem, (list, tuple, ndarray)) else elem[0]).isConstraint for elem in equations]
+                ConstraintTags = [(elem if not isinstance(elem, (set, list, tuple, ndarray)) else elem[0]).isConstraint for elem in equations]
                 cond_all_oofuns_but_not_cons = not any(ConstraintTags) 
                 cond_cons = all(ConstraintTags) 
                 if not cond_all_oofuns_but_not_cons and not cond_cons:
@@ -451,18 +451,18 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             
             self._D_kwargs = D_kwargs
             
-            variableTolerancesDict = dict([(v, v.tol) for v in self._freeVars])
+            variableTolerancesDict = dict((v, v.tol) for v in self._freeVars)
             self.variableTolerances = self._point2vector(variableTolerancesDict)
             
             #Z = self._vector2point(zeros(self.n))
             if len(self._fixedVars) < len(self._freeVars) and 'isdisjoint' in dir(set()):
                 areFixed = lambda dep: dep.issubset(self._fixedVars)
                 #isFixed = lambda v: v in self._fixedVars
-                Z = dict([(v, zeros_like(self._x0[v]) if v not in self._fixedVars else self._x0[v]) for v in self._x0.keys()])
+                Z = dict((v, zeros_like(val) if v not in self._fixedVars else val) for v, val in self._x0.items())
             else:
                 areFixed = lambda dep: dep.isdisjoint(self._freeVars)
                 #isFixed = lambda v: v not in self._freeVars
-                Z = dict([(v, zeros_like(self._x0[v]) if v in self._freeVars else self._x0[v]) for v in self._x0.keys()])
+                Z = dict((v, zeros_like(val) if v in self._freeVars else val) for v, val in self._x0.items())
             Z = oopoint(Z, maxDistributionSize = self.maxDistributionSize)
            
             #p.isFixed = isFixed
@@ -478,31 +478,28 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             UB = {}
             
             """                                    gather attached constraints                                    """
-            
             C = list(self.constraints)
+
             self.constraints = set(self.constraints)
             for v in self._x0.keys():
                 if not array_equal(v.lb, -inf):
                     self.constraints.add(v >= v.lb)
                 if not array_equal(v.ub, inf):
-                    self.constraints.add(v <= v.ub)
-            
-            if hasattr(self, 'f'):
-                if type(self.f) in [list, tuple, set]:
-                    C += list(self.f)
-                else: # self.f is oofun
-                    C.append(self.f)
-            
+                    self.constraints.add(v <= v.ub)            
+
             if self.useAttachedConstraints: 
+                if hasattr(self, 'f'):
+                    if type(self.f) in [list, tuple, set]:
+                        C += list(self.f)
+                    else: # self.f is oofun
+                        C.append(self.f)
                 self.constraints.update(_getAllAttachedConstraints(C))
-                
             FF = self.constraints.copy()
             for _F in F:
                 if isinstance(_F, (tuple, list, ndarray, set)):
                     FF.update(_F)
                 else:
                     FF.add(_F)
-
             unvectorizableFuncs = set()
             
             #unvectorizableVariables = set([var for var, val in self._x0.items() if isinstance(val, _Stochastic) or asarray(val).size > 1])
@@ -593,7 +590,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                             self._linear_objective = True
                             self._linear_objective_factor = self._pointDerivative2array(D).flatten()
                             self._linear_objective_scalar = self.f(Z)
-                                
+                            
             handleConstraint_args = (StartPointVars, areFixed, oovD, A, b, Aeq, beq, Z, D_kwargs, LB, UB, inplaceLinearRender)
             for c in self.constraints:
                 if isinstance(c, ooarray):
@@ -607,7 +604,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     self.err('The type ' + str(type(c)) + ' is inappropriate for problem constraints')
                 else:
                     self.handleConstraint(c, *handleConstraint_args)
-                    
+
             if len(b) != 0:
                 self.A, self.b = Vstack(A), Hstack(b)
                 if hasattr(self.b, 'toarray'): self.b = self.b.toarray()
@@ -667,6 +664,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             self.pWarn(scipyAbsentMsg)
             
         self._baseProblemIsPrepared = True
+
 
     def handleConstraint(self, c, StartPointVars, areFixed, oovD, A, b, Aeq, beq, Z, D_kwargs, LB, UB, inplaceLinearRender):
         #import FuncDesigner as fd
@@ -1031,9 +1029,6 @@ class NonLinProblem(baseProblem, nonLinFuncs, Args):
 
     # TODO: move the function to child classes
     def _isUnconstrained(self):
-#        s = ((), [], array([]), None)
-#        print '1:',all(isinf(self.lb))
-#        print self.b.size,self.beq.size
         return self.b.size ==0 and self.beq.size==0 and not self.userProvided.c and not self.userProvided.h \
             and (len(self.lb)==0 or all(isinf(self.lb))) and (len(self.ub)==0 or all(isinf(self.ub)))
     

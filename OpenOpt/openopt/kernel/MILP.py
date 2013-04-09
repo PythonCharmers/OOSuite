@@ -36,7 +36,7 @@ class MILP(LP):
             for v in self._freeVarsList:
                 if isinstance(v.domain, (tuple, list, ndarray, set)):
                     self.err('for FuncDesigner MILP models only variables with domains int, bool or None (real) are implemented for now')
-                if v.domain in (int, 'int', bool, 'bool'):
+                if v.domain is int or v.domain is  'int' or v.domain is bool or v.domain is 'bool':
                     r1, r2 = self._oovarsIndDict[v]
                     r += range(r1, r2)
             

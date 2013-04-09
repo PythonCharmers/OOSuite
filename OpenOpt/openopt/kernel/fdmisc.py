@@ -87,8 +87,9 @@ def setStartVectorAndTranslators(p):
         tmp[oov] = 1 if isinstance(val, _Stochastic) else asanyarray(val).size
             
     p._optVarSizes = tmp#dict([(oov, asarray(startPoint[oov]).size) for oov in freeVars])
-    sizes = p._optVarSizes
-    point2vector = lambda point: atleast_1d(hstack([(point[oov] if oov in point else zeros(sizes[oov])) for oov in p._optVarSizes]))
+    sizes_items = p._optVarSizes.items()
+    sizes_items.sort(key=lambda elem:elem[0]._id)
+    point2vector = lambda point: atleast_1d(hstack([(point[oov] if oov in point else zeros(sz)) for oov, sz in sizes_items]))
     # 2nd case can trigger from objective/constraints defined over some of opt oovars only
         
     vector_x0 = point2vector(startPoint)
@@ -179,7 +180,7 @@ def setStartVectorAndTranslators(p):
         involveSparse = useSparse
         if useSparse == 'auto':
             nTotal = n * funcLen#sum([prod(elem.shape) for elem in pointDerivative.values()])
-            nNonZero = sum([(elem.size if isspmatrix(elem) else count_nonzero(elem)) for elem in pointDerivative.values()])
+            nNonZero = sum((elem.size if isspmatrix(elem) else count_nonzero(elem)) for elem in pointDerivative.values())
             involveSparse = 4*nNonZero < nTotal and nTotal > 1000
 
 #        tmp_ = list(pointDerivative.keys())
@@ -193,9 +194,9 @@ def setStartVectorAndTranslators(p):
  
             if len(freeVars) > 5 * len(pointDerivative):
                 ind_Z = 0
-                derivative_items = list(pointDerivative.items())
-                derivative_items.sort(key=lambda elem: elem[0]._id)
-                for oov, val in derivative_items:
+#                derivative_items = list(pointDerivative.items())
+#                derivative_items.sort(key=lambda elem: elem[0]._id)
+                for oov, val in pointDerivative.items():
                     ind_start, ind_end = oovarsIndDict[oov]
                     if ind_start != ind_Z:
                         r2.append(SparseMatrixConstructor((funcLen, ind_start - ind_Z)))
@@ -239,16 +240,8 @@ def setStartVectorAndTranslators(p):
                 r = DenseMatrixConstructor(n)
             else:
                 r = SparseMatrixConstructor((funcLen, n)) if involveSparse else DenseMatrixConstructor((funcLen, n)) 
-            derivative_items = list(pointDerivative.items())
             
-            # temporary walkaround for a bug in Python or numpy
-            # TODO: remove it in future
-            derivative_items.sort(key=lambda elem: elem[0])
-            #            derivative_items.sort(key=lambda elem: elem[0]._id)
-            ######################################
-            
-            for key, val in derivative_items:#pointDerivative.items():
-                # TODO: remove indexes, do as above for sparse 
+            for key, val in pointDerivative.items():
                 indexes = oovarsIndDict[key]
                 if not involveSparse and isspmatrix(val): val = val.A
 #                if isscalar(val) or prod(val.shape)==1:
@@ -258,6 +251,7 @@ def setStartVectorAndTranslators(p):
                     r[indexes[0]:indexes[1]] = val.flatten() if type(val) == ndarray else val
                 else:
                     r[:, indexes[0]:indexes[1]] = val if val.shape == r.shape else val.reshape((funcLen, prod(val.shape)/funcLen))
+            # TODO: mb remove it
             if useSparse is True and funcLen == 1: 
                 return SparseMatrixConstructor(r)
             elif r.ndim <= 1:
