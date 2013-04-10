@@ -168,6 +168,7 @@ class boundsurf(object):#object is added for Python2 compatibility
         else:
             assert 0, 'bug or unimplemented yet'
         return boundsurf(rr[0], rr[1], definiteRange, self.domain)
+        
     __rmul__ = __mul__
     
     # TODO: rework it if __iadd_, __imul__ etc will be created
@@ -233,7 +234,7 @@ class boundsurf(object):#object is added for Python2 compatibility
             L_new.c = new_l_resolved - L_new.minimum(domain)
 
             if 1 and len(Ud) >= 1:# and np.all(lb != ub):
-                koeffs = -1.0 /(ub*lb) #(1/ub - 1/lb) / (ub - lb)
+                koeffs = 1.0 /(ub*lb) #(1/lb - 1/ub) / (ub - lb)
                 d_new = dict((v, koeffs * val) for v, val in Ld.items())
                 U_new = surf(d_new, 0.0)
                 U_new.c = new_u_resolved - U_new.maximum(domain)
@@ -241,6 +242,7 @@ class boundsurf(object):#object is added for Python2 compatibility
                 U_new = surf({}, new_u_resolved)
 
             R = boundsurf(L_new, U_new, self.definiteRange, domain)
+#            R = boundsurf(surf({}, new_l_resolved), surf({}, new_u_resolved), self.definiteRange, domain)
         return R
         
 

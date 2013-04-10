@@ -16,7 +16,7 @@ raise_except, DiagonalType, isPyPy
 from ooPoint import ooPoint
 from FuncDesigner.multiarray import multiarray
 from Interval import Interval, adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain, mul_interval,\
-pow_const_interval, pow_oofun_interval
+pow_const_interval, pow_oofun_interval, div_interval
 import inspect
 from baseClasses import OOArray, Stochastic
 from boundsurf import boundsurf, surf
@@ -634,35 +634,7 @@ class oofun(object):
                 order1, order2 = self.getOrder(*args, **kwargs), other.getOrder(*args, **kwargs)
                 return order1 if order2 == 0 else inf
             r.getOrder = getOrder
-            def interval(domain, dtype):
-                lb1_ub1, definiteRange1 = self._interval(domain, dtype)
-                lb1, ub1 = lb1_ub1[0], lb1_ub1[1]
-                lb2_ub2, definiteRange2 = other._interval(domain, dtype)
-                lb2, ub2 = lb2_ub2[0], lb2_ub2[1]
-                lb2, ub2 = asarray(lb2, dtype), asarray(ub2, dtype)
-
-                tmp = vstack((lb1/lb2, lb1/ub2, ub1/lb2, ub1/ub2))
-                r1, r2 = nanmin(tmp, 0), nanmax(tmp, 0)
-                
-                ind = logical_or(lb1==0.0, ub1==0.0)
-                r1[atleast_1d(logical_and(ind, r1>0.0))] = 0.0
-                r2[atleast_1d(logical_and(ind, r2<0.0))] = 0.0
-
-                # adjust inf
-#                ind1_zero_minus = logical_and(lb1<0, ub1>=0)
-#                ind1_zero_plus = logical_and(lb1<=0, ub1>0)
-                
-                ind2_zero_minus = logical_and(lb2<0, ub2>=0)
-                ind2_zero_plus = logical_and(lb2<=0, ub2>0)
-                
-                r1[atleast_1d(logical_or(logical_and(ind2_zero_minus, ub1>0), logical_and(ind2_zero_plus, lb1<0)))] = -inf
-                r2[atleast_1d(logical_or(logical_and(ind2_zero_minus, lb1<0), logical_and(ind2_zero_plus, ub1>0)))] = inf
-                
-                #assert not any(isnan(r1)) and not any(isnan(r2))
-                #assert all(r1 <= r2)
-                return vstack((r1, r2)), logical_and(definiteRange1, definiteRange2)
-
-            r._interval_ = interval
+            r._interval_ = lambda *args, **kw: div_interval(self, other, *args, **kw)
         else:
             # TODO: mb remove it?
             other = array(other,'float')# TODO: handle float128

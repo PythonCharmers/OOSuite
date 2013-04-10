@@ -319,6 +319,50 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):#*args, **kw):
    
     return vstack((t_min, t_max)), definiteRange
 
+
+def div_interval(self, other, domain, dtype):
+    lb1_ub1, definiteRange1 = self._interval(domain, dtype, allowBoundSurf = True)
+    lb2_ub2, definiteRange2 = other._interval(domain, dtype, allowBoundSurf = True)
+    
+    # TODO: mention in doc definiteRange result for 0 / 0
+    definiteRange = logical_and(definiteRange1, definiteRange2)
+
+    tmp1 = lb1_ub1.resolve()[0] if type(lb1_ub1) == boundsurf else lb1_ub1
+    t1_positive = all(tmp1 >= 0)
+    t1_negative = all(tmp1 <= 0)
+
+    tmp2 = lb2_ub2.resolve()[0] if type(lb2_ub2) == boundsurf else lb2_ub2
+    t2_strictly_positive = all(tmp2 > 0)
+    t2_strictly_negative = all(tmp2 < 0)
+    
+    if (type(lb1_ub1) == boundsurf  or type(lb2_ub2) == boundsurf) and \
+    (t1_positive or t1_negative) and (t2_strictly_positive or t2_strictly_negative):
+        changeSign = t1_positive != t2_strictly_positive
+        tmp = (lb1_ub1 if t1_positive else -lb1_ub1) * (lb2_ub2 if t2_strictly_positive else -lb2_ub2) ** (-1)
+        return (-tmp if changeSign else tmp), definiteRange
+    
+    lb1, ub1 = tmp1[0], tmp1[1]
+    lb2, ub2 = tmp2[0], tmp2[1]
+    lb2, ub2 = asarray(lb2, dtype), asarray(ub2, dtype)
+
+    tmp = vstack((lb1/lb2, lb1/ub2, ub1/lb2, ub1/ub2))
+    r1, r2 = nanmin(tmp, 0), nanmax(tmp, 0)
+    
+    ind = logical_or(lb1==0.0, ub1==0.0)
+    r1[atleast_1d(logical_and(ind, r1>0.0))] = 0.0
+    r2[atleast_1d(logical_and(ind, r2<0.0))] = 0.0
+
+    # adjust inf
+    ind2_zero_minus = logical_and(lb2<0, ub2>=0)
+    ind2_zero_plus = logical_and(lb2<=0, ub2>0)
+    
+    r1[atleast_1d(logical_or(logical_and(ind2_zero_minus, ub1>0), logical_and(ind2_zero_plus, lb1<0)))] = -inf
+    r2[atleast_1d(logical_or(logical_and(ind2_zero_minus, lb1<0), logical_and(ind2_zero_plus, ub1>0)))] = inf
+    
+    #assert not any(isnan(r1)) and not any(isnan(r2))
+    #assert all(r1 <= r2)
+    return vstack((r1, r2)), definiteRange
+
 def pow_const_interval(self, other, domain, dtype):
     lb_ub, definiteRange = self._interval(domain, dtype, allowBoundSurf = True)
     if type(lb_ub) == boundsurf:
