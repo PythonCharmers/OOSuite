@@ -338,7 +338,14 @@ def div_interval(self, other, domain, dtype):
     if (type(lb1_ub1) == boundsurf  or type(lb2_ub2) == boundsurf) and \
     (t1_positive or t1_negative) and (t2_strictly_positive or t2_strictly_negative):
         changeSign = t1_positive != t2_strictly_positive
-        tmp = (lb1_ub1 if t1_positive else -lb1_ub1) * (lb2_ub2 if t2_strictly_positive else -lb2_ub2) ** (-1)
+        tmp1 = lb1_ub1 if t1_positive else -lb1_ub1
+        if type(lb2_ub2) == boundsurf:
+            tmp2 = (lb2_ub2 if t2_strictly_positive else -lb2_ub2) ** (-1)
+        else:
+            assert tmp2.shape[0] == 2
+            tmp2 = 1.0/tmp2[::-1]
+        
+        tmp = tmp1 *  tmp2
         return (-tmp if changeSign else tmp), definiteRange
     
     lb1, ub1 = tmp1[0], tmp1[1]

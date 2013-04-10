@@ -234,7 +234,7 @@ class boundsurf(object):#object is added for Python2 compatibility
             L_new.c = new_l_resolved - L_new.minimum(domain)
 
             if 1 and len(Ud) >= 1:# and np.all(lb != ub):
-                koeffs = 1.0 /(ub*lb) #(1/lb - 1/ub) / (ub - lb)
+                koeffs = -1.0 /(ub*lb) #(1/ub - 1/lb) / (ub - lb)
                 d_new = dict((v, koeffs * val) for v, val in Ld.items())
                 U_new = surf(d_new, 0.0)
                 U_new.c = new_u_resolved - U_new.maximum(domain)
