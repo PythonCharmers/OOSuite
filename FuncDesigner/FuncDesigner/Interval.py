@@ -345,6 +345,10 @@ def div_interval(self, other, domain, dtype):
             assert tmp2.shape[0] == 2
             tmp2 = 1.0/tmp2[::-1]
         
+        # temporary
+        if type(lb1_ub1) == boundsurf and type(lb2_ub2) == boundsurf:
+            tmp2 = tmp2.resolve()[0]
+        
         tmp = tmp1 *  tmp2
         return (-tmp if changeSign else tmp), definiteRange
     

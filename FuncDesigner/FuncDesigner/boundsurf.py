@@ -159,14 +159,16 @@ class boundsurf(object):#object is added for Python2 compatibility
             c1, c2 = self.u.c, other.u.c
             l1_res = R1[1] - c1
             l2_res = R2[1] - c2
-            cond = nanmax(R1[1]/R1[0]) > nanmax(R2[1]/R2[0])
+#            cond = nanmax(R1[1]/R1[0]) > nanmax(R2[1]/R2[0])
             l1, l2 = self.u - c1, other.u - c2
             #r_u = (c2 + 0.5 * l2_res) * l1 + (c1 + 0.5 * l1_res) * l2 + c1 * c2
             r_u = (((c2+l2_res) * l1 + c1 * l2) if cond else (c2 * l1 + (c1+l1_res)* l2)) + c1 * c2
-            
+#            print('--')
             rr = (r_l, r_u)
         else:
             assert 0, 'bug or unimplemented yet'
+#        print('----')
+#        print (boundsurf(rr[0], rr[1], definiteRange, self.domain).resolve()[0])
         return boundsurf(rr[0], rr[1], definiteRange, self.domain)
         
     __rmul__ = __mul__
