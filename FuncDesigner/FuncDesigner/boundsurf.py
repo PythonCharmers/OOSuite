@@ -49,9 +49,8 @@ class surf(object):
     
     def __mul__(self, other):
         isArray = type(other) == np.ndarray
-        #if np.isscalar(other) or (isArray and other.size == 1):
         if np.isscalar(other) or isArray:
-            return surf(dict([(k, v*other) for k, v in self.d.items()]), self.c * other)
+            return surf(dict((k, v*other) for k, v in self.d.items()), self.c * other)
 #        elif type(other) == surf:
 #            return surf(self.l+other.l, self.u+other.u)
         else:
@@ -146,8 +145,10 @@ class boundsurf(object):#object is added for Python2 compatibility
                 rr = (self.u*R2[1], self.l*R2[0]) if R2Negative else (self.l*R2[1], self.u*R2[0])
             
         elif isBoundSurf:
-            assert selfPositive and  R2Positive, 'bug or unimplemented yet'            
+            assert selfPositive and  R2Positive, 'bug or unimplemented yet'
+#            return R2*self
             return 0.5 * (R1*other + R2*self)
+            
 #            
 #            c1, c2 = self.l.c, other.l.c
 #            l1_res = R1[0] - c1
