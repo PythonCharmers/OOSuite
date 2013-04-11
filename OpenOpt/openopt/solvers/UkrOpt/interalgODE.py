@@ -2,7 +2,7 @@ from numpy import hstack,  asarray, abs, atleast_1d, where, \
 logical_not, argsort, vstack, sum, array, nan, all
 
 from FuncDesigner import oopoint
-from FuncDesigner.boundsurf import boundsurf
+#from FuncDesigner.boundsurf import boundsurf
 
 
 def interalg_ODE_routine(p, solver):
@@ -59,8 +59,7 @@ def interalg_ODE_routine(p, solver):
         mp.dictOfFixedFuncs = p.dictOfFixedFuncs
         mp.surf_preference = True
         tmp = f.interval(mp, allowBoundSurf = isIP)
-#        print(tmp.__class__)
-        if type(tmp) == boundsurf:
+        if hasattr(tmp, 'resolve'):# boundsurf:
             #adjustr4WithDiscreteVariables(wr4, p)
             cs = oopoint([(v, asarray(0.5*(val[0] + val[1]), dataType)) for v, val in mp.items()])
             cs.dictOfFixedFuncs = p.dictOfFixedFuncs

@@ -1,6 +1,6 @@
 from interalgLLR import *
 from numpy import inf, prod, all, sum
-from FuncDesigner.boundsurf import boundsurf
+#from FuncDesigner.boundsurf import boundsurf
 
 def r14IP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, CBKPMV, g, nNodes,  \
          frc, fTol, Solutions, varTols, _in, dataType, \
@@ -19,7 +19,7 @@ def r14IP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, CBKPMV, g, nNode
         # new
         tmp = asdf1.interval(ip, allowBoundSurf = True)
 #        print(type(tmp))
-        if type(tmp) == boundsurf:
+        if hasattr(tmp, 'resolve'):#type(tmp) == boundsurf:
 #            print('b')
             #adjustr4WithDiscreteVariables(wr4, p)
             cs = oopoint((v, asarray(0.5*(val[0] + val[1]), dataType)) for v, val in ip.items())
