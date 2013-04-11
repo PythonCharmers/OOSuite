@@ -87,7 +87,7 @@ def setStartVectorAndTranslators(p):
         tmp[oov] = 1 if isinstance(val, _Stochastic) else asanyarray(val).size
             
     p._optVarSizes = tmp#dict([(oov, asarray(startPoint[oov]).size) for oov in freeVars])
-    sizes_items = p._optVarSizes.items()
+    sizes_items = list(p._optVarSizes.items())
     sizes_items.sort(key=lambda elem:elem[0]._id)
     point2vector = lambda point: atleast_1d(hstack([(point[oov] if oov in point else zeros(sz)) for oov, sz in sizes_items]))
     # 2nd case can trigger from objective/constraints defined over some of opt oovars only
