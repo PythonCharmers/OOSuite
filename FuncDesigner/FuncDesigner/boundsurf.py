@@ -146,29 +146,35 @@ class boundsurf(object):#object is added for Python2 compatibility
                 rr = (self.u*R2[1], self.l*R2[0]) if R2Negative else (self.l*R2[1], self.u*R2[0])
             
         elif isBoundSurf:
-            assert selfPositive and  R2Positive, 'bug or unimplemented yet'
-            definiteRange = logical_and(definiteRange, other.definiteRange)
-            c1, c2 = self.l.c, other.l.c
-            l1_res = R1[0] - c1
-            l2_res = R2[0] - c2
-            cond = nanmax(R1[1]/R1[0]) > nanmax(R2[1]/R2[0])
-            l1, l2 = self.l - c1, other.l - c2
-            #r_l = (c2 + 0.5 * l2_res) * l1 + (c1 + 0.5 * l1_res) * l2 + c1 * c2
-            r_l = (((c2+l2_res) * l1 + c1 * l2) if cond else (c2 * l1 + (c1+l1_res)* l2)) + c1 * c2
-            
-            c1, c2 = self.u.c, other.u.c
-            l1_res = R1[1] - c1
-            l2_res = R2[1] - c2
+            assert selfPositive and  R2Positive, 'bug or unimplemented yet'            
+            return 0.5 * (R1*other + R2*self)
+#            
+#            c1, c2 = self.l.c, other.l.c
+#            l1_res = R1[0] - c1
+#            l2_res = R2[0] - c2
 #            cond = nanmax(R1[1]/R1[0]) > nanmax(R2[1]/R2[0])
-            l1, l2 = self.u - c1, other.u - c2
-            #r_u = (c2 + 0.5 * l2_res) * l1 + (c1 + 0.5 * l1_res) * l2 + c1 * c2
-            r_u = (((c2+l2_res) * l1 + c1 * l2) if cond else (c2 * l1 + (c1+l1_res)* l2)) + c1 * c2
-#            print('--')
-            rr = (r_l, r_u)
+#            l1, l2 = self.l - c1, other.l - c2
+#            #r_l = (c2 + 0.5 * l2_res) * l1 + (c1 + 0.5 * l1_res) * l2 + c1 * c2
+#            r_l = (((c2+l2_res) * l1 + c1 * l2) if cond else (c2 * l1 + (c1+l1_res)* l2)) + c1 * c2
+#            
+#            c1, c2 = self.u.c, other.u.c
+#            l1_res = R1[1] - c1
+#            l2_res = R2[1] - c2
+##            cond = nanmax(R1[1]/R1[0]) > nanmax(R2[1]/R2[0])
+#            l1, l2 = self.u - c1, other.u - c2
+#            #r_u = (c2 + 0.5 * l2_res) * l1 + (c1 + 0.5 * l1_res) * l2 + c1 * c2
+#            r_u = (((c2+l2_res) * l1 + c1 * l2) if cond else (c2 * l1 + (c1+l1_res)* l2)) + c1 * c2
+##            print('--')
+#            rr = (r_l, r_u)
         else:
             assert 0, 'bug or unimplemented yet'
-#        print('----')
+        
+#        print(R1, R2)
 #        print (boundsurf(rr[0], rr[1], definiteRange, self.domain).resolve()[0])
+
+#        tmp = boundsurf(rr[0], rr[1], definiteRange, self.domain)
+#        print(tmp.l.d, tmp.l.c, tmp.u.d, tmp.u.c)
+#        print('----')
         return boundsurf(rr[0], rr[1], definiteRange, self.domain)
         
     __rmul__ = __mul__
