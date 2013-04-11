@@ -57,10 +57,10 @@ def interalg_ODE_routine(p, solver):
         mp.isMultiPoint = True
         
         mp.dictOfFixedFuncs = p.dictOfFixedFuncs
+        mp.surf_preference = True
         tmp = f.interval(mp, allowBoundSurf = isIP)
 #        print(tmp.__class__)
-        if tmp.__class__ == boundsurf:
-#            print('b')
+        if type(tmp) == boundsurf:
             #adjustr4WithDiscreteVariables(wr4, p)
             cs = oopoint([(v, asarray(0.5*(val[0] + val[1]), dataType)) for v, val in mp.items()])
             cs.dictOfFixedFuncs = p.dictOfFixedFuncs

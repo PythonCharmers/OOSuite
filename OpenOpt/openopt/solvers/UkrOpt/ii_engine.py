@@ -13,15 +13,16 @@ def r14IP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, CBKPMV, g, nNode
     if 1:
         ip = func10(y, e, vv)
         ip.dictOfFixedFuncs = p.dictOfFixedFuncs
+        ip.surf_preference = True
         # prev
         #o, a, definiteRange = func8(ip, asdf1, dataType)
         # new
         tmp = asdf1.interval(ip, allowBoundSurf = True)
-#        print(tmp.__class__)
-        if tmp.__class__ == boundsurf:
+#        print(type(tmp))
+        if type(tmp) == boundsurf:
 #            print('b')
             #adjustr4WithDiscreteVariables(wr4, p)
-            cs = oopoint([(v, asarray(0.5*(val[0] + val[1]), dataType)) for v, val in ip.items()])
+            cs = oopoint((v, asarray(0.5*(val[0] + val[1]), dataType)) for v, val in ip.items())
             cs.dictOfFixedFuncs = p.dictOfFixedFuncs
             o, a = tmp.values(cs)
             definiteRange = tmp.definiteRange

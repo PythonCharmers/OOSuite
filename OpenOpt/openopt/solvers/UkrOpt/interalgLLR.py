@@ -9,15 +9,6 @@ try:
     from bottleneck import nanargmin, nanmin, nanargmax, nanmax
 except ImportError:
     from numpy import nanmin, nanargmin, nanargmax, nanmax
-
-
-#def func82(y, e, vv, f, dataType, pool=None, nProc=1):
-#    if pool is None:
-#        return func82_seq(y, e, vv, f, dataType)
-#    from numpy import array_split
-#    yl, el = array_split(y, nProc), array_split(e, nProc)
-#    Args = [(yl[i], el[i], vv, lf, uf) for s in ss]
-#    R = func82_seq(y, e, vv, f, dataType)
     
 def func82(y, e, vv, f, dataType, p, Th = None):
     domain = oopoint([(v, (y[:, i], e[:, i])) for i, v in enumerate(vv)], skipArrayCast=True, isMultiPoint=True)
@@ -42,7 +33,7 @@ def func82(y, e, vv, f, dataType, p, Th = None):
             a_u.append(r0.ub)
             #definiteRange = logical_and(definiteRange, r0.definiteRange)
     o, a = hstack(o_l+o_u), hstack(a_l+a_u)    
-    return o, a, definiteRange
+    return o, a, definiteRange, domain.exactRange
 
 def func10(y, e, vv):
     m, n = y.shape

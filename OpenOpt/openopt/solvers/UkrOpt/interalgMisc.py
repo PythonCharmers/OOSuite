@@ -23,7 +23,6 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
     maxSolutions, solutions, coords = Solutions.maxNum, Solutions.solutions, Solutions.coords
     if len(p._discreteVarsNumList):
         y, e = adjustDiscreteVarBounds(y, e, p)
-
     
     o, a, r41 = r45(y, e, vv, p, asdf1, dataType, r41, nlhc)
     fo_prev = float(0 if isSNLE else min((r41, r40 - (fTol if maxSolutions == 1 else 0))))
@@ -222,8 +221,7 @@ def r46(o, a, PointCoords, PointVals, fTol, varTols, Solutions):
 
 
 def r45(y, e, vv, p, asdf1, dataType, r41, nlhc):
-    o, a, definiteRange = func82(y, e, vv, asdf1, dataType, p, r41)
-    
+    o, a, definiteRange, exactRange = func82(y, e, vv, asdf1, dataType, p)#, r41)
     if p.debug and any(a + 1e-15 < o):  
         p.warn('interval lower bound exceeds upper bound, it seems to be FuncDesigner kernel bug')
     if p.debug and any(logical_xor(isnan(o), isnan(a))):
@@ -233,11 +231,15 @@ def r45(y, e, vv, p, asdf1, dataType, r41, nlhc):
     o, a = o.reshape(2*n, m).T, a.reshape(2*n, m).T
 
     if p.probType not in ('SNLE', 'NLSP') and asdf1.isUncycled and not p.probType.startswith('MI') \
-    and len(p._discreteVarsList)==0:# for SNLE fo = 0
+    and len(p._discreteVarsList)==0 and exactRange:# for SNLE fo = 0
         # TODO: 
         # handle constraints with restricted domain and matrix definiteRange
+        ind = where(definiteRange)[0]
         
-        if all(definiteRange):
+        if ind.size != 0:
+            o = o[ind]
+            if nlhc is not None:
+                nlhc = nlhc[ind]
             # TODO: if o has at least one -inf => prob is unbounded
             tmp1 = o[nlhc==0] if nlhc is not None else o
             if tmp1.size != 0:
