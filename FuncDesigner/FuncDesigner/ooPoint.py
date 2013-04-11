@@ -30,6 +30,8 @@ class ooPoint(dict):
     modificationVar = None # default: no modification variable
     useSave = True
     useAsMutable = False
+    exactRange = True
+    surf_preference = False
     
     def __init__(self, *args, **kwargs):
         self.storedIntervals = {}
