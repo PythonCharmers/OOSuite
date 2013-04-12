@@ -2,7 +2,7 @@
 PythonSum = sum
 from numpy import inf, asfarray, copy, all, any, atleast_2d, zeros, dot, asarray, atleast_1d, \
 ones, ndarray, where, array, nan, vstack, eye, array_equal, isscalar, log, hstack, sum as npSum, prod, nonzero,\
-isnan, asscalar, zeros_like, ones_like, amin, amax, logical_and, logical_or, isinf, logical_not, logical_xor, flipud, \
+isnan, asscalar, zeros_like, ones_like, logical_and, logical_or, isinf, logical_not, logical_xor, \
 tile, float64, searchsorted, int8, int16, int32, int64, isfinite, log2, string_, asanyarray, bool_
 
 #from traceback import extract_stack 
@@ -16,7 +16,8 @@ raise_except, DiagonalType, isPyPy
 from ooPoint import ooPoint
 from FuncDesigner.multiarray import multiarray
 from Interval import Interval, adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain, mul_interval,\
-pow_const_interval, pow_oofun_interval, div_interval
+pow_const_interval, pow_oofun_interval, div_interval, rdiv_interval, add_interval, add_const_interval, \
+neg_interval
 import inspect
 from baseClasses import OOArray, Stochastic
 from boundsurf import boundsurf, surf
@@ -209,7 +210,7 @@ class oofun(object):
         
         arg_lb_ub, definiteRange = self.input[0]._interval(domain, dtype, allowBoundSurf = True)
         
-        if arg_lb_ub.__class__ == boundsurf:
+        if type(arg_lb_ub) == boundsurf:
             engine_convexity = self.engine_convexity
             if criticalPointsFunc is False and engine_convexity is not nan:
                 L, U = arg_lb_ub.l, arg_lb_ub.u
@@ -530,17 +531,10 @@ class oofun(object):
             r._summation_elements = [self, other]
             r.discrete = self.discrete and other.discrete
             r.getOrder = lambda *args, **kwargs: max((self.getOrder(*args, **kwargs), other.getOrder(*args, **kwargs)))
-            
-            # TODO: move it outside the func, to prevent recreation each time
-            def interval(domain, dtype): 
-                domain1, definiteRange1 = self._interval(domain, dtype, allowBoundSurf = True)
-                domain2, definiteRange2 = other._interval(domain, dtype, allowBoundSurf = True)
-                return domain1 + domain2, logical_and(definiteRange1, definiteRange2)
-            r._interval_ = interval
+            r._interval_ = lambda *args, **kw: add_interval(self, other, *args, **kw)
         else:
             # TODO: mb rework it?
             if isscalar(other) and other == 0: return self # sometimes triggers from other parts of FD engine 
-            
             if isinstance(other,  OOArray): return other + self
             if isinstance(other,  ndarray): other = other.copy() 
 
@@ -551,12 +545,8 @@ class oofun(object):
             r.discrete = self.discrete
             r.getOrder = self.getOrder
             
-            # TODO: move it outside 
             Other2 = tile(other, (2, 1))
-            def interval(domain, dtype): 
-                r, definiteRange = self._interval(domain, dtype, allowBoundSurf = True)
-                return r + Other2, definiteRange
-            r._interval_ = interval
+            r._interval_ = lambda *args, **kw: add_const_interval(self, Other2, *args, **kw)
             
             if isscalar(other) or asarray(other).size == 1 or ('size' in self.__dict__ and self.size is asarray(other).size):
                 r._D = lambda *args,  **kwargs: self._D(*args,  **kwargs) 
@@ -576,25 +566,16 @@ class oofun(object):
         r._neg_elem = self
         r._getFuncCalcEngine = lambda *args,  **kwargs: -self._getFuncCalcEngine(*args,  **kwargs)
         r.getOrder = self.getOrder
-        r._D = lambda *args, **kwargs: dict([(key, -value) for key, value in self._D(*args, **kwargs).items()])
+        r._D = lambda *args, **kwargs: dict((key, -value) for key, value in self._D(*args, **kwargs).items())
         r.d = raise_except
         r.criticalPoints = False
         r.vectorized = True
-        def _interval(domain, dtype):
-            r, definiteRange = self._interval(domain, dtype, allowBoundSurf=True)
-            if type(r) == ndarray:
-                assert r.shape[0] == 2
-                return -flipud(r), definiteRange
-            else:
-                #assert type(r) == boundsurf
-                return -r, definiteRange
-            #return (-r[1], -r[0])
-        r._interval_ = _interval
+        r._interval_ = lambda *args, **kw: neg_interval(self, *args, **kw)
         return r
         
     # overload "a-b"
-    __sub__ = lambda self, other: self + (-asfarray(other).copy()) if type(other) in (list, tuple, ndarray) else self + (-other)
-    __rsub__ = lambda self, other: other + (-self)
+    __sub__ = lambda self, other: self + (-asfarray(other).copy() if type(other) in (list, tuple, ndarray) else -other)
+    __rsub__ = lambda self, other: (asfarray(other).copy() if type(other) in (list, tuple, ndarray) else other) + (-self)
 
     # overload "a/b"
     def __div__(self, other):
@@ -668,32 +649,8 @@ class oofun(object):
         other = array(other, 'float') # TODO: sparse matrices handling!
         r = oofun(lambda x: other/x, self, discrete = self.discrete)
         r.d = lambda x: Diag((- other) / x**2)
-        def interval(domain, dtype):
-            arg_lb_ub, definiteRange = self._interval(domain, dtype, allowBoundSurf = True)
-            if arg_lb_ub.__class__ == boundsurf:
-                arg_lb_ub_resolved = arg_lb_ub.resolve()[0]
-                if all(arg_lb_ub_resolved > 0):
-                    return other * arg_lb_ub ** (-1), definiteRange
-                else:
-                    arg_lb_ub = arg_lb_ub_resolved
-            arg_infinum, arg_supremum = arg_lb_ub[0], arg_lb_ub[1]
-            if other.size != 1: 
-                raise FuncDesignerException('this case for interval calculations is unimplemented yet')
-            r = vstack((other / arg_supremum, other / arg_infinum))
-            r1, r2 = amin(r, 0), amax(r, 0)
-            ind_zero_minus = logical_and(arg_infinum<0, arg_supremum>=0)
-            if any(ind_zero_minus):
-                r1[atleast_1d(logical_and(ind_zero_minus, other>0))] = -inf
-                r2[atleast_1d(logical_and(ind_zero_minus, other<0))] = inf
-                
-            ind_zero_plus = logical_and(arg_infinum<=0, arg_supremum>0)
-            if any(ind_zero_plus):
-                r1[atleast_1d(logical_and(ind_zero_plus, other<0))] = -inf
-                r2[atleast_1d(logical_and(ind_zero_plus, other>0))] = inf
 
-            return vstack((r1, r2)), definiteRange
-            
-        r._interval_ = interval
+        r._interval_ = lambda *args, **kw: rdiv_interval(self, other, *args, **kw)
         #r.isCostly = True
         def getOrder(*args, **kwargs):
             order = self.getOrder(*args, **kwargs)
@@ -948,7 +905,6 @@ class oofun(object):
     __eq__ = lambda self, other: self.eq(other)
   
     def eq(self, other):
-        #if other in (None, (), []): return False
         if other is None or other is () or (type(other) == list and len(other) == 0): return False
         if type(other) in (str, string_): 
         #if self.domain is not None and self.domain is not bool and self.domain is not 'bool':
@@ -963,8 +919,6 @@ class oofun(object):
                 raise FuncDesignerException('compared value %s is absent in oovar %s domain' %(other, self.name))
             #r = (self == ind)(tol=0.5)
             r = Constraint(self - ind, ub = 0.0, lb = 0.0, tol=0.5)
-            #print (self, other)
-            # TODO: use it instead
             if self.is_oovar: r.nlh = lambda Lx, Ux, p, dataType: self.nlh(Lx, Ux, p, dataType, ind)
             return r
         
@@ -977,30 +931,9 @@ class oofun(object):
                 if other not in [0, 1]:# and type(other) not in (int, int16, int32, int64):
                     raise FuncDesignerException('bool oovar can be compared with [0,1] only')
                 r.nlh = self.nlh if other == 1.0 else (~self).nlh
-                r.alt_nlh_func = True
             elif self.domain is not int and self.domain is not 'int':# and type(other) in (str, string_):
                 pass
-#                if self.is_oovar:
-#                    self.formAuxDomain()
-#                    print('2', other)
-#                    ind = searchsorted(self.aux_domain, other, 'left')
-#                    #r.nlh = lambda Lx, Ux, p, dataType: self.nlh(Lx, Ux, p, dataType, ind)
-#                    r = Constraint(self - ind, ub = 0.0, lb = 0.0)
-#                    r.nlh = lambda Lx, Ux, p, dataType: self.nlh(Lx, Ux, p, dataType, ind)
-                    
-                
-           #                print (self.domain, other)
-#                r_nlh = r.nlh
-#                def nlh_c(Lx, Ux, p, dataType):
-#                    r1 = nlh2(Lx, Ux, p, dataType)
-#                    r2 = r_nlh(Lx, Ux, p, dataType)
-#                    print(r1)
-#                    print(r2)
-#                    raw_input()
-#                #r.nlh = lambda Lx, Ux, p, dataType: self.nlh(Lx, Ux, p, dataType, other)
-#                r.nlh = nlh_c
-##                r.nlh = lambda Lx, Ux, p, dataType: self.nlh(Lx, Ux, p, dataType, other)
-##                r.alt_nlh_func = True
+
         return r  
 
     """                                             getInput                                              """
@@ -2003,15 +1936,10 @@ def reverse_l2P(l2P):
 
 def AND(*args):
     Args = args[0] if len(args) == 1 and isinstance(args[0], (ndarray, tuple, list, set)) else args
-#    for arg in Args:
-#        if isinstance(arg, SmoothFDConstraint) and arg.lb == arg.ub and arg.tol == 0 and not arg.alt_nlh_func:
-#            pass
-            #raise FuncDesignerException('equality constraint for smooth func inside logical FD func should have user-assigned tolerance')
     assert not isinstance(args[0], ndarray), 'unimplemented yet' 
     for arg in Args:
         if not isinstance(arg, oofun):
             raise FuncDesignerException('FuncDesigner logical AND currently is implemented for oofun instances only')
-    #if other is True: return self
     
     f  = logical_and if len(Args) == 2 else alt_AND_engine
     r = BooleanOOFun(f, Args, vectorized = True)
@@ -2030,16 +1958,10 @@ XOR_prev = lambda arg1, arg2: (arg1 & ~arg2) | (~arg1 & arg2)
 
 def XOR(*args):
     Args = args[0] if len(args) == 1 and isinstance(args[0], (ndarray, tuple, list, set)) else args
-#    for arg in Args:
-#        if isinstance(arg, SmoothFDConstraint) and arg.lb == arg.ub and arg.tol == 0 and not arg.alt_nlh_func:
-#            pass
-            #raise FuncDesignerException('equality constraint for smooth func inside logical FD func should have user-assigned tolerance')
     assert not isinstance(args[0], ndarray), 'unimplemented yet' 
     for arg in Args:
         if not isinstance(arg, oofun):
-            raise FuncDesignerException('FuncDesigner logical XOR currently is implemented for oofun instances only')
-    #if other is True: return self
-    
+            raise FuncDesignerException('FuncDesigner logical XOR currently is implemented for oofun instances only')    
     #f = lambda *args: logical_xor(hstack([asarray(elem).reshape(-1, 1) for elem in args]))
     r = BooleanOOFun(f_xor, Args, vectorized = True)
     r.nlh = lambda *arguments: nlh_xor(Args, r._getDep(), *arguments)
@@ -2054,14 +1976,8 @@ EQUIVALENT = lambda arg1, arg2: ((arg1 & arg2) | (~arg1 & ~arg2))
     
 def NOT(_bool_oofun):
     assert not isinstance(_bool_oofun, (ndarray, list, tuple, set)), 'disjunctive and other logical constraint are not implemented for ooarrays/ndarrays/lists/tuples yet' 
-    #Args = args[0] if len(args) == 1 and type(args[0]) in (tuple, list, set) else args
-    #Args = args if type(args) in (tuple, list, set) else [args]
     if not isinstance(_bool_oofun, oofun):
         raise FuncDesignerException('FuncDesigner logical NOT currently is implemented for oofun instances only')
-#    if isinstance(_bool_oofun, SmoothFDConstraint) and _bool_oofun.lb == _bool_oofun.ub and _bool_oofun.tol == 0 and not _bool_oofun.alt_nlh_func:
-#        raise FuncDesignerException('equality constraint for smooth func inside logical FD func should have user-assigned tolerance')
-        
-    #if other is True: return False
     r = BooleanOOFun(logical_not, [_bool_oofun], vectorized = True)
     r.oofun = r
 
@@ -2089,10 +2005,9 @@ def OR(*args):
     return r
 
 class BooleanOOFun(oofun):
+    # an oofun that returns True/False
     _unnamedBooleanOOFunNumber = 0
     discrete = True
-    #alt_nlh_func = False
-    # an oofun that returns True/False
     def __init__(self, func, _input, *args, **kwargs):
         oofun.__init__(self, func, _input, *args, **kwargs)
         #self.input = oofun_Involved.input
@@ -2102,7 +2017,7 @@ class BooleanOOFun(oofun):
         # TODO: THIS SHOULD BE USED IN UP-LEVEL ONLY
         self.lb = self.ub = 1
     
-    __hash__ = lambda self: self._id
+    __hash__ = oofun.__hash__
         
     def size(self, *args, **kwargs): raise FuncDesignerException('currently BooleanOOFun.size() is disabled')
     def D(self, *args, **kwargs): raise FuncDesignerException('currently BooleanOOFun.D() is disabled')
@@ -2142,7 +2057,7 @@ class BaseFDConstraint(BooleanOOFun):
     isConstraint = True
     tol = 0.0 
     expected_kwargs = set(['tol', 'name'])
-    __hash__ = lambda self: self._id
+    __hash__ = oofun.__hash__
 
     #def __getitem__(self, point):
 
@@ -2203,7 +2118,7 @@ class BaseFDConstraint(BooleanOOFun):
 class SmoothFDConstraint(BaseFDConstraint):
         
     __getitem__ = lambda self, point: self.__call__(point)
-    __hash__ = lambda self: self._id
+    __hash__ = oofun.__hash__
 
     def __init__(self, *args, **kwargs):
         BaseFDConstraint.__init__(self, *args, **kwargs)
@@ -2263,10 +2178,8 @@ class SmoothFDConstraint(BaseFDConstraint):
 def getSmoothNLH(Lf, Uf, lb, ub, tol, m, dataType):
 
     M = prod(Lf.shape) / (2*m)
-    #init
+
     Lf, Uf  = Lf.reshape(2*M, m).T, Uf.reshape(2*M, m).T
-    #1
-    #Lf, Uf  = Lf.reshape(m, 2*M), Uf.reshape(m, 2*M)
     
     lf1, lf2, uf1, uf2 = Lf[:, 0:M], Lf[:, M:2*M], Uf[:, 0:M], Uf[:, M:2*M]
 
@@ -2339,7 +2252,7 @@ def getSmoothNLH(Lf, Uf, lb, ub, tol, m, dataType):
     return tmp
 
 class Constraint(SmoothFDConstraint):
-    __hash__ = lambda self: self._id    
+    __hash__ = oofun.__hash__
     def __init__(self, *args, **kwargs):
         
         SmoothFDConstraint.__init__(self, *args, **kwargs)
@@ -2348,17 +2261,12 @@ class Constraint(SmoothFDConstraint):
 class BoxBoundConstraint(SmoothFDConstraint):
     def __init__(self, *args, **kwargs):
         SmoothFDConstraint.__init__(self, *args, **kwargs)
-    __hash__ = lambda self: self._id
+    __hash__ = oofun.__hash__
         
 class Derivative(dict):
     def __init__(self):
         pass
 
-
-#def ooFun(*args, **kwargs):
-#    r = oofun(*args, **kwargs)
-#    r.isCostly = True
-#    return r
 
 def atleast_oofun(arg):
     if isinstance(arg, oofun):

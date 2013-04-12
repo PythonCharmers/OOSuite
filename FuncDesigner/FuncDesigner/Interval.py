@@ -3,6 +3,7 @@ copy as Copy, logical_and, logical_or, where, asarray, any, all, atleast_1d, vst
 searchsorted, logical_not
 import numpy as np
 from boundsurf import boundsurf
+from FDmisc import FuncDesignerException
 
 try:
     from bottleneck import nanmin, nanmax
@@ -196,6 +197,24 @@ def adjust_ux_WithDiscreteDomain(Ux, v):
         Ux[:] = d[ind-1]
         Ux[ind3] = asarray(Tmp, dtype=Ux.dtype)
 
+def add_interval(self, other, domain, dtype):
+    domain1, definiteRange1 = self._interval(domain, dtype, allowBoundSurf = True)
+    domain2, definiteRange2 = other._interval(domain, dtype, allowBoundSurf = True)
+    return domain1 + domain2, logical_and(definiteRange1, definiteRange2)
+
+def add_const_interval(self, c, domain, dtype): 
+    r, definiteRange = self._interval(domain, dtype, allowBoundSurf = True)
+    return r + c, definiteRange
+
+def neg_interval(self, domain, dtype):
+    r, definiteRange = self._interval(domain, dtype, allowBoundSurf=True)
+    if type(r) == ndarray:
+        assert r.shape[0] == 2
+        #return (-r[1], -r[0])
+        return -np.flipud(r), definiteRange
+    else:
+        #assert type(r) == boundsurf
+        return -r, definiteRange
 
 def mul_interval(self, other, isOtherOOFun, domain, dtype):#*args, **kw):
 #    if domain.isMultiPoint and isOtherOOFun and self.is_oovar and (self.domain is bool or self.domain is 'bool'):
@@ -367,6 +386,31 @@ def div_interval(self, other, domain, dtype):
     
     #assert not any(isnan(r1)) and not any(isnan(r2))
     #assert all(r1 <= r2)
+    return vstack((r1, r2)), definiteRange
+
+def rdiv_interval(self, other, domain, dtype):
+    arg_lb_ub, definiteRange = self._interval(domain, dtype, allowBoundSurf = True)
+    if type(arg_lb_ub) == boundsurf:
+        arg_lb_ub_resolved = arg_lb_ub.resolve()[0]
+        if all(arg_lb_ub_resolved > 0):
+            return other * arg_lb_ub ** (-1), definiteRange
+        else:
+            arg_lb_ub = arg_lb_ub_resolved
+    arg_infinum, arg_supremum = arg_lb_ub[0], arg_lb_ub[1]
+    if other.size != 1: 
+        raise FuncDesignerException('this case for interval calculations is unimplemented yet')
+    r = vstack((other / arg_supremum, other / arg_infinum))
+    r1, r2 = nanmin(r, 0), nanmax(r, 0)
+    ind_zero_minus = logical_and(arg_infinum<0, arg_supremum>=0)
+    if any(ind_zero_minus):
+        r1[atleast_1d(logical_and(ind_zero_minus, other>0))] = -inf
+        r2[atleast_1d(logical_and(ind_zero_minus, other<0))] = inf
+        
+    ind_zero_plus = logical_and(arg_infinum<=0, arg_supremum>0)
+    if any(ind_zero_plus):
+        r1[atleast_1d(logical_and(ind_zero_plus, other<0))] = -inf
+        r2[atleast_1d(logical_and(ind_zero_plus, other>0))] = inf
+
     return vstack((r1, r2)), definiteRange
 
 def pow_const_interval(self, other, domain, dtype):
