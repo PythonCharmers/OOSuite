@@ -212,7 +212,7 @@ class oofun(object):
         arg_lb_ub, definiteRange = self.input[0]._interval(domain, dtype, allowBoundSurf = True)
         
         if type(arg_lb_ub) == boundsurf:
-            if criticalPointsFunc is False and self.engine_convexity is not nan:
+            if self.engine_convexity is not nan:
                 return defaultIntervalEngine(arg_lb_ub, self.fun, self.d, self.engine_monotonity, self.engine_convexity)
             else:
                 arg_lb_ub = arg_lb_ub.resolve()[0]

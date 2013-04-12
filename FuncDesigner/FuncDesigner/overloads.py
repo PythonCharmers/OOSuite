@@ -9,7 +9,6 @@ from Interval import TrigonometryCriticalPoints, nonnegative_interval, ZeroCriti
 from numpy import atleast_1d, logical_and
 from FuncDesigner.multiarray import multiarray
 from boundsurf import boundsurf, surf
-from operator import le as LESS
 
 try:
     from scipy.sparse import isspmatrix, lil_matrix as Zeros
@@ -236,7 +235,8 @@ def cosh(inp):
         return distribution.stochasticDistribution(cosh(inp.values), inp.probabilities.copy())._update(inp)                
     if not isinstance(inp, oofun): 
         return np.cosh(inp)
-    return oofun(st_cosh, inp, d = lambda x: Diag(np.sinh(x)), vectorized = True, _interval_=ZeroCriticalPointsInterval(inp, np.cosh))
+    return oofun(st_cosh, inp, d = lambda x: Diag(np.sinh(x)), engine_convexity = 1, vectorized = True, \
+    _interval_=ZeroCriticalPointsInterval(inp, np.cosh))
     
 __all__ += ['sinh', 'cosh']
 

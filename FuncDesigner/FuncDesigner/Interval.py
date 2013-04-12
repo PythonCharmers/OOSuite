@@ -515,7 +515,7 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, engine_monotonity, engine_conve
         U_new.c = new_u_resolved - U_new.maximum(domain)
         
         # for some simple cases
-        if engine_monotonity is not nan and len(U_dict) >= 1:
+        if len(U_dict) >= 1:
             if any(ind_eq):
                 koeffs[ind_eq] = tmp2[ind_eq]
             d_new = dict((v, koeffs * val) for v, val in U_dict.items())
@@ -531,7 +531,7 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, engine_monotonity, engine_conve
         L_new.c = new_l_resolved - L_new.minimum(domain)
         
         # for some simple cases
-        if engine_monotonity is not nan and len(U_dict) >= 1:
+        if len(U_dict) >= 1:
             if any(ind_eq):
                 koeffs[ind_eq] = tmp2[ind_eq]
             d_new = dict((v, koeffs * val) for v, val in U_dict.items())
