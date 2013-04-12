@@ -4,6 +4,9 @@ searchsorted, logical_not
 import numpy as np
 from boundsurf import boundsurf
 from FDmisc import FuncDesignerException
+from FuncDesigner.multiarray import multiarray
+from boundsurf import boundsurf, surf
+
 
 try:
     from bottleneck import nanmin, nanmax
@@ -480,3 +483,64 @@ def pow_oofun_interval(self, other, domain, dtype):
         t_min[atleast_1d(logical_and(ind1, logical_not(ind2)))] = nan
     return vstack((t_min, t_max)), definiteRange
     
+def defaultIntervalEngine(arg_lb_ub, fun, deriv, engine_monotonity, engine_convexity):
+    L, U, domain, definiteRange = arg_lb_ub.l, arg_lb_ub.u, arg_lb_ub.domain, arg_lb_ub.definiteRange
+    R0 = arg_lb_ub.resolve()[0]
+    assert R0.shape[0]==2, 'unimplemented yet'
+    r_l, r_u = R0
+    
+    R2 = fun(R0)
+    koeffs = (R2[1] - R2[0]) / (r_u - r_l)
+    
+    ind_eq = r_u == r_l
+    
+    Ld, Ud = L.d, U.d
+
+    if engine_monotonity == 1:
+        new_l_resolved, new_u_resolved = R2
+        U_dict, L_dict = Ud, Ld
+        _argmin, _argmax = r_l, r_u
+    elif engine_monotonity == -1:
+        new_u_resolved, new_l_resolved = R2
+        U_dict, L_dict = Ld, Ud
+        _argmin, _argmax = r_u, r_l
+    else:
+        R2.sort(axis=0)
+        new_l_resolved, new_u_resolved = R2
+
+    if engine_convexity == -1:
+        tmp2 = deriv(_argmax.view(multiarray)).view(ndarray).flatten()
+        d_new = dict((v, tmp2 * val) for v, val in L_dict.items())
+        U_new = surf(d_new, 0.0)
+        U_new.c = new_u_resolved - U_new.maximum(domain)
+        
+        # for some simple cases
+        if engine_monotonity is not nan and len(U_dict) >= 1:
+            if any(ind_eq):
+                koeffs[ind_eq] = tmp2[ind_eq]
+            d_new = dict((v, koeffs * val) for v, val in U_dict.items())
+            L_new = surf(d_new, 0.0)
+            L_new.c = new_l_resolved -  L_new.minimum(domain)
+        else:
+            L_new = surf({}, new_l_resolved)                        
+        R = boundsurf(L_new, U_new, definiteRange, domain)
+    elif engine_convexity == 1:
+        tmp2 = deriv(_argmin.view(multiarray)).view(ndarray).flatten()
+        d_new = dict((v, tmp2 * val) for v, val in L_dict.items())
+        L_new = surf(d_new, 0.0)
+        L_new.c = new_l_resolved - L_new.minimum(domain)
+        
+        # for some simple cases
+        if engine_monotonity is not nan and len(U_dict) >= 1:
+            if any(ind_eq):
+                koeffs[ind_eq] = tmp2[ind_eq]
+            d_new = dict((v, koeffs * val) for v, val in U_dict.items())
+            U_new = surf(d_new, 0.0)
+            U_new.c = new_u_resolved - U_new.maximum(domain)
+        else:
+            U_new = surf({}, new_u_resolved)
+        R = boundsurf(L_new, U_new, definiteRange, domain)
+    else:
+        # linear oofuns with engine_convexity = 0 calculate their intervals in other funcs
+        raise FuncDesignerException('bug in FD kernel')
+    return R, definiteRange
