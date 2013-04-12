@@ -3,7 +3,7 @@ from lp_solve import lp_solve as lps
 #lp_solve.PRESOLVE_DUALS = 0#524288 + 1048576#10000
 
 from openopt.kernel.baseSolver import baseSolver
-from numpy import asarray, inf, ones, nan, ravel
+from numpy import asarray, ones, nan, ravel
 
 from openopt.kernel.ooMisc import LinConst2WholeRepr
 
@@ -30,6 +30,7 @@ class lpSolve(baseSolver):
         elif not (p.scale in [None, 0, False]):
             p.warn(self.__name__ + ' requires p.scale from [None, 0, False, 1, True], other value obtained, so scale = 1 will be used')
             scalemode = 1
+
         [obj, x_opt, duals] = lps(List(f.flatten()), List(p.Awhole), List(p.bwhole.flatten()), List(p.dwhole.flatten()), \
         List(p.lb.flatten()), List(p.ub.flatten()), (1+asarray(p.intVars)).tolist(), scalemode)
         if obj != []:
