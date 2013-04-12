@@ -2,8 +2,7 @@ from numpy import ndarray, asscalar, isscalar, floor, pi, inf, nan, \
 copy as Copy, logical_and, logical_or, where, asarray, any, all, atleast_1d, vstack, \
 searchsorted, logical_not
 import numpy as np
-from boundsurf import boundsurf
-from FDmisc import FuncDesignerException
+from FDmisc import FuncDesignerException, Diag
 from FuncDesigner.multiarray import multiarray
 from boundsurf import boundsurf, surf
 
@@ -72,13 +71,21 @@ def TrigonometryCriticalPoints(lb_ub):
 #    return Tmp
 #    
 
+cosh_deriv = lambda x: Diag(np.sinh(x))
 def ZeroCriticalPointsInterval(inp, func):
+    is_abs = func == np.abs
+    is_cosh = func == np.cosh    
     def interval(domain, dtype):
-        is_abs = func == np.abs
-        allowBoundSurf = is_abs
+        allowBoundSurf = is_abs or is_cosh
         lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = allowBoundSurf)
-        if is_abs and lb_ub.__class__ == boundsurf:
-            return lb_ub.abs()
+        if type(lb_ub) == boundsurf:
+            if is_abs:
+                return lb_ub.abs()
+            elif is_cosh:
+                return defaultIntervalEngine(lb_ub, func, cosh_deriv, np.nan, 1, 0.0, 1.0)
+            else:
+               assert 0, 'bug or unimplemented yet' 
+        
         lb, ub = lb_ub[0], lb_ub[1]
         ind1, ind2 = lb < 0.0, ub > 0.0
         ind = logical_and(ind1, ind2)
@@ -89,15 +96,8 @@ def ZeroCriticalPointsInterval(inp, func):
             F0 = func(0.0)
             t_min[atleast_1d(logical_and(ind, t_min > F0))] = F0
             t_max[atleast_1d(logical_and(ind, t_max < F0))] = F0
-
-        return  vstack((t_min, t_max)), definiteRange
+        return vstack((t_min, t_max)), definiteRange
     return interval
-#    if isscalar(arg_infinum):
-#        return [0.0] if arg_infinum < 0.0 < arg_supremum else []
-#    tmp = Copy(arg_infinum)
-#    #tmp[where(logical_and(arg_infinum < 0.0, arg_supremum > 0.0))] = 0.0
-#    tmp[atleast_1d(logical_and(arg_infinum < 0.0, arg_supremum > 0.0))] = 0.0
-#    return [tmp]
 
 def nonnegative_interval(inp, func, domain, dtype, F0, shift = 0.0):
 
@@ -483,7 +483,8 @@ def pow_oofun_interval(self, other, domain, dtype):
         t_min[atleast_1d(logical_and(ind1, logical_not(ind2)))] = nan
     return vstack((t_min, t_max)), definiteRange
     
-def defaultIntervalEngine(arg_lb_ub, fun, deriv, engine_monotonity, engine_convexity):
+def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, \
+                          criticalPoint = np.nan, criticalPointValue = np.nan):
     L, U, domain, definiteRange = arg_lb_ub.l, arg_lb_ub.u, arg_lb_ub.domain, arg_lb_ub.definiteRange
     R0 = arg_lb_ub.resolve()[0]
     assert R0.shape[0]==2, 'unimplemented yet'
@@ -496,20 +497,35 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, engine_monotonity, engine_conve
     
     Ld, Ud = L.d, U.d
 
-    if engine_monotonity == 1:
+    if monotonity == 1:
         new_l_resolved, new_u_resolved = R2
         U_dict, L_dict = Ud, Ld
         _argmin, _argmax = r_l, r_u
-    elif engine_monotonity == -1:
+    elif monotonity == -1:
         new_u_resolved, new_l_resolved = R2
         U_dict, L_dict = Ld, Ud
         _argmin, _argmax = r_u, r_l
     else:
         R2.sort(axis=0)
         new_l_resolved, new_u_resolved = R2
-
-    if engine_convexity == -1:
+        ind = koeffs > 0
+        _argmin = where(ind, r_l, r_u)
+        _argmax = where(ind, r_u, r_l)
+        if criticalPoint is not np.nan:
+            ind_c = logical_and(r_l < criticalPoint, r_u > criticalPoint)
+            if convexity == 1:
+                new_l_resolved[ind_c] = criticalPointValue
+                _argmin[ind_c] = criticalPoint
+            elif convexity == -1:
+                new_u_resolved[ind_c] = criticalPointValue
+                _argmax[ind_c] = criticalPoint
+        Keys = set().union(set(Ld.keys()), set(Ud.keys()))
+        L_dict = dict((k, where(ind, Ld.get(k, 0), Ud.get(k, 0))) for k in Keys)
+        U_dict = dict((k, where(ind, Ud.get(k, 0), Ld.get(k, 0))) for k in Keys)
+            
+    if convexity == -1:
         tmp2 = deriv(_argmax.view(multiarray)).view(ndarray).flatten()
+        
         d_new = dict((v, tmp2 * val) for v, val in L_dict.items())
         U_new = surf(d_new, 0.0)
         U_new.c = new_u_resolved - U_new.maximum(domain)
@@ -524,7 +540,7 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, engine_monotonity, engine_conve
         else:
             L_new = surf({}, new_l_resolved)                        
         R = boundsurf(L_new, U_new, definiteRange, domain)
-    elif engine_convexity == 1:
+    elif convexity == 1:
         tmp2 = deriv(_argmin.view(multiarray)).view(ndarray).flatten()
         d_new = dict((v, tmp2 * val) for v, val in L_dict.items())
         L_new = surf(d_new, 0.0)
@@ -541,6 +557,6 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, engine_monotonity, engine_conve
             U_new = surf({}, new_u_resolved)
         R = boundsurf(L_new, U_new, definiteRange, domain)
     else:
-        # linear oofuns with engine_convexity = 0 calculate their intervals in other funcs
+        # linear oofuns with convexity = 0 calculate their intervals in other funcs
         raise FuncDesignerException('bug in FD kernel')
     return R, definiteRange

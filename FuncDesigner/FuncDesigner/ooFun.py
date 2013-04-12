@@ -205,10 +205,6 @@ class oofun(object):
     __repr__ = lambda self: self.name
     
     def _interval_(self, domain, dtype):
-        criticalPointsFunc = self.criticalPoints
-        if criticalPointsFunc is None:
-            raise FuncDesignerException('interval calculations are unimplemented for the oofun (%s) yet' % self.name)
-        
         arg_lb_ub, definiteRange = self.input[0]._interval(domain, dtype, allowBoundSurf = True)
         
         if type(arg_lb_ub) == boundsurf:
@@ -220,15 +216,17 @@ class oofun(object):
         arg_infinum, arg_supremum = arg_lb_ub[0], arg_lb_ub[1]
         if (not isscalar(arg_infinum) and arg_infinum.size > 1) and not self.vectorized:
             raise FuncDesignerException('not implemented for vectorized oovars yet')
-        tmp = [arg_lb_ub]
-        if criticalPointsFunc is not False:
-            tmp += criticalPointsFunc(arg_lb_ub)
-        Tmp = self.fun(vstack(tmp))
+        
+        Tmp = self.fun(arg_lb_ub)
+        if self.engine_monotonity == -1:
+            Tmp = Tmp[::-1]
+        elif self.engine_monotonity != 1:
+            Tmp.sort(axis=0)
         
         if self.getDefiniteRange is not None:
             definiteRange = logical_and(definiteRange, self.getDefiniteRange(arg_infinum, arg_supremum))
-
-        return vstack((nanmin(Tmp, 0), nanmax(Tmp, 0))), definiteRange
+            
+        return Tmp, definiteRange
         
     
     def interval(self, domain, dtype = float, resetStoredIntervals = True, allowBoundSurf = False):
