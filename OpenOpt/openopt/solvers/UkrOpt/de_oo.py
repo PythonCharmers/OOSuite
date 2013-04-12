@@ -149,6 +149,8 @@ class de(baseSolver):
         if np.any(np.isfinite(p.x0)):
             pop[0] = np.copy(p.x0)
 
+        pop = _correct_box_constraints(lb,ub,pop)
+        
         #evaluate  population 
         best, vals, constr_vals = _eval_pop(pop, p)
 
