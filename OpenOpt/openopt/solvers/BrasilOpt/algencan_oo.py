@@ -3,6 +3,7 @@ from numpy import *
 from openopt.kernel.baseSolver import baseSolver
 import pywrapper
 from openopt.kernel.setDefaultIterFuncs import SMALL_DF
+#from openopt.kernel.ooMisc import isSolved
 
 class algencan(baseSolver):
     __name__ = 'algencan'
@@ -14,7 +15,6 @@ class algencan(baseSolver):
     __info__ = "please pay more attention to gtol param, it's the only one ALGENCAN positive stop criterium, xtol and ftol are unused"
     __optionalDataThatCanBeHandled__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'c', 'h']
     __isIterPointAlwaysFeasible__ = lambda self, p: p.__isNoMoreThanBoxBounded__()
-    __cannotHandleExceptions__ = True
 
     def __init__(self): pass
     def __solver__(self, p):
@@ -166,7 +166,7 @@ class algencan(baseSolver):
             """
 
             f = p.f(x)
-
+            #if f is None: raise isSolved
             if f is not nan: flag = 0
             else: flag = 1
 
@@ -205,6 +205,7 @@ class algencan(baseSolver):
             """
 
             g = p.df(x)
+            #if g is None: raise isSolved
             if any(isnan(g)): flag = 1
             else: flag = 0
 
@@ -337,7 +338,7 @@ class algencan(baseSolver):
                 p.err('error in connection algencan to openopt')
 
             if any(isnan(c)): flag = -1
-
+            #if c is None: raise isSolved
             return c,flag
 
         #   ******************************************************************
@@ -401,7 +402,7 @@ class algencan(baseSolver):
                 dc = p.Aeq[j]
             else:
                 p.err('error in connection algencan to openopt')
-
+            #if dc is None: raise isSolved
             dc = dc.flatten()
 
             if any(isnan(dc)):
