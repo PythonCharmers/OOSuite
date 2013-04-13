@@ -172,10 +172,8 @@ def arctan(inp):
     if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(arctan(inp.values), inp.probabilities.copy())._update(inp)             
     if not isinstance(inp, oofun): return np.arctan(inp)
-    return oofun(st_arctan, inp, 
-                 d = lambda x: Diag(1.0 / (1.0 + x**2)), 
-                 vectorized = True, 
-                 criticalPoints = False)
+    return oofun(st_arctan, inp, d = lambda x: Diag(1.0 / (1.0 + x**2)), 
+                 vectorized = True, criticalPoints = False, engine_monotonity = 1)
 
 __all__ += ['arcsin', 'arccos', 'arctan']
 
@@ -193,7 +191,8 @@ def sinh(inp):
     if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(sinh(inp.values), inp.probabilities.copy())._update(inp)        
     if not isinstance(inp, oofun): return np.sinh(inp)
-    return oofun(st_sinh, inp, d = lambda x: Diag(np.cosh(x)), vectorized = True, criticalPoints = False)
+    return oofun(st_sinh, inp, d = lambda x: Diag(np.cosh(x)), vectorized = True, criticalPoints = False, 
+    engine_monotonity = 1)
 
 
 #def asdf(x):
@@ -255,7 +254,8 @@ def tanh(inp):
     if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(tanh(inp.values), inp.probabilities.copy())._update(inp)              
     if not isinstance(inp, oofun): return np.tanh(inp)
-    return oofun(st_tanh, inp, d = lambda x: Diag(1.0/np.cosh(x)**2), vectorized = True, criticalPoints = False)
+    return oofun(st_tanh, inp, d = lambda x: Diag(1.0/np.cosh(x)**2), vectorized = True, criticalPoints = False, 
+    engine_monotonity = 1)
     
 st_arctanh = (lambda x: \
 distribution.stochasticDistribution(arctanh(x.values), x.probabilities.copy())._update(x) \
@@ -292,7 +292,8 @@ def arcsinh(inp):
     if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(arcsinh(inp.values), inp.probabilities.copy())._update(inp)      
     if not isinstance(inp, oofun): return np.arcsinh(inp)
-    return oofun(st_arcsinh, inp, d = lambda x: Diag(1.0/np.sqrt(1+x**2)), vectorized = True, criticalPoints = False)
+    return oofun(st_arcsinh, inp, d = lambda x: Diag(1.0/np.sqrt(1+x**2)), 
+    vectorized = True, criticalPoints = False, engine_monotonity = 1)
 
 st_arccosh = (lambda x: \
 distribution.stochasticDistribution(arccosh(x.values), x.probabilities.copy())._update(x) \
@@ -389,7 +390,7 @@ __all__ += ['abs']
 def log_interval(logfunc, derivative, inp):
     def interval(domain, dtype):
         lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
-        isBoundSurf = lb_ub.__class__ == boundsurf
+        isBoundSurf = type(lb_ub) == boundsurf
         if isBoundSurf:
             lb_ub_resolved = lb_ub.resolve()[0]
             lb, ub = lb_ub_resolved[0], lb_ub_resolved[1]
@@ -534,7 +535,7 @@ def ceil(inp):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([ceil(elem) for elem in inp])        
     if not isinstance(inp, oofun): return np.ceil(inp)
-    r = oofun(lambda x: np.ceil(x), inp, vectorized = True)
+    r = oofun(lambda x: np.ceil(x), inp, vectorized = True, engine_monotonity = 1)
     r._D = lambda *args, **kwargs: raise_except('derivative for FD ceil is unimplemented yet')
     r.criticalPoints = False#lambda arg_infinum, arg_supremum: [np.ceil(arg_supremum)]
     return r
@@ -543,7 +544,7 @@ def floor(inp):
     if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
         return ooarray([floor(elem) for elem in inp])        
     if not isinstance(inp, oofun): return np.floor(inp)
-    r = oofun(lambda x: np.floor(x), inp, vectorized = True)
+    r = oofun(lambda x: np.floor(x), inp, vectorized = True, engine_monotonity = 1)
     r._D = lambda *args, **kwargs: raise_except('derivative for FD floor is unimplemented yet')
     r.criticalPoints = False#lambda arg_infinum, arg_supremum: [np.floor(arg_infinum)]
     return r
@@ -563,7 +564,7 @@ def sign(inp):
         return distribution.stochasticDistribution(sign(inp.values), inp.probabilities.copy())._update(inp)      
     if not isinstance(inp, oofun): 
         return np.sign(inp)
-    r = oofun(st_sign, inp, vectorized = True, d = lambda x: 0.0)
+    r = oofun(st_sign, inp, vectorized = True, d = lambda x: 0.0, engine_monotonity = 1)
     r.criticalPoints = False
     return r
 
