@@ -263,7 +263,7 @@ class oofun(object):
                 domain.storedIntervals[self] = r 
             if v is not None and self._usedIn > 1:
                 domain.localStoredIntervals[self] = r
-        if r[0].__class__ == boundsurf: # TODO: replace it by type(r[0]) after dropping Python2 support
+        if type(r[0]) == boundsurf: 
             if allowBoundSurf:
                 return r[0], r[1]
             else:

@@ -2,6 +2,8 @@ from ooFun import oofun
 import numpy as np
 from numpy import all
 from FDmisc import FuncDesignerException, Diag
+from boundsurf import boundsurf
+from Interval import defaultIntervalEngine
 
 try:
     from scipy import interpolate
@@ -39,15 +41,15 @@ class SplineGenerator:
             return tmp if x.ndim <= 1 else tmp.reshape(x.shape)
         r = oofun(f, INP, d = d, isCostly = True, vectorized=True)
 
+        r.engine_monotonity = self.engine_monotonity
+        r.engine_convexity = self.engine_convexity
         
         if self.criticalPoints is not False:
-            r._interval = lambda *args, **kw: spline_interval_analysis_engine(r, *args, **kw)
+            r._interval_ = lambda *args, **kw: spline_interval_analysis_engine(r, *args, **kw)
             r._nonmonotone_x = self._nonmonotone_x
             r._nonmonotone_y = self._nonmonotone_y
         else:
-            r.criticalPoints = self.criticalPoints
-            r.engine_monotonity = self.engine_monotonity
-            r.engine_convexity = self.engine_convexity
+            r.criticalPoints = False
             
         def Plot():
             print('Warning! Plotting spline is recommended from FD spline generator, not initialized spline')
@@ -89,6 +91,15 @@ class SplineGenerator:
         monotone_increasing_y = all(diffY >= 0) and all(diff_yy >= 0)
         monotone_decreasing_y = all(diffY <= 0) and all(diff_yy <= 0)
     
+        self.engine_monotonity = np.nan
+        self.engine_convexity = np.nan
+        
+        d2y = np.diff(diffY)
+        if all(d2y >= 0):
+            self.engine_convexity = 1
+        elif all(d2y <= 0):
+            self.engine_convexity = -1
+        
         self.criticalPoints = None
         if k not in (1, 2, 3):
             def _interval(*args, **kw):
@@ -96,17 +107,12 @@ class SplineGenerator:
                 Currently interval calculations are implemented for 
                 sorted monotone splines with order 1 or 3 only''')
             self._interval = _interval
-        elif (monotone_increasing_y or monotone_decreasing_y):
+        elif monotone_increasing_y or monotone_decreasing_y:
             self.criticalPoints = False
             if monotone_increasing_y:
                 self.engine_monotonity = 1
             elif monotone_decreasing_y:
                 self.engine_monotonity = -1
-            d2y = np.diff(diffY)
-            if all(d2y >= 0):
-                self.engine_convexity = 1
-            elif all(d2y <= 0):
-                self.engine_convexity = -1
         else:
             ind_nonmonotone = np.where(diff_yy[1:] * diff_yy[:-1] < 0)[0] + 1
             self._nonmonotone_x = xx[ind_nonmonotone]
@@ -129,8 +135,12 @@ class SplineGenerator:
         YY = self._un_sp.__call__(self._X)
         return np.max(np.abs(YY - self._Y))
 
-def spline_interval_analysis_engine(S, domain, dtype, allowBoundSurf):
-    lb_ub, definiteRange = S.input[0]._interval(domain, dtype)
+def spline_interval_analysis_engine(S, domain, dtype):
+    lb_ub, definiteRange = S.input[0]._interval(domain, dtype, allowBoundSurf = not np.isnan(S.engine_convexity))
+    if type(lb_ub) == boundsurf:
+        assert S._nonmonotone_x.size == 1, 'bug in FD kernel'
+        return defaultIntervalEngine(lb_ub, S.fun, S.d, S.engine_monotonity, S.engine_convexity, \
+                          criticalPoint = S._nonmonotone_x, criticalPointValue = S._nonmonotone_y)
     lb, ub = lb_ub[0], lb_ub[1]
     
     x, y = S._nonmonotone_x, S._nonmonotone_y
