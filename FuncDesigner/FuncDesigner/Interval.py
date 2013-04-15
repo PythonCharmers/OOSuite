@@ -421,6 +421,10 @@ def pow_const_interval(self, other, domain, dtype):
     if type(lb_ub) == boundsurf:
         lb_ub_resolved = lb_ub.resolve()[0]
 
+    if other > 2 and asarray(other, int) == other and other % 2 == 0:
+        return defaultIntervalEngine(lb_ub, lambda x: x**other, lambda x: other * x**(other-1), \
+                                     np.nan, 1, criticalPoint = 0, criticalPointValue = 0)
+
     allowBoundSurf = True if isscalar(other) and other in (2, 0.5) else False
     if other == -1 and all(lb_ub_resolved > 0):
         allowBoundSurf = True
