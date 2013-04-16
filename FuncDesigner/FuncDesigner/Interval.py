@@ -515,9 +515,10 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, \
         U_dict, L_dict = Ld, Ud
         _argmin, _argmax = r_u, r_l
     else:
+        ind = R2[1] > R2[0] 
         R2.sort(axis=0)
         new_l_resolved, new_u_resolved = R2
-        ind = R2[1] > R2[0] 
+        
         _argmin = where(ind, r_l, r_u)
         _argmax = where(ind, r_u, r_l)
         if criticalPoint is not np.nan:

@@ -1,7 +1,6 @@
 PythonSum = sum
 import numpy as np
 from numpy import all, any, logical_and
-from operator import le as LESS,  gt as GREATER
 
 try:
     from bottleneck import nanmax
@@ -14,15 +13,19 @@ class surf(object):
     def __init__(self, d, c):
         self.d = d # dict of variables and linear coefficients on them (probably as multiarrays)
         self.c = c # (multiarray of) constant(s)
-        #self.Type = Type # False for lower, True for upper
 
     value = lambda self, point: self.c + PythonSum(point[k]*v for k, v in self.d.items())
 
     resolve = lambda self, domain, cmp: \
     self.c + PythonSum(np.where(cmp(v, 0), domain[k][0], domain[k][1])*v for k, v in self.d.items())
     
-    minimum = lambda self, domain: self.resolve(domain, GREATER)
-    maximum = lambda self, domain: self.resolve(domain, LESS)
+    #self.resolve(domain, GREATER)
+    minimum = lambda self, domain: \
+    self.c + PythonSum(np.where(v > 0, domain[k][0], domain[k][1])*v for k, v in self.d.items())
+    
+    #self.resolve(domain, LESS)
+    maximum = lambda self, domain: \
+    self.c + PythonSum(np.where(v < 0, domain[k][0], domain[k][1])*v for k, v in self.d.items())
     
     def render(self, domain, cmp):
         self.rendered = dict((k, np.where(cmp(v, 0), domain[k][0], domain[k][1])*v) for k, v in self.d.items())
@@ -33,14 +36,13 @@ class surf(object):
         if type(other) == surf:
             if other.isRendered and not self.isRendered:
                 self, other = other, self
-            #assert self.__class__ == other.__class__, 'bug in FD kernel (class surf)'
             S, O = self.d, other.d
             d = S.copy()
             d.update(O)
             for key in set(S.keys()) & set(O.keys()):
                 d[key] = S[key]  + O[key]
             return surf(d, self.c+other.c)
-        elif np.isscalar(other) or (type(other) == np.ndarray):
+        elif np.isscalar(other) or type(other) == np.ndarray:
             return surf(self.d, self.c + other)
         else:
             assert 0, 'unimplemented yet'
@@ -77,17 +79,15 @@ class boundsurf(object):#object is added for Python2 compatibility
     Size = lambda self: max((len(self.l.d), len(self.u.d), 1))
         
     def resolve(self):
-        l = self.l.resolve(self.domain, GREATER)
-        u = self.u.resolve(self.domain, LESS)
-        r = np.vstack((l, u))
+        r = np.vstack((self.l.minimum(self.domain), self.u.maximum(self.domain)))
         assert r.shape[0] == 2, 'bug in FD kernel'
         return r, self.definiteRange
     
     def render(self):
         if self.isRendered:
             return
-        self.l.render(self, self.domain, GREATER)
-        self.u.render(self, self.domain, LESS)
+#        self.l.render(self, self.domain, GREATER)
+#        self.u.render(self, self.domain, LESS)
         self.isRendered = True
     
     values = lambda self, point: (self.l.value(point), self.u.value(point))
