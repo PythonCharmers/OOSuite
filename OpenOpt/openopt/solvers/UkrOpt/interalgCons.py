@@ -1,4 +1,4 @@
-from numpy import empty, where, logical_and, logical_not, take, zeros, isfinite, any, asarray
+from numpy import empty, where, logical_and, logical_not, take, zeros, isfinite, any, asarray, ndarray, bool_
 from interalgT import adjustDiscreteVarBounds, truncateByPlane
     
 def processConstraints(C0, y, e, _s, p, dataType):
@@ -88,9 +88,15 @@ def processConstraints(C0, y, e, _s, p, dataType):
             # copy() is used because += and -= operators are involved on nlh in this cycle and probably some other computations
             nlh_l[ind_u], nlh_u[ind_l] = nlh_u[ind_u].copy(), nlh_l[ind_l].copy()        
 
+    if nlh.size != 0:
+        if DefiniteRange is False:
+            nlh_0 += 1e-300
+        elif type(DefiniteRange) == ndarray and not all(DefiniteRange):
+            nlh_0[logical_not(DefiniteRange)] += 1e-300
+        else:
+            assert type(DefiniteRange) in (bool, bool_, ndarray)
     # !! matrix - vector
     nlh += nlh_0.reshape(-1, 1)
-        
     residual = None
 
     return y, e, nlh, residual, DefiniteRange, indT, _s
