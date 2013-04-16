@@ -1715,11 +1715,6 @@ def nlh_xor(_input, dep, Lx, Ux, p, dataType):
     #S_finite_diff = {}
     
     DefiniteRange = True
-    
-#    elems_nlh = [(elem.nlh(Lx, Ux, p, dataType) if isinstance(elem, oofun) \
-#                  else (0, {}, None) if elem is True 
-#                  else (inf, {}, None) if elem is False 
-#                  else raise_except()) for elem in _input]
 
     elems_lh = [(elem.lh(Lx, Ux, p, dataType) if isinstance(elem, oofun) \
                   else (inf, {}, None) if elem is True 
@@ -2078,8 +2073,6 @@ class SmoothFDConstraint(BaseFDConstraint):
         if m == 0:
             assert 0, 'bug in FuncDesigner'
             #return None, None, None
-            
-        DefiniteRange = True
         
         tol = self.tol if self.tol > 0.0 else p.contol if self.tol == 0 else 0.0 # 0 for negative tolerances
         # TODO: check it
@@ -2106,13 +2099,13 @@ class SmoothFDConstraint(BaseFDConstraint):
                 
                 # TODO: 1) FIX IT it for matrix definiteRange
                 # 2) seems like DefiniteRange = (True, True) for any variable is enough for whole range to be defined in the involved node
-                DefiniteRange = logical_and(DefiniteRange, r[v][0].definiteRange)
-                DefiniteRange = logical_and(DefiniteRange, r[v][1].definiteRange)
+#                DefiniteRange = logical_and(DefiniteRange, r[v][0].definiteRange)
+#                DefiniteRange = logical_and(DefiniteRange, r[v][1].definiteRange)
                 
                 tmp = getSmoothNLH(Lf, Uf, self.lb, self.ub, tol, m, dataType) #- T02
                 #tmp[isnan(tmp)] = inf
                 res[v] = tmp 
-        return T0, res, DefiniteRange
+        return T0, res, r0.definiteRange
         
 def getSmoothNLH(Lf, Uf, lb, ub, tol, m, dataType):
 

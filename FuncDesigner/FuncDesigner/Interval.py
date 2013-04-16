@@ -104,7 +104,8 @@ def nonnegative_interval(inp, func, domain, dtype, F0, shift = 0.0):
     lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
     if type(lb_ub) == boundsurf:
         if 1 and func == np.sqrt:
-            return lb_ub ** 0.5, definiteRange
+            r = lb_ub ** 0.5
+            return r, r.definiteRange
         else:
             lb_ub = lb_ub.resolve()[0]
             
