@@ -240,7 +240,7 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):#*args, **kw):
         if type(lb2_ub2) != boundsurf and type(lb1_ub1) == boundsurf:
             lb2_ub2, lb1_ub1 = lb1_ub1, lb2_ub2
         tmp1 = lb1_ub1.resolve()[0] if type(lb1_ub1) == boundsurf else lb1_ub1
-
+        
         if type(lb2_ub2) == boundsurf:
             tmp2 = lb2_ub2.resolve()[0]
             t2_positive = all(tmp2 >= 0)
@@ -516,7 +516,7 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, \
     else:
         R2.sort(axis=0)
         new_l_resolved, new_u_resolved = R2
-        ind = koeffs > 0
+        ind = R2[1] > R2[0] 
         _argmin = where(ind, r_l, r_u)
         _argmax = where(ind, r_u, r_l)
         if criticalPoint is not np.nan:

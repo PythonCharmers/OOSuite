@@ -208,10 +208,11 @@ class oofun(object):
         arg_lb_ub, definiteRange = self.input[0]._interval(domain, dtype, allowBoundSurf = True)
         
         if type(arg_lb_ub) == boundsurf:
-            if self.engine_convexity is not nan:
+            arg_lb_ub_resolved = arg_lb_ub.resolve()[0]
+            if self.engine_convexity is not nan and all(isfinite(arg_lb_ub_resolved)):
                 return defaultIntervalEngine(arg_lb_ub, self.fun, self.d, self.engine_monotonity, self.engine_convexity)
             else:
-                arg_lb_ub = arg_lb_ub.resolve()[0]
+                arg_lb_ub = arg_lb_ub_resolved
                 
         arg_infinum, arg_supremum = arg_lb_ub[0], arg_lb_ub[1]
         if (not isscalar(arg_infinum) and arg_infinum.size > 1) and not self.vectorized:
@@ -666,6 +667,7 @@ class oofun(object):
             interval = lambda *args, **kw: pow_oofun_interval(self, other, *args, **kw)
             
         r = oofun(f, input, d = d, _interval_=interval)
+
         if isinstance(other, oofun) or (not isinstance(other, int) or (type(other) == ndarray and other.flatten()[0] != int)): 
             r.attach((self>0)('pow_domain_%d'%r._id, tol=-1e-7)) # TODO: if "other" is fixed oofun with integer value - omit this
 #        r.isCostly = True
