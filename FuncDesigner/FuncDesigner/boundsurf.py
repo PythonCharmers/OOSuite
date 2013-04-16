@@ -192,7 +192,7 @@ class boundsurf(object):#object is added for Python2 compatibility
     
     def __pow__(self, other):
         # TODO: rework it
-        assert np.isscalar(other) and other in (-1, 2, 0.5), 'unimplemented yet'
+        assert np.isscalar(other) and other in (-1, 0.5), 'unimplemented yet'
         if other == 0.5:
             return boundsurf_sqrt(self)
         
@@ -201,56 +201,29 @@ class boundsurf(object):#object is added for Python2 compatibility
         R0 = self.resolve()[0]#L.resolve(self.domain, GREATER), U.resolve(self.domain, LESS)
         assert R0.shape[0]==2, 'unimplemented yet'
         lb, ub = R0
+        
+        assert other == -1, 'unimplemented yet'
+        assert all(R0>0), 'bug in FD kernel (unimplemented yet)'
+        R2 = 1.0 / R0
+        #R2.sort(axis=0)
+        #new_l_resolved, new_u_resolved = R2
+        new_u_resolved, new_l_resolved = R2 # assuming R >= 0
+        
+        tmp2 = -1.0 / ub ** 2
+        Ld, Ud = L.d, U.d
+        d_new = dict((v, tmp2 * val) for v, val in Ud.items())
+        L_new = surf(d_new, 0.0)
+        L_new.c = new_l_resolved - L_new.minimum(domain)
 
-        if other == 2:
-            abs_R0 = np.abs(R0)
-            abs_R0.sort(axis=0)
-            abs_min, abs_max = abs_R0
-            ind_0 = np.where(logical_and(lb<0, ub>0))[0]
-            abs_min[ind_0] = 0.0
-            new_u_resolved = abs_max**2
-            
-            l1, u1 = np.abs(lb), np.abs(ub)
-            ind = u1 > l1
-            tmp2 = 2 * np.where(ind, lb, ub)
-            Ld, Ud = L.d, U.d
-            dep = set(Ld.keys()) | set(Ud.keys()) 
-            d_new = dict((v, tmp2 * np.where(ind, Ld.get(v, 0), Ud.get(v, 0))) for v in dep)
-            L_new = surf(d_new, 0.0)
-            L_new.c = abs_min**2 - L_new.minimum(domain)
-
-            if 1 and len(Ud) >= 1: # and np.all(lb != ub):
-                koeffs = ub + lb #(ub^2 - lb^2) / (ub - lb)
-                d_new = dict((v, koeffs * val) for v, val in Ud.items())
-                U_new = surf(d_new, 0.0)
-                U_new.c = new_u_resolved - U_new.maximum(domain)
-            else:
-                U_new = surf({}, new_u_resolved)
-
-            R = boundsurf(L_new, U_new, self.definiteRange, domain)
+        if 1 and len(Ud) >= 1:# and np.all(lb != ub):
+            koeffs = -1.0 /(ub*lb) #(1/ub - 1/lb) / (ub - lb)
+            d_new = dict((v, koeffs * val) for v, val in Ld.items())
+            U_new = surf(d_new, 0.0)
+            U_new.c = new_u_resolved - U_new.maximum(domain)
         else:
-            assert other == -1, 'unimplemented yet'
-            assert all(R0>0), 'bug in FD kernel (unimplemented yet)'
-            R2 = 1.0 / R0
-            #R2.sort(axis=0)
-            #new_l_resolved, new_u_resolved = R2
-            new_u_resolved, new_l_resolved = R2 # assuming R >= 0
-            
-            tmp2 = -1.0 / ub ** 2
-            Ld, Ud = L.d, U.d
-            d_new = dict((v, tmp2 * val) for v, val in Ud.items())
-            L_new = surf(d_new, 0.0)
-            L_new.c = new_l_resolved - L_new.minimum(domain)
+            U_new = surf({}, new_u_resolved)
 
-            if 1 and len(Ud) >= 1:# and np.all(lb != ub):
-                koeffs = -1.0 /(ub*lb) #(1/ub - 1/lb) / (ub - lb)
-                d_new = dict((v, koeffs * val) for v, val in Ld.items())
-                U_new = surf(d_new, 0.0)
-                U_new.c = new_u_resolved - U_new.maximum(domain)
-            else:
-                U_new = surf({}, new_u_resolved)
-
-            R = boundsurf(L_new, U_new, self.definiteRange, domain)
+        R = boundsurf(L_new, U_new, self.definiteRange, domain)
 #            R = boundsurf(surf({}, new_l_resolved), surf({}, new_u_resolved), self.definiteRange, domain)
         return R
         
