@@ -49,6 +49,8 @@ class surf(object):
     
     __sub__ = lambda self, other: self.__add__(-other)
     
+    __neg__ = lambda self: surf(dict((k, -v) for k, v in self.d.items()), -self.c)
+    
     def __mul__(self, other):
         isArray = type(other) == np.ndarray
         if np.isscalar(other) or isArray:
@@ -145,7 +147,7 @@ class boundsurf(object):#object is added for Python2 compatibility
                 rr = (self.u*R2[1], self.l*R2[0]) if R2Negative else (self.l*R2[1], self.u*R2[0])
             
         elif isBoundSurf:
-            assert selfPositive and  R2Positive, 'bug or unimplemented yet'
+            assert (selfPositive or selfNegative) and  (R2Positive or R2Negative), 'bug or unimplemented yet'
 #            return R2*self
             return 0.5 * (R1*other + R2*self)
             
@@ -192,40 +194,59 @@ class boundsurf(object):#object is added for Python2 compatibility
     
     def __pow__(self, other):
         # TODO: rework it
-        assert np.isscalar(other) and other in (-1, 0.5), 'unimplemented yet'
-        if other == 0.5:
-            return boundsurf_sqrt(self)
-        
-        L, U, domain = self.l, self.u, self.domain
         
         R0 = self.resolve()[0]#L.resolve(self.domain, GREATER), U.resolve(self.domain, LESS)
         assert R0.shape[0]==2, 'unimplemented yet'
-        lb, ub = R0
         
-        assert other == -1, 'unimplemented yet'
-        assert all(R0>0), 'bug in FD kernel (unimplemented yet)'
-        R2 = 1.0 / R0
-        #R2.sort(axis=0)
-        #new_l_resolved, new_u_resolved = R2
-        new_u_resolved, new_l_resolved = R2 # assuming R >= 0
-        
-        tmp2 = -1.0 / ub ** 2
-        Ld, Ud = L.d, U.d
-        d_new = dict((v, tmp2 * val) for v, val in Ud.items())
-        L_new = surf(d_new, 0.0)
-        L_new.c = new_l_resolved - L_new.minimum(domain)
-
-        if 1 and len(Ud) >= 1:# and np.all(lb != ub):
-            koeffs = -1.0 /(ub*lb) #(1/ub - 1/lb) / (ub - lb)
-            d_new = dict((v, koeffs * val) for v, val in Ld.items())
-            U_new = surf(d_new, 0.0)
-            U_new.c = new_u_resolved - U_new.maximum(domain)
-        else:
-            U_new = surf({}, new_u_resolved)
-
-        R = boundsurf(L_new, U_new, self.definiteRange, domain)
-#            R = boundsurf(surf({}, new_l_resolved), surf({}, new_u_resolved), self.definiteRange, domain)
-        return R
+        assert np.isscalar(other) and other in (-1, 2, 0.5), 'unimplemented yet'
+        if other == 0.5:
+            return boundsurf_sqrt(self)
+        elif other == 2:
+            from Interval import defaultIntervalEngine
+            return defaultIntervalEngine(self, lambda x: x**2, lambda x: 2 * x, 
+                         monotonity = 1 if all(R0>=0) else -1 if all(R0<=0) else np.nan, 
+                         convexity = 1, 
+                         criticalPoint = 0.0, criticalPointValue = 0.0)[0]
+        elif other == -1:
+            from Interval import defaultIntervalEngine
+            return defaultIntervalEngine(self, lambda x: 1.0/x, lambda x: -1.0 / x**2, 
+                         monotonity = -1 if all(R0>=0) else 1 if all(R0<=0) else np.nan, 
+                         convexity = 1 if all(R0>=0) else -1 if all(R0<=0) else np.nan, 
+                         criticalPoint = np.nan, criticalPointValue = np.nan)[0]        
+                         
+#        L, U, domain = self.l, self.u, self.domain
+#        
+#        lb, ub = R0
+#        
+#        assert other == -1, 'unimplemented yet'
+#        cond_positive = all(R0>0)
+#        cond_negative = all(R0<0)
+#        assert cond_positive or cond_negative, 'bug in FD kernel (unimplemented yet)'
+#        R2 = (1.0 if cond_positive else -1.0) / R0 
+#        if cond_negative:
+#            lb, ub = -ub, -lb
+#        #R2.sort(axis=0)
+#        #new_l_resolved, new_u_resolved = R2
+#        new_u_resolved, new_l_resolved = R2 # assuming R >= 0
+#        
+#        tmp2 = -1.0 / ub ** 2
+#        Ld, Ud = L.d, U.d
+#        d_new = dict((v, tmp2 * val) for v, val in Ud.items())
+#        L_new = surf(d_new, 0.0)
+#        L_new.c = new_l_resolved - L_new.minimum(domain)
+#
+#        if 1 and len(Ud) >= 1:# and np.all(lb != ub):
+#            koeffs = -1.0 /(ub*lb) #(1/ub - 1/lb) / (ub - lb)
+#            d_new = dict((v, koeffs * val) for v, val in Ld.items())
+#            U_new = surf(d_new, 0.0)
+#            U_new.c = new_u_resolved - U_new.maximum(domain)
+#        else:
+#            U_new = surf({}, new_u_resolved)
+#        
+#        assert cond_positive or cond_negative, 'bug in FD kernel (unimplemented yet)'
+#        tmp = (L_new, U_new) if cond_positive else (-U_new, -L_new)
+#        R = boundsurf(tmp[0], tmp[1], self.definiteRange, domain)
+#        return R# if cond_positive else -R
         
 
 #def boundsurf_mult(b1, b2):
