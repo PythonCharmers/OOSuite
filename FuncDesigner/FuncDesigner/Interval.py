@@ -431,11 +431,11 @@ def pow_const_interval(self, other, domain, dtype):
                          
         domain_isStrictlyNegative = all(lb_ub_resolved < 0.0)
         if domain_isStrictlyNegative and other_is_int:
-            return defaultIntervalEngine(lb_ub, lambda x: x**other, lambda x: other * x**(other-1), 
-                                     monotonity = 1 if other % 2 == 0 else -1,
+            r =  defaultIntervalEngine(lb_ub, lambda x: x**other, lambda x: other * x**(other-1), 
+                                     monotonity = np.nan, #-1 if other % 2 == 0 else 1,
                                      convexity = 1 if other % 2 == 0 else -1, 
                                      criticalPoint = np.nan, criticalPointValue = np.nan)
-
+            return r
     allowBoundSurf = True if isscalar(other) and other == 0.5 else False
     if other == -1 and all(lb_ub_resolved > 0) or all(lb_ub_resolved < 0):
         allowBoundSurf = True

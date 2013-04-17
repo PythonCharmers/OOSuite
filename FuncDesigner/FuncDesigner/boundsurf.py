@@ -148,40 +148,40 @@ class boundsurf(object):#object is added for Python2 compatibility
             
         elif isBoundSurf:
             assert (selfPositive or selfNegative) and  (R2Positive or R2Negative), 'bug or unimplemented yet'
-#            return R2*self
-            return 0.5 * (R1*other + R2*self)
-            
-#            
-#            c1, c2 = self.l.c, other.l.c
-#            l1_res = R1[0] - c1
-#            l2_res = R2[0] - c2
-#            cond = nanmax(R1[1]/R1[0]) > nanmax(R2[1]/R2[0])
-#            l1, l2 = self.l - c1, other.l - c2
-#            #r_l = (c2 + 0.5 * l2_res) * l1 + (c1 + 0.5 * l1_res) * l2 + c1 * c2
-#            r_l = (((c2+l2_res) * l1 + c1 * l2) if cond else (c2 * l1 + (c1+l1_res)* l2)) + c1 * c2
-#            
-#            c1, c2 = self.u.c, other.u.c
-#            l1_res = R1[1] - c1
-#            l2_res = R2[1] - c2
-##            cond = nanmax(R1[1]/R1[0]) > nanmax(R2[1]/R2[0])
-#            l1, l2 = self.u - c1, other.u - c2
-#            #r_u = (c2 + 0.5 * l2_res) * l1 + (c1 + 0.5 * l1_res) * l2 + c1 * c2
-#            r_u = (((c2+l2_res) * l1 + c1 * l2) if cond else (c2 * l1 + (c1+l1_res)* l2)) + c1 * c2
-##            print('--')
-#            rr = (r_l, r_u)
+            if selfPositive:
+                self.l.c = np.where(self.l.c==0, 1e-307, self.l.c)
+            else:
+                self.u.c = np.where(self.u.c==0, -1e-307, self.u.c)
+            if R2Positive:
+                other.l.c = np.where(other.l.c==0, 1e-307, other.l.c)
+            else:
+                other.u.c = np.where(other.u.c==0, -1e-307, other.u.c)
+                    
+#            self.c += (1e-307 if selfPositive else -1e307)
+#            other.c += (1e-307 if selfPositive else -1e307)
+            r = ((self if selfPositive else -self).log() + (other if R2Positive else -other).log()).exp()
+            return r if selfPositive == R2Positive else -r
+#            return R1*other# if nanmax(R2[0])
+            #return 0.5 * (R1*other + R2*self)
         else:
             assert 0, 'bug or unimplemented yet'
         
-#        print(R1, R2)
-#        print (boundsurf(rr[0], rr[1], definiteRange, self.domain).resolve()[0])
-
-#        tmp = boundsurf(rr[0], rr[1], definiteRange, self.domain)
-#        print(tmp.l.d, tmp.l.c, tmp.u.d, tmp.u.c)
-#        print('----')
         return boundsurf(rr[0], rr[1], definiteRange, self.domain)
-        
-    __rmul__ = __mul__
     
+    __rmul__ = __mul__
+
+    def log(self):
+        from Interval import defaultIntervalEngine
+        return defaultIntervalEngine(self, np.log, lambda x: 1.0 / x, 
+                     monotonity = 1, 
+                     convexity = -1)[0]
+    def exp(self):
+        from Interval import defaultIntervalEngine
+        return defaultIntervalEngine(self, np.exp, np.exp, 
+                     monotonity = 1, 
+                     convexity = 1)[0]
+                                          
+
     # TODO: rework it if __iadd_, __imul__ etc will be created
     def copy(self):
         assert '__iadd__' not in self.__dict__
@@ -210,44 +210,10 @@ class boundsurf(object):#object is added for Python2 compatibility
         elif other == -1:
             from Interval import defaultIntervalEngine
             return defaultIntervalEngine(self, lambda x: 1.0/x, lambda x: -1.0 / x**2, 
-                         monotonity = -1 if all(R0>=0) else 1 if all(R0<=0) else np.nan, 
+                         monotonity = -1, 
                          convexity = 1 if all(R0>=0) else -1 if all(R0<=0) else np.nan, 
                          criticalPoint = np.nan, criticalPointValue = np.nan)[0]        
-                         
-#        L, U, domain = self.l, self.u, self.domain
-#        
-#        lb, ub = R0
-#        
-#        assert other == -1, 'unimplemented yet'
-#        cond_positive = all(R0>0)
-#        cond_negative = all(R0<0)
-#        assert cond_positive or cond_negative, 'bug in FD kernel (unimplemented yet)'
-#        R2 = (1.0 if cond_positive else -1.0) / R0 
-#        if cond_negative:
-#            lb, ub = -ub, -lb
-#        #R2.sort(axis=0)
-#        #new_l_resolved, new_u_resolved = R2
-#        new_u_resolved, new_l_resolved = R2 # assuming R >= 0
-#        
-#        tmp2 = -1.0 / ub ** 2
-#        Ld, Ud = L.d, U.d
-#        d_new = dict((v, tmp2 * val) for v, val in Ud.items())
-#        L_new = surf(d_new, 0.0)
-#        L_new.c = new_l_resolved - L_new.minimum(domain)
-#
-#        if 1 and len(Ud) >= 1:# and np.all(lb != ub):
-#            koeffs = -1.0 /(ub*lb) #(1/ub - 1/lb) / (ub - lb)
-#            d_new = dict((v, koeffs * val) for v, val in Ld.items())
-#            U_new = surf(d_new, 0.0)
-#            U_new.c = new_u_resolved - U_new.maximum(domain)
-#        else:
-#            U_new = surf({}, new_u_resolved)
-#        
-#        assert cond_positive or cond_negative, 'bug in FD kernel (unimplemented yet)'
-#        tmp = (L_new, U_new) if cond_positive else (-U_new, -L_new)
-#        R = boundsurf(tmp[0], tmp[1], self.definiteRange, domain)
-#        return R# if cond_positive else -R
-        
+
 
 #def boundsurf_mult(b1, b2):
 #    d1l, d1u, d2l, d2u = b1.l.d, b1.u.d, b2.l.d, b2.u.d
