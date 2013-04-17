@@ -253,9 +253,10 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):#*args, **kw):
                 and not any(logical_and(tmp1==0, np.isinf(tmp2)))\
                 and not any(logical_and(tmp2==0, np.isinf(tmp1))):
                     # TODO: improve it
-                    r = (lb1_ub1 if t1_positive else -lb1_ub1) * (lb2_ub2 if t2_positive else -lb2_ub2)
-                    if t1_positive != t2_positive:
-                        r = -r
+                    r = lb1_ub1 * lb2_ub2
+#                    r = (lb1_ub1 if t1_positive else -lb1_ub1) * (lb2_ub2 if t2_positive else -lb2_ub2)
+#                    if t1_positive != t2_positive:
+#                        r = -r
                     return r, r.definiteRange
             elif domain.surf_preference and all(np.isfinite(tmp1)) and all(np.isfinite(tmp2)):
                 r = 0.25 * ((lb1_ub1 + lb2_ub2) ** 2 - (lb1_ub1 - lb2_ub2) ** 2)
@@ -359,17 +360,11 @@ def div_interval(self, other, domain, dtype):
     
     if (type(lb1_ub1) == boundsurf  or type(lb2_ub2) == boundsurf) and \
     (t1_positive or t1_negative) and (t2_strictly_positive or t2_strictly_negative):
-        changeSign = t1_positive != t2_strictly_positive
-        tmp1 = lb1_ub1 if t1_positive else -lb1_ub1
-        if type(lb2_ub2) == boundsurf:
-            tmp2 = (lb2_ub2 if t2_strictly_positive else -lb2_ub2) ** (-1)
-        else:
-            assert tmp2.shape[0] == 2
-            tmp2 = 1.0 / tmp2[::-1]
-        
-        tmp = tmp1 *  tmp2
-        return (-tmp if changeSign else tmp), definiteRange
-    
+#        changeSign = t1_positive != t2_strictly_positive
+        assert tmp2.shape[0] == 2
+        tmp = lb1_ub1 *  (lb2_ub2**-1 if type(lb2_ub2) == boundsurf else 1.0 / tmp2[::-1])
+        return tmp, definiteRange
+
     lb1, ub1 = tmp1[0], tmp1[1]
     lb2, ub2 = tmp2[0], tmp2[1]
     lb2, ub2 = asarray(lb2, dtype), asarray(ub2, dtype)
@@ -396,7 +391,7 @@ def rdiv_interval(self, other, domain, dtype):
     arg_lb_ub, definiteRange = self._interval(domain, dtype, allowBoundSurf = True)
     if type(arg_lb_ub) == boundsurf:
         arg_lb_ub_resolved = arg_lb_ub.resolve()[0]
-        if all(arg_lb_ub_resolved > 0):
+        if all(arg_lb_ub_resolved > 0) or all(arg_lb_ub_resolved < 0):
             return other * arg_lb_ub ** (-1), definiteRange
         else:
             arg_lb_ub = arg_lb_ub_resolved
@@ -419,19 +414,30 @@ def rdiv_interval(self, other, domain, dtype):
 
 def pow_const_interval(self, other, domain, dtype):
     lb_ub, definiteRange = self._interval(domain, dtype, allowBoundSurf = True)
-    if type(lb_ub) == boundsurf:
+    isBoundSurf = type(lb_ub) == boundsurf
+    lb_ub_resolved = lb_ub.resolve()[0] if isBoundSurf else lb_ub
+    if isBoundSurf and all(np.isfinite(lb_ub_resolved)):
         lb_ub_resolved = lb_ub.resolve()[0]
+        other_isPositive = other > 0
+        domain_isPositive = all(lb_ub_resolved >= 0)
+        domain_isStrictlyPositive = all(lb_ub_resolved > 0.0)
+        other_is_int = asarray(other, int) == other
+        if domain_isStrictlyPositive or (domain_isPositive and other_isPositive)\
+        or (other_is_int and other > 0 and other % 2 == 0):
+            return defaultIntervalEngine(lb_ub, lambda x: x**other, lambda x: other * x ** (other-1), 
+                         monotonity = 1 if other_isPositive and domain_isPositive else np.nan, 
+                         convexity = 1 if other > 1.0 or other < 0 else -1, 
+                         criticalPoint = 0.0, criticalPointValue = 0.0)
+                         
+        domain_isStrictlyNegative = all(lb_ub_resolved < 0.0)
+        if domain_isStrictlyNegative and other_is_int:
+            return defaultIntervalEngine(lb_ub, lambda x: x**other, lambda x: other * x**(other-1), 
+                                     monotonity = 1 if other % 2 == 0 else -1,
+                                     convexity = 1 if other % 2 == 0 else -1, 
+                                     criticalPoint = np.nan, criticalPointValue = np.nan)
 
-        if other >= 2 and asarray(other, int) == other:
-            if other % 2 == 0 or all(lb_ub_resolved >= 0):
-                return defaultIntervalEngine(lb_ub, lambda x: x**other, lambda x: other * x**(other-1), \
-                                         np.nan, 1, criticalPoint = 0, criticalPointValue = 0)
-            elif all(lb_ub_resolved <= 0):
-                return defaultIntervalEngine(lb_ub, lambda x: x**other, lambda x: other * x**(other-1), \
-                                         np.nan, -1, criticalPoint = 0, criticalPointValue = 0)
-
-    allowBoundSurf = True if isscalar(other) and other in (2, 0.5) else False
-    if other == -1 and all(lb_ub_resolved > 0):
+    allowBoundSurf = True if isscalar(other) and other == 0.5 else False
+    if other == -1 and all(lb_ub_resolved > 0) or all(lb_ub_resolved < 0):
         allowBoundSurf = True
         
     if type(lb_ub) == boundsurf:
