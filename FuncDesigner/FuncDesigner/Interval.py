@@ -507,9 +507,12 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, \
     r_l, r_u = R0
     
     R2 = fun(R0)
-    koeffs = (R2[1] - R2[0]) / (r_u - r_l)
+    tmp = R2[1] - R2[0]
+    ind_inf = np.where(np.isinf(tmp))[0]
+    koeffs = tmp / (r_u - r_l)
+    koeffs[ind_inf] = 0.0
     
-    ind_eq = r_u == r_l
+    ind_eq = where(r_u == r_l)[0]
     
     Ld, Ud = L.d, U.d
 
@@ -542,6 +545,7 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, \
             
     if convexity == -1:
         tmp2 = deriv(_argmax.view(multiarray)).view(ndarray).flatten()
+        tmp2[ind_inf] = 0.0
         
         d_new = dict((v, tmp2 * val) for v, val in L_dict.items())
         U_new = surf(d_new, 0.0)
@@ -549,7 +553,7 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, \
         
         # for some simple cases
         if len(U_dict) >= 1:
-            if any(ind_eq):
+            if ind_eq.size:
                 koeffs[ind_eq] = tmp2[ind_eq]
             d_new = dict((v, koeffs * val) for v, val in U_dict.items())
             L_new = surf(d_new, 0.0)
@@ -559,13 +563,15 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, \
         R = boundsurf(L_new, U_new, definiteRange, domain)
     elif convexity == 1:
         tmp2 = deriv(_argmin.view(multiarray)).view(ndarray).flatten()
+        tmp2[ind_inf] = 0.0
+        
         d_new = dict((v, tmp2 * val) for v, val in L_dict.items())
         L_new = surf(d_new, 0.0)
         L_new.c = new_l_resolved - L_new.minimum(domain)
         
         # for some simple cases
         if len(U_dict) >= 1:
-            if any(ind_eq):
+            if ind_eq.size:
                 koeffs[ind_eq] = tmp2[ind_eq]
             d_new = dict((v, koeffs * val) for v, val in U_dict.items())
             U_new = surf(d_new, 0.0)

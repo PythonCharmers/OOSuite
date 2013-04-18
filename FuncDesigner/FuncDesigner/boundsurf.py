@@ -168,14 +168,6 @@ class boundsurf(object):#object is added for Python2 compatibility
             
         elif isBoundSurf:
             assert (selfPositive or selfNegative) and  (R2Positive or R2Negative), 'bug or unimplemented yet'
-            if selfPositive:
-                self.l.c = np.where(self.l.c==0, 1e-307, self.l.c)
-            else:
-                self.u.c = np.where(self.u.c==0, -1e-307, self.u.c)
-            if R2Positive:
-                other.l.c = np.where(other.l.c==0, 1e-307, other.l.c)
-            else:
-                other.u.c = np.where(other.u.c==0, -1e-307, other.u.c)
 
             r = ((self if selfPositive else -self).log() + (other if R2Positive else -other).log()).exp()
             return r if selfPositive == R2Positive else -r
