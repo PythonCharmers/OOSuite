@@ -392,7 +392,7 @@ def rdiv_interval(self, other, domain, dtype):
     arg_lb_ub, definiteRange = self._interval(domain, dtype, allowBoundSurf = True)
     if type(arg_lb_ub) == boundsurf:
         arg_lb_ub_resolved = arg_lb_ub.resolve()[0]
-        if (all(arg_lb_ub_resolved > 0) or all(arg_lb_ub_resolved < 0)) and not any(np.isin(arg_lb_ub_resolved)):
+        if (all(arg_lb_ub_resolved > 0) or all(arg_lb_ub_resolved < 0)) and not any(np.isinf(arg_lb_ub_resolved)):
             return other * arg_lb_ub ** (-1), definiteRange
         else:
             arg_lb_ub = arg_lb_ub_resolved

@@ -99,9 +99,21 @@ class boundsurf(object):#object is added for Python2 compatibility
     # TODO: handling fd.sum()
     def __add__(self, other):
         if np.isscalar(other) or (type(other) == np.ndarray and other.size == 1):
-            return boundsurf(self.l+other, self.u+other, self.definiteRange, self.domain)
+            if self.l is self.u:
+                # TODO: mb use id() instead of "is"
+                tmp = self.l+other
+                rr = (tmp, tmp)
+            else:
+                rr = (self.l+other, self.u+other)
+            return boundsurf(rr[0], rr[1], self.definiteRange, self.domain)
         elif type(other) == boundsurf:# TODO: replace it by type(r[0]) after dropping Python2 support
-            return boundsurf(self.l+other.l, self.u+other.u, self.definiteRange & other.definiteRange, self.domain)
+            if self.l is self.u and other.l is other.u:
+                # TODO: mb use id() instead of "is"
+                tmp = self.l+other.l
+                rr = (tmp, tmp)
+            else:
+                rr = (self.l+other.l, self.u+other.u)
+            return boundsurf(rr[0], rr[1], self.definiteRange & other.definiteRange, self.domain)
         elif type(other) == np.ndarray:
             assert other.shape[0] == 2, 'unimplemented yet'
             return boundsurf(self.l+other[0], self.u+other[1], self.definiteRange, self.domain)
@@ -112,8 +124,12 @@ class boundsurf(object):#object is added for Python2 compatibility
     
     def __neg__(self):
         l, u = self.l, self.u
-        L = surf(dict((k, -v) for k, v in u.d.items()), -u.c)
-        U = surf(dict((k, -v) for k, v in l.d.items()), -l.c)
+        if l is u:
+            tmp = surf(dict((k, -v) for k, v in u.d.items()), -u.c)
+            L, U = tmp, tmp
+        else: 
+            L = surf(dict((k, -v) for k, v in u.d.items()), -u.c)
+            U = surf(dict((k, -v) for k, v in l.d.items()), -l.c)
         return boundsurf(L, U, self.definiteRange, self.domain)
     
     # TODO: mb rework it
@@ -137,7 +153,11 @@ class boundsurf(object):#object is added for Python2 compatibility
             assert R2Positive or R2Negative, 'bug or unimplemented yet'
             
         if R2_is_scalar or (isArray and R2.size == 1):
-            rr = (self.l*R2, self.u*R2) if R2 >= 0 else (self.u*R2, self.l*R2)
+            if self.l is self.u:
+                tmp = self.l*R2
+                rr = (tmp, tmp)
+            else:
+                rr = (self.l*R2, self.u*R2) if R2 >= 0 else (self.u*R2, self.l*R2)
         elif isArray:
             assert selfPositive or selfNegative, 'unimplemented yet'
 
