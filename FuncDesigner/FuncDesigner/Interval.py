@@ -249,33 +249,13 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):#*args, **kw):
             if type(lb1_ub1) != boundsurf and (t2_positive or t2_negative):
                 t1_positive = all(tmp1 >= 0)
                 t1_negative = all(tmp1 <= 0)
-                if (t1_positive or t1_negative) \
-                and not any(np.isinf(tmp2))\
-                and not any(np.isinf(tmp1)):
-                    # TODO: improve it
+                if (t1_positive or t1_negative):
                     r = lb1_ub1 * lb2_ub2
-#                    r = (lb1_ub1 if t1_positive else -lb1_ub1) * (lb2_ub2 if t2_positive else -lb2_ub2)
-#                    if t1_positive != t2_positive:
-#                        r = -r
                     return r, r.definiteRange
             elif domain.surf_preference and not any(np.isinf(tmp1)) and not any(np.isinf(tmp2)):
                 r = 0.25 * ((lb1_ub1 + lb2_ub2) ** 2 - (lb1_ub1 - lb2_ub2) ** 2)
                 domain.exactRange = False
                 return r, r.definiteRange
-#                        
-##                    #rr = 0.5*(lb1_ub1 * tmp2 + lb2_ub2 * tmp1)
-##                    from ooPoint import ooPoint as oopoint
-##                    centers = oopoint((v, asarray(0.5*(val[0] + val[1]))) for v, val in domain.items())
-##                    tmp1 = np.linalg.norm(rr.values(centers)[0] - rr.values(centers)[1]) 
-##                    tmp2 = np.linalg.norm(r.values(centers)[0] - r.values(centers)[1])
-##                    print(tmp1-tmp2, tmp1, tmp2)
-##                    tmp1 = np.linalg.norm(rr.resolve()[0][0] - rr.resolve()[0][1]) 
-##                    tmp2 = np.linalg.norm(r.resolve()[0][0] - r.resolve()[0][1])
-##                    print(tmp1-tmp2, tmp1, tmp2)
-##                    print('------')
-#
-##                    r.definiteRange = definiteRange
-#                    return r, r.definiteRange
         else:
             tmp2 = lb2_ub2
         
@@ -355,12 +335,11 @@ def div_interval(self, other, domain, dtype):
     t1_negative = all(tmp1 <= 0)
 
     tmp2 = lb2_ub2.resolve()[0] if type(lb2_ub2) == boundsurf else lb2_ub2
-    t2_strictly_positive = all(tmp2 > 0)
-    t2_strictly_negative = all(tmp2 < 0)
+    t2_positive = all(tmp2 >= 0)
+    t2_negative = all(tmp2 <= 0)
     
     if (type(lb1_ub1) == boundsurf  or type(lb2_ub2) == boundsurf) and \
-    (t1_positive or t1_negative) and (t2_strictly_positive or t2_strictly_negative)\
-    and not any(np.isinf(tmp1)) and not any(np.isinf(tmp2)):
+    (t1_positive or t1_negative) and (t2_positive or t2_negative):
 #        changeSign = t1_positive != t2_strictly_positive
         assert tmp2.shape[0] == 2
         tmp = lb1_ub1 *  (lb2_ub2**-1 if type(lb2_ub2) == boundsurf else 1.0 / tmp2[::-1])
@@ -392,7 +371,7 @@ def rdiv_interval(self, other, domain, dtype):
     arg_lb_ub, definiteRange = self._interval(domain, dtype, allowBoundSurf = True)
     if type(arg_lb_ub) == boundsurf:
         arg_lb_ub_resolved = arg_lb_ub.resolve()[0]
-        if (all(arg_lb_ub_resolved > 0) or all(arg_lb_ub_resolved < 0)) and not any(np.isinf(arg_lb_ub_resolved)):
+        if all(arg_lb_ub_resolved >= 0) or all(arg_lb_ub_resolved <= 0):
             return other * arg_lb_ub ** (-1), definiteRange
         else:
             arg_lb_ub = arg_lb_ub_resolved
