@@ -211,8 +211,8 @@ class ooSystemState:
         assert len(args) ==0
         assert len(kwargs) ==0
         #dict.__init__(self, *args, **kwargs)
-        self._byID = dict([(key, val) for key, val in  keysAndValues])
-        self._byNames = dict([(key.name, val) for key, val in keysAndValues])
+        self._byID = dict((key, val) for key, val in  keysAndValues)
+        self._byNames = dict((key.name, val) for key, val in keysAndValues)
         #self.update(self._byNames)
     
     __repr__ = lambda self: ''.join(['\n'+key+' = '+str(val) for key, val in self._byNames.items()])[1:]

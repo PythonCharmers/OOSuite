@@ -156,9 +156,7 @@ class boundsurf(object):#object is added for Python2 compatibility
                 other.l.c = np.where(other.l.c==0, 1e-307, other.l.c)
             else:
                 other.u.c = np.where(other.u.c==0, -1e-307, other.u.c)
-                    
-#            self.c += (1e-307 if selfPositive else -1e307)
-#            other.c += (1e-307 if selfPositive else -1e307)
+
             r = ((self if selfPositive else -self).log() + (other if R2Positive else -other).log()).exp()
             return r if selfPositive == R2Positive else -r
 #            return R1*other# if nanmax(R2[0])

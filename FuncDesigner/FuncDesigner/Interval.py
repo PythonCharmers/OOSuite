@@ -250,15 +250,15 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):#*args, **kw):
                 t1_positive = all(tmp1 >= 0)
                 t1_negative = all(tmp1 <= 0)
                 if (t1_positive or t1_negative) \
-                and not any(logical_and(tmp1==0, np.isinf(tmp2)))\
-                and not any(logical_and(tmp2==0, np.isinf(tmp1))):
+                and not any(np.isinf(tmp2))\
+                and not any(np.isinf(tmp1)):
                     # TODO: improve it
                     r = lb1_ub1 * lb2_ub2
 #                    r = (lb1_ub1 if t1_positive else -lb1_ub1) * (lb2_ub2 if t2_positive else -lb2_ub2)
 #                    if t1_positive != t2_positive:
 #                        r = -r
                     return r, r.definiteRange
-            elif domain.surf_preference and all(np.isfinite(tmp1)) and all(np.isfinite(tmp2)):
+            elif domain.surf_preference and not any(np.isinf(tmp1)) and not any(np.isinf(tmp2)):
                 r = 0.25 * ((lb1_ub1 + lb2_ub2) ** 2 - (lb1_ub1 - lb2_ub2) ** 2)
                 domain.exactRange = False
                 return r, r.definiteRange
@@ -359,7 +359,8 @@ def div_interval(self, other, domain, dtype):
     t2_strictly_negative = all(tmp2 < 0)
     
     if (type(lb1_ub1) == boundsurf  or type(lb2_ub2) == boundsurf) and \
-    (t1_positive or t1_negative) and (t2_strictly_positive or t2_strictly_negative):
+    (t1_positive or t1_negative) and (t2_strictly_positive or t2_strictly_negative)\
+    and not any(np.isinf(tmp1)) and not any(np.isinf(tmp2)):
 #        changeSign = t1_positive != t2_strictly_positive
         assert tmp2.shape[0] == 2
         tmp = lb1_ub1 *  (lb2_ub2**-1 if type(lb2_ub2) == boundsurf else 1.0 / tmp2[::-1])
@@ -391,7 +392,7 @@ def rdiv_interval(self, other, domain, dtype):
     arg_lb_ub, definiteRange = self._interval(domain, dtype, allowBoundSurf = True)
     if type(arg_lb_ub) == boundsurf:
         arg_lb_ub_resolved = arg_lb_ub.resolve()[0]
-        if all(arg_lb_ub_resolved > 0) or all(arg_lb_ub_resolved < 0):
+        if (all(arg_lb_ub_resolved > 0) or all(arg_lb_ub_resolved < 0)) and not any(np.isin(arg_lb_ub_resolved)):
             return other * arg_lb_ub ** (-1), definiteRange
         else:
             arg_lb_ub = arg_lb_ub_resolved
@@ -416,7 +417,7 @@ def pow_const_interval(self, other, domain, dtype):
     lb_ub, definiteRange = self._interval(domain, dtype, allowBoundSurf = True)
     isBoundSurf = type(lb_ub) == boundsurf
     lb_ub_resolved = lb_ub.resolve()[0] if isBoundSurf else lb_ub
-    if isBoundSurf and all(np.isfinite(lb_ub_resolved)):
+    if isBoundSurf and not any(np.isinf(lb_ub_resolved)):
         lb_ub_resolved = lb_ub.resolve()[0]
         other_isPositive = other > 0
         domain_isPositive = all(lb_ub_resolved >= 0)
