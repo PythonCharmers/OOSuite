@@ -383,7 +383,6 @@ def abs(inp):
     if not isinstance(inp, oofun): return np.abs(inp)
     
     return oofun(st_abs, inp, d = lambda x: Diag(np.sign(x)), vectorized = True, _interval_ = ZeroCriticalPointsInterval(inp, np.abs))
-    #return oofun(np.abs, inp, d = lambda x: Diag(np.sign(x)), vectorized = True, criticalPoints = ZeroCriticalPoints)
 
 __all__ += ['abs']
 
@@ -411,7 +410,7 @@ def log_interval(logfunc, derivative, inp):
             definiteRange = False
         # TODO: rework definiteRange with matrix operations
         
-        if 1 and isBoundSurf and np.all(lb > 0):
+        if 1 and isBoundSurf and np.all(lb > 0) and not np.any(np.isinf(ub)):
             L, U = lb_ub.l, lb_ub.u
             new_l_resolved = t_min
             new_u_resolved = t_max
@@ -629,7 +628,7 @@ def sum_interval(R0, r, INP, domain, dtype):
         R, DefiniteRange = domain.storedSums[r][-1]
         
         # TODO: replace it by type(R) after dropping Python2 support 
-        has_infs = not (np.all(np.isfinite(R)) if R.__class__ != boundsurf else R.isfinite())
+        has_infs = not (np.all(np.isfinite(R)) if type(R) != boundsurf else R.isfinite())
         
         if has_infs:
             # !!!!!!!!!!!!!!!!!!!!!!!!!!!!   TODO: implement allowBoundSurf = True here
