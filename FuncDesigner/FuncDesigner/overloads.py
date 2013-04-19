@@ -422,8 +422,10 @@ def log_interval(logfunc, derivative, inp):
             _val = U_new.maximum(domain)
             U_new.c = new_u_resolved - _val
             
-            if 1 and len(Ld) == 1 and np.all(lb != ub):
+            if 1 and len(Ld) == 1:
                 koeffs = (t_max - t_min) / (ub - lb)
+                ind_eq = lb==ub
+                koeffs[ind_eq] = 1.0 / lb[ind_eq]
                 d_new = dict((v, koeffs * val) for v, val in Ld.items())
                 L_new = surf(d_new, 0.0)
                 _val = L_new.minimum(domain)

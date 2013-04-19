@@ -223,17 +223,6 @@ class boundsurf(object):#object is added for Python2 compatibility
                          monotonity = -1, 
                          convexity = 1 if all(R0>=0) else -1 if all(R0<=0) else np.nan, 
                          criticalPoint = np.nan, criticalPointValue = np.nan)[0]        
-
-
-#def boundsurf_mult(b1, b2):
-#    d1l, d1u, d2l, d2u = b1.l.d, b1.u.d, b2.l.d, b2.u.d
-#    c1l, c1u, c2l, c2u = b1.l.c, b1.u.c, b2.l.c, b2.u.c
-#    
-#    d_l, d_u = {}, {}
-#    c_l, c_u = 0.0, 0.0
-#    
-#    r = boundsurf(surf(d_l, c_l), surf(d_u, c_u), b1.definiteRange & b2.definiteRange)
-#    return r
     
 def boundsurf_abs(b):
     r, definiteRange = b.resolve()
