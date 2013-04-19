@@ -247,17 +247,17 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):#*args, **kw):
             t2_positive = all(tmp2 >= 0)
             t2_negative = all(tmp2 <= 0)
             # TODO: handle zeros wrt inf
-            if not any(np.isinf(tmp1)) and not any(np.isinf(tmp2)):
-                if type(lb1_ub1) != boundsurf and (t2_positive or t2_negative):
-                    t1_positive = all(tmp1 >= 0)
-                    t1_negative = all(tmp1 <= 0)
-                    if (t1_positive or t1_negative):
-                        r = lb1_ub1 * lb2_ub2
-                        return r, r.definiteRange
-                elif domain.surf_preference:
-                    r = 0.25 * ((lb1_ub1 + lb2_ub2) ** 2 - (lb1_ub1 - lb2_ub2) ** 2)
-                    domain.exactRange = False
+            
+            if type(lb1_ub1) != boundsurf and (t2_positive or t2_negative):
+                t1_positive = all(tmp1 >= 0)
+                t1_negative = all(tmp1 <= 0)
+                if (t1_positive or t1_negative):
+                    r = lb1_ub1 * lb2_ub2
                     return r, r.definiteRange
+            elif domain.surf_preference and not any(np.isinf(tmp1)) and not any(np.isinf(tmp2)):
+                r = 0.25 * ((lb1_ub1 + lb2_ub2) ** 2 - (lb1_ub1 - lb2_ub2) ** 2)
+                domain.exactRange = False
+                return r, r.definiteRange
         else:
             tmp2 = lb2_ub2
         
