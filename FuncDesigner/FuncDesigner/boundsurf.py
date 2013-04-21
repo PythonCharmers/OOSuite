@@ -168,7 +168,7 @@ class boundsurf(object):#object is added for Python2 compatibility
             
         elif isBoundSurf:
             assert (selfPositive or selfNegative) and  (R2Positive or R2Negative), 'bug or unimplemented yet'
-
+            definiteRange = logical_and(definiteRange, other.definiteRange)
             r = ((self if selfPositive else -self).log() + (other if R2Positive else -other).log()).exp()
             return r if selfPositive == R2Positive else -r
 #            return R1*other# if nanmax(R2[0])
@@ -179,6 +179,17 @@ class boundsurf(object):#object is added for Python2 compatibility
         return boundsurf(rr[0], rr[1], definiteRange, self.domain)
     
     __rmul__ = __mul__
+    
+#    def __div__(self, other):
+#        R1 = self.resolve()[0]
+#        definiteRange = self.definiteRange
+#        selfPositive = all(R1 >= 0)
+#        selfNegative = all(R1 <= 0)
+#        
+#        isArray = type(other) == np.ndarray
+#        isBoundSurf = type(other) == boundsurf
+#        R2 = other.resolve()[0] if isBoundSurf else other
+#        R2_is_scalar = np.isscalar(R2)        
 
     def log(self):
         from Interval import defaultIntervalEngine

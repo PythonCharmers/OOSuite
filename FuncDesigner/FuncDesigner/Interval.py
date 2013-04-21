@@ -248,7 +248,7 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):#*args, **kw):
             t2_negative = all(tmp2 <= 0)
             # TODO: handle zeros wrt inf
             
-            if t2_positive or t2_negative:
+            if (t2_positive or t2_negative) and not any(np.isinf(tmp1)) and not any(np.isinf(tmp2)):
                 t1_positive = all(tmp1 >= 0)
                 t1_negative = all(tmp1 <= 0)
                 if t1_positive or t1_negative:
@@ -256,6 +256,8 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):#*args, **kw):
                     return r, r.definiteRange
             elif domain.surf_preference and not any(np.isinf(tmp1)) and not any(np.isinf(tmp2)):
                 r = 0.25 * ((lb1_ub1 + lb2_ub2) ** 2 - (lb1_ub1 - lb2_ub2) ** 2)
+#                Tmp1, Tmp2 = nanmin(tmp1)-1e-16, nanmin(tmp2)-1e-16
+#                r = (lb1_ub1 - Tmp1) * (lb2_ub2 - Tmp2) + Tmp1 * lb2_ub2 + Tmp2 * lb1_ub1 - Tmp1 * Tmp2
                 domain.exactRange = False
                 return r, r.definiteRange
         else:
@@ -484,12 +486,11 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, \
     r_l, r_u = R0
     
     R2 = fun(R0)
-    tmp = R2[1] - R2[0]
     
-    # ! not ind_inf = np.where(np.isinf(tmp))[0] - sometimes triggers inf-inf = nan
     ind_inf = np.where(np.logical_or(np.isinf(R2[0]), np.isinf(R2[1])))[0]
+#    ind_inf = np.isinf(R2[1] - R2[0])
 
-    koeffs = tmp / (r_u - r_l)
+    koeffs = (R2[1] - R2[0]) / (r_u - r_l)
     koeffs[ind_inf] = 0.0
     
     ind_eq = where(r_u == r_l)[0]
@@ -538,9 +539,6 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, \
         if len(U_dict) >= 1:
             if ind_eq.size:
                 koeffs[ind_eq] = tmp2[ind_eq]
-            ind_inf2 = np.isinf(new_l_resolved)
-            if any(ind_inf2):
-                koeffs[ind_inf2] = 0.0
             d_new = dict((v, koeffs * val) for v, val in U_dict.items())
             L_new = surf(d_new, 0.0)
             L_new.c = new_l_resolved -  L_new.minimum(domain)
@@ -564,9 +562,6 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, \
         if len(U_dict) >= 1:
             if ind_eq.size:
                 koeffs[ind_eq] = tmp2[ind_eq]
-            ind_inf2 = np.isinf(new_u_resolved)
-            if any(ind_inf2):
-                koeffs[ind_inf2] = 0.0
             d_new = dict((v, koeffs * val) for v, val in U_dict.items())
             U_new = surf(d_new, 0.0)
             U_new.c = new_u_resolved - U_new.maximum(domain)
