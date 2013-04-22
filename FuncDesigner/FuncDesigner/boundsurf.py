@@ -154,42 +154,55 @@ class boundsurf(object):#object is added for Python2 compatibility
             
         if R2_is_scalar or (isArray and R2.size == 1):
             if self.l is self.u:
-                tmp = self.l*R2
+                tmp = self.l * R2
                 rr = (tmp, tmp)
             else:
-                rr = (self.l*R2, self.u*R2) if R2 >= 0 else (self.u*R2, self.l*R2)
+                rr = (self.l * R2, self.u * R2) if R2 >= 0 else (self.u * R2, self.l * R2)
         elif isArray:
             assert selfPositive or selfNegative, 'unimplemented yet'
 
             if selfPositive: 
-                rr = (self.l*R2[0], self.u*R2[1]) if R2Positive else (self.u*R2[0], self.l*R2[1])
+                rr = (self.l * R2[0], self.u * R2[1]) if R2Positive else (self.u * R2[0], self.l * R2[1])
             else:#selfNegative
-                rr = (self.u*R2[1], self.l*R2[0]) if R2Negative else (self.l*R2[1], self.u*R2[0])
+                assert selfNegative
+                rr = (self.u * R2[1], self.l * R2[0]) if R2Negative else (self.l * R2[1], self.u * R2[0])
             
         elif isBoundSurf:
-            assert (selfPositive or selfNegative) and  (R2Positive or R2Negative), 'bug or unimplemented yet'
+            assert (selfPositive or selfNegative), 'bug or unimplemented yet'
             definiteRange = logical_and(definiteRange, other.definiteRange)
             r = ((self if selfPositive else -self).log() + (other if R2Positive else -other).log()).exp()
+            r.definiteRange = definiteRange
             return r if selfPositive == R2Positive else -r
 #            return R1*other# if nanmax(R2[0])
             #return 0.5 * (R1*other + R2*self)
         else:
             assert 0, 'bug or unimplemented yet'
         
-        return boundsurf(rr[0], rr[1], definiteRange, self.domain)
+        R = boundsurf(rr[0], rr[1], definiteRange, self.domain)
+        return R
     
     __rmul__ = __mul__
     
-#    def __div__(self, other):
-#        R1 = self.resolve()[0]
-#        definiteRange = self.definiteRange
-#        selfPositive = all(R1 >= 0)
-#        selfNegative = all(R1 <= 0)
-#        
+    def __div__(self, other):
+        R1 = self.resolve()[0]
+        definiteRange = self.definiteRange
+        selfPositive = all(R1 >= 0)
+        selfNegative = all(R1 <= 0)
+        
 #        isArray = type(other) == np.ndarray
-#        isBoundSurf = type(other) == boundsurf
-#        R2 = other.resolve()[0] if isBoundSurf else other
-#        R2_is_scalar = np.isscalar(R2)        
+        isBoundSurf = type(other) == boundsurf
+        assert isBoundSurf
+        R2 = other.resolve()[0] #if isBoundSurf else other
+#        R2_is_scalar = np.isscalar(R2)     
+        assert R2.shape[0] == 2, 'bug or unimplemented yet'
+        R2Positive = all(R2 >= 0)
+        R2Negative = all(R2 <= 0)
+        assert (selfPositive or selfNegative) and (R2Positive or R2Negative), 'bug or unimplemented yet'
+        definiteRange = logical_and(definiteRange, other.definiteRange)
+        r = ((self if selfPositive else -self).log() - (other if R2Positive else -other).log()).exp()
+        r.definiteRange = definiteRange
+        return r if selfPositive == R2Positive else -r
+        
 
     def log(self):
         from Interval import defaultIntervalEngine
