@@ -747,6 +747,14 @@ def func11(y, e, nlhc, indTC, residual, o, a, _s, p):
         residual = None
         tmp = asarray(a)-asarray(o)
         tmp[tmp<1e-300] = 1e-300
+        ind_uf_inf = where(a==inf)[0]
+        if ind_uf_inf.size:
+            Tmp = o[ind_uf_inf]
+            Tmp[Tmp==-inf] = -1e100
+            M = nanmax(abs(Tmp))
+            if M == nan: 
+                M = 1.0
+            tmp[ind_uf_inf] = 1e200 * (1.0 + Tmp/M)
         nlhf = log2(tmp)#-log2(p.fTol)
 #        nlhf[a==inf] = 1e300# to make it not inf and nan
 #        nlhf[o==-inf] = 1e300# to make it not inf and nan
