@@ -55,7 +55,7 @@ if hasStochastic\
 else np.sin
 
 def sin(inp):
-    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
+    if isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp)):
         return ooarray([sin(elem) for elem in inp])
     elif hasStochastic and isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(sin(inp.values), inp.probabilities.copy())._update(inp)
@@ -75,7 +75,7 @@ if hasStochastic\
 else np.cos
 
 def cos(inp):
-    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
+    if isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp)):
         return ooarray([cos(elem) for elem in inp])
     elif hasStochastic and isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(cos(inp.values), inp.probabilities.copy())._update(inp)        
@@ -95,16 +95,24 @@ else np.tan(x))\
 if hasStochastic\
 else np.tan
 
+
 def tan(inp):
-    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
+    if isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp)):
         return ooarray([tan(elem) for elem in inp])
     if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(tan(inp.values), inp.probabilities.copy())._update(inp)       
     if not isinstance(inp, oofun): return np.tan(inp)
     # TODO: move it outside of tan definition
-    def interval(*args):
-        raise 'interval for tan is unimplemented yet'
-    r = oofun(st_tan, inp, d = lambda x: Diag(1.0 / np.cos(x) ** 2), vectorized = True, interval = interval)
+    r = oofun(st_tan, inp, d = lambda x: Diag(1.0 / np.cos(x) ** 2), vectorized = True, \
+    criticalPoints = False, engine_monotonity = 1)
+    
+    def tan_interval(domain, dtype):
+        R0, definiteRange = inp._interval(domain, dtype)
+        assert R0.shape[0] == 2
+        if np.any(R0[0] < -np.pi/2) or np.any(R0[1] > np.pi/2):
+            raise 'interval for tan() is unimplemented for range beyond (-pi/2, pi/2) yet'
+        return oofun._interval_(r, domain, dtype)
+    r._interval_ = tan_interval
     return r
     
 __all__ += ['sin', 'cos', 'tan']
@@ -123,7 +131,7 @@ if hasStochastic\
 else np.arcsin
 
 def arcsin(inp):
-    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
+    if isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp)):
         return ooarray([arcsin(elem) for elem in inp])
     if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(arcsin(inp.values), inp.probabilities.copy())._update(inp)       
@@ -146,7 +154,7 @@ else np.arccos
 
 
 def arccos(inp):
-    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
+    if isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp)):
         return ooarray([arccos(elem) for elem in inp])
     if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(arccos(inp.values), inp.probabilities.copy())._update(inp)     
@@ -167,7 +175,7 @@ if hasStochastic\
 else np.arctan
 
 def arctan(inp):
-    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
+    if isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp)):
         return ooarray([arctan(elem) for elem in inp])    
     if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(arctan(inp.values), inp.probabilities.copy())._update(inp)             
@@ -186,7 +194,7 @@ if hasStochastic\
 else np.sinh
 
 def sinh(inp):
-    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
+    if isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp)):
         return ooarray([sinh(elem) for elem in inp])        
     if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(sinh(inp.values), inp.probabilities.copy())._update(inp)        
@@ -228,7 +236,7 @@ if hasStochastic\
 else np.cosh
 
 def cosh(inp):
-    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
+    if isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp)):
         return ooarray([cosh(elem) for elem in inp])        
     if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(cosh(inp.values), inp.probabilities.copy())._update(inp)                
@@ -249,7 +257,7 @@ else np.tanh
 
 
 def tanh(inp):
-    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
+    if isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp)):
         return ooarray([tanh(elem) for elem in inp])       
     if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(tanh(inp.values), inp.probabilities.copy())._update(inp)              
@@ -266,7 +274,7 @@ if hasStochastic\
 else np.arctanh
 
 def arctanh(inp):
-    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
+    if isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp)):
         return ooarray([arctanh(elem) for elem in inp])        
     if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(arctanh(inp.values), inp.probabilities.copy())._update(inp)          
@@ -287,7 +295,7 @@ if hasStochastic\
 else np.arcsinh
 
 def arcsinh(inp):
-    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
+    if isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp)):
         return ooarray([arcsinh(elem) for elem in inp])        
     if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(arcsinh(inp.values), inp.probabilities.copy())._update(inp)      
@@ -304,7 +312,7 @@ if hasStochastic\
 else np.arccosh
 
 def arccosh(inp):
-    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
+    if isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp)):
         return ooarray([arccosh(elem) for elem in inp])        
     if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(arccosh(inp.values), inp.probabilities.copy())._update(inp)      
@@ -350,7 +358,7 @@ if hasStochastic\
 else np.sqrt
 
 def sqrt(inp, attachConstraints = True):
-    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
+    if isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp)):
         return ooarray([sqrt(elem) for elem in inp])
     if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(sqrt(inp.values), inp.probabilities.copy())._update(inp)      
@@ -376,7 +384,7 @@ if hasStochastic\
 else np.abs
 
 def abs(inp):
-    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
+    if isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp)):
         return ooarray([abs(elem) for elem in inp])
     if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(abs(inp.values), inp.probabilities.copy())._update(inp)      
@@ -447,7 +455,7 @@ if hasStochastic\
 else np.log
 
 def log(inp):
-    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
+    if isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp)):
         return ooarray([log(elem) for elem in inp])    
     if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(log(inp.values), inp.probabilities.copy())._update(inp)      
@@ -468,7 +476,7 @@ else np.log10
 
 INV_LOG_10 = 1.0 / np.log(10)
 def log10(inp):
-    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
+    if isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp)):
         return ooarray([log10(elem) for elem in inp])    
     if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(log10(inp.values), inp.probabilities.copy())._update(inp)              
@@ -489,7 +497,7 @@ else np.log2
 
 INV_LOG_2 = 1.0 / np.log(2)
 def log2(inp):
-    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
+    if isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp)):
         return ooarray([log2(elem) for elem in inp])    
     if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(log2(inp.values), inp.probabilities.copy())._update(inp)       
@@ -533,7 +541,7 @@ def cross(a, b):
 __all__ += ['dot', 'cross']
 
 def ceil(inp):
-    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
+    if isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp)):
         return ooarray([ceil(elem) for elem in inp])        
     if not isinstance(inp, oofun): return np.ceil(inp)
     r = oofun(lambda x: np.ceil(x), inp, vectorized = True, engine_monotonity = 1)
@@ -542,7 +550,7 @@ def ceil(inp):
     return r
 
 def floor(inp):
-    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
+    if isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp)):
         return ooarray([floor(elem) for elem in inp])        
     if not isinstance(inp, oofun): return np.floor(inp)
     r = oofun(lambda x: np.floor(x), inp, vectorized = True, engine_monotonity = 1)
@@ -559,7 +567,7 @@ if hasStochastic\
 else np.sign
 
 def sign(inp):
-    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]):
+    if isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp)):
         return ooarray([sign(elem) for elem in inp])
     if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(sign(inp.values), inp.probabilities.copy())._update(inp)      
@@ -886,7 +894,7 @@ def sum(inp, *args, **kwargs):
     if isinstance(inp, ooarray) and inp.dtype != object:
         inp = inp.view(np.ndarray)
         
-    cond_ooarray = isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)])
+    cond_ooarray = isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp))
     if cond_ooarray and inp.size == 1: 
         return np.asscalar(inp).sum()
     condIterableOfOOFuns = type(inp) in (list, tuple) or cond_ooarray
@@ -894,7 +902,7 @@ def sum(inp, *args, **kwargs):
     if not isinstance(inp, oofun) and not condIterableOfOOFuns: 
         return np.sum(inp, *args, **kwargs)
 
-    if isinstance(inp, ooarray) and any([isinstance(elem, oofun) for elem in atleast_1d(inp)]): inp = inp.tolist()
+    if isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp)): inp = inp.tolist()
 
     if condIterableOfOOFuns:
         d, INP, r0 = [], [], 0.0
@@ -1035,7 +1043,7 @@ def decision(*args, **kwargs):
 def max(inp,  *args,  **kwargs): 
     if type(inp) in (list, tuple, np.ndarray) \
     and (len(args) == 0 or len(args) == 1 and not isinstance(args[0], oofun)) \
-    and not any([isinstance(elem, oofun) for elem in (inp if type(inp) in (list, tuple) else np.atleast_1d(inp))]):
+    and not any(isinstance(elem, oofun) for elem in (inp if type(inp) in (list, tuple) else np.atleast_1d(inp))):
         return np.max(inp, *args, **kwargs)
         
     assert len(args) == len(kwargs) == 0, 'incorrect data type in FuncDesigner max or not implemented yet'
@@ -1084,7 +1092,7 @@ def max(inp,  *args,  **kwargs):
 def min(inp,  *args,  **kwargs): 
     if type(inp) in (list, tuple, np.ndarray) \
     and (len(args) == 0 or len(args) == 1 and not isinstance(args[0], oofun))\
-    and not any([isinstance(elem, oofun) for elem in (inp if type(inp) in (list, tuple) else np.atleast_1d(inp))]):
+    and not any(isinstance(elem, oofun) for elem in (inp if type(inp) in (list, tuple) else np.atleast_1d(inp))):
         return np.min(inp, *args, **kwargs)
     
     assert len(args) == len(kwargs) == 0, 'incorrect data type in FuncDesigner min or not implemented yet'
@@ -1147,7 +1155,7 @@ __all__ += ['det3']
 
 def hstack(tup): # overload for oofun[ind]
     c = [isinstance(t, (oofun, ooarray)) for t in tup]
-    if any([isinstance(t, ooarray) for t in tup]):
+    if any(isinstance(t, ooarray) for t in tup):
         return ooarray(np.hstack(tup))
     if not any(c):
         return np.hstack(tup)

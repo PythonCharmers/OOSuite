@@ -205,7 +205,8 @@ class oofun(object):
     __repr__ = lambda self: self.name
     
     def _interval_(self, domain, dtype):
-        arg_lb_ub, definiteRange = self.input[0]._interval(domain, dtype, allowBoundSurf = True)
+        INP = self.input[0] #if not self.is_oovar else self
+        arg_lb_ub, definiteRange = INP._interval(domain, dtype, allowBoundSurf = True)
         
         if type(arg_lb_ub) == boundsurf:
             arg_lb_ub_resolved = arg_lb_ub.resolve()[0]
