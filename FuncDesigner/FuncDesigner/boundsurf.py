@@ -202,7 +202,8 @@ class boundsurf(object):#object is added for Python2 compatibility
         r = ((self if selfPositive else -self).log() - (other if R2Positive else -other).log()).exp()
         r.definiteRange = definiteRange
         return r if selfPositive == R2Positive else -r
-        
+    
+    __truediv__ = __div__
 
     def log(self):
         from Interval import defaultIntervalEngine
