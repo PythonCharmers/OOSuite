@@ -607,9 +607,12 @@ class oofun(object):
         if isinstance(other, list): other = asarray(other)
         
         if self._isProd:
-            if not isOtherOOFun and not isinstance(self._prod_elements[-1], (oofun, OOArray)):
-                assert len(self._prod_elements) == 2, 'bug in FD kernel'
-                return self._prod_elements[0] * (other * self._prod_elements[-1])
+            assert len(self._prod_elements) == 2, 'bug in FD kernel'
+            if not isinstance(self._prod_elements[-1], (oofun, OOArray)):
+                if not isOtherOOFun:
+                    return self._prod_elements[0] * (other * self._prod_elements[-1])
+                else:
+                    return (self._prod_elements[0] * other) * self._prod_elements[-1]
         
         if isOtherOOFun:
             r = oofun(lambda x, y: x*y, [self, other])
@@ -632,7 +635,11 @@ class oofun(object):
         r.vectorized = True
         #r.isCostly = True
         r._isProd = True
-        r._prod_elements = [self, other]
+        elems1 = [self] if not self._isProd else self._prod_elements
+        # TODO: handle ooarray here
+        #elems2 = [other] if not isinstance(other, (oofun, OOArray)) or not other._isProd else other._prod_elements
+        elems2 = [other] if not isinstance(other, oofun) or not other._isProd else other._prod_elements
+        r._prod_elements = elems1 + elems2#[self, other]
         return r
 
     __rmul__ = __mul__
@@ -646,8 +653,8 @@ class oofun(object):
 
         d_y = lambda x, y: x ** y * log(x) if (isscalar(y) or y.size == 1) and not isinstance(x, multiarray) else Diag(x ** y * log(x))
         
-
-        if not isinstance(other, oofun):
+        other_is_oofun = isinstance(other, oofun)
+        if not other_is_oofun:
             if isscalar(other):
                 if type(other) == int: # TODO: handle numpy integer types
                     pass
@@ -668,7 +675,11 @@ class oofun(object):
             interval = lambda *args, **kw: pow_oofun_interval(self, other, *args, **kw)
             
         r = oofun(f, input, d = d, _interval_=interval)
-
+        if not other_is_oofun:
+            r.getOrder = lambda *args, **kw: \
+            other * self.getOrder(*args, **kw) if isscalar(other) and int(other) == other and other >= 0 \
+            else inf
+            
         if isinstance(other, oofun) or (not isinstance(other, int) or (type(other) == ndarray and other.flatten()[0] != int)): 
             r.attach((self>0)('pow_domain_%d'%r._id, tol=-1e-7)) # TODO: if "other" is fixed oofun with integer value - omit this
 #        r.isCostly = True

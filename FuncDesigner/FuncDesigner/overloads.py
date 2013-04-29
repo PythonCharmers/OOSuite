@@ -105,7 +105,6 @@ def cos(inp):
     elif hasStochastic and isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(cos(inp.values), inp.probabilities.copy())._update(inp)        
     elif not isinstance(inp, oofun): return np.cos(inp)
-    #return oofun(np.cos, inp, d = lambda x: Diag(-np.sin(x)))
     r = oofun(st_cos, inp, 
              d = lambda x: Diag(-np.sin(x)), 
              vectorized = True, 
