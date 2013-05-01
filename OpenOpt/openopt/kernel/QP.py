@@ -126,7 +126,7 @@ def quad_render(arg, p):
     oovarsIndDict = p._oovarsIndDict
     n = p.n
     
-    if scipyInstalled and p.useSparse is not False:
+    if 0 and scipyInstalled and p.useSparse is not False:
         useSparse = p.useSparse
         if useSparse == 'auto':
             useSparse = p.n > 1500
