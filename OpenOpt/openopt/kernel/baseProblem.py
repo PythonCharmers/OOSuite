@@ -121,6 +121,11 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
     Aeq = None
     beq = None
     
+    #non-linear constraints
+    c = None # c(x)<=0
+    h = None # h(x)=0
+
+    
     scale = None
 
     goal = None# should be redefined by child class
@@ -845,6 +850,8 @@ class MatrixProblem(baseProblem):
     def __init__(self, *args, **kwargs):
         baseProblem.__init__(self, *args, **kwargs)
         self.kernelIterFuncs = setDefaultIterFuncs('Matrix')
+        self.userProvided.c = False
+        self.userProvided.h = False
 
     def _Prepare(self):
         if self.prepared == True:
@@ -879,9 +886,6 @@ class Args:
 class NonLinProblem(baseProblem, nonLinFuncs, Args):
     _baseClassName = 'NonLin'
     diffInt = ProbDefaults['diffInt']        #finite-difference gradient aproximation step
-    #non-linear constraints
-    c = None # c(x)<=0
-    h = None # h(x)=0
     #lines with |info_user-info_numerical| / (|info_user|+|info_numerical+1e-15) greater than maxViolation will be shown
     maxViolation = 1e-2
     JacobianApproximationStencil = 1
