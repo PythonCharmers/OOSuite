@@ -1,8 +1,9 @@
+#PythonSum = sum
 import NLP
 
 from ooMisc import isspmatrix
 from baseProblem import MatrixProblem
-from numpy import asfarray, dot, nan, zeros, isfinite, all, ravel
+from numpy import asfarray, dot, nan, zeros, isfinite, all, ravel, diag, isscalar
 from copy import copy as PythonCopy
 
 
@@ -30,7 +31,7 @@ class QP(MatrixProblem):
             H, f, C = quad_render(self.H, self)
             self.user.f = (self.H, )
             self.H, self.f, self.C = H, f, C
-#            print(H, f, C)
+            print(H, f, C)
             
             if self.fixedVars is None or (self.freeVars is not None and len(self.freeVars)<len(self.fixedVars)):
                 order_kw = {'Vars': self.freeVars}
@@ -122,7 +123,7 @@ def quad_render(arg, p):
     assert p.fixedVars is None, 'quadratic rendering is unimplemented for fixedVars yet'
     
     optVarSizes = p._optVarSizes
-    assert np.all(np.array(optVarSizes.values()) == 1), 'quadratic rendering is unimplemented for oovar(size=n) yet, use oovars(n) instead'
+#    assert np.all(np.array(optVarSizes.values()) == 1), 'quadratic rendering is unimplemented for oovar(size=n) yet, use oovars(n) instead'
         
     oovarsIndDict = p._oovarsIndDict
     n = p.n
@@ -164,7 +165,7 @@ def quad_render(arg, p):
     
     while(len(elems) != 0):
         elem = elems.pop()
-        if np.isscalar(elem) or (type(elem) == np.ndarray and elem.size == 1):
+        if np.isscalar(elem) or type(elem) == np.ndarray:
             c += elem
             continue
         order = elem.getOrder(**order_kw)
@@ -201,13 +202,14 @@ def quad_render(arg, p):
                             continue
                         else:
                             squared_elem = tmp.input[0] if not tmp.is_oovar else tmp
+                        elem1 = elem2 = None
                     else:
                         koeff = None
                         elem1, elem2 = prod_elements
                         squared_elem = None
-                if elem2._isSum:
+                if elem2 is not None and elem2._isSum:
                     elem1, elem2 = elem2, elem1
-                if elem1._isSum:
+                if elem1 is not None and elem1._isSum:
                     Tmp = koeff*elem2 if koeff is not None else elem2
                     elems += [Tmp * Elem for Elem in elem1._summation_elements]
                     continue
@@ -227,22 +229,31 @@ def quad_render(arg, p):
                 d = tmp.D(Z, **D_kwargs)
                 assert len(d) == 1, 'unimplemented yet'
                 oov, lin_coeff = list(d.items())[0]
-                const = squared_elem(Z)
-                Tmp2 = np.float(lin_coeff ** 2)
-                Tmp1 = 2.0 * lin_coeff * const
-                Tmp0 = np.float(const ** 2)
+#                const = squared_elem(Z)
+                const = tmp(Z)
+                if isscalar(lin_coeff):
+                    Tmp2 = np.float(lin_coeff ** 2)  
+                    Tmp1 = 2.0 * lin_coeff * const
+                else:
+                    Diag = diag(lin_coeff)
+                    Tmp2 = Diag **2.0
+                    Tmp1 = 2.0 * Diag * const
+                Tmp0 = const ** 2.0
                 if koeff is not None:
                     Tmp2 *= koeff
                     Tmp1 *= koeff
                     Tmp0 *= koeff
                 Ind = oovarsIndDict[oov]
-                assert Ind[1]-Ind[0] == 1, 'unimplemented yet'
-                H[Ind[0], Ind[0]] += Tmp2
-                f[Ind[0]] += Tmp1
-                c += Tmp0
+#                assert Ind[1]-Ind[0] == 1, 'unimplemented yet'
+                if Ind[1]-Ind[0] == 1:
+                    H[Ind[0], Ind[0]] += Tmp2
+                    f[Ind[0]] += Tmp1
+                else:
+                    H[range(Ind[0], Ind[1]), range(Ind[0], Ind[1])] += Tmp2
+                    f[range(Ind[0], Ind[1])] += Tmp1
+                c += Tmp0 if isscalar(Tmp0) else Tmp0.sum()
 #                for k, v in d.items():
 #                    pass
-                
             else:
                 assert elem1.is_oovar and elem2.is_oovar, 'unimplemented yet'
                 Tmp = 1 if koeff is None else koeff

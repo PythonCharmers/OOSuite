@@ -1,6 +1,7 @@
 import os
 from oologfcn import OpenOptException
-from numpy import zeros, hstack, vstack, ndarray, copy, where, prod, isscalar, atleast_2d, eye, diag, asfarray
+from numpy import zeros, hstack, vstack, ndarray, copy, where, prod, isscalar, atleast_2d, eye, \
+diag, asfarray
 import sys
 syspath = sys.path
 Sep = os.sep
@@ -31,8 +32,9 @@ try:
             return VstackSP(elems)
         
         s = set([(0 if isscalar(elem) else elem.ndim) for elem in elems])
+        s.add(0)
         ndim = max(s)
-        if ndim <= 1:  return vstack(elems)
+        if ndim <= 1:  return vstack(elems) if len(elems) > 0 else asfarray([])
         #assert ndim <= 2 and 1 not in s, 'bug in OpenOpt kernel, inform developers'
         return vstack(elems) if 0 not in s else vstack([atleast_2d(elem) for elem in elems])
         
