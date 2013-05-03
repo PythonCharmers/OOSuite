@@ -55,7 +55,8 @@ class cplex(baseSolver):
         if p.Awhole is not None:
             senses = ''.join(where(p.dwhole == -1, 'L', 'E').tolist())
             P.linear_constraints.add(rhs=np.asarray(p.bwhole).tolist(), senses = senses)
-            P.linear_constraints.set_coefficients(zip(*Find(p.Awhole)))
+            if p.Awhole.size != 0:
+                P.linear_constraints.set_coefficients(zip(*Find(p.Awhole)))
         
         if p.probType.endswith('QP') or p.probType == 'SOCP':
 #            assert p.probType in ('QP', 'QCQP','SOCP')
