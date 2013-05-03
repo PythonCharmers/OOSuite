@@ -30,7 +30,7 @@ class QP(MatrixProblem):
             H, f, C = quad_render(self.H, self)
             self.user.f = (self.H, )
             self.H, self.f, self.C = H, f, C
-            print(H, f, C)
+#            print(H, f, C)
             
             if self.fixedVars is None or (self.freeVars is not None and len(self.freeVars)<len(self.fixedVars)):
                 order_kw = {'Vars': self.freeVars}
