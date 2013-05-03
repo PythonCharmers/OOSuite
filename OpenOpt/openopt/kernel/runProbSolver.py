@@ -141,10 +141,10 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     T = time()
     C = clock()
     p._Prepare()
-    T = time() - T
-    C = clock() - C
-    if T > 1 or C > 1:
-        p.disp('Initialization: Time = %0.1f CPUTime = %0.1f' % (T, C))
+    p.initTime = time() - T
+    p.initCPUTime = clock() - C
+    if p.initTime > 1 or p.initCPUTime > 1:
+        p.disp('Initialization: Time = %0.1f CPUTime = %0.1f' % (p.initTime, p.initCPUTime))
         
     for fn in ['FunEvals', 'Iter', 'Time', 'CPUTime']:
         if hasattr(p,'min'+fn) and hasattr(p,'max'+fn) and getattr(p,'max'+fn) < getattr(p,'min'+fn):
@@ -470,6 +470,8 @@ class OpenOptResult:
         self.elapsed = dict()
         self.elapsed['solver_time'] = round(100.0*(time() - p.timeStart))/100.0
         self.elapsed['solver_cputime'] = round(100.0*(clock() - p.cpuTimeStart))/100.0
+        self.elapsed['initialization_time'] = round(100.0*p.initTime)/100.0
+        self.elapsed['initialization_cputime'] = round(100.0*p.initCPUTime)/100.0
 
         for fn in ('ff', 'istop', 'duals', 'isFeasible', 'msg', 'stopcase', 'iterValues',  'special', 'extras', 'solutions'):
             if hasattr(p, fn):  setattr(self, fn, getattr(p, fn))

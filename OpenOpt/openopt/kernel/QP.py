@@ -119,6 +119,7 @@ def quad_render(arg, p):
         arg = arg.item()
         
     assert isinstance(arg, oofun), 'oofun input expected'
+    assert p.fixedVars is None, 'quadratic rendering is unimplemented for fixedVars yet'
     
     optVarSizes = p._optVarSizes
     assert np.all(np.array(optVarSizes.values()) == 1), 'quadratic rendering is unimplemented for oovar(size=n) yet, use oovars(n) instead'
