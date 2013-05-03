@@ -3,7 +3,7 @@ import NLP
 
 from ooMisc import isspmatrix
 from baseProblem import MatrixProblem
-from numpy import asfarray, dot, nan, zeros, isfinite, all, ravel, diag, isscalar
+from numpy import asfarray, dot, nan, zeros, isfinite, all, ravel, diag, isscalar, arange, ndarray
 from copy import copy as PythonCopy
 
 
@@ -31,7 +31,7 @@ class QP(MatrixProblem):
             H, f, C = quad_render(self.H, self)
             self.user.f = (self.H, )
             self.H, self.f, self.C = H, f, C
-            print(H, f, C)
+#            print(H, f, C)
             
             if self.fixedVars is None or (self.freeVars is not None and len(self.freeVars)<len(self.fixedVars)):
                 order_kw = {'Vars': self.freeVars}
@@ -45,7 +45,16 @@ class QP(MatrixProblem):
                         processConstraint(elem, order_kw, self)
                 else:
                     processConstraint(c, order_kw, self)
-#                print (c.oofun.getOrder(**order_kw))
+            r = []
+            for v in self._freeVarsList:
+                if isinstance(v.domain, (tuple, list, ndarray, set)):
+                    self.err('for FuncDesigner MILP models only variables with domains int, bool or None (real) are implemented for now')
+                if v.domain is int or v.domain is  'int' or v.domain is bool or v.domain is 'bool':
+                    r1, r2 = self._oovarsIndDict[v]
+                    r += arange(r1, r2).tolist()
+            
+            self.intVars, self._intVars = r, self.intVars
+        self._intVars_vector = self.intVars
     
     def __init__(self, *args, **kwargs):
         self.QC = []
@@ -79,6 +88,9 @@ class QP(MatrixProblem):
         self.xf, self.ff, self.rf = r.xf, r.ff, r.rf
         return r
 
+    def __finalize__(self):
+        if self.isFDmodel: self.intVars = self._intVars
+        MatrixProblem.__finalize__(self)
 
 ff = lambda x, QProb: QProb.objFunc(x)
 def dff(x, QProb):
@@ -123,7 +135,7 @@ def quad_render(arg, p):
     assert p.fixedVars is None, 'quadratic rendering is unimplemented for fixedVars yet'
     
     optVarSizes = p._optVarSizes
-#    assert np.all(np.array(optVarSizes.values()) == 1), 'quadratic rendering is unimplemented for oovar(size=n) yet, use oovars(n) instead'
+    assert np.all(np.array(optVarSizes.values()) == 1), 'quadratic rendering is unimplemented for oovar(size=n) yet, use oovars(n) instead'
         
     oovarsIndDict = p._oovarsIndDict
     n = p.n
@@ -229,8 +241,9 @@ def quad_render(arg, p):
                 d = tmp.D(Z, **D_kwargs)
                 assert len(d) == 1, 'unimplemented yet'
                 oov, lin_coeff = list(d.items())[0]
-#                const = squared_elem(Z)
-                const = tmp(Z)
+                const = squared_elem(Z)
+#                print('const:', const)
+#                const = tmp(Z)
                 if isscalar(lin_coeff):
                     Tmp2 = np.float(lin_coeff ** 2)  
                     Tmp1 = 2.0 * lin_coeff * const

@@ -1,4 +1,4 @@
-from numpy import ceil, floor, argmax, ndarray, copy
+from numpy import ceil, floor, argmax, ndarray, copy, arange
 from setDefaultIterFuncs import SMALL_DELTA_X, SMALL_DELTA_F
 from LP import LP
 
@@ -23,22 +23,22 @@ class MILP(LP):
             if self.intVars != []:
                 s = '''
                 For FuncDesigner models prob parameter intVars is deprecated
-                and will be removed in future versions, use oovar(..., domain = int) instead'''
-                self.pWarn(s)
-            for iv in self.intVars:
-                if self.fixedVars is not None and iv in self.fixedVars or\
-                self.freeVars is not None and iv not in self.freeVars:
-                    continue
-                r1, r2 = self._oovarsIndDict[iv]
-                r += range(r1, r2)
+                use oovar(..., domain = int) instead'''
+                self.err(s)
+#            for iv in self.intVars:
+#                if self.fixedVars is not None and iv in self.fixedVars or\
+#                self.freeVars is not None and iv not in self.freeVars:
+#                    continue
+#                r1, r2 = self._oovarsIndDict[iv]
+#                r += range(r1, r2)
             ########### obsolete, to be removed in future versions
-        
+            
             for v in self._freeVarsList:
                 if isinstance(v.domain, (tuple, list, ndarray, set)):
                     self.err('for FuncDesigner MILP models only variables with domains int, bool or None (real) are implemented for now')
                 if v.domain is int or v.domain is  'int' or v.domain is bool or v.domain is 'bool':
                     r1, r2 = self._oovarsIndDict[v]
-                    r += range(r1, r2)
+                    r += arange(r1, r2).tolist()
             
             self.intVars, self._intVars = r, self.intVars
         self._intVars_vector = self.intVars
@@ -52,7 +52,6 @@ class MILP(LP):
                 intDifference = abs(intV-intV.round())
                 intConstraintNumber = argmax(intDifference)
                 intConstraint = intDifference[intConstraintNumber]
-                #print 'intConstraint:', intConstraint
                 if intConstraint > r:
                     intConstraintNumber = self.intVars[intConstraintNumber]
                     r, fname, ind = intConstraint, 'int', intConstraintNumber 
@@ -73,13 +72,3 @@ class MILP(LP):
     def __finalize__(self):
         LP.__finalize__(self)
         if self.isFDmodel: self.intVars = self._intVars
-#    def __finalize__(self):
-#        MatrixProblem.__finalize__(self)
-#        if self.goal in ['max', 'maximum']:
-#            self.f = -self.f
-#            for fn in ['fk', ]:#not ff - it's handled in other place in RunProbSolver.py
-#                if hasattr(self, fn):
-#                    setattr(self, fn, -getattr(self, fn))
-    
-#    def __init__(self, *args, **kwargs):
-#        LP.__init__(self, *args, **kwargs)
