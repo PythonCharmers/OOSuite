@@ -193,6 +193,7 @@ def quad_render(arg, p):
                 if hasattr(tmp, 'toarray'):
                     tmp = tmp.toarray()
                 f += tmp.flatten()
+            c += elem(Z)
         elif order == 2:
             if elem._isProd:
                 prod_elements =  elem._prod_elements
@@ -235,14 +236,15 @@ def quad_render(arg, p):
                     squared_elem = elem.input[0] if not elem.is_oovar else elem
                 koeff = None
             if squared_elem is not None:
-                tmp = squared_elem.input[0] if not squared_elem.is_oovar else squared_elem
+#                tmp = squared_elem.input[0] if not squared_elem.is_oovar else squared_elem
 #                assert tmp.is_oovar, 'unimplemented yet'
-                d = tmp.D(Z, **D_kwargs)
+#                d = tmp.D(Z, **D_kwargs)
+                d = squared_elem.D(Z, **D_kwargs)
                 #assert len(d) == 1, 'unimplemented yet'
                 if len(d) > 1:
-                    assert tmp._isSum, 'unimplemented yet'
-                    Tmp = tmp * koeff if koeff is not None else tmp
-                    elems += [Tmp * Elem for Elem in tmp._summation_elements]
+                    assert squared_elem._isSum, 'unimplemented yet'
+                    Tmp = squared_elem * koeff if koeff is not None else squared_elem
+                    elems += [Tmp * Elem for Elem in squared_elem._summation_elements]
                     continue
                 oov, lin_coeff = list(d.items())[0]
                 const = squared_elem(Z)
@@ -273,7 +275,7 @@ def quad_render(arg, p):
 #                    pass
             else:
                 assert elem1.is_oovar and elem2.is_oovar, 'unimplemented yet'
-                Tmp = 1 if koeff is None else koeff
+                Tmp = 1.0 if koeff is None else koeff
                 Ind1, Ind2 = oovarsIndDict[elem1], oovarsIndDict[elem2]
                 assert Ind1[1]-Ind1[0] == 1, 'unimplemented yet'
                 assert Ind2[1]-Ind2[0] == 1, 'unimplemented yet'
