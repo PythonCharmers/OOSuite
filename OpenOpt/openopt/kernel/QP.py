@@ -227,7 +227,6 @@ def quad_render(arg, p):
                     continue
             
             else:
-#                assert len(elem.input) == 0 or elem.input == [None], 'unimplemented yet'
                 if elem.fun == np.sum: # oofun.sum()
                     assert len(elem.input) == 1
                     elems.append(elem.input[0])
@@ -239,7 +238,12 @@ def quad_render(arg, p):
                 tmp = squared_elem.input[0] if not squared_elem.is_oovar else squared_elem
 #                assert tmp.is_oovar, 'unimplemented yet'
                 d = tmp.D(Z, **D_kwargs)
-                assert len(d) == 1, 'unimplemented yet'
+                #assert len(d) == 1, 'unimplemented yet'
+                if len(d) > 1:
+                    assert tmp._isSum, 'unimplemented yet'
+                    Tmp = tmp * koeff if koeff is not None else tmp
+                    elems += [Tmp * Elem for Elem in tmp._summation_elements]
+                    continue
                 oov, lin_coeff = list(d.items())[0]
                 const = squared_elem(Z)
 #                print('const:', const)

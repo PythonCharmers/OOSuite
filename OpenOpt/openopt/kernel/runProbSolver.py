@@ -401,7 +401,8 @@ def finalTextOutput(p, r):
         else:
             rMsg = 'MaxResidual = %g' % r.rf
         if not p.isFeasible:
-            nNaNs = (len(where(isnan(p.c(p.xf)))[0]) if hasattr(p, 'c') else 0) + (len(where(isnan(p.h(p.xf)))[0]) if hasattr(p, 'h') else 0)
+            nNaNs = (len(where(isnan(p.c(p.xf)))[0]) if p.c is not None and type(p.c)!=list else 0) \
+            + (len(where(isnan(p.h(p.xf)))[0]) if p.h is not None and type(p.h)!=list else 0)
             if nNaNs == 0:
                 nNaNsMsg = ''
             elif nNaNs == 1:
