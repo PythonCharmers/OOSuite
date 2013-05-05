@@ -239,7 +239,7 @@ class oofun(object):
         # TODO: MB GET RID OF IT?
         if resetStoredIntervals:
             domain.storedIntervals = {}
-        if lb_ub.__class__ == ndarray:
+        if type(lb_ub) == ndarray:
             return Interval(lb_ub[0], lb_ub[1], definiteRange)
         else: # boundsurf
             return lb_ub
@@ -607,7 +607,7 @@ class oofun(object):
         if isinstance(other, list): other = asarray(other)
         
         if self._isProd:
-            assert len(self._prod_elements) == 2, 'bug in FD kernel'
+#            assert len(self._prod_elements) == 2, 'bug in FD kernel'
             if not isinstance(self._prod_elements[-1], (oofun, OOArray)):
                 if not isOtherOOFun:
                     return self._prod_elements[0] * (other * self._prod_elements[-1])
