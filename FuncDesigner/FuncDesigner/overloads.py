@@ -132,10 +132,16 @@ def tan(inp):
     criticalPoints = False, engine_monotonity = 1)
     
     def tan_interval(domain, dtype):
-        R0, definiteRange = inp._interval(domain, dtype)
-        assert R0.shape[0] == 2
-        if np.any(R0[0] < -np.pi/2) or np.any(R0[1] > np.pi/2):
-            raise 'interval for tan() is unimplemented for range beyond (-pi/2, pi/2) yet'
+        lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
+        isBoundSurf = type(lb_ub) == boundsurf
+        lb, ub = lb_ub.resolve()[0] if isBoundSurf else lb_ub
+        if np.any(lb < -np.pi/2) or np.any(ub > np.pi/2):
+            raise FuncDesignerException('interval for tan() is unimplemented for range beyond (-pi/2, pi/2) yet')        
+        if isBoundSurf:
+            if np.all(lb >= 0) and np.all(ub <= np.pi/2):
+                return defaultIntervalEngine(lb_ub, np.tan, r.d, monotonity=1, convexity=1)
+            elif np.all(lb >= -np.pi/2) and np.all(ub <= 0):
+                return defaultIntervalEngine(lb_ub, np.tan, r.d, monotonity=1, convexity=-1)
         return oofun._interval_(r, domain, dtype)
     r._interval_ = tan_interval
     return r
