@@ -120,7 +120,19 @@ else np.tan(x))\
 if hasStochastic\
 else np.tan
 
-
+def tan_interval(inp, r, domain, dtype):
+    lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
+    isBoundSurf = type(lb_ub) == boundsurf
+    lb, ub = lb_ub.resolve()[0] if isBoundSurf else lb_ub
+    if np.any(lb < -np.pi/2) or np.any(ub > np.pi/2):
+        raise FuncDesignerException('interval for tan() is unimplemented for range beyond (-pi/2, pi/2) yet')        
+    if isBoundSurf:
+        if np.all(lb >= 0) and np.all(ub <= np.pi/2):
+            return defaultIntervalEngine(lb_ub, np.tan, r.d, monotonity=1, convexity=1)
+        elif np.all(lb >= -np.pi/2) and np.all(ub <= 0):
+            return defaultIntervalEngine(lb_ub, np.tan, r.d, monotonity=1, convexity=-1)
+    return oofun._interval_(r, domain, dtype)
+    
 def tan(inp):
     if isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp)):
         return ooarray([tan(elem) for elem in inp])
@@ -130,20 +142,7 @@ def tan(inp):
     # TODO: move it outside of tan definition
     r = oofun(st_tan, inp, d = lambda x: Diag(1.0 / np.cos(x) ** 2), vectorized = True, \
     criticalPoints = False, engine_monotonity = 1)
-    
-    def tan_interval(domain, dtype):
-        lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
-        isBoundSurf = type(lb_ub) == boundsurf
-        lb, ub = lb_ub.resolve()[0] if isBoundSurf else lb_ub
-        if np.any(lb < -np.pi/2) or np.any(ub > np.pi/2):
-            raise FuncDesignerException('interval for tan() is unimplemented for range beyond (-pi/2, pi/2) yet')        
-        if isBoundSurf:
-            if np.all(lb >= 0) and np.all(ub <= np.pi/2):
-                return defaultIntervalEngine(lb_ub, np.tan, r.d, monotonity=1, convexity=1)
-            elif np.all(lb >= -np.pi/2) and np.all(ub <= 0):
-                return defaultIntervalEngine(lb_ub, np.tan, r.d, monotonity=1, convexity=-1)
-        return oofun._interval_(r, domain, dtype)
-    r._interval_ = tan_interval
+    r._interval_ = lambda domain, dtype: tan_interval(inp, r, domain, dtype)
     return r
     
 __all__ += ['sin', 'cos', 'tan']
@@ -205,14 +204,28 @@ else np.arctan(x))\
 if hasStochastic\
 else np.arctan
 
+
+def arctan_interval(inp, r, domain, dtype):
+    lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
+    isBoundSurf = type(lb_ub) == boundsurf
+    lb, ub = lb_ub.resolve()[0] if isBoundSurf else lb_ub
+    if isBoundSurf:
+        if np.all(lb >= 0):
+            return defaultIntervalEngine(lb_ub, np.arctan, r.d, monotonity=1, convexity=-1)
+        elif np.all(ub <= 0):
+            return defaultIntervalEngine(lb_ub, np.arctan, r.d, monotonity=1, convexity=1)
+    return oofun._interval_(r, domain, dtype)
+
 def arctan(inp):
     if isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp)):
         return ooarray([arctan(elem) for elem in inp])    
     if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(arctan(inp.values), inp.probabilities.copy())._update(inp)             
     if not isinstance(inp, oofun): return np.arctan(inp)
-    return oofun(st_arctan, inp, d = lambda x: Diag(1.0 / (1.0 + x**2)), 
+    r = oofun(st_arctan, inp, d = lambda x: Diag(1.0 / (1.0 + x**2)), 
                  vectorized = True, criticalPoints = False, engine_monotonity = 1)
+    r._interval_ = lambda domain, dtype: arctan_interval(inp, r, domain, dtype)    
+    return r
 
 __all__ += ['arcsin', 'arccos', 'arctan']
 
