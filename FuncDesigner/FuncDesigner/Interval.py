@@ -99,30 +99,48 @@ def ZeroCriticalPointsInterval(inp, func):
         return vstack((t_min, t_max)), definiteRange
     return interval
 
-def nonnegative_interval(inp, func, domain, dtype, F0, shift = 0.0):
-
+def nonnegative_interval(inp, func, deriv, domain, dtype, F0, shift = 0.0):
+    is_arccosh = func == np.arccosh
+    is_sqrt = func == np.sqrt
+    
+    ##############################
+    assert is_arccosh or is_sqrt, 'unimplemented yet'
+    # check for monotonity is required, sort or reverse of t_min_max has to be performed for monotonity != +1
+    ##############################
+    
     lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
-    if type(lb_ub) == boundsurf:
-        if 1 and func == np.sqrt:
+    
+    isBoundSurf = type(lb_ub) == boundsurf
+    
+    if isBoundSurf:
+        if is_sqrt:
             r = lb_ub ** 0.5
             return r, r.definiteRange
-        else:
-            lb_ub = lb_ub.resolve()[0]
+        lb_ub_resolved = lb_ub.resolve()[0]
+    else:
+        lb_ub_resolved = lb_ub
             
-    lb, ub = lb_ub[0], lb_ub[1]
-    
-    t_min_max = func(lb_ub)
+    lb, ub = lb_ub_resolved[0], lb_ub_resolved[1]
     th = shift # 0.0 + shift = shift
-    ind = lb < th
-    if any(ind):
-        t_min_max[0][atleast_1d(logical_and(lb < th, ub >= th))] = F0
+    ind = where(lb < th)[0]
+    
+    if ind.size != 0:
+        lb_ub_resolved = lb_ub_resolved.copy()
+        lb_ub_resolved[0][ind] = th
+        #t_min_max[0][atleast_1d(logical_and(ind, ub >= th))] = F0
         if definiteRange is not False:
             if type(definiteRange) != np.ndarray:
                 definiteRange = np.empty_like(lb)
                 definiteRange.fill(True)
             definiteRange[ind] = False
-            
-    return t_min_max, definiteRange
+    
+    if isBoundSurf and is_arccosh:
+        r, _definiteRange = defaultIntervalEngine(lb_ub, func, deriv, monotonity = 1, convexity = -1)
+        r.definiteRange = definiteRange
+    else:
+        r = func(lb_ub_resolved)
+    
+    return r, definiteRange
 
 def box_1_interval(inp, func, domain, dtype, F_l, F_u):
     lb_ub, definiteRange = inp._interval(domain, dtype)

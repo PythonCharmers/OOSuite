@@ -361,9 +361,10 @@ def arccosh(inp):
     if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(arccosh(inp.values), inp.probabilities.copy())._update(inp)      
     if not isinstance(inp, oofun): return np.arccosh(inp)
-    r = oofun(st_arccosh, inp, d = lambda x: Diag(1.0/np.sqrt(x**2-1.0)), vectorized = True)
+    r = oofun(st_arccosh, inp, d = lambda x: Diag(1.0/np.sqrt(x**2-1.0)), vectorized = True, 
+    engine_monotonity = 1, engine_convexity = -1)
     F0, shift = 0.0, 1.0
-    r._interval_ = lambda domain, dtype: nonnegative_interval(inp, np.arccosh, domain, dtype, F0, shift)
+    r._interval_ = lambda domain, dtype: nonnegative_interval(inp, np.arccosh, r.d, domain, dtype, F0, shift)
     return r
 
 __all__ += ['arcsinh', 'arccosh']
@@ -408,12 +409,10 @@ def sqrt(inp, attachConstraints = True):
         return distribution.stochasticDistribution(sqrt(inp.values), inp.probabilities.copy())._update(inp)      
     if not isinstance(inp, oofun): 
         return np.sqrt(inp)
-#    def fff(x):
-#        print x
-#        return np.sqrt(x)
-    r = oofun(st_sqrt, inp, d = lambda x: Diag(0.5 / np.sqrt(x)), vectorized = True)
+    r = oofun(st_sqrt, inp, d = lambda x: Diag(0.5 / np.sqrt(x)), vectorized = True, 
+    engine_monotonity = 1, engine_convexity = -1)
     F0 = 0.0
-    r._interval_ = lambda domain, dtype: nonnegative_interval(inp, np.sqrt, domain, dtype, F0)
+    r._interval_ = lambda domain, dtype: nonnegative_interval(inp, np.sqrt, r.d, domain, dtype, F0)
     if attachConstraints: r.attach((inp>0)('sqrt_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
 
