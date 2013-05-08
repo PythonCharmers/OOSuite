@@ -752,7 +752,7 @@ def func11(y, e, nlhc, indTC, residual, o, a, _s, p):
             Tmp = o[ind_uf_inf]
             Tmp[Tmp==-inf] = -1e100
             M = nanmax(abs(Tmp))
-            if M == nan: 
+            if M is nan or M == 0.0: 
                 M = 1.0
             tmp[ind_uf_inf] = 1e200 * (1.0 + Tmp/M)
         nlhf = log2(tmp)#-log2(p.fTol)
@@ -774,7 +774,7 @@ def func11(y, e, nlhc, indTC, residual, o, a, _s, p):
             Tmp = nanmax(where(q<s, q, s), 1)
             
             nlhf[logical_and(isinf(a), isinf(nlhf))] = 1e300
-            assert p.probType in ('GLP', 'NLP', 'NSP', 'SNLE', 'NLSP', 'MINLP')
+            assert p.probType in ('GLP', 'NLP', 'NSP', 'SNLE', 'NLSP', 'MINLP')#, 'QP')
         
 #            residual = None
 
