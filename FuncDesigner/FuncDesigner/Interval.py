@@ -116,6 +116,10 @@ def nonnegative_interval(inp, func, deriv, domain, dtype, F0, shift = 0.0):
         if is_sqrt:
             r = lb_ub ** 0.5
             return r, r.definiteRange
+        elif is_arccosh:
+            r, definiteRange = defaultIntervalEngine(lb_ub, func, deriv, 
+                                                     monotonity = 1, convexity = -1, feasLB = 1.0)
+            return r, r.definiteRange
         lb_ub_resolved = lb_ub.resolve()[0]
     else:
         lb_ub_resolved = lb_ub
@@ -126,20 +130,16 @@ def nonnegative_interval(inp, func, deriv, domain, dtype, F0, shift = 0.0):
     
     if ind.size != 0:
         lb_ub_resolved = lb_ub_resolved.copy()
-        lb_ub_resolved[0][ind] = th
+        lb_ub_resolved[0][logical_and(ind, ub >= th)] = th
         #t_min_max[0][atleast_1d(logical_and(ind, ub >= th))] = F0
         if definiteRange is not False:
             if type(definiteRange) != np.ndarray:
-                definiteRange = np.empty_like(lb)
+                definiteRange = np.empty_like(lb, bool)
                 definiteRange.fill(True)
             definiteRange[ind] = False
     
     # TODO: rework it for ind.size != 0
-    if isBoundSurf and is_arccosh and ind.size == 0:
-        r, _definiteRange = defaultIntervalEngine(lb_ub, func, deriv, monotonity = 1, convexity = -1)
-        r.definiteRange = definiteRange
-    else:
-        r = func(lb_ub_resolved)
+    r = func(lb_ub_resolved)
     
     return r, definiteRange
 
@@ -153,7 +153,7 @@ def box_1_interval(inp, func, domain, dtype, F_l, F_u):
         t_min_max[0][atleast_1d(logical_and(lb < -1, ub >= -1))] = F_l
         if definiteRange is not False:
             if definiteRange is True:
-                definiteRange = np.empty_like(lb)
+                definiteRange = np.empty_like(lb, bool)
                 definiteRange.fill(True)
             definiteRange[ind] = False
         
@@ -162,7 +162,7 @@ def box_1_interval(inp, func, domain, dtype, F_l, F_u):
         t_min_max[0][atleast_1d(logical_and(lb < 1, ub >= 1))] = F_u
         if definiteRange is not False:
             if definiteRange is True:
-                definiteRange = np.empty_like(lb)
+                definiteRange = np.empty_like(lb, bool)
                 definiteRange.fill(True)
             definiteRange[ind] = False
         
@@ -502,11 +502,35 @@ def pow_oofun_interval(self, other, domain, dtype):
     return vstack((t_min, t_max)), definiteRange
     
 def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, \
-                          criticalPoint = np.nan, criticalPointValue = np.nan):
+                          criticalPoint = np.nan, criticalPointValue = np.nan, feasLB = -inf, feasUB = inf):
     L, U, domain, definiteRange = arg_lb_ub.l, arg_lb_ub.u, arg_lb_ub.domain, arg_lb_ub.definiteRange
     R0 = arg_lb_ub.resolve()[0]
     assert R0.shape[0]==2, 'unimplemented yet'
     r_l, r_u = R0
+    
+    # adjust feasLB and feasUB
+    ind_L = r_l < feasLB
+    ind_l = where(ind_L)[0]
+    ind_U = r_u > feasUB
+    ind_u = where(ind_U)[0]
+    if ind_l.size != 0 or ind_u.size != 0:
+        R0 = R0.copy()
+        r_l, r_u = R0
+        
+    if ind_l.size != 0:
+        r_l[logical_and(ind_L, r_u >= feasLB)] = feasLB
+        if definiteRange is not False:
+            if type(definiteRange) != np.ndarray:
+                definiteRange = np.empty_like(r_l, bool)
+                definiteRange.fill(True)
+            definiteRange[ind_l] = False
+    if ind_u.size != 0:
+        r_u[logical_and(ind_U, r_l <= feasUB)] = feasUB
+        if definiteRange is not False:
+            if type(definiteRange) != np.ndarray:
+                definiteRange = np.empty_like(r_l, bool)
+                definiteRange.fill(True)
+            definiteRange[ind_u] = False
     
     R2 = fun(R0)
     
