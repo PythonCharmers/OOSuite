@@ -150,7 +150,7 @@ __all__ += ['sin', 'cos', 'tan']
 # TODO: cotan?
 
 # TODO: rework it with matrix ops
-get_box1_DefiniteRange = lambda lb, ub: logical_and(np.all(lb >= -1.0), np.all(ub <= 1.0))
+#get_box1_DefiniteRange = lambda lb, ub: logical_and(np.all(lb >= -1.0), np.all(ub <= 1.0))
 
 st_arcsin = (lambda x: \
 distribution.stochasticDistribution(arcsin(x.values), x.probabilities.copy())._update(x) \
@@ -168,7 +168,7 @@ def arcsin(inp):
     if not isinstance(inp, oofun): 
         return np.arcsin(inp)
     r = oofun(st_arcsin, inp, d = lambda x: Diag(1.0 / np.sqrt(1.0 - x**2)), vectorized = True)
-    r.getDefiniteRange = get_box1_DefiniteRange
+#    r.getDefiniteRange = get_box1_DefiniteRange
     r._interval_ = lambda domain, dtype: box_1_interval(inp, np.arcsin, r.d, domain, dtype)
     r.attach((inp>-1)('arcsin_domain_lower_bound_%d' % r._id, tol=-1e-7), (inp<1)('arcsin_domain_upper_bound_%d' % r._id, tol=-1e-7))
     return r
@@ -189,7 +189,7 @@ def arccos(inp):
         return distribution.stochasticDistribution(arccos(inp.values), inp.probabilities.copy())._update(inp)     
     if not isinstance(inp, oofun): return np.arccos(inp)
     r = oofun(st_arccos, inp, d = lambda x: Diag(-1.0 / np.sqrt(1.0 - x**2)), vectorized = True)
-    r.getDefiniteRange = get_box1_DefiniteRange
+#    r.getDefiniteRange = get_box1_DefiniteRange
     r._interval_ = lambda domain, dtype: box_1_interval(inp, np.arccos, r.d, domain, dtype)
     r.attach((inp>-1)('arccos_domain_lower_bound_%d' % r._id, tol=-1e-7), (inp<1)('arccos_domain_upper_bound_%d' % r._id, tol=-1e-7))
     return r
@@ -235,15 +235,27 @@ else np.sinh(x))\
 if hasStochastic\
 else np.sinh
 
+def sinh_interval(inp, r, domain, dtype):
+    lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
+    isBoundSurf = type(lb_ub) == boundsurf
+    lb, ub = lb_ub.resolve()[0] if isBoundSurf else lb_ub
+    if isBoundSurf:
+        if np.all(lb >= 0):
+            return defaultIntervalEngine(lb_ub, np.sinh, r.d, monotonity=1, convexity=1)
+        elif np.all(ub <= 0):
+            return defaultIntervalEngine(lb_ub, np.sinh, r.d, monotonity=1, convexity=-1)
+    return oofun._interval_(r, domain, dtype)
+
 def sinh(inp):
     if isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp)):
         return ooarray([sinh(elem) for elem in inp])        
     if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(sinh(inp.values), inp.probabilities.copy())._update(inp)        
     if not isinstance(inp, oofun): return np.sinh(inp)
-    return oofun(st_sinh, inp, d = lambda x: Diag(np.cosh(x)), vectorized = True, criticalPoints = False, 
+    r = oofun(st_sinh, inp, d = lambda x: Diag(np.cosh(x)), vectorized = True, criticalPoints = False, 
     engine_monotonity = 1)
-
+    r._interval_ = lambda domain, dtype: sinh_interval(inp, r, domain, dtype)
+    return r
 
 #def asdf(x):
 ##    print (1, type(x))
@@ -297,6 +309,16 @@ else np.tanh(x))\
 if hasStochastic\
 else np.tanh
 
+def tanh_interval(inp, r, domain, dtype):
+    lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
+    isBoundSurf = type(lb_ub) == boundsurf
+    lb, ub = lb_ub.resolve()[0] if isBoundSurf else lb_ub
+    if isBoundSurf:
+        if np.all(lb >= 0):
+            return defaultIntervalEngine(lb_ub, np.tanh, r.d, monotonity=1, convexity=-1)
+        elif np.all(ub <= 0):
+            return defaultIntervalEngine(lb_ub, np.tanh, r.d, monotonity=1, convexity=1)
+    return oofun._interval_(r, domain, dtype)
 
 def tanh(inp):
     if isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp)):
@@ -304,8 +326,10 @@ def tanh(inp):
     if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(tanh(inp.values), inp.probabilities.copy())._update(inp)              
     if not isinstance(inp, oofun): return np.tanh(inp)
-    return oofun(st_tanh, inp, d = lambda x: Diag(1.0/np.cosh(x)**2), vectorized = True, criticalPoints = False, 
+    r = oofun(st_tanh, inp, d = lambda x: Diag(1.0/np.cosh(x)**2), vectorized = True, criticalPoints = False, 
     engine_monotonity = 1)
+    r._interval_ = lambda domain, dtype: tanh_interval(inp, r, domain, dtype)
+    return r
     
 st_arctanh = (lambda x: \
 distribution.stochasticDistribution(arctanh(x.values), x.probabilities.copy())._update(x) \
@@ -322,7 +346,7 @@ def arctanh(inp):
         return distribution.stochasticDistribution(arctanh(inp.values), inp.probabilities.copy())._update(inp)          
     if not isinstance(inp, oofun): return np.arctanh(inp)
     r = oofun(st_arctanh, inp, d = lambda x: Diag(1.0/(1.0-x**2)), vectorized = True, criticalPoints = False)
-    r.getDefiniteRange = get_box1_DefiniteRange
+#    r.getDefiniteRange = get_box1_DefiniteRange
     r._interval_ = lambda domain, dtype: box_1_interval(inp, np.arctanh, r.d, domain, dtype)
     return r
 
@@ -336,14 +360,28 @@ else np.arcsinh(x))\
 if hasStochastic\
 else np.arcsinh
 
+
+def arcsinh_interval(inp, r, domain, dtype):
+    lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
+    isBoundSurf = type(lb_ub) == boundsurf
+    lb, ub = lb_ub.resolve()[0] if isBoundSurf else lb_ub
+    if isBoundSurf:
+        if np.all(lb >= 0):
+            return defaultIntervalEngine(lb_ub, np.arcsinh, r.d, monotonity=1, convexity=-1)
+        elif np.all(ub <= 0):
+            return defaultIntervalEngine(lb_ub, np.arcsinh, r.d, monotonity=1, convexity=1)
+    return oofun._interval_(r, domain, dtype)
+
 def arcsinh(inp):
     if isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp)):
         return ooarray([arcsinh(elem) for elem in inp])        
     if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(arcsinh(inp.values), inp.probabilities.copy())._update(inp)      
     if not isinstance(inp, oofun): return np.arcsinh(inp)
-    return oofun(st_arcsinh, inp, d = lambda x: Diag(1.0/np.sqrt(1+x**2)), 
+    r = oofun(st_arcsinh, inp, d = lambda x: Diag(1.0/np.sqrt(1+x**2)), 
     vectorized = True, criticalPoints = False, engine_monotonity = 1)
+    r._interval_ = lambda domain, dtype: arcsinh_interval(inp, r, domain, dtype)
+    return r
 
 st_arccosh = (lambda x: \
 distribution.stochasticDistribution(arccosh(x.values), x.probabilities.copy())._update(x) \

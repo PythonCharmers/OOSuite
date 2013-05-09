@@ -101,7 +101,7 @@ class oofun(object):
     _lastOrderVarsID = 0
     criticalPoints = None
     vectorized = False
-    getDefiniteRange = None
+#    getDefiniteRange = None
     _neg_elem = None # used in render into quadratic 
 
     _usedIn = 0
@@ -225,8 +225,8 @@ class oofun(object):
         elif self.engine_monotonity != 1:
             Tmp.sort(axis=0)
         
-        if self.getDefiniteRange is not None:
-            definiteRange = logical_and(definiteRange, self.getDefiniteRange(arg_infinum, arg_supremum))
+#        if self.getDefiniteRange is not None:
+#            definiteRange = logical_and(definiteRange, self.getDefiniteRange(arg_infinum, arg_supremum))
             
         return Tmp, definiteRange
         
