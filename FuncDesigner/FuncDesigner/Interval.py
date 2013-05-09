@@ -134,7 +134,8 @@ def nonnegative_interval(inp, func, deriv, domain, dtype, F0, shift = 0.0):
                 definiteRange.fill(True)
             definiteRange[ind] = False
     
-    if isBoundSurf and is_arccosh:
+    # TODO: rework it for ind.size != 0
+    if isBoundSurf and is_arccosh and ind.size == 0:
         r, _definiteRange = defaultIntervalEngine(lb_ub, func, deriv, monotonity = 1, convexity = -1)
         r.definiteRange = definiteRange
     else:
