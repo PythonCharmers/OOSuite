@@ -169,8 +169,7 @@ def arcsin(inp):
         return np.arcsin(inp)
     r = oofun(st_arcsin, inp, d = lambda x: Diag(1.0 / np.sqrt(1.0 - x**2)), vectorized = True)
     r.getDefiniteRange = get_box1_DefiniteRange
-    F_l, F_u = np.arcsin((-1, 1))
-    r._interval_ = lambda domain, dtype: box_1_interval(inp, np.arcsin, domain, dtype, F_l, F_u)
+    r._interval_ = lambda domain, dtype: box_1_interval(inp, np.arcsin, r.d, domain, dtype)
     r.attach((inp>-1)('arcsin_domain_lower_bound_%d' % r._id, tol=-1e-7), (inp<1)('arcsin_domain_upper_bound_%d' % r._id, tol=-1e-7))
     return r
 
@@ -191,8 +190,7 @@ def arccos(inp):
     if not isinstance(inp, oofun): return np.arccos(inp)
     r = oofun(st_arccos, inp, d = lambda x: Diag(-1.0 / np.sqrt(1.0 - x**2)), vectorized = True)
     r.getDefiniteRange = get_box1_DefiniteRange
-    F_l, F_u = np.arccos((-1, 1))
-    r._interval_ = lambda domain, dtype: box_1_interval(inp, np.arccos, domain, dtype, F_l, F_u)
+    r._interval_ = lambda domain, dtype: box_1_interval(inp, np.arccos, r.d, domain, dtype)
     r.attach((inp>-1)('arccos_domain_lower_bound_%d' % r._id, tol=-1e-7), (inp<1)('arccos_domain_upper_bound_%d' % r._id, tol=-1e-7))
     return r
 
@@ -325,7 +323,7 @@ def arctanh(inp):
     if not isinstance(inp, oofun): return np.arctanh(inp)
     r = oofun(st_arctanh, inp, d = lambda x: Diag(1.0/(1.0-x**2)), vectorized = True, criticalPoints = False)
     r.getDefiniteRange = get_box1_DefiniteRange
-    r._interval_ = lambda domain, dtype: box_1_interval(inp, np.arctanh, domain, dtype, -np.inf, np.inf)
+    r._interval_ = lambda domain, dtype: box_1_interval(inp, np.arctanh, r.d, domain, dtype)
     return r
 
 __all__ += ['tanh', 'arctanh']

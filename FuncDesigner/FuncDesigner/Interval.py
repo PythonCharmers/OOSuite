@@ -143,54 +143,28 @@ def nonnegative_interval(inp, func, deriv, domain, dtype, F0, shift = 0.0):
     
     return r, definiteRange
 
-def box_1_interval(inp, func, domain, dtype, F_l, F_u):
+def box_1_interval(inp, func, deriv, domain, dtype):
     assert func in (np.arcsin, np.arccos, np.arctanh)
 
-    lb_ub, definiteRange = inp._interval(domain, dtype)
-    lb, ub = lb_ub[0], lb_ub[1]
-    t_min_max = func(lb_ub)
+    lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
+    isBoundSurf = type(lb_ub) == boundsurf
+    lb_ub_resolved = lb_ub.resolve()[0] if isBoundSurf else lb_ub
+    isNegative = all(lb_ub_resolved <= 0)
+    isPositive = all(lb_ub_resolved >= 0)
+    if isNegative or isPositive:
+        assert func in (np.arcsin, np.arccos, np.arctanh)
+        monotonity = 1 if func in (np.arcsin, np.arctanh) else -1
+        convexity = 1 if (func in (np.arcsin, np.arctanh)) == isPositive else -1
+        return defaultIntervalEngine(lb_ub, func, deriv, monotonity, convexity,
+                                     feasLB = -1.0, feasUB = 1.0)
+
+    lb_ub_resolved, definiteRange = adjustBounds(lb_ub_resolved, definiteRange, -1.0, 1.0)
+    t_min_max = func(lb_ub_resolved)
     if func == np.arccos:
         t_min_max = t_min_max[::-1]
-    
-    ind = lb < -1
-    if any(ind):
-        t_min_max[0][atleast_1d(logical_and(lb < -1, ub >= -1))] = F_l
-        if definiteRange is not False:
-            if definiteRange is True:
-                definiteRange = np.empty_like(lb, bool)
-                definiteRange.fill(True)
-            definiteRange[ind] = False
-        
-    ind = ub > 1
-    if any(ind):
-        t_min_max[0][atleast_1d(logical_and(lb < 1, ub >= 1))] = F_u
-        if definiteRange is not False:
-            if definiteRange is True:
-                definiteRange = np.empty_like(lb, bool)
-                definiteRange.fill(True)
-            definiteRange[ind] = False
         
     return t_min_max, definiteRange
-        
-#    lb, ub = lb_ub[0], lb_ub[1]
-#    ind = lb < -1.0
-#    if any(ind):
-#        t_min, t_max = atleast_1d(empty_like(lb)), atleast_1d(empty_like(ub))
-#        t_min.fill(nan)
-#        t_max.fill(nan)
-#        ind2 = ub >= -1.0
-#        t_min[atleast_1d(logical_not(ind))] = func(lb)
-#        t_min[atleast_1d(logical_and(ind2, ind))] = 0.0
-#        t_max[atleast_1d(ind2)] = func(ub[ind2])
-#        t_min, t_max = func(lb), func(ub)
-#        t_min[atleast_1d(logical_and(lb < 0, ub > 0))] = 0.0
-#        
-#        # TODO: rework it with matrix operations
-#        definiteRange = False
-#        
-#    else:
-#        t_min, t_max = func(lb), func(ub)
-#    return vstack((t_min, t_max)), definiteRange
+
 
 def adjust_lx_WithDiscreteDomain(Lx, v):
     if v.domain is bool or v.domain is 'bool':
@@ -510,31 +484,11 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, \
     L, U, domain, definiteRange = arg_lb_ub.l, arg_lb_ub.u, arg_lb_ub.domain, arg_lb_ub.definiteRange
     R0 = arg_lb_ub.resolve()[0]
     assert R0.shape[0]==2, 'unimplemented yet'
-    r_l, r_u = R0
     
-    # adjust feasLB and feasUB
-    ind_L = r_l < feasLB
-    ind_l = where(ind_L)[0]
-    ind_U = r_u > feasUB
-    ind_u = where(ind_U)[0]
-    if ind_l.size != 0 or ind_u.size != 0:
-        R0 = R0.copy()
-        r_l, r_u = R0
+    if feasLB != -inf or feasUB != inf:
+        R0, definiteRange = adjustBounds(R0, definiteRange, feasLB, feasUB)
         
-    if ind_l.size != 0:
-        r_l[logical_and(ind_L, r_u >= feasLB)] = feasLB
-        if definiteRange is not False:
-            if type(definiteRange) != np.ndarray:
-                definiteRange = np.empty_like(r_l, bool)
-                definiteRange.fill(True)
-            definiteRange[ind_l] = False
-    if ind_u.size != 0:
-        r_u[logical_and(ind_U, r_l <= feasUB)] = feasUB
-        if definiteRange is not False:
-            if type(definiteRange) != np.ndarray:
-                definiteRange = np.empty_like(r_l, bool)
-                definiteRange.fill(True)
-            definiteRange[ind_u] = False
+    r_l, r_u = R0
     
     R2 = fun(R0)
     
@@ -625,3 +579,31 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, \
         # linear oofuns with convexity = 0 calculate their intervals in other funcs
         raise FuncDesignerException('bug in FD kernel')
     return R, definiteRange
+
+def adjustBounds(R0, definiteRange, feasLB, feasUB):
+    # adjust feasLB and feasUB
+    r_l, r_u = R0
+    ind_L = r_l < feasLB
+    ind_l = where(ind_L)[0]
+    ind_U = r_u > feasUB
+    ind_u = where(ind_U)[0]
+    if ind_l.size != 0 or ind_u.size != 0:
+        R0 = R0.copy()
+        r_l, r_u = R0
+        
+    if ind_l.size != 0:
+        r_l[logical_and(ind_L, r_u >= feasLB)] = feasLB
+        if definiteRange is not False:
+            if type(definiteRange) != np.ndarray:
+                definiteRange = np.empty_like(r_l, bool)
+                definiteRange.fill(True)
+            definiteRange[ind_l] = False
+    if ind_u.size != 0:
+        r_u[logical_and(ind_U, r_l <= feasUB)] = feasUB
+        if definiteRange is not False:
+            if type(definiteRange) != np.ndarray:
+                definiteRange = np.empty_like(r_l, bool)
+                definiteRange.fill(True)
+            definiteRange[ind_u] = False
+            
+    return R0, definiteRange
