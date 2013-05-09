@@ -144,9 +144,13 @@ def nonnegative_interval(inp, func, deriv, domain, dtype, F0, shift = 0.0):
     return r, definiteRange
 
 def box_1_interval(inp, func, domain, dtype, F_l, F_u):
+    assert func in (np.arcsin, np.arccos, np.arctanh)
+
     lb_ub, definiteRange = inp._interval(domain, dtype)
     lb, ub = lb_ub[0], lb_ub[1]
     t_min_max = func(lb_ub)
+    if func == np.arccos:
+        t_min_max = t_min_max[::-1]
     
     ind = lb < -1
     if any(ind):
