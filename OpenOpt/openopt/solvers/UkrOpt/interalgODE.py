@@ -70,7 +70,7 @@ def interalg_ODE_routine(p, solver):
         
         if not all(definiteRange):
             p.err('''
-            solving ODE with interalg is implemented for definite (real) range only, 
+            solving ODE and IP by interalg is implemented for definite (real) range only, 
             no NaN values in integrand are allowed''')
         # TODO: perform check on NaNs
         r34 = atleast_1d(a)
