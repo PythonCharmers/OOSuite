@@ -102,9 +102,10 @@ def ZeroCriticalPointsInterval(inp, func):
 def nonnegative_interval(inp, func, deriv, domain, dtype, F0, shift = 0.0):
     is_arccosh = func == np.arccosh
     is_sqrt = func == np.sqrt
+    is_log = func in (np.log, np.log2, np.log10, np.log1p)
     
     ##############################
-    assert is_arccosh or is_sqrt, 'unimplemented yet'
+    assert is_arccosh or is_sqrt or is_log, 'unimplemented yet'
     # check for monotonity is required, sort or reverse of t_min_max has to be performed for monotonity != +1
     ##############################
     
@@ -113,8 +114,9 @@ def nonnegative_interval(inp, func, deriv, domain, dtype, F0, shift = 0.0):
     isBoundSurf = type(lb_ub) == boundsurf
     
     if isBoundSurf:
-        if is_sqrt:
-            r = lb_ub ** 0.5
+        if is_sqrt or is_log:
+            r, definiteRange = defaultIntervalEngine(lb_ub, func, deriv, 
+                                                     monotonity = 1, convexity = -1, feasLB = 0.0)
             return r, r.definiteRange
         elif is_arccosh:
             r, definiteRange = defaultIntervalEngine(lb_ub, func, deriv, 
@@ -493,7 +495,6 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, \
     R2 = fun(R0)
     
     ind_inf = np.where(np.logical_or(np.isinf(R2[0]), np.isinf(R2[1])))[0]
-#    ind_inf = np.isinf(R2[1] - R2[0])
 
     koeffs = (R2[1] - R2[0]) / (r_u - r_l)
     koeffs[ind_inf] = 0.0
