@@ -13,6 +13,8 @@ try:
 except ImportError:
     from numpy import nanmin, nanmax
 
+hasPoint = lambda y, e, point:\
+    True if any((all(y[i]<=point) and all(e[i]>=point)) for i in range(y.shape[0])) else False
 
 def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
          r41, fTol, Solutions, varTols, _in, dataType, \
@@ -25,6 +27,7 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
         y, e = adjustDiscreteVarBounds(y, e, p)
     
     o, a, r41 = r45(y, e, vv, p, asdf1, dataType, r41, nlhc)
+
     fo_prev = float(0 if isSNLE else min((r41, r40 - (fTol if maxSolutions == 1 else 0))))
     if fo_prev > 1e300:
         fo_prev = 1e300
@@ -93,7 +96,7 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
         r41 = Min
     
     fo = float(0 if isSNLE else min((r41, r40 - (fTol if maxSolutions == 1 else 0))))
-        
+
     if p.solver.dataHandling == 'raw':
         
         if fo != fo_prev and not  isSNLE:
@@ -229,7 +232,7 @@ def r45(y, e, vv, p, asdf1, dataType, r41, nlhc):
     
     m, n = e.shape
     o, a = o.reshape(2*n, m).T, a.reshape(2*n, m).T
-
+    
     if p.probType not in ('SNLE', 'NLSP') and asdf1.isUncycled and not p.probType.startswith('MI') \
     and len(p._discreteVarsList)==0 and exactRange:# for SNLE fo = 0
         # TODO: 
@@ -237,11 +240,11 @@ def r45(y, e, vv, p, asdf1, dataType, r41, nlhc):
         ind = where(definiteRange)[0]
         
         if ind.size != 0:
-            o = o[ind]
+            o2 = o[ind]
             if nlhc is not None:
                 nlhc = nlhc[ind]
             # TODO: if o has at least one -inf => prob is unbounded
-            tmp1 = o[nlhc==0] if nlhc is not None else o
+            tmp1 = o2[nlhc==0] if nlhc is not None else o2
             if tmp1.size != 0:
                 tmp1 = nanmin(tmp1)
                 
