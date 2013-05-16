@@ -1,11 +1,12 @@
 PythonSum = sum
 import numpy as np
-from numpy import all, any, logical_and
+from numpy import all, logical_and, logical_not, isscalar, where
 
-try:
-    from bottleneck import nanmax
-except ImportError:
-    from numpy import nanmax
+def extract(b, ind):
+    d = dict((k, v if isscalar(v) or v.size == 1 else v[ind]) for k, v in b.d.items())
+    C = b.c
+    c = C if isscalar(C) or C.size == 1 else C[ind]
+    return surf(d, c)
 
 class surf(object):
     isRendered = False
@@ -17,32 +18,37 @@ class surf(object):
     value = lambda self, point: self.c + PythonSum(point[k]*v for k, v in self.d.items())
 
     resolve = lambda self, domain, cmp: \
-    self.c + PythonSum(np.where(cmp(v, 0), domain[k][0], domain[k][1])*v for k, v in self.d.items())
+    self.c + PythonSum(where(cmp(v, 0), domain[k][0], domain[k][1])*v for k, v in self.d.items())
+    
+    split = lambda self, inds: [extract(self, ind) for ind in inds]
+    
+#    def join(self, S):
+#        
     
     #self.resolve(domain, GREATER)
     minimum = lambda self, domain: \
-    self.c + PythonSum(np.where(v > 0, domain[k][0], domain[k][1])*v for k, v in self.d.items())
+    self.c + PythonSum(where(v > 0, domain[k][0], domain[k][1])*v for k, v in self.d.items())
     
     #self.resolve(domain, LESS)
     maximum = lambda self, domain: \
-    self.c + PythonSum(np.where(v < 0, domain[k][0], domain[k][1])*v for k, v in self.d.items())
+    self.c + PythonSum(where(v < 0, domain[k][0], domain[k][1])*v for k, v in self.d.items())
     
     def render(self, domain, cmp):
-        self.rendered = dict((k, np.where(cmp(v, 0), domain[k][0], domain[k][1])*v) for k, v in self.d.items())
+        self.rendered = dict((k, where(cmp(v, 0), domain[k][0], domain[k][1])*v) for k, v in self.d.items())
         self.resolved = PythonSum(self.rendered) + self.c
         self.isRendered = True
     
     def __add__(self, other):
         if type(other) == surf:
-            if other.isRendered and not self.isRendered:
-                self, other = other, self
+#            if other.isRendered and not self.isRendered:
+#                self, other = other, self
             S, O = self.d, other.d
             d = S.copy()
             d.update(O)
             for key in set(S.keys()) & set(O.keys()):
                 d[key] = S[key]  + O[key]
             return surf(d, self.c+other.c)
-        elif np.isscalar(other) or type(other) == np.ndarray:
+        elif isscalar(other) or type(other) == np.ndarray:
             return surf(self.d, self.c + other)
         else:
             assert 0, 'unimplemented yet'
@@ -53,14 +59,18 @@ class surf(object):
     
     def __mul__(self, other):
         isArray = type(other) == np.ndarray
-        if np.isscalar(other) or isArray:
+        if isscalar(other) or isArray:
             return surf(dict((k, v*other) for k, v in self.d.items()), self.c * other)
-#        elif type(other) == surf:
-#            return surf(self.l+other.l, self.u+other.u)
         else:
             assert 0, 'unimplemented yet'
             
     __rmul__ = __mul__
+    
+    def koeffs_mul(self, other):
+        assert type(other) == surf
+        S, O = self.d, other.d
+        d = dict((key, S.get(key, 0.0)  * O.get(key, 0.0)) for key in set(S.keys()) | set(O.keys()))
+        return surf(d, 0.0)
             
 #    def __getattr__(self, attr):
 #        if attr == 'resolve_index':
@@ -79,7 +89,31 @@ class boundsurf(object):#object is added for Python2 compatibility
         self.domain = domain
         
     Size = lambda self: max((len(self.l.d), len(self.u.d), 1))
+    
+    def split(self, condition1, condition2):
+        inds = (
+                where(condition1)[0], 
+                where(logical_and(condition2, logical_not(condition1)))[0], 
+                where(logical_and(logical_not(condition1), logical_not(condition2)))[0]
+                )
+
+        L = self.l.split(inds)
+        U = self.u.split(inds) if self.l is not self.u else L
         
+        definiteRange = self.definiteRange
+        DefiniteRange = [definiteRange] * len(inds) if type(definiteRange) == bool or definiteRange.size == 1 \
+        else [definiteRange[ind] for ind in inds]
+        
+        return inds, [boundsurf(L[i], U[i], DefiniteRange[i], self.domain) for i in range(len(inds))]
+    
+    def join(self, inds, B):
+        L = surf.join(inds, (b.l for b in B))
+        U = surf.join(inds, (b.u for b in B)) #if self.l is not self.u else L
+        definiteRange = B[0].definiteRange if np.array_equiv(B[0].definiteRange, B[1].definiteRange)\
+        and np.array_equiv(B[0].definiteRange, B[2].definiteRange)\
+        else Join(inds, (B[0].definiteRange, B[1].definiteRange, B[2].definiteRange))
+        return boundsurf(L, U, definiteRange, B[0].domain)
+    
     def resolve(self):
         r = np.vstack((self.l.minimum(self.domain), self.u.maximum(self.domain)))
         assert r.shape[0] == 2, 'bug in FD kernel'
@@ -98,7 +132,7 @@ class boundsurf(object):#object is added for Python2 compatibility
     
     # TODO: handling fd.sum()
     def __add__(self, other):
-        if np.isscalar(other) or (type(other) == np.ndarray and other.size == 1):
+        if isscalar(other) or (type(other) == np.ndarray and other.size == 1):
             if self.l is self.u:
                 # TODO: mb use id() instead of "is"
                 tmp = self.l+other
@@ -144,7 +178,7 @@ class boundsurf(object):#object is added for Python2 compatibility
         isArray = type(other) == np.ndarray
         isBoundSurf = type(other) == boundsurf
         R2 = other.resolve()[0] if isBoundSurf else other
-        R2_is_scalar = np.isscalar(R2)
+        R2_is_scalar = isscalar(R2)
         
         if not R2_is_scalar and R2.size != 1:
             assert R2.shape[0] == 2, 'bug or unimplemented yet'
@@ -168,11 +202,25 @@ class boundsurf(object):#object is added for Python2 compatibility
                 rr = (self.u * R2[1], self.l * R2[0]) if R2Negative else (self.l * R2[1], self.u * R2[0])
             
         elif isBoundSurf:
-            assert (selfPositive or selfNegative), 'bug or unimplemented yet'
+            assert selfPositive or selfNegative, 'bug or unimplemented yet'
             definiteRange = logical_and(definiteRange, other.definiteRange)
-            r = ((self if selfPositive else -self).log() + (other if R2Positive else -other).log()).exp()
-            r.definiteRange = definiteRange
-            return r if selfPositive == R2Positive else -r
+            if 1:
+                r = ((self if selfPositive else -self).log() + (other if R2Positive else -other).log()).exp()
+                r.definiteRange = definiteRange
+                return r if selfPositive == R2Positive else -r
+            else:
+                RR = R1*R2 if selfPositive and R2Positive \
+                else (R1*R2)[::-1] if not selfPositive and not R2Positive\
+                else R1[::-1]*R2 if not selfPositive and R2Positive\
+                else R1*R2[::-1] #if selfPositive and not R2Positive
+                new_l_resolved, new_u_resolved = RR
+                
+                l1, u1, l2, u2 = self.l, self.u, other.l, other.u
+                l, u = l1.koeffs_mul(l2), u1.koeffs_mul(u2)
+                l.c = new_l_resolved - l.minimum(self.domain)
+                u.c = new_u_resolved - u.maximum(self.domain)
+                rr = (l, u)
+
 #            return R1*other# if nanmax(R2[0])
             #return 0.5 * (R1*other + R2*self)
         else:
@@ -193,7 +241,7 @@ class boundsurf(object):#object is added for Python2 compatibility
         isBoundSurf = type(other) == boundsurf
         assert isBoundSurf
         R2 = other.resolve()[0] #if isBoundSurf else other
-#        R2_is_scalar = np.isscalar(R2)     
+#        R2_is_scalar = isscalar(R2)     
         assert R2.shape[0] == 2, 'bug or unimplemented yet'
         R2Positive = all(R2 >= 0)
         R2Negative = all(R2 <= 0)
@@ -208,14 +256,11 @@ class boundsurf(object):#object is added for Python2 compatibility
     def log(self):
         from Interval import defaultIntervalEngine
         return defaultIntervalEngine(self, np.log, lambda x: 1.0 / x, 
-                     monotonity = 1, 
-                     convexity = -1)[0]
+                     monotonity = 1, convexity = -1, feasLB = 0.0)[0]
     def exp(self):
         from Interval import defaultIntervalEngine
         return defaultIntervalEngine(self, np.exp, np.exp, 
-                     monotonity = 1, 
-                     convexity = 1)[0]
-                                          
+                     monotonity = 1, convexity = 1)[0]
 
     # TODO: rework it if __iadd_, __imul__ etc will be created
     def copy(self):
@@ -233,9 +278,11 @@ class boundsurf(object):#object is added for Python2 compatibility
         R0 = self.resolve()[0]#L.resolve(self.domain, GREATER), U.resolve(self.domain, LESS)
         assert R0.shape[0]==2, 'unimplemented yet'
         
-        assert np.isscalar(other) and other in (-1, 2, 0.5), 'unimplemented yet'
+        assert isscalar(other) and other in (-1, 2, 0.5), 'unimplemented yet'
         if other == 0.5:
-            return boundsurf_sqrt(self)
+            from Interval import defaultIntervalEngine
+            return defaultIntervalEngine(self, lambda x: np.sqrt(x), lambda x: 0.5 / np.sqrt(x), 
+                         monotonity = 1, convexity = -1, feasLB = 0.0)[0]        
         elif other == 2:
             from Interval import defaultIntervalEngine
             return defaultIntervalEngine(self, lambda x: x**2, lambda x: 2 * x, 
@@ -254,7 +301,6 @@ def boundsurf_abs(b):
     lf, uf = r
 
     assert lf.ndim <= 1, 'unimplemented yet'
-    sz = lf.size
     
     ind_l = lf >= 0
     if all(ind_l):
@@ -263,86 +309,15 @@ def boundsurf_abs(b):
     ind_u = uf <= 0
     if all(ind_u):
         return -b, b.definiteRange
-    l_ind, u_ind = np.where(ind_l)[0], np.where(ind_u)[0]
-
-    L, U = b.l, b.u
-    d_l, c_l, d_u, c_u = L.d, L.c, U.d, U.c
-
-    Ld = dict((k, f_abs(b, l_ind, u_ind, sz, k)) for k in set(d_l.keys()) | set(d_u.keys()))
-    c = np.zeros(sz)
-
-    l_c = np.tile(c_l, sz) if np.isscalar(c_l) or c_l.size == 1 else np.copy(c_l)
-    c[ind_l] = l_c[ind_l]
-    u_c = np.tile(c_u, sz) if np.isscalar(c_u) or c_u.size == 1 else np.copy(c_u)
-    c[ind_u] = -u_c[ind_u]
-    L_new = surf(Ld, c)
     
-    M = np.max(np.abs(r), axis = 0)
-    if 1 and len(U.d) >= 1:# and all(lf != uf):
-        koeffs = (np.abs(uf) - np.abs(lf)) / (uf - lf)
-        ind = lf == uf
-        if any(ind):
-            koeffs[logical_and(ind, lf > 0)] = 1.0
-            koeffs[logical_and(ind, lf < 0)] = -1.0
-            koeffs[logical_and(ind, lf == 0)] = 0.0
-        d_new = dict((v, koeffs * val) for v, val in d_u.items())
-        U_new = surf(d_new, 0.0)
-        U_new.c = M - U_new.maximum(b.domain)
-    else:
-        U_new = surf({}, M)
-        
-    R = boundsurf(L_new, U_new, b.definiteRange, b.domain)
-    
-    return R, b.definiteRange
-    
-
-def f_abs(b, l_ind, u_ind, sz, k):
-    l =  np.zeros(sz)
-    if l_ind.size:
-        tmp = b.l.d[k]
-        l[l_ind] = tmp[l_ind] if type(tmp) == np.ndarray and tmp.size > 1 else tmp
-    if u_ind.size:
-        tmp = -b.u.d[k]
-        l[u_ind] = tmp[u_ind] if type(tmp) == np.ndarray and tmp.size > 1 else tmp
-    return l
+    from Interval import defaultIntervalEngine
+    return defaultIntervalEngine(b, np.abs, np.sign, 
+                         monotonity = np.nan, convexity = 1, 
+                         criticalPoint = 0.0, criticalPointValue = 0.0)
 
 
-def boundsurf_sqrt(b):
-    L, U, domain = b.l, b.u, b.domain
-    R0, definiteRange = b.resolve()
-    assert R0.shape[0]==2, 'unimplemented yet'
-    lb, ub = R0
-    ind_negative = lb < 0
-    
-    if any(ind_negative):
-        lb[ind_negative] = 0.0
-        if type(definiteRange) == bool or definiteRange.shape != lb.shape:
-            definiteRange2 = np.empty(lb.shape, bool)
-            definiteRange2.fill(definiteRange)
-            definiteRange = definiteRange2
-        definiteRange[ind_negative] = False
-    
-    new_u_resolved = np.sqrt(ub)
-    new_l_resolved = np.sqrt(lb)
-    
-    tmp2 = 0.5 / new_u_resolved
-    tmp2[new_u_resolved == 0.0] = 0.0
-    Ud = U.d
-    d_new = dict((v, tmp2 * val) for v, val in Ud.items())
-    U_new = surf(d_new, 0.0)
-    U_new.c = new_u_resolved - U_new.maximum(domain)
-    
-    Ld = L.d
-    if 1 and len(Ld) >= 1:# and all(lb != ub):
-        koeffs = (new_u_resolved - new_l_resolved) / (ub - lb)
-        ind = np.where(lb == ub)[0]
-        if ind.size != 0:
-            koeffs[ind] = tmp2[ind]
-        d_new = dict((v, koeffs * val) for v, val in Ld.items())
-        L_new = surf(d_new, 0.0)
-        L_new.c = new_l_resolved - L_new.minimum(domain)
-    else:
-        L_new = surf({}, new_l_resolved)
-    R = boundsurf(L_new, U_new, definiteRange, domain)
-    return R
-
+def Join(inds, arrays):
+    r = np.empty(PythonSum(arr.size for arr in arrays), arrays[0].dtype)
+    for ind, arr in zip(inds, arrays):
+        r[ind] = arr
+    return r
