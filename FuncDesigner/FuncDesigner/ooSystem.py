@@ -1,5 +1,5 @@
-from FDmisc import FuncDesignerException, pWarn
-from ooFun import oofun, BaseFDConstraint, _getAllAttachedConstraints
+from FDmisc import FuncDesignerException, pWarn, _getAllAttachedConstraints
+from ooFun import oofun, BaseFDConstraint
 from ooarray import ooarray
 from ooPoint import ooPoint
 from numpy import isnan, ndarray, isfinite, asscalar, all, asarray, atleast_1d, array_equal

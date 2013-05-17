@@ -281,7 +281,7 @@ class boundsurf(object):#object is added for Python2 compatibility
         assert isscalar(other) and other in (-1, 2, 0.5), 'unimplemented yet'
         if other == 0.5:
             from Interval import defaultIntervalEngine
-            return defaultIntervalEngine(self, lambda x: np.sqrt(x), lambda x: 0.5 / np.sqrt(x), 
+            return defaultIntervalEngine(self, np.sqrt, lambda x: 0.5 / np.sqrt(x), 
                          monotonity = 1, convexity = -1, feasLB = 0.0)[0]        
         elif other == 2:
             from Interval import defaultIntervalEngine

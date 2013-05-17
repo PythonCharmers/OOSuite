@@ -219,3 +219,21 @@ def raise_except(*args, **kwargs):
 class Extras:
     pass
 
+# TODO: make it work for ooSystem as well
+def broadcast(func, oofuncs, useAttachedConstraints, *args, **kwargs):
+    from ooFun import oofun
+    if isinstance(oofuncs, oofun):
+        oofuncs = [oofuncs]
+    oofun._BroadCastID += 1
+    for oof in oofuncs:
+        if oof is not None: 
+            oof._broadcast(func, useAttachedConstraints, *args, **kwargs)
+
+def _getAllAttachedConstraints(oofuns):
+    from FuncDesigner import broadcast
+    r = set()
+    def F(oof):
+        #print len(oof.attachedConstraints)
+        r.update(oof.attachedConstraints)
+    broadcast(F, oofuns, useAttachedConstraints=True)
+    return r

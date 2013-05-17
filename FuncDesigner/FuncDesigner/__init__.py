@@ -6,7 +6,7 @@ __version__ = '0.45'
 
 from ooVar import oovar, oovars
 #from ooFun import _getAllAttachedConstraints, broadcast, ooFun as oofun, AND, OR, NOT, NAND, NOR, XOR
-from ooFun import _getAllAttachedConstraints, broadcast, oofun, AND, OR, NOT, NAND, NOR, XOR
+from ooFun import oofun, AND, OR, NOT, NAND, NOR, XOR
 
 from ooSystem import ooSystem as oosystem
 from translator import FuncDesignerTranslator as ootranslator
@@ -14,7 +14,7 @@ from translator import FuncDesignerTranslator as ootranslator
 from ooPoint import ooPoint as oopoint, ooMultiPoint 
 #from logic import *
 from baseClasses import Stochastic as _Stochastic
-from FDmisc import FuncDesignerException, _getDiffVarsID
+from FDmisc import FuncDesignerException, _getDiffVarsID, _getAllAttachedConstraints, broadcast
 
 try:
     import distribution

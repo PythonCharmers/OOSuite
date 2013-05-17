@@ -204,9 +204,16 @@ class oofun(object):
         
     __repr__ = lambda self: self.name
     
-    def _interval_(self, domain, dtype):
-        INP = self.input[0] #if not self.is_oovar else self
+    def _interval_(self, domain, dtype):#, inputData = None):
+#        if inputData is None:
+#            INP = self.input[0] 
+#            arg_lb_ub, definiteRange = INP._interval(domain, dtype, allowBoundSurf = True)
+#        else:
+#            arg_lb_ub, definiteRange = inputData
+        
+        INP = self.input[0] 
         arg_lb_ub, definiteRange = INP._interval(domain, dtype, allowBoundSurf = True)
+        
         
         if type(arg_lb_ub) == boundsurf:
             arg_lb_ub_resolved = arg_lb_ub.resolve()[0]
@@ -1630,24 +1637,6 @@ class oofun(object):
         raise FuncDesignerException('oofun.IMPLICATION is temporary disabled, use ifThen(...) or IMPLICATION(...) instead')
     
     """                                             End of class oofun                                             """
-
-# TODO: make it work for ooSystem as well
-def broadcast(func, oofuncs, useAttachedConstraints, *args, **kwargs):
-    if isinstance(oofuncs, oofun):
-        oofuncs = [oofuncs]
-    oofun._BroadCastID += 1
-    for oof in oofuncs:
-        if oof is not None: 
-            oof._broadcast(func, useAttachedConstraints, *args, **kwargs)
-
-def _getAllAttachedConstraints(oofuns):
-    from FuncDesigner import broadcast
-    r = set()
-    def F(oof):
-        #print len(oof.attachedConstraints)
-        r.update(oof.attachedConstraints)
-    broadcast(F, oofuns, useAttachedConstraints=True)
-    return r
 
 
 #def discreteNLH(_input_bool_oofun, Lx, Ux, p, dataType):

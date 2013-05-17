@@ -71,7 +71,7 @@ def TrigonometryCriticalPoints(lb_ub):
 #    return Tmp
 #    
 
-cosh_deriv = lambda x: Diag(np.sinh(x))
+#cosh_deriv = lambda x: Diag(np.sinh(x))
 def ZeroCriticalPointsInterval(inp, func):
     is_abs = func == np.abs
     is_cosh = func == np.cosh    
@@ -82,7 +82,7 @@ def ZeroCriticalPointsInterval(inp, func):
             if is_abs:
                 return lb_ub.abs()
             elif is_cosh:
-                return defaultIntervalEngine(lb_ub, func, cosh_deriv, np.nan, 1, 0.0, 1.0)
+                return defaultIntervalEngine(lb_ub, func, np.sinh, np.nan, 1, 0.0, 1.0)
             else:
                assert 0, 'bug or unimplemented yet' 
         
@@ -219,17 +219,7 @@ def neg_interval(self, domain, dtype):
         #assert type(r) == boundsurf
         return -r, definiteRange
 
-def mul_interval(self, other, isOtherOOFun, domain, dtype):#*args, **kw):
-#    if domain.isMultiPoint and isOtherOOFun and self.is_oovar and (self.domain is bool or self.domain is 'bool'):
-#        # TODO: add handling allowBoundSurf here
-#        lb_ub, definiteRange = other._interval(domain, dtype)
-#        n = domain[self][1].size
-#        R = np.zeros((2, n), dtype)
-#        ind = domain[self][0]!=0
-#        R[0][ind] = lb_ub[0][ind]
-#        ind = domain[self][1]!=0
-#        R[1][ind] = lb_ub[1][ind]
-#        return R, definiteRange
+def mul_interval(self, other, isOtherOOFun, domain, dtype):
     
     lb1_ub1, definiteRange = self._interval(domain, dtype, allowBoundSurf = True)
 
