@@ -231,15 +231,16 @@ class oofun(object):
             if (not isscalar(arg_infinum) and arg_infinum.size > 1) and not self.vectorized:
                 raise FuncDesignerException('not implemented for vectorized oovars yet')
             Tmp = self.fun(arg_lb_ub)
+            if self.engine_monotonity == -1:
+                Tmp = Tmp[::-1]
+            elif self.engine_monotonity != 1:
+                Tmp.sort(axis=0)
         else:
             tmp = [arg_lb_ub] + criticalPointsFunc(arg_lb_ub) 
             Tmp = self.fun(vstack(tmp)) 
-            Tmp = vstack((nanmin(Tmp), nanmax(Tmp)))
+            Tmp = vstack((nanmin(Tmp, 0), nanmax(Tmp, 0)))
 
-        if self.engine_monotonity == -1:
-            Tmp = Tmp[::-1]
-        elif self.engine_monotonity != 1:
-            Tmp.sort(axis=0)
+
         
 #        if self.getDefiniteRange is not None:
 #            definiteRange = logical_and(definiteRange, self.getDefiniteRange(arg_infinum, arg_supremum))
