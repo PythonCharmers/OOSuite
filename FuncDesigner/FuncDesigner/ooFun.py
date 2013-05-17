@@ -12,7 +12,7 @@ except ImportError:
     from numpy import nanmin, nanmax
     
 from FDmisc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scipyInstalled, \
-raise_except, DiagonalType, isPyPy
+raise_except, DiagonalType, isPyPy, formResolveSchedule
 from ooPoint import ooPoint
 from FuncDesigner.multiarray import multiarray
 from Interval import Interval, adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain, mul_interval,\
@@ -138,6 +138,9 @@ class oofun(object):
             return self.isUncycled
         elif attr == 'isCostly':
             return self.d is None and not self._isSum
+        elif attr == 'resolveSchedule':
+            formResolveSchedule(self)
+            return self.resolveSchedule
         elif attr != 'size': 
             raise AttributeError('you are trying to obtain incorrect attribute "%s" for FuncDesigner oofun "%s"' %(attr, self.name))
         
@@ -221,12 +224,18 @@ class oofun(object):
                 return defaultIntervalEngine(arg_lb_ub, self.fun, self.d, self.engine_monotonity, self.engine_convexity)
             else:
                 arg_lb_ub = arg_lb_ub_resolved
-                
-        arg_infinum, arg_supremum = arg_lb_ub[0], arg_lb_ub[1]
-        if (not isscalar(arg_infinum) and arg_infinum.size > 1) and not self.vectorized:
-            raise FuncDesignerException('not implemented for vectorized oovars yet')
         
-        Tmp = self.fun(arg_lb_ub)
+        criticalPointsFunc = self.criticalPoints
+        if criticalPointsFunc is None:
+            arg_infinum, arg_supremum = arg_lb_ub[0], arg_lb_ub[1]
+            if (not isscalar(arg_infinum) and arg_infinum.size > 1) and not self.vectorized:
+                raise FuncDesignerException('not implemented for vectorized oovars yet')
+            Tmp = self.fun(arg_lb_ub)
+        else:
+            tmp = [arg_lb_ub] + criticalPointsFunc(arg_lb_ub) 
+            Tmp = self.fun(vstack(tmp)) 
+            Tmp = vstack((nanmin(Tmp), nanmax(Tmp)))
+
         if self.engine_monotonity == -1:
             Tmp = Tmp[::-1]
         elif self.engine_monotonity != 1:
@@ -241,6 +250,7 @@ class oofun(object):
     def interval(self, domain, dtype = float, resetStoredIntervals = True, allowBoundSurf = False):
         if type(domain) != ooPoint:
             domain = ooPoint(domain, skipArrayCast = True)
+        domain.resolveSchedule = self.resolveSchedule
         lb_ub, definiteRange = self._interval(domain, dtype, allowBoundSurf = allowBoundSurf) 
         
         # TODO: MB GET RID OF IT?
@@ -274,7 +284,14 @@ class oofun(object):
                 domain.localStoredIntervals[self] = r
         if type(r[0]) == boundsurf: 
             if allowBoundSurf:
-                return r[0], r[1]
+                Tmp = domain.resolveSchedule.get(self, ())
+                R, definiteRange = r
+                if len(Tmp):
+#                    print('1:', R.Size())
+#                    R = R.exclude(Tmp)
+#                    print('2:', R.Size())
+                    pass
+                return R, definiteRange
             else:
                 return r[0].resolve()
         return r
@@ -1572,30 +1589,6 @@ class oofun(object):
             for c in self.attachedConstraints:
                 c._broadcast(func, useAttachedConstraints, *args, **kwargs)
         func(self, *args, **kwargs)
-        
-#    def isUncycled(self):
-#        # TODO: speedup the function via omitting same oofuns
-#        # TODO: handle fixed variables
-#        deps = []
-#        oofuns = []
-#        dep_num = []
-#        for elem in self._getDep():
-#            if isinstance(elem, oofun):
-#                if elem.is_oovar:
-#                    deps.append(elem)
-#                    dep_num.append(1)
-#                else:
-#                    tmp = elem._getDep()
-#                    dep_num.append(len(tmp))
-#                    if tmp is not None:
-#                        deps.append(tmp)
-#                    oofuns.append(elem)
-#                    
-#        if any([not elem.isUncycled() for elem in oofuns]):
-#            return False
-#        r1 = set()
-#        r1.update(deps)
-#        return True if len(r1) == sum(dep_num) else False
         
     def uncertainty(self, point, deviations, actionOnAbsentDeviations='warning'):
         ''' 

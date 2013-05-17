@@ -233,7 +233,39 @@ def _getAllAttachedConstraints(oofuns):
     from FuncDesigner import broadcast
     r = set()
     def F(oof):
-        #print len(oof.attachedConstraints)
         r.update(oof.attachedConstraints)
     broadcast(F, oofuns, useAttachedConstraints=True)
     return r
+
+def formDepCounter(oofuns):
+    # TODO: mb exclude fixed oovars/oofuncs?
+    from FuncDesigner import broadcast, oofun
+    R = {}
+    def func(oof):
+        if oof.is_oovar:
+            R[oof] = {oof: 1}
+            return
+        dicts = [R.get(inp) for inp in oof.input if isinstance(inp, oofun)]
+        R[oof] = dictSum(dicts)
+    broadcast(func, oofuns, useAttachedConstraints=False)
+    return R 
+
+def formResolveSchedule(oof):
+    depsNumber = formDepCounter(oof)
+    def F(ff, depsNumberDict, baseFuncDepsNumber, R):
+        tmp = depsNumberDict[ff]
+        s = set()
+        for k, v in tmp.items():
+            if baseFuncDepsNumber[k] == v:
+                s.add(k)
+                baseFuncDepsNumber[k] -= 1
+        if len(s):
+            R[ff] = set(s)
+    R = {}
+    broadcast(F, oof, False, depsNumber, depsNumber[oof].copy(), R)
+    R.pop(oof, None)
+    oof.resolveSchedule = R
+
+
+
+

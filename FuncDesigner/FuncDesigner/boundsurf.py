@@ -1,6 +1,7 @@
 PythonSum = sum
 import numpy as np
 from numpy import all, logical_and, logical_not, isscalar, where
+from operator import gt as Greater, lt as Less
 
 def extract(b, ind):
     d = dict((k, v if isscalar(v) or v.size == 1 else v[ind]) for k, v in b.d.items())
@@ -17,8 +18,19 @@ class surf(object):
 
     value = lambda self, point: self.c + PythonSum(point[k]*v for k, v in self.d.items())
 
-    resolve = lambda self, domain, cmp: \
-    self.c + PythonSum(where(cmp(v, 0), domain[k][0], domain[k][1])*v for k, v in self.d.items())
+#    resolve = lambda self, domain, cmp: \
+#    self.c + PythonSum(where(cmp(v, 0), domain[k][0], domain[k][1])*v for k, v in self.d.items())
+    
+    def exclude(self, domain, oovars, cmp):
+        C = []
+        d = self.d.copy()
+        for v in oovars:
+            tmp = d.pop(v, 0.0)
+            if not np.array_equiv(tmp, 0.0):
+                D = domain[v]
+                C.append(where(cmp(tmp, 0), D[0], D[1])*tmp)
+        c = self.c + PythonSum(C)
+        return surf(d, c)
     
     split = lambda self, inds: [extract(self, ind) for ind in inds]
     
@@ -89,6 +101,10 @@ class boundsurf(object):#object is added for Python2 compatibility
         self.domain = domain
         
     Size = lambda self: max((len(self.l.d), len(self.u.d), 1))
+    
+    exclude = lambda self, oovars:\
+        boundsurf(self.l.exclude(self.domain, oovars, Greater), self.u.exclude(self.domain, oovars, Less), 
+                  self.definiteRange, self.domain)
     
     def split(self, condition1, condition2):
         inds = (

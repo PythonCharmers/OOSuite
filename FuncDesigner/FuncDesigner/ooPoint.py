@@ -38,7 +38,8 @@ class ooPoint(dict):
         self.storedSums = {}
         self.dictOfFixedFuncs = {}
         
-        for fn in ('isMultiPoint', 'modificationVar', 'useSave', 'useAsMutable', 'maxDistributionSize'):
+        for fn in ('isMultiPoint', 'modificationVar', 'useSave', 
+        'useAsMutable', 'maxDistributionSize', 'resolveSchedule'):
             tmp = kwargs.get(fn, None)
             if tmp is not None:
                 setattr(self, fn, tmp)
