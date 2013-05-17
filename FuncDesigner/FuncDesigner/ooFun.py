@@ -289,7 +289,7 @@ class oofun(object):
                 R, definiteRange = r
                 if len(Tmp):
 #                    print('1:', R.Size())
-#                    R = R.exclude(Tmp)
+                    R = R.exclude(Tmp)
 #                    print('2:', R.Size())
                     pass
                 return R, definiteRange
