@@ -287,7 +287,7 @@ class oofun(object):
             if allowBoundSurf:
                 Tmp = domain.resolveSchedule.get(self, ())
                 R, definiteRange = r
-                if len(Tmp):
+                if len(Tmp) and not domain.surf_preference:
 #                    print('1:', R.Size())
                     R = R.exclude(Tmp)
 #                    print('2:', R.Size())
