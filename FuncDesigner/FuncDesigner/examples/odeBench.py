@@ -1,5 +1,5 @@
 from time import time
-from numpy import linspace, pi, hstack
+from numpy import linspace, pi
 from FuncDesigner import *
 
 sigma = 1e-7 # interalg works even with 1e-26, i.e. 10^-26
@@ -22,7 +22,7 @@ for solver in ('scipy_lsoda', 'interalg'):
     equations = {y: f} # i.e. dy/dt = f
     startPoint = {y: 0} # y(t=0) = 0
     # assign ODE. 3rd argument (here "t") is time variable that is involved in differentiation
-    myODE = ode(equations, startPoint, t, times, ftol = ftol)# 
+    myODE = ode(equations, startPoint, {t: times}, ftol = ftol)# 
     T = time()
     r = myODE.solve(solver, iprint = -1)
     print('%s ODE time elapsed: % f' % (solver,  time()-T))
@@ -46,8 +46,7 @@ max scipy.interpolate.odeint difference from real solution: 1.000000020
 max interalg difference from real solution: 0.025937095 (required: 0.050000000)
 '''
 # Now let's see a graphical visualization of results
-from pylab import hist, show, plot, grid, legend, title
-#hist(Times, 500)
+from pylab import show, plot, grid, legend
 
 p1,  = plot(times, results['interalg'], 'b')
 p2,  = plot(times, results['scipy_lsoda'], 'r')
