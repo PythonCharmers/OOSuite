@@ -120,7 +120,7 @@ def interalg_ODE_routine(p, solver):
         if isODE:
             p.iterfcn(fk = r33/ftol)
         elif isIP:
-            p.iterfcn(xk=array(nan), fk=F, rk = 0)
+            p.iterfcn(xk=array(nan), fk=F, rk = ftol - r33)
         else:
             p.err('bug in interalgODE.py')
             
@@ -144,14 +144,14 @@ def interalg_ODE_routine(p, solver):
     elif isIP:
         P = p.point([nan]*p.n)
         P._f = F
-        P._mr = r33
+        P._mr = ftol - r33
         P._mrName = 'None'
         P._mrInd = 0
 #        p.xk = array([nan]*p.n)
 #        p.rk = r33
 #        p.fk = F
         #p._Residual = 
-        p.iterfcn(asarray([nan]*p.n), fk=F, rk=r33)
+        p.iterfcn(asarray([nan]*p.n), fk=F, rk = ftol - r33)
     else:
         p.err('incorrect prob type in interalg ODE routine')
 
