@@ -227,25 +227,21 @@ class oofun(object):
         
         criticalPointsFunc = self.criticalPoints
         if criticalPointsFunc is None:
-            arg_infinum, arg_supremum = arg_lb_ub[0], arg_lb_ub[1]
+            arg_infinum, arg_supremum = arg_lb_ub_resolved[0], arg_lb_ub_resolved[1]
             if (not isscalar(arg_infinum) and arg_infinum.size > 1) and not self.vectorized:
                 raise FuncDesignerException('not implemented for vectorized oovars yet')
-            Tmp = self.fun(arg_lb_ub)
+            Tmp = self.fun(arg_lb_ub_resolved)
             if self.engine_monotonity == -1:
                 Tmp = Tmp[::-1]
-            elif self.engine_monotonity not in (0, 1):
-                Tmp.sort(axis=0)
-#            else:
-#                # func has to be monotonically growing
-#                assert self.engine_monotonity in (0, 1), \
-#                'interval computations are unimplemented for the oofun yet'
+            else:
+                # func has to be monotonically growing
+                assert self.engine_monotonity in (0, 1), \
+                'interval computations are unimplemented for the oofun yet'
         else:
-            tmp = [arg_lb_ub] + criticalPointsFunc(arg_lb_ub) 
+            tmp = [arg_lb_ub_resolved] + criticalPointsFunc(arg_lb_ub_resolved) 
             Tmp = self.fun(vstack(tmp)) 
             Tmp = vstack((nanmin(Tmp, 0), nanmax(Tmp, 0)))
 
-
-        
 #        if self.getDefiniteRange is not None:
 #            definiteRange = logical_and(definiteRange, self.getDefiniteRange(arg_infinum, arg_supremum))
             
