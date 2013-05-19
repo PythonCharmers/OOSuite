@@ -233,8 +233,12 @@ class oofun(object):
             Tmp = self.fun(arg_lb_ub)
             if self.engine_monotonity == -1:
                 Tmp = Tmp[::-1]
-            elif self.engine_monotonity != 1:
+            elif self.engine_monotonity not in (0, 1):
                 Tmp.sort(axis=0)
+#            else:
+#                # func has to be monotonically growing
+#                assert self.engine_monotonity in (0, 1), \
+#                'interval computations are unimplemented for the oofun yet'
         else:
             tmp = [arg_lb_ub] + criticalPointsFunc(arg_lb_ub) 
             Tmp = self.fun(vstack(tmp)) 
