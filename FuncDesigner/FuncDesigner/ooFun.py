@@ -217,16 +217,14 @@ class oofun(object):
         INP = self.input[0] 
         arg_lb_ub, definiteRange = INP._interval(domain, dtype, allowBoundSurf = True)
         
-        
-        if type(arg_lb_ub) == boundsurf:
-            arg_lb_ub_resolved = arg_lb_ub.resolve()[0]
-            if self.engine_convexity is not nan and all(isfinite(arg_lb_ub_resolved)):
-                return defaultIntervalEngine(arg_lb_ub, self.fun, self.d, self.engine_monotonity, self.engine_convexity)
-            else:
-                arg_lb_ub = arg_lb_ub_resolved
+        isBoundsurf = type(arg_lb_ub) == boundsurf
+        arg_lb_ub_resolved = arg_lb_ub.resolve()[0] if isBoundsurf else arg_lb_ub
+        if isBoundsurf and self.engine_convexity is not nan and all(isfinite(arg_lb_ub_resolved)):
+            return defaultIntervalEngine(arg_lb_ub, self.fun, self.d, 
+                                         self.engine_monotonity, self.engine_convexity)
         
         criticalPointsFunc = self.criticalPoints
-        if criticalPointsFunc is None:
+        if criticalPointsFunc in (None, False):
             arg_infinum, arg_supremum = arg_lb_ub_resolved[0], arg_lb_ub_resolved[1]
             if (not isscalar(arg_infinum) and arg_infinum.size > 1) and not self.vectorized:
                 raise FuncDesignerException('not implemented for vectorized oovars yet')
