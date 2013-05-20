@@ -93,7 +93,7 @@ def interalg_ODE_routine(p, solver):
 
                 o, a = tmp.resolve()[0]
 #                r20 = 0.5 * u_koeffs * dT  + u_c  - (0.5 * l_koeffs * dT  + l_c)
-                r20 = ends_U - ends_L
+                r20 = 0.5 * (ends_U - ends_L)
 #                r20 = 0.5 * u_koeffs * dT ** 2 + u_c * dT - (0.5 * l_koeffs * dT ** 2 + l_c * dT)
 #                r20 =  0.5*u_koeffs * dT  + u_c  - ( 0.5*l_koeffs * dT  + l_c)
 
@@ -118,8 +118,6 @@ def interalg_ODE_routine(p, solver):
         else:
             assert isIP
             F += 0.5 * sum((r29[ind]-r28[ind])*(a[ind]+o[ind]))
-            
-            #p._Residual = p._residual + 0.5*sum((abs(a) +abs(o)) * (r29 - r28))
         
         if ind.size != 0: 
             tmp = abs(r29[ind] - r28[ind])
@@ -130,7 +128,7 @@ def interalg_ODE_routine(p, solver):
         ind = where(logical_not(r36))[0]
         if ind.size == 0:
             p.istop = 1000
-            p.msg = 'problem has been solved according to required tolerance'
+            p.msg = 'problem has been solved according to required user-defined accuracy %0.1g' % ftol
             break
             
         # OLD
