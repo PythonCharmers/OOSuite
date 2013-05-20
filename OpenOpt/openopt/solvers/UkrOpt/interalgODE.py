@@ -1,6 +1,6 @@
 from numpy import hstack,  asarray, abs, atleast_1d, where, \
 logical_not, argsort, vstack, sum, array, nan, all
-
+import numpy as np
 from FuncDesigner import oopoint
 #from FuncDesigner.boundsurf import boundsurf
 
@@ -38,8 +38,11 @@ def interalg_ODE_routine(p, solver):
 #        p.err('currently solver interalg requires times start from zero')  
     
     r37 = abs(r30[-1] - r30[0])
-    r28 = asarray(atleast_1d(r30[0]), dataType)
-    r29 = asarray(atleast_1d(r30[-1]), dataType)
+    if len(r30) == 2:
+        r30 = np.linspace(r30[0], r30[-1], 150)
+    r28 = asarray(atleast_1d(r30[:-1]), dataType)
+    r29 = asarray(atleast_1d(r30[1:]), dataType)
+
     storedr28 = []
     r27 = []
     r31 = []
@@ -58,41 +61,69 @@ def interalg_ODE_routine(p, solver):
         
         mp.dictOfFixedFuncs = p.dictOfFixedFuncs
         mp.surf_preference = True
-        tmp = f.interval(mp, allowBoundSurf = isIP)
-        if hasattr(tmp, 'resolve'):# boundsurf:
-            #adjustr4WithDiscreteVariables(wr4, p)
-            cs = oopoint([(v, asarray(0.5*(val[0] + val[1]), dataType)) for v, val in mp.items()])
-            cs.dictOfFixedFuncs = p.dictOfFixedFuncs
-            o, a = tmp.values(cs)
-            definiteRange = tmp.definiteRange
-        else:
-            o, a, definiteRange = tmp.lb, tmp.ub, tmp.definiteRange
-        
-        if not all(definiteRange):
+#        tmp = f.interval(mp, allowBoundSurf = isIP)
+        tmp = f.interval(mp, allowBoundSurf = 1)
+        if not all(tmp.definiteRange):
             p.err('''
             solving ODE and IP by interalg is implemented for definite (real) range only, 
             no NaN values in integrand are allowed''')
         # TODO: perform check on NaNs
-        r34 = atleast_1d(a)
-        r35 = atleast_1d(o)
         
-        
-        r36 = atleast_1d(r34 - r35   <= 0.95 * r33 / r37)
+        if hasattr(tmp, 'resolve'):# boundsurf:
+            #adjustr4WithDiscreteVariables(wr4, p)
+            cs = oopoint([(v, asarray(0.5*(val[0] + val[1]), dataType)) for v, val in mp.items()])
+            cs.dictOfFixedFuncs = p.dictOfFixedFuncs
+            r21, r22 = tmp.values(cs)
+            if isIP:
+                o, a = atleast_1d(r21), atleast_1d(r22)
+                r20 = a-o
+            elif isODE:
+                l, u = tmp.l, tmp.u
+                assert len(l.d) == len(u.d) == 1 # only time variable
+                l_koeffs, u_koeffs = list(l.d.values())[0], list(u.d.values())[0]
+                l_c, u_c = l.c, u.c
+#                dT = r29 - r28 if r30[-1] > r30[0] else r28 - r29
+
+                
+                ends = oopoint([(v, asarray(val[1], dataType)) for v, val in mp.items()])
+                ends.dictOfFixedFuncs = p.dictOfFixedFuncs
+                ends_L, ends_U = tmp.values(ends)
+
+#                o, a = atleast_1d(r21), atleast_1d(r22)
+
+                o, a = tmp.resolve()[0]
+#                r20 = 0.5 * u_koeffs * dT  + u_c  - (0.5 * l_koeffs * dT  + l_c)
+                r20 = ends_U - ends_L
+#                r20 = 0.5 * u_koeffs * dT ** 2 + u_c * dT - (0.5 * l_koeffs * dT ** 2 + l_c * dT)
+#                r20 =  0.5*u_koeffs * dT  + u_c  - ( 0.5*l_koeffs * dT  + l_c)
+
+#                o = 0.5*l_koeffs * dT + l_c
+#                a = 0.5*u_koeffs * dT + u_c
+                #assert 0, 'unimplemented'
+            else:
+                assert 0
+        else:
+            o, a = atleast_1d(tmp.lb), atleast_1d(tmp.ub)
+            r20 = a - o
+
+        r36 = atleast_1d(r20 <= 0.95 * r33 / r37)
+        if isODE:
+            r36 = np.logical_and(r36, r20 < ftol)
         ind = where(r36)[0]
         if isODE:
             storedr28.append(r28[ind])
             r27.append(r29[ind])
-            r31.append(r34[ind])
-            r32.append(r35[ind])
+            r31.append(a[ind])
+            r32.append(o[ind])
         else:
             assert isIP
-            F += 0.5 * sum((r29[ind]-r28[ind])*(r34[ind]+r35[ind]))
+            F += 0.5 * sum((r29[ind]-r28[ind])*(a[ind]+o[ind]))
             
-            #p._Residual = p._residual + 0.5*sum((abs(r34) +abs(r35)) * (r29 - r28))
+            #p._Residual = p._residual + 0.5*sum((abs(a) +abs(o)) * (r29 - r28))
         
         if ind.size != 0: 
             tmp = abs(r29[ind] - r28[ind])
-            Tmp = sum((r34[ind] - r35[ind]) * tmp)
+            Tmp = sum(r20[ind] * tmp)
             r33 -= Tmp
             if isIP: p._residual += Tmp
             r37 -= sum(tmp)
@@ -136,7 +167,7 @@ def interalg_ODE_routine(p, solver):
         if r30[0] > r30[-1]:
             ind = ind[::-1] # reverse
         t0, t1, lb, ub = t0[ind], t1[ind], lb[ind], ub[ind]
-        lb, ub = y0+(lb*(t1-t0)).cumsum(), y0+(ub*(t1-t0)).cumsum()
+        lb, ub = hstack((y0, y0+(lb*(t1-t0)).cumsum())), hstack((y0, y0+(ub*(t1-t0)).cumsum()))
         #y_var = p._x0.keys()[0]
         #p.xf = p.xk = 0.5*(lb+ub)
         p.extras = {'startTimes': t0, 'endTimes': t1, eq_var:{'infinums': lb, 'supremums': ub}}
@@ -154,43 +185,3 @@ def interalg_ODE_routine(p, solver):
         p.iterfcn(asarray([nan]*p.n), fk=F, rk = ftol - r33)
     else:
         p.err('incorrect prob type in interalg ODE routine')
-
-#        for i in range(len(T)-1): # TODO: is or is not T0 = 0?
-#            delta_y = f.interval({t: [T[i], T[i+1]]})
-#            delta_y_supremum[i] = delta_y.ub
-#            delta_y_infinum[i] = delta_y.lb
-#        diffTime = diff(T)
-#        y_supremums, y_infinums = cumsum(delta_y_supremum*diffTime), cumsum(delta_y_infinum*diffTime)
-#        
-#        #!!!! Currently for all time points ub-lb <= ftol is required, not only for those from timeArray
-#        
-#        if y_supremums[-1] - y_infinums[-1] < ftol:
-#            # hence prob is solved
-#            if p.debug: 
-#                assert all(y_supremums - y_infinums < ftol)
-#            break
-#
-#        d = (y_supremums - y_infinums) / ftol
-#        minNewPoints = int(2*(y_supremums[-1] - y_infinums[-1])/ftol) + 1000
-#        #print(itn, minNewPoints)
-#        tmp = diff(d)
-#        tmp /= max(tmp)
-#        ff = lambda x: abs(floor(x*tmp).sum() - minNewPoints)
-##        def ff(x):
-##            #print x
-##            return abs(floor(x*tmp).sum() - minNewPoints)
-#        P = NLP(ff, 0, lb = 1, ub = minNewPoints+1, iprint = -1)
-#        R = P.solve('goldenSection', ftol = max((2, 0.1*minNewPoints)), xtol = 0.0)
-#        if p.debug: assert R.stopCase == 1
-#        tmp = floor(R.xf * tmp)
-#        D = asarray(hstack((0, tmp)) , int)
-#        
-#        newT = []
-#        for i in range(len(T)-1):
-#            m = 1 + D[i]
-#            newT.append(linspace(T[i], T[i+1], m, False))
-#        newT.append(T[-1])
-#        #print('new T len - prev T len = ',  len(hstack(newT)) - len(T))
-#        T = hstack(newT)
-##        ind = where(d > ftol)
-    
