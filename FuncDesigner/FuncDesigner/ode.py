@@ -118,7 +118,6 @@ class ode:
             res = 0.5 * (prob.extras[y_var]['infinums'] + prob.extras[y_var]['supremums'])
             times = hstack((prob.extras['startTimes'], prob.extras['endTimes'][-1]))
             if len(self._times) != 2:
-                # old
                 from scipy.interpolate import InterpolatedUnivariateSpline
 #                if 'ftol' in kwargs.keys():
 #                    s = self._kwargs['ftol']

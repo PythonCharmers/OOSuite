@@ -57,16 +57,18 @@ else np.sin
 
 def sin_interval(r, inp, domain, dtype):
     lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
-    lb_ub_resolved = lb_ub if type(lb_ub) != boundsurf else lb_ub.resolve()[0]
+    isBoundsurf = type(lb_ub) == boundsurf
+    lb_ub_resolved = lb_ub.resolve()[0] if isBoundsurf else lb_ub
     lb, ub = lb_ub_resolved
-    if np.all(lb >= 0.0) and np.all(ub <= np.pi):
-        return defaultIntervalEngine(lb_ub, np.sin, np.cos, monotonity = np.nan, convexity = -1, \
-                          criticalPoint = np.pi/2, criticalPointValue = 1.0)
-    elif np.all(lb >=-np.pi) and np.all(ub <= 0.0):
-        return defaultIntervalEngine(lb_ub, np.sin, np.cos, monotonity = np.nan, convexity = 1, \
-                          criticalPoint = -np.pi/2, criticalPointValue = -1.0)
-    else:
-        return oofun._interval_(r, domain, dtype)
+    if isBoundsurf:
+        if np.all(lb >= 0.0) and np.all(ub <= np.pi):
+            return defaultIntervalEngine(lb_ub, np.sin, np.cos, monotonity = np.nan, convexity = -1, \
+                              criticalPoint = np.pi/2, criticalPointValue = 1.0)
+        elif np.all(lb >=-np.pi) and np.all(ub <= 0.0):
+            return defaultIntervalEngine(lb_ub, np.sin, np.cos, monotonity = np.nan, convexity = 1, \
+                              criticalPoint = -np.pi/2, criticalPointValue = -1.0)
+                              
+    return oofun._interval_(r, domain, dtype)
 
 def sin(inp):
     if isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp)):
@@ -91,9 +93,10 @@ else np.cos
 
 def cos_interval(r, inp, domain, dtype):
     lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
-    lb_ub_resolved = lb_ub if type(lb_ub) != boundsurf else lb_ub.resolve()[0]
+    isBoundsurf = type(lb_ub) == boundsurf
+    lb_ub_resolved = lb_ub.resolve()[0] if isBoundsurf else lb_ub
     lb, ub = lb_ub_resolved
-    if np.all(lb >= -np.pi/2) and np.all(ub <= np.pi/2):
+    if isBoundsurf and np.all(lb >= -np.pi/2) and np.all(ub <= np.pi/2):
         return defaultIntervalEngine(lb_ub, np.cos, lambda x: -np.sin(x), monotonity = np.nan, convexity = -1, \
                           criticalPoint = 0.0, criticalPointValue = 1.0)
     else:
@@ -720,7 +723,7 @@ def sum_interval(R0, r, INP, domain, dtype):
             R = boundsurf_sum(B, R+R2, DefiniteRange, domain)#.resolve()[0]
         else:
             R = R + R2
-        if type(R) == boundsurf:# and R.Size() > 5:
+        if type(R) == boundsurf and not domain.surf_preference:# and R.Size() > 5:
             R = R.resolve()[0]
 
         #R -= domain.storedSums[r][v]
