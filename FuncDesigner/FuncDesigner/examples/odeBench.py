@@ -2,20 +2,20 @@ from time import time
 from numpy import linspace, pi
 from FuncDesigner import *
 
-sigma = 1e-7 # interalg works even with 1e-26, i.e. 10^-26
+sigma = 1e-3
 StartTime, EndTime = 0, 10
+
 times = linspace(StartTime, EndTime, 100) # 0, 0.01, 0.02, 0.03, ..., 10
 
 # required accuracy
 # I use so big value for good graphical visualization below, elseware 2 lines are almost same and difficult to view
-ftol = 0.05 # this value is used by interalg only, not by scipy_lsoda
+ftol = 0.01 # this value is used by interalg only, not by scipy_lsoda
 
 t = oovar()
-f = exp(-(t-4.321)**2/(2*sigma)) / sqrt(2*pi*sigma) + 0.1*sin(t)
+f = exp(-(t - 4.321)**2/sigma**2)/(sqrt(pi)*sigma) + 0.1*sin(t) 
 # optional, for graphic visualisation and exact residual calculation:
 from scipy.special import erf
 exact_sol = lambda t: 0.5*erf((t-4.321)/sigma) - 0.1*cos(t) # + const, that is a function from y0
-
 results = {}
 for solver in ('scipy_lsoda', 'interalg'):
     y = oovar()
@@ -29,11 +29,11 @@ for solver in ('scipy_lsoda', 'interalg'):
     Y = r(y)
     results[solver] = Y
     print('%s result in final time point: %f' % (solver, Y[-1]))
-'''
-scipy_lsoda ODE time elapsed:  0.044204
-scipy_lsoda result in final time point: 0.183907
-interalg ODE time elapsed:  0.110030 (here most of time was elapsed for spline interpolation of obtained results)
-interalg result in final time point: 1.184044
+''' Intel Atom 1.6 GHz:
+scipy_lsoda ODE time elapsed:  0.118555
+scipy_lsoda result in final time point: 15.183906
+interalg ODE time elapsed:  0.458634
+interalg result in final time point: 16.183900
 '''
 
 realSolution = exact_sol(times) - exact_sol(times[0]) + startPoint[y] 
@@ -42,8 +42,8 @@ print('max scipy.interpolate.odeint difference from real solution: %0.9f' \
 print('max interalg difference from real solution: %0.9f (required: %0.9f)' \
       % (max(abs(realSolution - results['interalg'])), ftol))
 '''
-max scipy.interpolate.odeint difference from real solution: 1.000000020
-max interalg difference from real solution: 0.025937095 (required: 0.050000000)
+max scipy.interpolate.odeint difference from real solution: 1.000002071
+max interalg difference from real solution: 0.000015096 (required: 0.010000000)
 '''
 # Now let's see a graphical visualization of results
 from pylab import show, plot, grid, legend
@@ -54,3 +54,4 @@ p3,  = plot(times, realSolution,'k')
 legend([p1, p2, p3], ['interalg', 'scipy.interpolate.odeint', 'exact solution'], 'best')
 grid('on')
 show()
+

@@ -2,7 +2,7 @@ from time import time
 from numpy import linspace
 from FuncDesigner import *
 
-sigma = 1e-1
+sigma = 1
 StartTime, EndTime = 0, 10
 times = linspace(StartTime, EndTime, 10000) # 1000 points between StartTime, EndTime
 
@@ -12,9 +12,11 @@ ftol = 0.001 # this value is used by interalg only, not by scipy_lsoda
 
 t = oovar()
 f = 1 + t + 1000*(2*t - 9)/(1000000*(t - 4.5)**4 + 1)
+#f = 1 + 1e-10*t#1000*(2*t - 9)/(1000000*(t - 4.5)**4 + 1)
 
 # optional, for graphic visualisation and exact residual calculation - let's check IP result:
 exact_sol = lambda t: t + t**2 / 2 + arctan(1000*(t-4.5)**2)# + const, that is a function from y0
+#exact_sol = lambda t:  t#arctan(1000*(t-4.5)**2)
 y = oovar()
 domain = {t: (times[0], times[-1])}
 from openopt import IP
@@ -42,28 +44,28 @@ myODE = ode(equations, startPoint, {t: (times[0], times[-1])}, ftol = ftol)#
 T = time()
 r = myODE.solve('interalg', iprint = -1)
 print('Time elapsed with automatic solution time intervals: %0.1f' % (time()-T))
-Y = r(y)
+Y, times = r(y, t)
+realSolution = exact_sol(times) - exact_sol(times[0]) + startPoint[y] 
 print('result in final time point: %f' % Y[-1])
+print('max difference from real solution: %0.9f (required: %0.9f)' \
+      % (max(abs(realSolution - Y)), ftol))
 
-#t = t(r)
-
-
-'''
-Time elapsed with user-defined solution time intervals: 11.2
-result in final time point: 1.183941 sec
-Time elapsed with automatic solution time intervals: 3.1
-result in final time point: 1.183908 sec
-
-In time autoselect mode r(t) and r(y) will be arrays of times and values:
->>> r(t)
-array([  1.90734863e-05,   5.72204590e-05,   9.53674316e-05, ...,
-         9.99990463e+00,   9.99994278e+00,   9.99998093e+00])
->>> r(y)
-array([  7.27595761e-11,   2.91038304e-10,   6.54836184e-10, ...,
-         1.18391205e+00,   1.18390998e+00,   1.18390790e+00])
->>> r(t).size, r(y).size
-(951549, 951549)
-The time difference (11.2 - 3.1 = 8.1 sec) is due to calculating spline built over these arrays onto "times" array
+''' Intel Atom 1.6 GHz:
+------------------------- OpenOpt 0.45 -------------------------
+solver: interalg   problem: unnamed    type: IP
+ iter   objFunVal   
+    0  0.000e+00 
+   20  6.000e+01 
+istop: 1000 (problem has been solved according to required tolerance)
+Solver:   Time Elapsed = 7.08 	CPU Time Elapsed = 6.74
+objFunValue: 60.000016 (feasible, MaxResidual = 0.00096041)
+time elapsed: 7.080000
+Time elapsed with user-defined solution time intervals: 8.4
+result in final time point: 60.000016
+max difference from real solution: 0.000000112 (required: 0.001000000)
+Time elapsed with automatic solution time intervals: 8.3
+result in final time point: 60.000016
+max difference from real solution: 0.000003082 (required: 0.001000000)
 
 unestablished yet (http://openopt.org/unestablished):
 r.extras is Python dict with fields startTimes, endTimes, infinums, supremums (arrays of same size to r(t).size), 
@@ -75,7 +77,7 @@ and supremums[i] - infinums[i] <= ftol
 # as you'll see, less time intervals are created where function is close to constanct
 # and vise versa, more time intervals (with less size) are created
 # near most problem regions, where function values change very intensively
-from pylab import hist, show, grid
-hist(r(t), 5000)
-grid('on')
-show()
+#from pylab import hist, show, grid
+#hist(r(t), 5000)
+#grid('on')
+#show()
