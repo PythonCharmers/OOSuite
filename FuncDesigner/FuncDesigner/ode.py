@@ -116,9 +116,7 @@ class ode:
             r = prob.solve(solver, **kwargs)
             y_var = list(prob._x0.keys())[0]
             res = 0.5 * (prob.extras[y_var]['infinums'] + prob.extras[y_var]['supremums'])
-            times = 0.5 * (prob.extras['startTimes'] + prob.extras['endTimes'])
-            res = hstack((res[0], res, res[-1]))
-            times = hstack((prob.extras['startTimes'][0], times, prob.extras['endTimes'][-1]))            
+            times = hstack((prob.extras['startTimes'], prob.extras['endTimes'][-1]))
             if len(self._times) != 2:
                 # old
                 from scipy.interpolate import InterpolatedUnivariateSpline
@@ -135,12 +133,14 @@ class ode:
                 if times[-1] < times[0]:
                     times = times[::-1]
                     res = res[::-1]
-                    
+                #1
                 interp = InterpolatedUnivariateSpline(times, res, k=1)#, s=s**2) 
+                
                 times = self._times
                 res = interp(times)
-
-                # new
+                
+                #2
+#                from numpy import searchsorted
 #                ind = searchsorted(prob.extras['startTimes'], self._times, 'right')
 #                ind[ind==times.size] = times.size-1
 #                tmp = res[ind]
