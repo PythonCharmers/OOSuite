@@ -1,6 +1,6 @@
 PythonSum = sum
 import numpy as np
-from numpy import all, logical_and, logical_not, isscalar, where
+from numpy import all, any, logical_and, logical_not, isscalar, where
 from operator import gt as Greater, lt as Less
 
 def extract(b, ind):
@@ -26,7 +26,7 @@ class surf(object):
         d = self.d.copy()
         for v in oovars:
             tmp = d.pop(v, 0.0)
-            if not np.array_equiv(tmp, 0.0):
+            if any(tmp):
                 D = domain[v]
                 C.append(where(cmp(tmp, 0), D[0], D[1])*tmp)
         c = self.c + PythonSum(C)

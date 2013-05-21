@@ -723,8 +723,8 @@ def sum_interval(R0, r, INP, domain, dtype):
             R = boundsurf_sum(B, R+R2, DefiniteRange, domain)#.resolve()[0]
         else:
             R = R + R2
-        if type(R) == boundsurf and not domain.surf_preference:# and R.Size() > 5:
-            R = R.resolve()[0]
+#        if type(R) == boundsurf and not domain.surf_preference:# and R.Size() > 5:
+#            R = R.resolve()[0]
 
         #R -= domain.storedSums[r][v]
         
