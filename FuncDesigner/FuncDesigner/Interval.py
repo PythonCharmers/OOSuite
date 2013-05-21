@@ -151,14 +151,15 @@ def box_1_interval(inp, func, deriv, domain, dtype):
     lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
     isBoundSurf = type(lb_ub) == boundsurf
     lb_ub_resolved = lb_ub.resolve()[0] if isBoundSurf else lb_ub
-    isNegative = all(lb_ub_resolved <= 0)
-    isPositive = all(lb_ub_resolved >= 0)
-    if isNegative or isPositive:
-        assert func in (np.arcsin, np.arccos, np.arctanh)
-        monotonity = 1 if func in (np.arcsin, np.arctanh) else -1
-        convexity = 1 if (func in (np.arcsin, np.arctanh)) == isPositive else -1
-        return defaultIntervalEngine(lb_ub, func, deriv, monotonity, convexity,
-                                     feasLB = -1.0, feasUB = 1.0)
+    if isBoundSurf:
+        isNegative = all(lb_ub_resolved <= 0)
+        isPositive = all(lb_ub_resolved >= 0)
+        if isNegative or isPositive:
+            assert func in (np.arcsin, np.arccos, np.arctanh)
+            monotonity = 1 if func in (np.arcsin, np.arctanh) else -1
+            convexity = 1 if (func in (np.arcsin, np.arctanh)) == isPositive else -1
+            return defaultIntervalEngine(lb_ub, func, deriv, monotonity, convexity,
+                                         feasLB = -1.0, feasUB = 1.0)
 
     lb_ub_resolved, definiteRange = adjustBounds(lb_ub_resolved, definiteRange, -1.0, 1.0)
     t_min_max = func(lb_ub_resolved)

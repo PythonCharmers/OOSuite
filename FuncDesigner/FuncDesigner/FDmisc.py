@@ -254,13 +254,13 @@ def formResolveSchedule(oof):
     depsNumber = formDepCounter(oof)
     def F(ff, depsNumberDict, baseFuncDepsNumber, R):
         tmp = depsNumberDict[ff]
-        s = set()
+        s = []
         for k, v in tmp.items():
             if baseFuncDepsNumber[k] == v:
-                s.add(k)
+                s.append(k)
                 baseFuncDepsNumber[k] -= 1
         if len(s):
-            R[ff] = set(s)
+            R[ff] = s
     R = {}
     broadcast(F, oof, False, depsNumber, depsNumber[oof].copy(), R)
     R.pop(oof, None)

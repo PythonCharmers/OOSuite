@@ -249,7 +249,8 @@ class oofun(object):
     def interval(self, domain, dtype = float, resetStoredIntervals = True, allowBoundSurf = False):
         if type(domain) != ooPoint:
             domain = ooPoint(domain, skipArrayCast = True)
-        domain.resolveSchedule = self.resolveSchedule
+        if not domain.surf_preference:
+            domain.resolveSchedule = self.resolveSchedule
         lb_ub, definiteRange = self._interval(domain, dtype, allowBoundSurf = allowBoundSurf) 
         
         # TODO: MB GET RID OF IT?
@@ -283,13 +284,12 @@ class oofun(object):
                 domain.localStoredIntervals[self] = r
         if type(r[0]) == boundsurf: 
             if allowBoundSurf:
-                Tmp = domain.resolveSchedule.get(self, ())
                 R, definiteRange = r
-                if len(Tmp) and not domain.surf_preference:
+                Tmp = domain.resolveSchedule.get(self, ())
+                if len(Tmp):# and not domain.surf_preference:
 #                    print('1:', R.Size())
                     R = R.exclude(Tmp)
 #                    print('2:', R.Size())
-                    pass
                 return R, definiteRange
             else:
                 return r[0].resolve()
