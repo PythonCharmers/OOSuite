@@ -191,7 +191,7 @@ def Diag(x, *args, **kw):
 #    return r
 
 def dictSum(dicts):
-    K = set().union(*[set(d.keys()) for d in dicts])
+    K = set.union(*[set(d.keys()) for d in dicts])
     R = dict((v, []) for v in K)
     for d in dicts:
         for k, val in d.items():
@@ -265,7 +265,3 @@ def formResolveSchedule(oof):
     broadcast(F, oof, False, depsNumber, depsNumber[oof].copy(), R)
     R.pop(oof, None)
     oof.resolveSchedule = R
-
-
-
-

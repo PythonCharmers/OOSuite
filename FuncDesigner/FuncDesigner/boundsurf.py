@@ -1,22 +1,28 @@
 PythonSum = sum
+PythonAll = all
 import numpy as np
-from numpy import all, any, logical_and, logical_not, isscalar, where
+from numpy import all, any, logical_and, logical_not, logical_or, isscalar, where
 from operator import gt as Greater, lt as Less
 
-def extract(b, ind):
-    d = dict((k, v if isscalar(v) or v.size == 1 else v[ind]) for k, v in b.d.items())
-    C = b.c
-    c = C if isscalar(C) or C.size == 1 else C[ind]
-    return surf(d, c)
+try:
+    from bottleneck import nanmin, nanmax
+except ImportError:
+    from numpy import nanmin, nanmax
+
+#def extract(b, ind):
+#    d = dict((k, v if v.size == 1 else v[ind]) for k, v in b.d.items())
+#    C = b.c
+#    c = C if C.size == 1 else C[ind]
+#    return surf(d, c)
 
 class surf(object):
     isRendered = False
     __array_priority__ = 15
     def __init__(self, d, c):
         self.d = d # dict of variables and linear coefficients on them (probably as multiarrays)
-        self.c = c # (multiarray of) constant(s)
+        self.c = np.asarray(c) # (multiarray of) constant(s)
 
-    value = lambda self, point: self.c + PythonSum(point[k]*v for k, v in self.d.items())
+    value = lambda self, point: self.c + PythonSum(point[k] * v for k, v in self.d.items())
 
 #    resolve = lambda self, domain, cmp: \
 #    self.c + PythonSum(where(cmp(v, 0), domain[k][0], domain[k][1])*v for k, v in self.d.items())
@@ -32,18 +38,19 @@ class surf(object):
         c = self.c + PythonSum(C)
         return surf(d, c)
     
-    split = lambda self, inds: [extract(self, ind) for ind in inds]
-    
-#    def join(self, S):
-#        
+#    split = lambda self, inds: [extract(self, ind) for ind in inds]
     
     #self.resolve(domain, GREATER)
-    minimum = lambda self, domain: \
-    self.c + PythonSum(where(v > 0, domain[k][0], domain[k][1])*v for k, v in self.d.items())
+    minimum = lambda self, domain, domain_ind = slice(None): \
+    self.c +\
+    PythonSum(where(v > 0, 
+    domain[k][0][domain_ind], domain[k][1][domain_ind])*v for k, v in self.d.items())
     
     #self.resolve(domain, LESS)
-    maximum = lambda self, domain: \
-    self.c + PythonSum(where(v < 0, domain[k][0], domain[k][1])*v for k, v in self.d.items())
+    maximum = lambda self, domain, domain_ind = slice(None): \
+    self.c +\
+    PythonSum(where(v  < 0, 
+    domain[k][0][domain_ind], domain[k][1][domain_ind])*v for k, v in self.d.items())
     
     def render(self, domain, cmp):
         self.rendered = dict((k, where(cmp(v, 0), domain[k][0], domain[k][1])*v) for k, v in self.d.items())
@@ -106,30 +113,27 @@ class boundsurf(object):#object is added for Python2 compatibility
         boundsurf(self.l.exclude(self.domain, oovars, Greater), self.u.exclude(self.domain, oovars, Less), 
                   self.definiteRange, self.domain)
     
-    def split(self, condition1, condition2):
-        inds = (
-                where(condition1)[0], 
-                where(logical_and(condition2, logical_not(condition1)))[0], 
-                where(logical_and(logical_not(condition1), logical_not(condition2)))[0]
-                )
-
-        L = self.l.split(inds)
-        U = self.u.split(inds) if self.l is not self.u else L
-        
-        definiteRange = self.definiteRange
-        DefiniteRange = [definiteRange] * len(inds) if type(definiteRange) == bool or definiteRange.size == 1 \
-        else [definiteRange[ind] for ind in inds]
-        
-        return inds, [boundsurf(L[i], U[i], DefiniteRange[i], self.domain) for i in range(len(inds))]
+#    def split(self, condition1, condition2):
+#        inds = (
+#                where(condition1)[0], 
+#                where(logical_and(condition2, logical_not(condition1)))[0], 
+#                where(logical_and(logical_not(condition1), logical_not(condition2)))[0]
+#                )
+#
+#        L = self.l.split(inds)
+#        U = self.u.split(inds) if self.l is not self.u else L
+#        
+#        definiteRange = self.definiteRange
+#        DefiniteRange = [definiteRange] * len(inds) if type(definiteRange) == bool or definiteRange.size == 1 \
+#        else [definiteRange[ind] for ind in inds]
+#        
+#        return inds, [boundsurf(L[i], U[i], DefiniteRange[i], self.domain) if ind.size else None for i, ind in enumerate(inds)]
     
-    def join(self, inds, B):
-        L = surf.join(inds, (b.l for b in B))
-        U = surf.join(inds, (b.u for b in B)) #if self.l is not self.u else L
-        definiteRange = B[0].definiteRange if np.array_equiv(B[0].definiteRange, B[1].definiteRange)\
-        and np.array_equiv(B[0].definiteRange, B[2].definiteRange)\
-        else Join(inds, (B[0].definiteRange, B[1].definiteRange, B[2].definiteRange))
-        return boundsurf(L, U, definiteRange, B[0].domain)
-    
+#    def resolve(self, ind = slice(None)):
+#        r = np.vstack((self.l.minimum(self.domain, ind), self.u.maximum(self.domain, ind)))
+#        assert r.shape[0] == 2, 'bug in FD kernel'
+#        return r, (self.definiteRange if type(self.definiteRange) == bool or self.definiteRange.size == 1 \
+#                   else self.definiteRange[ind])
     def resolve(self):
         r = np.vstack((self.l.minimum(self.domain), self.u.maximum(self.domain)))
         assert r.shape[0] == 2, 'bug in FD kernel'
@@ -209,7 +213,35 @@ class boundsurf(object):#object is added for Python2 compatibility
             else:
                 rr = (self.l * R2, self.u * R2) if R2 >= 0 else (self.u * R2, self.l * R2)
         elif isArray:
-            assert selfPositive or selfNegative, 'unimplemented yet'
+            
+            if 1:
+                assert selfPositive or selfNegative, 'unimplemented yet'
+            
+            else:
+                assert R2Positive or R2Negative, 'bug or unimplemented yet'
+                lb1, ub1 = R1
+                Ind1 = lb1 >= 0
+                ind1 = where(Ind1)[0]
+                Ind2 = ub1 <= 0
+                ind2 = where(Ind2)[0]
+                ind3 = where(logical_not(logical_or(Ind1, Ind2)))[0]
+                tmp_l, tmp_u = np.empty_like(lb1), np.empty_like(ub1)
+                
+                lb2, ub2 = R2 if R2Positive else (-R2[1], -R2[0])
+
+                tmp_l1 = lb2[ind1] * self.l[ind1]
+                tmp_l2 = ub2[ind2] * self.l[ind2]
+                l2, u2 = lb2[ind3], ub2[ind3]
+                l1, u1 = lb1[ind3], ub1[ind3]
+                Tmp = np.vstack((l1*l2, l1*u2, l2*u1, u1*u2))
+                tmp_l3 = nanmin(Tmp, axis=0)
+                tmp_u3 = nanmax(Tmp, axis=0)
+                
+                if R2Negative:
+                    # TODO: implement revert
+                    pass
+                rr = (tmp_l, tmp_u)
+
 
             if selfPositive: 
                 rr = (self.l * R2[0], self.u * R2[1]) if R2Positive else (self.u * R2[0], self.l * R2[1])
@@ -327,13 +359,84 @@ def boundsurf_abs(b):
         return -b, b.definiteRange
     
     from Interval import defaultIntervalEngine
+        
     return defaultIntervalEngine(b, np.abs, np.sign, 
                          monotonity = np.nan, convexity = 1, 
                          criticalPoint = 0.0, criticalPointValue = 0.0)
 
 
 def Join(inds, arrays):
-    r = np.empty(PythonSum(arr.size for arr in arrays), arrays[0].dtype)
+    r = np.empty(PythonSum(ind.size for ind in inds), arrays[0].dtype)
     for ind, arr in zip(inds, arrays):
         r[ind] = arr
     return r
+
+def surf_join(inds, S):
+    keys = set.union(*[set(s.d.keys()) for s in S])
+    d = dict((k, Join(inds, [s.d.get(k, 0.0) for s in S])) for k in keys)
+    c = Join(inds, [s.c for s in S])
+    return surf(d, c)
+
+def boundsurf_join(inds, B):
+#    inds = [inds[i] for i, b in enumerate(B) if b is not None]
+#    B = [b for b in B if b is not None]
+    L = surf_join(inds, [b.l for b in B])
+    U = surf_join(inds, [b.u for b in B]) #if self.l is not self.u else L
+    definiteRange = True \
+    if PythonAll(np.array_equiv(True, b.definiteRange) for b in B)\
+    else Join(inds, [b.definiteRange for b in B])
+    return boundsurf(L, U, definiteRange, B[0].domain)
+
+split = lambda condition1, condition2: \
+    (
+    where(condition1)[0], 
+    where(logical_and(condition2, logical_not(condition1)))[0], 
+    where(logical_and(logical_not(condition1), logical_not(condition2)))[0]
+    )
+
+def devided_interval(inp, r, domain, dtype):
+    lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
+    isBoundSurf = type(lb_ub) == boundsurf
+    lb_ub_resolved = lb_ub.resolve()[0] if isBoundSurf else lb_ub
+    lb, ub = lb_ub_resolved
+    Inds = split(ub <= 0, lb >= 0)
+    assert len(Inds) == 3
+    
+    convexities = r.convexities
+    monotonities = [r.engine_monotonity] * (len(Inds)-1) if r.engine_monotonity is not np.nan \
+    else r.monotonities
+    
+    m = PythonSum(ind_.size for ind_ in Inds)
+    inds, rr = [], []
+    
+    from Interval import defaultIntervalEngine
+    
+    for j, ind in enumerate(Inds[:-1]):
+        if ind.size != 0:
+            tmp = defaultIntervalEngine(lb_ub, r.fun, r.d, monotonity=monotonities[j], 
+                                        convexity=convexities[j], domain_ind = ind)[0]
+            if ind.size == m:
+                return tmp, tmp.definiteRange
+            rr.append(tmp)
+            inds.append(ind)
+    
+    _ind = Inds[-1]
+    if _ind.size:
+        DefiniteRange = definiteRange if type(definiteRange) == bool or definiteRange.size == 1 else definiteRange[_ind]
+        from ooFun import oofun
+        Tmp, definiteRange3 = oofun._interval_(r, domain, dtype, inputData = (lb_ub_resolved[:, _ind], DefiniteRange))
+        if _ind.size == m:
+            return Tmp, definiteRange3
+        tmp = boundsurf(surf({}, Tmp[0]), surf({}, Tmp[1]), definiteRange3, domain)
+        rr.append(tmp)
+        inds.append(_ind)
+
+    b = boundsurf_join(inds, rr)
+    return b, b.definiteRange
+
+
+
+
+
+
+

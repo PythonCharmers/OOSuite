@@ -2,7 +2,7 @@ from numpy import ndarray, asscalar, isscalar, floor, pi, inf, nan, \
 copy as Copy, logical_and, logical_or, where, asarray, any, all, atleast_1d, vstack, \
 searchsorted, logical_not
 import numpy as np
-from FDmisc import FuncDesignerException, Diag
+from FDmisc import FuncDesignerException
 from FuncDesigner.multiarray import multiarray
 from boundsurf import boundsurf, surf
 
@@ -472,17 +472,26 @@ def pow_oofun_interval(self, other, domain, dtype):
         t_min[atleast_1d(logical_and(ind1, logical_not(ind2)))] = nan
     return vstack((t_min, t_max)), definiteRange
     
-def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, \
-                          criticalPoint = np.nan, criticalPointValue = np.nan, feasLB = -inf, feasUB = inf):
+def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, criticalPoint = np.nan, 
+                          criticalPointValue = np.nan, feasLB = -inf, feasUB = inf, domain_ind = slice(None)):
     L, U, domain, definiteRange = arg_lb_ub.l, arg_lb_ub.u, arg_lb_ub.domain, arg_lb_ub.definiteRange
-    R0 = arg_lb_ub.resolve()[0]
+    Ld, Ud = L.d, U.d
+    if type(domain_ind) == np.ndarray:
+        Ld, Ud = dict_reduce(Ld, domain_ind), dict_reduce(Ud, domain_ind)
+        R0 = arg_lb_ub.resolve()[0][:, domain_ind]
+        if type(definiteRange) != bool and definiteRange.size > 1:
+            definiteRange = definiteRange[domain_ind]
+    else:
+        R0 = arg_lb_ub.resolve()[0]
+        
+    #R0 = arg_lb_ub.resolve(ind = domain_ind)[0]
+    
     assert R0.shape[0]==2, 'unimplemented yet'
     
     if feasLB != -inf or feasUB != inf:
         R0, definiteRange = adjustBounds(R0, definiteRange, feasLB, feasUB)
         
     r_l, r_u = R0
-    
     R2 = fun(R0)
     
     ind_inf = np.where(np.logical_or(np.isinf(R2[0]), np.isinf(R2[1])))[0]
@@ -491,8 +500,6 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, \
     koeffs[ind_inf] = 0.0
     
     ind_eq = where(r_u == r_l)[0]
-    
-    Ld, Ud = L.d, U.d
 
     if monotonity == 1:
         new_l_resolved, new_u_resolved = R2
@@ -518,16 +525,17 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, \
                 new_u_resolved[ind_c] = criticalPointValue
                 _argmax[ind_c] = criticalPoint
         Keys = set().union(set(Ld.keys()), set(Ud.keys()))
+
         L_dict = dict((k, where(ind, Ld.get(k, 0), Ud.get(k, 0))) for k in Keys)
         U_dict = dict((k, where(ind, Ud.get(k, 0), Ld.get(k, 0))) for k in Keys)
-            
+
     if convexity == -1:
         tmp2 = deriv(_argmax.view(multiarray)).view(ndarray).flatten()
         tmp2[ind_inf] = 0.0
         
         d_new = dict((v, tmp2 * val) for v, val in L_dict.items())
         U_new = surf(d_new, 0.0)
-        U_new.c = new_u_resolved - U_new.maximum(domain)
+        U_new.c = new_u_resolved - U_new.maximum(domain, domain_ind)
         ind_inf2 = np.isinf(new_u_resolved)
         if any(ind_inf2):
             U_new.c = where(ind_inf2, new_u_resolved, U_new.c)
@@ -538,7 +546,7 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, \
                 koeffs[ind_eq] = tmp2[ind_eq]
             d_new = dict((v, koeffs * val) for v, val in U_dict.items())
             L_new = surf(d_new, 0.0)
-            L_new.c = new_l_resolved -  L_new.minimum(domain)
+            L_new.c = new_l_resolved -  L_new.minimum(domain, domain_ind)
             if any(ind_inf2):
                 L_new.c = where(ind_inf2, new_l_resolved, L_new.c)
         else:
@@ -550,7 +558,7 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, \
         
         d_new = dict((v, tmp2 * val) for v, val in L_dict.items())
         L_new = surf(d_new, 0.0)
-        L_new.c = new_l_resolved - L_new.minimum(domain)
+        L_new.c = new_l_resolved - L_new.minimum(domain, domain_ind)
         ind_inf2 = np.isinf(new_l_resolved)
         if any(ind_inf2):
             L_new.c = where(ind_inf2, new_l_resolved, L_new.c)
@@ -561,7 +569,7 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, \
                 koeffs[ind_eq] = tmp2[ind_eq]
             d_new = dict((v, koeffs * val) for v, val in U_dict.items())
             U_new = surf(d_new, 0.0)
-            U_new.c = new_u_resolved - U_new.maximum(domain)
+            U_new.c = new_u_resolved - U_new.maximum(domain, domain_ind)
             if any(ind_inf2):
                 U_new.c = where(ind_inf2, new_u_resolved, U_new.c)
         else:
@@ -599,3 +607,5 @@ def adjustBounds(R0, definiteRange, feasLB, feasUB):
             definiteRange[ind_u] = False
             
     return R0, definiteRange
+
+dict_reduce = lambda d, ind: dict((k, v if v.size == 1 else v[ind]) for k, v in d.items())

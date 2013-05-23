@@ -99,7 +99,7 @@ class oofun(object):
     _lastDiffVarsID = 0
     _lastFuncVarsID = 0
     _lastOrderVarsID = 0
-    criticalPoints = None
+    criticalPoints = lambda *args, **kw: raise_except('bug in FD kernel')
     vectorized = False
 #    getDefiniteRange = None
     _neg_elem = None # used in render into quadratic 
@@ -207,15 +207,15 @@ class oofun(object):
         
     __repr__ = lambda self: self.name
     
-    def _interval_(self, domain, dtype):#, inputData = None):
-#        if inputData is None:
-#            INP = self.input[0] 
-#            arg_lb_ub, definiteRange = INP._interval(domain, dtype, allowBoundSurf = True)
-#        else:
-#            arg_lb_ub, definiteRange = inputData
+    def _interval_(self, domain, dtype, inputData = None):
+        if inputData is None:
+            INP = self.input[0] 
+            arg_lb_ub, definiteRange = INP._interval(domain, dtype, allowBoundSurf = True)
+        else:
+            arg_lb_ub, definiteRange = inputData
         
-        INP = self.input[0] 
-        arg_lb_ub, definiteRange = INP._interval(domain, dtype, allowBoundSurf = True)
+#        INP = self.input[0] 
+#        arg_lb_ub, definiteRange = INP._interval(domain, dtype, allowBoundSurf = True)
         
         isBoundsurf = type(arg_lb_ub) == boundsurf
         arg_lb_ub_resolved = arg_lb_ub.resolve()[0] if isBoundsurf else arg_lb_ub
@@ -223,8 +223,7 @@ class oofun(object):
             return defaultIntervalEngine(arg_lb_ub, self.fun, self.d, 
                                          self.engine_monotonity, self.engine_convexity)
         
-        criticalPointsFunc = self.criticalPoints
-        if criticalPointsFunc in (None, False):
+        if self.engine_monotonity is not nan:
             arg_infinum, arg_supremum = arg_lb_ub_resolved[0], arg_lb_ub_resolved[1]
             if (not isscalar(arg_infinum) and arg_infinum.size > 1) and not self.vectorized:
                 raise FuncDesignerException('not implemented for vectorized oovars yet')
@@ -236,7 +235,7 @@ class oofun(object):
                 assert self.engine_monotonity in (0, 1), \
                 'interval computations are unimplemented for the oofun yet'
         else:
-            tmp = [arg_lb_ub_resolved] + criticalPointsFunc(arg_lb_ub_resolved) 
+            tmp = [arg_lb_ub_resolved] + self.criticalPointsFunc(arg_lb_ub_resolved) 
             Tmp = self.fun(vstack(tmp)) 
             Tmp = vstack((nanmin(Tmp, 0), nanmax(Tmp, 0)))
 
@@ -531,7 +530,6 @@ class oofun(object):
         r.getOrder = self.getOrder
         r._D = lambda *args, **kwargs: dict((key, -value) for key, value in self._D(*args, **kwargs).items())
         r.d = raise_except
-        r.criticalPoints = False
         r.vectorized = True
         r._interval_ = lambda *args, **kw: neg_interval(self, *args, **kw)
         return r
@@ -590,8 +588,7 @@ class oofun(object):
             r.d = lambda x: 1.0/other if (isscalar(x) or x.size == 1) else Diag(ones(x.size)/other) #if other.size > 1 \
             #else Diag(None, size=x.size, scalarMultiplier=1.0/other)
             # commented code is unreacheble, see r._D definition below for other.size == 1
-            
-            r.criticalPoints = False
+
 #            if other.size == 1 or 'size' in self.__dict__ and self.size in (1, other.size):
             if other.size == 1:
                 r._D = lambda *args, **kwargs: dict([(key, value/other) for key, value in self._D(*args, **kwargs).items()])
@@ -647,7 +644,6 @@ class oofun(object):
             r = oofun(lambda x: x*other, self, discrete = self.discrete)
             r.getOrder = self.getOrder
             r._getFuncCalcEngine = lambda *args,  **kwargs: other * self._getFuncCalcEngine(*args,  **kwargs)
-            r.criticalPoints = False
 
             if isscalar(other) or asarray(other).size == 1:  # other may be array-like
                 r._D = lambda *args, **kwargs: dict([(key, value * other) for key, value in self._D(*args, **kwargs).items()])
@@ -721,7 +717,7 @@ class oofun(object):
         
         f = lambda x: other ** x
         d = lambda x: Diag(other ** x * log(other)) 
-        r = oofun(f, self, d=d, criticalPoints = False, vectorized = True)
+        r = oofun(f, self, d=d, vectorized = True)
         if other_is_scalar:
             r.engine_convexity = 1
             r.engine_monotonity = 1 if other > 1 else -1 if other >= 0 else nan
