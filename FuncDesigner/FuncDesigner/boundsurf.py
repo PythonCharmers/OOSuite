@@ -419,8 +419,8 @@ def devided_interval(inp, r, domain, dtype, feasLB = -inf, feasUB = inf):
     
     for j, ind in enumerate(Inds[:-1]):
         if ind.size != 0:
-            tmp = defaultIntervalEngine(lb_ub, r.fun, r.d, monotonity=monotonities[j], 
-                                        convexity=convexities[j], feasLB = feasLB, feasUB = feasUB, domain_ind = ind)[0]
+            tmp = defaultIntervalEngine(lb_ub, r.fun, r.d, monotonity=monotonities[j], convexity=convexities[j], 
+                                        feasLB = feasLB, feasUB = feasUB, domain_ind = ind)[0]
             if ind.size == m:
                 return tmp, tmp.definiteRange
             rr.append(tmp)

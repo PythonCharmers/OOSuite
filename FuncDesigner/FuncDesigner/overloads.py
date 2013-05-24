@@ -9,7 +9,7 @@ from Interval import TrigonometryCriticalPoints, nonnegative_interval, ZeroCriti
 box_1_interval, defaultIntervalEngine
 from numpy import atleast_1d, logical_and
 from FuncDesigner.multiarray import multiarray
-from boundsurf import boundsurf, surf, devided_interval
+from boundsurf import boundsurf, surf, devided_interval, boundsurf_join, split
 
 try:
     from scipy.sparse import isspmatrix, lil_matrix as Zeros
@@ -55,20 +55,75 @@ else np.sin(x))\
 if hasStochastic\
 else np.sin
 
+#def sin_interval(r, inp, domain, dtype):
+#    lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
+#    isBoundsurf = type(lb_ub) == boundsurf
+#    lb_ub_resolved = lb_ub.resolve()[0] if isBoundsurf else lb_ub
+#    lb, ub = lb_ub_resolved
+#    if isBoundsurf:
+#        if np.all(lb >= 0.0) and np.all(ub <= np.pi):
+#            return defaultIntervalEngine(lb_ub, np.sin, np.cos, monotonity = np.nan, convexity = -1, \
+#                              criticalPoint = np.pi/2, criticalPointValue = 1.0)
+#        elif np.all(lb >=-np.pi) and np.all(ub <= 0.0):
+#            return defaultIntervalEngine(lb_ub, np.sin, np.cos, monotonity = np.nan, convexity = 1, \
+#                              criticalPoint = -np.pi/2, criticalPointValue = -1.0)
+#                              
+#    return oofun._interval_(r, domain, dtype)
+
 def sin_interval(r, inp, domain, dtype):
     lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
     isBoundsurf = type(lb_ub) == boundsurf
     lb_ub_resolved = lb_ub.resolve()[0] if isBoundsurf else lb_ub
     lb, ub = lb_ub_resolved
+    res = lb % (2 * np.pi)
+    shift = lb - res
+    lb, ub = res, ub - shift
+    R0 = np.vstack((lb, ub))
+    
     if isBoundsurf:
-        if np.all(lb >= 0.0) and np.all(ub <= np.pi):
-            return defaultIntervalEngine(lb_ub, np.sin, np.cos, monotonity = np.nan, convexity = -1, \
-                              criticalPoint = np.pi/2, criticalPointValue = 1.0)
-        elif np.all(lb >=-np.pi) and np.all(ub <= 0.0):
-            return defaultIntervalEngine(lb_ub, np.sin, np.cos, monotonity = np.nan, convexity = 1, \
-                              criticalPoint = -np.pi/2, criticalPointValue = -1.0)
-                              
-    return oofun._interval_(r, domain, dtype)
+        Inds = split(ub <= np.pi, logical_and(lb >= np.pi, ub <= 2*np.pi))
+        m = PythonSum(ind_.size for ind_ in Inds)
+        inds, rr = [], []
+        ind = Inds[0]
+        if ind.size != 0:
+            tmp = defaultIntervalEngine(lb_ub, r.fun, r.d, np.nan, convexity = -1, 
+                                        criticalPoint = np.pi/2, 
+                                        criticalPointValue = 1, 
+                                        domain_ind = ind, R0 = R0)[0]
+            if ind.size == m:
+                return tmp, tmp.definiteRange
+            rr.append(tmp)
+            inds.append(ind)
+            
+        ind = Inds[1]
+        if ind.size != 0:
+            tmp = defaultIntervalEngine(lb_ub, r.fun, r.d, np.nan, convexity = 1, 
+                                        criticalPoint = 3*np.pi/2, 
+                                        criticalPointValue = -1, 
+                                        domain_ind = ind, R0 = R0)[0]
+            if ind.size == m:
+                return tmp, tmp.definiteRange
+            rr.append(tmp)
+            inds.append(ind)
+        
+    ind = Inds[-1] if isBoundsurf else slice(None)
+    R0 = R0[:, ind]
+    lb, ub = R0
+    R = r.fun(R0)
+    R.sort(axis=0)
+    R[0][logical_and(lb < 3*np.pi/2, ub > 3*np.pi/2)] = -1.0
+    R[1][logical_and(lb < np.pi/2, ub > np.pi/2)] = 1.0
+    if not isBoundsurf or ind.size == m:
+        return R, definiteRange
+    else:
+        definiteRange_ = definiteRange if type(definiteRange) == bool or definiteRange.size == 1 \
+        else definiteRange[ind]
+        tmp = boundsurf(surf({}, R[0]), surf({}, R[1]), definiteRange_, domain)
+        rr.append(tmp)
+        inds.append(ind)
+        b = boundsurf_join(inds, rr)
+        return b, b.definiteRange
+#    return oofun._interval_(r, domain, dtype)
 
 def sin(inp):
     if isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp)):

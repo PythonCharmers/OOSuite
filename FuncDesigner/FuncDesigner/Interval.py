@@ -475,15 +475,15 @@ def pow_oofun_interval(self, other, domain, dtype):
     return vstack((t_min, t_max)), definiteRange
     
 def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, criticalPoint = np.nan, 
-                          criticalPointValue = np.nan, feasLB = -inf, feasUB = inf, domain_ind = slice(None)):
+                          criticalPointValue = np.nan, feasLB = -inf, feasUB = inf, domain_ind = slice(None), R0 = None):
     L, U, domain, definiteRange = arg_lb_ub.l, arg_lb_ub.u, arg_lb_ub.domain, arg_lb_ub.definiteRange
     Ld, Ud = L.d, U.d
     if type(domain_ind) == np.ndarray:
         Ld, Ud = dict_reduce(Ld, domain_ind), dict_reduce(Ud, domain_ind)
-        R0 = arg_lb_ub.resolve()[0][:, domain_ind]
+        R0 = (arg_lb_ub.resolve()[0] if R0 is None else R0)[:, domain_ind]
         if type(definiteRange) != bool and definiteRange.size > 1:
             definiteRange = definiteRange[domain_ind]
-    else:
+    elif R0 is None:
         R0 = arg_lb_ub.resolve()[0]
         
     #R0 = arg_lb_ub.resolve(ind = domain_ind)[0]
