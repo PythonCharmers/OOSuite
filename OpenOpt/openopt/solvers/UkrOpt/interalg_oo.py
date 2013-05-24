@@ -73,7 +73,7 @@ class interalg(baseSolver):
                 dataType = 'float64'
             dataType = getattr(np, dataType)
             self.dataType = dataType
-       
+        
         isIP = p.probType == 'IP'
         if isIP:
             pb = r14IP
@@ -98,7 +98,7 @@ class interalg(baseSolver):
                 '''% self.__name__)
                 
         vv = list(p._freeVarsList)
-        x0 = dict([(v, p._x0[v]) for v in vv])
+        x0 = dict((v, p._x0[v]) for v in vv)
         
         for val in x0.values():
             if isinstance(val,  (list, tuple, np.ndarray)) and len(val) > 1:
@@ -222,7 +222,7 @@ class interalg(baseSolver):
 #            # handles 'auto' as well
 #            self.dataHandling ='sorted'
 
-        domain = oopoint([(v, [p.lb[i], p.ub[i]]) for i,  v in enumerate(vv)], skipArrayCast=True)
+        domain = oopoint([(v, [p.lb[i], p.ub[i]]) for i,  v in enumerate(vv)])
         domain.dictOfFixedFuncs = p.dictOfFixedFuncs
         #from FuncDesigner.ooFun import BooleanOOFun, SmoothFDConstraint
         
@@ -269,26 +269,10 @@ class interalg(baseSolver):
         g = np.inf
         C = p._FD.nonBoxConsWithTolShift
         C0 = p._FD.nonBoxCons
-#        if isOpt:
-#            r = []
-#            for (elem, lb, ub, tol) in C0:
-#                if tol == 0: tol = p.contol
-#                if lb == ub:
-#                    r.append(fd_max((fd_abs(elem-lb)-tol, 0)) * (fTol/tol))
-#                elif lb == -inf:
-#                    r.append(fd_max((0, elem-ub-tol)) * (fTol/tol))
-#                elif ub == inf:
-#                    r.append(fd_max((0, lb-elem-tol)) * (fTol/tol))
-#                else:
-#                    p.err('finite box constraints are unimplemented for interalg yet')
-            #p._cons_obj = 1e100 * fd_sum(r) if len(r) != 0 else None
-            #p._cons_obj = fd_sum(r) if len(r) != 0 else None
-
+        
         if isSNLE:
             C += [(elem==0, elem, -(elem.tol if elem.tol != 0 else p.ftol), (elem.tol if elem.tol != 0 else p.ftol)) for elem in p.user.f]
             C0 += [(elem==0, elem, 0, 0, (elem.tol if elem.tol != 0 else p.ftol)) for elem in p.user.f]
-        
-        
         
         # TODO: hanlde fixed variables here
         varTols = p.variableTolerances
