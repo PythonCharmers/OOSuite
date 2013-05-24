@@ -138,37 +138,7 @@ def sin(inp):
     r._interval_ = lambda domain, dtype: sin_interval(r, inp, domain, dtype)
     return r
 
-st_cos = (lambda x: \
-distribution.stochasticDistribution(cos(x.values), x.probabilities.copy())._update(x) \
-if isinstance(x, distribution.stochasticDistribution)\
-else np.array([cos(elem) for elem in x.flat]).view(multiarray) if isinstance(x, multiarray) and isinstance(x.flat[0], distribution.stochasticDistribution)
-else np.cos(x))\
-if hasStochastic\
-else np.cos
-
-def cos_interval(r, inp, domain, dtype):
-    lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
-    isBoundsurf = type(lb_ub) == boundsurf
-    lb_ub_resolved = lb_ub.resolve()[0] if isBoundsurf else lb_ub
-    lb, ub = lb_ub_resolved
-    if isBoundsurf and np.all(lb >= -np.pi/2) and np.all(ub <= np.pi/2):
-        return defaultIntervalEngine(lb_ub, np.cos, lambda x: -np.sin(x), monotonity = np.nan, convexity = -1, \
-                          criticalPoint = 0.0, criticalPointValue = 1.0)
-    else:
-        return oofun._interval_(r, domain, dtype)
-
-def cos(inp):
-    if isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp)):
-        return ooarray([cos(elem) for elem in inp])
-    elif hasStochastic and isinstance(inp, distribution.stochasticDistribution):
-        return distribution.stochasticDistribution(cos(inp.values), inp.probabilities.copy())._update(inp)        
-    elif not isinstance(inp, oofun): return np.cos(inp)
-    r = oofun(st_cos, inp, 
-             d = lambda x: Diag(-np.sin(x)), 
-             vectorized = True, 
-             criticalPoints = TrigonometryCriticalPoints)
-    r._interval_ = lambda domain, dtype: cos_interval(r, inp, domain, dtype)
-    return r
+cos = lambda inp: sin(inp - np.pi / 2)
 
 st_tan = (lambda x: \
 distribution.stochasticDistribution(tan(x.values), x.probabilities.copy())._update(x) \
