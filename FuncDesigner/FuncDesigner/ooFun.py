@@ -235,7 +235,7 @@ class oofun(object):
                 assert self.engine_monotonity in (0, 1), \
                 'interval computations are unimplemented for the oofun yet'
         else:
-            tmp = [arg_lb_ub_resolved] + self.criticalPointsFunc(arg_lb_ub_resolved) 
+            tmp = [arg_lb_ub_resolved] + self.criticalPoints(arg_lb_ub_resolved) 
             Tmp = self.fun(vstack(tmp)) 
             Tmp = vstack((nanmin(Tmp, 0), nanmax(Tmp, 0)))
 
