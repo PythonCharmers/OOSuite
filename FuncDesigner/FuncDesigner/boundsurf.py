@@ -1,7 +1,7 @@
 PythonSum = sum
 PythonAll = all
 import numpy as np
-from numpy import all, any, logical_and, logical_not, logical_or, isscalar, where
+from numpy import all, any, logical_and, logical_not, logical_or, isscalar, where, inf
 from operator import gt as Greater, lt as Less
 
 try:
@@ -394,10 +394,16 @@ split = lambda condition1, condition2: \
     where(logical_and(logical_not(condition1), logical_not(condition2)))[0]
     )
 
-def devided_interval(inp, r, domain, dtype):
+def devided_interval(inp, r, domain, dtype, feasLB = -inf, feasUB = inf):
     lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
     isBoundSurf = type(lb_ub) == boundsurf
     lb_ub_resolved = lb_ub.resolve()[0] if isBoundSurf else lb_ub
+    
+    if feasLB != -inf or feasUB != inf:
+        from Interval import adjustBounds
+        lb_ub_resolved, definiteRange = adjustBounds(lb_ub_resolved, definiteRange, feasLB, feasUB)
+        lb_ub.definiteRange = definiteRange
+        
     lb, ub = lb_ub_resolved
     Inds = split(ub <= 0, lb >= 0)
     assert len(Inds) == 3
@@ -414,7 +420,7 @@ def devided_interval(inp, r, domain, dtype):
     for j, ind in enumerate(Inds[:-1]):
         if ind.size != 0:
             tmp = defaultIntervalEngine(lb_ub, r.fun, r.d, monotonity=monotonities[j], 
-                                        convexity=convexities[j], domain_ind = ind)[0]
+                                        convexity=convexities[j], feasLB = feasLB, feasUB = feasUB, domain_ind = ind)[0]
             if ind.size == m:
                 return tmp, tmp.definiteRange
             rr.append(tmp)

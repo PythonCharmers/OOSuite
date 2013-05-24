@@ -165,9 +165,10 @@ def arcsin(inp):
         return distribution.stochasticDistribution(arcsin(inp.values), inp.probabilities.copy())._update(inp)       
     if not isinstance(inp, oofun): 
         return np.arcsin(inp)
-    r = oofun(st_arcsin, inp, d = lambda x: Diag(1.0 / np.sqrt(1.0 - x**2)), vectorized = True)
+    r = oofun(st_arcsin, inp, d = lambda x: Diag(1.0 / np.sqrt(1.0 - x**2)), vectorized = True, 
+    engine_monotonity = 1, convexities = (-1, 1))
 #    r.getDefiniteRange = get_box1_DefiniteRange
-    r._interval_ = lambda domain, dtype: box_1_interval(inp, np.arcsin, r.d, domain, dtype)
+    r._interval_ = lambda domain, dtype: box_1_interval(inp, r, np.arcsin, domain, dtype)
     r.attach((inp>-1)('arcsin_domain_lower_bound_%d' % r._id, tol=-1e-7), (inp<1)('arcsin_domain_upper_bound_%d' % r._id, tol=-1e-7))
     return r
 
@@ -186,9 +187,10 @@ def arccos(inp):
     if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(arccos(inp.values), inp.probabilities.copy())._update(inp)     
     if not isinstance(inp, oofun): return np.arccos(inp)
-    r = oofun(st_arccos, inp, d = lambda x: Diag(-1.0 / np.sqrt(1.0 - x**2)), vectorized = True)
+    r = oofun(st_arccos, inp, d = lambda x: Diag(-1.0 / np.sqrt(1.0 - x**2)), vectorized = True, 
+    engine_monotonity = -1, convexities = (1, -1))
 #    r.getDefiniteRange = get_box1_DefiniteRange
-    r._interval_ = lambda domain, dtype: box_1_interval(inp, np.arccos, r.d, domain, dtype)
+    r._interval_ = lambda domain, dtype: box_1_interval(inp, r, np.arccos, domain, dtype)
     r.attach((inp>-1)('arccos_domain_lower_bound_%d' % r._id, tol=-1e-7), (inp<1)('arccos_domain_upper_bound_%d' % r._id, tol=-1e-7))
     return r
 
@@ -309,9 +311,10 @@ def arctanh(inp):
     if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(arctanh(inp.values), inp.probabilities.copy())._update(inp)          
     if not isinstance(inp, oofun): return np.arctanh(inp)
-    r = oofun(st_arctanh, inp, d = lambda x: Diag(1.0/(1.0-x**2)), vectorized = True)
+    r = oofun(st_arctanh, inp, d = lambda x: Diag(1.0/(1.0-x**2)), vectorized = True, 
+    engine_monotonity = 1, convexities = (-1, 1))
 #    r.getDefiniteRange = get_box1_DefiniteRange
-    r._interval_ = lambda domain, dtype: box_1_interval(inp, np.arctanh, r.d, domain, dtype)
+    r._interval_ = lambda domain, dtype: box_1_interval(inp, r, np.arctanh, domain, dtype)
     return r
 
 __all__ += ['tanh', 'arctanh']
