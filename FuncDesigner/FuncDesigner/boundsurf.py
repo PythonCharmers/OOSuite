@@ -57,6 +57,13 @@ class surf(object):
         self.resolved = PythonSum(self.rendered) + self.c
         self.isRendered = True
     
+    def extract(b, ind): 
+        d = dict((k, v if v.size == 1 else v[ind]) for k, v in b.d.items()) 
+        C = b.c 
+        c = C if C.size == 1 else C[ind] 
+        return surf(d, c) 
+    
+    
     def __add__(self, other):
         if type(other) == surf:
 #            if other.isRendered and not self.isRendered:
@@ -188,6 +195,7 @@ class boundsurf(object):#object is added for Python2 compatibility
     
     # TODO: mb rework it
     __sub__ = lambda self, other: self.__add__(-other)
+    __rsub__ = lambda self, other: (-self).__add__(other)
         
     def __mul__(self, other):
         R1 = self.resolve()[0]
@@ -213,12 +221,12 @@ class boundsurf(object):#object is added for Python2 compatibility
             else:
                 rr = (self.l * R2, self.u * R2) if R2 >= 0 else (self.u * R2, self.l * R2)
         elif isArray:
-            
-            if 1:
-                assert selfPositive or selfNegative, 'unimplemented yet'
-            
+            assert R2Positive or R2Negative, 'bug or unimplemented yet'
+            if selfPositive:
+                rr = (self.l * R2[0], self.u * R2[1]) if R2Positive else (self.u * R2[0], self.l * R2[1])
+            elif selfNegative:
+                rr = (self.u * R2[1], self.l * R2[0]) if R2Negative else (self.l * R2[1], self.u * R2[0])
             else:
-                assert R2Positive or R2Negative, 'bug or unimplemented yet'
                 lb1, ub1 = R1
                 Ind1 = lb1 >= 0
                 ind1 = where(Ind1)[0]
@@ -229,26 +237,22 @@ class boundsurf(object):#object is added for Python2 compatibility
                 
                 lb2, ub2 = R2 if R2Positive else (-R2[1], -R2[0])
 
-                tmp_l1 = lb2[ind1] * self.l[ind1]
-                tmp_l2 = ub2[ind2] * self.l[ind2]
+                tmp_l1 = lb2[ind1] * self.l.extract(ind1)
+                tmp_l2 = ub2[ind2] * self.l.extract(ind2)
+                tmp_u1 = ub2[ind1] * self.u.extract(ind1)
+                tmp_u2 = lb2[ind2] * self.u.extract(ind2)
+                
                 l2, u2 = lb2[ind3], ub2[ind3]
                 l1, u1 = lb1[ind3], ub1[ind3]
                 Tmp = np.vstack((l1*l2, l1*u2, l2*u1, u1*u2))
                 tmp_l3 = nanmin(Tmp, axis=0)
                 tmp_u3 = nanmax(Tmp, axis=0)
+                tmp_l = surf_join((ind1, ind2, ind3), (tmp_l1, tmp_l2, surf({}, tmp_l3)))
+                tmp_u = surf_join((ind1, ind2, ind3), (tmp_u1, tmp_u2, surf({}, tmp_u3)))
                 
-                if R2Negative:
-                    # TODO: implement revert
-                    pass
-                rr = (tmp_l, tmp_u)
+                rr = (tmp_l, tmp_u) if R2Positive else (-tmp_u, -tmp_l)
 
 
-            if selfPositive: 
-                rr = (self.l * R2[0], self.u * R2[1]) if R2Positive else (self.u * R2[0], self.l * R2[1])
-            else:#selfNegative
-                assert selfNegative
-                rr = (self.u * R2[1], self.l * R2[0]) if R2Negative else (self.l * R2[1], self.u * R2[0])
-            
         elif isBoundSurf:
             assert selfPositive or selfNegative, 'bug or unimplemented yet'
             definiteRange = logical_and(definiteRange, other.definiteRange)

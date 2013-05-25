@@ -231,7 +231,8 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):
         
         if type(lb2_ub2) != boundsurf and type(lb1_ub1) == boundsurf:
             lb2_ub2, lb1_ub1 = lb1_ub1, lb2_ub2
-        tmp1 = lb1_ub1.resolve()[0] if type(lb1_ub1) == boundsurf else lb1_ub1
+        firstIsBoundsurf = type(lb1_ub1) == boundsurf
+        tmp1 = lb1_ub1.resolve()[0] if firstIsBoundsurf else lb1_ub1
         
         if type(lb2_ub2) == boundsurf:
             tmp2 = lb2_ub2.resolve()[0]
@@ -239,9 +240,11 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):
             t2_negative = all(tmp2 <= 0)
             # TODO: handle zeros wrt inf
             
+            t1_positive = all(tmp1 >= 0)
+            t1_negative = all(tmp1 <= 0)
+            
             if t2_positive or t2_negative:# and not any(np.isinf(tmp1)) and not any(np.isinf(tmp2)):
-                t1_positive = all(tmp1 >= 0)
-                t1_negative = all(tmp1 <= 0)
+
                 if t1_positive or t1_negative:
                     ind_z1 = logical_or(tmp1[0] == 0, tmp1[1] == 0)
                     ind_z2 = logical_or(tmp2[0] == 0, tmp2[1] == 0)
@@ -250,6 +253,9 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):
                     if not any(logical_and(ind_z1, ind_i2)) and not any(logical_and(ind_z2, ind_i1)):
                         r = lb1_ub1 * lb2_ub2
                         return r, r.definiteRange
+            elif not firstIsBoundsurf and (t1_positive or t1_negative):
+                r = lb1_ub1 * lb2_ub2
+                return r, r.definiteRange
             elif domain.surf_preference and not any(np.isinf(tmp1)) and not any(np.isinf(tmp2)):
                 r = 0.25 * ((lb1_ub1 + lb2_ub2) ** 2 - (lb1_ub1 - lb2_ub2) ** 2)
 #                Tmp1, Tmp2 = nanmin(tmp1)-1e-16, nanmin(tmp2)-1e-16
