@@ -407,7 +407,7 @@ def pow_const_interval(self, r, other, domain, dtype):
         
         domain_isNegative = all(lb_ub_resolved <= 0)
         feasLB = -inf if other_is_int else 0.0
-        if other > 0 or domain_isPositive or domain_isNegative:
+        if other > 0 or domain_isNegative:
             return devided_interval(self, r, domain, dtype, feasLB = feasLB)
 
     allowBoundSurf = True if isscalar(other) and other == 0.5 else False
@@ -454,7 +454,7 @@ def pow_oofun_interval(self, other, domain, dtype):
     lb1, ub1 = lb1_ub1[0], lb1_ub1[1]
     lb2_ub2, definiteRange2 = other._interval(domain, dtype)
     lb2, ub2 = lb2_ub2[0], lb2_ub2[1]
-    T = vstack((lb1 ** lb2, lb1** ub2, ub1**lb1, ub1**ub2))
+    T = vstack((lb1 ** lb2, lb1** ub2, ub1**lb2, ub1**ub2))
     t_min, t_max = nanmin(T, 0), nanmax(T, 0)
     definiteRange = logical_and(definiteRange1, definiteRange2)
     ind1 = lb1 < 0
