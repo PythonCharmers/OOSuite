@@ -74,12 +74,17 @@ class interalg(baseSolver):
             dataType = getattr(np, dataType)
             self.dataType = dataType
         
+        vv = list(p._freeVarsList)
+        x0 = dict((v, p._x0[v]) for v in vv)
+        domain = oopoint([(v, [atleast_1d(p.lb[i]), atleast_1d(p.ub[i])]) for i,  v in enumerate(vv)], skipArrayCast = True)
+        domain.dictOfFixedFuncs = p.dictOfFixedFuncs
+        
         isIP = p.probType == 'IP'
         if isIP:
             pb = r14IP
             p._F = asarray(0, self.dataType)
             p._residual = 0.0
-            f_int = p.user.f[0].interval(oopoint(p.domain), self.dataType)
+            f_int = p.user.f[0].interval(domain, self.dataType)
             p._r0 = prod(p.ub-p.lb) * (f_int.ub - f_int.lb)
             p._volume = 0.0
             p.kernelIterFuncs.pop(IS_NAN_IN_X)
@@ -96,9 +101,7 @@ class interalg(baseSolver):
                 use oovars(n) instead of oovar(size=n),
                 elseware correct result is not guaranteed
                 '''% self.__name__)
-                
-        vv = list(p._freeVarsList)
-        x0 = dict((v, p._x0[v]) for v in vv)
+
         
         for val in x0.values():
             if isinstance(val,  (list, tuple, np.ndarray)) and len(val) > 1:
@@ -222,8 +225,6 @@ class interalg(baseSolver):
 #            # handles 'auto' as well
 #            self.dataHandling ='sorted'
 
-        domain = oopoint([(v, [p.lb[i], p.ub[i]]) for i,  v in enumerate(vv)])
-        domain.dictOfFixedFuncs = p.dictOfFixedFuncs
         #from FuncDesigner.ooFun import BooleanOOFun, SmoothFDConstraint
         
         if self.dataHandling == 'auto':
