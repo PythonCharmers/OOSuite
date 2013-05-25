@@ -395,6 +395,7 @@ split = lambda condition1, condition2: \
     )
 
 def devided_interval(inp, r, domain, dtype, feasLB = -inf, feasUB = inf):
+                         
     lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
     isBoundSurf = type(lb_ub) == boundsurf
     lb_ub_resolved = lb_ub.resolve()[0] if isBoundSurf else lb_ub
@@ -408,9 +409,10 @@ def devided_interval(inp, r, domain, dtype, feasLB = -inf, feasUB = inf):
     Inds = split(ub <= 0, lb >= 0)
     assert len(Inds) == 3
     
-    convexities = r.convexities
     monotonities = [r.engine_monotonity] * (len(Inds)-1) if r.engine_monotonity is not np.nan \
     else r.monotonities
+    
+    convexities = [r.engine_convexity] * (len(Inds)-1) if r.engine_convexity is not np.nan else r.convexities
     
     m = PythonSum(ind_.size for ind_ in Inds)
     inds, rr = [], []

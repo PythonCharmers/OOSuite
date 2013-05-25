@@ -4,8 +4,7 @@ searchsorted, logical_not
 import numpy as np
 from FDmisc import FuncDesignerException
 from FuncDesigner.multiarray import multiarray
-from boundsurf import boundsurf, surf
-
+from boundsurf import boundsurf, surf, devided_interval
 
 try:
     from bottleneck import nanmin, nanmax
@@ -37,24 +36,24 @@ def ZeroCriticalPoints(lb_ub):
 #    return arange(ceil(arg_infinum), ceil(1.0+arg_supremum), dtype=float).tolist()
 
 
-# TODO: split TrigonometryCriticalPoints into (pi/2) *(2k+1) and (pi/2) *(2k)
-def TrigonometryCriticalPoints(lb_ub):
-    arg_infinum, arg_supremum = lb_ub[0], lb_ub[1]
-    # returns points with coords n * pi/2, arg_infinum <= n * pi/2<= arg_supremum,n -array of integers
-    arrN = asarray(atleast_1d(floor(2 * arg_infinum / pi)), int)
-    Tmp = []
-    for i in range(1, 6):
-        th = (arrN+i)*pi/2
-        #ind = where(logical_and(arg_infinum < th,  th < arg_supremum))[0]
-        ind = logical_and(arg_infinum < th,  th < arg_supremum)
-        #if ind.size == 0: break
-        if not any(ind): break
-        tmp = atleast_1d(Copy(arg_infinum))
-        tmp[atleast_1d(ind)] = asarray((arrN[ind]+i)*pi/2, dtype = tmp.dtype)
-        Tmp.append(tmp)
-    return Tmp
-    # 6 instead of  5 for more safety, e.g. small numerical rounding effects
-    #return [i / 2.0 * pi for i in range(n1, amin((n1+6, n2))) if (arg_infinum < (i / 2.0) * pi <  arg_supremum)]
+## TODO: split TrigonometryCriticalPoints into (pi/2) *(2k+1) and (pi/2) *(2k)
+#def TrigonometryCriticalPoints(lb_ub):
+#    arg_infinum, arg_supremum = lb_ub[0], lb_ub[1]
+#    # returns points with coords n * pi/2, arg_infinum <= n * pi/2<= arg_supremum,n -array of integers
+#    arrN = asarray(atleast_1d(floor(2 * arg_infinum / pi)), int)
+#    Tmp = []
+#    for i in range(1, 6):
+#        th = (arrN+i)*pi/2
+#        #ind = where(logical_and(arg_infinum < th,  th < arg_supremum))[0]
+#        ind = logical_and(arg_infinum < th,  th < arg_supremum)
+#        #if ind.size == 0: break
+#        if not any(ind): break
+#        tmp = atleast_1d(Copy(arg_infinum))
+#        tmp[atleast_1d(ind)] = asarray((arrN[ind]+i)*pi/2, dtype = tmp.dtype)
+#        Tmp.append(tmp)
+#    return Tmp
+#    # 6 instead of  5 for more safety, e.g. small numerical rounding effects
+#    #return [i / 2.0 * pi for i in range(n1, amin((n1+6, n2))) if (arg_infinum < (i / 2.0) * pi <  arg_supremum)]
 
 #def halph_pi_x_2k_plus_one_points(arg_infinum, arg_supremum):
 #    n1 = asarray(floor(2 * arg_infinum / pi), int)
@@ -392,27 +391,18 @@ def rdiv_interval(self, other, domain, dtype):
 
     return vstack((r1, r2)), definiteRange
 
-def pow_const_interval(self, other, domain, dtype):
+def pow_const_interval(self, r, other, domain, dtype):
     lb_ub, definiteRange = self._interval(domain, dtype, allowBoundSurf = True)
     isBoundSurf = type(lb_ub) == boundsurf
     lb_ub_resolved = lb_ub.resolve()[0] if isBoundSurf else lb_ub
+    other_is_int = asarray(other, int) == other
     if isBoundSurf and not any(np.isinf(lb_ub_resolved)):
         lb_ub_resolved = lb_ub.resolve()[0]
-        other_isPositive = other > 0
         domain_isPositive = all(lb_ub_resolved >= 0)
-        other_is_int = asarray(other, int) == other
-        if domain_isPositive or (other_is_int and other > 0 and other % 2 == 0):
-            return defaultIntervalEngine(lb_ub, lambda x: x**other, lambda x: other * x ** (other-1), 
-                         monotonity = 1 if other_isPositive and domain_isPositive else np.nan, 
-                         convexity = 1 if other > 1.0 or other < 0 else -1, 
-                         criticalPoint = 0.0, criticalPointValue = 0.0)
-                         
-        domain_isNegative = all(lb_ub_resolved <= 0.0)
-        if domain_isNegative and other_is_int:
-            return  defaultIntervalEngine(lb_ub, lambda x: x**other, lambda x: other * x**(other-1), 
-                                     monotonity = 1 if other % 2 == 0 else -1,
-                                     convexity = 1 if other % 2 == 0 else -1, 
-                                     criticalPoint = np.nan, criticalPointValue = np.nan)
+        domain_isNegative = all(lb_ub_resolved <= 0)
+        feasLB = -inf if other_is_int or domain_isPositive else 0.0
+        if other > 0 or domain_isPositive or domain_isNegative:
+            return devided_interval(self, r, domain, dtype, feasLB = feasLB)
 
     allowBoundSurf = True if isscalar(other) and other == 0.5 else False
         

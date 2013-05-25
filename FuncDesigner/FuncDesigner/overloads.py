@@ -5,7 +5,7 @@ import numpy as np
 from FDmisc import FuncDesignerException, Diag, Eye, raise_except, diagonal, DiagonalType, dictSum
 from ooFun import atleast_oofun, Vstack, Copy
 from ooarray import ooarray
-from Interval import TrigonometryCriticalPoints, nonnegative_interval, ZeroCriticalPointsInterval, \
+from Interval import nonnegative_interval, ZeroCriticalPointsInterval, \
 box_1_interval, defaultIntervalEngine
 from numpy import atleast_1d, logical_and
 from FuncDesigner.multiarray import multiarray
@@ -133,8 +133,7 @@ def sin(inp):
     elif not isinstance(inp, oofun): return np.sin(inp)
     r = oofun(st_sin, inp, 
                  d = lambda x: Diag(np.cos(x)), 
-                 vectorized = True, 
-                 criticalPoints = TrigonometryCriticalPoints)
+                 vectorized = True)
     r._interval_ = lambda domain, dtype: sin_interval(r, inp, domain, dtype)
     return r
 

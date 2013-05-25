@@ -674,6 +674,7 @@ class oofun(object):
         d_y = lambda x, y: x ** y * log(x) if (isscalar(y) or y.size == 1) and not isinstance(x, multiarray) else Diag(x ** y * log(x))
         
         other_is_oofun = isinstance(other, oofun)
+        isInt = isscalar(other) and int(other) == other
         if not other_is_oofun:
             if isscalar(other):
                 if type(other) == int: # TODO: handle numpy integer types
@@ -687,18 +688,29 @@ class oofun(object):
             f = lambda x: asanyarray(x) ** other
             d = lambda x: d_x(x, other)
             input = self
-            interval = lambda *args, **kw: pow_const_interval(self, other, *args, **kw)
         else:
             f = lambda x, y: asanyarray(x) ** y
             d = (d_x, d_y)
             input = [self, other]
-            interval = lambda *args, **kw: pow_oofun_interval(self, other, *args, **kw)
             
-        r = oofun(f, input, d = d, _interval_=interval)
+        r = oofun(f, input, d = d)
         if not other_is_oofun:
             r.getOrder = lambda *args, **kw: \
-            other * self.getOrder(*args, **kw) if isscalar(other) and int(other) == other and other >= 0 \
+            other * self.getOrder(*args, **kw) if isInt and other >= 0 \
             else inf
+            r._interval_ = lambda *args, **kw: pow_const_interval(self, r, other, *args, **kw)
+            if isscalar(other) or other.size == 1:
+                if other > 0 or (isInt and other%2 == 1): 
+                    r.engine_monotonity = 1
+                    r.convexities = (-1, (1 if other > 1 or other < 0 else -1))
+                elif isInt and other%2 == 0:
+                    r.monotonities = (-1, 1)
+                    r.engine_convexity = 1
+                else: # not int
+                    r.engine_monotonity = other > 0
+                    r.engine_convexity  = other > 1
+        else:
+            r._interval_ = lambda *args, **kw: pow_oofun_interval(self, other, *args, **kw)
             
         if isinstance(other, oofun) or (not isinstance(other, int) or (type(other) == ndarray and other.flatten()[0] != int)): 
             r.attach((self>0)('pow_domain_%d'%r._id, tol=-1e-7)) # TODO: if "other" is fixed oofun with integer value - omit this
