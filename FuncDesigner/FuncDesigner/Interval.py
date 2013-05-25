@@ -397,10 +397,16 @@ def pow_const_interval(self, r, other, domain, dtype):
     lb_ub_resolved = lb_ub.resolve()[0] if isBoundSurf else lb_ub
     other_is_int = asarray(other, int) == other
     if isBoundSurf and not any(np.isinf(lb_ub_resolved)):
-        lb_ub_resolved = lb_ub.resolve()[0]
         domain_isPositive = all(lb_ub_resolved >= 0)
+        
+        if domain_isPositive or (other_is_int and other > 0 and other % 2 == 0): 
+            return defaultIntervalEngine(lb_ub, r.fun, r.d,  
+                monotonity = 1 if other > 0 and domain_isPositive else np.nan,  
+                convexity = 1 if other > 1.0 or other < 0 else -1,  
+                criticalPoint = 0.0, criticalPointValue = 0.0) 
+        
         domain_isNegative = all(lb_ub_resolved <= 0)
-        feasLB = -inf if other_is_int or domain_isPositive else 0.0
+        feasLB = -inf if other_is_int else 0.0
         if other > 0 or domain_isPositive or domain_isNegative:
             return devided_interval(self, r, domain, dtype, feasLB = feasLB)
 
