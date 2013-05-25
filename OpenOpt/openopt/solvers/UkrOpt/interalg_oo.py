@@ -79,7 +79,7 @@ class interalg(baseSolver):
             pb = r14IP
             p._F = asarray(0, self.dataType)
             p._residual = 0.0
-            f_int = p.user.f[0].interval(p.domain, self.dataType)
+            f_int = p.user.f[0].interval(oopoint(p.domain), self.dataType)
             p._r0 = prod(p.ub-p.lb) * (f_int.ub - f_int.lb)
             p._volume = 0.0
             p.kernelIterFuncs.pop(IS_NAN_IN_X)
