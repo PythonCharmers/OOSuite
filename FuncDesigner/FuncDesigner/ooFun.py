@@ -1151,11 +1151,13 @@ class oofun(object):
 
             # TODO: rework it (for input with ooarays)
             try:
-                t1 = dict([(elem, copy((x if isinstance(x, dict) else x.xf)[elem])) for elem in dep]) if self.isCostly else None
-                t2 = tmp.copy() if isinstance(tmp, (ndarray, Stochastic)) else tmp
-                self._f_key_prev, self._f_val_prev = t1, t2
-                if type(x) == ooPoint: 
-                    self._point_id = x._id                
+                t1 = dict([(elem, (x if isinstance(x, dict) else x.xf)[elem]) for elem in dep]) if self.isCostly else None
+                #t1 = dict([(elem, copy((x if isinstance(x, dict) else x.xf)[elem])) for elem in dep]) if self.isCostly else None
+                if t1 is not None:
+                    t2 = tmp.copy() if isinstance(tmp, (ndarray, Stochastic)) else tmp
+                    self._f_key_prev, self._f_val_prev = t1, t2
+                    if type(x) == ooPoint: 
+                        self._point_id = x._id                
             except:
                 pass
             
