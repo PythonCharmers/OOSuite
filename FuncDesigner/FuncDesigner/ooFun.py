@@ -5,6 +5,8 @@ ones, ndarray, where, array, nan, vstack, eye, array_equal, isscalar, log, hstac
 isnan, asscalar, zeros_like, ones_like, logical_and, logical_or, isinf, logical_not, logical_xor, \
 tile, float64, searchsorted, int8, int16, int32, int64, isfinite, log2, string_, asanyarray, bool_
 
+import operator
+
 #from traceback import extract_stack 
 try:
     from bottleneck import nanmin, nanmax
@@ -247,7 +249,7 @@ class oofun(object):
     
     def interval(self, domain, dtype = float, resetStoredIntervals = True, allowBoundSurf = False):
         if type(domain) != ooPoint:
-            domain = ooPoint(domain, skipArrayCast = True)
+            domain = ooPoint(domain)#, skipArrayCast = True)
 
         domain.resolveSchedule = {} if domain.surf_preference else self.resolveSchedule
             
@@ -489,7 +491,7 @@ class oofun(object):
                 raise FuncDesignerException('for oofun summation a+b should be size(a)=size(b) or size(a)=1 or size(b)=1')        
 
         if isinstance(other, oofun):
-            r = oofun(lambda x, y: x+y, [self, other], d = (lambda x, y: aux_d(x, y), lambda x, y: aux_d(y, x)), _isSum = True)
+            r = oofun(operator.add, [self, other], d = (lambda x, y: aux_d(x, y), lambda x, y: aux_d(y, x)), _isSum = True)
             r._summation_elements = [self, other]
             r.discrete = self.discrete and other.discrete
             r.getOrder = lambda *args, **kwargs: max((self.getOrder(*args, **kwargs), other.getOrder(*args, **kwargs)))
@@ -524,7 +526,7 @@ class oofun(object):
         if self._isSum:
             from overloads import sum as FDsum
             return FDsum([-elem for elem in self._summation_elements])
-        r = oofun(lambda a: -a, self, d = lambda a: -Eye(Len(a)))
+        r = oofun(operator.neg, self, d = lambda a: -Eye(Len(a)))
         r._neg_elem = self
         r._getFuncCalcEngine = lambda *args,  **kwargs: -self._getFuncCalcEngine(*args,  **kwargs)
         r.getOrder = self.getOrder
@@ -547,7 +549,7 @@ class oofun(object):
             return self * (1.0 / other) # to make available using _prod_elements
         if isinstance(other, oofun):
 #            return self * (1.0/other)
-            r = oofun(lambda x, y: x/y, [self, other])
+            r = oofun(operator.truediv, [self, other])
             def aux_dx(x, y):
                 # TODO: handle float128
                 y = asfarray(y) 
@@ -566,7 +568,7 @@ class oofun(object):
                 # TODO: handle float128
                 x = asfarray(x)
                 Xsize, Ysize = Len(x), Len(y)
-                r = -x / y**2
+                r = operator.truediv(-x, y**2)
                 if Ysize != 1:
                     assert Xsize == Ysize or Xsize == 1, 'incorrect size for oofun devision'
                     r = Diag(r)
@@ -580,7 +582,7 @@ class oofun(object):
         else:
             # TODO: mb remove it?
             other = array(other,'float')# TODO: handle float128
-            r = oofun(lambda a: a/other, self, discrete = self.discrete)# TODO: involve sparsity if possible!
+            r = oofun(lambda a: operator.truediv(a, other), self, discrete = self.discrete)# TODO: involve sparsity if possible!
             r.getOrder = self.getOrder
             r._getFuncCalcEngine = lambda *args,  **kwargs: self._getFuncCalcEngine(*args,  **kwargs) / other
             #r.d = lambda x: 1.0/other if (isscalar(x) or x.size == 1) else Diag(ones(x.size)/other) if other.size > 1 \
@@ -607,8 +609,8 @@ class oofun(object):
             return other.__div__(self)
        
         other = array(other, 'float') # TODO: sparse matrices handling!
-        r = oofun(lambda x: other/x, self, discrete = self.discrete)
-        r.d = lambda x: Diag((- other) / x**2)
+        r = oofun(lambda x: operator.truediv(other, x), self, discrete = self.discrete)
+        r.d = lambda x: Diag(operator.truediv(- other, x**2))
 
         r._interval_ = lambda *args, **kw: rdiv_interval(self, other, *args, **kw)
         #r.isCostly = True
@@ -636,7 +638,7 @@ class oofun(object):
                     return (self._prod_elements[0] * other) * self._prod_elements[-1]
         
         if isOtherOOFun:
-            r = oofun(lambda x, y: x*y, [self, other])
+            r = oofun(operator.mul, [self, other])
             r.d = (lambda x, y: mul_aux_d(x, y), lambda x, y: mul_aux_d(y, x))
             r.getOrder = lambda *args, **kwargs: self.getOrder(*args, **kwargs) + other.getOrder(*args, **kwargs)
         else:

@@ -8,7 +8,7 @@
 
 from FDmisc import FuncDesignerException
 from baseClasses import Stochastic
-from numpy import asanyarray, ndarray, isscalar
+from numpy import asanyarray, ndarray, isscalar, atleast_1d
 try:
     from scipy.sparse import isspmatrix
 except ImportError:
@@ -32,34 +32,37 @@ class ooPoint(dict):
     useAsMutable = False
     exactRange = True
     surf_preference = False
+    skipArrayCast = False
     
     def __init__(self, *args, **kwargs):
         self.storedIntervals = {}
         self.storedSums = {}
         self.dictOfFixedFuncs = {}
         
-        for fn in ('isMultiPoint', 'modificationVar', 'useSave', 
+        for fn in ('isMultiPoint', 'modificationVar', 'useSave', 'skipArrayCast', 
         'useAsMutable', 'maxDistributionSize', 'resolveSchedule'):
             tmp = kwargs.get(fn, None)
             if tmp is not None:
                 setattr(self, fn, tmp)
         
-        if kwargs.get('skipArrayCast', False): 
-            Asanyarray = lambda arg: arg
-        else: 
-            Asanyarray = lambda arg: asanyarray(arg)  if not isinstance(arg, Stochastic) else arg#if not isspmatrix(arg) else arg
+#        if self.skipArrayCast: 
+#            Asanyarray = lambda arg: arg
+#        else: 
+#            Asanyarray = lambda arg: asanyarray(arg) if not isinstance(arg, Stochastic) else arg#if not isspmatrix(arg) else arg
             
-        # TODO: remove float() after Python 3 migraion
-        if args:
-            if not isinstance(args[0], dict):
-                items = [(key, Asanyarray(val) if not isscalar(val) else float(val) if type(val) == int else val) for key, val in args[0]] 
-            else:
-                items = [(key, Asanyarray(val) if not isscalar(val) else float(val) if type(val) == int else val) for key, val in args[0].items()] 
-        elif kwargs:
-            items = [(key, Asanyarray(val) if not isscalar(val) else float(val) if type(val) == int else val) for key, val in kwargs.items()]
+        assert args or kwargs, 'incorrect oopoint constructor arguments'
+        Iterator = (args[0].items() if isinstance(args[0], dict) else args[0]) if args else kwargs.items()
+        # TODO: remove float() after Python 3 migration
+        
+        if self.skipArrayCast: 
+            items = Iterator#((key, (Asanyarray(val[0]), Asanyarray(val[1])) if type(val) == tuple\
+#            else float(val) if type(val) == int\
+#            else val) for key, val in Iterator)
         else:
-            raise FuncDesignerException('incorrect oopoint constructor arguments')
-            
+            items = ((key, (atleast_1d(val[0]), atleast_1d(val[1])) if type(val) in (list, tuple)\
+            else atleast_1d(val) if not isinstance(val, Stochastic)\
+            else val)\
+            for key, val in Iterator)
         dict.__init__(self, items)
 
 # TODO: fix it wrt ode2.py

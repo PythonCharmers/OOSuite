@@ -14,6 +14,8 @@ from baseClasses import Stochastic
 from boundsurf import boundsurf, surf
 
 f_none = lambda *args, **kw: None
+One = array(1.0)
+Zero = array(0.0)
 class oovar(oofun):
     is_oovar = True
     domain = None
@@ -61,7 +63,7 @@ class oovar(oofun):
         if self in domain.resolveSchedule:
             return vstack((infinum, supremum)), True
         else:
-            S = surf({self: array(1.0)}, array(0.0))
+            S = surf({self: One}, Zero)
             return boundsurf(S, S, True, domain), True
 #        if 1 and domain.isMultiPoint:
 #            return boundsurf(surf({self:1.0}, 0), surf({self:1.0}, 0), True), True

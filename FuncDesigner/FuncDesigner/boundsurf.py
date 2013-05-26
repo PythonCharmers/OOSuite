@@ -228,30 +228,24 @@ class boundsurf(object):#object is added for Python2 compatibility
                 rr = (self.u * R2[1], self.l * R2[0]) if R2Negative else (self.l * R2[1], self.u * R2[0])
             else:
                 lb1, ub1 = R1
-                Ind1 = lb1 >= 0
-                ind1 = where(Ind1)[0]
-                Ind2 = ub1 <= 0
-                ind2 = where(Ind2)[0]
-                ind3 = where(logical_not(logical_or(Ind1, Ind2)))[0]
-                tmp_l, tmp_u = np.empty_like(lb1), np.empty_like(ub1)
+                ind_positive, ind_negative, ind3 = split(lb1 >= 0, ub1 <= 0)
                 
-                lb2, ub2 = R2 if R2Positive else (-R2[1], -R2[0])
+                other_lb, other_ub = R2 if R2Positive else (-R2[1], -R2[0])
 
-                tmp_l1 = lb2[ind1] * self.l.extract(ind1)
-                tmp_l2 = ub2[ind2] * self.l.extract(ind2)
-                tmp_u1 = ub2[ind1] * self.u.extract(ind1)
-                tmp_u2 = lb2[ind2] * self.u.extract(ind2)
+                tmp_l1 = other_lb[ind_positive] * self.l.extract(ind_positive)
+                tmp_l2 = other_ub[ind_negative] * self.l.extract(ind_negative)
+                tmp_u1 = other_ub[ind_positive] * self.u.extract(ind_positive)
+                tmp_u2 = other_lb[ind_negative] * self.u.extract(ind_negative)
                 
-                l2, u2 = lb2[ind3], ub2[ind3]
+                l2, u2 = other_lb[ind3], other_ub[ind3]
                 l1, u1 = lb1[ind3], ub1[ind3]
                 Tmp = np.vstack((l1*l2, l1*u2, l2*u1, u1*u2))
                 tmp_l3 = nanmin(Tmp, axis=0)
                 tmp_u3 = nanmax(Tmp, axis=0)
-                tmp_l = surf_join((ind1, ind2, ind3), (tmp_l1, tmp_l2, surf({}, tmp_l3)))
-                tmp_u = surf_join((ind1, ind2, ind3), (tmp_u1, tmp_u2, surf({}, tmp_u3)))
+                tmp_l = surf_join((ind_positive, ind_negative, ind3), (tmp_l1, tmp_l2, surf({}, tmp_l3)))
+                tmp_u = surf_join((ind_positive, ind_negative, ind3), (tmp_u1, tmp_u2, surf({}, tmp_u3)))
                 
                 rr = (tmp_l, tmp_u) if R2Positive else (-tmp_u, -tmp_l)
-
 
         elif isBoundSurf:
             assert selfPositive or selfNegative, 'bug or unimplemented yet'
