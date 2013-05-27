@@ -246,12 +246,12 @@ class boundsurf(object):#object is added for Python2 compatibility
                 l2, u2 = other_lb[ind_z], other_ub[ind_z]
                 l1, u1 = lb1[ind_z], ub1[ind_z]
                 Tmp = np.vstack((l1*l2, l1*u2, l2*u1, u1*u2))
-                tmp_l3 = nanmin(Tmp, axis=0)
-                tmp_u3 = nanmax(Tmp, axis=0)
+                tmp_l3 = surf({}, nanmin(Tmp, axis=0))
+                tmp_u3 = surf({}, nanmax(Tmp, axis=0))
 #                    tmp_l3 = other_ub[ind_z] * self.l.extract(ind_z)
 #                    tmp_u3 = other_ub[ind_z] * self.u.extract(ind_z)
-                tmp_l = surf_join((ind_positive, ind_negative, ind_z), (tmp_l1, tmp_l2, surf({}, tmp_l3)))
-                tmp_u = surf_join((ind_positive, ind_negative, ind_z), (tmp_u1, tmp_u2, surf({}, tmp_u3)))
+                tmp_l = surf_join((ind_positive, ind_negative, ind_z), (tmp_l1, tmp_l2, tmp_l3))
+                tmp_u = surf_join((ind_positive, ind_negative, ind_z), (tmp_u1, tmp_u2, tmp_u3))
 
                 rr = (tmp_l, tmp_u) if R2Positive else (-tmp_u, -tmp_l)
             elif selfPositive or selfNegative:
@@ -264,15 +264,19 @@ class boundsurf(object):#object is added for Python2 compatibility
                 tmp_l2 = other_lb[ind_other_negative] * u.extract(ind_other_negative)
                 tmp_u1 = other_ub[ind_other_positive] * u.extract(ind_other_positive)
                 tmp_u2 = other_ub[ind_other_negative] * l.extract(ind_other_negative)
+                if 1:
+                    uu = u.extract(ind_z2)
+                    tmp_l3 = other_lb[ind_z2] * uu
+                    tmp_u3 = other_ub[ind_z2] * uu
+                else:
+                    l2, u2 = other_lb[ind_z2], other_ub[ind_z2]
+                    l1, u1 = lb1[ind_z2], ub1[ind_z2]
+                    Tmp = np.vstack((l1*l2, l1*u2, l2*u1, u1*u2))
+                    tmp_l3 = surf({}, nanmin(Tmp, axis=0))
+                    tmp_u3 = surf({}, nanmax(Tmp, axis=0))
                 
-                l2, u2 = other_lb[ind_z2], other_ub[ind_z2]
-                l1, u1 = lb1[ind_z2], ub1[ind_z2]
-                Tmp = np.vstack((l1*l2, l1*u2, l2*u1, u1*u2))
-                tmp_l3 = nanmin(Tmp, axis=0)
-                tmp_u3 = nanmax(Tmp, axis=0)
-                
-                tmp_l = surf_join((ind_other_positive, ind_other_negative, ind_z2), (tmp_l1, tmp_l2, surf({}, tmp_l3)))
-                tmp_u = surf_join((ind_other_positive, ind_other_negative, ind_z2), (tmp_u1, tmp_u2, surf({}, tmp_u3)))
+                tmp_l = surf_join((ind_other_positive, ind_other_negative, ind_z2), (tmp_l1, tmp_l2, tmp_l3))
+                tmp_u = surf_join((ind_other_positive, ind_other_negative, ind_z2), (tmp_u1, tmp_u2, tmp_u3))
                 rr = (tmp_l, tmp_u) if selfPositive else (-tmp_u, -tmp_l)
                 
         elif isBoundSurf:
