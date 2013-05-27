@@ -1,6 +1,6 @@
-from numpy import ndarray, asscalar, isscalar, floor, pi, inf, nan, \
-copy as Copy, logical_and, logical_or, where, asarray, any, all, atleast_1d, vstack, \
-searchsorted, logical_not
+from numpy import ndarray, asscalar, isscalar, inf, nan, searchsorted, logical_not, \
+copy as Copy, logical_and, logical_or, where, asarray, any, all, atleast_1d, vstack
+
 import numpy as np
 from FDmisc import FuncDesignerException
 from FuncDesigner.multiarray import multiarray
@@ -231,28 +231,30 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):
         
         if type(lb2_ub2) != boundsurf and type(lb1_ub1) == boundsurf:
             lb2_ub2, lb1_ub1 = lb1_ub1, lb2_ub2
+            
         firstIsBoundsurf = type(lb1_ub1) == boundsurf
-        tmp1 = lb1_ub1.resolve()[0] if firstIsBoundsurf else lb1_ub1
+        secondIsBoundsurf = type(lb2_ub2) == boundsurf
         
-        if type(lb2_ub2) == boundsurf:
-            tmp2 = lb2_ub2.resolve()[0]
-            t2_positive = all(tmp2 >= 0)
-            t2_negative = all(tmp2 <= 0)
+        tmp1 = lb1_ub1.resolve()[0] if firstIsBoundsurf else lb1_ub1
+        tmp2 = lb2_ub2.resolve()[0] if secondIsBoundsurf else lb2_ub2
+        
+        t2_positive = all(tmp2 >= 0)
+        t2_negative = all(tmp2 <= 0)
+        
+        if secondIsBoundsurf:
             # TODO: handle zeros wrt inf
             
             t1_positive = all(tmp1 >= 0)
             t1_negative = all(tmp1 <= 0)
             
             if t2_positive or t2_negative:# and not any(np.isinf(tmp1)) and not any(np.isinf(tmp2)):
-
-                if t1_positive or t1_negative:
-                    ind_z1 = logical_or(tmp1[0] == 0, tmp1[1] == 0)
-                    ind_z2 = logical_or(tmp2[0] == 0, tmp2[1] == 0)
-                    ind_i1 = logical_or(np.isinf(tmp1[0]), np.isinf(tmp1[1]))
-                    ind_i2 = logical_or(np.isinf(tmp2[0]), np.isinf(tmp2[1]))
-                    if not any(logical_and(ind_z1, ind_i2)) and not any(logical_and(ind_z2, ind_i1)):
-                        r = lb1_ub1 * lb2_ub2
-                        return r, r.definiteRange
+                ind_z1 = logical_or(tmp1[0] == 0, tmp1[1] == 0)
+                ind_z2 = logical_or(tmp2[0] == 0, tmp2[1] == 0)
+                ind_i1 = logical_or(np.isinf(tmp1[0]), np.isinf(tmp1[1]))
+                ind_i2 = logical_or(np.isinf(tmp2[0]), np.isinf(tmp2[1]))
+                if not any(logical_and(ind_z1, ind_i2)) and not any(logical_and(ind_z2, ind_i1)):
+                    r = lb1_ub1 * lb2_ub2
+                    return r, r.definiteRange
             elif not firstIsBoundsurf and (t1_positive or t1_negative):
                 r = lb1_ub1 * lb2_ub2
                 return r, r.definiteRange
@@ -262,8 +264,7 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):
 #                r = (lb1_ub1 - Tmp1) * (lb2_ub2 - Tmp2) + Tmp1 * lb2_ub2 + Tmp2 * lb1_ub1 - Tmp1 * Tmp2
                 domain.exactRange = False
                 return r, r.definiteRange
-        else:
-            tmp2 = lb2_ub2
+
         
         lb2, ub2 = tmp2[0], tmp2[1]
     else:
