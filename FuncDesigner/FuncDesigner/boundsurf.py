@@ -330,6 +330,8 @@ class boundsurf(object):#object is added for Python2 compatibility
         return r if selfPositive == R2Positive else -r
     
     __truediv__ = __div__
+    
+    __rdiv__ = lambda self, other: other * self ** -1
 
     def log(self):
         from Interval import defaultIntervalEngine
