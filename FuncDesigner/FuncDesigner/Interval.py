@@ -244,9 +244,6 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):
         if secondIsBoundsurf:
             # TODO: handle zeros wrt inf
             
-            t1_positive = all(tmp1 >= 0)
-            t1_negative = all(tmp1 <= 0)
-            
             if t2_positive or t2_negative:# and not any(np.isinf(tmp1)) and not any(np.isinf(tmp2)):
                 ind_z1 = logical_or(tmp1[0] == 0, tmp1[1] == 0)
                 ind_z2 = logical_or(tmp2[0] == 0, tmp2[1] == 0)
@@ -255,7 +252,7 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):
                 if not any(logical_and(ind_z1, ind_i2)) and not any(logical_and(ind_z2, ind_i1)):
                     r = lb1_ub1 * lb2_ub2
                     return r, r.definiteRange
-            elif not firstIsBoundsurf and (t1_positive or t1_negative):
+            elif not firstIsBoundsurf and (all(tmp1 >= 0) or all(tmp1 <= 0)):
                 r = lb1_ub1 * lb2_ub2
                 return r, r.definiteRange
             elif domain.surf_preference and not any(np.isinf(tmp1)) and not any(np.isinf(tmp2)):
@@ -336,16 +333,22 @@ def div_interval(self, other, domain, dtype):
     
     # TODO: mention in doc definiteRange result for 0 / 0
     definiteRange = logical_and(definiteRange1, definiteRange2)
-
-    tmp1 = lb1_ub1.resolve()[0] if type(lb1_ub1) == boundsurf else lb1_ub1
+    
+    firstIsBoundsurf = type(lb1_ub1) == boundsurf
+    secondIsBoundsurf = type(lb2_ub2) == boundsurf
+    
+    tmp1 = lb1_ub1.resolve()[0] if firstIsBoundsurf else lb1_ub1
     t1_positive = all(tmp1 >= 0)
     t1_negative = all(tmp1 <= 0)
 
-    tmp2 = lb2_ub2.resolve()[0] if type(lb2_ub2) == boundsurf else lb2_ub2
+    tmp2 = lb2_ub2.resolve()[0] if secondIsBoundsurf else lb2_ub2
     t2_positive = all(tmp2 >= 0)
     t2_negative = all(tmp2 <= 0)
     
-    if (type(lb1_ub1) == boundsurf  or type(lb2_ub2) == boundsurf) and \
+    if firstIsBoundsurf and not secondIsBoundsurf and (t1_positive or t1_negative or t2_positive or t2_negative):
+        tmp = lb1_ub1 * (1.0 / tmp2[::-1])
+        return tmp, tmp.definiteRange
+    elif (firstIsBoundsurf  or secondIsBoundsurf) and \
     (t1_positive or t1_negative) and (t2_positive or t2_negative):
         assert tmp2.shape[0] == 2
         tmp = lb1_ub1 / lb2_ub2 if type(lb2_ub2) == boundsurf else lb1_ub1 * (1.0 / tmp2[::-1])
