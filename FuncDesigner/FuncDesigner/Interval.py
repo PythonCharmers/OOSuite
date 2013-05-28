@@ -2,7 +2,7 @@ from numpy import ndarray, asscalar, isscalar, inf, nan, searchsorted, logical_n
 copy as Copy, logical_and, logical_or, where, asarray, any, all, atleast_1d, vstack
 
 import numpy as np
-from FDmisc import FuncDesignerException
+from FDmisc import FuncDesignerException, update_mul_inf_zero, update_negative_int_pow_inf_zero
 from FuncDesigner.multiarray import multiarray
 from boundsurf import boundsurf, surf, devided_interval
 
@@ -151,7 +151,6 @@ def box_1_interval(inp, r, func, domain, dtype):
     isBoundSurf = type(lb_ub) == boundsurf
     lb_ub_resolved = lb_ub.resolve()[0] if isBoundSurf else lb_ub
     if isBoundSurf:
-        from boundsurf import devided_interval
         return devided_interval(inp, r, domain, dtype, feasLB = -1.0, feasUB = 1.0)
 #        isNegative = all(lb_ub_resolved <= 0)
 #        isPositive = all(lb_ub_resolved >= 0)
@@ -227,104 +226,42 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):
 
     if isOtherOOFun:
         lb2_ub2, definiteRange2 = other._interval(domain, dtype, allowBoundSurf = True)
-        definiteRange = logical_and(definiteRange, definiteRange2)
-        
-        if type(lb2_ub2) != boundsurf and type(lb1_ub1) == boundsurf:
-            lb2_ub2, lb1_ub1 = lb1_ub1, lb2_ub2
-            
-        firstIsBoundsurf = type(lb1_ub1) == boundsurf
-        secondIsBoundsurf = type(lb2_ub2) == boundsurf
-        
-        tmp1 = lb1_ub1.resolve()[0] if firstIsBoundsurf else lb1_ub1
-        tmp2 = lb2_ub2.resolve()[0] if secondIsBoundsurf else lb2_ub2
-        
-        t2_positive = all(tmp2 >= 0)
-        t2_negative = all(tmp2 <= 0)
-        
-        if secondIsBoundsurf:
-            # TODO: handle zeros wrt inf
-            
-            if t2_positive or t2_negative:# and not any(np.isinf(tmp1)) and not any(np.isinf(tmp2)):
-                ind_z1 = logical_or(tmp1[0] == 0, tmp1[1] == 0)
-                ind_z2 = logical_or(tmp2[0] == 0, tmp2[1] == 0)
-                ind_i1 = logical_or(np.isinf(tmp1[0]), np.isinf(tmp1[1]))
-                ind_i2 = logical_or(np.isinf(tmp2[0]), np.isinf(tmp2[1]))
-                if not any(logical_and(ind_z1, ind_i2)) and not any(logical_and(ind_z2, ind_i1)):
-                    r = lb1_ub1 * lb2_ub2
-                    return r, r.definiteRange
-            elif not firstIsBoundsurf and (all(tmp1 >= 0) or all(tmp1 <= 0)):
-                r = lb1_ub1 * lb2_ub2
-                return r, r.definiteRange
-            elif domain.surf_preference and not any(np.isinf(tmp1)) and not any(np.isinf(tmp2)):
-                r = 0.25 * ((lb1_ub1 + lb2_ub2) ** 2 - (lb1_ub1 - lb2_ub2) ** 2)
-#                Tmp1, Tmp2 = nanmin(tmp1)-1e-16, nanmin(tmp2)-1e-16
-#                r = (lb1_ub1 - Tmp1) * (lb2_ub2 - Tmp2) + Tmp1 * lb2_ub2 + Tmp2 * lb1_ub1 - Tmp1 * Tmp2
-                domain.exactRange = False
-                return r, r.definiteRange
-
-        
-        lb2, ub2 = tmp2[0], tmp2[1]
     else:
-        if type(lb1_ub1) == boundsurf:# TODO: replace it by type(r[0]) after dropping Python2 support
-            assert isscalar(other) or other.size==1, 'bug in FD kernel'
-            return lb1_ub1 * other, definiteRange
-        lb2, ub2 = other, other # TODO: improve it
-
-    if type(lb1_ub1) == boundsurf:
-        lb1_ub1 = lb1_ub1.resolve()[0]
-    lb1, ub1 = lb1_ub1[0], lb1_ub1[1]
+        lb2_ub2 = other
+        
+    if type(lb2_ub2) == boundsurf or type(lb1_ub1) == boundsurf:
+        r = lb1_ub1 * lb2_ub2
+        return r, r.definiteRange
+    
+    lb1, ub1 = lb1_ub1
+    lb2, ub2 = lb2_ub2 if isOtherOOFun else (other, other)
     
     firstPositive = all(lb1 >= 0)
     firstNegative = all(ub1 <= 0)
     secondPositive = all(lb2 >= 0)
     secondNegative = all(ub2 <= 0)
     if firstPositive and secondPositive:
-        t_min, t_max = atleast_1d(lb1 * lb2), atleast_1d(ub1 * ub2)
+        t= vstack((lb1 * lb2, ub1 * ub2))
     elif firstNegative and secondNegative:
-        t_min, t_max = atleast_1d(ub1 * ub2), atleast_1d(lb1 * lb2)
+        t = vstack((ub1 * ub2, lb1 * lb2))
     elif firstPositive and secondNegative:
-        t_min, t_max = atleast_1d(lb2*ub1), atleast_1d(lb1 * ub2)
+        t = vstack((lb2 * ub1, lb1 * ub2))
     elif firstNegative and secondPositive:
-        t_min, t_max = atleast_1d(lb1 * ub2), atleast_1d(lb2*ub1)
+        t = vstack((lb1 * ub2, lb2 * ub1))
     elif isscalar(other):
-        t_min, t_max = (lb1 * other, ub1 * other) if other >= 0 else (ub1 * other, lb1 * other)
+        t = vstack((lb1 * other, ub1 * other) if other >= 0 else (ub1 * other, lb1 * other))
+    elif isOtherOOFun:
+        t = vstack((lb1 * lb2, ub1 * lb2, lb1 * ub2, ub1 * ub2))# TODO: improve it
+        t = vstack((nanmin(t, 0), nanmax(t, 0)))
     else:
-        if isOtherOOFun:
-            t = vstack((lb1 * lb2, ub1 * lb2, \
-                        lb1 * ub2, ub1 * ub2))# TODO: improve it
-        else:
-            t = vstack((lb1 * other, ub1 * other))# TODO: improve it
-        t_min, t_max = atleast_1d(nanmin(t, 0)), atleast_1d(nanmax(t, 0))
+        t = vstack((lb1 * other, ub1 * other))# TODO: improve it
+        t.sort(axis=0)
+        
     #assert isinstance(t_min, ndarray) and isinstance(t_max, ndarray), 'Please update numpy to more recent version'
     
-    if any(np.isinf(lb1)) or any(np.isinf(lb2)) or any(np.isinf(ub1)) or any(np.isinf(ub2)):
-        ind1_zero_minus = logical_and(lb1<0, ub1>=0)
-        ind1_zero_plus = logical_and(lb1<=0, ub1>0)
-        
-        ind2_zero_minus = logical_and(lb2<0, ub2>=0)
-        ind2_zero_plus = logical_and(lb2<=0, ub2>0)
-        
-        has_plus_inf_1 = logical_or(logical_and(ind1_zero_minus, lb2==-inf), logical_and(ind1_zero_plus, ub2==inf))
-        has_plus_inf_2 = logical_or(logical_and(ind2_zero_minus, lb1==-inf), logical_and(ind2_zero_plus, ub1==inf))
-        
-        # !!!! lines with zero should be before lines with inf !!!!
-        ind = logical_or(logical_and(lb1==-inf, ub2==0), logical_and(lb2==-inf, ub1==0))
-        t_max[atleast_1d(logical_and(ind, t_max<0.0))] = 0.0
-        
-        t_max[atleast_1d(logical_or(has_plus_inf_1, has_plus_inf_2))] = inf
-        t_max[atleast_1d(logical_or(logical_and(lb1==0, ub2==inf), logical_and(lb2==0, ub1==inf)))] = inf
-        
-        has_minus_inf_1 = logical_or(logical_and(ind1_zero_plus, lb2==-inf), logical_and(ind1_zero_minus, ub2==inf))
-        has_minus_inf_2 = logical_or(logical_and(ind2_zero_plus, lb1==-inf), logical_and(ind2_zero_minus, ub1==inf))
-        # !!!! lines with zero should be before lines with -inf !!!!
-        t_min[atleast_1d(logical_or(logical_and(lb1==0, ub2==inf), logical_and(lb2==0, ub1==inf)))] = 0.0
-        t_min[atleast_1d(logical_or(logical_and(lb1==-inf, ub2==0), logical_and(lb2==-inf, ub1==0)))] = 0.0
-        
-        t_min[atleast_1d(logical_or(has_minus_inf_1, has_minus_inf_2))] = -inf
+    update_mul_inf_zero(lb1_ub1, lb2_ub2, t)
     
-#            assert not any(isnan(t_min)) and not any(isnan(t_max))
-   
-    return vstack((t_min, t_max)), definiteRange
+    return t, definiteRange
 
 
 def div_interval(self, other, domain, dtype):
@@ -346,6 +283,7 @@ def div_interval(self, other, domain, dtype):
     t2_negative = all(tmp2 <= 0)
     
     if not firstIsBoundsurf and secondIsBoundsurf and (t2_positive or t2_negative):
+        # TODO: check handling zeros
         tmp = tmp1 * lb2_ub2 ** -1
         return tmp, tmp.definiteRange
     elif firstIsBoundsurf and not secondIsBoundsurf and (t1_positive or t1_negative or t2_positive or t2_negative):
@@ -392,16 +330,9 @@ def rdiv_interval(self, other, domain, dtype):
     if other.size != 1: 
         raise FuncDesignerException('this case for interval calculations is unimplemented yet')
     r = vstack((other / arg_supremum, other / arg_infinum))
-    r1, r2 = nanmin(r, 0), nanmax(r, 0)
-    ind_zero_minus = logical_and(arg_infinum<0, arg_supremum>=0)
-    if any(ind_zero_minus):
-        r1[atleast_1d(logical_and(ind_zero_minus, other>0))] = -inf
-        r2[atleast_1d(logical_and(ind_zero_minus, other<0))] = inf
-        
-    ind_zero_plus = logical_and(arg_infinum<=0, arg_supremum>0)
-    if any(ind_zero_plus):
-        r1[atleast_1d(logical_and(ind_zero_plus, other<0))] = -inf
-        r2[atleast_1d(logical_and(ind_zero_plus, other>0))] = inf
+    r.sort(axis=0)
+    r1, r2 = r
+    update_negative_int_pow_inf_zero(arg_infinum, arg_supremum, r1, r2, other)
 
     return vstack((r1, r2)), definiteRange
 

@@ -1,5 +1,5 @@
 PythonSum = sum
-from numpy import asscalar, isscalar, asfarray, ndarray, prod
+from numpy import asscalar, isscalar, asfarray, ndarray, prod, logical_and, logical_or, inf, atleast_1d, any
 import numpy as np
 from baseClasses import MultiArray
 
@@ -265,3 +265,46 @@ def formResolveSchedule(oof):
     broadcast(F, oof, False, depsNumber, depsNumber[oof].copy(), R)
     R.pop(oof, None)
     oof.resolveSchedule = R
+
+def update_mul_inf_zero(lb1_ub1, lb2_ub2, t):
+    if not any(np.isinf(lb1_ub1)) and not any(np.isinf(lb2_ub2)):
+        return
+        
+    t_min, t_max = t
+    lb1, ub1 = lb1_ub1
+    lb2, ub2 = lb2_ub2
+    
+    ind1_zero_minus = logical_and(lb1<0, ub1>=0)
+    ind1_zero_plus = logical_and(lb1<=0, ub1>0)
+    
+    ind2_zero_minus = logical_and(lb2<0, ub2>=0)
+    ind2_zero_plus = logical_and(lb2<=0, ub2>0)
+    
+    has_plus_inf_1 = logical_or(logical_and(ind1_zero_minus, lb2==-inf), logical_and(ind1_zero_plus, ub2==inf))
+    has_plus_inf_2 = logical_or(logical_and(ind2_zero_minus, lb1==-inf), logical_and(ind2_zero_plus, ub1==inf))
+    
+    # !!!! lines with zero should be before lines with inf !!!!
+    ind = logical_or(logical_and(lb1==-inf, ub2==0), logical_and(lb2==-inf, ub1==0))
+    t_max[atleast_1d(logical_and(ind, t_max<0.0))] = 0.0
+    
+    t_max[atleast_1d(logical_or(has_plus_inf_1, has_plus_inf_2))] = inf
+    t_max[atleast_1d(logical_or(logical_and(lb1==0, ub2==inf), logical_and(lb2==0, ub1==inf)))] = inf
+    
+    has_minus_inf_1 = logical_or(logical_and(ind1_zero_plus, lb2==-inf), logical_and(ind1_zero_minus, ub2==inf))
+    has_minus_inf_2 = logical_or(logical_and(ind2_zero_plus, lb1==-inf), logical_and(ind2_zero_minus, ub1==inf))
+    # !!!! lines with zero should be before lines with -inf !!!!
+    t_min[atleast_1d(logical_or(logical_and(lb1==0, ub2==inf), logical_and(lb2==0, ub1==inf)))] = 0.0
+    t_min[atleast_1d(logical_or(logical_and(lb1==-inf, ub2==0), logical_and(lb2==-inf, ub1==0)))] = 0.0
+    
+    t_min[atleast_1d(logical_or(has_minus_inf_1, has_minus_inf_2))] = -inf
+
+def update_negative_int_pow_inf_zero(arg_infinum, arg_supremum, r1, r2, other):
+    ind_zero_minus = logical_and(arg_infinum<0, arg_supremum>=0)
+    if any(ind_zero_minus):
+        r1[atleast_1d(logical_and(ind_zero_minus, other>0))] = -inf
+        r2[atleast_1d(logical_and(ind_zero_minus, other<0))] = inf
+        
+    ind_zero_plus = logical_and(arg_infinum<=0, arg_supremum>0)
+    if any(ind_zero_plus):
+        r1[atleast_1d(logical_and(ind_zero_plus, other<0))] = -inf
+        r2[atleast_1d(logical_and(ind_zero_plus, other>0))] = inf
