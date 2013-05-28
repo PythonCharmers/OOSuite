@@ -74,7 +74,7 @@ def r14IP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, CBKPMV, g, nNode
     volumes = array([node.volume for node in an])
     
     if 1:
-        r10 = ao_diff <= 0.5*(required_sigma-p._residual) / (prod(p.ub-p.lb) - p._volume)
+        r10 = ao_diff <= 0.95*(required_sigma-p._residual) / (prod(p.ub-p.lb) - p._volume)
         #r10 = nanmax(a-o, 1) <= required_sigma / prod(p.ub-p.lb)
         
         ind = where(r10)[0]
