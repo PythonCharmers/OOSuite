@@ -8,7 +8,7 @@
 
 from FDmisc import FuncDesignerException
 from baseClasses import Stochastic
-from numpy import asanyarray, ndarray, isscalar, atleast_1d
+from numpy import ndarray, isscalar, atleast_1d
 try:
     from scipy.sparse import isspmatrix
 except ImportError:
@@ -40,7 +40,7 @@ class ooPoint(dict):
         self.dictOfFixedFuncs = {}
         
         for fn in ('isMultiPoint', 'modificationVar', 'useSave', 'skipArrayCast', 
-        'useAsMutable', 'maxDistributionSize', 'resolveSchedule'):
+        'useAsMutable', 'maxDistributionSize', 'resolveSchedule', 'surf_preference'):
             tmp = kwargs.get(fn, None)
             if tmp is not None:
                 setattr(self, fn, tmp)

@@ -248,13 +248,16 @@ class boundsurf(object):#object is added for Python2 compatibility
                 tmp_u1 = other_ub[ind_positive] * u.extract(ind_positive)
                 tmp_u2 = other_lb[ind_negative] * u.extract(ind_negative)
                 
+#                tmp_l3 = other_ub[ind_z] * l.extract(ind_z)
+#                tmp_u3 = other_ub[ind_z] * u.extract(ind_z)
+                
                 l2, u2 = other_lb[ind_z], other_ub[ind_z]
                 l1, u1 = lb1[ind_z], ub1[ind_z]
                 Tmp = np.vstack((l1*l2, l1*u2, l2*u1, u1*u2))
                 tmp_l3 = surf({}, nanmin(Tmp, axis=0))
                 tmp_u3 = surf({}, nanmax(Tmp, axis=0))
-#                    tmp_l3 = other_ub[ind_z] * self.l.extract(ind_z)
-#                    tmp_u3 = other_ub[ind_z] * self.u.extract(ind_z)
+                
+
                 tmp_l = surf_join((ind_positive, ind_negative, ind_z), (tmp_l1, tmp_l2, tmp_l3))
                 tmp_u = surf_join((ind_positive, ind_negative, ind_z), (tmp_u1, tmp_u2, tmp_u3))
 
@@ -285,106 +288,100 @@ class boundsurf(object):#object is added for Python2 compatibility
                 rr = (tmp_l, tmp_u) if selfPositive else (-tmp_u, -tmp_l)
             else:
                 # TODO: mb improve it
-                if 1:
-                    rr = self * boundsurf(surf({}, R2[0]),surf({}, R2[1]), definiteRange, domain) 
-                else:
-                    lb1, ub1 = R1
-                    lb2, ub2 = R2
-                    l, u = self.l, self.u
-                    ind_other_positive, ind_other_negative, ind_z2 = Split(lb2 >= 0, ub2 <= 0)
-                    ind_positive, ind_negative, ind_z1 = Split(lb1 >= 0, ub1 <= 0)
-                    inds, lu = [], []
+                lb1, ub1 = R1
+                lb2, ub2 = R2
+                l, u = self.l, self.u
+                ind_other_positive, ind_other_negative, ind_z2 = Split(lb2 >= 0, ub2 <= 0)
+                ind_positive, ind_negative, ind_z1 = Split(lb1 >= 0, ub1 <= 0)
+                inds, lu = [], []
+                
+#                    ind_all_z = logical_and(ind_z1, ind_z2)
+#                    ind_Z = where(ind_all_z)[0]
+                ind_any_z = logical_or(ind_z1, ind_z2)
+                ind_Z = where(ind_any_z)[0]
+                if ind_Z.size:
+                    inds.append(ind_Z)
+                    l2, u2 = lb2[ind_Z], ub2[ind_Z]
+                    l1, u1 = lb1[ind_Z], ub1[ind_Z]
+                    Tmp = np.vstack((l1*l2, l1*u2, l2*u1, u1*u2))
+                    tmp_l3 = surf({}, nanmin(Tmp, axis=0))
+                    tmp_u3 = surf({}, nanmax(Tmp, axis=0))
+                    b_z = boundsurf(tmp_l3, tmp_u3, definiteRange, domain)
+                    lu.append((b_z.l, b_z.u))
                     
-                    ind_all_z = logical_and(ind_z1, ind_z2)
-                    ind_Z = where(ind_all_z)[0]
-                    if ind_Z.size:
-                        print('1')
-                        inds.append(ind_Z)
-                        l2, u2 = lb2[ind_Z], ub2[ind_Z]
-                        l1, u1 = lb1[ind_Z], ub1[ind_Z]
-                        Tmp = np.vstack((l1*l2, l1*u2, l2*u1, u1*u2))
-                        tmp_l3 = surf({}, nanmin(Tmp, axis=0))
-                        tmp_u3 = surf({}, nanmax(Tmp, axis=0))
-                        b_z = boundsurf(tmp_l3, tmp_u3, definiteRange, domain)
-                        lu.append((b_z.l, b_z.u))
-                        
-                    ind_positive_all = logical_and(ind_positive, ind_other_positive)
-                    ind_Positive = where(ind_positive_all)[0]
-                    if ind_Positive.size:
-                        print('2')
-                        inds.append(ind_Positive)
-                        L = l.extract(ind_Positive) * lb2[ind_Positive]
-                        U = u.extract(ind_Positive) * ub2[ind_Positive]
-                        lu.append((L, U))
+                ind_positive_all = logical_and(ind_positive, ind_other_positive)
+                ind_Positive = where(ind_positive_all)[0]
+                if ind_Positive.size:
+                    inds.append(ind_Positive)
+                    L = l.extract(ind_Positive) * lb2[ind_Positive]
+                    U = u.extract(ind_Positive) * ub2[ind_Positive]
+                    lu.append((L, U))
+                
+                ind_negative_all = logical_and(ind_negative, ind_other_negative)
+                ind_Negative =  where(ind_negative_all)[0]
+                if ind_Negative.size:
+                    inds.append(ind_Negative)
+                    U = l.extract(ind_Negative) * lb2[ind_Negative]
+                    L = u.extract(ind_Negative) * ub2[ind_Negative]
+                    lu.append((L, U))
                     
-                    ind_negative_all = logical_and(ind_negative, ind_other_negative)
-                    ind_Negative =  where(ind_negative_all)[0]
-                    if ind_Negative.size:
-                        print('3')
-                        inds.append(ind_Negative)
-                        U = l.extract(ind_Negative) * lb2[ind_Negative]
-                        L = u.extract(ind_Negative) * ub2[ind_Negative]
-                        lu.append((L, U))
-                        
-                    ind = logical_and(ind_positive, ind_other_negative)
-                    Ind = where(ind)[0]
-                    if Ind.size:
-                        print('4')
-                        inds.append(Ind)
-                        L = u.extract(Ind) * lb2[Ind]
-                        U = l.extract(Ind) * ub2[Ind]
-                        lu.append((L, U))
+                ind = logical_and(ind_positive, ind_other_negative)
+                Ind = where(ind)[0]
+                if Ind.size:
+                    inds.append(Ind)
+                    L = u.extract(Ind) * lb2[Ind]
+                    U = l.extract(Ind) * ub2[Ind]
+                    lu.append((L, U))
 
-                    ind = logical_and(ind_negative, ind_other_positive)
-                    Ind = where(ind)[0]
-                    if Ind.size:
-                        print('5')
-                        inds.append(Ind)
-                        L = l.extract(Ind) * ub2[Ind]
-                        U = u.extract(Ind) * lb2[Ind]
-                        lu.append((L, U))
+                ind = logical_and(ind_negative, ind_other_positive)
+                Ind = where(ind)[0]
+                if Ind.size:
+                    inds.append(Ind)
+                    L = l.extract(Ind) * ub2[Ind]
+                    U = u.extract(Ind) * lb2[Ind]
+                    lu.append((L, U))
 
-                    ind = logical_and(ind_positive, ind_z2)
-                    Ind = where(ind)[0]
-                    if Ind.size:
-                        print('6')
-                        inds.append(Ind)
-                        uu = u.extract(Ind)
-                        L = uu * lb2[Ind]
-                        U = uu * ub2[Ind]
-                        lu.append((L, U))
-                    
-                    ind = logical_and(ind_negative, ind_z2)
-                    Ind = where(ind)[0]
-                    if Ind.size:
-                        print('7')
-                        inds.append(Ind)
-                        ll = l.extract(Ind)
-                        L = ll * ub2[Ind]
-                        U = ll * lb2[Ind]
-                        lu.append((L, U))
-
-                    ind = logical_and(ind_z1, ind_other_positive)
-                    Ind = where(ind)[0]
-                    if Ind.size:
-                        print('8')
-                        inds.append(Ind)
-                        L = l.extract(Ind) * ub2[Ind]
-                        U = u.extract(Ind) * ub2[Ind]
-                        lu.append((L, U))
-                    
-                    ind = logical_and(ind_z1, ind_other_negative)
-                    Ind = where(ind)[0]
-                    if Ind.size:
-                        print('9')
-                        inds.append(Ind)
-                        L = u.extract(Ind) * lb2[Ind]
-                        U = l.extract(Ind) * lb2[Ind]
-                        lu.append((L, U))
-                        
-                    B = [boundsurf(L, U, False, domain) for L, U in lu]
-                    rr = boundsurf_join(inds, B)
-                    rr.definiteRange = definiteRange
+#                    ind = logical_and(ind_positive, ind_z2)
+#                    Ind = where(ind)[0]
+#                    if Ind.size:
+#                        print('6')
+#                        inds.append(Ind)
+#                        uu = u.extract(Ind)
+#                        L = uu * lb2[Ind]
+#                        U = uu * ub2[Ind]
+#                        lu.append((L, U))
+#                    
+#                    ind = logical_and(ind_negative, ind_z2)
+#                    Ind = where(ind)[0]
+#                    if Ind.size:
+#                        print('7')
+#                        inds.append(Ind)
+#                        ll = l.extract(Ind)
+#                        L = ll * ub2[Ind]
+#                        U = ll * lb2[Ind]
+#                        lu.append((L, U))
+#
+#                    ind = logical_and(ind_z1, ind_other_positive)
+#                    Ind = where(ind)[0]
+#                    if Ind.size:
+#                        print('8')
+#                        inds.append(Ind)
+#                        L = l.extract(Ind) * ub2[Ind]
+#                        U = u.extract(Ind) * ub2[Ind]
+#                        lu.append((L, U))
+#                    
+#                    ind = logical_and(ind_z1, ind_other_negative)
+#                    Ind = where(ind)[0]
+#                    if Ind.size:
+#                        print('9')
+#                        inds.append(Ind)
+#                        L = u.extract(Ind) * lb2[Ind]
+#                        U = l.extract(Ind) * lb2[Ind]
+#                        lu.append((L, U))
+#                        
+                B = [boundsurf(L, U, False, domain) for L, U in lu]
+                rr = boundsurf_join(inds, B)
+                rr.definiteRange = definiteRange
         elif isBoundSurf:
             #assert selfPositive or selfNegative, 'bug or unimplemented yet'
             if (selfPositive or selfNegative) and (R2Positive or R2Negative):
