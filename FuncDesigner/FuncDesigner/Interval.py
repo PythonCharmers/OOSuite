@@ -226,11 +226,13 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):
 
     if isOtherOOFun:
         lb2_ub2, definiteRange2 = other._interval(domain, dtype, allowBoundSurf = True)
+        definiteRange = logical_and(definiteRange, definiteRange2)
     else:
         lb2_ub2 = other
         
     if type(lb2_ub2) == boundsurf or type(lb1_ub1) == boundsurf:
         r = lb1_ub1 * lb2_ub2
+        r.definiteRange = definiteRange
         return r, r.definiteRange
     
     lb1, ub1 = lb1_ub1
@@ -285,16 +287,16 @@ def div_interval(self, other, domain, dtype):
     if not firstIsBoundsurf and secondIsBoundsurf and (t2_positive or t2_negative):
         # TODO: check handling zeros
         tmp = tmp1 * lb2_ub2 ** -1
-        return tmp, tmp.definiteRange
     elif firstIsBoundsurf and not secondIsBoundsurf and (t1_positive or t1_negative or t2_positive or t2_negative):
         # TODO: handle zeros
         tmp = lb1_ub1 * (1.0 / tmp2[::-1]) 
-        return tmp, tmp.definiteRange
     elif (firstIsBoundsurf  or secondIsBoundsurf) and \
     (t1_positive or t1_negative) and (t2_positive or t2_negative):
         assert tmp2.shape[0] == 2
         tmp = lb1_ub1 / lb2_ub2 # if secondIsBoundsurf else lb1_ub1 * (1.0 / tmp2[::-1])
-        return tmp, tmp.definiteRange
+        
+    tmp.definiteRange = definiteRange
+    return tmp, tmp.definiteRange
 
     lb1, ub1 = tmp1[0], tmp1[1]
     lb2, ub2 = tmp2[0], tmp2[1]
