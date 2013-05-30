@@ -185,9 +185,12 @@ class oofun(object):
         # TODO: fix it for ooarray!
         if input is not None:
             #levels = [0]
-            for elem in self.input: # if a
+            for elem in self.input: 
                 if isinstance(elem, oofun):
                     elem._usedIn += 1
+                elif isinstance(elem, OOArray):
+                    for Elem in elem.view(ndarray):
+                        Elem._usedIn += 1
 #                    levels.append(elem._level)
 #            self._level = max(levels)+1
 
@@ -289,15 +292,11 @@ class oofun(object):
                 R, definiteRange = r
                 Tmp = domain.resolveSchedule.get(self, ())
                 if len(Tmp):# and not domain.surf_preference:
-#                    print('1:', R.Size())
                     R = R.exclude(Tmp)
-#                    print('2:', R.Size())
                 return R, definiteRange
             else:
                 return r[0].resolve()
-        return r
-        #return r if allowBoundSurf or type(r) != boundsurf else r.resolve()
-            
+        return r            
     
     def iqg(self, domain, dtype = float, lb=None, ub=None, UB = None):
         if type(domain) != ooPoint:
