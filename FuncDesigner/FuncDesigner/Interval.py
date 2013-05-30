@@ -284,6 +284,7 @@ def div_interval(self, other, domain, dtype):
     t2_positive = all(tmp2 >= 0)
     t2_negative = all(tmp2 <= 0)
     
+    tmp = None
     if not firstIsBoundsurf and secondIsBoundsurf and (t2_positive or t2_negative):
         # TODO: check handling zeros
         tmp = tmp1 * lb2_ub2 ** -1
@@ -294,9 +295,9 @@ def div_interval(self, other, domain, dtype):
     (t1_positive or t1_negative) and (t2_positive or t2_negative):
         assert tmp2.shape[0] == 2
         tmp = lb1_ub1 / lb2_ub2 # if secondIsBoundsurf else lb1_ub1 * (1.0 / tmp2[::-1])
-        
-    tmp.definiteRange = definiteRange
-    return tmp, tmp.definiteRange
+    if tmp is not None:
+        tmp.definiteRange = definiteRange
+        return tmp, tmp.definiteRange
 
     lb1, ub1 = tmp1[0], tmp1[1]
     lb2, ub2 = tmp2[0], tmp2[1]
