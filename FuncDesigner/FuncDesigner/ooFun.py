@@ -190,7 +190,8 @@ class oofun(object):
                     elem._usedIn += 1
                 elif isinstance(elem, OOArray):
                     for Elem in elem.view(ndarray):
-                        Elem._usedIn += 1
+                        if isinstance(Elem, oofun):
+                            Elem._usedIn += 1
 #                    levels.append(elem._level)
 #            self._level = max(levels)+1
 
