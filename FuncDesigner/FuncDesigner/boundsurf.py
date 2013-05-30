@@ -113,9 +113,13 @@ class boundsurf(object):#object is added for Python2 compatibility
         
     Size = lambda self: max((len(self.l.d), len(self.u.d), 1))
     
-    exclude = lambda self, oovars:\
-        boundsurf(self.l.exclude(self.domain, oovars, Greater), self.u.exclude(self.domain, oovars, Less), 
-                  self.definiteRange, self.domain)
+    def exclude(self, oovars):
+        L = self.l.exclude(self.domain, oovars, Greater)
+        U = self.u.exclude(self.domain, oovars, Less)
+        if len(L.d) != 0 or len(U.d) != 0:
+            return boundsurf(L, U, self.definiteRange, self.domain)
+        else:
+            return np.vstack((L.c, U.c))
     
     def extract(self, ind): 
         Ind = ind if ind.dtype != bool else where(ind)[0]
@@ -621,13 +625,13 @@ Split = lambda condition1, condition2: \
 import ooFun
 
 def devided_interval(inp, r, domain, dtype, feasLB = -inf, feasUB = inf):
-                         
+
     lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
     isBoundSurf = type(lb_ub) == boundsurf
     if not isBoundSurf:
         return ooFun.oofun._interval_(r, domain, dtype)
     
-    lb_ub_resolved = lb_ub.resolve()[0] if isBoundSurf else lb_ub
+    lb_ub_resolved = lb_ub.resolve()[0]
     
     if feasLB != -inf or feasUB != inf:
         from Interval import adjustBounds

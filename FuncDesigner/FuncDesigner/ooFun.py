@@ -280,8 +280,9 @@ class oofun(object):
 
         if r is None and v is not None:
             r = domain.localStoredIntervals.get(self, None)
-        
-        if r is None:
+            
+        newComputation = r is None
+        if newComputation:
             # TODO: rework it
             r = self._interval_(domain, dtype)                
             if domain.useSave:
@@ -291,9 +292,14 @@ class oofun(object):
         if type(r[0]) == boundsurf: 
             if allowBoundSurf:
                 R, definiteRange = r
-                Tmp = domain.resolveSchedule.get(self, ())
-                if len(Tmp):# and not domain.surf_preference:
-                    R = R.exclude(Tmp)
+                if newComputation:
+                    Tmp = domain.resolveSchedule.get(self, ())
+                    if len(Tmp):# and not domain.surf_preference:
+                        R = R.exclude(Tmp)
+                        if domain.useSave:
+                            domain.storedIntervals[self] = R
+                        if v is not None and self._usedIn > 1:
+                            domain.localStoredIntervals[self] = R
                 return R, definiteRange
             else:
                 return r[0].resolve()
