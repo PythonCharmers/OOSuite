@@ -1,10 +1,12 @@
 from numpy import ndarray, asscalar, isscalar, inf, nan, searchsorted, logical_not, \
-copy as Copy, logical_and, logical_or, where, asarray, any, all, atleast_1d, vstack
+copy as Copy, logical_and, where, asarray, any, all, atleast_1d, vstack
 
 import numpy as np
-from FDmisc import FuncDesignerException, update_mul_inf_zero, update_negative_int_pow_inf_zero
+from FDmisc import FuncDesignerException, update_mul_inf_zero, update_negative_int_pow_inf_zero, \
+update_div_zero
 from FuncDesigner.multiarray import multiarray
 from boundsurf import boundsurf, surf, devided_interval
+from operator import truediv as td
 
 try:
     from bottleneck import nanmin, nanmax
@@ -294,32 +296,19 @@ def div_interval(self, other, domain, dtype):
     elif (firstIsBoundsurf  or secondIsBoundsurf) and \
     (t1_positive or t1_negative) and (t2_positive or t2_negative):
         assert tmp2.shape[0] == 2
-        tmp = lb1_ub1 / lb2_ub2 # if secondIsBoundsurf else lb1_ub1 * (1.0 / tmp2[::-1])
+        tmp = lb1_ub1 / lb2_ub2 
     if tmp is not None:
         tmp.definiteRange = definiteRange
         return tmp, tmp.definiteRange
 
     lb1, ub1 = tmp1[0], tmp1[1]
     lb2, ub2 = tmp2[0], tmp2[1]
-    lb2, ub2 = asarray(lb2, dtype), asarray(ub2, dtype)
+#    lb2, ub2 = asarray(lb2, dtype), asarray(ub2, dtype)
 
-    tmp = vstack((lb1/lb2, lb1/ub2, ub1/lb2, ub1/ub2))
-    r1, r2 = nanmin(tmp, 0), nanmax(tmp, 0)
-    
-    ind = logical_or(lb1==0.0, ub1==0.0)
-    r1[atleast_1d(logical_and(ind, r1>0.0))] = 0.0
-    r2[atleast_1d(logical_and(ind, r2<0.0))] = 0.0
-
-    # adjust inf
-    ind2_zero_minus = logical_and(lb2<0, ub2>=0)
-    ind2_zero_plus = logical_and(lb2<=0, ub2>0)
-    
-    r1[atleast_1d(logical_or(logical_and(ind2_zero_minus, ub1>0), logical_and(ind2_zero_plus, lb1<0)))] = -inf
-    r2[atleast_1d(logical_or(logical_and(ind2_zero_minus, lb1<0), logical_and(ind2_zero_plus, ub1>0)))] = inf
-    
-    #assert not any(isnan(r1)) and not any(isnan(r2))
-    #assert all(r1 <= r2)
-    return vstack((r1, r2)), definiteRange
+    tmp = vstack((td(lb1, lb2), td(lb1, ub2), td(ub1, lb2), td(ub1, ub2)))
+    r = vstack((nanmin(tmp, 0), nanmax(tmp, 0)))
+    update_div_zero(lb1, ub1, lb2, ub2, r)
+    return r, definiteRange
 
 def rdiv_interval(self, other, domain, dtype):
     arg_lb_ub, definiteRange = self._interval(domain, dtype, allowBoundSurf = True)
