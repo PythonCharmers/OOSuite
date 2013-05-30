@@ -618,10 +618,15 @@ Split = lambda condition1, condition2: \
     logical_and(logical_not(condition1), logical_not(condition2))
     )
 
+import ooFun
+
 def devided_interval(inp, r, domain, dtype, feasLB = -inf, feasUB = inf):
                          
     lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
     isBoundSurf = type(lb_ub) == boundsurf
+    if not isBoundSurf:
+        return ooFun.oofun._interval_(r, domain, dtype)
+    
     lb_ub_resolved = lb_ub.resolve()[0] if isBoundSurf else lb_ub
     
     if feasLB != -inf or feasUB != inf:
