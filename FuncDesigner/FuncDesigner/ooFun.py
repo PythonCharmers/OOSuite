@@ -933,7 +933,7 @@ class oofun(object):
         r = []
         for item in self.input:
             tmp = item._getFuncCalcEngine(*args, **kwargs) if isinstance(item, oofun) else item(*args, **kwargs) if isinstance(item, OOArray) else item
-            r.append(tmp if type(tmp) not in (list, tuple, Stochastic) else asanyarray(tmp))
+            r.append(asarray(tmp) if type(tmp) in (list, tuple) else tmp)
         return tuple(r)
 
     """                                                getDep                                             """

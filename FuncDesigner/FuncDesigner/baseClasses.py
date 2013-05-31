@@ -15,7 +15,7 @@ def distrib_err_fcn(*args, **kw):
             ''')
 
 stochasticDistribution = 'stochastic distribution'
-class Stochastic:
+class Stochastic(object):
     #__array_priority__ = 100
     def __init__(self):
         self._str = stochasticDistribution
