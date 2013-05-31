@@ -1,7 +1,7 @@
 PythonSum = sum
 PythonAll = all
 import numpy as np
-from numpy import all, any, logical_and, logical_not, isscalar, where, inf, logical_or, logical_xor, isinf
+from numpy import all, any, logical_and, logical_not, isscalar, where, inf, logical_or, logical_xor, isnan
 from operator import gt as Greater, lt as Less, truediv as td
 from FDmisc import update_mul_inf_zero, update_negative_int_pow_inf_zero, update_div_zero
 
@@ -504,18 +504,25 @@ class boundsurf(object):#object is added for Python2 compatibility
         r.definiteRange = definiteRange
         if selfPositive != R2Positive: 
             r = -r
-        ind_inf_z = logical_or(logical_or(R2[0]==0, R2[1]==0), logical_or(isinf(R1[0]), isinf(R1[1])))
-        if not any(ind_inf_z):
+#        return r 
+#        ind_inf_z = logical_or(logical_or(R2[0]==0, R2[1]==0), logical_or(isinf(R1[0]), isinf(R1[1])))
+        #(R2[0]==0) | (R2[1]==0) | (isinf(R2[0])) | (isinf(R2[1])) | (isinf(R1[0])) | isinf(R1[1])
+        
+        rr = r.resolve()[0]
+        # nans may be from other computations from a level below, although
+        ind_nan = logical_or(isnan(rr[0]), isnan(rr[1]))
+
+        if not any(ind_nan):
             return r
-        Ind_finite = where(logical_not(ind_inf_z))[0]
+        Ind_finite = where(logical_not(ind_nan))[0]
         r_finite = r.extract(Ind_finite)
-        Ind_inf_z = where(ind_inf_z)[0]
-        lb1, ub1, lb2, ub2 = R1[0, Ind_inf_z], R1[1, Ind_inf_z], R2[0, Ind_inf_z], R2[1, Ind_inf_z]
+        ind_nan = where(ind_nan)[0]
+        lb1, ub1, lb2, ub2 = R1[0, ind_nan], R1[1, ind_nan], R2[0, ind_nan], R2[1, ind_nan]
         tmp = np.vstack((td(lb1, lb2), td(lb1, ub2), td(ub1, lb2), td(ub1, ub2)))
         R = np.vstack((nanmin(tmp, 0), nanmax(tmp, 0)))
         update_div_zero(lb1, ub1, lb2, ub2, R)
         b = boundsurf(surf({}, R[0]), surf({}, R[1]), False, self.domain)
-        r = boundsurf_join((ind_inf_z, Ind_finite), (b, r_finite))
+        r = boundsurf_join((ind_nan, Ind_finite), (b, r_finite))
         r.definiteRange = definiteRange
         return r 
     
