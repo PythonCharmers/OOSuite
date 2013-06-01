@@ -298,11 +298,8 @@ class boundsurf(object):#object is added for Python2 compatibility
                 ind_other_positive, ind_other_negative, ind_z2 = Split(lb2 >= 0, ub2 <= 0)
                 ind_positive, ind_negative, ind_z1 = Split(lb1 >= 0, ub1 <= 0)
                 inds, lu = [], []
-                
-#                    ind_all_z = logical_and(ind_z1, ind_z2)
-#                    ind_Z = where(ind_all_z)[0]
-                ind_any_z = logical_or(ind_z1, ind_z2)
-                ind_Z = where(ind_any_z)[0]
+
+                ind_Z = where(ind_z1)[0]
                 if ind_Z.size:
                     inds.append(ind_Z)
                     l2, u2 = lb2[ind_Z], ub2[ind_Z]
@@ -345,25 +342,23 @@ class boundsurf(object):#object is added for Python2 compatibility
                     U = u.extract(Ind) * lb2[Ind]
                     lu.append((L, U))
 
-#                    ind = logical_and(ind_positive, ind_z2)
-#                    Ind = where(ind)[0]
-#                    if Ind.size:
-#                        print('6')
-#                        inds.append(Ind)
-#                        uu = u.extract(Ind)
-#                        L = uu * lb2[Ind]
-#                        U = uu * ub2[Ind]
-#                        lu.append((L, U))
-#                    
-#                    ind = logical_and(ind_negative, ind_z2)
-#                    Ind = where(ind)[0]
-#                    if Ind.size:
-#                        print('7')
-#                        inds.append(Ind)
-#                        ll = l.extract(Ind)
-#                        L = ll * ub2[Ind]
-#                        U = ll * lb2[Ind]
-#                        lu.append((L, U))
+                ind = logical_and(ind_positive, ind_z2)
+                Ind = where(ind)[0]
+                if Ind.size:
+                    inds.append(Ind)
+                    uu = u.extract(Ind)
+                    L = uu * lb2[Ind]
+                    U = uu * ub2[Ind]
+                    lu.append((L, U))
+                
+                ind = logical_and(ind_negative, ind_z2)
+                Ind = where(ind)[0]
+                if Ind.size:
+                    inds.append(Ind)
+                    ll = l.extract(Ind)
+                    L = ll * ub2[Ind]
+                    U = ll * lb2[Ind]
+                    lu.append((L, U))
 #
 #                    ind = logical_and(ind_z1, ind_other_positive)
 #                    Ind = where(ind)[0]
@@ -387,7 +382,6 @@ class boundsurf(object):#object is added for Python2 compatibility
                 rr = boundsurf_join(inds, B)
                 rr.definiteRange = definiteRange
         elif isBoundSurf:
-            #assert selfPositive or selfNegative, 'bug or unimplemented yet'
             if (selfPositive or selfNegative) and (R2Positive or R2Negative):
                 r = ((self if selfPositive else -self).log() + (other if R2Positive else -other).log()).exp()
                 r.definiteRange = definiteRange

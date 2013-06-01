@@ -312,15 +312,16 @@ def update_negative_int_pow_inf_zero(arg_infinum, arg_supremum, r1, r2, other):
 def update_div_zero(lb1, ub1, lb2, ub2, r):
     r1, r2 = r
     ind = logical_or(lb1==0.0, ub1==0.0)
-    r1[atleast_1d(logical_and(ind, r1>0.0))] = 0.0
-    r2[atleast_1d(logical_and(ind, r2<0.0))] = 0.0
+    if any(ind):
+        r1[atleast_1d(logical_and(ind, r1>0.0))] = 0.0
+        r2[atleast_1d(logical_and(ind, r2<0.0))] = 0.0
 
     # adjust inf
     ind2_zero_minus = logical_and(lb2<0, ub2>=0)
     ind2_zero_plus = logical_and(lb2<=0, ub2>0)
-    
-    r1[atleast_1d(logical_or(logical_and(ind2_zero_minus, ub1>0), logical_and(ind2_zero_plus, lb1<0)))] = -inf
-    r2[atleast_1d(logical_or(logical_and(ind2_zero_minus, lb1<0), logical_and(ind2_zero_plus, ub1>0)))] = inf
+    if any(ind2_zero_minus) or any(ind2_zero_plus):
+        r1[atleast_1d(logical_or(logical_and(ind2_zero_minus, ub1>0), logical_and(ind2_zero_plus, lb1<0)))] = -inf
+        r2[atleast_1d(logical_or(logical_and(ind2_zero_minus, lb1<0), logical_and(ind2_zero_plus, ub1>0)))] = inf
 
 
 
