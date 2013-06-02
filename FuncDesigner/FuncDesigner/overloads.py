@@ -938,7 +938,7 @@ def sum(inp, *args, **kwargs):
         r.vectorized = True
         r_dep = r._getDep()
         r._D = lambda *args, **kw: sum_derivative(r, r0, INP, r_dep, *args, **kw)
-#        r.isCostly = True
+        r.isCostly = True
         return r
     else: 
         return inp.sum(*args, **kwargs)#np.sum(inp, *args, **kwargs)
