@@ -473,9 +473,9 @@ class boundsurf(object):#object is added for Python2 compatibility
     
     __truediv__ = __div__
     
-    __rdiv__ = lambda self, other: other * self ** -1
+#    __rdiv__ = lambda self, other: other * self ** -1
     
-    __rtruediv__ = __rdiv__
+#    __rtruediv__ = __rdiv__
 
     def log(self, domain_ind = slice(None)):
         from Interval import defaultIntervalEngine
@@ -507,34 +507,38 @@ class boundsurf(object):#object is added for Python2 compatibility
         
         assert isscalar(other) and other in (-1, 2, 0.5), 'unimplemented yet'
         if other == 0.5:
-            from Interval import defaultIntervalEngine
-            return defaultIntervalEngine(self, np.sqrt, lambda x: 0.5 / np.sqrt(x), 
-                         monotonity = 1, convexity = -1, feasLB = 0.0)[0]        
+            assert 0
+#            from Interval import defaultIntervalEngine
+#            return defaultIntervalEngine(self, np.sqrt, lambda x: 0.5 / np.sqrt(x), 
+#                         monotonity = 1, convexity = -1, feasLB = 0.0)[0]        
         elif other == 2:
-            from Interval import defaultIntervalEngine
-            return defaultIntervalEngine(self, lambda x: x**2, lambda x: 2 * x, 
-                         monotonity = 1 if all(R0>=0) else -1 if all(R0<=0) else np.nan, 
-                         convexity = 1, 
-                         criticalPoint = 0.0, criticalPointValue = 0.0)[0]
+            assert 0
+#            from Interval import defaultIntervalEngine
+#            return defaultIntervalEngine(self, lambda x: x**2, lambda x: 2 * x, 
+#                         monotonity = 1 if all(R0>=0) else -1 if all(R0<=0) else np.nan, 
+#                         convexity = 1, 
+#                         criticalPoint = 0.0, criticalPointValue = 0.0)[0]
         elif other == -1:
-            from Interval import defaultIntervalEngine
-            r = defaultIntervalEngine(self, lambda x: 1.0/x, lambda x: -1.0 / x**2, 
-                         monotonity = -1, 
-                         convexity = 1 if all(R0>=0) else -1 if all(R0<=0) else np.nan, 
-                         criticalPoint = np.nan, criticalPointValue = np.nan)[0]    
-            ind = logical_or(R0[0] == 0, R0[1] == 0) 
-            if any(ind):
-                R_tmp = r.extract(logical_not(ind))
-                t = 1.0 / R0[:, ind]
-                t.sort(axis=0)
-                t_min, t_max = t
-                update_negative_int_pow_inf_zero(R0[0, ind], R0[1, ind], t_min, t_max, 1.0)
-                definiteRange_Tmp = \
-                r.definiteRange if type(r.definiteRange) == bool or r.definiteRange.size == 1\
-                else r.definiteRange[ind]
-                R_Tmp = boundsurf(surf({}, t_min), surf({}, t_max), definiteRange_Tmp, self.domain)
-                r = R_Tmp if all(ind) else boundsurf_join((ind, logical_not(ind)), (R_Tmp, R_tmp))
-            return r
+            assert 0
+#            from Interval import defaultIntervalEngine
+#            r = defaultIntervalEngine(self, lambda x: 1.0/x, lambda x: -1.0 / x**2, 
+#                         monotonity = -1, 
+#                         convexity = 1 if all(R0>=0) else -1 if all(R0<=0) else np.nan, 
+#                         criticalPoint = np.nan, criticalPointValue = np.nan)[0]    
+#            ind = logical_or(R0[0] == 0, R0[1] == 0) 
+#            if any(ind):
+#                R_tmp = r.extract(logical_not(ind))
+#                t = 1.0 / R0[:, ind]
+#                t.sort(axis=0)
+#                
+#                update_negative_int_pow_inf_zero(R0[0, ind], R0[1, ind], t, 1.0)
+#                definiteRange_Tmp = \
+#                r.definiteRange if type(r.definiteRange) == bool or r.definiteRange.size == 1\
+#                else r.definiteRange[ind]
+#                t_min, t_max = t
+#                R_Tmp = boundsurf(surf({}, t_min), surf({}, t_max), definiteRange_Tmp, self.domain)
+#                r = R_Tmp if all(ind) else boundsurf_join((ind, logical_not(ind)), (R_Tmp, R_tmp))
+#            return r
     
 def boundsurf_abs(b):
     r, definiteRange = b.resolve()
@@ -610,7 +614,7 @@ def devided_interval(inp, r, domain, dtype, feasLB = -inf, feasUB = inf):
         lb_ub.definiteRange = definiteRange
         
     lb, ub = lb_ub_resolved
-    Inds = split(ub <= 0, lb >= 0)
+    Inds = split(ub <= -0.0, lb >= 0.0)
     assert len(Inds) == 3
     
     monotonities = [r.engine_monotonity] * (len(Inds)-1) if r.engine_monotonity is not np.nan \
@@ -634,9 +638,12 @@ def devided_interval(inp, r, domain, dtype, feasLB = -inf, feasUB = inf):
     
     _ind = Inds[-1]
     if _ind.size:
-        DefiniteRange = definiteRange if type(definiteRange) == bool or definiteRange.size == 1 else definiteRange[_ind]
-        from ooFun import oofun
-        Tmp, definiteRange3 = oofun._interval_(r, domain, dtype, inputData = (lb_ub_resolved[:, _ind], DefiniteRange))
+        DefiniteRange = definiteRange if type(definiteRange) == bool or definiteRange.size == 1 \
+        else definiteRange[_ind]
+        
+        Tmp, definiteRange3 = \
+        ooFun.oofun._interval_(r, domain, dtype, inputData = (lb_ub_resolved[:, _ind], DefiniteRange))
+        
         if _ind.size == m:
             return Tmp, definiteRange3
         tmp = boundsurf(surf({}, Tmp[0]), surf({}, Tmp[1]), definiteRange3, domain)

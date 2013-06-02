@@ -5,7 +5,7 @@ import numpy as np
 from FDmisc import FuncDesignerException, update_mul_inf_zero, update_negative_int_pow_inf_zero, \
 update_div_zero
 from FuncDesigner.multiarray import multiarray
-from boundsurf import boundsurf, surf, devided_interval
+from boundsurf import boundsurf, surf, devided_interval, split, boundsurf_join
 from operator import truediv as td
 
 try:
@@ -296,7 +296,7 @@ def div_interval(self, other, domain, dtype):
     elif firstIsBoundsurf and not secondIsBoundsurf:# and (t1_positive or t1_negative or t2_positive or t2_negative):
         # TODO: handle zeros
         tmp = lb1_ub1 * (1.0 / tmp2[::-1]) 
-    elif firstIsBoundsurf  or secondIsBoundsurf:
+    elif firstIsBoundsurf and secondIsBoundsurf:
         tmp = lb1_ub1 / lb2_ub2 
     if tmp is not None:
         if type(tmp) == boundsurf:
@@ -315,24 +315,25 @@ def div_interval(self, other, domain, dtype):
     return r, definiteRange
 
 def rdiv_interval(self, r, other, domain, dtype):
-#    Tmp, definiteRange = pow_const_interval(self, r, -1, domain, dtype)
-#    return other * Tmp, definiteRange
-    arg_lb_ub, definiteRange = self._interval(domain, dtype, allowBoundSurf = True)
-    if type(arg_lb_ub) == boundsurf:
-        arg_lb_ub_resolved = arg_lb_ub.resolve()[0]
-        if all(arg_lb_ub_resolved >= 0) or all(arg_lb_ub_resolved <= 0):
-            return other * arg_lb_ub ** (-1), definiteRange
-        else:
-            arg_lb_ub = arg_lb_ub_resolved
-    arg_infinum, arg_supremum = arg_lb_ub[0], arg_lb_ub[1]
-    if other.size != 1: 
-        raise FuncDesignerException('this case for interval calculations is unimplemented yet')
-    r = vstack((other / arg_supremum, other / arg_infinum))
-    r.sort(axis=0)
-    r1, r2 = r
-    update_negative_int_pow_inf_zero(arg_infinum, arg_supremum, r1, r2, other)
 
-    return vstack((r1, r2)), definiteRange
+    Tmp, definiteRange = pow_const_interval(self, r, -1, domain, dtype)
+    return other * Tmp, definiteRange
+#    arg_lb_ub, definiteRange = self._interval(domain, dtype, allowBoundSurf = True)
+#    if type(arg_lb_ub) == boundsurf:
+#        arg_lb_ub_resolved = arg_lb_ub.resolve()[0]
+#        if all(arg_lb_ub_resolved >= 0) or all(arg_lb_ub_resolved <= 0):
+#            return other * arg_lb_ub ** (-1), definiteRange
+#        else:
+#            arg_lb_ub = arg_lb_ub_resolved
+#    arg_infinum, arg_supremum = arg_lb_ub[0], arg_lb_ub[1]
+#    if other.size != 1: 
+#        raise FuncDesignerException('this case for interval calculations is unimplemented yet')
+#    r = vstack((other / arg_supremum, other / arg_infinum))
+#    r.sort(axis=0)
+#    r1, r2 = r
+#    update_negative_int_pow_inf_zero(arg_infinum, arg_supremum, r, other)
+#
+#    return r, definiteRange
 
 def pow_const_interval(self, r, other, domain, dtype):
     lb_ub, definiteRange = self._interval(domain, dtype, allowBoundSurf = True)
@@ -353,46 +354,57 @@ def pow_const_interval(self, r, other, domain, dtype):
         if other > 0 or domain_isNegative:
             return devided_interval(self, r, domain, dtype, feasLB = feasLB)
         
-        if other_is_int and other < 0 and other % 2 != 0:
-            return devided_interval(self, r, domain, dtype, feasLB = feasLB)
+        if other_is_int and other < 0:# and other % 2 != 0:
+            isOdd = other % 2 != 1
+            lb, ub = lb_ub_resolved 
+            ind_positive, ind_negative, ind_z = split(lb >= 0, ub <= 0)
+            B, inds = [], []
+            if ind_positive.size:
+                inds.append(ind_positive)
+                monotonity = -1
+                b = defaultIntervalEngine(lb_ub, r.fun, r.d, monotonity = monotonity, convexity = 1, 
+                                          domain_ind = ind_positive)[0]
+                B.append(b)
+            if ind_negative.size:
+                inds.append(ind_negative)
+                
+                # TODO: fix it
+                monotonity = np.nan#-1 if isOdd else 1
+                
+                convexity = -1 if isOdd else 1
+                b = defaultIntervalEngine(lb_ub, r.fun, r.d, monotonity = monotonity, convexity = convexity, 
+                                          domain_ind = ind_negative)[0]
+                B.append(b)
+            if ind_z.size:
+                inds.append(ind_z)
+                t = 1.0 / lb_ub_resolved[:, ind_z]
+                t.sort(axis=0)
+                update_negative_int_pow_inf_zero(lb_ub_resolved[0, ind_z], lb_ub_resolved[1, ind_z], t, other)
+                b = boundsurf(
+                              surf({}, t[0]), 
+                              surf({}, t[1]), 
+                              definiteRange if type(definiteRange) == bool or definiteRange.size == 1 \
+                              else definiteRange[ind_z], 
+                              domain)
+                B.append(b)
 
-    allowBoundSurf = True if isscalar(other) and other == 0.5 else False
-        
-    if type(lb_ub) == boundsurf:
-        if allowBoundSurf:
-            return lb_ub**other, definiteRange
-        else:
-            lb_ub = lb_ub_resolved
-        
-    Tmp = lb_ub ** other
-    
-    t_min, t_max = nanmin(Tmp, 0), nanmax(Tmp, 0)
+            r = boundsurf_join(inds, B)
+            return r, r.definiteRange
+
+    lb_ub = lb_ub_resolved
     lb, ub = lb_ub[0], lb_ub[1]
-    ind = lb < 0.0
-    if any(ind):
-        isNonInteger = other != asarray(other, int) # TODO: rational numbers?
-        
-        # TODO: rework it properly, with matrix operations
-        if any(isNonInteger):
-            definiteRange = False
-        
-        ind_nan = logical_and(logical_and(ind, isNonInteger), ub < 0)
-        if any(ind_nan):
-            t_max[atleast_1d(ind_nan)] = nan
-        
-        #1
-        t_min[atleast_1d(logical_and(ind, logical_and(t_min>0, ub >= 0)))] = 0.0
-        
-#                    #2
-#                    if asarray(other).size == 1:
-#                        IND = not isNonInteger
-#                    else:
-#                        ind2 = logical_not(isNonInteger)
-#                        IND = other[ind2] % 2 == 0
-#                    
-#                    if any(IND):
-#                        t_min[logical_and(IND, atleast_1d(logical_and(lb<0, ub >= 0)))] = 0.0
-    return vstack((t_min, t_max)), definiteRange
+    if not other_is_int:
+        ind = logical_and(lb < 0, ub >= 0)
+        if any(ind):
+            lb_ub = lb_ub.copy()
+            lb, ub = lb_ub
+            lb[ind] = 0.0
+            definiteRange = logical_and(definiteRange, logical_not(ind))
+
+    Tmp = lb_ub ** other
+    Tmp.sort(axis = 0)
+    return Tmp, definiteRange    
+
     
 def pow_oofun_interval(self, other, domain, dtype): 
     # TODO: handle discrete cases

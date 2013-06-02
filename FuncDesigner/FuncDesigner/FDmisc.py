@@ -298,7 +298,8 @@ def update_mul_inf_zero(lb1_ub1, lb2_ub2, t):
     
     t_min[atleast_1d(logical_or(has_minus_inf_1, has_minus_inf_2))] = -inf
 
-def update_negative_int_pow_inf_zero(arg_infinum, arg_supremum, r1, r2, other):
+def update_negative_int_pow_inf_zero(arg_infinum, arg_supremum, r, other):
+    r1, r2 = r
     ind_zero_minus = logical_and(arg_infinum<0, arg_supremum>=0)
     if any(ind_zero_minus):
         r1[atleast_1d(logical_and(ind_zero_minus, other>0))] = -inf
