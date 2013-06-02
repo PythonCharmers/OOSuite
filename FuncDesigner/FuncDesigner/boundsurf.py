@@ -4,6 +4,7 @@ import numpy as np
 from numpy import all, any, logical_and, logical_not, isscalar, where, inf, logical_or, logical_xor, isnan
 from operator import gt as Greater, lt as Less, truediv as td
 from FDmisc import update_mul_inf_zero, update_negative_int_pow_inf_zero, update_div_zero
+import operator
 
 try:
     from bottleneck import nanmin, nanmax
@@ -387,54 +388,8 @@ class boundsurf(object):#object is added for Python2 compatibility
                 r.definiteRange = definiteRange
                 rr = r if selfPositive == R2Positive else -r
             else:
-                _r = []
-                _resolved = []
-                changeSign = False
-                indZ = False
                 Elems = (self, other)
-                definiteRange = np.array(True)
-                for elem in Elems:
-                    _R = elem.resolve()[0]
-                    lb, ub = _R
-                    ind_positive, ind_negative, ind_z = Split(lb >= 0, ub <= 0)
-                    not_ind_negative = logical_not(ind_negative)
-                    Ind_negative = where(ind_negative)[0]
-                    Not_ind_negative = where(not_ind_negative)[0]
-                    changeSign = logical_xor(changeSign, ind_negative)
-                    indZ = logical_or(indZ, ind_z)
-                    tmp1 = elem.log(domain_ind = Not_ind_negative)
-                    tmp2 = (-elem).log(domain_ind = Ind_negative)
-                    Tmp = boundsurf_join((not_ind_negative, ind_negative), (tmp1, tmp2))
-                    _r.append(Tmp)
-                    _resolved.append(_R)
-                    definiteRange = logical_and(definiteRange, elem.definiteRange)
-                rr = PythonSum(_r).exp()
-                changeSign = logical_and(changeSign, logical_not(indZ))
-                keepSign = logical_and(logical_not(changeSign), logical_not(indZ))
-                _rr, _inds = [], []
-                if any(keepSign):
-                    _rr.append(rr.extract(keepSign))
-                    _inds.append(keepSign)
-                if any(changeSign):
-                    _rr.append(-rr.extract(changeSign))
-                    _inds.append(changeSign)
-                if any(indZ):
-                    assert len(Elems) == 2, 'unimplemented yet'
-                    definiteRange = logical_and(self.definiteRange, other.definiteRange)
-                    lb1, ub1 = R1
-                    other_lb, other_ub = R2
-                    
-                    IndZ = where(indZ)[0]
-                    tmp_z = np.vstack((lb1[IndZ] * other_lb[IndZ], 
-                        ub1[IndZ] * other_lb[IndZ], 
-                        lb1[IndZ] * other_ub[IndZ], 
-                        ub1[IndZ] * other_ub[IndZ]))
-                    l_z, u_z = nanmin(tmp_z, 0), nanmax(tmp_z, 0)
-                    definiteRange2 = definiteRange if definiteRange.size == 1 else definiteRange[IndZ]
-                    rr_z = boundsurf(surf({}, l_z), surf({}, u_z), definiteRange2, domain)
-                    _rr.append(rr_z)
-                    _inds.append(indZ)
-                rr = boundsurf_join(_inds, _rr)
+                rr = aux_mul_div_boundsurf(Elems, operator.mul)
 
 #            else:
 #                RR = R1*R2 if selfPositive and R2Positive \
@@ -477,27 +432,20 @@ class boundsurf(object):#object is added for Python2 compatibility
     __rmul__ = __mul__
     
     def __div__(self, other):
-        R1 = self.resolve()[0]
-        definiteRange = self.definiteRange
-        selfPositive = all(R1 >= 0)
-        selfNegative = all(R1 <= 0)
-        
-#        isArray = type(other) == np.ndarray
         isBoundSurf = type(other) == boundsurf
         assert isBoundSurf
-        if isBoundSurf:
-            definiteRange = logical_and(definiteRange, other.definiteRange)
-        R2 = other.resolve()[0] #if isBoundSurf else other
-#        R2_is_scalar = isscalar(R2)     
-        assert R2.shape[0] == 2, 'bug or unimplemented yet'
-        R2Positive = all(R2 >= 0)
-        R2Negative = all(R2 <= 0)
-        assert (selfPositive or selfNegative) and (R2Positive or R2Negative), 'bug or unimplemented yet'
-        definiteRange = logical_and(definiteRange, other.definiteRange)
-        r = ((self if selfPositive else -self).log() - (other if R2Positive else -other).log()).exp()
-        r.definiteRange = definiteRange
-        if selfPositive != R2Positive: 
-            r = -r
+        
+###        R2Positive = all(R2 >= 0)
+###        R2Negative = all(R2 <= 0)
+####        assert (selfPositive or selfNegative) and (R2Positive or R2Negative), 'bug or unimplemented yet'
+###        definiteRange = logical_and(definiteRange, other.definiteRange)
+###        r = ((self if selfPositive else -self).log() - (other if R2Positive else -other).log()).exp()
+###        r.definiteRange = definiteRange
+###        if selfPositive != R2Positive: 
+###            r = -r
+        
+        r = aux_mul_div_boundsurf((self, other), operator.truediv)
+        
 #        return r 
 #        ind_inf_z = logical_or(logical_or(R2[0]==0, R2[1]==0), logical_or(isinf(R1[0]), isinf(R1[1])))
         #(R2[0]==0) | (R2[1]==0) | (isinf(R2[0])) | (isinf(R2[1])) | (isinf(R1[0])) | isinf(R1[1])
@@ -505,24 +453,29 @@ class boundsurf(object):#object is added for Python2 compatibility
         rr = r.resolve()[0]
         # nans may be from other computations from a level below, although
         ind_nan = logical_or(isnan(rr[0]), isnan(rr[1]))
-
         if not any(ind_nan):
             return r
+            
         Ind_finite = where(logical_not(ind_nan))[0]
         r_finite = r.extract(Ind_finite)
         ind_nan = where(ind_nan)[0]
+        R1 = self.resolve()[0]
+        R2 = other.resolve()[0]
         lb1, ub1, lb2, ub2 = R1[0, ind_nan], R1[1, ind_nan], R2[0, ind_nan], R2[1, ind_nan]
         tmp = np.vstack((td(lb1, lb2), td(lb1, ub2), td(ub1, lb2), td(ub1, ub2)))
         R = np.vstack((nanmin(tmp, 0), nanmax(tmp, 0)))
         update_div_zero(lb1, ub1, lb2, ub2, R)
         b = boundsurf(surf({}, R[0]), surf({}, R[1]), False, self.domain)
         r = boundsurf_join((ind_nan, Ind_finite), (b, r_finite))
+        definiteRange = logical_and(self.definiteRange, other.definiteRange)
         r.definiteRange = definiteRange
         return r 
     
     __truediv__ = __div__
     
     __rdiv__ = lambda self, other: other * self ** -1
+    
+    __rtruediv__ = __rdiv__
 
     def log(self, domain_ind = slice(None)):
         from Interval import defaultIntervalEngine
@@ -694,7 +647,62 @@ def devided_interval(inp, r, domain, dtype, feasLB = -inf, feasUB = inf):
     return b, b.definiteRange
 
 
-
+def aux_mul_div_boundsurf(Elems, op):
+    _r = []
+    _resolved = []
+    changeSign = False
+    indZ = False
+    
+    definiteRange = np.array(True)
+    for elem in Elems:
+        _R = elem.resolve()[0]
+        lb, ub = _R
+        ind_positive, ind_negative, ind_z = Split(lb >= 0, ub <= 0)
+        not_ind_negative = logical_not(ind_negative)
+        Ind_negative = where(ind_negative)[0]
+        Not_ind_negative = where(not_ind_negative)[0]
+        changeSign = logical_xor(changeSign, ind_negative)
+        indZ = logical_or(indZ, ind_z)
+        tmp1 = elem.log(domain_ind = Not_ind_negative)
+        tmp2 = (-elem).log(domain_ind = Ind_negative)
+        Tmp = boundsurf_join((not_ind_negative, ind_negative), (tmp1, tmp2))
+        _r.append(Tmp)
+        _resolved.append(_R)
+        definiteRange = logical_and(definiteRange, elem.definiteRange)
+    if op == operator.mul:
+        rr = PythonSum(_r).exp()
+    else:
+        assert op == operator.truediv and len(Elems) == 2
+        rr = (_r[0] - _r[1]).exp()
+        
+    changeSign = logical_and(changeSign, logical_not(indZ))
+    keepSign = logical_and(logical_not(changeSign), logical_not(indZ))
+    _rr, _inds = [], []
+    if any(keepSign):
+        _rr.append(rr.extract(keepSign))
+        _inds.append(keepSign)
+    if any(changeSign):
+        _rr.append(-rr.extract(changeSign))
+        _inds.append(changeSign)
+    if any(indZ):
+        assert len(Elems) == 2, 'unimplemented yet'
+        lb1, ub1 = Elems[0].resolve()[0] # R1
+        other_lb, other_ub = Elems[1].resolve()[0] # R2
+        
+        IndZ = where(indZ)[0]
+        tmp_z = np.vstack((
+                           op(lb1[IndZ], other_lb[IndZ]), 
+                           op(ub1[IndZ], other_lb[IndZ]), 
+                           op(lb1[IndZ], other_ub[IndZ]), 
+                           op(ub1[IndZ], other_ub[IndZ])
+                           ))
+        l_z, u_z = nanmin(tmp_z, 0), nanmax(tmp_z, 0)
+        rr_z = boundsurf(surf({}, l_z), surf({}, u_z), True, Elems[0].domain)
+        _rr.append(rr_z)
+        _inds.append(indZ)
+    rr = boundsurf_join(_inds, _rr)
+    rr.definiteRange = definiteRange
+    return rr
 
 
 

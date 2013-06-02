@@ -617,8 +617,10 @@ class oofun(object):
         other = array(other, 'float') # TODO: sparse matrices handling!
         r = oofun(lambda x: operator.truediv(other, x), self, discrete = self.discrete)
         r.d = lambda x: Diag(operator.truediv(- other, x**2))
+        r.monotonities = (-1, -1)
+        r.convexities = (-1, 1)
 
-        r._interval_ = lambda *args, **kw: rdiv_interval(self, other, *args, **kw)
+        r._interval_ = lambda *args, **kw: rdiv_interval(self, r, other, *args, **kw)
         #r.isCostly = True
         def getOrder(*args, **kwargs):
             order = self.getOrder(*args, **kwargs)
@@ -709,14 +711,15 @@ class oofun(object):
             r._interval_ = lambda *args, **kw: pow_const_interval(self, r, other, *args, **kw)
             if isscalar(other) or other.size == 1:
                 if other > 0 or (isInt and other%2 == 1): 
-                    r.engine_monotonity = 1
-                    r.convexities = (-1, (1 if other > 1 or other < 0 else -1))
-                elif isInt and other%2 == 0:
-                    r.monotonities = (-1, 1)
-                    r.engine_convexity = 1
-                else: # not int
-                    r.engine_monotonity = other > 0
-                    r.engine_convexity  = other > 1
+                    r.engine_monotonity = 1 if other > 0 else -1
+                    r.convexities = ((-1 if isInt and other%2 == 1 else 1 if other > 1 else -1), 
+                                     (1 if other > 1 or other < 0 else -1))
+                elif isInt and other%2 == 0: #int, other = 2k < 0
+                    r.monotonities = (1, -1)
+                    r.engine_convexity = -1
+                else: # not int,other < 0
+                    r.engine_monotonity = -1
+                    r.engine_convexity  = -1
         else:
             r._interval_ = lambda *args, **kw: pow_oofun_interval(self, other, *args, **kw)
             

@@ -134,14 +134,12 @@ def nonnegative_interval(inp, func, deriv, domain, dtype, F0, shift = 0.0):
     if ind.size != 0:
         lb_ub_resolved = lb_ub_resolved.copy()
         lb_ub_resolved[0][logical_and(ind, ub >= th)] = th
-        #t_min_max[0][atleast_1d(logical_and(ind, ub >= th))] = F0
         if definiteRange is not False:
             if type(definiteRange) != np.ndarray:
                 definiteRange = np.empty_like(lb, bool)
                 definiteRange.fill(True)
             definiteRange[ind] = False
     
-    # TODO: rework it for ind.size != 0
     r = func(lb_ub_resolved)
     
     return r, definiteRange
@@ -279,27 +277,33 @@ def div_interval(self, other, domain, dtype):
     secondIsBoundsurf = type(lb2_ub2) == boundsurf
     
     tmp1 = lb1_ub1.resolve()[0] if firstIsBoundsurf else lb1_ub1
-    t1_positive = all(tmp1 >= 0)
-    t1_negative = all(tmp1 <= 0)
+#    t1_positive = all(tmp1 >= 0)
+#    t1_negative = all(tmp1 <= 0)
 
     tmp2 = lb2_ub2.resolve()[0] if secondIsBoundsurf else lb2_ub2
-    t2_positive = all(tmp2 >= 0)
-    t2_negative = all(tmp2 <= 0)
+#    t2_positive = all(tmp2 >= 0)
+#    t2_negative = all(tmp2 <= 0)
     
     tmp = None
-    if not firstIsBoundsurf and secondIsBoundsurf and (t2_positive or t2_negative):
+    if not firstIsBoundsurf and secondIsBoundsurf:
         # TODO: check handling zeros
-        tmp = tmp1 * lb2_ub2 ** -1
-    elif firstIsBoundsurf and not secondIsBoundsurf and (t1_positive or t1_negative or t2_positive or t2_negative):
+        if not hasattr(other, '_inv'):
+            other._inv = other ** -1 #1.0/other
+#            other._inv.engine_convexity = other._inv.engine_monotonity = -1
+        Tmp = pow_const_interval(other, other._inv, -1, domain, dtype)[0]
+        if type(Tmp) == boundsurf:
+            tmp = tmp1 * Tmp#lb2_ub2 ** -1
+    elif firstIsBoundsurf and not secondIsBoundsurf:# and (t1_positive or t1_negative or t2_positive or t2_negative):
         # TODO: handle zeros
         tmp = lb1_ub1 * (1.0 / tmp2[::-1]) 
-    elif (firstIsBoundsurf  or secondIsBoundsurf) and \
-    (t1_positive or t1_negative) and (t2_positive or t2_negative):
-        assert tmp2.shape[0] == 2
+    elif firstIsBoundsurf  or secondIsBoundsurf:
         tmp = lb1_ub1 / lb2_ub2 
     if tmp is not None:
-        tmp.definiteRange = definiteRange
-        return tmp, tmp.definiteRange
+        if type(tmp) == boundsurf:
+            tmp.definiteRange = definiteRange
+            return tmp, tmp.definiteRange
+#        else:
+#            return tmp, definiteRange
 
     lb1, ub1 = tmp1[0], tmp1[1]
     lb2, ub2 = tmp2[0], tmp2[1]
@@ -310,7 +314,9 @@ def div_interval(self, other, domain, dtype):
     update_div_zero(lb1, ub1, lb2, ub2, r)
     return r, definiteRange
 
-def rdiv_interval(self, other, domain, dtype):
+def rdiv_interval(self, r, other, domain, dtype):
+#    Tmp, definiteRange = pow_const_interval(self, r, -1, domain, dtype)
+#    return other * Tmp, definiteRange
     arg_lb_ub, definiteRange = self._interval(domain, dtype, allowBoundSurf = True)
     if type(arg_lb_ub) == boundsurf:
         arg_lb_ub_resolved = arg_lb_ub.resolve()[0]
@@ -345,6 +351,9 @@ def pow_const_interval(self, r, other, domain, dtype):
         domain_isNegative = all(lb_ub_resolved <= 0)
         feasLB = -inf if other_is_int else 0.0
         if other > 0 or domain_isNegative:
+            return devided_interval(self, r, domain, dtype, feasLB = feasLB)
+        
+        if other_is_int and other < 0 and other % 2 != 0:
             return devided_interval(self, r, domain, dtype, feasLB = feasLB)
 
     allowBoundSurf = True if isscalar(other) and other == 0.5 else False
