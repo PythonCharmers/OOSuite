@@ -297,9 +297,9 @@ class oofun(object):
                     if len(Tmp):# and not domain.surf_preference:
                         R = R.exclude(Tmp)
                         if domain.useSave:
-                            domain.storedIntervals[self] = R
+                            domain.storedIntervals[self] = R if type(R) == boundsurf else (R, definiteRange)
                         if v is not None and self._usedIn > 1:
-                            domain.localStoredIntervals[self] = R
+                            domain.localStoredIntervals[self] = R if type(R) == boundsurf else (R, definiteRange)
                 return R, definiteRange
             else:
                 return r[0].resolve()
