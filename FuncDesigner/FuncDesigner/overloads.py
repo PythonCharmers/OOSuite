@@ -137,7 +137,7 @@ def sin(inp):
     r._interval_ = lambda domain, dtype: sin_interval(r, inp, domain, dtype)
     return r
 
-cos = lambda inp: sin(inp - np.pi / 2)
+cos = lambda inp: sin(inp + np.pi / 2)
 
 st_tan = (lambda x: \
 distribution.stochasticDistribution(tan(x.values), x.probabilities.copy())._update(x) \
