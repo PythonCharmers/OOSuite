@@ -37,20 +37,15 @@ class oovar(oofun):
         oofun.__init__(self, f_none, *args, **kwargs)
     
     def _interval_(self, domain, dtype = float64):
-        tmp = domain.get(self, None)
-        if tmp is None: return None
-        if isinstance(tmp, ndarray) or isscalar(tmp): # thus variable value is fixed for this calculation
-            tmp = asarray(tmp, dtype)
-            return tile(tmp, (2, 1)), True
-        infinum, supremum = tmp
-        if type(infinum) in (list, tuple): 
-            infinum = array(infinum, dtype)
-        elif isscalar(infinum):
-            infinum = dtype(infinum)
-        if type(supremum) in (list, tuple): 
-            supremum = array(supremum, dtype)
-        elif isscalar(supremum):
-            supremum = dtype(supremum)
+        
+#        if type(infinum) in (list, tuple): 
+#            infinum = array(infinum, dtype)
+#        elif isscalar(infinum):
+#            infinum = dtype(infinum)
+#        if type(supremum) in (list, tuple): 
+#            supremum = array(supremum, dtype)
+#        elif isscalar(supremum):
+#            supremum = dtype(supremum)
             
 #        if modificationVar is self:
 #            assert dtype in (float, float64),  'other types unimplemented yet'
@@ -61,7 +56,13 @@ class oovar(oofun):
 #        assert np.all(rr[0]==vstack((infinum, supremum)))
 #        return vstack((infinum, supremum)), True
         if self in domain.resolveSchedule:
-            return vstack((infinum, supremum)), True
+            tmp = domain.get(self, None)
+            if tmp is None: return None
+            if isinstance(tmp, ndarray) or isscalar(tmp): # thus variable value is fixed for this calculation
+                tmp = asarray(tmp, dtype)
+                return tile(tmp, (2, 1)), True
+            infinum, supremum = tmp
+            return asarray(vstack((infinum, supremum)), dtype), True
         else:
             S = surf({self: One}, Zero)
             return boundsurf(S, S, True, domain), True

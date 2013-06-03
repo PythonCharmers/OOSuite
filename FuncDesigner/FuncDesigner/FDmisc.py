@@ -300,15 +300,16 @@ def update_mul_inf_zero(lb1_ub1, lb2_ub2, t):
 
 def update_negative_int_pow_inf_zero(arg_infinum, arg_supremum, r, other):
     r1, r2 = r
-    ind_zero_minus = logical_and(arg_infinum<0, arg_supremum>=0)
-    if any(ind_zero_minus):
-        r1[atleast_1d(logical_and(ind_zero_minus, other>0))] = -inf
-        r2[atleast_1d(logical_and(ind_zero_minus, other<0))] = inf
-        
-    ind_zero_plus = logical_and(arg_infinum<=0, arg_supremum>0)
-    if any(ind_zero_plus):
-        r1[atleast_1d(logical_and(ind_zero_plus, other<0))] = -inf
-        r2[atleast_1d(logical_and(ind_zero_plus, other>0))] = inf
+    assert other < 0
+    ind_zero = logical_and(arg_infinum<0, arg_supremum>0)
+    r1[ind_zero] = -inf
+    r2[ind_zero] = inf
+    ind_zero_minus = logical_and(arg_infinum<0, arg_supremum==0)
+    r1[ind_zero_minus] = -inf
+    r2[ind_zero_minus] = arg_infinum[ind_zero_minus]**other
+    ind_zero_plus = logical_and(arg_infinum==0, arg_supremum>0)
+    r1[ind_zero_plus] = arg_supremum[ind_zero_plus]**other
+    r2[ind_zero_plus] = inf
         
 def update_div_zero(lb1, ub1, lb2, ub2, r):
     r1, r2 = r
