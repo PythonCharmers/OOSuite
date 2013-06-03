@@ -39,7 +39,7 @@ startPoint = {
 p = NLP(objective, startPoint, constraints = constraints)
 solver = 'scipy_cobyla' 
 r = p.minimize(solver, iprint = 5, maxDistributionSize=100)
-''' output for Intel Atom 1.6 GHz (may differ due to random numbers involved in solver "de")
+''' output for Intel Atom 1.6 GHz:
 ------------------------- OpenOpt 0.39 -------------------------
 solver: scipy_cobyla   problem: unnamed    type: NLP   goal: minimum
  iter   objFunVal   log10(maxResidual)   
