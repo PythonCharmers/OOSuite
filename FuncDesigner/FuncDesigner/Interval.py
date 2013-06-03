@@ -355,7 +355,7 @@ def pow_const_interval(self, r, other, domain, dtype):
             return devided_interval(self, r, domain, dtype, feasLB = feasLB)
         
         if other_is_int and other < 0:# and other % 2 != 0:
-            isOdd = other % 2 != 1
+            isOdd = other % 2 == 1
             lb, ub = lb_ub_resolved 
             ind_positive, ind_negative, ind_z = split(lb >= 0, ub <= 0)
             B, inds = [], []
@@ -369,7 +369,7 @@ def pow_const_interval(self, r, other, domain, dtype):
                 inds.append(ind_negative)
                 
                 # TODO: fix it
-                monotonity = np.nan#-1 if isOdd else 1
+                monotonity = -1 if isOdd else 1
                 
                 convexity = -1 if isOdd else 1
                 b = defaultIntervalEngine(lb_ub, r.fun, r.d, monotonity = monotonity, convexity = convexity, 
