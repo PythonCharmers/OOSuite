@@ -340,6 +340,7 @@ def pow_const_interval(self, r, other, domain, dtype):
     isBoundSurf = type(lb_ub) == boundsurf
     lb_ub_resolved = lb_ub.resolve()[0] if isBoundSurf else lb_ub
     other_is_int = asarray(other, int) == other
+    isOdd = other_is_int and other % 2 == 1
     if isBoundSurf and not any(np.isinf(lb_ub_resolved)):
         domain_isPositive = all(lb_ub_resolved >= 0)
         
@@ -355,7 +356,6 @@ def pow_const_interval(self, r, other, domain, dtype):
             return devided_interval(self, r, domain, dtype, feasLB = feasLB)
         
         if other_is_int and other < 0:# and other % 2 != 0:
-            isOdd = other % 2 == 1
             lb, ub = lb_ub_resolved 
             ind_positive, ind_negative, ind_z = split(lb >= 0, ub <= 0)
             B, inds = [], []
@@ -392,32 +392,22 @@ def pow_const_interval(self, r, other, domain, dtype):
             return r, r.definiteRange
 
     lb_ub = lb_ub_resolved
-    lb, ub = lb_ub[0], lb_ub[1]
-    if not other_is_int:
+    lb, ub = lb_ub
+    if not other_is_int or not isOdd:
         ind = logical_and(lb < 0, ub >= 0)
         if any(ind):
             lb_ub = lb_ub.copy()
             lb, ub = lb_ub
             lb[ind] = 0.0
-            definiteRange = logical_and(definiteRange, logical_not(ind))
+            if not other_is_int:
+                definiteRange = logical_and(definiteRange, logical_not(ind))
 
     Tmp = lb_ub ** other
     Tmp.sort(axis = 0)
+    
     if other < 0 and other_is_int:
         update_negative_int_pow_inf_zero(lb, ub, Tmp, other)
-    ind = lb < 0.0
-    if any(ind):
-        t_min, t_max = Tmp
-        isNonInteger = other != asarray(other, int) # TODO: rational numbers?
-        
-        if any(isNonInteger):
-            definiteRange = logical_and(definiteRange, logical_not(ind))
-        
-        ind_nan = logical_and(logical_and(ind, isNonInteger), ub < 0)
-        if any(ind_nan):
-            t_max[atleast_1d(ind_nan)] = nan
-        
-        t_min[atleast_1d(logical_and(ind, logical_and(t_min>0, ub >= 0)))] = 0.0
+
     return Tmp, definiteRange    
 
     
