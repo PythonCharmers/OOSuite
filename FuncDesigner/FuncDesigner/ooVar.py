@@ -37,24 +37,6 @@ class oovar(oofun):
         oofun.__init__(self, f_none, *args, **kwargs)
     
     def _interval_(self, domain, dtype = float64):
-        
-#        if type(infinum) in (list, tuple): 
-#            infinum = array(infinum, dtype)
-#        elif isscalar(infinum):
-#            infinum = dtype(infinum)
-#        if type(supremum) in (list, tuple): 
-#            supremum = array(supremum, dtype)
-#        elif isscalar(supremum):
-#            supremum = dtype(supremum)
-            
-#        if modificationVar is self:
-#            assert dtype in (float, float64),  'other types unimplemented yet'
-#            middle = 0.5 * (supremum+infinum)
-#            return (vstack((infinum, middle)), True), (vstack((middle, supremum)), True)
-        #if 0 and allowBoundSurf:
-#        rr = boundsurf(lowerSurf({self:1.0}, 0), upperSurf({self:1.0}, 0), True).resolve(domain)
-#        assert np.all(rr[0]==vstack((infinum, supremum)))
-#        return vstack((infinum, supremum)), True
         if self in domain.resolveSchedule:
             tmp = domain.get(self, None)
             if tmp is None: return None
@@ -66,17 +48,6 @@ class oovar(oofun):
         else:
             S = surf({self: One}, Zero)
             return boundsurf(S, S, True, domain), True
-#        if 1 and domain.isMultiPoint:
-#            return boundsurf(surf({self:1.0}, 0), surf({self:1.0}, 0), True), True
-#        else:
-#            return vstack((infinum, supremum)), True
-        
-        #else:
-            #return vstack((infinum, supremum)), True
-    
-    #def _interval_(self, domain, dtype):
-        #return self._interval()
-    #_interval_ = _interval
     
     def _getFuncCalcEngine(self, x, **kwargs):
         if hasattr(x, 'xf'):

@@ -405,6 +405,19 @@ def pow_const_interval(self, r, other, domain, dtype):
     Tmp.sort(axis = 0)
     if other < 0 and other_is_int:
         update_negative_int_pow_inf_zero(lb, ub, Tmp, other)
+    ind = lb < 0.0
+    if any(ind):
+        t_min, t_max = Tmp
+        isNonInteger = other != asarray(other, int) # TODO: rational numbers?
+        
+        if any(isNonInteger):
+            definiteRange = logical_and(definiteRange, logical_not(ind))
+        
+        ind_nan = logical_and(logical_and(ind, isNonInteger), ub < 0)
+        if any(ind_nan):
+            t_max[atleast_1d(ind_nan)] = nan
+        
+        t_min[atleast_1d(logical_and(ind, logical_and(t_min>0, ub >= 0)))] = 0.0
     return Tmp, definiteRange    
 
     
