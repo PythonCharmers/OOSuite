@@ -81,8 +81,8 @@ def sin_interval(r, inp, domain, dtype):
     R0 = np.vstack((lb, ub))
     
     if isBoundsurf:
-        #Inds = split(ub <= np.pi, logical_and(lb >= np.pi, ub <= 2*np.pi))
-        Inds = split(ub <= np.pi, lb >= np.pi)
+        Inds = split(ub <= np.pi, logical_and(lb >= np.pi, ub <= 2*np.pi)) # logical_and() is REQUIRED here
+        
         m = PythonSum(ind_.size for ind_ in Inds)
         inds, rr = [], []
         ind = Inds[0]
@@ -112,8 +112,14 @@ def sin_interval(r, inp, domain, dtype):
     lb, ub = R0
     R = r.fun(R0)
     R.sort(axis=0)
-    R[0][logical_and(lb < 3*np.pi/2, ub > 3*np.pi/2)] = -1.0
-    R[1][logical_and(lb < np.pi/2, ub > np.pi/2)] = 1.0
+    ind_minus_1 = logical_and(lb < 3*np.pi/2, ub > 3*np.pi/2)
+    R[0][ind_minus_1] = -1.0
+    ind_plus_1 = np.logical_or(
+                            logical_and(lb < np.pi/2, ub > np.pi/2), 
+                            logical_and(lb < 5*np.pi/2, ub > 5*np.pi/2)
+                            )
+    R[1][ind_plus_1] = 1.0
+    
     if not isBoundsurf or ind.size == m:
         return R, definiteRange
     else:
