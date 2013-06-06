@@ -96,7 +96,7 @@ def ZeroCriticalPointsInterval(inp, func):
         if any(ind):
             F0 = func(0.0)
             t_min[atleast_1d(logical_and(ind, t_min > F0))] = F0
-            t_max[atleast_1d(logical_and(ind, t_max < F0))] = F0
+#            t_max[atleast_1d(logical_and(ind, t_max < F0))] = F0
         return vstack((t_min, t_max)), definiteRange
     return interval
 
@@ -260,8 +260,8 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):
         t.sort(axis=0)
         
     #assert isinstance(t_min, ndarray) and isinstance(t_max, ndarray), 'Please update numpy to more recent version'
-    
-    update_mul_inf_zero(lb1_ub1, lb2_ub2, t)
+    if isOtherOOFun:
+        update_mul_inf_zero(lb1_ub1, lb2_ub2, t)
     
     return t, definiteRange
 
@@ -396,7 +396,7 @@ def pow_const_interval(self, r, other, domain, dtype):
     if not other_is_int or not isOdd:
         ind = logical_and(lb < 0, ub >= 0)
         if any(ind):
-            lb_ub = lb_ub.copy()
+            lb_ub = lb_ub.copy() # the value may be used from other oofuns interval evaluations
             lb, ub = lb_ub
             lb[ind] = 0.0
             if not other_is_int:
@@ -420,13 +420,10 @@ def pow_oofun_interval(self, other, domain, dtype):
     T = vstack((lb1 ** lb2, lb1** ub2, ub1**lb2, ub1**ub2))
     t_min, t_max = nanmin(T, 0), nanmax(T, 0)
     definiteRange = logical_and(definiteRange1, definiteRange2)
+    
     ind1 = lb1 < 0
-    # TODO: check it, especially with integer "other"
     if any(ind1):
-        
-        # TODO: rework it with matrix operations
-        definiteRange = False
-        
+        definiteRange = logical_and(definiteRange, logical_not(ind1))
         ind2 = ub1 >= 0
         t_min[atleast_1d(logical_and(logical_and(ind1, ind2), logical_and(t_min > 0.0, ub2 > 0.0)))] = 0.0
         t_max[atleast_1d(logical_and(ind1, logical_not(ind2)))] = nan
