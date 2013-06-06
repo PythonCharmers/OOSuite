@@ -129,9 +129,10 @@ def nonnegative_interval(inp, func, deriv, domain, dtype, F0, shift = 0.0):
             
     lb, ub = lb_ub_resolved[0], lb_ub_resolved[1]
     th = shift # 0.0 + shift = shift
-    ind = where(lb < th)[0]
+    ind = lb < th
+
     
-    if ind.size != 0:
+    if any(ind):
         lb_ub_resolved = lb_ub_resolved.copy()
         lb_ub_resolved[0][logical_and(ind, ub >= th)] = th
         if definiteRange is not False:
