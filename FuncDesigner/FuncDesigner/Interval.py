@@ -236,7 +236,9 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):
     firstNegative = all(ub1 <= 0)
     secondPositive = all(lb2 >= 0)
     secondNegative = all(ub2 <= 0)
-    if firstPositive and secondPositive:
+    if isscalar(other):
+        t = lb1_ub1 * other if other >= 0 else lb1_ub1[::-1] * other
+    elif firstPositive and secondPositive:
         t= vstack((lb1 * lb2, ub1 * ub2))
     elif firstNegative and secondNegative:
         t = vstack((ub1 * ub2, lb1 * lb2))
@@ -244,8 +246,7 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):
         t = vstack((lb2 * ub1, lb1 * ub2))
     elif firstNegative and secondPositive:
         t = vstack((lb1 * ub2, lb2 * ub1))
-    elif isscalar(other):
-        t = vstack((lb1 * other, ub1 * other) if other >= 0 else (ub1 * other, lb1 * other))
+        #t = vstack((lb1 * other, ub1 * other) if other >= 0 else (ub1 * other, lb1 * other))
     elif isOtherOOFun:
         t = vstack((lb1 * lb2, ub1 * lb2, lb1 * ub2, ub1 * ub2))# TODO: improve it
         t = vstack((nanmin(t, 0), nanmax(t, 0)))
