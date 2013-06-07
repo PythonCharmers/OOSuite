@@ -52,8 +52,8 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
         if not isSNLE:
             for node in nodes:
                 node.fo = fo_prev       
-        if nlhc is not None:
-            for i, node in enumerate(nodes): node.tnlhf = node.nlhf + node.nlhc
+        if nlhc is not None and not isSNLE:
+            for i, node in enumerate(nodes): node.tnlhf = node.nlhc + node.nlhf 
         else:
             for i, node in enumerate(nodes): node.tnlhf = node.nlhf # TODO: improve it
             
@@ -61,16 +61,31 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
         
         #tnlh_fixed = vstack([node.tnlhf for node in an])
         tnlh_fixed_local = vstack([node.tnlhf for node in nodes])#tnlh_fixed[:len(nodes)]
-
-        tmp = a.copy()
-
-        
-        tmp[tmp>fo_prev] = fo_prev
-        tmp2 = tmp - o
-        tmp2[tmp2<1e-300] = 1e-300
-        tmp2[o > fo_prev] = nan
-        tnlh_curr = tnlh_fixed_local - log2(tmp2)
+        if 1:
+            tmp = a.copy()
+            
+            tmp[tmp>fo_prev] = fo_prev
+            tmp2 = tmp - o
+            tmp2[tmp2<1e-300] = 1e-300
+            tmp2[o > fo_prev] = nan
+            tnlh_curr = tnlh_fixed_local - log2(tmp2)
+            tnlh_curr_best = nanmin(tnlh_curr, 1)
+            for i, node in enumerate(nodes):
+                node.tnlh_curr = tnlh_curr[i]
+                node.tnlh_curr_best = tnlh_curr_best[i]
+        else:
+            if isSNLE:
+                tnlh_curr = tnlh_fixed_local
+            else:
+                tmp = a.copy()
+                tmp[tmp>fo_prev] = fo_prev
+                tmp2 = tmp - o
+                tmp2[tmp2<1e-300] = 1e-300
+                tmp2[o > fo_prev] = nan
+                tnlh_curr = tnlh_fixed_local - log2(tmp2)
+                
         tnlh_curr_best = nanmin(tnlh_curr, 1)
+            
         for i, node in enumerate(nodes):
             node.tnlh_curr = tnlh_curr[i]
             node.tnlh_curr_best = tnlh_curr_best[i]
@@ -140,7 +155,7 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
             #NN = take(NN, ind, axis=0, out=NN[:ind.size])
             NN = NN[ind]
 
-        if not isSNLE or p.maxSolutions == 1:
+        if 1 or not isSNLE or p.maxSolutions == 1:
             #pass
             astnlh = argsort(NN)
             an = an[astnlh]
@@ -174,7 +189,7 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
 #                    assert all(arr[1:]>= arr[:-1])
 
     if maxSolutions != 1:
-        Solutions = r46(o, a, PointCoords, PointVals, fTol, varTols, Solutions)
+        Solutions = r46(PointCoords, PointVals, fTol, varTols, Solutions)
         
         p._nObtainedSolutions = len(solutions)
         if p._nObtainedSolutions > maxSolutions:
@@ -202,13 +217,8 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
     return an, g, fo, _s, Solutions, xRecord, r41, r40
 
 
-def r46(o, a, PointCoords, PointVals, fTol, varTols, Solutions):
+def r46(PointCoords, PointVals, fTol, varTols, Solutions):
     solutions, coords = Solutions.solutions, Solutions.coords
-    #n = o.shape[1] / 2
-    
-    #L1, L2 = o[:, :n], o[:, n:]
-    #omin = where(logical_or(L1 > L2, isnan(L1)), L2, L1)
-    #r5Ind =  where(logical_and(PointVals < fTol, nanmax(omin, 1) == 0.0))[0]
     
     r5Ind =  where(PointVals < fTol)[0]
 
@@ -254,8 +264,6 @@ def r45(y, e, vv, p, asdf1, dataType, r41, nlhc):
                 ######################
                 
                 r41 = nanmin((r41, tmp1)) 
-    else:
-        pass
         
     return o, a, r41
 

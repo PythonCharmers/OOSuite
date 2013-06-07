@@ -180,6 +180,9 @@ class interalg(baseSolver):
             eqs = [fd_abs(elem) for elem in p.user.f]
             asdf1 = fd_sum(eqs)
             
+            # temporary change, TODO: rework it
+            asdf1.resolveSchedule = asdf1._getDep()
+            
             # TODO: check it, for reducing calculations
             #C.update([elem == 0 for elem in p.user.f])
         elif isMOP:
@@ -301,7 +304,7 @@ class interalg(baseSolver):
             return
 
         while 1:
-            if len(C0) != 0: 
+            if len(C0) != 0:# and not isSNLE: 
                 y, e, nlhc, residual, definiteRange, indT, _s = processConstraints(C0, y, e, _s, p, dataType)
             else:
                 nlhc, residual, definiteRange, indT = None, None, True, None
@@ -353,9 +356,12 @@ class interalg(baseSolver):
         if not isFeas and p.istop > 0:
             p.istop, p.msg = -1000, 'no feasible solution has been obtained'
         
-        o = asarray([t.o for t in an])
-        if o.size != 0:
-            g = nanmin([nanmin(o), g])
+        if isSNLE:
+            lf = inf
+        else:
+            lf = asarray([t.o for t in an]).flatten()
+            if lf.size != 0:
+                g = nanmin([nanmin(lf), g])
 
         if not isMOP:
             p.extras['isRequiredPrecisionReached'] = \
@@ -368,7 +374,7 @@ class interalg(baseSolver):
             
         # TODO: simplify it
         if not isMOP:
-            tmp = [nanmin(np.hstack((ff, g, o.flatten()))), np.asscalar(np.array(ff))]
+            tmp = [nanmin(np.hstack((ff, g, lf))), np.asscalar(np.array(ff))]
             if p.goal in ['max', 'maximum']: tmp = (-tmp[1], -tmp[0])
             p.extras['extremumBounds'] = tmp if not isIP else 'unimplemented for IP yet'
         
