@@ -228,6 +228,9 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):
         r = lb1_ub1 * lb2_ub2
         r.definiteRange = definiteRange
         return r, r.definiteRange
+    elif isscalar(other) or (type(other) == ndarray and other.size == 1):
+        r = lb1_ub1 * other if other >= 0 else lb1_ub1[::-1] * other
+        return r, definiteRange
     
     lb1, ub1 = lb1_ub1
     lb2, ub2 = lb2_ub2 if isOtherOOFun else (other, other)
@@ -236,9 +239,7 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):
     firstNegative = all(ub1 <= 0)
     secondPositive = all(lb2 >= 0)
     secondNegative = all(ub2 <= 0)
-    if isscalar(other):
-        t = lb1_ub1 * other if other >= 0 else lb1_ub1[::-1] * other
-    elif firstPositive and secondPositive:
+    if firstPositive and secondPositive:
         t= vstack((lb1 * lb2, ub1 * ub2))
     elif firstNegative and secondNegative:
         t = vstack((ub1 * ub2, lb1 * lb2))
