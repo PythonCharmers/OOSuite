@@ -10,7 +10,7 @@ x[4].domain = [0.9, -0.7, 0.4] # let's set one of x coords as  discrete variable
 y = oovar(domain = bool) # the same to domain = [0,1], but has some optimizations
 z = oovar(domain = [1, 1.5, 2, 4, 6, -4, 5]) 
 
-F = sum(x) / n  + y*sin(z) 
+F = sum(x) / n  + y*sin(z)  
 
 constraints = [
                x>-1, x<1, 
@@ -50,5 +50,5 @@ OpenOpt info: Solution with required tolerance 5.0e-02
   427  -1.722e+00                     -0.76 
 istop: 1000 (solution has been obtained)
 Solver:   Time Elapsed = 190.9 	CPU Time Elapsed = 189.13
-objFunValue: -1.7168538 (feasible, max(residuals/requiredTolerances) = 0.0799645)
+objFunValue: -1.7220354 (feasible, max(residuals/requiredTolerances) = 0.171915)
 '''
