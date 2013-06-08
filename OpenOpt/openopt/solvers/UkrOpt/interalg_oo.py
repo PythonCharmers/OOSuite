@@ -304,7 +304,7 @@ class interalg(baseSolver):
             return
 
         while 1:
-            if len(C0) != 0:# and not isSNLE: 
+            if len(C0) != 0: # SNLE also can have constraints
                 y, e, nlhc, residual, definiteRange, indT, _s = processConstraints(C0, y, e, _s, p, dataType)
             else:
                 nlhc, residual, definiteRange, indT = None, None, True, None

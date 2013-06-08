@@ -27,7 +27,7 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
         y, e = adjustDiscreteVarBounds(y, e, p)
     
     o, a, r41 = r45(y, e, vv, p, asdf1, dataType, r41, nlhc)
-
+    
     fo_prev = float(0 if isSNLE else min((r41, r40 - (fTol if maxSolutions == 1 else 0))))
     if fo_prev > 1e300:
         fo_prev = 1e300
@@ -52,10 +52,11 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
         if not isSNLE:
             for node in nodes:
                 node.fo = fo_prev       
-        if nlhc is not None and not isSNLE:
-            for i, node in enumerate(nodes): node.tnlhf = node.nlhc + node.nlhf 
+                
+        if p.__isNoMoreThanBoxBounded__():#nlhc is not None and not isSNLE:
+            for i, node in enumerate(nodes): node.tnlhf = node.nlhf 
         else:
-            for i, node in enumerate(nodes): node.tnlhf = node.nlhf # TODO: improve it
+            for i, node in enumerate(nodes): node.tnlhf = node.nlhc + node.nlhf 
             
         an = hstack((nodes, _in))
         
@@ -69,10 +70,6 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
             tmp2[tmp2<1e-300] = 1e-300
             tmp2[o > fo_prev] = nan
             tnlh_curr = tnlh_fixed_local - log2(tmp2)
-            tnlh_curr_best = nanmin(tnlh_curr, 1)
-            for i, node in enumerate(nodes):
-                node.tnlh_curr = tnlh_curr[i]
-                node.tnlh_curr_best = tnlh_curr_best[i]
         else:
             if isSNLE:
                 tnlh_curr = tnlh_fixed_local
@@ -83,9 +80,7 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
                 tmp2[tmp2<1e-300] = 1e-300
                 tmp2[o > fo_prev] = nan
                 tnlh_curr = tnlh_fixed_local - log2(tmp2)
-                
         tnlh_curr_best = nanmin(tnlh_curr, 1)
-            
         for i, node in enumerate(nodes):
             node.tnlh_curr = tnlh_curr[i]
             node.tnlh_curr_best = tnlh_curr_best[i]
