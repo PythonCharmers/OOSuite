@@ -388,22 +388,17 @@ def pow_const_interval(self, r, other, domain, dtype):
             return r, r.definiteRange
 
     lb_ub = lb_ub_resolved
+    Tmp = lb_ub ** other
+    Tmp.sort(axis = 0)
     lb, ub = lb_ub
-    ind_z = None
+    
     if not other_is_int or not isOdd:
         ind_z = logical_and(lb < 0, ub >= 0)
         if any(ind_z):
-#            lb_ub = lb_ub.copy() # the value may be used from other oofuns interval evaluations
-#            lb, ub = lb_ub
-#            lb[ind] = 0.0
+            Tmp[0, ind_z] = 0.0
             if not other_is_int:
                 definiteRange = logical_and(definiteRange, logical_not(ind_z))
 
-    Tmp = lb_ub ** other
-    Tmp.sort(axis = 0)
-    if ind_z is not None:
-        Tmp[0, ind_z] = 0.0
-    
     if other < 0 and other_is_int:
         update_negative_int_pow_inf_zero(lb, ub, Tmp, other)
 
