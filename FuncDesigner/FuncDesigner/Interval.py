@@ -76,6 +76,7 @@ def ZeroCriticalPoints(lb_ub):
 def ZeroCriticalPointsInterval(inp, func):
     is_abs = func == np.abs
     is_cosh = func == np.cosh    
+    assert is_abs or is_cosh
     def interval(domain, dtype):
         allowBoundSurf = is_abs or is_cosh
         lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = allowBoundSurf)
@@ -84,20 +85,17 @@ def ZeroCriticalPointsInterval(inp, func):
                 return lb_ub.abs()
             elif is_cosh:
                 return defaultIntervalEngine(lb_ub, func, np.sinh, np.nan, 1, 0.0, 1.0)
-            else:
-               assert 0, 'bug or unimplemented yet' 
         
-        lb, ub = lb_ub[0], lb_ub[1]
+        lb, ub = lb_ub#[0], lb_ub[1]
         ind1, ind2 = lb < 0.0, ub > 0.0
         ind = logical_and(ind1, ind2)
-        tmp = vstack((lb, ub))
-        TMP = func(tmp)
-        t_min, t_max = atleast_1d(nanmin(TMP, 0)), atleast_1d(nanmax(TMP, 0))
+        TMP = func(lb_ub)
+        TMP.sort(axis=0)
         if any(ind):
             F0 = func(0.0)
-            t_min[atleast_1d(logical_and(ind, t_min > F0))] = F0
-#            t_max[atleast_1d(logical_and(ind, t_max < F0))] = F0
-        return vstack((t_min, t_max)), definiteRange
+            TMP[0, atleast_1d(logical_and(ind, TMP[0] > F0))] = F0
+#            TMP[atleast_1d(logical_and(ind, t_max < F0))] = F0
+        return TMP, definiteRange
     return interval
 
 def nonnegative_interval(inp, func, deriv, domain, dtype, F0, shift = 0.0):
@@ -127,14 +125,14 @@ def nonnegative_interval(inp, func, deriv, domain, dtype, F0, shift = 0.0):
     else:
         lb_ub_resolved = lb_ub
             
-    lb, ub = lb_ub_resolved[0], lb_ub_resolved[1]
+    lb, ub = lb_ub_resolved#[0], lb_ub_resolved[1]
     th = shift # 0.0 + shift = shift
     ind = lb < th
 
     
     if any(ind):
         lb_ub_resolved = lb_ub_resolved.copy()
-        lb_ub_resolved[0][logical_and(ind, ub >= th)] = th
+        lb_ub_resolved[0, logical_and(ind, ub >= th)] = th
         if definiteRange is not False:
             if type(definiteRange) != np.ndarray:
                 definiteRange = np.empty_like(lb, bool)
