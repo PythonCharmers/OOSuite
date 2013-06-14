@@ -405,10 +405,14 @@ def pow_const_interval(self, r, other, domain, dtype):
     
 def pow_oofun_interval(self, other, domain, dtype): 
     # TODO: handle discrete cases
-    lb1_ub1, definiteRange1 = self._interval(domain, dtype)
-    lb1, ub1 = lb1_ub1[0], lb1_ub1[1]
-    lb2_ub2, definiteRange2 = other._interval(domain, dtype)
-    lb2, ub2 = lb2_ub2[0], lb2_ub2[1]
+    lb1_ub1, definiteRange1 = self._interval(domain, dtype, allowBoundSurf = True)
+    lb2_ub2, definiteRange2 = other._interval(domain, dtype, allowBoundSurf = True)
+    if type(lb1_ub1) == boundsurf or type(lb2_ub2) == boundsurf:
+        r = (lb2_ub2 * lb1_ub1.log()).exp()
+        return r, r.definiteRange
+    
+    lb1, ub1 = lb1_ub1#[0], lb1_ub1[1]
+    lb2, ub2 = lb2_ub2#[0], lb2_ub2[1]
     T = vstack((lb1 ** lb2, lb1** ub2, ub1**lb2, ub1**ub2))
     t_min, t_max = nanmin(T, 0), nanmax(T, 0)
     definiteRange = logical_and(definiteRange1, definiteRange2)
