@@ -61,8 +61,7 @@ def interalg_ODE_routine(p, solver):
         
         mp.dictOfFixedFuncs = p.dictOfFixedFuncs
         mp.surf_preference = True
-#        tmp = f.interval(mp, allowBoundSurf = isIP)
-        tmp = f.interval(mp, allowBoundSurf = 1)
+        tmp = f.interval(mp, allowBoundSurf = True)
         if not all(tmp.definiteRange):
             p.err('''
             solving ODE and IP by interalg is implemented for definite (real) range only, 
@@ -106,22 +105,34 @@ def interalg_ODE_routine(p, solver):
             o, a = atleast_1d(tmp.lb), atleast_1d(tmp.ub)
             r20 = a - o
 
+        
+#        if isODE:
+#            r36 = atleast_1d(r20 <= 0.95 * r33)
+##            r36 = np.logical_and(r36, r20 < ftol)
+##            r36 = np.logical_and(r36, a-o < ftol)
+#        else:
+#            r36 = atleast_1d(r20 <= 0.95 * r33 / r37)
+
         r36 = atleast_1d(r20 <= 0.95 * r33 / r37)
         if isODE:
-            r36 = np.logical_and(r36, r20 < ftol)
+#            r36 = np.logical_and(r36, r20 < ftol)
+            r36 = np.logical_and(r36, a-o < ftol)
+
         ind = where(r36)[0]
         if isODE:
             storedr28.append(r28[ind])
             r27.append(r29[ind])
             r31.append(a[ind])
             r32.append(o[ind])
+#            r31.append(a[ind])
+#            r32.append(o[ind])
         else:
             assert isIP
             F += 0.5 * sum((r29[ind]-r28[ind])*(a[ind]+o[ind]))
         
         if ind.size != 0: 
             tmp = abs(r29[ind] - r28[ind])
-            Tmp = sum(r20[ind] * tmp)
+            Tmp = sum(r20[ind] * tmp) #if isIP else sum(r20[ind])
             r33 -= Tmp
             if isIP: p._residual += Tmp
             r37 -= sum(tmp)
