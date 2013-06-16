@@ -5,7 +5,7 @@ ones, ndarray, where, array, nan, vstack, eye, array_equal, isscalar, log, hstac
 isnan, asscalar, zeros_like, ones_like, logical_and, logical_or, isinf, logical_not, logical_xor, \
 tile, float64, searchsorted, int8, int16, int32, int64, isfinite, log2, string_, asanyarray, bool_
 
-import operator
+import operator, numpy as np
 
 #from traceback import extract_stack 
 try:
@@ -642,10 +642,13 @@ class oofun(object):
         if self._isProd:
 #            assert len(self._prod_elements) == 2, 'bug in FD kernel'
             if not isinstance(self._prod_elements[-1], (oofun, OOArray)):
+                # TODO: replace np.prod by fd.prod
                 if not isOtherOOFun:
-                    return self._prod_elements[0] * (other * self._prod_elements[-1])
+                    return (np.prod(self._prod_elements[:-1]) if len(self._prod_elements) > 2 else self._prod_elements[0])\
+                    * (other * self._prod_elements[-1])
                 else:
-                    return (self._prod_elements[0] * other) * self._prod_elements[-1]
+                    return (self._prod_elements[0] * other) * \
+                    (np.prod(self._prod_elements[1:]) if len(self._prod_elements) > 2 else self._prod_elements[1] )
         
         if isOtherOOFun:
             r = oofun(operator.mul, [self, other])
