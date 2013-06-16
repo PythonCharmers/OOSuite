@@ -637,18 +637,46 @@ class oofun(object):
             return other.__mul__(self)
         
         isOtherOOFun = isinstance(other, oofun)
+        if isOtherOOFun and other._isProd and not self._isProd:
+            return other * self
+            
         if isinstance(other, list): other = asarray(other)
         
         if self._isProd:
-#            assert len(self._prod_elements) == 2, 'bug in FD kernel'
-            if not isinstance(self._prod_elements[-1], (oofun, OOArray)):
+            if isOtherOOFun and other._isProd and not isinstance(other._prod_elements[-1], (oofun, OOArray))\
+            and isinstance(self._prod_elements[-1], (oofun, OOArray)):
+                return other * self
+            
+            P1, rest1 = (self._prod_elements, None) \
+            if isinstance(self._prod_elements[-1], (oofun, OOArray))\
+            else (self._prod_elements[:-1], self._prod_elements[-1])
+            P2, rest2 = ([], other) if not isOtherOOFun\
+            else ([other], None) if not other._isProd\
+            else (other._prod_elements, None) \
+            if other._isProd and isinstance(other._prod_elements[-1], (oofun, OOArray))\
+            else (other._prod_elements[:-1], other._prod_elements[-1])
+            rest = rest1 *  rest2 if rest1 is not None and rest2 is not None\
+            else rest1 if rest1 is not None\
+            else rest2 if rest2 is not None\
+            else None
+#            INP = P1+P2
+#            if rest is not None: 
+#                INP.append(rest)
+#            r = oofun(np.prod, INP, vectorized=True)
+
+            if rest1 is not None and rest2 is not None and isOtherOOFun:
+                r = np.prod(P1+P2)*rest
+                r._prod_elements = P1+P2+[rest]
+                return r
+            
+            if rest1 is not None:
                 # TODO: replace np.prod by fd.prod
-                if not isOtherOOFun:
-                    return (np.prod(self._prod_elements[:-1]) if len(self._prod_elements) > 2 else self._prod_elements[0])\
-                    * (other * self._prod_elements[-1])
-                else:
-                    return (self._prod_elements[0] * other) * \
-                    (np.prod(self._prod_elements[1:]) if len(self._prod_elements) > 2 else self._prod_elements[1] )
+                return \
+                (other*(np.prod(self._prod_elements[:-1]) if len(self._prod_elements) > 2 else self._prod_elements[0]))\
+                * rest1 \
+                if isOtherOOFun else \
+                (np.prod(self._prod_elements[:-1]) if len(self._prod_elements) > 2 else self._prod_elements[0])\
+                * (other * rest1)
         
         if isOtherOOFun:
             r = oofun(operator.mul, [self, other])
