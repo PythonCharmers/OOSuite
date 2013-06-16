@@ -120,13 +120,12 @@ def processConstraint(c, order_kw, p):
         p.QC.append((H, f, -c.ub + C))
         
 
-
-from FuncDesigner.ooFun import oofun
-from FuncDesigner.baseClasses import OOArray
 from nonOptMisc import scipyInstalled
 import numpy as np
 
 def quad_render(arg, p):
+    from FuncDesigner.ooFun import oofun
+    from FuncDesigner.baseClasses import OOArray
     if isinstance(arg, OOArray):
         assert arg.size == 1, 'quad_render works with oofuns with scalar output only'
         arg = arg.item()
