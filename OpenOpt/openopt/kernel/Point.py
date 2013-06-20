@@ -485,26 +485,25 @@ class Point:
                     d[ind_ub] += ub[ind_ub]# d/dx((x-ub)^2) for violated constraints
                 if any(ind_lin_ineq):
                     # d/dx((Ax-b)^2)
-                    b = p.b[ind_lin_ineq]
+                    Ind_lin_ineq = where(ind_lin_ineq)[0]
+                    b = p.b[Ind_lin_ineq]
                     if hasattr(p, '_A'):
-                        a = p._A[ind_lin_ineq] 
+                        a = p._A[Ind_lin_ineq] 
                         tmp = a._mul_sparse_matrix(csr_matrix((self.x, (arange(n), zeros(n))), shape=(n, 1))).toarray().flatten() - b 
                         
                         #tmp = a._mul_sparse_matrix(csr_matrix((self.x, reshape(p.n, 1))).toarray().flatten() - b 
                         d += a.T._mul_sparse_matrix(tmp.reshape(tmp.size, 1)).A.flatten()
                         #d += dot(a.T, dot(a, self.x)  - b) 
                     else:
-                        if isPyPy:
-                            a = vstack([p.A[j] for j in where(ind_lin_ineq)[0]])
-                        else:
-                            a = p.A[ind_lin_ineq] 
+                        a = p.A[ind_lin_ineq] 
                         d += dot(a.T, dot(a, self.x)  - b) # d/dx((Ax-b)^2)
                 if any(ind_lin_eq):
+                    #Ind_lin_eq = where(ind_lin_eq)[0]
                     if isspmatrix(p.Aeq):
                         p.err('this solver is not ajusted to handle sparse Aeq matrices yet')
                     #self.p.err('nonzero threshold is not ajusted with lin eq yet')
-                    aeq = p.Aeq#[ind_lin_eq]
-                    beq = p.beq#[ind_lin_eq]
+                    aeq = p.Aeq#[Ind_lin_eq]
+                    beq = p.beq#[Ind_lin_eq]
                     d += dot(aeq.T, dot(aeq, self.x)  - beq) # d/dx((Aeq x - beq)^2)
                     
 
@@ -512,6 +511,7 @@ class Point:
                 self._all_lin_gradient = 2.0 * d / p.contol
 
             else:
+                assert 0
                 if any(ind_lb):
                     d[ind_lb] -= 1# d/dx(lb-x) for violated constraints
                 if any(ind_ub):
