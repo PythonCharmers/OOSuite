@@ -2,7 +2,7 @@ from FuncDesigner import *
 from numpy import ones
 a, b = oovars('a', 'b')
 a_infsup = (-ones(3), [1, 2, 3]) # Python list or tuple with 2 elements LowerBound, UpperBound
-b_infsup = [2, 50.5] # or as tuple: (2, 50.5)
+b_infsup = (2, 50.5)
 f1 = 2 * a
 f2 = b + 15
 f = f1 + f2
@@ -16,5 +16,5 @@ print(f_interval.lb, f_interval.ub) # (array([-2., -2., -2.]), array([ 2.,  4., 
 print(f_interval) # "FuncDesigner interval with lower bound [-2. -2. -2.] and upper bound [ 2.  4.  6.]"
 
 f = sin(b) + cos(b+0.15)
-f_interval = f.interval({a: 1000, b: [-0.1, 3.14/2]}) # fixed a = 1000, b from -0.1 to 3.14/2
+f_interval = f.interval({a: 1000, b: (-0.1, 3.14/2)}) # fixed a = 1000, b from -0.1 to 3.14/2
 print(f_interval.lb, f_interval.ub) # (-1.0985836770417943, 1.1486503832031978)
