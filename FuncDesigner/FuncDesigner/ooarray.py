@@ -205,6 +205,7 @@ class ooarray(OOArray):
         return ooarray([other[i] ** elem for i, elem in enumerate(self.tolist())])
     
     def __eq__(self, other):
+        if type(other) == str and other =='__builtins__': return False  
         r = self - other
         if r.dtype != object: return all(r)
         if r.size == 1: return asscalar(r)==0

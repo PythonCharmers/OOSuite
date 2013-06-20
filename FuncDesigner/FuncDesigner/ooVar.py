@@ -116,6 +116,7 @@ class oovar(oofun):
     __invert__ = NOT
     __ne__ = lambda self, arg: NOT(self==arg)
     def __eq__(self, other): 
+        if type(other) == str and other =='__builtins__': return False  
         if (self.domain is bool or self.domain is 'bool') and isinstance(other, (oovar, BooleanOOFun)):
             return EQUIVALENT(self, other)
         else:

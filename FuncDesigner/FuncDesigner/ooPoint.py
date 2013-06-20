@@ -59,7 +59,8 @@ class ooPoint(dict):
 #            else float(val) if type(val) == int\
 #            else val) for key, val in Iterator)
         else:
-            items = ((key, (atleast_1d(val[0]), atleast_1d(val[1])) if type(val) in (list, tuple)\
+            # TODO: rework it
+            items = ((key, (atleast_1d(val[0]), atleast_1d(val[1])) if type(val) == tuple\
             else atleast_1d(val) if not isinstance(val, Stochastic)\
             else val)\
             for key, val in Iterator)
