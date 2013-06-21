@@ -428,6 +428,9 @@ def pow_oofun_interval(self, other, domain, dtype):
     
 def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, criticalPoint = np.nan, 
                           criticalPointValue = np.nan, feasLB = -inf, feasUB = inf, domain_ind = slice(None), R0 = None):
+    
+    assert type(monotonity) != bool and type(convexity) != bool, 'bug in defaultIntervalEngine'
+    
     L, U, domain, definiteRange = arg_lb_ub.l, arg_lb_ub.u, arg_lb_ub.domain, arg_lb_ub.definiteRange
     Ld, Ud = L.d, U.d
     if type(domain_ind) == np.ndarray:

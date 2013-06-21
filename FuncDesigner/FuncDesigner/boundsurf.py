@@ -3,7 +3,7 @@ PythonAll = all
 import numpy as np
 from numpy import all, any, logical_and, logical_not, isscalar, where, inf, logical_or, logical_xor, isnan
 from operator import gt as Greater, lt as Less, truediv as td
-from FDmisc import update_mul_inf_zero, update_negative_int_pow_inf_zero, update_div_zero
+from FDmisc import update_mul_inf_zero, update_div_zero
 import operator
 
 try:
@@ -496,49 +496,6 @@ class boundsurf(object):#object is added for Python2 compatibility
     
     abs = lambda self: boundsurf_abs(self)
     
-    def __pow__(self, other):
-        # TODO: rework it
-        
-#        from Interval import pow_const_interval
-#        return pow_const_interval(self, r, other, domain, dtype)
-        
-        R0 = self.resolve()[0]#L.resolve(self.domain, GREATER), U.resolve(self.domain, LESS)
-        assert R0.shape[0]==2, 'unimplemented yet'
-        
-        assert isscalar(other) and other in (-1, 2, 0.5), 'unimplemented yet'
-        if other == 0.5:
-            assert 0
-#            from Interval import defaultIntervalEngine
-#            return defaultIntervalEngine(self, np.sqrt, lambda x: 0.5 / np.sqrt(x), 
-#                         monotonity = 1, convexity = -1, feasLB = 0.0)[0]        
-        elif other == 2:
-            assert 0
-#            from Interval import defaultIntervalEngine
-#            return defaultIntervalEngine(self, lambda x: x**2, lambda x: 2 * x, 
-#                         monotonity = 1 if all(R0>=0) else -1 if all(R0<=0) else np.nan, 
-#                         convexity = 1, 
-#                         criticalPoint = 0.0, criticalPointValue = 0.0)[0]
-        elif other == -1:
-            assert 0
-#            from Interval import defaultIntervalEngine
-#            r = defaultIntervalEngine(self, lambda x: 1.0/x, lambda x: -1.0 / x**2, 
-#                         monotonity = -1, 
-#                         convexity = 1 if all(R0>=0) else -1 if all(R0<=0) else np.nan, 
-#                         criticalPoint = np.nan, criticalPointValue = np.nan)[0]    
-#            ind = logical_or(R0[0] == 0, R0[1] == 0) 
-#            if any(ind):
-#                R_tmp = r.extract(logical_not(ind))
-#                t = 1.0 / R0[:, ind]
-#                t.sort(axis=0)
-#                
-#                update_negative_int_pow_inf_zero(R0[0, ind], R0[1, ind], t, 1.0)
-#                definiteRange_Tmp = \
-#                r.definiteRange if type(r.definiteRange) == bool or r.definiteRange.size == 1\
-#                else r.definiteRange[ind]
-#                t_min, t_max = t
-#                R_Tmp = boundsurf(surf({}, t_min), surf({}, t_max), definiteRange_Tmp, self.domain)
-#                r = R_Tmp if all(ind) else boundsurf_join((ind, logical_not(ind)), (R_Tmp, R_tmp))
-#            return r
     
 def boundsurf_abs(b):
     r, definiteRange = b.resolve()
