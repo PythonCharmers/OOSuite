@@ -17,4 +17,4 @@ print(f_interval) # "FuncDesigner interval with lower bound [-2. -2. -2.] and up
 
 f = sin(b) + cos(b+0.15) + a/100
 f_interval = f.interval({a: 1000, b: (0.1, 3.14/2)}) # fixed a = 1000, b from -0.1 to 3.14/2
-print(f_interval.lb, f_interval.ub) # (-0.24848411691819142, 1.9987499433268008)
+print(f_interval.lb, f_interval.ub) # (9.951182716375465, 11.96891210464248)
