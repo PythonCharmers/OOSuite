@@ -88,7 +88,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
     gtol = 1e-6 # TODO: move it to NinLinProblem class?
     ftol = 1e-6
     contol = 1e-6
-    
+    discrtol = 1e-5 # tolerance required for discrete constraints 
     fTol = None
 
     minIter = 0

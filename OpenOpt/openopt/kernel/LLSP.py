@@ -11,6 +11,7 @@ class LLSP(MatrixProblem):
     allowedGoals = ['minimum', 'min']
     showGoal = False
     FuncDesignerSign = 'C'
+    ftol = 1e-13
     
     def __init__(self, *args, **kwargs):
         MatrixProblem.__init__(self, *args, **kwargs)

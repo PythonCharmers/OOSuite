@@ -7,7 +7,6 @@ class MINLP(NonLinProblem):
     allowedGoals = ['minimum', 'min', 'maximum', 'max']
     showGoal = True
     plotOnlyCurrentMinimum = True
-    discrtol = 1e-5 # tolerance required for discrete constraints 
     expectedArgs = ['f', 'x0']
     def __init__(self, *args, **kwargs):
         self.goal = 'minimum'
