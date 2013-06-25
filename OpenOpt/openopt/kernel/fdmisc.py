@@ -1,6 +1,6 @@
 # Handling of FuncDesigner probs
 from numpy import hstack, vstack, atleast_1d, cumsum, asarray, zeros,  ndarray,\
-prod, ones, copy, nan, flatnonzero, array_equal, asanyarray
+prod, ones, copy, nan, flatnonzero, array_equal, asanyarray, int64
 from nonOptMisc import scipyInstalled, Hstack, Vstack, isspmatrix, SparseMatrixConstructor, DenseMatrixConstructor
 
 try:
@@ -226,13 +226,11 @@ def setStartVectorAndTranslators(p):
                             tmp = tmp.reshape(funcLen, prod(tmp.shape) // funcLen)
                         r2.append(tmp)
                     else:
-                        zeros_end_ind  += oovar_sizes[i]                        
+                        zeros_end_ind  += oovar_sizes[i]          
                 if zeros_end_ind != zeros_start_ind:
                     r2.append(SparseMatrixConstructor((funcLen, zeros_end_ind - zeros_start_ind)))
-                    
             r3 = Hstack(r2) #if hasSparse else hstack(r2)
-            
-            if isspmatrix(r3) and r3.nnz > 0.25 * prod(r3.shape): r3 = r3.A
+            if isspmatrix(r3) and 4 * r3.nnz > asarray(r3.shape, int64).prod(): r3 = r3.A
             return r3
         else:
             # USE INSERT

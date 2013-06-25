@@ -743,7 +743,9 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         
         if not f.is_oovar and f_order < 2:
             D_kwargs2 = D_kwargs.copy()
-            D_kwargs2['useSparse'] = False
+            if inplaceLinearRender:
+                # interalg only
+                D_kwargs2['useSparse'] = False
             D = f.D(Z, **D_kwargs2)
             if inplaceLinearRender:
                 # interalg only

@@ -1,6 +1,6 @@
 __docformat__ = "restructuredtext en"
-from numpy import zeros, ones, copy, isfinite, where, asarray, inf, \
-array, asfarray, dot, ndarray, prod, flatnonzero, max, abs, sqrt, sum, atleast_1d, asscalar
+from numpy import zeros, ones, copy, isfinite, where, asarray, inf, int64, \
+array, dot, ndarray, prod, flatnonzero, max, abs, sqrt, sum, atleast_1d, asscalar
 from nonOptMisc import scipyAbsentMsg, scipyInstalled, isspmatrix, Hstack, Vstack, coo_matrix, isPyPy
 
 Copy = lambda arg: asscalar(arg) if type(arg)==ndarray and arg.size == 1 else arg.copy() if hasattr(arg, 'copy') else copy(arg)
@@ -81,7 +81,7 @@ def xBounds2Matrix(p):
         p.A = Vstack((p.A, R1, R2))
         if hasattr(p, '_A'): delattr(p, '_A')
         if isspmatrix(p.A): 
-            if prod(p.A.shape)>10000:
+            if asarray(p.A.shape, int64).prod()>10000:
                 p.A = p.A.tocsc()
                 p._A = p.A
             else:
