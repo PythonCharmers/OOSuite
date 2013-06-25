@@ -769,14 +769,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     _lb = _lb.item()
                 
                 val = array(f_size*[_lb] if type(_lb) == ndarray and _lb.size < f_size else _lb)
-                if f not in LB:
-                    LB[f] = val
-                else:
-                    #max((val, LB[f])) doesn't work for arrays
-                    if val.size > 1 or LB[f].size > 1:
-                        LB[f][val > LB[f]] = val[val > LB[f]] if val.size > 1 else asscalar(val)
-                    else:
-                        LB[f] = max((val, LB[f]))
+                LB[f] = val if f not in LB else where(val > LB[f], val, LB[f])
 
             if any(isfinite(_ub)):
                 if _ub.size not in (f_size, 1): 
@@ -787,14 +780,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     _ub = _ub.item()
                     
                 val = array(f_size*[_ub] if type(_ub) == ndarray and _ub.size < f_size else _ub)
-                if f not in UB:
-                    UB[f] = val
-                else:
-                    #min((val, UB[f])) doesn't work for arrays
-                    if val.size > 1 or UB[f].size > 1:
-                        UB[f][val < UB[f]] = val[val < UB[f]] if val.size > 1 else asscalar(val)
-                    else:
-                        UB[f] = min((val, UB[f]))
+                UB[f] = val if f not in UB else where(val < UB[f], val, UB[f])
                     
         elif _lb == _ub:
             if f_order < 2:
