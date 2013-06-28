@@ -3,7 +3,6 @@ import re
 from openopt.kernel.baseSolver import baseSolver
 from openopt.kernel.nonOptMisc import Vstack, Find, isspmatrix
 #import os
-#from openopt.kernel.setDefaultIterFuncs import SMALL_DF
 try:
     import pyipopt
     pyipoptInstalled = True
@@ -66,8 +65,6 @@ class ipopt(baseSolver):
             else:
                 r = array([])
             
-            #if isspmatrix(r): r = r.A
-            # isspmatrix(r) turned off till more proper sparse matrices fancy indexation
             if isspmatrix(r):
                 I, J, _ = Find(r)
                 # DON'T remove it!
@@ -97,19 +94,6 @@ class ipopt(baseSolver):
             r = hstack((r, p._get_AX_Less_B_residuals(x), p._get_AeqX_eq_Beq_residuals(x)))
             return r
 
-#        def eval_jac_g(x, flag, userdata = None):
-#            r = []
-#            if p.userProvided.c: r.append(p.dc(x))
-#            if p.userProvided.h: r.append(p.dh(x))
-#            if p.nb > 0: p.append(p.A)
-#            if p.nbeq > 0: p.append(p.Aeq)
-#            
-#            if flag:
-#                return where(ones(r.shape))
-#            else:
-#                return r.flatten()
-
-        #def eval_jac_g(x, flag, userdata = None):
         def eval_jac_g(x, flag, userdata = (I, J)):
             (I, J) = userdata
             if  flag and p.isFDmodel: 
@@ -127,18 +111,13 @@ class ipopt(baseSolver):
             
             if p.isFDmodel: 
                 # TODO: make it more properly
-                if isspmatrix(r):
-                    R = r.tocsr()
-                    R = R[I, J]
-                else: 
-                    R = r[I, J]
+                R = (r.tocsr() if isspmatrix(r) else r)[I, J]
                 if isspmatrix(R): 
                     return R.A
                 elif isinstance(R, ndarray): 
                     return R
                 else: p.err('bug in OpenOpt-ipopt connection, inform OpenOpt developers, type(R) = %s' % type(R))
             if flag:
-                #I, J = where(ones(r.shape))  
                 return (I, J)
             else:
                 if isspmatrix(r): r = r.A
