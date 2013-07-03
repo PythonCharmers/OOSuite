@@ -265,7 +265,7 @@ class nonLinFuncs:
             #assert r.size != 30
         #if type(r) == matrix: r = r.A
 
-        if type(r) != ndarray and not isscalar(r): # multiarray
+        if type(r) != ndarray and not isscalar(r) and not isspmatrix(r): # multiarray
             r = r.view(ndarray).flatten() if userFunctionType == 'f' else r.view(ndarray)
         #elif userFunctionType == 'f' and p.isObjFunValueASingleNumber and prod(r.shape) > 1 and (type(r) == ndarray or min(r.shape) > 1): 
             #r = r.sum(0)
