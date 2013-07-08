@@ -508,7 +508,6 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
                 L_new.c = where(ind_inf2, new_l_resolved, L_new.c)
         else:
             L_new = surf({}, new_l_resolved)                        
-        R = boundsurf(L_new, U_new, definiteRange, domain)
     elif convexity == 1:
         tmp2 = deriv(_argmin.view(multiarray)).view(ndarray).flatten()
         tmp2[ind_inf] = 0.0
@@ -531,10 +530,70 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
                 U_new.c = where(ind_inf2, new_u_resolved, U_new.c)
         else:
             U_new = surf({}, new_u_resolved)
-        R = boundsurf(L_new, U_new, definiteRange, domain)
+    elif convexity == -101:
+        tmp2 = deriv(_argmax.view(multiarray)).view(ndarray).flatten()
+        ind_k = where(tmp2 < koeffs)[0]
+        tmp2[ind_k] = koeffs[ind_k]
+        tmp2[ind_inf] = 0.0
+        
+        d_new = dict((v, tmp2 * val) for v, val in L_dict.items())
+        L_new = surf(d_new, 0.0)
+        L_new.c = new_u_resolved - L_new.maximum(domain, domain_ind)
+        ind_inf2 = np.isinf(new_u_resolved)
+        if any(ind_inf2):
+            L_new.c = where(ind_inf2, new_u_resolved, L_new.c)
+        
+        tmp2 = deriv(_argmin.view(multiarray)).view(ndarray).flatten()
+        ind_k = where(tmp2 < koeffs)[0]
+        tmp2[ind_k] = koeffs[ind_k]
+        tmp2[ind_inf] = 0.0
+        
+        d_new = dict((v, tmp2 * val) for v, val in L_dict.items())
+        U_new = surf(d_new, 0.0)
+        U_new.c = new_l_resolved - U_new.minimum(domain, domain_ind)
+        ind_inf2 = np.isinf(new_l_resolved)
+        if any(ind_inf2):
+            U_new.c = where(ind_inf2, new_l_resolved, U_new.c)
+            
+    elif convexity == 9: # 1 0 -1
+        if monotonity == 1:
+            argvals = (_argmin, _argmax)
+            vals = (new_l_resolved, new_u_resolved)
+            Attributes = ('minimum', 'maximum')
+        elif monotonity == -1:
+            argvals = (_argmax, _argmin)
+            vals = (new_u_resolved, new_l_resolved)
+            Attributes = ('maximum','minimum')
+        else:
+            assert 0
+        tmp2 = deriv(argvals[0].view(multiarray)).view(ndarray).flatten()
+        ind_k = where(tmp2 > koeffs)[0]
+        tmp2[ind_k] = koeffs[ind_k]
+        tmp2[ind_inf] = 0.0
+        
+        d_new = dict((v, tmp2 * val) for v, val in L_dict.items())
+        L_new = surf(d_new, 0.0)
+        L_new.c = vals[0] - getattr(L_new, Attributes[0])(domain, domain_ind)
+        ind_inf2 = np.isinf(vals[0])
+        if any(ind_inf2):
+            L_new.c = where(ind_inf2, vals[0], L_new.c)
+        
+        tmp2 = deriv(argvals[1].view(multiarray)).view(ndarray).flatten()
+        ind_k = where(tmp2 > koeffs)[0]
+        tmp2[ind_k] = koeffs[ind_k]
+        tmp2[ind_inf] = 0.0
+        
+        d_new = dict((v, tmp2 * val) for v, val in L_dict.items())
+        U_new = surf(d_new, 0.0)
+        U_new.c = vals[1] - getattr(U_new, Attributes[1])(domain, domain_ind)
+        ind_inf2 = np.isinf(vals[1])
+        if any(ind_inf2):
+            U_new.c = where(ind_inf2, vals[1], U_new.c)
+            
     else:
         # linear oofuns with convexity = 0 calculate their intervals in other funcs
         raise FuncDesignerException('bug in FD kernel')
+    R = boundsurf(L_new, U_new, definiteRange, domain)
     return R, definiteRange
 
 def adjustBounds(R0, definiteRange, feasLB, feasUB):

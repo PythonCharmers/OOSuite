@@ -91,6 +91,7 @@ class oofun(object):
     same_d = 0
     evals_d  = 0
     
+    engine = 'unspecified'
     engine_convexity = nan # nan for undefined, 0 for linear, +1 for convex, -1 for concave
     engine_monotonity = nan
 

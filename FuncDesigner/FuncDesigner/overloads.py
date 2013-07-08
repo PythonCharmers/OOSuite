@@ -211,7 +211,7 @@ def arcsin(inp):
     if not isinstance(inp, oofun): 
         return np.arcsin(inp)
     r = oofun(st_arcsin, inp, d = lambda x: Diag(1.0 / np.sqrt(1.0 - x**2)), vectorized = True, 
-    engine_monotonity = 1, convexities = (-1, 1))
+    engine_monotonity = 1, convexities = (-1, 1), engine = 'arcsin')
 #    r.getDefiniteRange = get_box1_DefiniteRange
     r._interval_ = lambda domain, dtype: box_1_interval(inp, r, np.arcsin, domain, dtype)
     r.attach((inp>-1)('arcsin_domain_lower_bound_%d' % r._id, tol=-1e-7), (inp<1)('arcsin_domain_upper_bound_%d' % r._id, tol=-1e-7))

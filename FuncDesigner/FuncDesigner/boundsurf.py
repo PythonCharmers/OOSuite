@@ -435,15 +435,6 @@ class boundsurf(object):#object is added for Python2 compatibility
         isBoundSurf = type(other) == boundsurf
         assert isBoundSurf
         
-###        R2Positive = all(R2 >= 0)
-###        R2Negative = all(R2 <= 0)
-####        assert (selfPositive or selfNegative) and (R2Positive or R2Negative), 'bug or unimplemented yet'
-###        definiteRange = logical_and(definiteRange, other.definiteRange)
-###        r = ((self if selfPositive else -self).log() - (other if R2Positive else -other).log()).exp()
-###        r.definiteRange = definiteRange
-###        if selfPositive != R2Positive: 
-###            r = -r
-        
         r = aux_mul_div_boundsurf((self, other), operator.truediv)
         
 #        return r 
@@ -595,17 +586,33 @@ def devided_interval(inp, r, domain, dtype, feasLB = -inf, feasUB = inf):
     
     _ind = Inds[-1]
     if _ind.size:
-        DefiniteRange = definiteRange if type(definiteRange) == bool or definiteRange.size == 1 \
-        else definiteRange[_ind]
+        if convexities == (-1, 1) and r.engine_monotonity == 1:
+            tmp = defaultIntervalEngine(lb_ub, r.fun, r.d, monotonity = r.engine_monotonity, convexity=-101, 
+                                        feasLB = feasLB, feasUB = feasUB, domain_ind = _ind)[0]
+            if _ind.size == m:
+                return tmp, tmp.definiteRange
+            rr.append(tmp)
+            inds.append(_ind)
+        elif convexities == (1, -1) and r.engine_monotonity is not np.nan:
+            tmp = defaultIntervalEngine(lb_ub, r.fun, r.d, monotonity = r.engine_monotonity, convexity= 9, # 10-1 
+                                        feasLB = feasLB, feasUB = feasUB, domain_ind = _ind)[0]
+            if _ind.size == m:
+                return tmp, tmp.definiteRange
+            rr.append(tmp)
+            inds.append(_ind)
+        else:
         
-        Tmp, definiteRange3 = \
-        ooFun.oofun._interval_(r, domain, dtype, inputData = (lb_ub_resolved[:, _ind], DefiniteRange))
-        
-        if _ind.size == m:
-            return Tmp, definiteRange3
-        tmp = boundsurf(surf({}, Tmp[0]), surf({}, Tmp[1]), definiteRange3, domain)
-        rr.append(tmp)
-        inds.append(_ind)
+            DefiniteRange = definiteRange if type(definiteRange) == bool or definiteRange.size == 1 \
+            else definiteRange[_ind]
+            
+            Tmp, definiteRange3 = \
+            ooFun.oofun._interval_(r, domain, dtype, inputData = (lb_ub_resolved[:, _ind], DefiniteRange))
+            
+            if _ind.size == m:
+                return Tmp, definiteRange3
+            tmp = boundsurf(surf({}, Tmp[0]), surf({}, Tmp[1]), definiteRange3, domain)
+            rr.append(tmp)
+            inds.append(_ind)
 
     b = boundsurf_join(inds, rr)
     return b, b.definiteRange
