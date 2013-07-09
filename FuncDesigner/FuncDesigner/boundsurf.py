@@ -531,13 +531,24 @@ def boundsurf_join(inds, B):
     else Join(inds, [np.asarray(b.definiteRange) for b in B])
     return boundsurf(L, U, definiteRange, B[0].domain)
 
-split = lambda condition1, condition2: \
-    (
-    where(condition1)[0], 
-    where(logical_and(condition2, logical_not(condition1)))[0], 
-    where(logical_and(logical_not(condition1), logical_not(condition2)))[0]
-    )
+#split = lambda condition1, condition2: \
+#    (
+#    where(condition1)[0], 
+#    where(logical_and(condition2, logical_not(condition1)))[0], 
+#    where(logical_and(logical_not(condition1), logical_not(condition2)))[0]
+#    )
 
+def split(*conditions):
+    Rest = np.ones_like(conditions[0]) # dtype bool
+    r = []
+    for c in conditions:
+        tmp = logical_and(c, Rest)
+        r.append(where(tmp)[0])
+        Rest &= logical_not(c)
+    r.append(where(Rest)[0])
+    return r
+
+    
 Split = lambda condition1, condition2: \
     (
     condition1, 

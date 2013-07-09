@@ -9,7 +9,7 @@ from Interval import nonnegative_interval, ZeroCriticalPointsInterval, \
 box_1_interval, defaultIntervalEngine
 from numpy import atleast_1d, logical_and
 from FuncDesigner.multiarray import multiarray
-from boundsurf import boundsurf, surf, devided_interval, boundsurf_join, split
+from boundsurf import boundsurf, surf, devided_interval, boundsurf_join, split#, direct_split
 
 try:
     from scipy.sparse import isspmatrix, lil_matrix as Zeros
@@ -65,13 +65,16 @@ def sin_cos_interval(r, inp, domain, dtype):
     R0 = np.vstack((lb, ub))
     
     if isBoundsurf:
-        Inds = split(ub <= np.pi, logical_and(lb >= np.pi, ub <= 2*np.pi)) # logical_and() is REQUIRED here
+        c1 = ub <= np.pi
+        c2 = logical_and(lb >= np.pi, ub <= 2*np.pi)# logical_and() is REQUIRED here
+        c3 = logical_and(lb >= 1.5*np.pi, ub <= 2.5*np.pi)
+        c4 = logical_and(lb >= 0.5*np.pi, ub <= 1.5*np.pi)
+        Inds = split(c1, c2, c3, c4) 
         
         m = PythonSum(ind_.size for ind_ in Inds)
         inds, rr = [], []
         ind = Inds[0]
         if ind.size != 0:
-#            tmp = defaultIntervalEngine(lb_ub, r.fun, r.d, np.nan, convexity = -1, 
             tmp = defaultIntervalEngine(lb_ub, np.sin, np.cos, np.nan, convexity = -1, 
                                         criticalPoint = np.pi/2, 
                                         criticalPointValue = 1, 
@@ -83,7 +86,6 @@ def sin_cos_interval(r, inp, domain, dtype):
             
         ind = Inds[1]
         if ind.size != 0:
-            #tmp = defaultIntervalEngine(lb_ub, r.fun, r.d, np.nan, convexity = 1, 
             tmp = defaultIntervalEngine(lb_ub, np.sin, np.cos, np.nan, convexity = 1, 
                                         criticalPoint = 3*np.pi/2, 
                                         criticalPointValue = -1, 
@@ -93,6 +95,24 @@ def sin_cos_interval(r, inp, domain, dtype):
             rr.append(tmp)
             inds.append(ind)
         
+        ind = Inds[2]
+        if ind.size != 0:
+            tmp = defaultIntervalEngine(lb_ub, np.sin, np.cos, monotonity=1, convexity = 9, #10-1
+                                        domain_ind = ind, R0 = R0)[0]
+            if ind.size == m:
+                return tmp, tmp.definiteRange
+            rr.append(tmp)
+            inds.append(ind)
+
+        ind = Inds[3]
+        if ind.size != 0:
+            tmp = defaultIntervalEngine(lb_ub, np.sin, np.cos, monotonity=-1, convexity = -101, 
+                                        domain_ind = ind, R0 = R0)[0]
+            if ind.size == m:
+                return tmp, tmp.definiteRange
+            rr.append(tmp)
+            inds.append(ind)
+
     ind = Inds[-1] if isBoundsurf else slice(None)
     R0 = R0[:, ind]
     lb, ub = R0
@@ -536,38 +556,37 @@ def log2(inp):
 
 __all__ += ['log', 'log2', 'log10']
 
+
+def f_dot(x, y):
+    if x.size == 1 or y.size == 1:
+        return x*y
+    if isinstance(y, multiarray) and not isinstance(x, multiarray):
+        return dot(x, y.T).T
+    return np.dot(x, y)
+
+def d_dot(x, y):
+    if y.size == 1: 
+        r = np.empty_like(x)
+        r.fill(y)
+        return Diag(r)
+    else:
+        return y
+
 def dot(inp1, inp2):
     if not isinstance(inp1, oofun) and not isinstance(inp2, oofun): return np.dot(inp1, inp2)
-    
-    def aux_d(x, y):
-        if y.size == 1: 
-            r = np.empty_like(x)
-            r.fill(y)
-            return Diag(r)
-        else:
-            return y
-            
-    def f(x, y):
-        if x.size == 1 or y.size == 1:
-            return x*y
-        if isinstance(y, multiarray) and not isinstance(x, multiarray):
-            return dot(x, y.T).T
-        return np.dot(x, y)
-        
-    r = oofun(f, [inp1, inp2], d=(lambda x, y: aux_d(x, y), lambda x, y: aux_d(y, x)))
+    r = oofun(f_dot, [inp1, inp2], d=(lambda x, y: d_dot(x, y), lambda x, y: d_dot(y, x)))
     r.getOrder = lambda *args, **kwargs: (inp1.getOrder(*args, **kwargs) if isinstance(inp1, oofun) else 0) + (inp2.getOrder(*args, **kwargs) if isinstance(inp2, oofun) else 0)
     #r.isCostly = True
     return r
 
+def cross_d(x, y):
+    assert x.size == 3 and y.size == 3, 'currently FuncDesigner cross(x,y) is implemented for arrays of length 3 only'
+    return np.array([[0, -y[2], y[1]], [y[2], 0, -y[0]], [-y[1], y[0], 0]])
+    
 def cross(a, b):
     if not isinstance(a, oofun) and not isinstance(b, oofun): return np.cross(a, b)
-
-    
-    def aux_d(x, y):
-        assert x.size == 3 and y.size == 3, 'currently FuncDesigner cross(x,y) is implemented for arrays of length 3 only'
-        return np.array([[0, -y[2], y[1]], [y[2], 0, -y[0]], [-y[1], y[0], 0]])
    
-    r = oofun(lambda x, y: np.cross(x, y), [a, b], d=(lambda x, y: -aux_d(x, y), lambda x, y: aux_d(y, x)))
+    r = oofun(np.cross, [a, b], d=(lambda x, y: -cross_d(x, y), lambda x, y: cross_d(y, x)))
     r.getOrder = lambda *args, **kwargs: (a.getOrder(*args, **kwargs) if isinstance(a, oofun) else 0) + (b.getOrder(*args, **kwargs) if isinstance(b, oofun) else 0)
     return r
 
