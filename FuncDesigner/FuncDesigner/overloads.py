@@ -546,8 +546,15 @@ def dot(inp1, inp2):
             return Diag(r)
         else:
             return y
+            
+    def f(x, y):
+        if x.size == 1 or y.size == 1:
+            return x*y
+        if isinstance(y, multiarray) and not isinstance(x, multiarray):
+            return dot(x, y.T).T
+        return np.dot(x, y)
         
-    r = oofun(lambda x, y: x * y if x.size == 1 or y.size == 1 else np.dot(x, y), [inp1, inp2], d=(lambda x, y: aux_d(x, y), lambda x, y: aux_d(y, x)))
+    r = oofun(f, [inp1, inp2], d=(lambda x, y: aux_d(x, y), lambda x, y: aux_d(y, x)))
     r.getOrder = lambda *args, **kwargs: (inp1.getOrder(*args, **kwargs) if isinstance(inp1, oofun) else 0) + (inp2.getOrder(*args, **kwargs) if isinstance(inp2, oofun) else 0)
     #r.isCostly = True
     return r
