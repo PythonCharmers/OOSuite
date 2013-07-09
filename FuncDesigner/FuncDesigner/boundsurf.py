@@ -591,17 +591,12 @@ def devided_interval(inp, r, domain, dtype, feasLB = -inf, feasUB = inf):
                                         feasLB = feasLB, feasUB = feasUB, domain_ind = _ind)[0]
             if _ind.size == m:
                 return tmp, tmp.definiteRange
-            rr.append(tmp)
-            inds.append(_ind)
         elif convexities == (1, -1) and r.engine_monotonity is not np.nan:
             tmp = defaultIntervalEngine(lb_ub, r.fun, r.d, monotonity = r.engine_monotonity, convexity= 9, # 10-1 
                                         feasLB = feasLB, feasUB = feasUB, domain_ind = _ind)[0]
             if _ind.size == m:
                 return tmp, tmp.definiteRange
-            rr.append(tmp)
-            inds.append(_ind)
         else:
-        
             DefiniteRange = definiteRange if type(definiteRange) == bool or definiteRange.size == 1 \
             else definiteRange[_ind]
             
@@ -611,8 +606,9 @@ def devided_interval(inp, r, domain, dtype, feasLB = -inf, feasUB = inf):
             if _ind.size == m:
                 return Tmp, definiteRange3
             tmp = boundsurf(surf({}, Tmp[0]), surf({}, Tmp[1]), definiteRange3, domain)
-            rr.append(tmp)
-            inds.append(_ind)
+            
+        rr.append(tmp)
+        inds.append(_ind)
 
     b = boundsurf_join(inds, rr)
     return b, b.definiteRange
