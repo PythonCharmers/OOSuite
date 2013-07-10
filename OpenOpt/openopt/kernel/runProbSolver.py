@@ -249,7 +249,7 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
 
     
     try:
-        if isConverter:
+        if 0 and isConverter:
             pass
             # TODO: will R be somewhere used?
             #R = converter(solverName, **solver_params)
