@@ -10,6 +10,7 @@ from MILP import MILP as CMILP
 from STAB import STAB as CSTAB
 from MCP import MCP as CMCP
 from TSP import TSP as CTSP
+from KSP import KSP as CKSP
 from NSP import NSP as CNSP
 from NLP import NLP as CNLP
 from MOP import MOP as CMOP
@@ -197,6 +198,35 @@ def TSP(*args, **kwargs):
        * MILP solvers at http://openopt.org/MILP
     """
     return CTSP(*args, **kwargs)
+
+
+def KSP(*args, **kwargs):
+    """
+    KSP: constructor for traveling salesman problem assignment
+    
+    valid calls are:
+    p = KSP(objective, objects, <params as kwargs>)
+    See also: /examples/ksp_*.py
+
+    :Parameters:
+    objective: objective (e.g. 'weight', 'cost')
+    objects: Python list or tuple of dictionaries
+
+    :Returns:
+    OpenOpt KSP class instance
+
+    Notes
+    -----
+    Solving of OpenOpt KSP problems is performed via
+    r = p.solve(string_name_of_solver)
+    or r = p.manage(string_name_of_solver) (to enable basic GUI)
+    r.solution - desired solution (names or numbers of objects)
+    r.ff - objFun value (NaN if a problem occured)
+    (see also other r fields)
+    Solvers available for now:  
+       * MILP solvers at http://openopt.org/MILP
+    """
+    return CKSP(*args, **kwargs)
 
 
 def LCP(*args, **kwargs):
