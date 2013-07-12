@@ -75,8 +75,8 @@ def setStartVectorAndTranslators(p):
             p._discreteVarsNumList.append(i)
             p._discreteVarsList.append(v)
     
-    p._fixedVars = set(fixedVars) if fixedVars is not None else set()
-    p._freeVars = set(freeVars) if freeVars is not None else set()
+    p._fixedVars = p.fixedVarsSet = set(fixedVars) if fixedVars is not None else set()
+    p._freeVars = p.freeVarsSet = set(freeVars) if freeVars is not None else set()
         
     # point should be FuncDesigner point that currently is Python dict        
     # point2vector = lambda point: atleast_1d(hstack([asfarray(point[oov]) for oov in freeVars]))

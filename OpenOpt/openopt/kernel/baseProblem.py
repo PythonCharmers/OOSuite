@@ -443,16 +443,16 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             
             self.x0 = oopoint(self.x0)
             self.x0.maxDistributionSize = self.maxDistributionSize
-            
-            if self.probType in ['LP', 'MILP'] and self.f.getOrder(self.freeVars, self.fixedVars) > 1:
-                self.err('for LP/MILP objective function has to be linear, while this one ("%s") is not' % self.f.name)
 
             setStartVectorAndTranslators(self)
             
+            if self.probType in ['LP', 'MILP'] and self.f.getOrder(self.freeVarsSet, self.fixedVarsSet, fixedVarsScheduleID = self._FDVarsID) > 1:
+                self.err('for LP/MILP objective function has to be linear, while this one ("%s") is not' % self.f.name)
+            
             if self.fixedVars is None or (self.freeVars is not None and len(self.freeVars)<len(self.fixedVars)):
-                D_kwargs = {'Vars':self.freeVars}
+                D_kwargs = {'Vars':self.freeVarsSet}
             else:
-                D_kwargs = {'fixedVars':self.fixedVars}
+                D_kwargs = {'fixedVars':self.fixedVarsSet}
             D_kwargs['useSparse'] = self.useSparse
             D_kwargs['fixedVarsScheduleID'] = self._FDVarsID
             D_kwargs['exactShape'] = True
@@ -586,7 +586,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 if type(self.f) in [list, tuple, set]:
                     ff = []
                     for f in self.f:
-                        if f.getOrder(self.freeVars, self.fixedVars) < 2:
+                        if f.getOrder(self.freeVarsSet, self.fixedVarsSet, fixedVarsScheduleID = self._FDVarsID) < 2:
                             D = f.D(Z, **D_kwargs2)
                             f2 = linear_render(f, D, Z)
                             ff.append(f2)
@@ -594,7 +594,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                             ff.append(f)
                     self.f = ff
                 else: # self.f is oofun
-                    if self.f.getOrder(self.freeVars, self.fixedVars) < 2:
+                    if self.f.getOrder(self.freeVarsSet, self.fixedVarsSet, fixedVarsScheduleID = self._FDVarsID) < 2:
                         D = self.f.D(Z, **D_kwargs2)
                         self.f = linear_render(self.f, D, Z)
                         if self.isObjFunValueASingleNumber:
@@ -743,7 +743,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         broadcast(formDictOfFixedFuncs, f, self.useAttachedConstraints, self.dictOfFixedFuncs, areFixed, self._x0)
             #self.dictOfFixedFuncs[f] = f(self.x0)
 
-        f_order = f.getOrder(self.freeVars, self.fixedVars)
+        f_order = f.getOrder(self.freeVarsSet, self.fixedVarsSet, fixedVarsScheduleID = self._FDVarsID)
         if self.probType in ['LP', 'MILP', 'LLSP', 'LLAVP'] and f_order > 1:
             self.err('for LP/MILP/LLSP/LLAVP all constraints have to be linear, while ' + f.name + ' is not')
         
