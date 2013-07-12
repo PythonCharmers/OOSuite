@@ -10,8 +10,12 @@ from numpy import sin, cos
 
 N = 1500
 
-items = [{'name': 'item %d' % i,'cost': 1.5*(cos(i)+1)**2, 
-'volume': 2*sin(i) + 3, 'n':  1 if i < N/3 else 2 if i < 2*N/3 else 3} for i in range(N)]
+items = [
+         {'name': 'item %d' % i,'cost': 1.5*(cos(i)+1)**2, 
+         'volume': 2*sin(i) + 3, 
+         'n':  1 if i < N/3 else 2 if i < 2*N/3 else 3} for i in range(N)
+         ]
+         
 constraints = lambda values: (
                               values['volume'] < 10, 
                               values['nItems'] <= 10, 
