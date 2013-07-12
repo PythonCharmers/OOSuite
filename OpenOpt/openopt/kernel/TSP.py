@@ -302,7 +302,7 @@ class TSP(MatrixProblem):
             tmp = cr_values.get(optCrName, [])
 
             if len(tmp) == 0:
-                self.err('seems like graph edgs have no attribute "%s" to perform optimization on it' % optCrName)
+                self.err('seems like graph edges have no attribute "%s" to perform optimization on it' % optCrName)
             elif len(tmp) != m:
                 self.err('for optimization creterion "%s" at least one edge has no this attribute' % optCrName)
             if interalg_gdp:
@@ -322,7 +322,7 @@ class TSP(MatrixProblem):
             Funcs[optCrName] = F
         
         for obj in objective:
-            FF.append((Funcs[obj[0]] if type(obj[0]) in (str, np.str_) else obj[0](Funcs), obj[1], obj[2]))
+            FF.append((Funcs[obj[0]](obj[0]) if type(obj[0]) in (str, np.str_) else obj[0](Funcs), obj[1], obj[2]))
 
         for c in Cons:
             tmp = c(Funcs)

@@ -328,7 +328,9 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             self._FDVarsID = _getDiffVarsID()
             
             probDep = set()
-            updateDep = lambda Dep, elem: [updateDep(Dep, f) for f in elem] if isinstance(elem, (tuple, list, set, ndarray))\
+            updateDep = lambda Dep, elem: \
+            [updateDep(Dep, f) for f in elem] if isinstance(elem, (tuple, list, set))\
+            else [updateDep(Dep, f) for f in atleast_1d(elem)] if isinstance(elem, ndarray)\
             else Dep.update(set([elem]) if elem.is_oovar else elem._getDep()) if isinstance(elem, oofun) else None
             
             if self.probType in ['SLE', 'NLSP', 'SNLE', 'LLSP']:
@@ -501,8 +503,13 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 self.constraints.update(_getAllAttachedConstraints(C))
             FF = self.constraints.copy()
             for _F in F:
-                if isinstance(_F, (tuple, list, ndarray, set)):
+                if isinstance(_F, (tuple, list, set)):
                     FF.update(_F)
+                elif isinstance(_F, ndarray):
+                    if _F.size > 1:
+                        FF.update(_F)
+                    else:
+                        FF.add(_F.item())
                 else:
                     FF.add(_F)
             unvectorizableFuncs = set()
@@ -522,7 +529,6 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
 #            hasVectorizableFuncs = False
 #            cond = True
             #debug end
-
             if 1 and isPyPy:
                 hasVectorizableFuncs = False
                 unvectorizableFuncs = FF
@@ -537,7 +543,6 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                             hasVectorizableFuncs = True
                 else:
                     hasVectorizableFuncs = True
-            
             self.unvectorizableFuncs = unvectorizableFuncs
             self.hasVectorizableFuncs = hasVectorizableFuncs
             
