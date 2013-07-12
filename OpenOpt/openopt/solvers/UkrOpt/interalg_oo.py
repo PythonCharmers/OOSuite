@@ -3,6 +3,7 @@ import numpy as np
 #from numpy.linalg import norm, solve#, LinAlgError
 from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X,  SMALL_DELTA_F, MAX_NON_SUCCESS, IS_NAN_IN_X
 from openopt.kernel.baseSolver import *
+from openopt.kernel.MOP import MOPsolutions
 
 from openopt.solvers.UkrOpt.interalgMisc import *
 from FuncDesigner import sum as fd_sum, abs as fd_abs, oopoint
@@ -409,7 +410,6 @@ class interalg(baseSolver):
 class Solution:
     pass
     
-class MOPsolutions(list):
-    pass
+
     
 
