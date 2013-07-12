@@ -225,7 +225,7 @@ def broadcast(func, oofuncs, useAttachedConstraints, *args, **kwargs):
     if isinstance(oofuncs, oofun):
         oofuncs = [oofuncs]
     oofun._BroadCastID += 1
-    for oof in oofuncs:
+    for oof in (oofuncs if not isinstance(oofuncs, ndarray) else atleast_1d(oofuncs)):
         if oof is not None: 
             oof._broadcast(func, useAttachedConstraints, *args, **kwargs)
 

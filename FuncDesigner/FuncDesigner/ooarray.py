@@ -62,6 +62,9 @@ class ooarray(OOArray):
                 return self
         #tmp = asarray([asscalar(asarray(self[i](*args, **kwargs))) if isinstance(self[i], oofun) else self[i] for i in range(self.size)])
         
+        if self.size == 1 and type(self.item()) == oofun:
+            return self.item()(*args, **kwargs)
+        
         # TODO: get rid of self in args[0]
         if self._is_array_of_oovars and isinstance(args[0], dict) and self in args[0] and len(args) == 1 and len(kwargs) == 0:
             return args[0][self]
