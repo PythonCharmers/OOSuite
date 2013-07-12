@@ -24,8 +24,9 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
 
     maxSolutions, solutions, coords = Solutions.maxNum, Solutions.solutions, Solutions.coords
     if len(p._discreteVarsNumList):
-        y, e = adjustDiscreteVarBounds(y, e, p)
-    
+        y, e, _s, indTC = adjustDiscreteVarBounds(y, e, _s, indTC, p)
+#    import numpy as np
+#    print np.abs(e-y).sum(axis=0) / y.shape[0]
     o, a, r41 = r45(y, e, vv, p, asdf1, dataType, r41, nlhc)
     
     fo_prev = float(0 if isSNLE else min((r41, r40 - (fTol if maxSolutions == 1 else 0))))
@@ -59,6 +60,14 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
             for i, node in enumerate(nodes): node.tnlhf = node.nlhc + node.nlhf 
             
         an = hstack((nodes, _in))
+        
+#        import numpy as np
+#        arr = np.ones(9, bool)
+#        arr[4] = arr[7] = arr[8] = False
+#        volumes = [np.prod(n.e[arr]-n.y[arr]) for n in an]
+#        print sum(volumes)
+
+        
         
         #tnlh_fixed = vstack([node.tnlhf for node in an])
         tnlh_fixed_local = vstack([node.tnlhf for node in nodes])#tnlh_fixed[:len(nodes)]
@@ -120,11 +129,11 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
             delta_fos = fos - fo
             ind_update = where(10 * delta_fos > fos - th_keys)[0]
             
-            nodesToUpdate = an[ind_update]
             update_nlh = True if ind_update.size != 0 else False
 #                  print 'o MB:', float(o_tmp.nbytes) / 1e6
 #                  print 'percent:', 100*float(ind_update.size) / len(an) 
             if update_nlh:
+                nodesToUpdate = an[ind_update]
 #                    from time import time
 #                    tt = time()
                 updateNodes(nodesToUpdate, fo)
@@ -153,6 +162,7 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
         if 1 or not isSNLE or p.maxSolutions == 1:
             #pass
             astnlh = argsort(NN)
+#            print(astnlh[:10])
             an = an[astnlh]
             
 #        print(an[0].nlhc, an[0].tnlh_curr_best)
@@ -264,11 +274,11 @@ def r45(y, e, vv, p, asdf1, dataType, r41, nlhc):
 
 def updateNodes(nodesToUpdate, fo):
     if len(nodesToUpdate) == 0: return
-    a_tmp = array([node.a for node in nodesToUpdate])
+    a_tmp = vstack([node.a for node in nodesToUpdate])
     Tmp = a_tmp
     Tmp[Tmp>fo] = fo                
 
-    o_tmp = array([node.o for node in nodesToUpdate])
+    o_tmp = vstack([node.o for node in nodesToUpdate])
     Tmp -= o_tmp
     Tmp[Tmp<1e-300] = 1e-300
     Tmp[o_tmp>fo] = nan

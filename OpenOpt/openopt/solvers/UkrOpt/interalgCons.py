@@ -24,7 +24,7 @@ def processConstraints(C0, y, e, _s, p, dataType):
     
     DefiniteRange = True
     if len(p._discreteVarsNumList):
-        adjustDiscreteVarBounds(y, e, p)
+        y, e, _s, indT = adjustDiscreteVarBounds(y, e, _s, indT, p)
 
     m = y.shape[0]
     nlh = zeros((m, 2*n))
@@ -79,9 +79,14 @@ def processConstraints(C0, y, e, _s, p, dataType):
             # TODO: mb implement it
             if len(p._discreteVarsNumList):
                 if tmp_l.ndim > 1:
-                    adjustDiscreteVarBounds(tmp_l, tmp_u, p)
+                    # shouldn't reduce y,e shape here, so output values doesn't matter
+                    l1 = len(_s)
+                    tmp_l, tmp_u, _s2, indT2 = adjustDiscreteVarBounds(tmp_l, tmp_u, _s, indT, p)
+                    l2 = len(_s2)
+                    if l1 != l2:
+                        print('Warning: possible bug in interalg constraints processing, inform developers')
                 else:
-                    adjustDiscreteVarBounds(y, e, p)
+                    y, e, _s, indT = adjustDiscreteVarBounds(y, e, _s, indT, p)
 
             nlh_l, nlh_u = nlh[:, nlh.shape[1]/2:], nlh[:, :nlh.shape[1]/2]
             

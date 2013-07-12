@@ -9,7 +9,7 @@ except ImportError:
     from numpy import nanmin
 
 
-def adjustDiscreteVarBounds(y, e, p):
+def adjustDiscreteVarBounds(y, e, _s, indT, p):
     #n = p.n
     # TODO: remove the cycle, use vectorization
     for i in p._discreteVarsNumList:
@@ -18,17 +18,18 @@ def adjustDiscreteVarBounds(y, e, p):
         adjust_lx_WithDiscreteDomain(y[:, i], v)
         adjust_ux_WithDiscreteDomain(e[:, i], v)
 
-    ind = any(y>e, 1)
+    Ind = any(y>e, 1)
 
-    # TODO:  is it triggered?
-    if any(ind):
-        #print('asdf')
-        ind = where(logical_not(ind))[0]
+    # TODO:  is it triggered? // updated: can be from MOP or cons
+    if any(Ind):
+        ind = where(logical_not(Ind))[0]
         s = ind.size
         y = take(y, ind, axis=0, out=y[:s])
         e = take(e, ind, axis=0, out=e[:s])
-    return y, e
-    
+        _s = _s[ind]
+        indT = indT[ind]
+    return y, e, _s, indT
+
     
 def func7(y, e, o, a, _s, indT, nlhc, residual):
     r10 = logical_and(all(isnan(o), 1), all(isnan(a), 1))
@@ -164,7 +165,7 @@ def func4(p, y, e, o, a, fo, tnlhf_curr = None):
         
     indT = logical_or(any(ind, 1), indT)
     if any(ind):
-        # copy is used to prevent y and e being same array, that may be buggy with discret vars
+        # copy is used to prevent y and e being same array, that may be buggy with discrete vars
         e[ind] = cs[ind].copy() 
         # Changes
 #        ind = logical_and(ind, logical_not(isnan(a[:, n:])))
@@ -180,15 +181,6 @@ def func4(p, y, e, o, a, fo, tnlhf_curr = None):
 #                arr[:, n:2*n][ind] = arr[:, 0:n][ind]
         
     return indT
-
-
-def TruncateByCuttingPlane(f, f_val, y, e, lb, ub, point, gradient):
-    gradient_squared_norm = np.sum(gradient**2)
-    #gradient_norm = np.sqrt(np.sum(gradient**2))
-    #normed_gradient = gradient / gradient_norm
-    gradient_multiplier = gradient / gradient_squared_norm
-    delta_l = gradient_multiplier * (f_val - lb)
-    H = point + delta_l
     
 def truncateByPlane(y, e, indT, A, b):
     #!!!!!!!!!!!!!!!!!!!
@@ -200,11 +192,8 @@ def truncateByPlane(y, e, indT, A, b):
     if m == 0:
         assert e.size == 0, 'bug in interalg engine'
         return y, e, indT, ind_trunc
-    # TODO: remove the cycle
-#    for i in range(m):
-#        l, u = y[i], e[i]
+
     ind_positive = where(A > 0)[0]
-    
     ind_negative = where(A < 0)[0]
     
     A1 = A[ind_positive] 
@@ -257,10 +246,6 @@ def truncateByPlane(y, e, indT, A, b):
 
     
 def truncateByPlane2(cs, centerValues, y, e, indT, gradient, fo, p):
-#    #debug
-#    t = np.array([ 0.63056964, -1.        , -1.        , -1.        , -1.        ,       -1.        , -1.        ])
-#    cond_present_1 = np.any([logical_and([u>=t for u in e], [l<=t for l in y])])
-#    print(cond_present_1)
     
     ind_trunc = True
     assert np.asarray(fo).size <= 1, 'unimplemented yet'
@@ -268,18 +253,13 @@ def truncateByPlane2(cs, centerValues, y, e, indT, gradient, fo, p):
     if m == 0:
         assert e.size == 0, 'bug in interalg engine'
         return y, e, indT, ind_trunc
-    # TODO: remove the cycle
-#    for i in range(m):
-#        l, u = y[i], e[i]
 
     oovarsIndDict = p._oovarsIndDict
     ind = np.array([oovarsIndDict[oov][0] for oov in gradient.keys()])
     y2, e2 = y[:, ind], e[:, ind]
     
-    #print(gradient)
     A = np.vstack([np.asarray(elem).reshape(1, -1) for elem in gradient.values()]).T
     cs = 0.5 * (y2 + e2)
-    #print(gradient.values())
     b = np.sum(A * cs, 1) - centerValues.view(np.ndarray) + fo
 
 #    ind_positive = where(A > 0)
@@ -331,12 +311,8 @@ def truncateByPlane2(cs, centerValues, y, e, indT, gradient, fo, p):
         y = take(y, ind_trunc, axis=0, out=y[:lj])
         e = take(e, ind_trunc, axis=0, out=e[:lj])
         indT = indT[ind_trunc]
-        
-#    cond_present_2 = np.any([logical_and([u>=t for u in e], [l<=t for l in y])])
-#    print('!', cond_present_2)
     
     return y, e, indT, ind_trunc
-    
     
     
 def  truncateByConvexFunc():
