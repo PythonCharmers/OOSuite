@@ -248,3 +248,6 @@ def _export_to_xls(p, r, *args, **kw):
     
 class target:
     pass
+    
+class MOPsolutions(list):
+    pass

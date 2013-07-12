@@ -437,7 +437,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     self._categoricalVars.add(key)
                     key.formAuxDomain()
                     self.x0[key] = searchsorted(key.aux_domain, val, 'left')
-                elif key.domain is not None and key.domain is not bool and key.domain is not 'bool' and key.domain is not int and val not in key.domain:
+                elif key.domain is not None and key.domain is not bool and key.domain is not 'bool' \
+                and key.domain is not int and key.domain is not 'int' and val not in key.domain:
                     self.x0[key] = key.domain[0]
             
             self.x0 = oopoint(self.x0)
@@ -556,7 +557,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     v.domain.sort()
                     self.constraints.update([v >= v.domain[0], v <= v.domain[-1]])
                     if hasattr(v, 'aux_domain'):
-                         self.constraints.add(v - (len(v.aux_domain)-1)<=0)
+                        self.constraints.add(v - (len(v.aux_domain)-1)<=0)
                     
 #            for v in self._categoricalVars:
 #                if isFixed(v):
