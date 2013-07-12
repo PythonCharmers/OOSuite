@@ -16,6 +16,10 @@ def CVXOPT_LP_Solver(p, solverName):
         cvxopt_solvers.options['show_progress'] = False
         cvxopt_solvers.options['LPX_K_MSGLEV'] = 0
         cvxopt_solvers.options['MSK_IPAR_LOG'] = 0
+        if solverName == 'glpk': 
+            from cvxopt import glpk  
+            glpk.options['LPX_K_MSGLEV'] = 0  
+
     xBounds2Matrix(p)
     #WholeRepr2LinConst(p)
 
