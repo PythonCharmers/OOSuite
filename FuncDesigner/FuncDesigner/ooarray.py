@@ -297,3 +297,8 @@ class ooarray(OOArray):
                 # !!! assunimg other.size = 1
                 return ooarray([elem >= other for elem in self])                   
         raise FuncDesignerException('unimplemented yet')
+
+    def sum(self, *args, **kw):
+        r = ndarray.sum(self, *args, **kw)
+        if type(r) == ooarray and r.size == 1:
+            return r.item()
