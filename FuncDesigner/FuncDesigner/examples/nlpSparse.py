@@ -19,7 +19,7 @@ cons = [
         y>-10-arange(N), z<arange(2*N), z>-100-arange(2*N), 
         x + y > 2-3*arange(N), # N linear constraints
         x**4 + sum(y) + sum(z**2) < 100, 
-        x+sum(z)>4 # 2*N linear constraints
+        x+sum(z)>4 
         ]
 
 p = NLP(objective, startPoint, constraints = cons, iprint=50)
