@@ -15,7 +15,7 @@ class cplex(baseSolver):
     #__info__ = ""
     __optionalDataThatCanBeHandled__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'intVars', 'H', 'QC']
     _canHandleScipySparse = True
-    __isIterPointAlwaysFeasible__ = lambda self, p: p.intVars not in ((), [], None)
+    __isIterPointAlwaysFeasible__ = False#lambda self, p: p.intVars not in ((), [], None)
     
     preprocessor = lambda *args, **kwargs: None
     #options = ''
