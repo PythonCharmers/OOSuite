@@ -158,12 +158,12 @@ def quad_render(arg, p):
     
     
     if p.fixedVars is None or (p.freeVars is not None and len(p.freeVars)<len(p.fixedVars)):
-        D_kwargs = {'Vars': p.freeVars}
-        order_kw = {'Vars': p.freeVars}
+        D_kwargs = {'Vars': p.freeVarsSet}
+        order_kw = {'Vars': p.freeVarsSet}
         Z = dict((v, np.zeros_like(p._x0[v]) if v in p._freeVars else p._x0[v]) for v in p._x0.keys())
     else:
-        D_kwargs = {'fixedVars': p.fixedVars}
-        order_kw = {'fixedVars': p.fixedVars}
+        D_kwargs = {'fixedVars': p.fixedVarsSet}
+        order_kw = {'fixedVars': p.fixedVarsSet}
         Z = dict((v, np.zeros_like(p._x0[v]) if v not in p._fixedVars else p._x0[v]) for v in p._x0.keys())
     D_kwargs['useSparse'] = useSparse
     D_kwargs['fixedVarsScheduleID'] = p._FDVarsID
@@ -188,6 +188,7 @@ def quad_render(arg, p):
             pointDerivative = elem.D(Z, **D_kwargs)
             if len(pointDerivative) != 0:
                 # TODO: check iadd with different types (dense/sparse)
+#                asdf(p, pointDerivative, useSparse, f)
                 tmp = p._pointDerivative2array(pointDerivative, useSparse = useSparse)
                 if hasattr(tmp, 'toarray'):
                     tmp = tmp.toarray()
@@ -283,8 +284,12 @@ def quad_render(arg, p):
     H = H + H.T
     return H, f, c
     
-    
-    
+#def asdf(p, pointDerivative, useSparse, f):
+#    tmp = p._pointDerivative2array(pointDerivative, useSparse = useSparse)
+#    if hasattr(tmp, 'toarray'):
+#        tmp = tmp.toarray()
+#    f += tmp.flatten()
+
     
     
 #    if p.fixedVars is None or (p.freeVars is not None and len(p.freeVars)<len(p.fixedVars)):
