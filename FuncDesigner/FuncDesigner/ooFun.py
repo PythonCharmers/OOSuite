@@ -1595,7 +1595,6 @@ class oofun(object):
     def getOrder(self, Vars=None, fixedVars=None, fixedVarsScheduleID=-1):
         
         # TODO: improve it wrt fixedVarsScheduleID
-        
         # returns polinomial order of the oofun
         if isinstance(Vars, oofun): Vars = set([Vars])
         elif Vars is not None and type(Vars) != set: Vars = set(Vars)
@@ -1609,23 +1608,26 @@ class oofun(object):
         
         if rebuildFixedCheck:
             # ajust new value of self._order wrt new free/fixed vars schedule
-            if self.discrete: self._order = 0
-       
-            if self.is_oovar:
-                if (fixedVars is not None and self in fixedVars) or (Vars is not None and self not in Vars):
-                    self._order = 0
+            if self.discrete: 
+                self._order = 0
+            elif self.is_oovar:
+                if fixedVars is not None and Vars is not None:
+                    isFixed = (self in fixedVars) if len(fixedVars) < len(Vars) else (self not in Vars)
                 else:
-                    self._order = 1
+                    isFixed = (fixedVars is not None and self in fixedVars) or (Vars is not None and self not in Vars)
+                self._order = 0 if isFixed else 1
             else:
-#                orders = [(inp.getOrder(Vars, fixedVars) if isinstance(inp, oofun) else 0) for inp in self.input]
-                orders = []
+                self._order = 0
                 for inp in self.input:
                     if isinstance(inp, oofun):
-                        orders.append(inp.getOrder(Vars, fixedVars))
+                        if inp.getOrder(Vars, fixedVars, fixedVarsScheduleID=fixedVarsScheduleID) != 0:
+                            self._order = inf
+                            break
                     elif isinstance(inp, OOArray):
-                        orders += [(elem.getOrder(Vars, fixedVars) if isinstance(elem, oofun) else 0) for elem in inp.view(ndarray)]
-                self._order = inf if any(asarray(orders) != 0) else 0
-
+                        for elem in inp.view(ndarray):
+                            if isinstance(elem, oofun) and elem.getOrder(Vars, fixedVars, fixedVarsScheduleID=fixedVarsScheduleID) != 0:
+                                self._order = inf
+                                break
         return self._order
     
     # TODO: should broadcast return non-void result?
