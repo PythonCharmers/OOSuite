@@ -34,9 +34,9 @@ class QP(MatrixProblem):
 #            print(H, f, C)
             
             if self.fixedVars is None or (self.freeVars is not None and len(self.freeVars)<len(self.fixedVars)):
-                order_kw = {'Vars': self.freeVars}
+                order_kw = {'Vars': self.freeVarsSet}
             else:
-                order_kw = {'fixedVars': self.fixedVars}
+                order_kw = {'fixedVars': self.fixedVarsSet}
             order_kw['fixedVarsScheduleID'] = self._FDVarsID 
             from FuncDesigner import ooarray
             for c in self.constraints:
