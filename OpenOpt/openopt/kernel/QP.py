@@ -125,6 +125,7 @@ import numpy as np
 
 def quad_render(arg, p):
     from FuncDesigner.ooFun import oofun
+    from FuncDesigner.ooPoint import ooPoint
     from FuncDesigner.baseClasses import OOArray
     if isinstance(arg, OOArray):
         assert arg.size == 1, 'quad_render works with oofuns with scalar output only'
@@ -165,6 +166,7 @@ def quad_render(arg, p):
         D_kwargs = {'fixedVars': p.fixedVarsSet}
         order_kw = {'fixedVars': p.fixedVarsSet}
         Z = dict((v, np.zeros_like(p._x0[v]) if v not in p._fixedVars else p._x0[v]) for v in p._x0.keys())
+    Z = ooPoint(Z)
     D_kwargs['useSparse'] = useSparse
     D_kwargs['fixedVarsScheduleID'] = p._FDVarsID
     order_kw['fixedVarsScheduleID'] = p._FDVarsID 
@@ -188,11 +190,11 @@ def quad_render(arg, p):
             pointDerivative = elem.D(Z, **D_kwargs)
             if len(pointDerivative) != 0:
                 # TODO: check iadd with different types (dense/sparse)
-#                asdf(p, pointDerivative, useSparse, f)
-                tmp = p._pointDerivative2array(pointDerivative, useSparse = useSparse)
-                if hasattr(tmp, 'toarray'):
-                    tmp = tmp.toarray()
-                f += tmp.flatten()
+                asdf(p, pointDerivative, useSparse, f)
+#                tmp = p._pointDerivative2array(pointDerivative, useSparse = useSparse)
+#                if hasattr(tmp, 'toarray'):
+#                    tmp = tmp.toarray()
+#                f += tmp.flatten()
             c += elem(Z)
         elif order == 2:
             if elem._isProd:
@@ -240,6 +242,7 @@ def quad_render(arg, p):
 #                assert tmp.is_oovar, 'unimplemented yet'
 #                d = tmp.D(Z, **D_kwargs)
                 d = squared_elem.D(Z, **D_kwargs)
+
                 #assert len(d) == 1, 'unimplemented yet'
                 if len(d) > 1:
                     assert squared_elem._isSum, 'unimplemented yet'
@@ -279,16 +282,26 @@ def quad_render(arg, p):
                 Ind1, Ind2 = oovarsIndDict[elem1], oovarsIndDict[elem2]
                 assert Ind1[1]-Ind1[0] == 1, 'unimplemented yet'
                 assert Ind2[1]-Ind2[0] == 1, 'unimplemented yet'
+                
                 H[Ind1[0], Ind2[0]] += Tmp
                 
     H = H + H.T
     return H, f, c
-    
-#def asdf(p, pointDerivative, useSparse, f):
-#    tmp = p._pointDerivative2array(pointDerivative, useSparse = useSparse)
-#    if hasattr(tmp, 'toarray'):
-#        tmp = tmp.toarray()
-#    f += tmp.flatten()
+
+#def updateH(H, ind1, ind2, elem):
+#    H[ind1, ind2] += elem
+
+def asdf(p, pointDerivative, useSparse, f):
+    #new
+#    for k, v in pointDerivative.items():
+#        Ind = p._oovarsIndDict[k]
+#        f[Ind[0]:Ind[1]] += v if type(v) != ndarray else v.item()
+##        f[Ind[0]] += v
+    # prev
+    tmp = p._pointDerivative2array(pointDerivative, useSparse = useSparse)
+    if hasattr(tmp, 'toarray'):
+        tmp = tmp.toarray()
+    f += tmp.flatten()
 
     
     
