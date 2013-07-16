@@ -466,12 +466,12 @@ class oofun(object):
 #        if isinstance(other, Stochastic):
 #            return other.__add__(self)
         
-        for frame_tuple in inspect.stack():
-            frame = frame_tuple[0]
-            if 'func_code' in dir(frame) and 'func_code' in dir(npSum) and frame.f_code is npSum.func_code:
-                pWarn('''
-                seems like you use numpy.sum() on FuncDesigner object(s), 
-                using FuncDesigner.sum() instead is highly recommended''')              
+#        for frame_tuple in inspect.stack():
+#            frame = frame_tuple[0]
+#            if 'func_code' in dir(frame) and 'func_code' in dir(npSum) and frame.f_code is npSum.func_code:
+#                pWarn('''
+#                seems like you use numpy.sum() on FuncDesigner object(s), 
+#                using FuncDesigner.sum() instead is highly recommended''')              
         
         if not isinstance(other, (oofun, list, ndarray, tuple)) and not isscalar(other):
             raise FuncDesignerException('operation oofun_add is not implemented for the type ' + str(type(other)))
