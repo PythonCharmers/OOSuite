@@ -140,10 +140,10 @@ def quad_render(arg, p):
     oovarsIndDict = p._oovarsIndDict
     n = p.n
     
-    if 0 and scipyInstalled and p.useSparse is not False:
+    if 1 and scipyInstalled and p.useSparse is not False:
         useSparse = p.useSparse
         if useSparse == 'auto':
-            useSparse = p.n > 1500
+            useSparse = p.n > 150
     else:
         useSparse = False
         
@@ -292,7 +292,7 @@ def quad_render(arg, p):
 #    H[ind1, ind2] += elem
 
 def asdf(p, pointDerivative, useSparse, f):
-    if useSparse is False:
+    if 1 or useSparse is False:
         for k, v in pointDerivative.items():
             Ind = p._oovarsIndDict[k]
             if type(v) in (float, np.float64):
