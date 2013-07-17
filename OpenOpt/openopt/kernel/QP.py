@@ -292,16 +292,18 @@ def quad_render(arg, p):
 #    H[ind1, ind2] += elem
 
 def asdf(p, pointDerivative, useSparse, f):
-    #new
-#    for k, v in pointDerivative.items():
-#        Ind = p._oovarsIndDict[k]
-#        f[Ind[0]:Ind[1]] += v if type(v) != ndarray else v.item()
-##        f[Ind[0]] += v
-    # prev
-    tmp = p._pointDerivative2array(pointDerivative, useSparse = useSparse)
-    if hasattr(tmp, 'toarray'):
-        tmp = tmp.toarray()
-    f += tmp.flatten()
+    if useSparse is False:
+        for k, v in pointDerivative.items():
+            Ind = p._oovarsIndDict[k]
+            if type(v) in (float, np.float64):
+                f[Ind[0]]+=v
+            else:
+                f[Ind[0]:Ind[1]] += v if type(v) != ndarray else v.item()
+    else:
+        tmp = p._pointDerivative2array(pointDerivative, useSparse = useSparse)
+        if hasattr(tmp, 'toarray'):
+            tmp = tmp.toarray()
+        f += tmp.flatten()
 
     
     

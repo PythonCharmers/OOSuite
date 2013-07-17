@@ -192,43 +192,43 @@ def setStartVectorAndTranslators(p):
             r2 = []
 #            hasSparse = False
  
-            if len(freeVars) > 5 * len(pointDerivative):
-                ind_Z = 0
-#                derivative_items = list(pointDerivative.items())
-#                derivative_items.sort(key=lambda elem: elem[0]._id)
-                for oov, val in pointDerivative.items():
-                    ind_start, ind_end = oovarsIndDict[oov]
-                    if ind_start != ind_Z:
-                        r2.append(SparseMatrixConstructor((funcLen, ind_start - ind_Z)))
-                    if not isspmatrix(val): 
-                        val = asarray(val) # else bug with scipy sparse hstack
-                    r2.append(val)
-                    ind_Z = ind_end
-                if ind_Z != n:
-                    # assert ind_Z < n
-                    r2.append(SparseMatrixConstructor((funcLen, n - ind_Z)))
-            else:
-                zeros_start_ind = 0
-                zeros_end_ind = 0           
-                for i, var in enumerate(freeVars):
-                    if var in pointDerivative:#i.e. one of its keys
-                        if zeros_end_ind != zeros_start_ind:
-                            r2.append(SparseMatrixConstructor((funcLen, zeros_end_ind - zeros_start_ind)))
-                            zeros_start_ind = zeros_end_ind
-                        
-                        tmp = pointDerivative[var]
-                        if isspmatrix(tmp): 
-                            pass
-#                            hasSparse = True
-                        else:
-                            tmp = asarray(tmp) # else bug with scipy sparse hstack
-                        if tmp.ndim < 2:
-                            tmp = tmp.reshape(funcLen, prod(tmp.shape) // funcLen)
-                        r2.append(tmp)
-                    else:
-                        zeros_end_ind  += oovar_sizes[i]          
-                if zeros_end_ind != zeros_start_ind:
-                    r2.append(SparseMatrixConstructor((funcLen, zeros_end_ind - zeros_start_ind)))
+#            if len(freeVars) > 5 * len(pointDerivative):
+            ind_Z = 0
+            derivative_items = list(pointDerivative.items())
+            derivative_items.sort(key=lambda elem: elem[0]._id)
+            for oov, val in derivative_items:#pointDerivative.items():
+                ind_start, ind_end = oovarsIndDict[oov]
+                if ind_start != ind_Z:
+                    r2.append(SparseMatrixConstructor((funcLen, ind_start - ind_Z)))
+                if not isspmatrix(val): 
+                    val = asarray(val) # else bug with scipy sparse hstack
+                r2.append(val)
+                ind_Z = ind_end
+            if ind_Z != n:
+                # assert ind_Z < n
+                r2.append(SparseMatrixConstructor((funcLen, n - ind_Z)))
+#            else:
+#                zeros_start_ind = 0
+#                zeros_end_ind = 0           
+#                for i, var in enumerate(freeVars):
+#                    if var in pointDerivative:#i.e. one of its keys
+#                        if zeros_end_ind != zeros_start_ind:
+#                            r2.append(SparseMatrixConstructor((funcLen, zeros_end_ind - zeros_start_ind)))
+#                            zeros_start_ind = zeros_end_ind
+#                        
+#                        tmp = pointDerivative[var]
+#                        if isspmatrix(tmp): 
+#                            pass
+##                            hasSparse = True
+#                        else:
+#                            tmp = asarray(tmp) # else bug with scipy sparse hstack
+#                        if tmp.ndim < 2:
+#                            tmp = tmp.reshape(funcLen, prod(tmp.shape) // funcLen)
+#                        r2.append(tmp)
+#                    else:
+#                        zeros_end_ind  += oovar_sizes[i]          
+#                if zeros_end_ind != zeros_start_ind:
+#                    r2.append(SparseMatrixConstructor((funcLen, zeros_end_ind - zeros_start_ind)))
             r3 = Hstack(r2) #if hasSparse else hstack(r2)
             if isspmatrix(r3) and 4 * r3.nnz > asarray(r3.shape, int64).prod(): r3 = r3.A
             return r3
