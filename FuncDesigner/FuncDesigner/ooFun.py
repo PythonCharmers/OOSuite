@@ -1044,7 +1044,7 @@ class oofun(object):
             if type(args[0]) != str:
                 assert not isinstance(args[0], oofun), "you can't invoke oofun on another one oofun"
                 x = args[0]
-                if isinstance(x, dict) and not isinstance(x, ooPoint): 
+                if type(x)== dict: 
                     x = ooPoint(x)
                     Args = (x,)+args[1:]
                 if self.is_oovar:
@@ -1223,7 +1223,7 @@ class oofun(object):
         if Vars is not None and fixedVars is not None:
             raise FuncDesignerException('No more than one argument from "Vars" and "fixedVars" is allowed for the function')
         #assert type(Vars) != ndarray and type(fixedVars) != ndarray
-        if not isinstance(x, ooPoint): x = ooPoint(x)
+        if type(x) == dict: x = ooPoint(x)
         initialVars = Vars
         #TODO: remove cloned code
         if Vars is not None:
