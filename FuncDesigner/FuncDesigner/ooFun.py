@@ -20,7 +20,7 @@ from FuncDesigner.multiarray import multiarray
 from Interval import Interval, adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain, mul_interval,\
 pow_const_interval, pow_oofun_interval, div_interval, rdiv_interval, add_interval, add_const_interval, \
 neg_interval, defaultIntervalEngine
-import inspect
+#import inspect
 from baseClasses import OOArray, Stochastic
 from boundsurf import boundsurf
 
@@ -1252,13 +1252,10 @@ class oofun(object):
             if it is still present somewhere in FuncDesigner doc inform developers""")
         elif resultKeysType == 'vars':
             rr = {}
-            #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! TODO: remove the cycle!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            
-            for oov, val in x.items():
-                #if not isinstance(oov not in r, bool): print oov not in r
-                if oov not in r or (fixedVars is not None and oov in fixedVars):
+            #!!! TODO: mb remove the cycle!!!!
+            for oov, tmp in r.items():
+                if (fixedVars is not None and oov in fixedVars) or (Vars is not None and oov not in Vars):
                     continue
-                tmp = r[oov]
                 if useSparse == False and hasattr(tmp, 'toarray'): tmp = tmp.toarray()
                 if not exactShape and not isspmatrix(tmp) and not isscalar(tmp):
                     if tmp.size == 1: tmp = asscalar(tmp)
