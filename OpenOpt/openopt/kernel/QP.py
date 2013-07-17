@@ -124,18 +124,18 @@ from nonOptMisc import scipyInstalled
 import numpy as np
 
 def quad_render(arg, p):
-    from FuncDesigner.ooFun import oofun
+#    from FuncDesigner import oofun
     from FuncDesigner.ooPoint import ooPoint
     from FuncDesigner.baseClasses import OOArray
     if isinstance(arg, OOArray):
         assert arg.size == 1, 'quad_render works with oofuns with scalar output only'
         arg = arg.item()
-        
-    assert isinstance(arg, oofun), 'oofun input expected'
+    #assert type(arg) == oofun, 'oofun input expected'
     assert p.fixedVars is None, 'quadratic rendering is unimplemented for fixedVars yet'
     
     optVarSizes = p._optVarSizes
-    assert np.all(np.array(optVarSizes.values()) == 1), 'quadratic rendering is unimplemented for oovar(size=n) yet, use oovars(n) instead'
+#    print(optVarSizes.values(), np.array(optVarSizes.values()))
+    assert all(np.array(list(optVarSizes.values())) == 1), 'quadratic rendering is unimplemented for oovar(size=n) yet, use oovars(n) instead'
         
     oovarsIndDict = p._oovarsIndDict
     n = p.n
