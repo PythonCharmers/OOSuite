@@ -935,7 +935,7 @@ class oofun(object):
             # do not perform check for other == 0, copy should be returned, not self!
         r.descriptor = (self, '<', other)
         Other = str(other) if not isinstance(other, ndarray) or other.size < 5\
-        else '[%f %f ... %f %f]' % (other[0], other[1], other[-2], other[-1])
+        else '[%s %s ... %s %s]' % (other[0], other[1], other[-2], other[-1])
         r.name = self.name + ' <= ' + Other
         return r            
 
@@ -975,7 +975,7 @@ class oofun(object):
                 elif self.domain is not int and self.domain is not 'int':# and type(other) in (str, string_):
                     pass
             Other = str(other) if not isinstance(other, ndarray) or other.size < 5\
-            else '[%f %f ... %f %f]' %(other[0], other[1], other[-2], other[-1])
+            else '[%s %s ... %s %s]' %(other[0], other[1], other[-2], other[-1])
             r.name = self.name + ' == ' + Other
         return r  
 
