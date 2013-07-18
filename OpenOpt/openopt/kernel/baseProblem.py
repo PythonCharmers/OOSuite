@@ -446,10 +446,12 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
 
             setStartVectorAndTranslators(self)
             
-            if self.probType in ['LP', 'MILP'] and self.f.getOrder(self.freeVarsSet, self.fixedVarsSet, fixedVarsScheduleID = self._FDVarsID) > 1:
+            if self.probType in ['LP', 'MILP', 'SOCP'] and self.f.getOrder(self.freeVarsSet, self.fixedVarsSet, fixedVarsScheduleID = self._FDVarsID) > 1:
                 self.err('for LP/MILP objective function has to be linear, while this one ("%s") is not' % self.f.name)
             
-            if self.fixedVars is None or (self.freeVars is not None and len(self.freeVars)<len(self.fixedVars)):
+            if self.fixedVars is None:
+               D_kwargs = {'fixedVars':self.fixedVarsSet}
+            elif self.freeVars is not None and len(self.freeVars)<len(self.fixedVars):
                 D_kwargs = {'Vars':self.freeVarsSet}
             else:
                 D_kwargs = {'fixedVars':self.fixedVarsSet}
@@ -464,14 +466,15 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             
             #Z = self._vector2point(zeros(self.n))
             if len(self._fixedVars) < len(self._freeVars) and 'isdisjoint' in dir(set()):
-                areFixed = lambda dep: dep.issubset(self._fixedVars)
+                areFixed = lambda dep: dep.issubset(self.fixedVarsSet)
                 #isFixed = lambda v: v in self._fixedVars
-                Z = dict((v, zeros_like(val) if v not in self._fixedVars else val) for v, val in self._x0.items())
+                Z = dict((v, zeros_like(val) if v not in self.fixedVarsSet else val) for v, val in self._x0.items())
             else:
-                areFixed = lambda dep: dep.isdisjoint(self._freeVars)
+                areFixed = lambda dep: dep.isdisjoint(self.freeVarsSet)
                 #isFixed = lambda v: v not in self._freeVars
-                Z = dict((v, zeros_like(val) if v in self._freeVars else val) for v, val in self._x0.items())
+                Z = dict((v, zeros_like(val) if v in self.freeVarsSet else val) for v, val in self._x0.items())
             Z = oopoint(Z, maxDistributionSize = self.maxDistributionSize)
+            self._Z = Z
            
             #p.isFixed = isFixed
             lb, ub = -inf*ones(self.n), inf*ones(self.n)
@@ -547,7 +550,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             self.unvectorizableFuncs = unvectorizableFuncs
             self.hasVectorizableFuncs = hasVectorizableFuncs
             
-            for v in self._freeVars:
+            for v in self.freeVarsSet:
                 d = v.domain
                 if d is bool or d is 'bool':
                     self.constraints.update([v>0, v<1])

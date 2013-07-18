@@ -18,7 +18,7 @@ def setStartVectorAndTranslators(p):
     
     fixedVars, freeVars = None, None
     
-    from FuncDesigner import ooarray
+    from FuncDesigner import ooarray, _Stochastic
     def getVars(t):
         vars1 = [v for v in (t if t is not None else []) if type(v) != ooarray]
         vars2 = [v for v in (t if t is not None else []) if type(v) == ooarray]
@@ -51,7 +51,6 @@ def setStartVectorAndTranslators(p):
     else:
         freeVars = list(startPoint.keys())
     
-    from FuncDesigner import _Stochastic
     nn = len(freeVars)
     for i in range(nn):
         v = freeVars[nn-1-i]

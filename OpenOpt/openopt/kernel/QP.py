@@ -18,9 +18,7 @@ class QP(MatrixProblem):
     C = 0.0
     
     def _Prepare(self):
-        if self._isFDmodel():
-            pass
-        else:
+        if not self._isFDmodel():
             if not isspmatrix(self.H):
                 self.H = asfarray(self.H) # TODO: handle the case in runProbSolver()
             self.n = self.H.shape[0]
@@ -157,20 +155,16 @@ def quad_render(arg, p):
     
     startPoint = p._x0
     
-    
     if p.fixedVars is None or (p.freeVars is not None and len(p.freeVars)<len(p.fixedVars)):
-        D_kwargs = {'Vars': p.freeVarsSet}
         order_kw = {'Vars': p.freeVarsSet}
         Z = dict((v, np.zeros_like(p._x0[v]) if v in p._freeVars else p._x0[v]) for v in p._x0.keys())
     else:
-        D_kwargs = {'fixedVars': p.fixedVarsSet}
         order_kw = {'fixedVars': p.fixedVarsSet}
         Z = dict((v, np.zeros_like(p._x0[v]) if v not in p._fixedVars else p._x0[v]) for v in p._x0.keys())
     Z = ooPoint(Z)
+    D_kwargs = p._D_kwargs
     D_kwargs['useSparse'] = useSparse
-    D_kwargs['fixedVarsScheduleID'] = p._FDVarsID
     order_kw['fixedVarsScheduleID'] = p._FDVarsID 
-    D_kwargs['exactShape'] = True
     
 #    D = arg.D(Z, **D_kwargs)
     
