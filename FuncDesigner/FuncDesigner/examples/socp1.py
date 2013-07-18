@@ -13,8 +13,8 @@ x, y, z = oovars('x y z')
 f = -2*x + y + 5*z
 
 # since all our oovar instances have size=1 in the example
-# to define dot(A, x) we could use either hstack or ooarray:
-constraint1 = norm(hstack(-13*x + 3*y + 5*z - 3, -12 * x + 12 * y - 6 * z - 2)) < -12 * x - 6 * y + 5 * z - 12
+# to define dot(A, x) we could use either standalone oovar operations:
+constraint1 = norm([-13,-12]*x + [3, 12]*y + [5,-6]*z - [3, 2]) < -12 * x - 6 * y + 5 * z - 12
 
 # or matrix multiplication:
 C = mat('-3 6 2; 1 9 2; -1 -19 3')
