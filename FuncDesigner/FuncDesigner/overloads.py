@@ -1003,8 +1003,11 @@ def norm(*args, **kwargs):
     if len(kwargs) or len(args) > 1:
         return np.linalg.norm(*args, **kwargs)
     r = sqrt(sum(args[0]**2),  attachConstraints=False)
+    if len(kwargs) == 0 and (len(args) == 1 or args[1] == 2):
+        r.engine = 'norm2'
+        r._norm_arg = args[0]#used in SOCP
     return r
-
+ 
 __all__ += ['sum', 'prod', 'norm']
 
 #def stack(*args, **kwargs):
@@ -1209,7 +1212,7 @@ def hstack(tup): # overload for oofun[ind]
     if not any(c):
         return np.hstack(tup)
     #an_oofun_ind = np.where(c)[0][0]
-    f = lambda *x: np.hstack(x)
+    f = lambda *x: np.hstack(x).flatten()
     
     
   

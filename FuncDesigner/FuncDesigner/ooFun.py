@@ -22,6 +22,7 @@ pow_const_interval, pow_oofun_interval, div_interval, rdiv_interval, add_interva
 neg_interval, defaultIntervalEngine
 #import inspect
 from baseClasses import OOArray, Stochastic
+
 from boundsurf import boundsurf
 
 Copy = lambda arg: asscalar(arg) if type(arg)==ndarray and arg.size == 1 else arg.copy() if hasattr(arg, 'copy') else copy(arg)
@@ -903,13 +904,18 @@ class oofun(object):
     
     # TODO: fix it for discrete problems like MILP, MINLP
     def __gt__(self, other): # overload for >
-    
-        if self.is_oovar and not isinstance(other, (oofun, OOArray)) and not (isinstance(other, ndarray) and str(other.dtype) =='object'):
+        if self.is_oovar and not isinstance(other, (oofun, OOArray)) \
+        and not (isinstance(other, ndarray) and str(other.dtype) =='object'):
             r = BoxBoundConstraint(self, lb = other)
         elif isinstance(other, OOArray) or (isinstance(other, ndarray) and str(other.dtype) =='object'):
-            return other.__le__(self)
+            r = other.__le__(self)
         else:
-            r = Constraint(self - other, lb=0.0) # do not perform check for other == 0, copy should be returned, not self!
+            r = Constraint(self - other, lb=0.0) 
+            # do not perform check for other == 0, copy should be returned, not self!
+        r.descriptor = (self, '>', other)
+        Other = str(other) if not isinstance(other, ndarray) or other.size < 5\
+        else '[%f %f ... %f %f]' % (other[0], other[1], other[-2], other[-1])
+        r.name = self.name + ' >= ' + Other
         return r
 
     # overload for >=
@@ -919,12 +925,18 @@ class oofun(object):
     def __lt__(self, other): # overload for <
         # TODO:
         #(self.is_oovar or self.is_oovarSlice)
-        if self.is_oovar and not isinstance(other, (oofun, OOArray)) and not(isinstance(other, ndarray) and str(other.dtype) =='object'):
+        if self.is_oovar and not isinstance(other, (oofun, OOArray))\
+        and not(isinstance(other, ndarray) and str(other.dtype) =='object'):
             r = BoxBoundConstraint(self, ub = other)
         elif isinstance(other, OOArray) or (isinstance(other, ndarray) and str(other.dtype) =='object'):
-            return other.__ge__(self)
+            r = other.__ge__(self)
         else:
-            r = Constraint(self - other, ub = 0.0) # do not perform check for other == 0, copy should be returned, not self!
+            r = Constraint(self - other, ub = 0.0) 
+            # do not perform check for other == 0, copy should be returned, not self!
+        r.descriptor = (self, '<', other)
+        Other = str(other) if not isinstance(other, ndarray) or other.size < 5\
+        else '[%f %f ... %f %f]' % (other[0], other[1], other[-2], other[-1])
+        r.name = self.name + ' <= ' + Other
         return r            
 
     # overload for <=
@@ -948,20 +960,23 @@ class oofun(object):
             #r = (self == ind)(tol=0.5)
             r = Constraint(self - ind, ub = 0.0, lb = 0.0, tol=0.5)
             if self.is_oovar: r.nlh = lambda Lx, Ux, p, dataType: self.nlh(Lx, Ux, p, dataType, ind)
-            return r
         
-        if 'startswith' in dir(other): return False
+        elif 'startswith' in dir(other): 
+            return False
         #if self.is_oovar and not isinstance(other, oofun):
             #raise FuncDesignerException('Constraints like this: "myOOVar = <some value>" are not implemented yet and are not recommended; for openopt use freeVars / fixedVars instead')
-        r = Constraint(self - other, ub = 0.0, lb = 0.0) # do not perform check for other == 0, copy should be returned, not self!
-        if self.is_oovar and isscalar(other) and self.domain is not None:
-            if self.domain is bool or self.domain is 'bool':
-                if other not in [0, 1]:# and type(other) not in (int, int16, int32, int64):
-                    raise FuncDesignerException('bool oovar can be compared with [0,1] only')
-                r.nlh = self.nlh if other == 1.0 else (~self).nlh
-            elif self.domain is not int and self.domain is not 'int':# and type(other) in (str, string_):
-                pass
-
+        else:
+            r = Constraint(self - other, ub = 0.0, lb = 0.0) # do not perform check for other == 0, copy should be returned, not self!
+            if self.is_oovar and isscalar(other) and self.domain is not None:
+                if self.domain is bool or self.domain is 'bool':
+                    if other not in [0, 1]:# and type(other) not in (int, int16, int32, int64):
+                        raise FuncDesignerException('bool oovar can be compared with [0,1] only')
+                    r.nlh = self.nlh if other == 1.0 else (~self).nlh
+                elif self.domain is not int and self.domain is not 'int':# and type(other) in (str, string_):
+                    pass
+            Other = str(other) if not isinstance(other, ndarray) or other.size < 5\
+            else '[%f %f ... %f %f]' %(other[0], other[1], other[-2], other[-1])
+            r.name = self.name + ' == ' + Other
         return r  
 
     """                                             getInput                                              """
@@ -2040,7 +2055,7 @@ class BaseFDConstraint(BooleanOOFun):
     tol = 0.0 
     expected_kwargs = set(['tol', 'name'])
     __hash__ = oofun.__hash__
-
+    descriptor = None
     #def __getitem__(self, point):
 
     def __call__(self, *args,  **kwargs):
@@ -2095,7 +2110,23 @@ class BaseFDConstraint(BooleanOOFun):
             
         # TODO: replace self.oofun by self.engine
         self.oofun = oofun_Involved
-        
+    
+#    def __ge__(self, other):
+#        from overloads import hstack
+#        x, op, y = self.descriptor
+#        if op == '<':
+#            x, y = y, x
+#        return hstack((self, y>other))
+#        
+#    __gt__ = __ge__
+#    
+#    def __le__(self, other):
+#        from overloads import hstack
+#        x, op, y = self.descriptor
+#        if op == '>':
+#            x, y = y, x
+#        return hstack((self, other<x))
+#    __lt__ = __le__
 
 class SmoothFDConstraint(BaseFDConstraint):
         
