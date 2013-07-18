@@ -6,7 +6,7 @@ class cvxopt_socp(baseSolver):
     __license__ = "LGPL"
     __authors__ = "http://abel.ee.ucla.edu/cvxopt"
     __alg__ = "see http://abel.ee.ucla.edu/cvxopt"
-    __optionalDataThatCanBeHandled__ = ['A','b','Aeq', 'beq', 'lb', 'ub']
+    __optionalDataThatCanBeHandled__ = ['d', 'q', 's', 'A','b','Aeq', 'beq', 'lb', 'ub']
     properTextOutput = True
     _canHandleScipySparse = True
     def __init__(self): pass

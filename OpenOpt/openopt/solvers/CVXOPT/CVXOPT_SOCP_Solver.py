@@ -5,6 +5,7 @@ from cvxopt_misc import *
 import cvxopt.solvers as cvxopt_solvers
 from cvxopt.base import matrix
 from openopt.kernel.setDefaultIterFuncs import SOLVED_WITH_UNIMPLEMENTED_OR_UNKNOWN_REASON,  IS_MAX_ITER_REACHED, IS_MAX_TIME_REACHED, FAILED_WITH_UNIMPLEMENTED_OR_UNKNOWN_REASON, UNDEFINED
+from openopt.kernel.nonOptMisc import Vstack, isspmatrix
 
 def CVXOPT_SOCP_Solver(p, solverName):
     if solverName == 'native_CVXOPT_SOCP_Solver': solverName = None
@@ -25,9 +26,8 @@ def CVXOPT_SOCP_Solver(p, solverName):
     Gq, hq = [], []
     C, d, q, s = p.C, p.d, p.q, p.s
     for i in range(len(q)):
-        Gq.append(Matrix(vstack((-atleast_1d(q[i]),-atleast_1d(C[i])))))
+        Gq.append(Matrix(Vstack((-atleast_1d(q[i]),-atleast_1d(C[i]) if not isspmatrix(C[i]) else C[i]))))
         hq.append(matrix(hstack((atleast_1d(s[i]), atleast_1d(d[i]))), tc='d'))
-
     sol = cvxopt_solvers.socp(Matrix(p.f), Gl=Matrix(p.A), hl = Matrix(p.b), Gq=Gq, hq=hq, A=Matrix(p.Aeq), b=Matrix(p.beq), solver=solverName)
     p.msg = sol['status']
     if p.msg == 'optimal' :  p.istop = SOLVED_WITH_UNIMPLEMENTED_OR_UNKNOWN_REASON
