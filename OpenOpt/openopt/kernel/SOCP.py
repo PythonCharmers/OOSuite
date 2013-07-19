@@ -10,6 +10,7 @@ class SOCP(MatrixProblem):
     allowedGoals = ['minimum', 'min']
     #TODO: add goal=max, maximum
     showGoal = True
+    contol = 1e-6
     
     expectedArgs = ['f', 'C']
     # required are f, C, d for OO and f for FD
@@ -30,10 +31,10 @@ class SOCP(MatrixProblem):
         if self._isFDmodel():
             C, d, q, s = renderFDmodel(self)        
             self.C, self.d, self.q, self.s = C, d, q, s
-            D = self.f.D(self._x0, useSparse=False, fixedVars = self.fixedVars)
+            D = self.f.D(self._x0, fixedVars = self.fixedVars)
             _f = self._point2vector(D).flatten()
             self.f, self._f = _f, self.f
-            
+
     def __finalize__(self):
         MatrixProblem.__finalize__(self)
         if self.goal in ['max', 'maximum']:
