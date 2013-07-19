@@ -624,7 +624,7 @@ class Point:
                     
                     if tmp.ndim > 1: 
                         tmp = tmp.sum(0)
-                    direction -= (tmp.A if isspmatrix(tmp) or isinstance(tmp, matrix) else tmp).flatten()
+                    direction -= (tmp.A if type(tmp) != ndarray else tmp).flatten()
             self._sum_of_all_active_constraints_gradient = direction
         return Copy(self._sum_of_all_active_constraints_gradient)
 

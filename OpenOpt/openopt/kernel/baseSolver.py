@@ -71,7 +71,7 @@ class baseSolver:
                 p.rk, p.rtk, p.rik = p.getMaxResidual(p.xk, True)
             
         
-        p.iterValues.r.append(ravel(p.rk)[0])
+        p.iterValues.r.append(p.rk)
         if p.probType != 'IP':
             # recalculations are not performed
             p.rk, p.rtk, p.rik = p.getMaxResidual(p.xk, True)

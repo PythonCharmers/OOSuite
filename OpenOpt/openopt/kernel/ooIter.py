@@ -4,7 +4,7 @@ from time import time, clock
 from numpy import isscalar,  array_equal
 
 ######################
-# don't cjhange to mere ooMisc! 
+# don't change to mere ooMisc! 
 from openopt.kernel.ooMisc import isSolved 
 ######################
 
