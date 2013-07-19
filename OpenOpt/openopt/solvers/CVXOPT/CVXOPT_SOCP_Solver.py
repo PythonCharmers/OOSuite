@@ -38,4 +38,4 @@ def CVXOPT_SOCP_Solver(p, solverName):
         
     else:
         p.ff = nan
-        p.xf = nan*ones([p.n,1])
+        p.xf = nan*ones(p.n)
