@@ -12,13 +12,13 @@ N = 150
 
 items = [
          {
-             'name': 'item %d' % i,
+             'name': 'item %d' % i, # pay attention that Python indexation starts from zero
              'cost': 1.5*(cos(i)+1)**2, 
              'volume': 2*sin(i) + 3, 
              'mass': 4*cos(i)+5,
              'n':  1 if i < N/3 else 2 if i < 2*N/3 else 3 # number of elements
          } 
-         for i in range(N)
+         for i in range(N) # i = 0, ... , N-1
          ]
          
 constraints = lambda values: (
