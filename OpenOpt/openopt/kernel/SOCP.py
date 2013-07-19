@@ -10,7 +10,7 @@ class SOCP(MatrixProblem):
     allowedGoals = ['minimum', 'min']
     #TODO: add goal=max, maximum
     showGoal = True
-    contol = 1e-6
+    #contol = 1e-6
     
     expectedArgs = ['f', 'C']
     # required are f, C, d for OO and f for FD
