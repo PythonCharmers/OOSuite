@@ -286,7 +286,7 @@ class nonLinFuncs:
                 r = r.flatten()
 
         if userFunctionType != 'f' and nXvectors != 1:
-            r = r.reshape(nXvectors, int(r.size/nXvectors))
+            r = r.reshape(nXvectors, r.size // nXvectors)
 #        if type(r) == matrix: 
 #            raise 0
 #            r = r.A # if _dense_numpy_matrix !

@@ -92,13 +92,6 @@ class KSP(MatrixProblem):
         FF = []
         
         for optCrName in usedValues:
-            
-            #tmp = cr_values.get(optCrName, [])
-
-#            if len(tmp) == 0:
-#                self.err('seems like graph edges have no attribute "%s" to perform optimization on it' % optCrName)
-#            elif len(tmp) != m:
-#                self.err('for optimization creterion "%s" at least one edge has no this attribute' % optCrName)
             F = fd.sum(x * cr_values[optCrName])
             Funcs[optCrName] = F
         
