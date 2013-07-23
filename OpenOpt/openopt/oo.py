@@ -11,6 +11,7 @@ from STAB import STAB as CSTAB
 from MCP import MCP as CMCP
 from TSP import TSP as CTSP
 from KSP import KSP as CKSP
+from BPP import BPP as CBPP
 from NSP import NSP as CNSP
 from NLP import NLP as CNLP
 from MOP import MOP as CMOP
@@ -202,7 +203,7 @@ def TSP(*args, **kwargs):
 
 def KSP(*args, **kwargs):
     """
-    KSP: constructor for traveling salesman problem assignment
+    KSP: constructor for knapsack problem assignment
     
     valid calls are:
     p = KSP(objective, objects, <params as kwargs>)
@@ -225,9 +226,37 @@ def KSP(*args, **kwargs):
     (see also other r fields)
     Solvers available for now:  
        * MILP solvers at http://openopt.org/MILP
+       * interalg (http://openopt.org/interalg)
     """
     return CKSP(*args, **kwargs)
 
+def BPP(*args, **kwargs):
+    """
+    BPP: constructor for traveling salesman problem assignment
+    
+    valid calls are:
+    p = BPP(items, <params as kwargs>)
+    See also: /examples/bpp_*.py
+
+    :Parameters:
+    objective: objective (e.g. 'weight', 'cost')
+    items: Python list or tuple of dictionaries
+
+    :Returns:
+    OpenOpt BPP class instance
+
+    Notes
+    -----
+    Solving of OpenOpt BPP problems is performed via
+    r = p.solve(string_name_of_solver)
+    or r = p.manage(string_name_of_solver) (to enable basic GUI)
+    r.solution - desired solution (names or numbers of objects)
+    r.ff - objFun value (NaN if a problem occured)
+    (see also other r fields)
+    Solvers available for now:  
+       * MILP solvers at http://openopt.org/MILP
+    """
+    return CBPP(*args, **kwargs)
 
 def LCP(*args, **kwargs):
     """
