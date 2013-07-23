@@ -3,16 +3,15 @@
 descr   = """
 """
 
-from os.path import join
 import os
-import sys, compileall
+import sys
 
 DISTNAME            = 'openopt'
 DESCRIPTION         = 'A python module for numerical optimization'
 LONG_DESCRIPTION    = descr
 MAINTAINER          = 'Dmitrey Kroshko',
-MAINTAINER_EMAIL    = 'dmitrey-at-openopt-dot-org',
-URL                 = 'http://openopt.org',
+MAINTAINER_EMAIL    = 'dmitrey-at-openopt-dot-org'
+URL                 = 'http://openopt.org'
 LICENSE             = 'new BSD'
 
 sys.path.append(os.getcwd() + os.sep + 'openopt')
@@ -29,15 +28,14 @@ except:
     raw_input()
     exit()
     
-from distutils.errors import DistutilsError
 #from numpy.distutils.system_info import system_info, NotFoundError, dict_append, so_ext
-from numpy.distutils.core import setup, Extension
+from numpy.distutils.core import setup
 
 DOC_FILES = []
 
 def configuration(parent_package='',top_path=None, package_name=DISTNAME):
     if os.path.exists('MANIFEST'): os.remove('MANIFEST')
-    pkg_prefix_dir = 'openopt'
+    #pkg_prefix_dir = 'openopt'
 
     # Get the version
 
