@@ -3,21 +3,19 @@
 descr   = """
 """
 
-from os.path import join
 import os
-import sys, compileall
 
 DISTNAME            = 'DerApproximator'
 DESCRIPTION         = 'A python module for finite-differences derivatives approximation'
 LONG_DESCRIPTION    = descr
-MAINTAINER          = 'Dmitrey Kroshko',
-MAINTAINER_EMAIL    = 'dmitrey-at-openopt-dot-org',
-URL                 = 'http://openopt.org',
+MAINTAINER          = 'Dmitrey Kroshko'
+MAINTAINER_EMAIL    = 'dmitrey-at-openopt-dot-org'
+URL                 = 'http://openopt.org'
 LICENSE             = 'new BSD'
 
 from __init__ import __version__ as Ver
 
-DOWNLOAD_URL        = 'http://openopt.org/images/6/6a/DerApproximator.zip'
+#DOWNLOAD_URL        = 'http://openopt.org/images/6/6a/DerApproximator.zip'
 
 try:
     import setuptools
@@ -27,20 +25,18 @@ except:
     raw_input()
     exit()
     
-import string, shutil
-from distutils.errors import DistutilsError
+
 #from numpy.distutils.system_info import system_info, NotFoundError, dict_append, so_ext
 try:
-    from numpy.distutils.core import setup, Extension
+    from numpy.distutils.core import setup
 except:
-    from distutils.core import setup, Extension
-import os, sys
+    from distutils.core import setup
 
 DOC_FILES = []
 
 def configuration(parent_package='',top_path=None, package_name=DISTNAME):
     if os.path.exists('MANIFEST'): os.remove('MANIFEST')
-    pkg_prefix_dir = '' #'openopt'
+#    pkg_prefix_dir = '' #'openopt'
 
     # Get the version
 
@@ -52,7 +48,7 @@ def configuration(parent_package='',top_path=None, package_name=DISTNAME):
         description = DESCRIPTION,
         license = LICENSE,
         url = URL,
-        download_url = DOWNLOAD_URL,
+#        download_url = DOWNLOAD_URL,
         long_description = LONG_DESCRIPTION)
 
 
