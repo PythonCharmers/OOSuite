@@ -10,9 +10,9 @@ import sys, compileall
 DISTNAME            = 'SpaceFuncs'
 DESCRIPTION         = 'A python module for 2D, 3D, ND space objects modelling and optimization'
 LONG_DESCRIPTION    = descr
-MAINTAINER          = 'Dmitrey Kroshko',
-MAINTAINER_EMAIL    = 'dmitrey-at-openopt-dot-org',
-URL                 = 'http://openopt.org',
+MAINTAINER          = 'Dmitrey Kroshko'
+MAINTAINER_EMAIL    = 'dmitrey-at-openopt-dot-org'
+URL                 = 'http://openopt.org'
 LICENSE             = 'new BSD'
 
 from __version__ import __version__ as Ver
