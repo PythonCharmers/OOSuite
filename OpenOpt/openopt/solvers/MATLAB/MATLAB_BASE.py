@@ -27,6 +27,7 @@ class MATLAB_BASE(baseSolver):
         
         Args.append(opts)
         r = getattr(mlab, SolverName)(*Args)
+        p.istop = 1000
         return r
 
 def optConverter(p, fn):
