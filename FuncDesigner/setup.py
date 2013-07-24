@@ -8,14 +8,14 @@ import sys
 DISTNAME            = 'FuncDesigner'
 DESCRIPTION         = 'A python module for function design and automatic derivatives'
 LONG_DESCRIPTION    = descr
-MAINTAINER          = 'Dmitrey Kroshko',
-MAINTAINER_EMAIL    = 'dmitrey-at-openopt-dot-org',
-URL                 = 'http://openopt.org',
+MAINTAINER          = 'Dmitrey Kroshko'
+MAINTAINER_EMAIL    = 'dmitrey-at-openopt-dot-org'
+URL                 = 'http://openopt.org'
 LICENSE             = 'new BSD'
 sys.path.append(os.getcwd() + os.sep + 'FuncDesigner')
 from FuncDesigner import __version__ as Ver
 
-DOWNLOAD_URL        = 'http://openopt.org/images/a/a6/FuncDesigner.zip'
+#DOWNLOAD_URL        = 'http://openopt.org/images/a/a6/FuncDesigner.zip'
 try:
     import setuptools
 except:
@@ -42,7 +42,7 @@ def configuration(parent_package='',top_path=None, package_name=DISTNAME):
         description = DESCRIPTION,
         license = LICENSE,
         url = URL,
-        download_url = DOWNLOAD_URL,
+#        download_url = DOWNLOAD_URL,
         long_description = LONG_DESCRIPTION)
 
 
