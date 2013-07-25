@@ -183,7 +183,6 @@ def setStartVectorAndTranslators(p):
             nTotal = n * funcLen#sum([prod(elem.shape) for elem in pointDerivative.values()])
             nNonZero = sum((elem.size if isspmatrix(elem) else count_nonzero(elem)) for elem in pointDerivative.values())
             involveSparse = 4*nNonZero < nTotal and nTotal > 1000
-#        print ('involveSparse:', involveSparse, 'nNonZero:', nNonZero, 'nTotal:', nTotal)
         if involveSparse:
             r2 = []
             if funcLen == 1:
@@ -192,7 +191,7 @@ def setStartVectorAndTranslators(p):
                     ind_start, ind_end = oovarsIndDict[oov]
                     
                     # works faster than isscalar()
-                    if type(val) == np.float64\
+                    if type(val) in (float, np.float64)\
                     or np.isscalar(val):
                         r2.append(val)
                         inds.append(ind_start)
@@ -205,10 +204,11 @@ def setStartVectorAndTranslators(p):
                         I, J, vals = Find(val)
                         r2.append(vals)
                         inds.append(ind_start+J)
+                
+                R2 = hstack(r2)
                 Inds = hstack(inds)
-                r3 = SparseMatrixConstructor((funcLen, n))
-                r3[0, Inds] = hstack(r2)
-                return r3
+                from scipy.sparse import coo_matrix
+                r3 = coo_matrix((R2, ([0]*R2.size, Inds)), shape=(funcLen, n))
             else:
                 # USE STACK
                 ind_Z = 0
@@ -225,10 +225,9 @@ def setStartVectorAndTranslators(p):
                 if ind_Z != n:
                     # assert ind_Z < n
                     r2.append(SparseMatrixConstructor((funcLen, n - ind_Z)))
-
-                r3 = Hstack(r2) #if hasSparse else hstack(r2)
-                if isspmatrix(r3) and 4 * r3.nnz > asarray(r3.shape, int64).prod(): r3 = r3.A
-                return r3
+                r3 = Hstack(r2) 
+                #if isspmatrix(r3) and 4 * r3.nnz > asarray(r3.shape, int64).prod(): r3 = r3.A
+            return r3
         else:
             # USE INSERT
             if funcLen == 1:
