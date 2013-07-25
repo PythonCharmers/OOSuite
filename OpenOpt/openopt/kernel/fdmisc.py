@@ -1,7 +1,9 @@
 # Handling of FuncDesigner probs
 from numpy import hstack, vstack, atleast_1d, cumsum, asarray, zeros,  ndarray,\
 prod, ones, copy, nan, flatnonzero, array_equal, asanyarray, int64
-from nonOptMisc import scipyInstalled, Hstack, Vstack, isspmatrix, SparseMatrixConstructor, DenseMatrixConstructor
+from nonOptMisc import scipyInstalled, Hstack, Vstack, Find, \
+isspmatrix, SparseMatrixConstructor, DenseMatrixConstructor
+import numpy as np
 
 try:
     # available since numpy 1.6.x
@@ -181,28 +183,52 @@ def setStartVectorAndTranslators(p):
             nTotal = n * funcLen#sum([prod(elem.shape) for elem in pointDerivative.values()])
             nNonZero = sum((elem.size if isspmatrix(elem) else count_nonzero(elem)) for elem in pointDerivative.values())
             involveSparse = 4*nNonZero < nTotal and nTotal > 1000
-
-        if involveSparse:# and newStyle:
-            # USE STACK
+#        print ('involveSparse:', involveSparse, 'nNonZero:', nNonZero, 'nTotal:', nTotal)
+        if involveSparse:
             r2 = []
-            ind_Z = 0
-            derivative_items = list(pointDerivative.items())
-            derivative_items.sort(key=lambda elem: elem[0]._id)
-            for oov, val in derivative_items:#pointDerivative.items():
-                ind_start, ind_end = oovarsIndDict[oov]
-                if ind_start != ind_Z:
-                    r2.append(SparseMatrixConstructor((funcLen, ind_start - ind_Z)))
-                if not isspmatrix(val): 
-                    val = asarray(val) # else bug with scipy sparse hstack
-                r2.append(val)
-                ind_Z = ind_end
-            if ind_Z != n:
-                # assert ind_Z < n
-                r2.append(SparseMatrixConstructor((funcLen, n - ind_Z)))
+            if funcLen == 1:
+                inds = []
+                for oov, val in pointDerivative.items():
+                    ind_start, ind_end = oovarsIndDict[oov]
+                    
+                    # works faster than isscalar()
+                    if type(val) == np.float64\
+                    or np.isscalar(val):
+                        r2.append(val)
+                        inds.append(ind_start)
+                    elif type(val) in (np.ndarray, np.matrix):
+                        Val = val if type(val) == ndarray else val.A.flatten()
+                        Ind = np.where(Val)[0]
+                        r2.append(Val)
+                        inds.append(ind_start+Ind)
+                    elif isspmatrix(val):
+                        I, J, vals = Find(val)
+                        r2.append(vals)
+                        inds.append(ind_start+J)
+                Inds = hstack(inds)
+                r3 = SparseMatrixConstructor((funcLen, n))
+                r3[0, Inds] = hstack(r2)
+                return r3
+            else:
+                # USE STACK
+                ind_Z = 0
+                derivative_items = list(pointDerivative.items())
+                derivative_items.sort(key=lambda elem: elem[0]._id)
+                for oov, val in derivative_items:#pointDerivative.items():
+                    ind_start, ind_end = oovarsIndDict[oov]
+                    if ind_start != ind_Z:
+                        r2.append(SparseMatrixConstructor((funcLen, ind_start - ind_Z)))
+                    if not isspmatrix(val): 
+                        val = asarray(val) # else bug with scipy sparse hstack
+                    r2.append(val)
+                    ind_Z = ind_end
+                if ind_Z != n:
+                    # assert ind_Z < n
+                    r2.append(SparseMatrixConstructor((funcLen, n - ind_Z)))
 
-            r3 = Hstack(r2) #if hasSparse else hstack(r2)
-            if isspmatrix(r3) and 4 * r3.nnz > asarray(r3.shape, int64).prod(): r3 = r3.A
-            return r3
+                r3 = Hstack(r2) #if hasSparse else hstack(r2)
+                if isspmatrix(r3) and 4 * r3.nnz > asarray(r3.shape, int64).prod(): r3 = r3.A
+                return r3
         else:
             # USE INSERT
             if funcLen == 1:
