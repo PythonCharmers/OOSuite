@@ -64,25 +64,12 @@ class BPP(MatrixProblem):
         item_numbers = [item.get('n', 1) for item in items]
         nItemTypes = len(items)
         nItems = sum(item_numbers)
-        nBins = bins.get('n', nItems)
-        X = fd.oovars(nBins * nItemTypes, domain=int, lb=0).view(np.ndarray).reshape(nItemTypes, nBins)
         
-        requireCount  = False
-        for item in items:
-            if 'n' in item:
-#                x[i].domain = np.arange(obj['n']+1) if is_interalg else int
-#                x[i].ub = obj['n']
-#                x[i].lb = 0
-                requireCount  = True
-                break
-        
-        y = fd.oovars(nBins, domain = bool)('y')
-        aux_objective = fd.sum(y)
-        
-        Funcs = {}
         Cons = KW.pop('constraints', [])
         if type(Cons) not in (list, tuple):
             Cons = [Cons]
+        
+        Funcs = {}
         
         usedValues = getUsedValues(Cons)
         bins_keys = set(bins.keys())
@@ -100,7 +87,30 @@ class BPP(MatrixProblem):
             else:
                 cr_values[val] = [obj[val] for obj in items]
         
-
+        nBins = bins.get('n', -1)
+        if nBins == -1:
+            if len(UsedValues) == 1 and type(bins) == dict:
+                Tmp_items = sum(list(cr_values.values()[0]))
+                Tmp_bins = bins[list(UsedValues)[0]]
+                approx_n_bins = int(np.ceil((2.0 * Tmp_items) / Tmp_bins))
+            else:
+                approx_n_bins = nItems
+            nBins = approx_n_bins
+            
+        X = fd.oovars(nBins * nItemTypes, domain=int, lb=0).view(np.ndarray).reshape(nItemTypes, nBins)
+        
+        requireCount  = False
+        for item in items:
+            if 'n' in item:
+#                x[i].domain = np.arange(obj['n']+1) if is_interalg else int
+#                x[i].ub = obj['n']
+#                x[i].lb = 0
+                requireCount  = True
+                break
+        
+        y = fd.oovars(nBins, domain = bool)('y')
+        aux_objective = fd.sum(y)
+        
         #cr_values = dict([(obj[0], []) for obj in objective])
         
 #        MainCr = mainCr if type(mainCr) in (str, np.str_) else list(usedValues)[0]
@@ -137,8 +147,6 @@ class BPP(MatrixProblem):
         # 3. Number of items of type i from all bins equals to item_numbers[i]
         constraints += [fd.sum(X[i].view(fd.ooarray)) == item_numbers[i] for i in range(nItemTypes)]
         
-#        startPoint = {y:[0]*nBins}
-        #X:[0]*(nBins*nItems),
         startPoint = dict((X[i, j], 0) for i in range(nItemTypes) for j in range(nBins))
         startPoint[y] = [0]*nBins
         
