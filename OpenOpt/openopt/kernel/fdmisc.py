@@ -198,17 +198,15 @@ def setStartVectorAndTranslators(p):
                     elif type(val) in (np.ndarray, np.matrix):
                         Val = val if type(val) == ndarray else val.A.flatten()
                         Ind = np.where(Val)[0]
-                        r2.append(Val)
-                        inds.append(ind_start+Ind)
+                        r2 += Val.tolist()
+                        inds += (ind_start+Ind).tolist()
                     elif isspmatrix(val):
                         I, J, vals = Find(val)
-                        r2.append(vals)
-                        inds.append(ind_start+J)
-                
-                R2 = hstack(r2)
-                Inds = hstack(inds)
+                        r2 += vals.tolist()
+                        inds += (ind_start+J).tolist()
+
                 from scipy.sparse import coo_matrix
-                r3 = coo_matrix((R2, ([0]*R2.size, Inds)), shape=(funcLen, n))
+                r3 = coo_matrix((r2, ([0]*len(r2), inds)), shape=(funcLen, n))
             else:
                 # USE STACK
                 ind_Z = 0
