@@ -58,7 +58,9 @@ class interalg(baseSolver):
             p.err('''
             solver %s requires finite lb, ub: 
             lb <= x <= ub 
-            (you can use "implicitBoounds")
+            (you can use "implicitBounds"),
+            e.g. p.implicitBounds = (-100, 100)
+            or mere p.implicitBounds = 100
             ''' % self.__name__)
 #        if p.fixedVars is not None:
 #            p.err('solver %s cannot handle FuncDesigner problems with some variables declared as fixed' % self.__name__)
