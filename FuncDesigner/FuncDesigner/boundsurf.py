@@ -74,6 +74,8 @@ class surf(object):
             return surf(d, self.c+other.c)
         elif isscalar(other) or type(other) == np.ndarray:
             return surf(self.d, self.c + other)
+        elif isinstance(other, surf):# surf2 class instance
+            return other + self
         else:
             assert 0, 'unimplemented yet'
     
@@ -90,11 +92,11 @@ class surf(object):
             
     __rmul__ = __mul__
     
-    def koeffs_mul(self, other):
-        assert type(other) == surf
-        S, O = self.d, other.d
-        d = dict((key, S.get(key, 0.0)  * O.get(key, 0.0)) for key in set(S.keys()) | set(O.keys()))
-        return surf(d, 0.0)
+#    def koeffs_mul(self, other):
+#        assert type(other) == surf
+#        S, O = self.d, other.d
+#        d = dict((key, S.get(key, 0.0)  * O.get(key, 0.0)) for key in set(S.keys()) | set(O.keys()))
+#        return surf(d, 0.0)
             
 #    def __getattr__(self, attr):
 #        if attr == 'resolve_index':
@@ -205,11 +207,9 @@ class boundsurf(object):#object is added for Python2 compatibility
     __rsub__ = lambda self, other: (-self).__add__(other)
         
     def __mul__(self, other):
-        R1 = self.resolve()[0]
+        
         domain = self.domain
         definiteRange = self.definiteRange
-        selfPositive = all(R1 >= 0)
-        selfNegative = all(R1 <= 0)
         
         isArray = type(other) == np.ndarray
         isBoundSurf = type(other) == boundsurf
@@ -231,7 +231,11 @@ class boundsurf(object):#object is added for Python2 compatibility
                 rr = (tmp, tmp)
             else:
                 rr = (self.l * R2, self.u * R2) if R2 >= 0 else (self.u * R2, self.l * R2)
-        elif isArray:
+            return boundsurf(rr[0], rr[1], definiteRange, domain)
+        R1 = self.resolve()[0]
+        selfPositive = all(R1 >= 0)
+        selfNegative = all(R1 <= 0)
+        if isArray:
 #            assert R2Positive or R2Negative, 'bug or unimplemented yet'
 
             if selfPositive and R2Positive:
@@ -406,6 +410,7 @@ class boundsurf(object):#object is added for Python2 compatibility
 
 #            return R1*other# if nanmax(R2[0])
             #return 0.5 * (R1*other + R2*self)
+            
         else:
             assert 0, 'bug or unimplemented yet'
         R = rr if type(rr) == boundsurf else boundsurf(rr[0], rr[1], definiteRange, domain)
