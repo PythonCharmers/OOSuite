@@ -12,6 +12,12 @@ try:
     from bottleneck import nanmin, nanmax
 except ImportError:
     from numpy import nanmin, nanmax
+
+from boundsurf import boundsurf
+try:
+    from boundsurf2 import boundsurf2
+except ImportError:
+    boundsurf2 = boundsurf
     
 from FDmisc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scipyInstalled, \
 raise_except, DiagonalType, isPyPy, formResolveSchedule
@@ -23,7 +29,7 @@ neg_interval, defaultIntervalEngine
 #import inspect
 from baseClasses import OOArray, Stochastic
 
-from boundsurf import boundsurf
+
 
 Copy = lambda arg: asscalar(arg) if type(arg)==ndarray and arg.size == 1 else arg.copy() if hasattr(arg, 'copy') else copy(arg)
 Len = lambda x: 1 if isscalar(x) else x.size if type(x)==ndarray else x.values.size if isinstance(x, Stochastic) else len(x)
@@ -260,7 +266,7 @@ class oofun(object):
         domain.resolveSchedule = {} if domain.surf_preference else self.resolveSchedule
             
         lb_ub, definiteRange = self._interval(domain, dtype, allowBoundSurf = True) 
-        if allowBoundSurf == False and type(lb_ub) == boundsurf:
+        if allowBoundSurf == False and type(lb_ub) in (boundsurf, boundsurf2):
             lb_ub = lb_ub.resolve()[0]
         
         # TODO: MB GET RID OF IT?
@@ -519,7 +525,10 @@ class oofun(object):
             r.discrete = self.discrete
             r.getOrder = self.getOrder
             
-            Other2 = tile(other, (2, 1))
+            Other2 = other if isscalar(other) \
+            else other.item if type(other)==ndarray and other.size==1 \
+            else tile(other, (2, 1))
+#            Other2 = tile(other, (2, 1))
             r._interval_ = lambda *args, **kw: add_const_interval(self, Other2, *args, **kw)
             
             if isscalar(other) or asarray(other).size == 1 or ('size' in self.__dict__ and self.size is asarray(other).size):
