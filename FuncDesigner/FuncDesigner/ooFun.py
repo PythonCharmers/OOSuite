@@ -87,6 +87,7 @@ class oofun(object):
     isConstraint = False
     #isDifferentiable = True
     discrete = False
+    fixed = False
     _isSum = False
     _isProd = False
     
@@ -155,7 +156,7 @@ class oofun(object):
             raise AttributeError('you are trying to obtain incorrect attribute "%s" for FuncDesigner oofun "%s"' %(attr, self.name))
         
         # to prevent creating of several oofuns binded to same oofun.size
-        r = oofun(lambda x: asarray(x).size, self, discrete = True, getOrder = lambda *args, **kwargs: 0)
+        r = oofun(lambda x: asarray(x).size, self, discrete = True, fixed = True, getOrder = lambda *args, **kwargs: 0)
         self.size = r 
 
         return r
@@ -299,7 +300,7 @@ class oofun(object):
                 domain.storedIntervals[self] = r 
             if v is not None and self._usedIn > 1:
                 domain.localStoredIntervals[self] = r
-        if type(r[0]) == boundsurf: 
+        if type(r[0]) in (boundsurf, boundsurf2): 
             if allowBoundSurf:
                 R, definiteRange = r
                 if newComputation:
@@ -307,9 +308,9 @@ class oofun(object):
                     if len(Tmp):# and not domain.surf_preference:
                         R = R.exclude(Tmp)
                         if domain.useSave:
-                            domain.storedIntervals[self] = R if type(R) == boundsurf else (R, definiteRange)
+                            domain.storedIntervals[self] = R if type(R) in (boundsurf, boundsurf2) else (R, definiteRange)
                         if v is not None and self._usedIn > 1:
-                            domain.localStoredIntervals[self] = R if type(R) == boundsurf else (R, definiteRange)
+                            domain.localStoredIntervals[self] = R if type(R) in (boundsurf, boundsurf2) else (R, definiteRange)
                 return R, definiteRange
             else:
                 return r[0].resolve()
@@ -1629,7 +1630,7 @@ class oofun(object):
         
         if rebuildFixedCheck:
             # ajust new value of self._order wrt new free/fixed vars schedule
-            if self.discrete: 
+            if self.fixed: 
                 self._order = 0
             elif self.is_oovar:
                 if fixedVars is not None and Vars is not None:
