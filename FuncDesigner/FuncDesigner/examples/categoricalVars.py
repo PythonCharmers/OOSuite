@@ -28,7 +28,8 @@ enginesData = [
                ('MotorSich D-27', 2.7, 35.7)
                ]
 
-aircraftPrice, enginePrice, aircraftCapacity, engineEfficiency = oovars('aircraft price', 'engine price', 'aircraft capacity','engine efficiency')
+aircraftPrice, enginePrice, aircraftCapacity, engineEfficiency = \
+oovars('aircraft price', 'engine price', 'aircraft capacity','engine efficiency')
 
 # interalg will work much faster if we define domain for these discrete variables
 aircraftPrice.domain = [elem[1] for elem in aircraftsData] # 15, 30, 50,..., 240
@@ -56,10 +57,8 @@ initialPayment = (aircraftPrice + enginePrice)('initial payment')
 
 constraints = [
                FuelOctaneNumber > 30, FuelOctaneNumber < 105, 
-               
                OR([(aircraft == Name) & (aircraftPrice == Price) & (aircraftCapacity == Capacity) for Name, Price, Capacity in aircraftsData]),
                OR([(engine == Engine) & (enginePrice == Price) & (engineEfficiency == Efficiency) for Engine, Price, Efficiency in enginesData]),
-               
                
               # suppose for AN-15 FuelOctaneNumber has to be less than 100
                ifThen(aircraft == 'AN-15', FuelOctaneNumber < 100), 
@@ -67,9 +66,9 @@ constraints = [
                ifThen(aircraft == 'AN-140', 
                       (engine == 'MotorSich MD-18T') | (engine == 'Ivchenko AI-14') | (engine == 'MotorSich D-436TP')), 
                # suppose for AN-138 engine MotorSich D-27 is not suitable; we could use  
-               ifThen(aircraft == 'AN-138', engine != 'MotorSich D-27'), 
+               #ifThen(aircraft == 'AN-138', engine != 'MotorSich D-27'), 
                # but let's assign it via NAND ("not and"), see FuncDesigner or interalg doc for  other funcs like AND, XOR, NOR etc
-#               NAND(aircraft == 'AN-138', engine == 'MotorSich D-27'), 
+               NAND(aircraft == 'AN-138', engine == 'MotorSich D-27'), 
                # suppose for MotorSich MS400 fuelConsumption has to be at least 15.8:
                # we can use synonim "IMPLICATION" for ifThen:
                IMPLICATION(engine == 'MotorSich MS400', fuelConsumption >= 15.8), 
@@ -77,15 +76,8 @@ constraints = [
                ifThen(FuelOctaneNumber < 50, (engine == 'MotorSich MS400') | (engine == 'MotorSich MD-18T')), 
                # suppose for AN-225 FuelOctaneNumber has to be at least 80 and fuelConsumption should be between 1.5 and 15
                #ifThen(aircraft == 'AN-225', FuelOctaneNumber > 80, fuelConsumption > 1.5, fuelConsumption < 15)
-               ifThen(aircraft == 'AN-225', (FuelOctaneNumber > 80) ,  (fuelConsumption > 1.5) , (fuelConsumption < 15))
+               ifThen(aircraft == 'AN-225', FuelOctaneNumber > 80 ,  fuelConsumption > 1.5, fuelConsumption < 15)
                ]
-#for Name, Price, Capacity in aircraftsData:
-#    constraints.append((aircraft == Name) == (aircraftPrice == Price))
-#    constraints.append((aircraft == Name) == (aircraftCapacity == Capacity))
-#for Engine, Price, Efficiency in enginesData:
-#    constraints.append((engine == Engine) == (enginePrice == Price))
-#    constraints.append((engine == Engine) == (engineEfficiency == Efficiency))
-
 
 # if you have defined aircraftPrice etc variables as discrete (via domain parameter), you can omit using tol
 # elseware it's very recommended (e.g. (aircraftPrice == Price)(tol = 0.5); default tol is 10^-6
@@ -96,9 +88,9 @@ constraints = [
 # but formew way is works many times faster
 
 # start point can have any coords, even infiasibl, but for soma difficault problems a good start point matters for time elapsed
-startPoint = {aircraft:'AN-70', aircraftCapacity: -0.5, 
-              engine:'MotorSich D-436TP', engineEfficiency: -4, 
-              FuelOctaneNumber:80, enginePrice: -10, aircraftPrice: -100}
+startPoint = {aircraft:'AN-70', aircraftCapacity: 0.5, 
+              engine:'MotorSich D-436TP', engineEfficiency: 4, 
+              FuelOctaneNumber:80, enginePrice: 10, aircraftPrice: 100}
 
 solver='interalg'
 # or this solver with some non-default parameters:
