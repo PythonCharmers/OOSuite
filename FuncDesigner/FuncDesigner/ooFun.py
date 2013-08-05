@@ -2004,7 +2004,9 @@ def OR(*args):
     assert not isinstance(args[0], ndarray), 'unimplemented yet' 
     for arg in Args:
         if not isinstance(arg, oofun):
-            raise FuncDesignerException('FuncDesigner logical AND currently is implemented for oofun instances only')
+            raise FuncDesignerException('''
+            FuncDesigner logical OR currently is implemented 
+            for oofun instances or list/tuple/set on them only''')
     
     r = ~ AND([~elem for elem in Args])
     #r.fun = np.logical_or
