@@ -932,7 +932,7 @@ class oofun(object):
             # do not perform check for other == 0, copy should be returned, not self!
         r.descriptor = (self, '>', other)
         Other = str(other) if not isinstance(other, ndarray) or other.size < 5\
-        else '[%f %f ... %f %f]' % (other[0], other[1], other[-2], other[-1])
+        else '[%s %s ... %s %s]' % (other[0], other[1], other[-2], other[-1])
         r.name = self.name + ' >= ' + Other
         return r
 
@@ -1291,7 +1291,7 @@ class oofun(object):
                     continue
                 if useSparse == False and hasattr(tmp, 'toarray'): tmp = tmp.toarray()
                 if not exactShape and not isspmatrix(tmp) and not isscalar(tmp):
-                    if tmp.size == 1: tmp = asscalar(tmp)
+                    if tmp.size == 1: tmp = tmp.item()
                     elif min(tmp.shape) == 1: tmp = tmp.flatten()
                 rr[oov] = tmp
             return rr if not is_oofun else rr[initialVars]
