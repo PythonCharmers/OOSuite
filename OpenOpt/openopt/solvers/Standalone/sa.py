@@ -2,6 +2,7 @@ import random
 import math
 #import logging
 import numpy as np
+from openopt.kernel.setDefaultIterFuncs import IS_MAX_FUN_EVALS_REACHED
 
 def P(prev_score,next_score,temperature):
     if next_score > prev_score:
@@ -49,6 +50,9 @@ def anneal(init_function,move_operator,objective_function,max_evaluations,start_
         # examine moves around our current position
         for next in move_operator(current):
             if num_evaluations >= max_evaluations:
+                if prob is not None:
+                    prob.istop = IS_MAX_FUN_EVALS_REACHED
+                    prob.msg = 'max objfunc evals limit (p.maxFunEvals=%d) has been reached' % prob.maxFunEvals
                 done=True
                 break
             
