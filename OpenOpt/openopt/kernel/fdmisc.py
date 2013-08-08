@@ -277,25 +277,6 @@ def setStartVectorAndTranslators(p):
             if ind_Z != n:
                 # assert ind_Z < n
                 r.append(SparseMatrixConstructor((SIZE, n - ind_Z)))
-            
-            # OLD
-#            Depends = True if freeVars[0] in dep else False
-#            ind_start = 0
-#            ind_end = asarray(startPoint[freeVars[0]]).size
-#            for oov in freeVars[1:]:
-#                tmp = startPoint[oov]
-#                depends = True if oov in dep else False
-#                if Depends != depends:
-#                    if ind_start != ind_end:
-#                        constructor = ones if Depends else SparseMatrixConstructor
-#                        r.append(constructor((SIZE, ind_end-ind_start)))
-#                    ind_start = ind_end
-#                    Depends = depends
-#                ind_end += len(tmp) if not isscalar(tmp) else 1
-#            if ind_start != ind_end:
-#                constructor = ones if Depends else SparseMatrixConstructor
-#                r.append(constructor((SIZE, ind_end-ind_start)))
-                
             if any([isspmatrix(elem) for elem in r]):
                 rr = Hstack(r) if len(r) > 1 else r[0]
             elif len(r)>1:

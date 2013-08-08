@@ -94,7 +94,7 @@ def isNanInX(p):
 
 def isMaxIterReached(p):
     if p.iter >= p.maxIter-1: # iter numeration starts from zero
-        return (True, 'Max Iter has been reached')
+        return (True, 'Max Iter (p.maxIter=%d) has been reached' % p.maxIter)
     else: return False
 
 def isMaxCPUTimeReached(p):
@@ -113,7 +113,7 @@ def isMaxTimeReached(p):
 def isMaxFunEvalsReached(p):
     #if not hasattr(p, 'nFunEvals'): p.warn('no nFunEvals field'); return 0
     if p.nEvals['f'] >= p.maxFunEvals:
-        return (True, 'max objfunc evals limit has been reached')
+        return (True, 'max objfunc evals limit (p.maxFunEvals=%d) has been reached' %p.maxFunEvals)
     else:
         return False
 
