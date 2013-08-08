@@ -12,7 +12,13 @@ try:
     from bottleneck import nanmin, nanmax
 except ImportError:
     from numpy import nanmin, nanmax
-
+    
+from boundsurf import boundsurf
+try:
+    from boundsurf2 import boundsurf2
+except ImportError:
+    boundsurf2 = boundsurf
+    
 class Interval:
     def __init__(self, l, u, definiteRange):
         if isinstance(l, ndarray) and l.size == 1: l = asscalar(l)
@@ -78,8 +84,7 @@ def ZeroCriticalPointsInterval(inp, func):
     is_cosh = func == np.cosh    
     assert is_abs or is_cosh
     def interval(domain, dtype):
-        allowBoundSurf = is_abs or is_cosh
-        lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = allowBoundSurf)
+        lb_ub, definiteRange = inp._interval(domain, dtype, ia_surf_level = 1)
         if type(lb_ub) == boundsurf:
             if is_abs:
                 return lb_ub.abs()
@@ -108,7 +113,7 @@ def nonnegative_interval(inp, func, deriv, domain, dtype, F0, shift = 0.0):
     # check for monotonity is required, sort or reverse of t_min_max has to be performed for monotonity != +1
     ##############################
     
-    lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
+    lb_ub, definiteRange = inp._interval(domain, dtype, ia_surf_level = 1)
     
     isBoundSurf = type(lb_ub) == boundsurf
     
@@ -146,7 +151,7 @@ def nonnegative_interval(inp, func, deriv, domain, dtype, F0, shift = 0.0):
 def box_1_interval(inp, r, func, domain, dtype):
     assert func in (np.arcsin, np.arccos, np.arctanh)
 
-    lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
+    lb_ub, definiteRange = inp._interval(domain, dtype, ia_surf_level = 1)
     isBoundSurf = type(lb_ub) == boundsurf
     
     if isBoundSurf:
@@ -194,16 +199,16 @@ def adjust_ux_WithDiscreteDomain(Ux, v):
         Ux[ind3] = asarray(Tmp, dtype=Ux.dtype)
 
 def add_interval(self, other, domain, dtype):
-    domain1, definiteRange1 = self._interval(domain, dtype, allowBoundSurf = True)
-    domain2, definiteRange2 = other._interval(domain, dtype, allowBoundSurf = True)
+    domain1, definiteRange1 = self._interval(domain, dtype, ia_surf_level = 2)
+    domain2, definiteRange2 = other._interval(domain, dtype, ia_surf_level = 2)
     return domain1 + domain2, logical_and(definiteRange1, definiteRange2)
 
 def add_const_interval(self, c, domain, dtype): 
-    r, definiteRange = self._interval(domain, dtype, allowBoundSurf = True)
+    r, definiteRange = self._interval(domain, dtype, ia_surf_level = 2)
     return r + c, definiteRange
 
 def neg_interval(self, domain, dtype):
-    r, definiteRange = self._interval(domain, dtype, allowBoundSurf=True)
+    r, definiteRange = self._interval(domain, dtype, ia_surf_level = 2)
     if type(r) == ndarray:
         assert r.shape[0] == 2
         #return (-r[1], -r[0])
@@ -214,15 +219,15 @@ def neg_interval(self, domain, dtype):
 
 def mul_interval(self, other, isOtherOOFun, domain, dtype):
     
-    lb1_ub1, definiteRange = self._interval(domain, dtype, allowBoundSurf = True)
+    lb1_ub1, definiteRange = self._interval(domain, dtype, ia_surf_level = 2)
 
     if isOtherOOFun:
-        lb2_ub2, definiteRange2 = other._interval(domain, dtype, allowBoundSurf = True)
+        lb2_ub2, definiteRange2 = other._interval(domain, dtype, ia_surf_level = 2)
         definiteRange = logical_and(definiteRange, definiteRange2)
     else:
         lb2_ub2 = other
         
-    if type(lb2_ub2) == boundsurf or type(lb1_ub1) == boundsurf:
+    if type(lb2_ub2) in (boundsurf, boundsurf2) or type(lb1_ub1) in (boundsurf, boundsurf2):
         r = lb1_ub1 * lb2_ub2
         r.definiteRange = definiteRange
         return r, r.definiteRange
@@ -261,8 +266,8 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):
 
 
 def div_interval(self, other, domain, dtype):
-    lb1_ub1, definiteRange1 = self._interval(domain, dtype, allowBoundSurf = True)
-    lb2_ub2, definiteRange2 = other._interval(domain, dtype, allowBoundSurf = True)
+    lb1_ub1, definiteRange1 = self._interval(domain, dtype, ia_surf_level = 1)
+    lb2_ub2, definiteRange2 = other._interval(domain, dtype, ia_surf_level = 1)
     
     # TODO: mention in doc definiteRange result for 0 / 0
     definiteRange = logical_and(definiteRange1, definiteRange2)
@@ -312,7 +317,7 @@ def rdiv_interval(self, r, other, domain, dtype):
 
     Tmp, definiteRange = pow_const_interval(self, r, -1, domain, dtype)
     return other * Tmp, definiteRange
-#    arg_lb_ub, definiteRange = self._interval(domain, dtype, allowBoundSurf = True)
+#    arg_lb_ub, definiteRange = self._interval(domain, dtype, ia_surf_level = 1)
 #    if type(arg_lb_ub) == boundsurf:
 #        arg_lb_ub_resolved = arg_lb_ub.resolve()[0]
 #        if all(arg_lb_ub_resolved >= 0) or all(arg_lb_ub_resolved <= 0):
@@ -330,8 +335,31 @@ def rdiv_interval(self, r, other, domain, dtype):
 #    return r, definiteRange
 
 def pow_const_interval(self, r, other, domain, dtype):
-    lb_ub, definiteRange = self._interval(domain, dtype, allowBoundSurf = True)
+    lb_ub, definiteRange = self._interval(domain, dtype, ia_surf_level = 1)
     isBoundSurf = type(lb_ub) == boundsurf
+    
+    # changes
+    #if isBoundSurf and other == 2 and lb_ub.l is lb_ub.u and len(lb_ub.l.d) == 1:
+    if 1 and isBoundSurf and other == 2 and len(lb_ub.l.d) == 1 and len(lb_ub.u.d) == 1:
+        from boundsurf2 import boundsurf2, surf2
+        L, U = lb_ub.l, lb_ub.u
+        d, c = L.d, L.c
+        s_l = surf2(dict((k, v**2) for k, v in d.items()), dict((k, 2*v*c) for k, v in d.items()), c**2)
+        
+        if lb_ub.l is lb_ub.u:
+            return boundsurf2(s_l, s_l, definiteRange, domain), definiteRange
+        
+        d, c = U.d, U.c
+        lb_ub_resolved = lb_ub.resolve()[0]
+        if all(lb_ub_resolved >= 0):
+            s_u = surf2(dict((k, v**2) for k, v in d.items()), dict((k, 2*v*c) for k, v in d.items()), c**2)
+            return boundsurf2(s_l, s_u, definiteRange, domain), definiteRange
+        elif all(lb_ub_resolved <= 0):
+            s_u = s_l
+            s_l = surf2(dict((k, v**2) for k, v in d.items()), dict((k, 2*v*c) for k, v in d.items()), c**2)
+            return boundsurf2(s_l, s_u, definiteRange, domain), definiteRange
+    # changes end
+    
     lb_ub_resolved = lb_ub.resolve()[0] if isBoundSurf else lb_ub
     other_is_int = asarray(other, int) == other
     isOdd = other_is_int and other % 2 == 1
@@ -405,8 +433,8 @@ def pow_const_interval(self, r, other, domain, dtype):
     
 def pow_oofun_interval(self, other, domain, dtype): 
     # TODO: handle discrete cases
-    lb1_ub1, definiteRange1 = self._interval(domain, dtype, allowBoundSurf = True)
-    lb2_ub2, definiteRange2 = other._interval(domain, dtype, allowBoundSurf = True)
+    lb1_ub1, definiteRange1 = self._interval(domain, dtype, ia_surf_level = 1)
+    lb2_ub2, definiteRange2 = other._interval(domain, dtype, ia_surf_level = 1)
     if type(lb1_ub1) == boundsurf or type(lb2_ub2) == boundsurf:
         r = (lb2_ub2 * lb1_ub1.log()).exp()
         return r, r.definiteRange

@@ -114,6 +114,8 @@ class oofun(object):
     vectorized = False
 #    getDefiniteRange = None
     _neg_elem = None # used in render into quadratic 
+    
+    ia_surf_level = 0 # 0 or 1 or 2
 
     _usedIn = 0
     _level = 0
@@ -225,12 +227,12 @@ class oofun(object):
     def _interval_(self, domain, dtype, inputData = None):
         if inputData is None:
             INP = self.input[0] 
-            arg_lb_ub, definiteRange = INP._interval(domain, dtype, allowBoundSurf = True)
+            arg_lb_ub, definiteRange = INP._interval(domain, dtype, ia_surf_level = 1)
         else:
             arg_lb_ub, definiteRange = inputData
         
 #        INP = self.input[0] 
-#        arg_lb_ub, definiteRange = INP._interval(domain, dtype, allowBoundSurf = True)
+#        arg_lb_ub, definiteRange = INP._interval(domain, dtype, ia_surf_level = 1)
         
         isBoundsurf = type(arg_lb_ub) == boundsurf
         arg_lb_ub_resolved = arg_lb_ub.resolve()[0] if isBoundsurf else arg_lb_ub
@@ -266,7 +268,9 @@ class oofun(object):
 
         domain.resolveSchedule = {} if domain.surf_preference else self.resolveSchedule
             
-        lb_ub, definiteRange = self._interval(domain, dtype, allowBoundSurf = True) 
+        lb_ub, definiteRange = self._interval(domain, dtype, ia_surf_level = 1) 
+        if type(lb_ub) == boundsurf2:
+            lb_ub = lb_ub.to_linear()
         if allowBoundSurf == False and type(lb_ub) in (boundsurf, boundsurf2):
             lb_ub = lb_ub.resolve()[0]
         
@@ -278,7 +282,7 @@ class oofun(object):
         else: # boundsurf
             return lb_ub
     
-    def _interval(self, domain, dtype, allowBoundSurf = False):
+    def _interval(self, domain, dtype, ia_surf_level = 0):
         tmp = domain.dictOfFixedFuncs.get(self, None)
         if tmp is not None:
             return tile(tmp, (2, 1)), True
@@ -301,19 +305,23 @@ class oofun(object):
             if v is not None and self._usedIn > 1:
                 domain.localStoredIntervals[self] = r
         if type(r[0]) in (boundsurf, boundsurf2): 
-            if allowBoundSurf:
-                R, definiteRange = r
-                if newComputation:
-                    Tmp = domain.resolveSchedule.get(self, ())
-                    if len(Tmp):# and not domain.surf_preference:
-                        R = R.exclude(Tmp)
-                        if domain.useSave:
-                            domain.storedIntervals[self] = R if type(R) in (boundsurf, boundsurf2) else (R, definiteRange)
-                        if v is not None and self._usedIn > 1:
-                            domain.localStoredIntervals[self] = R if type(R) in (boundsurf, boundsurf2) else (R, definiteRange)
-                return R, definiteRange
-            else:
+            if ia_surf_level == 0:
                 return r[0].resolve()
+
+            R, definiteRange = r
+            if newComputation:
+                Tmp = domain.resolveSchedule.get(self, ())
+                if len(Tmp):# and not domain.surf_preference:
+                    R = R.exclude(Tmp)
+                    if domain.useSave:
+                        domain.storedIntervals[self] = R if type(R) in (boundsurf, boundsurf2) else (R, definiteRange)
+                    if v is not None and self._usedIn > 1:
+                        domain.localStoredIntervals[self] = R if type(R) in (boundsurf, boundsurf2) else (R, definiteRange)
+            
+            if ia_surf_level == 1 and type(R) == boundsurf2:
+                R = R.to_linear()
+            return R, definiteRange
+
         return r            
     
     def iqg(self, domain, dtype = float, lb=None, ub=None, UB = None):

@@ -55,7 +55,7 @@ except:
 def sin_cos_interval(r, inp, domain, dtype):
     is_cos = r.fun == st_cos
 #    print('is_cos', is_cos)
-    lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
+    lb_ub, definiteRange = inp._interval(domain, dtype, ia_surf_level = 1)
     
     if is_cos:
         # not inplace!
@@ -194,7 +194,7 @@ if hasStochastic\
 else np.tan
 
 def tan_interval(inp, r, domain, dtype):
-    lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
+    lb_ub, definiteRange = inp._interval(domain, dtype, ia_surf_level = 1)
     isBoundSurf = type(lb_ub) == boundsurf
     lb, ub = lb_ub.resolve()[0] if isBoundSurf else lb_ub
     if np.any(lb < -np.pi/2) or np.any(ub > np.pi/2):
@@ -670,20 +670,20 @@ def sum_engine(r0, *args):
     return r1 
 
 def sum_interval(R0, r, INP, domain, dtype):
-    if len(INP) <= 10:
-        B = []
-        _r = [R0]
-        DefiniteRange = True
-        for inp in INP:
-            arg_lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
-            DefiniteRange = np.logical_and(DefiniteRange, definiteRange)
-            if type(arg_lb_ub) in (boundsurf, boundsurf2):
-                B.append(arg_lb_ub)
-            else:
-                _r.append(arg_lb_ub)
-        _r = PythonSum(_r)
-        R = _r if len(B) == 0 else boundsurf_sum(B, _r, DefiniteRange, domain)
-        return R, DefiniteRange
+#    if len(INP) <= 10:
+#        B = []
+#        _r = [R0]
+#        DefiniteRange = True
+#        for inp in INP:
+#            arg_lb_ub, definiteRange = inp._interval(domain, dtype, ia_surf_level = 1)
+#            DefiniteRange = np.logical_and(DefiniteRange, definiteRange)
+#            if type(arg_lb_ub) in (boundsurf, boundsurf2):
+#                B.append(arg_lb_ub)
+#            else:
+#                _r.append(arg_lb_ub)
+#        _r = PythonSum(_r)
+#        R = _r if len(B) == 0 else boundsurf_sum(B, _r, DefiniteRange, domain)
+#        return R, DefiniteRange
         
     v = domain.modificationVar
     if v is not None:
@@ -695,7 +695,7 @@ def sum_interval(R0, r, INP, domain, dtype):
         has_infs = not (np.all(np.isfinite(R)) if type(R) not in (boundsurf, boundsurf2) else R.isfinite())
         
         if has_infs:
-            # !!!!!!!!!!!!!!!!!!!!!!!!!!!!   TODO: implement allowBoundSurf = True here
+            # !!!!!!!!!!!!!!!!!!!!!!!!!!!!   TODO: implement ia_surf_level = 1 here
             R = np.asarray(R0, dtype).copy()
             if domain.isMultiPoint:
                 R = np.tile(R, (1, len(list(domain.values())[0][0])))
@@ -722,7 +722,7 @@ def sum_interval(R0, r, INP, domain, dtype):
         B = []
         for inp in r.storedSumsFuncs[v]:
             # TODO: mb rework definiteRange processing ?
-            arg_lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
+            arg_lb_ub, definiteRange = inp._interval(domain, dtype, ia_surf_level = 2)
             DefiniteRange = logical_and(DefiniteRange, definiteRange)
 
             if type(arg_lb_ub) == np.ndarray:
@@ -767,7 +767,7 @@ def sum_interval(R0, r, INP, domain, dtype):
     DefiniteRange = True
     B = []
     for inp in INP:
-        arg_lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
+        arg_lb_ub, definiteRange = inp._interval(domain, dtype, ia_surf_level = 2)
         Tmp = inp._getDep() if not inp.is_oovar else [inp]
         for oov in Tmp:
             tmp = D.get(oov, None)
@@ -807,24 +807,6 @@ def sum_interval(R0, r, INP, domain, dtype):
     domain.storedSums[r] = D
     
     return R, DefiniteRange
-
-#def sum_with_boundsurf(inputs, domain, dtype):
-#    B = []
-#    s = np.array([[0.0], [0.0]])
-#    DefiniteRange = True
-#    for inp in inputs:
-#        arg_lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
-#        if type(arg_lb_ub) != boundsurf:
-#            if type(arg_lb_ub) == np.ndarray and s.shape == arg_lb_ub.shape:
-#                s += arg_lb_ub
-#            else:
-#                s = s + arg_lb_ub
-#        else:
-#            B.append(arg_lb_ub)
-#        DefiniteRange = np.logical_and(DefiniteRange, definiteRange)
-#    if len(B) == 0:
-#        return s, DefiniteRange
-#    return boundsurf_sum(B, s, DefiniteRange, domain)
 
     
 def boundsurf_sum(B, s, DefiniteRange, domain):

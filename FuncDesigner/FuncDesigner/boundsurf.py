@@ -207,12 +207,12 @@ class boundsurf(object):#object is added for Python2 compatibility
     __rsub__ = lambda self, other: (-self).__add__(other)
         
     def __mul__(self, other):
-        
         domain = self.domain
         definiteRange = self.definiteRange
         
         isArray = type(other) == np.ndarray
         isBoundSurf = type(other) == boundsurf
+        
         if isBoundSurf:
             definiteRange = logical_and(definiteRange, other.definiteRange)
         R2 = other.resolve()[0] if isBoundSurf else other
@@ -412,7 +412,11 @@ class boundsurf(object):#object is added for Python2 compatibility
             #return 0.5 * (R1*other + R2*self)
             
         else:
-            assert 0, 'bug or unimplemented yet'
+            from boundsurf2 import boundsurf2
+            isBoundSurf2 = type(other) == boundsurf2
+            assert isBoundSurf2, 'bug or unimplemented yet (incorrect boundsurf.__mul__ type: %s)' % type(other)
+            return other * self
+            
         R = rr if type(rr) == boundsurf else boundsurf(rr[0], rr[1], definiteRange, domain)
 
         lb1, ub1 = R1
@@ -565,7 +569,7 @@ import ooFun
 
 def devided_interval(inp, r, domain, dtype, feasLB = -inf, feasUB = inf):
 
-    lb_ub, definiteRange = inp._interval(domain, dtype, allowBoundSurf = True)
+    lb_ub, definiteRange = inp._interval(domain, dtype, ia_surf_level = 1)
     isBoundSurf = type(lb_ub) == boundsurf
     if not isBoundSurf:
         return ooFun.oofun._interval_(r, domain, dtype)

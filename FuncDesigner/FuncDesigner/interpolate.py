@@ -136,7 +136,7 @@ class SplineGenerator:
         return np.max(np.abs(YY - self._Y))
 
 def spline_interval_analysis_engine(S, domain, dtype):
-    lb_ub, definiteRange = S.input[0]._interval(domain, dtype, allowBoundSurf = not np.isnan(S.engine_convexity))
+    lb_ub, definiteRange = S.input[0]._interval(domain, dtype, ia_surf_level = 1 if not np.isnan(S.engine_convexity) else 0)
     if type(lb_ub) == boundsurf:
         assert S._nonmonotone_x.size == 1, 'bug in FD kernel'
         return defaultIntervalEngine(lb_ub, S.fun, S.d, S.engine_monotonity, S.engine_convexity, \
