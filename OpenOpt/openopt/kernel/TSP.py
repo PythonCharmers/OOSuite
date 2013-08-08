@@ -178,7 +178,7 @@ class TSP(MatrixProblem):
                 Cr_values = -Cr_values
             for i, w in enumerate(EdgesDescriptors):
                 node_in, node_out = EdgesCoords[i]
-                M[node_in, node_out] = Cr_values[i]
+                M[node2index[node_in], node2index[node_out]] = Cr_values[i]
             S = np.abs(Cr_values).sum() + 1.0
             
             # TODO: check it
