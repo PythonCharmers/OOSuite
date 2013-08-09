@@ -1,7 +1,7 @@
 PythonSum = sum
 import numpy as np
 from numpy import where, logical_and, isscalar, all, any
-from boundsurf import surf, boundsurf
+from boundsurf import surf, boundsurf, mul_fixed_interval
 from operator import gt as Greater, lt as Less
 try:
     from bottleneck import nanmin, nanmax
@@ -283,8 +283,8 @@ class boundsurf2(boundsurf):
         
         if not R2_is_scalar and R2.size != 1:
             assert R2.shape[0] == 2, 'bug or unimplemented yet'
-            R2Positive = all(R2 >= 0)
-            R2Negative = all(R2 <= 0)
+#            R2Positive = all(R2 >= 0)
+#            R2Negative = all(R2 <= 0)
 #            if not selfPositive and not selfNegative:
 #                assert R2Positive or R2Negative, 'bug or unimplemented yet'
             
@@ -294,6 +294,13 @@ class boundsurf2(boundsurf):
                 rr = (tmp, tmp)
             else:
                 rr = (self.l * R2, self.u * R2) if R2 >= 0 else (self.u * R2, self.l * R2)
+            return boundsurf(rr[0], rr[1], definiteRange, domain)
+            
+#        R1 = self.resolve()[0]
+#        selfPositive = all(R1 >= 0)
+#        selfNegative = all(R1 <= 0)
+        if isArray:
+            return mul_fixed_interval(self, R2)
         else:
             assert 0, 'unimplemented yet'
         
