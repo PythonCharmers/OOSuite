@@ -6,18 +6,13 @@ from FDmisc import FuncDesignerException, update_mul_inf_zero, update_negative_i
 update_div_zero
 from FuncDesigner.multiarray import multiarray
 from boundsurf import boundsurf, surf, devided_interval, split, boundsurf_join
+from boundsurf2 import surf2, boundsurf2
 from operator import truediv as td
 
 try:
     from bottleneck import nanmin, nanmax
 except ImportError:
     from numpy import nanmin, nanmax
-    
-from boundsurf import boundsurf
-try:
-    from boundsurf2 import boundsurf2
-except ImportError:
-    boundsurf2 = boundsurf
     
 class Interval:
     def __init__(self, l, u, definiteRange):
@@ -341,7 +336,6 @@ def pow_const_interval(self, r, other, domain, dtype):
     # changes
     #if isBoundSurf and other == 2 and lb_ub.l is lb_ub.u and len(lb_ub.l.d) == 1:
     if 1 and isBoundSurf and other == 2 and len(lb_ub.l.d) == 1 and len(lb_ub.u.d) == 1:
-        from boundsurf2 import boundsurf2, surf2
         L, U = lb_ub.l, lb_ub.u
         d, c = L.d, L.c
         s_l = surf2(dict((k, v**2) for k, v in d.items()), dict((k, 2*v*c) for k, v in d.items()), c**2)
@@ -458,11 +452,16 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
                           criticalPointValue = np.nan, feasLB = -inf, feasUB = inf, domain_ind = slice(None), R0 = None):
     
     assert type(monotonity) != bool and type(convexity) != bool, 'bug in defaultIntervalEngine'
-    
+    if monotonity not in (-1, 1) and type(arg_lb_ub) == boundsurf2:
+        arg_lb_ub = arg_lb_ub.to_linear()
     L, U, domain, definiteRange = arg_lb_ub.l, arg_lb_ub.u, arg_lb_ub.domain, arg_lb_ub.definiteRange
     Ld, Ud = L.d, U.d
+    Ld2, Ud2 = getattr(L,'d2', {}),  getattr(U,'d2', {})
+    if len(Ld2) != 0 or len(Ud2) != 0:
+        assert convexity in (-1, 1), 'unimplemented'
     if type(domain_ind) == np.ndarray:
         Ld, Ud = dict_reduce(Ld, domain_ind), dict_reduce(Ud, domain_ind)
+        Ld2, Ud2 = dict_reduce(Ld2, domain_ind), dict_reduce(Ud2, domain_ind)
         R0 = (arg_lb_ub.resolve()[0] if R0 is None else R0)[:, domain_ind]
         if type(definiteRange) != bool and definiteRange.size > 1:
             definiteRange = definiteRange[domain_ind]
@@ -489,12 +488,15 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
     if monotonity == 1:
         new_l_resolved, new_u_resolved = R2
         U_dict, L_dict = Ud, Ld
+        U2_dict, L2_dict = Ud2, Ld2
         _argmin, _argmax = r_l, r_u
     elif monotonity == -1:
         new_u_resolved, new_l_resolved = R2
         U_dict, L_dict = Ld, Ud
+        U2_dict, L2_dict = Ld2, Ud2
         _argmin, _argmax = r_u, r_l
     else:
+        assert len(Ld2) == len(Ud2) == 0, 'unimplemented'
         ind = R2[1] > R2[0] 
         R2.sort(axis=0)
         new_l_resolved, new_u_resolved = R2
@@ -513,24 +515,38 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
 
         L_dict = dict((k, where(ind, Ld.get(k, 0), Ud.get(k, 0))) for k in Keys)
         U_dict = dict((k, where(ind, Ud.get(k, 0), Ld.get(k, 0))) for k in Keys)
+        L2_dict = dict((k, where(ind, Ld2.get(k, 0), Ud2.get(k, 0))) for k in Keys)
+        U2_dict = dict((k, where(ind, Ud2.get(k, 0), Ld2.get(k, 0))) for k in Keys)
 
     if convexity == -1:
         tmp2 = deriv(_argmax.view(multiarray)).view(ndarray).flatten()
         tmp2[ind_inf] = 0.0
         
         d_new = dict((v, tmp2 * val) for v, val in L_dict.items())
-        U_new = surf(d_new, 0.0)
+        
+        if len(L2_dict) == 0:
+            U_new = surf(d_new, 0.0)
+        else:
+            d2_new = dict((v, tmp2 * val) for v, val in L2_dict.items())
+            U_new = surf2(d2_new, d_new, 0.0)
+
         U_new.c = new_u_resolved - U_new.maximum(domain, domain_ind)
         ind_inf2 = np.isinf(new_u_resolved)
         if any(ind_inf2):
             U_new.c = where(ind_inf2, new_u_resolved, U_new.c)
         
         # for some simple cases
-        if len(U_dict) >= 1:
+        if len(U_dict) >= 1 or len(U2_dict) >= 1:
             if ind_eq.size:
                 koeffs[ind_eq] = tmp2[ind_eq]
             d_new = dict((v, koeffs * val) for v, val in U_dict.items())
-            L_new = surf(d_new, 0.0)
+            
+            if len(U2_dict) == 0:
+                L_new = surf(d_new, 0.0)
+            else:
+                d2_new = dict((v, tmp2 * val) for v, val in U2_dict.items())
+                L_new = surf2(d2_new, d_new, 0.0)
+
             L_new.c = new_l_resolved -  L_new.minimum(domain, domain_ind)
             if any(ind_inf2):
                 L_new.c = where(ind_inf2, new_l_resolved, L_new.c)
@@ -541,18 +557,27 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
         tmp2[ind_inf] = 0.0
         
         d_new = dict((v, tmp2 * val) for v, val in L_dict.items())
-        L_new = surf(d_new, 0.0)
+        if len(L2_dict) == 0:
+            L_new = surf(d_new, 0.0)
+        else:
+            d2_new = dict((v, tmp2 * val) for v, val in L2_dict.items())
+            L_new = surf2(d2_new, d_new, 0.0)
         L_new.c = new_l_resolved - L_new.minimum(domain, domain_ind)
         ind_inf2 = np.isinf(new_l_resolved)
         if any(ind_inf2):
             L_new.c = where(ind_inf2, new_l_resolved, L_new.c)
         
         # for some simple cases
-        if len(U_dict) >= 1:
+        if len(U_dict) >= 1 or len(U2_dict) >= 1:
             if ind_eq.size:
                 koeffs[ind_eq] = tmp2[ind_eq]
             d_new = dict((v, koeffs * val) for v, val in U_dict.items())
-            U_new = surf(d_new, 0.0)
+            if len(U2_dict) == 0:
+                U_new = surf(d_new, 0.0)
+            else:
+                d2_new = dict((v, tmp2 * val) for v, val in U2_dict.items())
+                U_new = surf2(d2_new, d_new, 0.0)
+
             U_new.c = new_u_resolved - U_new.maximum(domain, domain_ind)
             if any(ind_inf2):
                 U_new.c = where(ind_inf2, new_u_resolved, U_new.c)
@@ -631,7 +656,10 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
     else:
         # linear oofuns with convexity = 0 calculate their intervals in other funcs
         raise FuncDesignerException('bug in FD kernel')
-    R = boundsurf(L_new, U_new, definiteRange, domain)
+    if type(L_new) == type(U_new) == surf:
+        R = boundsurf(L_new, U_new, definiteRange, domain)
+    else:
+        R = boundsurf2(L_new, U_new, definiteRange, domain)
     return R, definiteRange
 
 def adjustBounds(R0, definiteRange, feasLB, feasUB):

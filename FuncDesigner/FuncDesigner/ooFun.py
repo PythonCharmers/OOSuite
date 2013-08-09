@@ -227,21 +227,24 @@ class oofun(object):
     def _interval_(self, domain, dtype, inputData = None):
         if inputData is None:
             INP = self.input[0] 
-            arg_lb_ub, definiteRange = INP._interval(domain, dtype, ia_surf_level = 1)
+            ia_surf_level = 2 if self.engine_convexity in (-1, 1) else 1
+            arg_lb_ub, definiteRange = INP._interval(domain, dtype, ia_surf_level = ia_surf_level)
+#            print type(arg_lb_ub)
         else:
+#            print('asdf')
             arg_lb_ub, definiteRange = inputData
         
 #        INP = self.input[0] 
 #        arg_lb_ub, definiteRange = INP._interval(domain, dtype, ia_surf_level = 1)
         
-        isBoundsurf = type(arg_lb_ub) == boundsurf
+        isBoundsurf = type(arg_lb_ub) in (boundsurf, boundsurf2)
         arg_lb_ub_resolved = arg_lb_ub.resolve()[0] if isBoundsurf else arg_lb_ub
         if isBoundsurf and self.engine_convexity is not nan and all(isfinite(arg_lb_ub_resolved)):
             return defaultIntervalEngine(arg_lb_ub, self.fun, self.d, 
                                          self.engine_monotonity, self.engine_convexity)
         
         if self.engine_monotonity is not nan:
-            arg_infinum, arg_supremum = arg_lb_ub_resolved[0], arg_lb_ub_resolved[1]
+            arg_infinum, arg_supremum = arg_lb_ub_resolved#[0], arg_lb_ub_resolved[1]
             if (not isscalar(arg_infinum) and arg_infinum.size > 1) and not self.vectorized:
                 raise FuncDesignerException('not implemented for vectorized oovars yet')
             Tmp = self.fun(arg_lb_ub_resolved)
@@ -1290,9 +1293,11 @@ class oofun(object):
                 if (fixedVars is not None and oov in fixedVars) or (Vars is not None and oov not in Vars):
                     continue
                 if useSparse == False and hasattr(tmp, 'toarray'): tmp = tmp.toarray()
-                if not exactShape and not isspmatrix(tmp) and not isscalar(tmp):
-                    if tmp.size == 1: tmp = tmp.item()
-                    elif min(tmp.shape) == 1: tmp = tmp.flatten()
+                if not isspmatrix(tmp) and not isscalar(tmp):
+                    if tmp.size == 1: 
+                        tmp = tmp.item()
+                    elif not exactShape and min(tmp.shape) == 1: 
+                        tmp = tmp.flatten()
                 rr[oov] = tmp
             return rr if not is_oofun else rr[initialVars]
         else:

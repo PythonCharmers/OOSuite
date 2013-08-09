@@ -235,6 +235,8 @@ class boundsurf(object):#object is added for Python2 compatibility
         R1 = self.resolve()[0]
         selfPositive = all(R1 >= 0)
         selfNegative = all(R1 <= 0)
+        
+        from boundsurf2 import boundsurf2
         if isArray:
 #            assert R2Positive or R2Negative, 'bug or unimplemented yet'
 
@@ -388,9 +390,23 @@ class boundsurf(object):#object is added for Python2 compatibility
                 rr.definiteRange = definiteRange
         elif isBoundSurf:
             if (selfPositive or selfNegative) and (R2Positive or R2Negative):
-                r = ((self if selfPositive else -self).log() + (other if R2Positive else -other).log()).exp()
-                r.definiteRange = definiteRange
-                rr = r if selfPositive == R2Positive else -r
+                if 1 and R2Positive and selfPositive \
+                and len(self.l.d) <= 1 and len(self.u.d) <= 1 and len(other.l.d) <= 1 and len(other.u.d) <= 1 and\
+                len(set.union(set(self.l.d.keys()), set(self.u.d.keys()), set(other.l.d.keys()), set(other.u.d.keys()))) == 1:
+                    k = list(set.union(set(self.l.d.keys()), set(self.u.d.keys()), set(other.l.d.keys()), set(other.u.d.keys())))[0]
+                    ld = {k: self.l.c*other.l.d.get(k, 0.0) + other.l.c*self.l.d.get(k, 0.0)}
+                    ud = {k: self.u.c*other.u.d.get(k, 0.0) + other.u.c*self.u.d.get(k, 0.0)}
+                    ld2 = {k: other.l.d.get(k, 0.0) * self.l.d.get(k, 0.0)}
+                    ud2 = {k: other.u.d.get(k, 0.0) * self.u.d.get(k, 0.0)}
+                    lc = self.l.c * other.l.c
+                    uc = self.u.c * other.u.c
+                    from boundsurf2 import surf2
+                    ls, us = surf2(ld2, ld, lc), surf2(ud2, ud, uc)
+                    rr = boundsurf2(ls, us, definiteRange, domain)
+                else:
+                    r = ((self if selfPositive else -self).log() + (other if R2Positive else -other).log()).exp()
+                    r.definiteRange = definiteRange
+                    rr = r if selfPositive == R2Positive else -r
             else:
                 Elems = (self, other)
                 rr = aux_mul_div_boundsurf(Elems, operator.mul)
@@ -412,12 +428,11 @@ class boundsurf(object):#object is added for Python2 compatibility
             #return 0.5 * (R1*other + R2*self)
             
         else:
-            from boundsurf2 import boundsurf2
             isBoundSurf2 = type(other) == boundsurf2
             assert isBoundSurf2, 'bug or unimplemented yet (incorrect boundsurf.__mul__ type: %s)' % type(other)
             return other * self
             
-        R = rr if type(rr) == boundsurf else boundsurf(rr[0], rr[1], definiteRange, domain)
+        R = rr if type(rr) in (boundsurf, boundsurf2) else boundsurf(rr[0], rr[1], definiteRange, domain)
 
         lb1, ub1 = R1
         lb2, ub2 = (R2, R2) if R2_is_scalar or R2.size == 1 else R2
@@ -427,15 +442,22 @@ class boundsurf(object):#object is added for Python2 compatibility
         ind_i2 = logical_or(np.isinf(lb2), np.isinf(ub2))
         ind = logical_or(logical_and(ind_z1, ind_i2), logical_and(ind_z2, ind_i1))
         if any(ind):
-            R_tmp = R.extract(logical_not(ind))
+            lb1, lb2, ub1, ub2 = lb1[ind], lb2[ind], ub1[ind], ub2[ind] 
+            R1, R2 = R1[:, ind], R2[:, ind]
             t = np.vstack((lb1 * lb2, ub1 * lb2, lb1 * ub2, ub1 * ub2))
             t_min, t_max = np.atleast_1d(nanmin(t, 0)), np.atleast_1d(nanmax(t, 0))
-            update_mul_inf_zero(R1, R2, np.vstack((t_min, t_max)))
+            
+            # !!!!!!!!!!!!!!!!1 TODO: check it
+            t = np.vstack((t_min, t_max))
+            update_mul_inf_zero(R1, R2, t)
+            t_min, t_max = t
+            
             definiteRange_Tmp = \
             R.definiteRange if type(R.definiteRange) == bool or R.definiteRange.size == 1\
             else R.definiteRange[ind]
-            R_Tmp = boundsurf(surf({}, t_min), surf({}, t_max), definiteRange_Tmp, domain)
-            R = R_Tmp if all(ind) else boundsurf_join((ind, logical_not(ind)), (R_Tmp, R_tmp))
+            R_Tmp_nan = boundsurf(surf({}, t_min), surf({}, t_max), definiteRange_Tmp, domain)
+            R = R_Tmp_nan if all(ind) \
+            else boundsurf_join((ind, logical_not(ind)), (R_Tmp_nan, R.extract(logical_not(ind))))
         return R
     
     __rmul__ = __mul__
@@ -525,10 +547,18 @@ def Join(inds, arrays):
     return r
 
 def surf_join(inds, S):
+    c = Join(inds, [s.c for s in S])
+    
     keys = set.union(*[set(s.d.keys()) for s in S])
     d = dict((k, Join(inds, [s.d.get(k, arrZero) for s in S])) for k in keys)
-    c = Join(inds, [s.c for s in S])
-    return surf(d, c)
+    
+    keys = set.union(*[set(s.getattr('d2', {}).keys()) for s in S])
+    if len(keys) == 0:
+        return surf(d, c)
+        
+    d2 = dict((k, Join(inds, [s.d.get(k, arrZero) for s in S])) for k in keys)
+    from boundsurf2 import surf2
+    return surf2(d2, d, c)
 
 def boundsurf_join(inds, B):
     inds = [(ind if ind.dtype != bool else where(ind)[0]) for ind in inds]
