@@ -294,13 +294,14 @@ class boundsurf2(boundsurf):
                 rr = (tmp, tmp)
             else:
                 rr = (self.l * R2, self.u * R2) if R2 >= 0 else (self.u * R2, self.l * R2)
-            return boundsurf(rr[0], rr[1], definiteRange, domain)
+            return boundsurf2(rr[0], rr[1], definiteRange, domain)
             
 #        R1 = self.resolve()[0]
 #        selfPositive = all(R1 >= 0)
 #        selfNegative = all(R1 <= 0)
         if isArray:
-            return mul_fixed_interval(self, R2)
+            r = mul_fixed_interval(self, R2)
+            return r
         else:
             assert 0, 'unimplemented yet'
         

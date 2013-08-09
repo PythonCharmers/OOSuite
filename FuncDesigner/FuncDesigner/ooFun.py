@@ -271,7 +271,7 @@ class oofun(object):
 
         domain.resolveSchedule = {} if domain.surf_preference else self.resolveSchedule
             
-        lb_ub, definiteRange = self._interval(domain, dtype, ia_surf_level = 1) 
+        lb_ub, definiteRange = self._interval(domain, dtype, ia_surf_level = 1 if allowBoundSurf else 0) 
         if type(lb_ub) == boundsurf2:
             lb_ub = lb_ub.to_linear()
         if allowBoundSurf == False and type(lb_ub) in (boundsurf, boundsurf2):
