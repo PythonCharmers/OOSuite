@@ -207,15 +207,18 @@ class boundsurf(object):#object is added for Python2 compatibility
     __rsub__ = lambda self, other: (-self).__add__(other)
         
     def __mul__(self, other):
+        from boundsurf2 import boundsurf2
+        
         domain = self.domain
         definiteRange = self.definiteRange
         
         isArray = type(other) == np.ndarray
         isBoundSurf = type(other) == boundsurf
+        isBoundSurf2 = type(other) == boundsurf2
         
         if isBoundSurf:
             definiteRange = logical_and(definiteRange, other.definiteRange)
-        R2 = other.resolve()[0] if isBoundSurf else other
+        R2 = other.resolve()[0] if isBoundSurf or isBoundSurf2 else other
         R2_is_scalar = isscalar(R2)
         
         if not R2_is_scalar and R2.size != 1:
@@ -236,7 +239,6 @@ class boundsurf(object):#object is added for Python2 compatibility
         selfPositive = all(R1 >= 0)
         selfNegative = all(R1 <= 0)
         
-        from boundsurf2 import boundsurf2
         if isArray:
 #            assert R2Positive or R2Negative, 'bug or unimplemented yet'
             rr = mul_fixed_interval(self, other)

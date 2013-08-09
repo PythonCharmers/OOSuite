@@ -276,9 +276,11 @@ class boundsurf2(boundsurf):
         
         isArray = type(other) == np.ndarray
         isBoundSurf = type(other) == boundsurf
+        isBoundSurf2 = type(other) == boundsurf2
+        
         if isBoundSurf:
             definiteRange = logical_and(definiteRange, other.definiteRange)
-        R2 = other.resolve()[0] if isBoundSurf else other
+        R2 = other.resolve()[0] if isBoundSurf or isBoundSurf2 else other
         R2_is_scalar = isscalar(R2)
         
         if not R2_is_scalar and R2.size != 1:
@@ -302,6 +304,9 @@ class boundsurf2(boundsurf):
         if isArray:
             r = mul_fixed_interval(self, R2)
             return r
+        # temporary
+        elif isBoundSurf:
+            return self.to_linear() * other
         else:
             assert 0, 'unimplemented yet'
         
