@@ -552,7 +552,7 @@ def surf_join(inds, S):
     keys = set.union(*[set(s.d.keys()) for s in S])
     d = dict((k, Join(inds, [s.d.get(k, arrZero) for s in S])) for k in keys)
     
-    keys = set.union(*[set(s.getattr('d2', {}).keys()) for s in S])
+    keys = set.union(*[set(getattr(s,'d2', {}).keys()) for s in S])
     if len(keys) == 0:
         return surf(d, c)
         
