@@ -307,6 +307,8 @@ class boundsurf2(boundsurf):
         # temporary
         elif isBoundSurf:
             return self.to_linear() * other
+        elif isBoundSurf2:
+            return self.to_linear() * other.to_linear()
         else:
             assert 0, 'unimplemented yet'
         
