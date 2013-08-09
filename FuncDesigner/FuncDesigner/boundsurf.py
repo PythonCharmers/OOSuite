@@ -411,7 +411,7 @@ def surf_join(inds, S):
     if len(keys) == 0:
         return surf(d, c)
         
-    d2 = dict((k, Join(inds, [s.d.get(k, arrZero) for s in S])) for k in keys)
+    d2 = dict((k, Join(inds, [getattr(s, 'd2', {}).get(k, arrZero) for s in S])) for k in keys)
     from boundsurf2 import surf2
     return surf2(d2, d, c)
 

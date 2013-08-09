@@ -312,5 +312,7 @@ class boundsurf2(boundsurf):
         
         R = rr if type(rr) in (boundsurf, boundsurf2) else boundsurf2(rr[0], rr[1], definiteRange, domain)
         return R
+        
+    __rmul__ = __mul__
 
     
