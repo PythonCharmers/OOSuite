@@ -1,7 +1,7 @@
 PythonSum = sum
 import numpy as np
 from numpy import where, logical_and, isscalar, all, any
-from boundsurf import surf, boundsurf, mul_fixed_interval
+from boundsurf import surf, boundsurf, mul_fixed_interval, mul_handle_nan
 from operator import gt as Greater, lt as Less
 try:
     from bottleneck import nanmin, nanmax
@@ -268,11 +268,8 @@ class boundsurf2(boundsurf):
         return boundsurf2(L, U, self.definiteRange, self.domain)
     
     def __mul__(self, other):
-#        R1 = self.resolve()[0]
         domain = self.domain
         definiteRange = self.definiteRange
-#        selfPositive = all(R1 >= 0)
-#        selfNegative = all(R1 <= 0)
         
         isArray = type(other) == np.ndarray
         isBoundSurf = type(other) == boundsurf
@@ -298,12 +295,14 @@ class boundsurf2(boundsurf):
                 rr = (self.l * R2, self.u * R2) if R2 >= 0 else (self.u * R2, self.l * R2)
             return boundsurf2(rr[0], rr[1], definiteRange, domain)
             
-#        R1 = self.resolve()[0]
+#        
 #        selfPositive = all(R1 >= 0)
 #        selfNegative = all(R1 <= 0)
         if isArray:
             r = mul_fixed_interval(self, R2)
-            return r
+            R1 = self.resolve()[0]
+            R = mul_handle_nan(r, R1, R2, domain)
+            return R
         # temporary
         elif isBoundSurf:
             return self.to_linear() * other

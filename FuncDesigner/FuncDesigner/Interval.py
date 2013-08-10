@@ -195,6 +195,7 @@ def adjust_ux_WithDiscreteDomain(Ux, v):
 
 def add_interval(self, other, domain, dtype):
     domain1, definiteRange1 = self._interval(domain, dtype, ia_surf_level = 2)
+    #print domain1.resolve()
     domain2, definiteRange2 = other._interval(domain, dtype, ia_surf_level = 2)
     return domain1 + domain2, logical_and(definiteRange1, definiteRange2)
 
@@ -289,7 +290,10 @@ def div_interval(self, other, domain, dtype):
             tmp = tmp1 * Tmp#lb2_ub2 ** -1
     elif firstIsBoundsurf and not secondIsBoundsurf:# and (t1_positive or t1_negative or t2_positive or t2_negative):
         # TODO: handle zeros
-        tmp = lb1_ub1 * (1.0 / tmp2[::-1]) 
+        Tmp2 = 1.0 / tmp2
+        Tmp2.sort(axis=0)
+        tmp = lb1_ub1 * Tmp2
+        #tmp = lb1_ub1 * (1.0 / tmp2[::-1]) 
     elif firstIsBoundsurf and secondIsBoundsurf:
         tmp = lb1_ub1 / lb2_ub2 
     if tmp is not None:

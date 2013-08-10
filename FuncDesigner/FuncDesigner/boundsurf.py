@@ -288,31 +288,7 @@ class boundsurf(object):#object is added for Python2 compatibility
             return other * self
             
         R = rr if type(rr) in (boundsurf, boundsurf2) else boundsurf(rr[0], rr[1], definiteRange, domain)
-
-        lb1, ub1 = R1
-        lb2, ub2 = (R2, R2) if R2_is_scalar or R2.size == 1 else R2
-        ind_z1 = logical_or(lb1 == 0, ub1 == 0)
-        ind_z2 = logical_or(lb2 == 0, ub2 == 0)
-        ind_i1 = logical_or(np.isinf(lb1), np.isinf(ub1))
-        ind_i2 = logical_or(np.isinf(lb2), np.isinf(ub2))
-        ind = logical_or(logical_and(ind_z1, ind_i2), logical_and(ind_z2, ind_i1))
-        if any(ind):
-            lb1, lb2, ub1, ub2 = lb1[ind], lb2[ind], ub1[ind], ub2[ind] 
-            R1, R2 = R1[:, ind], R2[:, ind]
-            t = np.vstack((lb1 * lb2, ub1 * lb2, lb1 * ub2, ub1 * ub2))
-            t_min, t_max = np.atleast_1d(nanmin(t, 0)), np.atleast_1d(nanmax(t, 0))
-            
-            # !!!!!!!!!!!!!!!!1 TODO: check it
-            t = np.vstack((t_min, t_max))
-            update_mul_inf_zero(R1, R2, t)
-            t_min, t_max = t
-            
-            definiteRange_Tmp = \
-            R.definiteRange if type(R.definiteRange) == bool or R.definiteRange.size == 1\
-            else R.definiteRange[ind]
-            R_Tmp_nan = boundsurf(surf({}, t_min), surf({}, t_max), definiteRange_Tmp, domain)
-            R = R_Tmp_nan if all(ind) \
-            else boundsurf_join((ind, logical_not(ind)), (R_Tmp_nan, R.extract(logical_not(ind))))
+        R = mul_handle_nan(R, R1, R2, domain)
         return R
     
     __rmul__ = __mul__
@@ -744,4 +720,34 @@ def mul_fixed_interval(self, R2):
         rr = boundsurf_join(inds, B)
         rr.definiteRange = definiteRange
     R = Boundsurf(rr[0], rr[1], definiteRange, domain) if type(rr) == tuple else rr 
+    return R
+
+def mul_handle_nan(R, R1, R2, domain):
+    RR = R.resolve()[0]
+    R2_is_scalar = isscalar(R2)
+    ind = logical_or(np.isnan(RR[0]), np.isnan(RR[1]))
+#        ind_z1 = logical_or(lb1 == 0, ub1 == 0)
+#        ind_z2 = logical_or(lb2 == 0, ub2 == 0)
+#        ind_i1 = logical_or(np.isinf(lb1), np.isinf(ub1))
+#        ind_i2 = logical_or(np.isinf(lb2), np.isinf(ub2))
+#        ind = logical_or(logical_and(ind_z1, ind_i2), logical_and(ind_z2, ind_i1))
+    if any(ind):
+        lb1, ub1 = R1
+        lb2, ub2 = (R2, R2) if R2_is_scalar or R2.size == 1 else R2
+        lb1, lb2, ub1, ub2 = lb1[ind], lb2[ind], ub1[ind], ub2[ind] 
+        R1, R2 = R1[:, ind], R2[:, ind]
+        t = np.vstack((lb1 * lb2, ub1 * lb2, lb1 * ub2, ub1 * ub2))
+        t_min, t_max = np.atleast_1d(nanmin(t, 0)), np.atleast_1d(nanmax(t, 0))
+        
+        # !!!!!!!!!!!!!!!!1 TODO: check it
+        t = np.vstack((t_min, t_max))
+        update_mul_inf_zero(R1, R2, t)
+        t_min, t_max = t
+        
+        definiteRange_Tmp = \
+        R.definiteRange if type(R.definiteRange) == bool or R.definiteRange.size == 1\
+        else R.definiteRange[ind]
+        R_Tmp_nan = boundsurf(surf({}, t_min), surf({}, t_max), definiteRange_Tmp, domain)
+        R = R_Tmp_nan if all(ind) \
+        else boundsurf_join((ind, logical_not(ind)), (R_Tmp_nan, R.extract(logical_not(ind))))
     return R
