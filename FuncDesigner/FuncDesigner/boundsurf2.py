@@ -241,7 +241,7 @@ class boundsurf2(boundsurf):
             else:
                 rr = (self.l+other, self.u+other)
             return boundsurf2(rr[0], rr[1], self.definiteRange, self.domain)
-        elif type(other) in (boundsurf, boundsurf2):# TODO: replace it by type(r[0]) after dropping Python2 support
+        elif type(other) in (boundsurf, boundsurf2):
             if self.l is self.u and other.l is other.u:
                 # TODO: mb use id() instead of "is"
                 tmp = self.l+other.l

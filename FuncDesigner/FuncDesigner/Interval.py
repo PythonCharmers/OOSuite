@@ -262,14 +262,18 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):
 
 
 def div_interval(self, other, domain, dtype):
-    lb1_ub1, definiteRange1 = self._interval(domain, dtype, ia_surf_level = 1)
+    
     lb2_ub2, definiteRange2 = other._interval(domain, dtype, ia_surf_level = 1)
+
+    secondIsBoundsurf = type(lb2_ub2) == boundsurf
+    
+    lb1_ub1, definiteRange1 = self._interval(domain, dtype, ia_surf_level = 2 if type(lb2_ub2)==ndarray else 1)
+    firstIsBoundsurf = type(lb1_ub1) in (boundsurf, boundsurf2)
+#    if type(lb1_ub1) == boundsurf2:
+#        lb1_ub1 = lb1_ub1.to_linear()
     
     # TODO: mention in doc definiteRange result for 0 / 0
     definiteRange = logical_and(definiteRange1, definiteRange2)
-    
-    firstIsBoundsurf = type(lb1_ub1) == boundsurf
-    secondIsBoundsurf = type(lb2_ub2) == boundsurf
     
     tmp1 = lb1_ub1.resolve()[0] if firstIsBoundsurf else lb1_ub1
 #    t1_positive = all(tmp1 >= 0)
@@ -297,7 +301,7 @@ def div_interval(self, other, domain, dtype):
     elif firstIsBoundsurf and secondIsBoundsurf:
         tmp = lb1_ub1 / lb2_ub2 
     if tmp is not None:
-        if type(tmp) == boundsurf:
+        if type(tmp) in (boundsurf, boundsurf2):
             tmp.definiteRange = definiteRange
             return tmp, tmp.definiteRange
 #        else:
