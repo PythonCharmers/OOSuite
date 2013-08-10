@@ -3,9 +3,7 @@
 descr   = """
 """
 
-from os.path import join
 import os
-import sys, compileall
 
 DISTNAME            = 'SpaceFuncs'
 DESCRIPTION         = 'A python module for 2D, 3D, ND space objects modelling and optimization'
@@ -27,17 +25,15 @@ except:
     raw_input()
     exit()
     
-import string, shutil
-from distutils.errors import DistutilsError
+
 #from numpy.distutils.system_info import system_info, NotFoundError, dict_append, so_ext
-from numpy.distutils.core import setup, Extension
-import os, sys
+from numpy.distutils.core import setup
 
 DOC_FILES = []
 
 def configuration(parent_package='',top_path=None, package_name=DISTNAME):
     if os.path.exists('MANIFEST'): os.remove('MANIFEST')
-    pkg_prefix_dir = '' #'openopt'
+    #pkg_prefix_dir = '' #'openopt'
 
     # Get the version
 
