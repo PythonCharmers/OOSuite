@@ -98,9 +98,6 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p, fo = inf):
     wr4_0 = (y+e) / 2
     if tnlh is None:# or p.probType =='MOP':
         wr4 = wr4_0
-        adjustr4WithDiscreteVariables(wr4, p)
-        #cs = dict([(oovar, asarray((y[:, i]+e[:, i])/2, dataType)) for i, oovar in enumerate(vv)])
-        cs = dict([(oovar, asarray(wr4[:, i], dataType)) for i, oovar in enumerate(vv)])
     else:
         tnlh = tnlh.copy()
         tnlh[atleast_1d(tnlh<1e-300)] = 1e-300 # to prevent division by zero
@@ -111,8 +108,8 @@ def getr4Values(vv, y, e, tnlh, func, C, contol, dataType, p, fo = inf):
         wr4[ind] = (y[ind] + e[ind]) / 2
         wr4_1 = (wr4 + wr4_0)/2
         wr4 = vstack((wr4, wr4_0, wr4_1))
-        adjustr4WithDiscreteVariables(wr4, p)
-        cs = dict([(oovar, asarray(wr4[:, i], dataType)) for i, oovar in enumerate(vv)])
+    adjustr4WithDiscreteVariables(wr4, p)
+    cs = dict([(oovar, asarray(wr4[:, i], dataType)) for i, oovar in enumerate(vv)])
         
     cs = oopoint(cs, skipArrayCast = True)
     cs.isMultiPoint = True
@@ -231,10 +228,10 @@ def func3(an, maxActiveNodes, dataHandling):
 #        ind = maxActiveNodes
         #M = max((5, maxActiveNodes/2, ind))
         #M = ind
-        n = an[0].y.size
-        M = max((5, int(maxActiveNodes/n), ind))
-        M = ind
-#        M = max((5, maxActiveNodes/5, ind))
+#        n = an[0].y.size
+#        M = max((5, int(maxActiveNodes/n), ind))
+#        M = ind
+        M = max((5, ind))
         
         # IMPORTANT!
         if M == 0: M = 1
@@ -313,7 +310,9 @@ def func1(tnlhf, tnlhf_curr, residual, y, e, o, a, _s_prev, p, indT):
     else:
         if p.solver.dataHandling == 'sorted':
             _s = func13(o, a)
+            
             t = nanargmin(a, 1) % n
+
             d = nanmax([a[w, t] - o[w, t], 
                     a[w, n+t] - o[w, n+t]], 0)
             
@@ -361,6 +360,9 @@ def func1(tnlhf, tnlhf_curr, residual, y, e, o, a, _s_prev, p, indT):
             indQ = d >= _s_prev - 1.0/n 
             #indQ = logical_and(indQ, False)
             indD = logical_or(indQ, logical_not(indT))
+#            print '------'
+#            print indQ[:10]
+#            print indD[:10]
 #            print _s_prev[:2], d[:2]
             #print len(where(indD)[0]), len(where(indQ)[0]), len(where(indT)[0])
             #print _s_prev - d
@@ -743,25 +745,33 @@ def func11(y, e, nlhc, indTC, residual, o, a, _s, p):
         return [si(IP_fields, sup_inf_diff[i], minres[i], minres_ind[i], complementary_minres[i], y[i], e[i], o[i], a[i], _s[i], F[i], volume[i], volumeResidual[i]) for i in range(m)]
         
     else:
-        
         residual = None
-        tmp = asarray(a)-asarray(o)
-        tmp[tmp<1e-300] = 1e-300
-        ind_uf_inf = where(a==inf)[0]
-        if ind_uf_inf.size:
-            Tmp = o[ind_uf_inf]
-            Tmp[Tmp==-inf] = -1e100
-            M = nanmax(abs(Tmp))
-            if M is nan or M == 0.0: 
-                M = 1.0
-            tmp[ind_uf_inf] = 1e200 * (1.0 + Tmp/M)
-        nlhf = log2(tmp)#-log2(p.fTol)
+        
+        isSNLE = p.probType in ('SNLE', 'NLSP')
+        if 1 or not isSNLE:
+            o, a = asarray(o), asarray(a)
+            a[a==inf] = 1e300
+            o[o==-inf] = -1e300
+            tmp = a - o
+            tmp[tmp<1e-300] = 1e-300
+#            ind_uf_inf = where(a==inf)[0]
+#            if ind_uf_inf.size:
+#                Tmp = o[ind_uf_inf]
+#                Tmp[Tmp==-inf] = -1e100
+#                M = nanmax(abs(Tmp))
+#                if M is nan or M == 0.0: 
+#                    M = 1.0
+#                tmp[ind_uf_inf] = 1e200 * (1.0 + Tmp/M)
+            nlhf = log2(tmp)#-log2(p.fTol)
+            
 #        nlhf[a==inf] = 1e300# to make it not inf and nan
 #        nlhf[o==-inf] = 1e300# to make it not inf and nan
-        if nlhf.ndim == 3: # in MOP
-            nlhf = nlhf.sum(axis=1)
         
         if p.probType == "MOP":
+            if nlhf.ndim == 3: # in MOP
+                nlhf = nlhf.sum(axis=1)
+            else:
+                assert 0, 'bug in interalg'
             # make correct o,a wrt each target
             return [si(MOP_Fields, y[i], e[i], nlhf[i], 
                           nlhc[i] if nlhc is not None else None, 
@@ -770,12 +780,16 @@ def func11(y, e, nlhc, indTC, residual, o, a, _s, p):
                           [o[i][k] for k in range(p.nf)], [a[i][k] for k in range(p.nf)], 
                           _s[i]) for i in range(m)]
         else:
-            s, q = o[:, 0:n], o[:, n:2*n]
-            Tmp = nanmax(where(q<s, q, s), 1)
-            
-            nlhf[logical_and(isinf(a), isinf(nlhf))] = 1e300
             assert p.probType in ('GLP', 'NLP', 'NSP', 'SNLE', 'NLSP', 'MINLP')#, 'QP')
-        
+            
+            if 0 and isSNLE:
+                nlhf = Tmp = o = a = [None]*m
+            else:
+                s, q = o[:, 0:n], o[:, n:2*n]
+                Tmp = nanmax(where(q<s, q, s), 1)
+                
+                nlhf[logical_and(isinf(a), isinf(nlhf))] = 1e300
+            
 #            residual = None
 
             return [si(Fields, Tmp[i], y[i], e[i], nlhf[i], 

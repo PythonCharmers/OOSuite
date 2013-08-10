@@ -28,7 +28,8 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
 #    import numpy as np
 #    print np.abs(e-y).sum(axis=0) / y.shape[0]
     o, a, r41 = r45(y, e, vv, p, asdf1, dataType, r41, nlhc)
-    
+#    assert not any(isnan(a))
+#    assert not any(isnan(o))
     fo_prev = float(0 if isSNLE else min((r41, r40 - (fTol if maxSolutions == 1 else 0))))
     if fo_prev > 1e300:
         fo_prev = 1e300
@@ -61,24 +62,18 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
             
         an = hstack((nodes, _in))
         
-#        import numpy as np
-#        arr = np.ones(9, bool)
-#        arr[4] = arr[7] = arr[8] = False
-#        volumes = [np.prod(n.e[arr]-n.y[arr]) for n in an]
-#        print sum(volumes)
-
-        
-        
         #tnlh_fixed = vstack([node.tnlhf for node in an])
         tnlh_fixed_local = vstack([node.tnlhf for node in nodes])#tnlh_fixed[:len(nodes)]
         if 1:
-            tmp = a.copy()
-            
-            tmp[tmp>fo_prev] = fo_prev
-            tmp2 = tmp - o
+            tmp_u = where(a>fo_prev, fo_prev, a)#a.copy()
+            tmp_l = where(o==-inf, -1e300, o)
+#            tmp[tmp>fo_prev] = fo_prev
+            tmp2 = tmp_u - tmp_l
+#            ind_inf = tmp2==inf
             tmp2[tmp2<1e-300] = 1e-300
             tmp2[o > fo_prev] = nan
             tnlh_curr = tnlh_fixed_local - log2(tmp2)
+#            tnlh_curr[ind_inf] = 1e300
         else:
             if isSNLE:
                 tnlh_curr = tnlh_fixed_local
