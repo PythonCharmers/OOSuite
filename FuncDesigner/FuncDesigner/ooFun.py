@@ -227,7 +227,7 @@ class oofun(object):
     def _interval_(self, domain, dtype, inputData = None):
         if inputData is None:
             INP = self.input[0] 
-            ia_surf_level = 2 if self.engine_convexity in (-1, 1) else 1
+            ia_surf_level = 2 #if self.engine_convexity in (-1, 1) else 1
             arg_lb_ub, definiteRange = INP._interval(domain, dtype, ia_surf_level = ia_surf_level)
 #            print type(arg_lb_ub)
         else:
@@ -238,10 +238,12 @@ class oofun(object):
 #        arg_lb_ub, definiteRange = INP._interval(domain, dtype, ia_surf_level = 1)
         
         isBoundsurf = type(arg_lb_ub) in (boundsurf, boundsurf2)
-        arg_lb_ub_resolved = arg_lb_ub.resolve()[0] if isBoundsurf else arg_lb_ub
-        if isBoundsurf and self.engine_convexity is not nan and all(isfinite(arg_lb_ub_resolved)):
+        
+        if isBoundsurf and self.engine_convexity is not nan:# and all(isfinite(arg_lb_ub_resolved)):
             return defaultIntervalEngine(arg_lb_ub, self.fun, self.d, 
                                          self.engine_monotonity, self.engine_convexity)
+                                         
+        arg_lb_ub_resolved = arg_lb_ub.resolve()[0] if isBoundsurf else arg_lb_ub
         
         if self.engine_monotonity is not nan:
             arg_infinum, arg_supremum = arg_lb_ub_resolved#[0], arg_lb_ub_resolved[1]
@@ -767,7 +769,8 @@ class oofun(object):
             r._interval_ = lambda *args, **kw: pow_const_interval(self, r, other, *args, **kw)
             if isscalar(other) or other.size == 1:
                 if other > 0 or (isInt and other%2 == 1): 
-                    r.engine_monotonity = 1 if other > 0 else -1
+                    #r.engine_monotonity = 1 if other > 0 == (other%2 == 1) else -1
+                    r.monotonities = (-1 if isInt and other%2 == 0 else 1, 1)
                     r.convexities = ((-1 if isInt and other%2 == 1 else 1 if other > 1 else -1), 
                                      (1 if other > 1 or other < 0 else -1))
                 elif isInt and other%2 == 0: #int, other = 2k < 0

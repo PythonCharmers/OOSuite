@@ -368,11 +368,21 @@ def pow_const_interval(self, r, other, domain, dtype):
     if isBoundSurf and not any(np.isinf(lb_ub_resolved)):
         domain_isPositive = all(lb_ub_resolved >= 0)
         
+        #new
+#        if domain_isPositive: 
+#            return defaultIntervalEngine(lb_ub, r.fun, r.d,  
+#                monotonity = 1,  
+#                convexity = 1 if other > 1.0 or other < 0 else -1) 
+#        
+#        if other_is_int and other > 0 and other % 2 == 0: 
+#            return devided_interval(self, r, domain, dtype)
+        
+        #prev
         if domain_isPositive or (other_is_int and other > 0 and other % 2 == 0): 
             return defaultIntervalEngine(lb_ub, r.fun, r.d,  
                 monotonity = 1 if other > 0 and domain_isPositive else np.nan,  
                 convexity = 1 if other > 1.0 or other < 0 else -1,  
-                criticalPoint = 0.0, criticalPointValue = 0.0) 
+                criticalPoint = 0.0, criticalPointValue = 0.0)         
         
         domain_isNegative = all(lb_ub_resolved <= 0)
         feasLB = -inf if other_is_int else 0.0
@@ -460,13 +470,15 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
                           criticalPointValue = np.nan, feasLB = -inf, feasUB = inf, domain_ind = slice(None), R0 = None):
     
     assert type(monotonity) != bool and type(convexity) != bool, 'bug in defaultIntervalEngine'
-    if monotonity not in (-1, 1) and type(arg_lb_ub) == boundsurf2:
+
+    Ld2, Ud2 = getattr(arg_lb_ub.l,'d2', {}),  getattr(arg_lb_ub.u,'d2', {})
+    
+    if len(Ld2) != 0 or len(Ud2) != 0 and convexity not in (-1, 1):
         arg_lb_ub = arg_lb_ub.to_linear()
+        
     L, U, domain, definiteRange = arg_lb_ub.l, arg_lb_ub.u, arg_lb_ub.domain, arg_lb_ub.definiteRange
     Ld, Ud = L.d, U.d
-    Ld2, Ud2 = getattr(L,'d2', {}),  getattr(U,'d2', {})
-    if len(Ld2) != 0 or len(Ud2) != 0:
-        assert convexity in (-1, 1), 'unimplemented'
+
     if type(domain_ind) == np.ndarray:
         Ld, Ud = dict_reduce(Ld, domain_ind), dict_reduce(Ud, domain_ind)
         Ld2, Ud2 = dict_reduce(Ld2, domain_ind), dict_reduce(Ud2, domain_ind)
@@ -523,8 +535,11 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
 
         L_dict = dict((k, where(ind, Ld.get(k, 0), Ud.get(k, 0))) for k in Keys)
         U_dict = dict((k, where(ind, Ud.get(k, 0), Ld.get(k, 0))) for k in Keys)
-        L2_dict = dict((k, where(ind, Ld2.get(k, 0), Ud2.get(k, 0))) for k in Keys)
-        U2_dict = dict((k, where(ind, Ud2.get(k, 0), Ld2.get(k, 0))) for k in Keys)
+        if len(Ld2) != 0 or len(Ud2) != 0:
+            L2_dict = dict((k, where(ind, Ld2.get(k, 0), Ud2.get(k, 0))) for k in Keys)
+            U2_dict = dict((k, where(ind, Ud2.get(k, 0), Ld2.get(k, 0))) for k in Keys)
+        else:
+            L2_dict = U2_dict = {}
 
     if convexity == -1:
         tmp2 = deriv(_argmax.view(multiarray)).view(ndarray).flatten()
