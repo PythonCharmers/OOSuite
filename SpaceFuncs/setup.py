@@ -17,7 +17,7 @@ LICENSE             = 'new BSD'
 
 from __version__ import __version__ as Ver
 
-DOWNLOAD_URL        = 'http://openopt.org/images/4/4e/SpaceFuncs.zip'
+#DOWNLOAD_URL        = 'http://openopt.org/images/4/4e/SpaceFuncs.zip'
 
 try:
     import setuptools
@@ -49,7 +49,7 @@ def configuration(parent_package='',top_path=None, package_name=DISTNAME):
         description = DESCRIPTION,
         license = LICENSE,
         url = URL,
-        download_url = DOWNLOAD_URL,
+#        download_url = DOWNLOAD_URL,
         long_description = LONG_DESCRIPTION)
 
 
