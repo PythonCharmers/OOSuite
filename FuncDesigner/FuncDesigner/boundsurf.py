@@ -245,23 +245,26 @@ class boundsurf(object):#object is added for Python2 compatibility
 
         elif isBoundSurf:
             if (selfPositive or selfNegative) and (R2Positive or R2Negative):
-                if 1 and R2Positive and selfPositive \
-                and len(self.l.d) <= 1 and len(self.u.d) <= 1 and len(other.l.d) <= 1 and len(other.u.d) <= 1 and\
+                Self = self if selfPositive else -self
+                Other = other if R2Positive else -other
+                if 1 and len(self.l.d) <= 1 and len(self.u.d) <= 1 \
+                and len(other.l.d) <= 1 and len(other.u.d) <= 1 and\
                 len(set.union(set(self.l.d.keys()), set(self.u.d.keys()), set(other.l.d.keys()), set(other.u.d.keys()))) == 1:
-                    k = list(set.union(set(self.l.d.keys()), set(self.u.d.keys()), set(other.l.d.keys()), set(other.u.d.keys())))[0]
-                    ld = {k: self.l.c*other.l.d.get(k, 0.0) + other.l.c*self.l.d.get(k, 0.0)}
-                    ud = {k: self.u.c*other.u.d.get(k, 0.0) + other.u.c*self.u.d.get(k, 0.0)}
-                    ld2 = {k: other.l.d.get(k, 0.0) * self.l.d.get(k, 0.0)}
-                    ud2 = {k: other.u.d.get(k, 0.0) * self.u.d.get(k, 0.0)}
-                    lc = self.l.c * other.l.c
-                    uc = self.u.c * other.u.c
+                    
+                    k = list(set.union(set(Self.l.d.keys()), set(Self.u.d.keys()), set(Other.l.d.keys()), set(Other.u.d.keys())))[0]
+                    ld = {k: Self.l.c*Other.l.d.get(k, 0.0) + Other.l.c*Self.l.d.get(k, 0.0)}
+                    ud = {k: Self.u.c*Other.u.d.get(k, 0.0) + Other.u.c*Self.u.d.get(k, 0.0)}
+                    ld2 = {k: Other.l.d.get(k, 0.0) * Self.l.d.get(k, 0.0)}
+                    ud2 = {k: Other.u.d.get(k, 0.0) * Self.u.d.get(k, 0.0)}
+                    lc = Self.l.c * Other.l.c
+                    uc = Self.u.c * Other.u.c
                     from boundsurf2 import surf2
                     ls, us = surf2(ld2, ld, lc), surf2(ud2, ud, uc)
-                    rr = boundsurf2(ls, us, definiteRange, domain)
+                    r = boundsurf2(ls, us, definiteRange, domain)
                 else:
-                    r = ((self if selfPositive else -self).log() + (other if R2Positive else -other).log()).exp()
+                    r = (Self.log() + Other.log()).exp()
                     r.definiteRange = definiteRange
-                    rr = r if selfPositive == R2Positive else -r
+                rr = r if selfPositive == R2Positive else -r
             else:
                 Elems = (self, other)
                 rr = aux_mul_div_boundsurf(Elems, operator.mul)
