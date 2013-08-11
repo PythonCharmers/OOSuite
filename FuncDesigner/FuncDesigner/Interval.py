@@ -342,7 +342,6 @@ def pow_const_interval(self, r, other, domain, dtype):
     isBoundSurf = type(lb_ub) == boundsurf
     
     # changes
-    #if isBoundSurf and other == 2 and lb_ub.l is lb_ub.u and len(lb_ub.l.d) == 1:
     if 1 and isBoundSurf and other == 2 and len(lb_ub.l.d) == 1 and len(lb_ub.u.d) == 1:
         L, U = lb_ub.l, lb_ub.u
         d, c = L.d, L.c
@@ -480,6 +479,8 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
     Ld, Ud = L.d, U.d
 
     if type(domain_ind) == np.ndarray:
+        if domain_ind.dtype == bool:
+            domain_ind = where(domain_ind)[0]
         Ld, Ud = dict_reduce(Ld, domain_ind), dict_reduce(Ud, domain_ind)
         Ld2, Ud2 = dict_reduce(Ld2, domain_ind), dict_reduce(Ud2, domain_ind)
         R0 = (arg_lb_ub.resolve()[0] if R0 is None else R0)[:, domain_ind]
