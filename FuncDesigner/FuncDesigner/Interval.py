@@ -472,7 +472,7 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
 
     Ld2, Ud2 = getattr(arg_lb_ub.l,'d2', {}),  getattr(arg_lb_ub.u,'d2', {})
     
-    if (len(Ld2) != 0 or len(Ud2) != 0) and convexity not in (-1, 1):
+    if 0 and (len(Ld2) != 0 or len(Ud2) != 0) and convexity not in (-1, 1):
         arg_lb_ub = arg_lb_ub.to_linear()
         Ld2, Ud2 = {}, {}
         
