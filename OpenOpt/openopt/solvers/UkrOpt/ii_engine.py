@@ -14,7 +14,7 @@ def r14IP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, CBKPMV, g, nNode
     ip.dictOfFixedFuncs = p.dictOfFixedFuncs
     ip.surf_preference = True
 
-    tmp = asdf1.interval(ip, allowBoundSurf = True)
+    tmp = asdf1.interval(ip, ia_surf_level=1)
 #        print(type(tmp))
     if hasattr(tmp, 'resolve'):#type(tmp) == boundsurf:
 #            print('b')

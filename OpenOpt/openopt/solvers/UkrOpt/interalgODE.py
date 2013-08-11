@@ -38,8 +38,8 @@ def interalg_ODE_routine(p, solver):
 #        p.err('currently solver interalg requires times start from zero')  
     
     r37 = abs(r30[-1] - r30[0])
-    if len(r30) == 2:
-        r30 = np.linspace(r30[0], r30[-1], 150)
+#    if len(r30) == 2:
+#        r30 = np.linspace(r30[0], r30[-1], 150)
     r28 = asarray(atleast_1d(r30[:-1]), dataType)
     r29 = asarray(atleast_1d(r30[1:]), dataType)
 
@@ -61,38 +61,56 @@ def interalg_ODE_routine(p, solver):
         
         mp.dictOfFixedFuncs = p.dictOfFixedFuncs
         mp.surf_preference = True
-        tmp = f.interval(mp, allowBoundSurf = True)
+        tmp = f.interval(mp, ia_surf_level = 2)
         if not all(tmp.definiteRange):
             p.err('''
             solving ODE and IP by interalg is implemented for definite (real) range only, 
             no NaN values in integrand are allowed''')
         # TODO: perform check on NaNs
-        
-        if hasattr(tmp, 'resolve'):# boundsurf:
+        isBoundsurf = hasattr(tmp, 'resolve')
+        if isBoundsurf:
             #adjustr4WithDiscreteVariables(wr4, p)
             cs = oopoint([(v, asarray(0.5*(val[0] + val[1]), dataType)) for v, val in mp.items()])
             cs.dictOfFixedFuncs = p.dictOfFixedFuncs
             r21, r22 = tmp.values(cs)
             if isIP:
-                o, a = atleast_1d(r21), atleast_1d(r22)
-                r20 = a-o
+                if tmp.level == 1:
+                    o, a = atleast_1d(r21), atleast_1d(r22)
+                    r20 = a-o
+                    approx_value = 0.5*(a+o)
+                else:
+                    assert tmp.level == 2
+                    ts, te = r28, r29
+                    A, B = (te**2 + te*ts+ts**2) / 3.0, 0.5 * (te + ts)
+                    a, b, c = tmp.l.d2.get(t, 0.0), tmp.l.d.get(t, 0.0), tmp.l.c
+                    val_l = a * A + b * B + c 
+                    a, b, c = tmp.u.d2.get(t, 0.0), tmp.u.d.get(t, 0.0), tmp.u.c
+                    val_u =  a * A + b * B + c 
+                    r20 = val_u - val_l
+                    approx_value = 0.5 * (val_l + val_u)
             elif isODE:
                 l, u = tmp.l, tmp.u
-                assert len(l.d) == len(u.d) == 1 # only time variable
-                l_koeffs, u_koeffs = list(l.d.values())[0], list(u.d.values())[0]
+                assert len(l.d) <= 1 and len(u.d) <= 1 # at most time variable
+                l_koeffs, u_koeffs = l.d.get(t, 0.0), u.d.get(t, 0.0)
                 l_c, u_c = l.c, u.c
 #                dT = r29 - r28 if r30[-1] > r30[0] else r28 - r29
-
                 
                 ends = oopoint([(v, asarray(val[1], dataType)) for v, val in mp.items()])
                 ends.dictOfFixedFuncs = p.dictOfFixedFuncs
                 ends_L, ends_U = tmp.values(ends)
+                
+                starts = oopoint([(v, asarray(val[0], dataType)) for v, val in mp.items()])
+                starts.dictOfFixedFuncs = p.dictOfFixedFuncs
+                starts_L, starts_U = tmp.values(starts)
 
 #                o, a = atleast_1d(r21), atleast_1d(r22)
 
                 o, a = tmp.resolve()[0]
 #                r20 = 0.5 * u_koeffs * dT  + u_c  - (0.5 * l_koeffs * dT  + l_c)
-                r20 = 0.5 * (ends_U - ends_L)
+                r20_end = 0.5 * (ends_U - ends_L)
+                r20_start = 0.5 * (starts_U - starts_L)
+                r20 = where(r20_end>r20_start, r20_end, r20_start)
+                
 #                r20 = 0.5 * u_koeffs * dT ** 2 + u_c * dT - (0.5 * l_koeffs * dT ** 2 + l_c * dT)
 #                r20 =  0.5*u_koeffs * dT  + u_c  - ( 0.5*l_koeffs * dT  + l_c)
 
@@ -103,8 +121,10 @@ def interalg_ODE_routine(p, solver):
                 assert 0
         else:
             o, a = atleast_1d(tmp.lb), atleast_1d(tmp.ub)
+            ends_L = starts_L = o
+            ends_U = starts_U = a
             r20 = a - o
-
+            approx_value = 0.5 * (a+o)
         
 #        if isODE:
 #            r36 = atleast_1d(r20 <= 0.95 * r33)
@@ -113,26 +133,37 @@ def interalg_ODE_routine(p, solver):
 #        else:
 #            r36 = atleast_1d(r20 <= 0.95 * r33 / r37)
 
-        r36 = atleast_1d(r20 <= 0.95 * r33 / r37)
-        if isODE:
+        
+        if isODE and isBoundsurf:
+            d = r37 if not isODE or not isBoundsurf else len(r28)
+            r36 = np.logical_and(
+                                atleast_1d(r20_end <= 0.95 * r33 / d), 
+                                atleast_1d(r20_start <= 0.95 * r33 / d)
+                                )
+#            r36 &= atleast_1d(r20_end <= ftol)
+#            r36 &= atleast_1d(r20_start <= ftol)
+        else:
+            r36 = atleast_1d(r20 <= 0.95 * r33 / r37)
+            
 #            r36 = np.logical_and(r36, r20 < ftol)
-            r36 = np.logical_and(r36, a-o < ftol)
+#            r36 = np.logical_and(r36, a-o < ftol)
 
         ind = where(r36)[0]
         if isODE:
             storedr28.append(r28[ind])
             r27.append(r29[ind])
-            r31.append(a[ind])
-            r32.append(o[ind])
 #            r31.append(a[ind])
 #            r32.append(o[ind])
+            r31.append(ends_U[ind])
+            r32.append(ends_L[ind])
         else:
             assert isIP
-            F += 0.5 * sum((r29[ind]-r28[ind])*(a[ind]+o[ind]))
+            #F += 0.5 * sum((r29[ind]-r28[ind])*(a[ind]+o[ind]))
+            F += sum((r29[ind]-r28[ind])*approx_value[ind])
         
         if ind.size != 0: 
             tmp = abs(r29[ind] - r28[ind])
-            Tmp = sum(r20[ind] * tmp) #if isIP else sum(r20[ind])
+            Tmp = sum(r20[ind] * tmp) if not isODE or not isBoundsurf else sum(r20[ind])
             r33 -= Tmp
             if isIP: p._residual += Tmp
             r37 -= sum(tmp)
@@ -142,15 +173,6 @@ def interalg_ODE_routine(p, solver):
             p.msg = 'problem has been solved according to required user-defined accuracy %0.1g' % ftol
             break
             
-        # OLD
-#        for i in ind:
-#            t0, t1 = r28[i], r29[i]
-#            t_m = 0.5 * (t0+t1)
-#            newr28.append(t0)
-#            newr28.append(t_m)
-#            newr29.append(t_m)
-#            newr29.append(t1)
-        # NEW
         r38, r39 = r28[ind], r29[ind]
         r40 = 0.5 * (r38 + r39)
         r28 = vstack((r38, r40)).flatten()
