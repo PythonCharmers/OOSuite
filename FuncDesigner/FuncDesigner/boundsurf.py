@@ -251,16 +251,7 @@ class boundsurf(object):#object is added for Python2 compatibility
                 if 1 and len(self.l.d) <= 1 and len(self.u.d) <= 1 \
                 and len(other.l.d) <= 1 and len(other.u.d) <= 1 and \
                 len(set.union(set(self.l.d.keys()), set(self.u.d.keys()), set(other.l.d.keys()), set(other.u.d.keys()))) == 1:
-                    k = list(set.union(set(Self.l.d.keys()), set(Self.u.d.keys()), set(Other.l.d.keys()), set(Other.u.d.keys())))[0]
-                    ld = {k: Self.l.c*Other.l.d.get(k, 0.0) + Other.l.c*Self.l.d.get(k, 0.0)}
-                    ud = {k: Self.u.c*Other.u.d.get(k, 0.0) + Other.u.c*Self.u.d.get(k, 0.0)}
-                    ld2 = {k: Other.l.d.get(k, 0.0) * Self.l.d.get(k, 0.0)}
-                    ud2 = {k: Other.u.d.get(k, 0.0) * Self.u.d.get(k, 0.0)}
-                    lc = Self.l.c * Other.l.c
-                    uc = Self.u.c * Other.u.c
-                    from boundsurf2 import surf2
-                    ls, us = surf2(ld2, ld, lc), surf2(ud2, ud, uc)
-                    r = boundsurf2(ls, us, definiteRange, domain)
+                    r = b2mult(Self, Other)
                 else:
                     r = (Self.log() + Other.log()).exp()
                     r.definiteRange = definiteRange
@@ -516,16 +507,20 @@ def aux_mul_div_boundsurf(Elems, op):
 
         tmp1 = elem.extract(not_ind_negative)
         tmp2 = -elem.extract(ind_negative)
-        Tmp = boundsurf_join((not_ind_negative, ind_negative), (tmp1, tmp2)).log()
+        Tmp = boundsurf_join((not_ind_negative, ind_negative), (tmp1, tmp2))#.log()
         
         _r.append(Tmp)
         _resolved.append(_R)
         definiteRange = logical_and(definiteRange, elem.definiteRange)
     if op == operator.mul:
-        rr = PythonSum(_r).exp()
+        if len(_r) == 2 and \
+        len(set.union(set(_r[0].l.d.keys()), set(_r[0].u.d.keys()), set(_r[1].l.d.keys()), set(_r[1].u.d.keys()))) == 1:
+            rr = b2mult(_r[0], _r[1])
+        else:
+            rr = PythonSum(elem.log() for elem in _r).exp()
     else:
         assert op == operator.truediv and len(Elems) == 2
-        rr = (_r[0] - _r[1]).exp()
+        rr = (_r[0].log() - _r[1].log()).exp()
         
     changeSign = logical_and(changeSign, logical_not(indZ))
     keepSign = logical_and(logical_not(changeSign), logical_not(indZ))
@@ -755,3 +750,16 @@ def mul_handle_nan(R, R1, R2, domain):
         R = R_Tmp_nan if all(ind) \
         else boundsurf_join((ind, logical_not(ind)), (R_Tmp_nan, R.extract(logical_not(ind))))
     return R
+
+def b2mult(Self, Other):
+    k = list(set.union(set(Self.l.d.keys()), set(Self.u.d.keys()), set(Other.l.d.keys()), set(Other.u.d.keys())))[0]
+    ld = {k: Self.l.c*Other.l.d.get(k, 0.0) + Other.l.c*Self.l.d.get(k, 0.0)}
+    ud = {k: Self.u.c*Other.u.d.get(k, 0.0) + Other.u.c*Self.u.d.get(k, 0.0)}
+    ld2 = {k: Other.l.d.get(k, 0.0) * Self.l.d.get(k, 0.0)}
+    ud2 = {k: Other.u.d.get(k, 0.0) * Self.u.d.get(k, 0.0)}
+    lc = Self.l.c * Other.l.c
+    uc = Self.u.c * Other.u.c
+    from boundsurf2 import surf2, boundsurf2
+    ls, us = surf2(ld2, ld, lc), surf2(ud2, ud, uc)
+    r = boundsurf2(ls, us, Self.definiteRange & Other.definiteRange, Self.domain)
+    return r
