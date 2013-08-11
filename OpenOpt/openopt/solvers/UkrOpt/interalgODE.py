@@ -61,7 +61,7 @@ def interalg_ODE_routine(p, solver):
         
         mp.dictOfFixedFuncs = p.dictOfFixedFuncs
         mp.surf_preference = True
-        tmp = f.interval(mp, ia_surf_level = 2)
+        tmp = f.interval(mp, ia_surf_level = 2 if isIP else 1)
         if not all(tmp.definiteRange):
             p.err('''
             solving ODE and IP by interalg is implemented for definite (real) range only, 
@@ -126,22 +126,22 @@ def interalg_ODE_routine(p, solver):
             r20 = a - o
             approx_value = 0.5 * (a+o)
         
-#        if isODE:
-#            r36 = atleast_1d(r20 <= 0.95 * r33)
-##            r36 = np.logical_and(r36, r20 < ftol)
-##            r36 = np.logical_and(r36, a-o < ftol)
+        if isODE:
+            r36 = atleast_1d(r20 <= 0.95 * r33)
+            r36 = np.logical_and(r36, r20 < ftol)
+            r36 = np.logical_and(r36, a-o < ftol)
 #        else:
 #            r36 = atleast_1d(r20 <= 0.95 * r33 / r37)
 
         
         if isODE and isBoundsurf:
-            d = r37 if not isODE or not isBoundsurf else len(r28)
+            d = r37 #if not isODE or not isBoundsurf else len(r28)
             r36 = np.logical_and(
                                 atleast_1d(r20_end <= 0.95 * r33 / d), 
                                 atleast_1d(r20_start <= 0.95 * r33 / d)
                                 )
-#            r36 &= atleast_1d(r20_end <= ftol)
-#            r36 &= atleast_1d(r20_start <= ftol)
+            r36 &= atleast_1d(r20_end <= ftol)
+            r36 &= atleast_1d(r20_start <= ftol)
         else:
             r36 = atleast_1d(r20 <= 0.95 * r33 / r37)
             
@@ -152,10 +152,10 @@ def interalg_ODE_routine(p, solver):
         if isODE:
             storedr28.append(r28[ind])
             r27.append(r29[ind])
-#            r31.append(a[ind])
-#            r32.append(o[ind])
-            r31.append(ends_U[ind])
-            r32.append(ends_L[ind])
+            r31.append(a[ind])
+            r32.append(o[ind])
+#            r31.append(ends_U[ind])
+#            r32.append(ends_L[ind])
         else:
             assert isIP
             #F += 0.5 * sum((r29[ind]-r28[ind])*(a[ind]+o[ind]))
@@ -163,7 +163,7 @@ def interalg_ODE_routine(p, solver):
         
         if ind.size != 0: 
             tmp = abs(r29[ind] - r28[ind])
-            Tmp = sum(r20[ind] * tmp) if not isODE or not isBoundsurf else sum(r20[ind])
+            Tmp = sum(r20[ind] * tmp) #if not isODE or not isBoundsurf else sum(r20[ind])
             r33 -= Tmp
             if isIP: p._residual += Tmp
             r37 -= sum(tmp)
