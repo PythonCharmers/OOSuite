@@ -229,9 +229,7 @@ class oofun(object):
             INP = self.input[0] 
             ia_surf_level = 2 #if self.engine_convexity in (-1, 1) else 1
             arg_lb_ub, definiteRange = INP._interval(domain, dtype, ia_surf_level = ia_surf_level)
-#            print type(arg_lb_ub)
         else:
-#            print('asdf')
             arg_lb_ub, definiteRange = inputData
         
 #        INP = self.input[0] 
@@ -267,17 +265,13 @@ class oofun(object):
         return Tmp, definiteRange
         
     
-    def interval(self, domain, dtype = float, resetStoredIntervals = True, allowBoundSurf = False):
+    def interval(self, domain, dtype = float, resetStoredIntervals = True, ia_surf_level = 0):
         if type(domain) != ooPoint:
             domain = ooPoint(domain)#, skipArrayCast = True)
 
         domain.resolveSchedule = {} if domain.surf_preference else self.resolveSchedule
-            
-        lb_ub, definiteRange = self._interval(domain, dtype, ia_surf_level = 1 if allowBoundSurf else 0) 
-        if type(lb_ub) == boundsurf2:
-            lb_ub = lb_ub.to_linear()
-        if allowBoundSurf == False and type(lb_ub) in (boundsurf, boundsurf2):
-            lb_ub = lb_ub.resolve()[0]
+        
+        lb_ub, definiteRange = self._interval(domain, dtype, ia_surf_level = ia_surf_level) 
         
         # TODO: MB GET RID OF IT?
         if resetStoredIntervals:
@@ -323,7 +317,7 @@ class oofun(object):
                     if v is not None and self._usedIn > 1:
                         domain.localStoredIntervals[self] = R if type(R) in (boundsurf, boundsurf2) else (R, definiteRange)
             
-            if ia_surf_level == 1 and type(R) == boundsurf2:
+            if ia_surf_level == 1 and R.level == 2:
                 R = R.to_linear()
             return R, definiteRange
 

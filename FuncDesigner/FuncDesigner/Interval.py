@@ -472,10 +472,10 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
 
     Ld2, Ud2 = getattr(arg_lb_ub.l,'d2', {}),  getattr(arg_lb_ub.u,'d2', {})
     
-    if 0 or (len(Ld2) != 0 or len(Ud2) != 0):# and convexity not in (-1, 1):
+    if (len(Ld2) != 0 or len(Ud2) != 0) and convexity not in (-1, 1):
         arg_lb_ub = arg_lb_ub.to_linear()
         Ld2, Ud2 = {}, {}
-        
+
     L, U, domain, definiteRange = arg_lb_ub.l, arg_lb_ub.u, arg_lb_ub.domain, arg_lb_ub.definiteRange
     Ld, Ud = L.d, U.d
 
@@ -569,7 +569,7 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
             if len(U2_dict) == 0:
                 L_new = surf(d_new, 0.0)
             else:
-                d2_new = dict((v, tmp2 * val) for v, val in U2_dict.items())
+                d2_new = dict((v, koeffs * val) for v, val in U2_dict.items())
                 L_new = surf2(d2_new, d_new, 0.0)
 
             L_new.c = new_l_resolved -  L_new.minimum(domain, domain_ind)
@@ -600,7 +600,7 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
             if len(U2_dict) == 0:
                 U_new = surf(d_new, 0.0)
             else:
-                d2_new = dict((v, tmp2 * val) for v, val in U2_dict.items())
+                d2_new = dict((v, koeffs * val) for v, val in U2_dict.items())
                 U_new = surf2(d2_new, d_new, 0.0)
 
             U_new.c = new_u_resolved - U_new.maximum(domain, domain_ind)

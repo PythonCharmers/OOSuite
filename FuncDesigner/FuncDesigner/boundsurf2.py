@@ -203,6 +203,7 @@ class surf2(surf):
     __rmul__ = __mul__
     
 class boundsurf2(boundsurf):
+    level = 2
 #    def __init__(self, lowersurf, uppersurf, definiteRange, domain):
 #        self.l = lowersurf
 #        self.u = uppersurf

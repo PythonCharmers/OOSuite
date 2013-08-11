@@ -108,6 +108,7 @@ class surf(object):
 class boundsurf(object):#object is added for Python2 compatibility
     __array_priority__ = 15
     isRendered = False
+    level = 1
     def __init__(self, lowersurf, uppersurf, definiteRange, domain):
         self.l = lowersurf
         self.u = uppersurf
@@ -129,27 +130,7 @@ class boundsurf(object):#object is added for Python2 compatibility
         definiteRange = self.definiteRange if type(self.definiteRange) == bool \
         or self.definiteRange.size == 1 else self.definiteRange[ind]
         return boundsurf(self.l.extract(Ind), self.u.extract(Ind), definiteRange, self.domain)
-#    def split(self, condition1, condition2):
-#        inds = (
-#                where(condition1)[0], 
-#                where(logical_and(condition2, logical_not(condition1)))[0], 
-#                where(logical_and(logical_not(condition1), logical_not(condition2)))[0]
-#                )
-#
-#        L = self.l.split(inds)
-#        U = self.u.split(inds) if self.l is not self.u else L
-#        
-#        definiteRange = self.definiteRange
-#        DefiniteRange = [definiteRange] * len(inds) if type(definiteRange) == bool or definiteRange.size == 1 \
-#        else [definiteRange[ind] for ind in inds]
-#        
-#        return inds, [boundsurf(L[i], U[i], DefiniteRange[i], self.domain) if ind.size else None for i, ind in enumerate(inds)]
-    
-#    def resolve(self, ind = slice(None)):
-#        r = np.vstack((self.l.minimum(self.domain, ind), self.u.maximum(self.domain, ind)))
-#        assert r.shape[0] == 2, 'bug in FD kernel'
-#        return r, (self.definiteRange if type(self.definiteRange) == bool or self.definiteRange.size == 1 \
-#                   else self.definiteRange[ind])
+
     def resolve(self):
         r = np.vstack((self.l.minimum(self.domain), self.u.maximum(self.domain)))
         assert r.shape[0] == 2, 'bug in FD kernel'
