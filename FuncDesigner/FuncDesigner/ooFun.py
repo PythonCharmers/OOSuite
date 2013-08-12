@@ -271,7 +271,11 @@ class oofun(object):
 
         domain.resolveSchedule = {} if domain.surf_preference else self.resolveSchedule
         
-        lb_ub, definiteRange = self._interval(domain, dtype, ia_surf_level = ia_surf_level) 
+        lb_ub, definiteRange = self._interval(domain, dtype, ia_surf_level = 2) 
+        if ia_surf_level == 0 and type(lb_ub) in (boundsurf, boundsurf2):
+            lb_ub = lb_ub.resolve()[0]
+        if ia_surf_level == 1 and type(lb_ub) == boundsurf2:
+            lb_ub = lb_ub.to_linear()
         
         # TODO: MB GET RID OF IT?
         if resetStoredIntervals:
