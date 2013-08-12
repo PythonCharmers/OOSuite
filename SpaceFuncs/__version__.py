@@ -1,2 +1,2 @@
 # created by Dmitrey
-__version__ = '0.503'
+__version__ = '0.504'
