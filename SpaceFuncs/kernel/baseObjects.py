@@ -59,6 +59,9 @@ class Point(ooarray, baseGeometryObject):
     __rmul__ = __mul__ = lambda self, other: Point(ooarray.__mul__(self, other))
     __div__ = lambda self, other: Point(ooarray.__div__(self, other))
     __rdiv__ = lambda self, other: Point(ooarray.__div__(other, self))
+
+    def __str__(self):
+        return str(self.view(ndarray).flatten())
     
     def distance(self, *args, **kw):
         assert len(kw) == 0 and len(args) == 1
