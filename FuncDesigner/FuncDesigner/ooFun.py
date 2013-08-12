@@ -308,21 +308,21 @@ class oofun(object):
             if v is not None and self._usedIn > 1:
                 domain.localStoredIntervals[self] = r
         if type(r[0]) in (boundsurf, boundsurf2): 
-            if ia_surf_level == 0:
-                return r[0].resolve()
-
             R, definiteRange = r
             if newComputation:
                 Tmp = domain.resolveSchedule.get(self, ())
-                if len(Tmp):# and not domain.surf_preference:
+                if len(Tmp):
                     R = R.exclude(Tmp)
                     if domain.useSave:
                         domain.storedIntervals[self] = R if type(R) in (boundsurf, boundsurf2) else (R, definiteRange)
                     if v is not None and self._usedIn > 1:
                         domain.localStoredIntervals[self] = R if type(R) in (boundsurf, boundsurf2) else (R, definiteRange)
             
-            if ia_surf_level == 1 and R.level == 2:
-                R = R.to_linear()
+            if type(R) in (boundsurf, boundsurf2):
+                if ia_surf_level == 1 and R.level == 2:
+                    R = R.to_linear()
+                elif ia_surf_level == 0:
+                    R = R.resolve()[0]
             return R, definiteRange
 
         return r            
