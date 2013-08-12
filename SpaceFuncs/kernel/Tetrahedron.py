@@ -2,9 +2,9 @@
 #from numpy import array, asscalar, isscalar, ndarray
 from FuncDesigner import dot, cross, sum, det3, norm #, sqrt, sum, oofun, ooarray, anglet  #, stack
 #from BaseObjects import Point, Line, Circle
-from baseObjects import Sphere
+from .baseObjects import Sphere
 #from misc import SpaceFuncsException
-from Polyhedron import Polyhedron
+from .Polyhedron import Polyhedron
 
 table = {
          'S': 'square', 

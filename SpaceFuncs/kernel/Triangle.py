@@ -1,9 +1,8 @@
 # created by Dmitrey
-from numpy import array, asscalar, isscalar, ndarray
-from FuncDesigner import sqrt, sum, oofun, ooarray, angle  #, stack
-from baseObjects import Point, Line, Circle
-from misc import SpaceFuncsException
-from Polygon import Polygon
+from FuncDesigner import sqrt, sum, ooarray, angle  #, stack
+from .baseObjects import Line, Circle
+#from misc import SpaceFuncsException
+from .Polygon import Polygon
 
 table = {
          'r': 'inscribedCircleRadius', 
@@ -37,8 +36,13 @@ class Triangle(Polygon):
                                     (self.vertices[0]-self.vertices[2], self.vertices[1]-self.vertices[2]))])
     
     _area = lambda self: Polygon._area(self) if self._spaceDimension() is 2 else self._areaViaGeron() 
+    #_area = lambda self: Polygon._area(self) if self._spaceDimension() is 2 else self._areaViaHeightSideMult() 
     
     _areaViaGeron = lambda self: sqrt(self.p * (self.p - self.sides[0]) * (self.p - self.sides[1]) * (self.p - self.sides[2]), attachConstraints = False)
+    
+    def _areaViaHeightSideMult(self):
+        proj = self.vertices[0].projection(Line(self.vertices[1], self.vertices[2]))
+        return 0.5 * proj.distance(self.vertices[0]) * self.vertices[1].distance(self.vertices[2])
    
     _circumCircleRadius = lambda self: (self.sides[0] * self.sides[1] * self.sides[2]) / (4*self.S)
     

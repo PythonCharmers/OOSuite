@@ -1,5 +1,5 @@
-from baseGeometryObject import baseGeometryObject
-from baseObjects import Point
+from .baseGeometryObject import baseGeometryObject
+from .baseObjects import Point
 from numpy import ndarray
 from FuncDesigner import ooarray, sum
 

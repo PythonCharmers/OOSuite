@@ -2,8 +2,8 @@
 from numpy import all, ndarray, array, asscalar, asarray, pi, sin, cos
 #import numpy as np
 from FuncDesigner import  ooarray, dot, sum, sqrt, cross, norm, oofun
-from misc import SpaceFuncsException, pWarn, SF_error
-from baseGeometryObject import baseGeometryObject
+from .misc import SpaceFuncsException, pWarn, SF_error
+from .baseGeometryObject import baseGeometryObject
 
 pylabInstalled = False
 try:

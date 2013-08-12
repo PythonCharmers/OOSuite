@@ -1,4 +1,4 @@
-from misc import SpaceFuncsException
+from .misc import SpaceFuncsException
 class baseGeometryObject:
     _AttributesDict = {'spaceDimension': '_spaceDimension'}
     

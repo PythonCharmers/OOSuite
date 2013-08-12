@@ -1,7 +1,7 @@
-from Polytope import Polytope
+from .Polytope import Polytope
 from FuncDesigner import ooarray, sqrt, angle, abs, sum
 from numpy import arange, isscalar
-from misc import SpaceFuncsException
+from .misc import SpaceFuncsException
 
 pylabInstalled = False
 try:

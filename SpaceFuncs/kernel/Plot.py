@@ -1,5 +1,5 @@
 # created by DmitreyPlot.py
-from misc import SpaceFuncsException
+from .misc import SpaceFuncsException
 pylabInstalled = False
 try:
     import pylab
