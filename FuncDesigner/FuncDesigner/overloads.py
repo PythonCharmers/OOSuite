@@ -4,7 +4,7 @@ PythonAny = any
 from ooFun import oofun
 import numpy as np
 from FDmisc import FuncDesignerException, Diag, Eye, raise_except, diagonal, DiagonalType, dictSum
-from ooFun import atleast_oofun, Vstack, Copy
+from ooFun import atleast_oofun, Vstack, Copy, oofun
 from ooarray import ooarray
 from Interval import nonnegative_interval, ZeroCriticalPointsInterval, \
 box_1_interval, defaultIntervalEngine
@@ -1004,7 +1004,7 @@ def norm(*args, **kwargs):
     if len(kwargs) or len(args) > 1:
         return np.linalg.norm(*args, **kwargs)
     r = sqrt(sum(args[0]**2),  attachConstraints=False)
-    if len(kwargs) == 0 and (len(args) == 1 or args[1] == 2):
+    if isinstance(r, oofun) and len(kwargs) == 0 and (len(args) == 1 or args[1] == 2):
         r.engine = 'norm2'
         r._norm_arg = args[0]#used in SOCP
     return r
