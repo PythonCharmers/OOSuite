@@ -160,6 +160,9 @@ class nonLinFuncs:
                     X.update(p.dictOfFixedFuncs)
                     X.maxDistributionSize = p.maxDistributionSize
                     X._p = p
+                    if x.ndim > 1:
+                        X.isMultiPoint = True
+                        X.N = nXvectors
                 if len(p.unvectorizableFuncs) != 0:
                     XX = [p._vector2point(x[i]) for i in range(nXvectors)]
                     for _X in XX: 
