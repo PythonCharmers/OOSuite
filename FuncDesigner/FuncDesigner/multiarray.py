@@ -42,6 +42,8 @@ class multiarray(MultiArray):
     __pow__ = lambda self, other: multiarray_op(self, other, o.pow)
     __rpow__ = lambda self, other: multiarray_op(other, self, o.pow)
     
+    __str__ = lambda self: str(self.view(ndarray))
+    
     def __getitem__(self, ind): 
 #        if self.ndim <= 1:
 #            if ind is 0:
