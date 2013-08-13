@@ -1,5 +1,7 @@
 # created by Dmitrey
 PythonSum = sum
+PythonAny = any
+PythonMax = max
 from numpy import inf, asfarray, copy, all, any, atleast_2d, zeros, dot, asarray, atleast_1d, \
 ones, ndarray, where, array, nan, vstack, eye, array_equal, isscalar, log, hstack, sum as npSum, prod, nonzero,\
 isnan, asscalar, zeros_like, ones_like, logical_and, logical_or, isinf, logical_not, logical_xor, \
@@ -1177,7 +1179,7 @@ class oofun(object):
         Input = self._getInput(*args, **kwargs) 
         
 #        if not isinstance(x, ooPoint) or not x.isMultiPoint or (self.vectorized and not any([isinstance(inp, Stochastic) for inp in Input])):
-        if not isinstance(x, ooPoint) or not x.isMultiPoint or self.vectorized:
+        if not PythonAny(isinstance(inp, multiarray) for inp in Input) or self.vectorized:
             if self.args != ():
                 Input += self.args
             Tmp = self.fun(*Input)
@@ -1190,19 +1192,17 @@ class oofun(object):
                 N = x.N
             else:
                 # TODO: fix it for x.values() is Stochastic
-                N = 1
-                for inp in Input:
-                    if not isinstance(inp,  Stochastic):
-                        N = inp.size if type(inp) == ndarray else 1
-                        break
-            inputs = zip(*[(atleast_1d(inp) if not isinstance(inp, Stochastic) and type(inp) == ndarray and inp.size == N else [inp]*N) for inp in Input])
+                N = PythonMax([1] + [inp.size for inp in Input if type(inp) == ndarray])
+
+            Temp = [inp.flatten().tolist() if isinstance(inp, multiarray) else [inp]*N for inp in Input]
+            inputs = zip(*Temp)
             
             # Check it!
             Tmp = [self.fun(*inp) if self.args == () else self.fun(*(inp + self.args)) for inp in inputs]
-            if N == 1:
+            if len(Tmp) == 1:
                 tmp = Tmp[0]
             else:
-                tmp = array([elem for elem in Tmp], object).view(multiarray)
+                tmp = array([elem for elem in Tmp]).view(multiarray)
         
         #if self._c != 0.0: tmp += self._c
         
