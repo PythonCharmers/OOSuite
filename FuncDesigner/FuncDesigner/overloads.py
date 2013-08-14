@@ -475,7 +475,7 @@ def exp_interval(r, inp, domain, dtype):
     #!!!!! Temporary !!!!
 
     r1, definiteRange = oofun._interval_(r, domain, dtype)
-    if type(lb_ub) == np.ndarray or len(lb_ub.l.d) > 1 or len(lb_ub.u.d) > 1 or len(lb_ub.dep) != 1:
+    if 1 or type(lb_ub) == np.ndarray or len(lb_ub.l.d) > 1 or len(lb_ub.u.d) > 1 or len(lb_ub.dep) != 1:
         return r1, definiteRange
             
     if type(lb_ub) == boundsurf2:
@@ -525,6 +525,7 @@ def exp_interval(r, inp, domain, dtype):
         ind1, ind2 = ind, np.logical_not(ind)
         b1, b2 = r1.extract(ind1), r2.extract(ind2)
         R = boundsurf_join((ind1, ind2), (b1, b2))
+    R = r2
     return R, definiteRange
 
 def exp(inp):
