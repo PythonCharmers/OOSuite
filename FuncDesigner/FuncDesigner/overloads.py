@@ -1,7 +1,6 @@
 PythonSum = sum
 PythonMax = max
 PythonAny = any
-from ooFun import oofun
 import numpy as np
 from FDmisc import FuncDesignerException, Diag, Eye, raise_except, diagonal, DiagonalType, dictSum
 from ooFun import atleast_oofun, Vstack, Copy, oofun
@@ -11,10 +10,7 @@ box_1_interval, defaultIntervalEngine
 from numpy import atleast_1d, logical_and
 from FuncDesigner.multiarray import multiarray
 from boundsurf import boundsurf, surf, devided_interval, boundsurf_join, split#, direct_split
-try:
-    from boundsurf2 import boundsurf2, surf2
-except ImportError:
-    boundsurf2 = boundsurf
+from boundsurf2 import boundsurf2, surf2
     
 try:
     from scipy.sparse import isspmatrix, lil_matrix as Zeros
@@ -446,14 +442,94 @@ else np.exp(x))\
 if hasStochastic\
 else np.exp
 
+def get_exp_b2_coeffs(l, u, dl, du, c_l, c_u):
+    L2, U2 = dl * l + c_l, du * u + c_u
+    ind = L2<U2#)[0]
+    l2 = np.where(ind, L2, U2)
+    u2 = np.where(ind, U2, L2)
+    l, u = np.where(ind, l, u), np.where(ind, u, l)
+
+    ind_z =  u2 == l2
+    
+    inv_ul2 =  (u-l) ** -2.0
+    exp_u, exp_l = exp(u), exp(l)
+    exp_u2, exp_l2 = exp(u2), exp(l2)
+
+    a = dl**2 * exp_l2 * 0.5 
+    b = dl * exp_l2 * (1.0 - dl * l)
+    a[ind_z] = b[ind_z] = 0.0
+    c = exp_l2 - (a * l + b) * l
+    koeffs_l = (a, b, c)
+    
+    a = (exp_u2 - exp_l2 + (l-u) * dl * exp_l2) * inv_ul2
+    b = dl * exp_l2 - 2 * a * l
+    a[ind_z] = b[ind_z] = 0.0
+    c = exp_u2 - (a * u + b) * u
+    koeffs_u = (a, b, c)
+    
+    return koeffs_l, koeffs_u
+    
+def exp_interval(r, inp, domain, dtype):
+    lb_ub, definiteRange = inp._interval(domain, dtype, ia_surf_level = 2)
+    
+    
+    #!!!!! Temporary !!!!
+
+    # boundsurf2 or ndarray
+    
+    # TODO:
+#    if type(lb_ub) == boundsurf2:
+#        lb_ub = lb_ub.to_linear()
+        
+    if 0 or type(lb_ub) == np.ndarray or type(lb_ub) != boundsurf \
+    or len(lb_ub.l.d) > 1 or len(lb_ub.u.d) > 1 or len(set.union(set(lb_ub.l.d.keys()), set(lb_ub.u.d.keys()))) != 1:
+        r1, definiteRange = oofun._interval_(r, domain, dtype)
+        return r1, definiteRange
+        
+    k = list(set.union(set(lb_ub.l.d.keys()), set(lb_ub.u.d.keys())))[0]
+    l, u = domain[k]
+    d_l, d_u = lb_ub.l.d[k], lb_ub.u.d[k]
+    c_l, c_u = lb_ub.l.c, lb_ub.u.c 
+    
+    koeffs_l, koeffs_u = get_exp_b2_coeffs(l, u, d_l, d_u, c_l, c_u)
+    
+    # L
+    a, b, c = koeffs_l
+    L = surf2({k:a}, {k:b}, c)
+#    D, C = lb_ub.l.d[k], lb_ub.l.c
+#    A, B, C = a * D**2, (2*a*C + b) * D, (a * C + b) * C + c
+#    L = surf2({k:A}, {k:B}, C)
+    
+    
+    # U
+    a, b, c = koeffs_u
+    U = surf2({k:a}, {k:b}, c)
+#    from numpy import linspace
+#    x = linspace(l, u, 1000)
+#    import pylab
+#    pylab.plot(x, exp(d_l*x+c_l), 'b')
+#    pylab.plot(x, koeffs_l[0]*x**2+koeffs_l[1]*x+koeffs_l[2], 'r')
+#    pylab.plot(x, koeffs_u[0]*x**2+koeffs_u[1]*x+koeffs_u[2], 'k')
+#    pylab.show()
+#    pass
+    
+#    D, C = lb_ub.u.d[k], lb_ub.u.c
+#    A, B, C = a * D**2, (2*a*C + b) * D, (a * C + b) * C + c
+#    U = surf2({k:A}, {k:B}, C)
+#    U = surf2({k:0}, r1.u.d, r1.u.c)
+    
+    return boundsurf2(L, U, definiteRange, domain), definiteRange
+
 def exp(inp):
     if isinstance(inp, ooarray):
         return ooarray([exp(elem) for elem in inp])         
     if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(exp(inp.values), inp.probabilities.copy())._update(inp)      
     if not isinstance(inp, oofun): return np.exp(inp)
-    return oofun(st_exp, inp, d = lambda x: Diag(np.exp(x)), vectorized = True, 
+    r = oofun(st_exp, inp, d = lambda x: Diag(np.exp(x)), vectorized = True, 
     engine_convexity = 1, engine_monotonity = 1)
+    r._interval_ = lambda domain, dtype: exp_interval(r, inp, domain, dtype)
+    return r
 
 st_sqrt = (lambda x: \
 distribution.stochasticDistribution(sqrt(x.values), x.probabilities.copy())._update(x) \
