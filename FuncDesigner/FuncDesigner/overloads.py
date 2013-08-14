@@ -445,16 +445,16 @@ else np.exp
 def get_exp_b2_coeffs(ll, uu, dll, duu, c_l, c_u):
     ind_z =  uu == ll
     
-    L2, U2 = dll * ll + c_l, dll * uu + c_l
-    ind = L2<U2#)[0]
-    l2, u2 = np.where(ind, L2, U2), np.where(ind, U2, L2)
-    l, u = np.where(ind, ll, uu), np.where(ind, uu, ll)
-    dl, du = np.where(ind, dll, duu), np.where(ind, duu, dll)
+    #L
+    #L2, U2 = dll * ll + c_l, dll * uu + c_l
+    #ind = L2<U2
+    #l2 = np.where(ind, L2, U2)
+    ind = dll > 0
     
-
-    inv_ul2 =  (u-l) ** -2.0
-    exp_u, exp_l = exp(u), exp(l)
-    exp_u2, exp_l2 = exp(u2), exp(l2)
+    l = np.where(ind, ll, uu)
+    l2 = l * dll + c_l
+    dl = np.where(ind, dll, duu)
+    exp_l2 = exp(l2)
 
     a = dl**2 * exp_l2 * 0.5 
     b = dl * exp_l2 * (1.0 - dl * l)
@@ -464,17 +464,16 @@ def get_exp_b2_coeffs(ll, uu, dll, duu, c_l, c_u):
     
     
     #U
-    L2, U2 = duu * ll + c_u, duu * uu + c_u
-    ind = L2<U2#)[0]
-    l2, u2 = np.where(ind, L2, U2), np.where(ind, U2, L2)
+#    L2, U2 = duu * ll + c_u, duu * uu + c_u
+#    ind = L2<U2
+#    l2, u2 = np.where(ind, L2, U2), np.where(ind, U2, L2)
+    ind = duu > 0
     l, u = np.where(ind, ll, uu), np.where(ind, uu, ll)
-    dl, du = np.where(ind, dll, duu), np.where(ind, duu, dll)
-    
-    inv_ul2 =  (u-l) ** -2.0
-    exp_u, exp_l = exp(u), exp(l)
+    l2, u2 = l * duu + c_u, u * duu + c_u
+    dl = np.where(ind, dll, duu)
     exp_u2, exp_l2 = exp(u2), exp(l2)
     
-    a = (exp_u2 - exp_l2 + (l-u) * dl * exp_l2) * inv_ul2
+    a = (exp_u2 - exp_l2 + (l-u) * dl * exp_l2) * (u-l) ** -2.0
     b = dl * exp_l2 - 2 * a * l
     a[ind_z] = b[ind_z] = 0.0
     c = exp_u2 - (a * u + b) * u
@@ -539,7 +538,7 @@ def exp_interval(r, inp, domain, dtype):
         ind1, ind2 = ind, np.logical_not(ind)
         b1, b2 = r1.extract(ind1), r2.extract(ind2)
         R = boundsurf_join((ind1, ind2), (b1, b2))
-#    R = r1
+#    R = r2
     return R, definiteRange
 
 def exp(inp):
