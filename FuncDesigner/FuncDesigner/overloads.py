@@ -442,15 +442,16 @@ else np.exp(x))\
 if hasStochastic\
 else np.exp
 
-def get_exp_b2_coeffs(l, u, dl, du, c_l, c_u):
-    L2, U2 = dl * l + c_l, du * u + c_u
-    ind = L2<U2#)[0]
-    l2 = np.where(ind, L2, U2)
-    u2 = np.where(ind, U2, L2)
-    l, u = np.where(ind, l, u), np.where(ind, u, l)
-
-    ind_z =  u2 == l2
+def get_exp_b2_coeffs(ll, uu, dll, duu, c_l, c_u):
+    ind_z =  uu == ll
     
+    L2, U2 = dll * ll + c_l, dll * uu + c_l
+    ind = L2<U2#)[0]
+    l2, u2 = np.where(ind, L2, U2), np.where(ind, U2, L2)
+    l, u = np.where(ind, ll, uu), np.where(ind, uu, ll)
+    dl, du = np.where(ind, dll, duu), np.where(ind, duu, dll)
+    
+
     inv_ul2 =  (u-l) ** -2.0
     exp_u, exp_l = exp(u), exp(l)
     exp_u2, exp_l2 = exp(u2), exp(l2)
@@ -460,6 +461,18 @@ def get_exp_b2_coeffs(l, u, dl, du, c_l, c_u):
     a[ind_z] = b[ind_z] = 0.0
     c = exp_l2 - (a * l + b) * l
     koeffs_l = (a, b, c)
+    
+    
+    #U
+    L2, U2 = duu * ll + c_u, duu * uu + c_u
+    ind = L2<U2#)[0]
+    l2, u2 = np.where(ind, L2, U2), np.where(ind, U2, L2)
+    l, u = np.where(ind, ll, uu), np.where(ind, uu, ll)
+    dl, du = np.where(ind, dll, duu), np.where(ind, duu, dll)
+    
+    inv_ul2 =  (u-l) ** -2.0
+    exp_u, exp_l = exp(u), exp(l)
+    exp_u2, exp_l2 = exp(u2), exp(l2)
     
     a = (exp_u2 - exp_l2 + (l-u) * dl * exp_l2) * inv_ul2
     b = dl * exp_l2 - 2 * a * l
@@ -475,7 +488,7 @@ def exp_interval(r, inp, domain, dtype):
     #!!!!! Temporary !!!!
 
     r1, definiteRange = oofun._interval_(r, domain, dtype)
-    if 1 or type(lb_ub) == np.ndarray or len(lb_ub.l.d) > 1 or len(lb_ub.u.d) > 1 or len(lb_ub.dep) != 1:
+    if 0 or type(lb_ub) == np.ndarray or len(lb_ub.l.d) > 1 or len(lb_ub.u.d) > 1 or len(lb_ub.dep) != 1:
         return r1, definiteRange
             
     if type(lb_ub) == boundsurf2:
@@ -503,6 +516,7 @@ def exp_interval(r, inp, domain, dtype):
 #    x = linspace(l, u, 1000)
 #    import pylab
 #    pylab.plot(x, exp(d_l*x+c_l), 'b')
+#    pylab.plot(x, exp(d_u*x+c_u), 'g')
 #    pylab.plot(x, koeffs_l[0]*x**2+koeffs_l[1]*x+koeffs_l[2], 'r')
 #    pylab.plot(x, koeffs_u[0]*x**2+koeffs_u[1]*x+koeffs_u[2], 'k')
 #    pylab.show()
@@ -525,7 +539,7 @@ def exp_interval(r, inp, domain, dtype):
         ind1, ind2 = ind, np.logical_not(ind)
         b1, b2 = r1.extract(ind1), r2.extract(ind2)
         R = boundsurf_join((ind1, ind2), (b1, b2))
-    R = r2
+#    R = r1
     return R, definiteRange
 
 def exp(inp):
