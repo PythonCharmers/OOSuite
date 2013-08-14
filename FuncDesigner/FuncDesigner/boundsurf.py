@@ -117,6 +117,24 @@ class boundsurf(object):#object is added for Python2 compatibility
         
     Size = lambda self: max((len(self.l.d), len(self.u.d), 1))
     
+    def _dep(self):
+        r = set.union(set(self.l.d.keys()), set(self.u.d.keys()))
+        tmp = getattr(self.l, 'd2', None)
+        if tmp is not None:
+            r |= set(tmp.keys())
+        tmp = getattr(self.u, 'd2', None)
+        if tmp is not None:
+            r |= set(tmp.keys())
+        return r
+    
+    def __getattr__(self, attr):
+        if attr == 'dep':
+            self.dep =self._dep()
+            return self.dep # dependence oovars
+        else:
+            raise AttributeError('incorrect attribute %s for boundsurf / boundsurf2 instance' % attr)
+            
+    
     def exclude(self, oovars):
         L = self.l.exclude(self.domain, oovars, Greater)
         U = self.u.exclude(self.domain, oovars, Less)
@@ -375,7 +393,9 @@ def boundsurf_join(inds, B):
     definiteRange = True \
     if PythonAll(np.array_equiv(True, b.definiteRange) for b in B)\
     else Join(inds, [np.asarray(b.definiteRange) for b in B])
-    return boundsurf(L, U, definiteRange, B[0].domain)
+    from boundsurf2 import boundsurf2
+    b = boundsurf if type(L) == type(U) == surf else boundsurf2
+    return b(L, U, definiteRange, B[0].domain)
 
 #split = lambda condition1, condition2: \
 #    (

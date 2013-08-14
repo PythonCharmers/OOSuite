@@ -472,21 +472,16 @@ def get_exp_b2_coeffs(l, u, dl, du, c_l, c_u):
 def exp_interval(r, inp, domain, dtype):
     lb_ub, definiteRange = inp._interval(domain, dtype, ia_surf_level = 2)
     
-    
     #!!!!! Temporary !!!!
 
-    # boundsurf2 or ndarray
-    
-    # TODO:
-#    if type(lb_ub) == boundsurf2:
-#        lb_ub = lb_ub.to_linear()
-        
-    if 0 or type(lb_ub) == np.ndarray or type(lb_ub) != boundsurf \
-    or len(lb_ub.l.d) > 1 or len(lb_ub.u.d) > 1 or len(set.union(set(lb_ub.l.d.keys()), set(lb_ub.u.d.keys()))) != 1:
-        r1, definiteRange = oofun._interval_(r, domain, dtype)
+    r1, definiteRange = oofun._interval_(r, domain, dtype)
+    if type(lb_ub) == np.ndarray or len(lb_ub.l.d) > 1 or len(lb_ub.u.d) > 1 or len(lb_ub.dep) != 1:
         return r1, definiteRange
+            
+    if type(lb_ub) == boundsurf2:
+        lb_ub = lb_ub.to_linear()
         
-    k = list(set.union(set(lb_ub.l.d.keys()), set(lb_ub.u.d.keys())))[0]
+    k = list(lb_ub.dep)[0]
     l, u = domain[k]
     d_l, d_u = lb_ub.l.d[k], lb_ub.u.d[k]
     c_l, c_u = lb_ub.l.c, lb_ub.u.c 
@@ -499,7 +494,7 @@ def exp_interval(r, inp, domain, dtype):
 #    D, C = lb_ub.l.d[k], lb_ub.l.c
 #    A, B, C = a * D**2, (2*a*C + b) * D, (a * C + b) * C + c
 #    L = surf2({k:A}, {k:B}, C)
-    
+
     
     # U
     a, b, c = koeffs_u
@@ -518,7 +513,19 @@ def exp_interval(r, inp, domain, dtype):
 #    U = surf2({k:A}, {k:B}, C)
 #    U = surf2({k:0}, r1.u.d, r1.u.c)
     
-    return boundsurf2(L, U, definiteRange, domain), definiteRange
+    r2 = boundsurf2(L, U, definiteRange, domain)
+    
+    R1, R2 = r1.resolve()[0], r2.resolve()[0]
+    ind = R1[1]-R1[0] < R2[1]-R2[0]
+    if np.all(ind):
+        R = r1
+    elif not np.any(ind):
+        R = r2
+    else:
+        ind1, ind2 = ind, np.logical_not(ind)
+        b1, b2 = r1.extract(ind1), r2.extract(ind2)
+        R = boundsurf_join((ind1, ind2), (b1, b2))
+    return R, definiteRange
 
 def exp(inp):
     if isinstance(inp, ooarray):

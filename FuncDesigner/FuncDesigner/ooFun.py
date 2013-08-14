@@ -148,6 +148,9 @@ class oofun(object):
                 return 1
             else:
                 raise AttributeError('using len(oofun) is not possible yet, try using oofun.size instead')
+        elif attr == 'dep':
+            self.dep = self._getDep()
+            return self.dep # dependence oovars
         elif attr == 'isUncycled':
             self._getDep()
             return self.isUncycled
