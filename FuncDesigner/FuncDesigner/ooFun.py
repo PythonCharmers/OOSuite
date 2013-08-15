@@ -26,8 +26,8 @@ raise_except, DiagonalType, isPyPy, formResolveSchedule
 from ooPoint import ooPoint
 from FuncDesigner.multiarray import multiarray
 from Interval import Interval, adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain, mul_interval,\
-pow_const_interval, pow_oofun_interval, div_interval, rdiv_interval, add_interval, add_const_interval, \
-neg_interval, defaultIntervalEngine
+pow_const_interval, pow_oofun_interval, div_interval, add_interval, add_const_interval, \
+neg_interval, defaultIntervalEngine#, rdiv_interval
 #import inspect
 from baseClasses import OOArray, Stochastic
 
@@ -649,8 +649,10 @@ class oofun(object):
         r.d = lambda x: Diag(operator.truediv(- other, x**2))
         r.monotonities = (-1, -1)
         r.convexities = (-1, 1)
-
-        r._interval_ = lambda *args, **kw: rdiv_interval(self, r, other, *args, **kw)
+        
+        aux_inteval_oofun = other * self**-1
+        r._interval_ = aux_inteval_oofun._interval_
+        #r._interval_ = lambda *args, **kw: rdiv_interval(self, r, other, *args, **kw)
         #r.isCostly = True
         def getOrder(*args, **kwargs):
             order = self.getOrder(*args, **kwargs)

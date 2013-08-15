@@ -1,5 +1,5 @@
 from numpy import ndarray, asscalar, isscalar, inf, nan, searchsorted, logical_not, \
-copy as Copy, logical_and, where, asarray, any, all, atleast_1d, vstack
+copy as Copy, logical_and, where, asarray, any, all, atleast_1d, vstack, logical_or, isfinite, array
 
 import numpy as np
 from FDmisc import FuncDesignerException, update_mul_inf_zero, update_negative_int_pow_inf_zero, \
@@ -316,10 +316,71 @@ def div_interval(self, other, domain, dtype):
     update_div_zero(lb1, ub1, lb2, ub2, r)
     return r, definiteRange
 
-def rdiv_interval(self, r, other, domain, dtype):
 
-    Tmp, definiteRange = pow_const_interval(self, r, -1, domain, dtype)
-    return other * Tmp, definiteRange
+def get_inv_b2_coeffs(ll, uu, dll, duu, c_l, c_u):
+    ind_z =  uu == ll
+    
+    #L
+    #L2, U2 = dll * ll + c_l, dll * uu + c_l
+    #ind = L2<U2
+    #l2 = np.where(ind, L2, U2)
+    ind = dll < 0
+    
+    l = np.where(ind, ll, uu)
+    l2 = l * dll + c_l
+    dl = np.where(ind, dll, duu)
+    #exp_l2 = exp(l2)
+
+    a = dl**2 * l2**-3  
+    b = -(2*dl**2+dl) * l2**-2
+    a[ind_z] = b[ind_z] = 0.0
+    ind_z2 = logical_or(logical_not(isfinite(a)), logical_not(isfinite(b)))
+    a[ind_z2] = b[ind_z2] = 0.0
+    c = 1.0/l2 - (a * l + b) * l
+#    print a, b, c
+#    a, b, c = 0, 0, 0
+    koeffs_l = array((a, b, c))
+    
+    
+    #U
+#    L2, U2 = duu * ll + c_u, duu * uu + c_u
+#    ind = L2<U2
+#    l2, u2 = np.where(ind, L2, U2), np.where(ind, U2, L2)
+    ind = duu > 0
+    l, u = np.where(ind, ll, uu), np.where(ind, uu, ll)
+    l2, u2 = l * duu + c_u, u * duu + c_u
+    dl = np.where(ind, dll, duu)
+#    dl = np.where(ind, duu, dll)
+    inv_u2, inv_l2 = 1.0/u2, 1.0/l2
+    
+#    a = (inv_u2 - inv_l2 + (l-u) * dl * inv_l2) * (u-l) ** -2.0
+#    b = dl * inv_l2 - 2 * a * l
+    u2_2 = u2 ** 2
+    a = (1.0/l2  - 1.0/u2 + dl*(l-u)/u2_2) / (u-l)**2
+    b = -dl/u2_2 - 2*a*u
+    a[ind_z] = b[ind_z] = 0.0
+    ind_z2 = logical_or(logical_not(isfinite(a)), logical_not(isfinite(b)))
+    a[ind_z2] = b[ind_z2] = 0.0
+    c = inv_u2 - (a * u + b) * u
+    
+#    from numpy.linalg import solve
+#    from numpy import array, vstack
+#    a, b, c = solve(vstack([[2*u, 1, 0], [l**2, l, 1], [u**2, u, 1]]), array([-dl/u2**2, 1/l2, 1/u2]))
+    
+    koeffs_u = array((a, b, c))
+    
+    return koeffs_l, koeffs_u
+
+
+#def rdiv_interval(self, r, other, domain, dtype):
+#
+#    Tmp, definiteRange = pow_const_interval(self, r, -1, domain, dtype)
+#    print '-----'
+#    print type(Tmp)
+#    print Tmp if type(Tmp) == ndarray else Tmp.resolve()[0]
+#    print other
+#    return Tmp, definiteRange
+    
 #    arg_lb_ub, definiteRange = self._interval(domain, dtype, ia_surf_level = 1)
 #    if type(arg_lb_ub) == boundsurf:
 #        arg_lb_ub_resolved = arg_lb_ub.resolve()[0]
@@ -362,13 +423,51 @@ def pow_const_interval(self, r, other, domain, dtype):
     # changes end
     
     lb_ub_resolved = lb_ub.resolve()[0] if isBoundSurf else lb_ub
+    arg_isNonNegative = all(lb_ub_resolved >= 0)
+    arg_isNonPositive = all(lb_ub_resolved <= 0)
+    
+    #changes
+#    if other == -1 and (arg_isNonNegative or arg_isNonPositive) and isBoundSurf and len(lb_ub.dep)==1:
+#        k = list(lb_ub.dep)[0]
+#        l, u = domain[k]
+#        if arg_isNonPositive:
+#            lb_ub = -lb_ub
+#        d_l, d_u = lb_ub.l.d[k], lb_ub.u.d[k]
+#        c_l, c_u = lb_ub.l.c, lb_ub.u.c 
+#
+#        koeffs_l, koeffs_u = get_inv_b2_coeffs(l, u, d_l, d_u, c_l, c_u)
+#        if arg_isNonPositive:
+#            koeffs_l, koeffs_u = -koeffs_u, -koeffs_l
+#        
+#        a, b, c = koeffs_l
+#        s_l = surf2({k:a}, {k:b}, c)
+#        a, b, c = koeffs_u
+#        s_u = surf2({k:a}, {k:b}, c)
+#        return boundsurf2(s_l, s_u, definiteRange, domain), definiteRange
+            
+##        print koeffs_u
+#        from numpy import linspace
+#        x = linspace(l, u, 1000)
+#        if arg_isNonPositive:
+#            lb_ub = -lb_ub
+#        d_l, d_u = lb_ub.l.d[k], lb_ub.u.d[k]
+#        c_l, c_u = lb_ub.l.c, lb_ub.u.c 
+#        import pylab
+#        pylab.plot(x, 1.0/(d_l*x+c_l), 'b')
+##        pylab.plot(x, 1.0/(d_u*x+c_u), 'g')
+#        pylab.plot(x, koeffs_l[0]*x**2+koeffs_l[1]*x+koeffs_l[2], 'r')
+##        pylab.plot(x, koeffs_u[0]*x**2+koeffs_u[1]*x+koeffs_u[2], 'k')
+#        pylab.show()
+        
+    #changes end
+    
+    
     other_is_int = asarray(other, int) == other
     isOdd = other_is_int and other % 2 == 1
     if isBoundSurf and not any(np.isinf(lb_ub_resolved)):
-        domain_isPositive = all(lb_ub_resolved >= 0)
         
         #new
-#        if domain_isPositive: 
+#        if arg_isNonNegative: 
 #            return defaultIntervalEngine(lb_ub, r.fun, r.d,  
 #                monotonity = 1,  
 #                convexity = 1 if other > 1.0 or other < 0 else -1) 
@@ -377,15 +476,14 @@ def pow_const_interval(self, r, other, domain, dtype):
 #            return devided_interval(self, r, domain, dtype)
         
         #prev
-        if domain_isPositive or (other_is_int and other > 0 and other % 2 == 0): 
+        if arg_isNonNegative or (other_is_int and other > 0 and other % 2 == 0): 
             return defaultIntervalEngine(lb_ub, r.fun, r.d,  
-                monotonity = 1 if other > 0 and domain_isPositive else np.nan,  
+                monotonity = 1 if other > 0 and arg_isNonNegative else -1 if arg_isNonNegative and other < 0 else np.nan,  
                 convexity = 1 if other > 1.0 or other < 0 else -1,  
                 criticalPoint = 0.0, criticalPointValue = 0.0)         
         
-        domain_isNegative = all(lb_ub_resolved <= 0)
         feasLB = -inf if other_is_int else 0.0
-        if other > 0 or domain_isNegative:
+        if other > 0 or arg_isNonPositive:
             return devided_interval(self, r, domain, dtype, feasLB = feasLB)
         
         if other_is_int and other < 0:# and other % 2 != 0:
