@@ -106,7 +106,7 @@ class surf2(surf):
         c = self.c
         oovars = set(self.d.keys()) | set(self.d2.keys())
         Vals = domain.values()
-        n = np.asarray(Vals[0][0] if type(Vals) == list else next(iter(Vals))).size
+        n = np.asarray(Vals[0][0] if type(Vals) == list else next(iter(Vals))[0]).size
         r = np.zeros(domain_ind.size if type(domain_ind)==np.ndarray else n) + c
         for k in oovars:
             l, u = domain[k][0][domain_ind], domain[k][1][domain_ind]
@@ -131,7 +131,7 @@ class surf2(surf):
         c = self.c
         oovars = set(self.d.keys()) | set(self.d2.keys())
         Vals = domain.values()
-        n = np.asarray(Vals[0][0] if type(Vals) == list else next(iter(Vals))).size
+        n = np.asarray(Vals[0][0] if type(Vals) == list else next(iter(Vals))[0]).size
         r = np.zeros(domain_ind.size if type(domain_ind)==np.ndarray else n) + c
         for k in oovars:
             l, u = domain[k][0][domain_ind], domain[k][1][domain_ind]
