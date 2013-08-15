@@ -1020,7 +1020,7 @@ class oofun(object):
     """                                                getDep                                             """
     def _getDep(self):
         # returns Python set of oovars it depends on
-        if hasattr(self, 'dep'):
+        if 'dep' in self.__dict__:
             return self.dep
         elif self.input is None:
             self.dep = None
