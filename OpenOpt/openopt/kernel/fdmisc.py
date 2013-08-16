@@ -196,7 +196,7 @@ def setStartVectorAndTranslators(p):
                         r2.append(val)
                         inds.append(ind_start)
                     elif type(val) in (np.ndarray, np.matrix):
-                        Val = val if type(val) == ndarray else val.A.flatten()
+                        Val = (val if type(val) == ndarray else val.A).flatten()
 #                        if Val.size == 1:
 #                            r2.append(Val.item())
 #                            inds.append(ind_start)
