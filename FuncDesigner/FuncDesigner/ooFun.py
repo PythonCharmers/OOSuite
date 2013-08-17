@@ -780,7 +780,7 @@ class oofun(object):
                         
                     # is int
                     elif other < 0: 
-                        r.monotonities = (-1, -1)
+                        r.monotonities = (-1 if other%2 == 1 else 1, -1)
                     else: # other is int, other > 0
                         r.monotonities = (-1 if other%2 == 0 else 1, 1)
                         
