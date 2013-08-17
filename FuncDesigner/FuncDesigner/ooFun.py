@@ -724,7 +724,7 @@ class oofun(object):
             else:
                 r.d = lambda x: mul_aux_d(x, other)
         
-        r._interval_ = lambda *args, **kw: mul_interval(self, other, isOtherOOFun, *args, **kw)
+        r._interval_ = lambda *args, **kw: mul_interval(self, other, isOtherOOFun, r, *args, **kw)
         r.vectorized = True
         #r.isCostly = True
         r._isProd = True

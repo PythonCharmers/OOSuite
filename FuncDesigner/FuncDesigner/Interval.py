@@ -213,7 +213,7 @@ def neg_interval(self, domain, dtype):
         #assert type(r) == boundsurf
         return -r, definiteRange
 
-def mul_interval(self, other, isOtherOOFun, domain, dtype):
+def mul_interval(self, other, isOtherOOFun, Prod, domain, dtype):
     
     lb1_ub1, definiteRange = self._interval(domain, dtype, ia_surf_level = 2)
 
@@ -224,7 +224,11 @@ def mul_interval(self, other, isOtherOOFun, domain, dtype):
         lb2_ub2 = other
         
     if type(lb2_ub2) in (boundsurf, boundsurf2) or type(lb1_ub1) in (boundsurf, boundsurf2):
-        r = lb1_ub1 * lb2_ub2
+        if type(lb2_ub2) in (boundsurf, boundsurf2) and type(lb1_ub1) in (boundsurf, boundsurf2):
+            resolveSchedule = domain.resolveSchedule.get(Prod, ())
+            r = lb1_ub1.__mul__(lb2_ub2, resolveSchedule)
+        else:
+            r = lb1_ub1 * lb2_ub2
         r.definiteRange = definiteRange
         return r, r.definiteRange
     elif isscalar(other) or (type(other) == ndarray and other.size == 1):
@@ -317,6 +321,32 @@ def div_interval(self, other, domain, dtype):
     return r, definiteRange
 
 
+#def rdiv_interval(self, r, other, domain, dtype):
+#
+#    Tmp, definiteRange = pow_const_interval(self, r, -1, domain, dtype)
+#    print '-----'
+#    print type(Tmp)
+#    print Tmp if type(Tmp) == ndarray else Tmp.resolve()[0]
+#    print other
+#    return Tmp, definiteRange
+    
+#    arg_lb_ub, definiteRange = self._interval(domain, dtype, ia_surf_level = 1)
+#    if type(arg_lb_ub) == boundsurf:
+#        arg_lb_ub_resolved = arg_lb_ub.resolve()[0]
+#        if all(arg_lb_ub_resolved >= 0) or all(arg_lb_ub_resolved <= 0):
+#            return other * arg_lb_ub ** (-1), definiteRange
+#        else:
+#            arg_lb_ub = arg_lb_ub_resolved
+#    arg_infinum, arg_supremum = arg_lb_ub[0], arg_lb_ub[1]
+#    if other.size != 1: 
+#        raise FuncDesignerException('this case for interval calculations is unimplemented yet')
+#    r = vstack((other / arg_supremum, other / arg_infinum))
+#    r.sort(axis=0)
+#    r1, r2 = r
+#    update_negative_int_pow_inf_zero(arg_infinum, arg_supremum, r, other)
+#
+#    return r, definiteRange
+
 def get_inv_b2_coeffs(ll, uu, dll, duu, c_l, c_u):
     ind_z =  uu == ll
     
@@ -324,19 +354,22 @@ def get_inv_b2_coeffs(ll, uu, dll, duu, c_l, c_u):
     #L2, U2 = dll * ll + c_l, dll * uu + c_l
     #ind = L2<U2
     #l2 = np.where(ind, L2, U2)
-    ind = dll < 0
+#    print ll, uu, dll, duu, c_l, c_u
+    ind = dll > 0
     
-    l = np.where(ind, ll, uu)
-    l2 = l * dll + c_l
-    dl = np.where(ind, dll, duu)
-    #exp_l2 = exp(l2)
+    argmin = np.where(ind, uu, ll)
+    point_val = argmin * dll + c_l
+    dl = dll#np.where(ind, dll, duu)
 
-    a = dl**2 * l2**-3  
-    b = -(2*dl**2+dl) * l2**-2
+#    a = dl**2 * point_val**-3  
+#    b = -(2*dl**2+dl) * point_val**-2
+    a = dl**2 * point_val**-3  
+    b = - (2 * dl**2 * argmin/point_val - dl) * point_val**-2 
+#    a/=2
     a[ind_z] = b[ind_z] = 0.0
     ind_z2 = logical_or(logical_not(isfinite(a)), logical_not(isfinite(b)))
     a[ind_z2] = b[ind_z2] = 0.0
-    c = 1.0/l2 - (a * l + b) * l
+    c = 1.0/point_val - (a * argmin + b) * argmin
 #    print a, b, c
 #    a, b, c = 0, 0, 0
     koeffs_l = array((a, b, c))
@@ -371,33 +404,6 @@ def get_inv_b2_coeffs(ll, uu, dll, duu, c_l, c_u):
     
     return koeffs_l, koeffs_u
 
-
-#def rdiv_interval(self, r, other, domain, dtype):
-#
-#    Tmp, definiteRange = pow_const_interval(self, r, -1, domain, dtype)
-#    print '-----'
-#    print type(Tmp)
-#    print Tmp if type(Tmp) == ndarray else Tmp.resolve()[0]
-#    print other
-#    return Tmp, definiteRange
-    
-#    arg_lb_ub, definiteRange = self._interval(domain, dtype, ia_surf_level = 1)
-#    if type(arg_lb_ub) == boundsurf:
-#        arg_lb_ub_resolved = arg_lb_ub.resolve()[0]
-#        if all(arg_lb_ub_resolved >= 0) or all(arg_lb_ub_resolved <= 0):
-#            return other * arg_lb_ub ** (-1), definiteRange
-#        else:
-#            arg_lb_ub = arg_lb_ub_resolved
-#    arg_infinum, arg_supremum = arg_lb_ub[0], arg_lb_ub[1]
-#    if other.size != 1: 
-#        raise FuncDesignerException('this case for interval calculations is unimplemented yet')
-#    r = vstack((other / arg_supremum, other / arg_infinum))
-#    r.sort(axis=0)
-#    r1, r2 = r
-#    update_negative_int_pow_inf_zero(arg_infinum, arg_supremum, r, other)
-#
-#    return r, definiteRange
-
 def pow_const_interval(self, r, other, domain, dtype):
     lb_ub, definiteRange = self._interval(domain, dtype, ia_surf_level = 1)
     isBoundSurf = type(lb_ub) == boundsurf
@@ -431,33 +437,34 @@ def pow_const_interval(self, r, other, domain, dtype):
 #        k = list(lb_ub.dep)[0]
 #        l, u = domain[k]
 #        if arg_isNonPositive:
+#            print('arg_isNonPositive')
 #            lb_ub = -lb_ub
 #        d_l, d_u = lb_ub.l.d[k], lb_ub.u.d[k]
 #        c_l, c_u = lb_ub.l.c, lb_ub.u.c 
 #
 #        koeffs_l, koeffs_u = get_inv_b2_coeffs(l, u, d_l, d_u, c_l, c_u)
 #        if arg_isNonPositive:
+#            lb_ub = -lb_ub
 #            koeffs_l, koeffs_u = -koeffs_u, -koeffs_l
-#        
+#        ###############
+#        from numpy import linspace
+#        x = linspace(l, u, 10000)
+#        d_l, d_u = lb_ub.l.d[k], lb_ub.u.d[k]
+#        c_l, c_u = lb_ub.l.c, lb_ub.u.c 
+#        import pylab
+#        if 1:
+#            pylab.plot(x, 1.0/(d_l*x+c_l), 'b')
+#            pylab.plot(x, koeffs_l[0]*x**2+koeffs_l[1]*x+koeffs_l[2], 'r')
+#        else:
+#            pylab.plot(x, 1.0/(d_u*x+c_u), 'g')
+#            pylab.plot(x, koeffs_u[0]*x**2+koeffs_u[1]*x+koeffs_u[2], 'k')
+#        pylab.show()
+#        ###############
 #        a, b, c = koeffs_l
 #        s_l = surf2({k:a}, {k:b}, c)
 #        a, b, c = koeffs_u
 #        s_u = surf2({k:a}, {k:b}, c)
 #        return boundsurf2(s_l, s_u, definiteRange, domain), definiteRange
-            
-##        print koeffs_u
-#        from numpy import linspace
-#        x = linspace(l, u, 1000)
-#        if arg_isNonPositive:
-#            lb_ub = -lb_ub
-#        d_l, d_u = lb_ub.l.d[k], lb_ub.u.d[k]
-#        c_l, c_u = lb_ub.l.c, lb_ub.u.c 
-#        import pylab
-#        pylab.plot(x, 1.0/(d_l*x+c_l), 'b')
-##        pylab.plot(x, 1.0/(d_u*x+c_u), 'g')
-#        pylab.plot(x, koeffs_l[0]*x**2+koeffs_l[1]*x+koeffs_l[2], 'r')
-##        pylab.plot(x, koeffs_u[0]*x**2+koeffs_u[1]*x+koeffs_u[2], 'k')
-#        pylab.show()
         
     #changes end
     
@@ -565,7 +572,7 @@ def pow_oofun_interval(self, other, domain, dtype):
     
 def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, criticalPoint = np.nan, 
                           criticalPointValue = np.nan, feasLB = -inf, feasUB = inf, domain_ind = slice(None), R0 = None):
-    
+    #monotonity = nan
     assert type(monotonity) != bool and type(convexity) != bool, 'bug in defaultIntervalEngine'
 
     Ld2, Ud2 = getattr(arg_lb_ub.l,'d2', {}),  getattr(arg_lb_ub.u,'d2', {})
@@ -642,15 +649,16 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
             L2_dict = U2_dict = {}
 
     if convexity == -1:
+
         tmp2 = deriv(_argmax.view(multiarray)).view(ndarray).flatten()
         tmp2[ind_inf] = 0.0
+
+        d_new = dict((v, tmp2 * val) for v, val in U_dict.items())
         
-        d_new = dict((v, tmp2 * val) for v, val in L_dict.items())
-        
-        if len(L2_dict) == 0:
+        if len(U2_dict) == 0:
             U_new = surf(d_new, 0.0)
         else:
-            d2_new = dict((v, tmp2 * val) for v, val in L2_dict.items())
+            d2_new = dict((v, tmp2 * val) for v, val in U2_dict.items())
             U_new = surf2(d2_new, d_new, 0.0)
 
         U_new.c = new_u_resolved - U_new.maximum(domain, domain_ind)
@@ -659,18 +667,19 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
             U_new.c = where(ind_inf2, new_u_resolved, U_new.c)
         
         # for some simple cases
-        if len(U_dict) >= 1 or len(U2_dict) >= 1:
+        if len(L_dict) >= 1 or len(L2_dict) >= 1:
             if ind_eq.size:
                 koeffs[ind_eq] = tmp2[ind_eq]
-            d_new = dict((v, koeffs * val) for v, val in U_dict.items())
+            d_new = dict((v, koeffs * val) for v, val in L_dict.items())
             
-            if len(U2_dict) == 0:
+            if len(L2_dict) == 0:
                 L_new = surf(d_new, 0.0)
             else:
-                d2_new = dict((v, koeffs * val) for v, val in U2_dict.items())
+                d2_new = dict((v, koeffs * val) for v, val in L2_dict.items())
                 L_new = surf2(d2_new, d_new, 0.0)
 
             L_new.c = new_l_resolved -  L_new.minimum(domain, domain_ind)
+#            print L_new.c, L_new.d, U_new.c, U_new.d
             if any(ind_inf2):
                 L_new.c = where(ind_inf2, new_l_resolved, L_new.c)
         else:
@@ -704,6 +713,7 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
             U_new.c = new_u_resolved - U_new.maximum(domain, domain_ind)
             if any(ind_inf2):
                 U_new.c = where(ind_inf2, new_u_resolved, U_new.c)
+#            print L_new.c, L_new.d, U_new.c, U_new.d
         else:
             U_new = surf({}, new_u_resolved)
     elif convexity == -101:

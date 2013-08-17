@@ -268,7 +268,7 @@ class boundsurf2(boundsurf):
             U = surf2(dict((k, -v) for k, v in l.d2.items()), dict((k, -v) for k, v in l.d.items()), -l.c)
         return boundsurf2(L, U, self.definiteRange, self.domain)
     
-    def __mul__(self, other):
+    def __mul__(self, other, resolveSchedule=()):
         domain = self.domain
         definiteRange = self.definiteRange
         
@@ -306,9 +306,9 @@ class boundsurf2(boundsurf):
             return R
         # temporary
         elif isBoundSurf:
-            return self.to_linear() * other
+            return self.to_linear().__mul__(other, resolveSchedule)
         elif isBoundSurf2:
-            return self.to_linear() * other.to_linear()
+            return self.to_linear().__mul__(other.to_linear(), resolveSchedule)
         else:
             assert 0, 'unimplemented yet'
         

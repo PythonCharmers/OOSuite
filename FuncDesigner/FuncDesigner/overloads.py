@@ -489,7 +489,9 @@ def exp_interval(r, inp, domain, dtype):
     r1, definiteRange = oofun._interval_(r, domain, dtype)
     if 0 or type(lb_ub) == np.ndarray or len(lb_ub.l.d) > 1 or len(lb_ub.u.d) > 1 or len(lb_ub.dep) != 1:
         return r1, definiteRange
-            
+    return exp_b_interval(lb_ub, r1, definiteRange, domain)
+
+def exp_b_interval(lb_ub, r1, definiteRange, domain):
     if type(lb_ub) == boundsurf2:
         lb_ub = lb_ub.to_linear()
         

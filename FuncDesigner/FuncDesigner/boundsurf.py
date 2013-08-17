@@ -205,7 +205,7 @@ class boundsurf(object):#object is added for Python2 compatibility
     __sub__ = lambda self, other: self.__add__(-other)
     __rsub__ = lambda self, other: (-self).__add__(other)
         
-    def __mul__(self, other):
+    def __mul__(self, other, resolveSchedule = ()):
         from boundsurf2 import boundsurf2
         
         domain = self.domain
@@ -252,7 +252,18 @@ class boundsurf(object):#object is added for Python2 compatibility
                 len(set.union(set(self.l.d.keys()), set(self.u.d.keys()), set(other.l.d.keys()), set(other.u.d.keys()))) == 1:
                     r = b2mult(Self, Other)
                 else:
-                    r = (Self.log() + Other.log()).exp()
+                    if 1:
+                        _r = Self.log() + Other.log()
+                        if len(resolveSchedule):
+#                            print(resolveSchedule)
+                            _r = _r.exclude(resolveSchedule)
+                        if type(_r) == np.ndarray:
+                            r = np.exp(_r)
+                            return r if selfPositive == R2Positive else -r[::-1], definiteRange
+                        r = _r.exp()
+                        #print type(r)
+                    else:
+                        r = (Self.log() + Other.log()).exp()
                     r.definiteRange = definiteRange
                     
                 rr = r if selfPositive == R2Positive else -r
@@ -330,8 +341,15 @@ class boundsurf(object):#object is added for Python2 compatibility
                      monotonity = 1, convexity = -1, feasLB = 0.0, domain_ind = domain_ind)[0]
     def exp(self, domain_ind = slice(None)):
         from Interval import defaultIntervalEngine
-        return defaultIntervalEngine(self, np.exp, np.exp, 
+        r1 = defaultIntervalEngine(self, np.exp, np.exp, 
                      monotonity = 1, convexity = 1, domain_ind = domain_ind)[0]
+#        print len(self.l.d),  len(self.u.d), len(self.dep)
+        if len(self.l.d) > 1 or len(self.u.d) > 1 or len(self.dep) != 1:
+            return r1
+        from overloads import exp_b_interval
+        r = exp_b_interval(self, r1, self.definiteRange, self.domain)[0]
+#        print type(r)
+        return r
 
     # TODO: rework it if __iadd_, __imul__ etc will be created
     def copy(self):
