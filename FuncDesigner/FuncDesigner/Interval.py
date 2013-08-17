@@ -649,7 +649,8 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
             L2_dict = U2_dict = {}
 
     if convexity == -1:
-
+#        print('asdf')
+#        L_dict, U_dict = U_dict, L_dict
         tmp2 = deriv(_argmax.view(multiarray)).view(ndarray).flatten()
         tmp2[ind_inf] = 0.0
 
