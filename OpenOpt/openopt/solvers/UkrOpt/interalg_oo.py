@@ -324,12 +324,8 @@ class interalg(baseSolver):
                 fo = 0.0 if isSNLE or isMOP else min((r41, r40 - (fTol if Solutions.maxNum == 1 else 0.0))) 
             pnc = max((len(np.atleast_1d(an)), pnc))
             
-            if isIP:
-                y, e, _in, _s = \
-                    func12(an, self.maxActiveNodes, p, Solutions, vv, varTols, np.inf)
-            else:
-                y, e, _in, _s = \
-                func12(an, self.maxActiveNodes, p, Solutions, vv, varTols, fo)
+            y, e, _in, _s = \
+                func12(an, self.maxActiveNodes, p, Solutions, vv, varTols, np.inf if isIP else fo)
 
             nActiveNodes.append(y.shape[0]/2)
             if y.size == 0: 

@@ -53,6 +53,8 @@ def interalg_ODE_routine(p, solver):
     
     # Main cycle
     for itn in range(p.maxIter+1):
+        p.extras['nNodes'].append(r28.size)
+        p.extras['nActiveNodes'].append(r28.size)
         if r30[-1] > r30[0]:
             mp = oopoint({t: [r28, r29]}, skipArrayCast = True)
         else:
@@ -69,12 +71,12 @@ def interalg_ODE_routine(p, solver):
         # TODO: perform check on NaNs
         isBoundsurf = hasattr(tmp, 'resolve')
         if isBoundsurf:
-            #adjustr4WithDiscreteVariables(wr4, p)
-            cs = oopoint([(v, asarray(0.5*(val[0] + val[1]), dataType)) for v, val in mp.items()])
-            cs.dictOfFixedFuncs = p.dictOfFixedFuncs
-            r21, r22 = tmp.values(cs)
             if isIP:
                 if tmp.level == 1:
+                    #adjustr4WithDiscreteVariables(wr4, p)
+                    cs = oopoint([(v, asarray(0.5*(val[0] + val[1]), dataType)) for v, val in mp.items()])
+                    cs.dictOfFixedFuncs = p.dictOfFixedFuncs
+                    r21, r22 = tmp.values(cs)
                     o, a = atleast_1d(r21), atleast_1d(r22)
                     r20 = a-o
                     approx_value = 0.5*(a+o)

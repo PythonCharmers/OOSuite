@@ -1,5 +1,5 @@
 from interalgLLR import *
-from numpy import inf, prod, all, sum
+from numpy import inf, prod, all, sum, zeros
 #from FuncDesigner.boundsurf import boundsurf
 
 def r14IP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, CBKPMV, g, nNodes,  \
@@ -14,14 +14,45 @@ def r14IP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, CBKPMV, g, nNode
     ip.dictOfFixedFuncs = p.dictOfFixedFuncs
     ip.surf_preference = True
 
-    tmp = asdf1.interval(ip, ia_surf_level=1)
-#        print(type(tmp))
+    tmp = asdf1.interval(ip, ia_surf_level=2)
+#    print(type(tmp))
     if hasattr(tmp, 'resolve'):#type(tmp) == boundsurf:
 #            print('b')
         #adjustr4WithDiscreteVariables(wr4, p)
-        cs = oopoint((v, asarray(0.5*(val[0] + val[1]), dataType)) for v, val in ip.items())
-        cs.dictOfFixedFuncs = p.dictOfFixedFuncs
-        o, a = tmp.values(cs)
+        
+        if 1:
+        # changes
+            val_l, val_u = zeros(2*n*m), zeros(2*n*m)
+            
+            val_l += tmp.l.c # may be array <- scalar
+            val_u += tmp.u.c
+            
+            for v in tmp.dep:
+                ind = p._oovarsIndDict[v]
+                ts, te = ip[v]#y[:, ind], e[:, ind]
+                A, B = (te**2 + te*ts + ts**2) / 3.0, 0.5 * (te + ts)
+                #A, B, C = (te**3 - ts**3) / 3.0, 0.5 * (te**2 - ts**2), te - ts
+                b = tmp.l.d.get(v, 0.0)
+                val_l += b * B
+                if tmp.level == 2:
+                    a = tmp.l.d2.get(v, 0.0)
+                    val_l += a * A
+                
+                b= tmp.u.d.get(v, 0.0)
+                val_u +=  b * B
+                if tmp.level == 2:
+                    a = tmp.u.d2.get(v, 0.0)
+                    val_u += a * A
+
+            #r20 = val_u - val_l
+            #approx_value = 0.5 * (val_l + val_u)
+            o, a = val_l, val_u
+        # changes end
+        else:
+            cs = oopoint((v, asarray(0.5*(val[0] + val[1]), dataType)) for v, val in ip.items())
+            cs.dictOfFixedFuncs = p.dictOfFixedFuncs
+            o, a = tmp.values(cs)
+        
         definiteRange = tmp.definiteRange
     else:
         o, a, definiteRange = tmp.lb, tmp.ub, tmp.definiteRange
