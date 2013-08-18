@@ -85,7 +85,7 @@ def ZeroCriticalPointsInterval(inp, func):
         ################
         
         lb_ub, definiteRange = inp._interval(domain, dtype, ia_surf_level = 2)
-        if type(lb_ub) == boundsurf:
+        if isinstance(lb_ub, boundsurf):
             if is_abs:
                 return lb_ub.abs()
             elif is_cosh:
@@ -152,7 +152,7 @@ def box_1_interval(inp, r, func, domain, dtype):
     assert func in (np.arcsin, np.arccos, np.arctanh)
 
     lb_ub, definiteRange = inp._interval(domain, dtype, ia_surf_level = 2)
-    isBoundSurf = type(lb_ub) == boundsurf
+    isBoundSurf = isinstance(lb_ub, boundsurf)
     
     if isBoundSurf:
         return devided_interval(inp, r, domain, dtype, feasLB = -1.0, feasUB = 1.0)
@@ -274,7 +274,7 @@ def div_interval(self, other, domain, dtype):
     
     lb2_ub2, definiteRange2 = other._interval(domain, dtype, ia_surf_level = 2)
 
-    secondIsBoundsurf = type(lb2_ub2) == boundsurf
+    secondIsBoundsurf = isinstance(lb2_ub2, boundsurf)
     
     lb1_ub1, definiteRange1 = self._interval(domain, dtype, ia_surf_level = 2)# if type(lb2_ub2)==ndarray else 1)
     firstIsBoundsurf = type(lb1_ub1) in (boundsurf, boundsurf2)
@@ -291,7 +291,7 @@ def div_interval(self, other, domain, dtype):
             other._inv = other ** -1 #1.0/other
 #            other._inv.engine_convexity = other._inv.engine_monotonity = -1
         Tmp = pow_const_interval(other, other._inv, -1, domain, dtype)[0]
-        if type(Tmp) == boundsurf:
+        if isinstance(Tmp, boundsurf):
             tmp = lb1_ub1 * Tmp#lb2_ub2 ** -1
     elif firstIsBoundsurf and not secondIsBoundsurf:# and (t1_positive or t1_negative or t2_positive or t2_negative):
         # TODO: handle zeros
