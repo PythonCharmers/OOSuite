@@ -445,7 +445,7 @@ import ooFun
 def devided_interval(inp, r, domain, dtype, feasLB = -inf, feasUB = inf):
 
     lb_ub, definiteRange = inp._interval(domain, dtype, ia_surf_level = 2)
-    isBoundSurf = type(lb_ub) == boundsurf
+    isBoundSurf = isinstance(lb_ub, boundsurf)
     if not isBoundSurf:
         return ooFun.oofun._interval_(r, domain, dtype)
     
