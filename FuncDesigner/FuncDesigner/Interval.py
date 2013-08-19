@@ -576,10 +576,16 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
     assert type(monotonity) != bool and type(convexity) != bool, 'bug in defaultIntervalEngine'
     
     Ld2, Ud2 = getattr(arg_lb_ub.l,'d2', {}),  getattr(arg_lb_ub.u,'d2', {})
-    #print convexity
-    if (len(Ld2) != 0 or len(Ud2) != 0) and convexity not in (-1, 1, -101):
-        arg_lb_ub = arg_lb_ub.to_linear()
-        Ld2, Ud2 = {}, {}
+#    print convexity, type(arg_lb_ub)
+
+    # DEBUG!!!!!!!!!!!!!!!!!
+#    if (len(Ld2) != 0 or len(Ud2) != 0): 
+#        arg_lb_ub = arg_lb_ub.to_linear()
+#        Ld2, Ud2 = {}, {}
+    
+#    if (len(Ld2) != 0 or len(Ud2) != 0) and convexity not in (-1, 1, -101, 9):
+#        arg_lb_ub = arg_lb_ub.to_linear()
+#        Ld2, Ud2 = {}, {}
 
     L, U, domain, definiteRange = arg_lb_ub.l, arg_lb_ub.u, arg_lb_ub.domain, arg_lb_ub.definiteRange
     Ld, Ud = L.d, U.d
@@ -786,7 +792,13 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
         tmp2[ind_inf] = 0.0
         
         d_new = dict((v, tmp2 * val) for v, val in L_dict.items())
-        L_new = surf(d_new, 0.0)
+        
+        if len(L2_dict) == 0:
+            L_new = surf(d_new, 0.0)
+        else:
+            d2_new = dict((v, tmp2 * val) for v, val in L2_dict.items())
+            L_new = surf2(d2_new, d_new, 0.0)
+
         L_new.c = vals[0] - getattr(L_new, Attributes[0])(domain, domain_ind)
         ind_inf2 = np.isinf(vals[0])
         if any(ind_inf2):
@@ -797,8 +809,13 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
         tmp2[ind_k] = koeffs[ind_k]
         tmp2[ind_inf] = 0.0
         
-        d_new = dict((v, tmp2 * val) for v, val in L_dict.items())
-        U_new = surf(d_new, 0.0)
+        d_new = dict((v, tmp2 * val) for v, val in U_dict.items())
+        if len(U2_dict) == 0:
+            U_new = surf(d_new, 0.0)
+        else:
+            d2_new = dict((v, tmp2 * val) for v, val in U2_dict.items())
+            U_new = surf2(d2_new, d_new, 0.0)
+        
         U_new.c = vals[1] - getattr(U_new, Attributes[1])(domain, domain_ind)
         ind_inf2 = np.isinf(vals[1])
         if any(ind_inf2):
