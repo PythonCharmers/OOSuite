@@ -663,8 +663,7 @@ def mul_fixed_interval(self, R2):
             Tmp = np.vstack((l1*l2, l1*u2, l2*u1, u1*u2))
             tmp_l3 = surf({}, nanmin(Tmp, axis=0))
             tmp_u3 = surf({}, nanmax(Tmp, axis=0))
-            b_z = boundsurf(tmp_l3, tmp_u3, definiteRange, domain)
-            lu.append((b_z.l, b_z.u))
+            lu.append((tmp_l3, tmp_u3))
             
         ind_positive_all = logical_and(ind_positive, ind_other_positive)
         ind_Positive = where(ind_positive_all)[0]

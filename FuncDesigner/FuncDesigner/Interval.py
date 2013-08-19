@@ -153,7 +153,7 @@ def box_1_interval(inp, r, func, domain, dtype):
 
     lb_ub, definiteRange = inp._interval(domain, dtype, ia_surf_level = 2)
     isBoundSurf = isinstance(lb_ub, boundsurf)
-    
+
     if isBoundSurf:
         return devided_interval(inp, r, domain, dtype, feasLB = -1.0, feasUB = 1.0)
 
@@ -574,7 +574,7 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
                           criticalPointValue = np.nan, feasLB = -inf, feasUB = inf, domain_ind = slice(None), R0 = None):
     #monotonity = nan
     assert type(monotonity) != bool and type(convexity) != bool, 'bug in defaultIntervalEngine'
-
+    
     Ld2, Ud2 = getattr(arg_lb_ub.l,'d2', {}),  getattr(arg_lb_ub.u,'d2', {})
     
     if (len(Ld2) != 0 or len(Ud2) != 0) and convexity not in (-1, 1):
@@ -720,37 +720,54 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
     elif convexity == -101:
         if monotonity == 1:
             argvals = (_argmax, _argmin)
-            vals = (new_u_resolved, new_l_resolved)
-            Attributes = ('maximum','minimum')
+            vals = (new_u_resolved, new_l_resolved)[::-1]
+            Attributes = ('maximum', 'minimum')
         elif monotonity == -1:
             argvals = (_argmin, _argmax)
             vals = (new_l_resolved, new_u_resolved)
             Attributes = ('minimum', 'maximum')
         else:
             assert 0
+        
         tmp2 = deriv(argvals[0].view(multiarray)).view(ndarray).flatten()
-        ind_k = where(tmp2 < koeffs)[0]
+        ind_k = where((tmp2 > koeffs) if monotonity == 1 else (tmp2 < koeffs))[0]
         tmp2[ind_k] = koeffs[ind_k]
         tmp2[ind_inf] = 0.0
         
-        d_new = dict((v, tmp2 * val) for v, val in L_dict.items())
-        L_new = surf(d_new, 0.0)
+        d_new = dict((v, tmp2 * val) for v, val in U_dict.items())
+        if len(L2_dict) == 0:
+            L_new = surf(d_new, 0.0)
+        else:
+            d2_new = dict((v, tmp2 * val) for v, val in L2_dict.items())
+            L_new = surf2(d2_new, d_new, 0.0)
+
         L_new.c = vals[0] - getattr(L_new, Attributes[0])(domain, domain_ind)
+#        L_new.c = vals[0] - L_new.minimum(domain, domain_ind)
+#        L_new.c = new_l_resolved - L_new.minimum(domain, domain_ind)
+
         ind_inf2 = np.isinf(vals[0])
         if any(ind_inf2):
-            L_new.c = where(ind_inf2, vals[0], L_new.c)
+            L_new.c = where(ind_inf2, new_l_resolved, L_new.c)
         
         tmp2 = deriv(argvals[1].view(multiarray)).view(ndarray).flatten()
-        ind_k = where(tmp2 < koeffs)[0]
+        ind_k = where((tmp2 > koeffs) if monotonity == 1 else (tmp2 < koeffs))[0]
         tmp2[ind_k] = koeffs[ind_k]
         tmp2[ind_inf] = 0.0
         
         d_new = dict((v, tmp2 * val) for v, val in L_dict.items())
-        U_new = surf(d_new, 0.0)
+#        U_new = surf(d_new, 0.0)
+        if len(L2_dict) == 0:
+            U_new = surf(d_new, 0.0)
+        else:
+            d2_new = dict((v, koeffs * val) for v, val in L2_dict.items())
+            U_new = surf2(d2_new, d_new, 0.0)
+                
         U_new.c = vals[1] - getattr(U_new, Attributes[1])(domain, domain_ind)
+#        U_new.c = vals[1] - U_new.maximum(domain, domain_ind)
+#        U_new.c = new_u_resolved - U_new.maximum(domain, domain_ind)
         ind_inf2 = np.isinf(vals[1])
         if any(ind_inf2):
-            U_new.c = where(ind_inf2, vals[1], U_new.c)
+            U_new.c = where(ind_inf2, new_u_resolved, U_new.c)
             
     elif convexity == 9: # 1 0 -1
         if monotonity == 1:
