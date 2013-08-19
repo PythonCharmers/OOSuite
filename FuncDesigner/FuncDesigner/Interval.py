@@ -776,7 +776,7 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
             Attributes = ('minimum', 'maximum')
         elif monotonity == -1:
             argvals = (_argmax, _argmin)
-            vals = (new_u_resolved, new_l_resolved)
+            vals = (new_u_resolved, new_l_resolved)[::-1]
             Attributes = ('maximum','minimum')
         else:
             assert 0
