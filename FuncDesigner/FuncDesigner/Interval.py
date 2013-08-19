@@ -576,8 +576,8 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
     assert type(monotonity) != bool and type(convexity) != bool, 'bug in defaultIntervalEngine'
     
     Ld2, Ud2 = getattr(arg_lb_ub.l,'d2', {}),  getattr(arg_lb_ub.u,'d2', {})
-    
-    if (len(Ld2) != 0 or len(Ud2) != 0) and convexity not in (-1, 1):
+    #print convexity
+    if (len(Ld2) != 0 or len(Ud2) != 0) and convexity not in (-1, 1, -101):
         arg_lb_ub = arg_lb_ub.to_linear()
         Ld2, Ud2 = {}, {}
 
@@ -738,7 +738,7 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
         if len(L2_dict) == 0:
             L_new = surf(d_new, 0.0)
         else:
-            d2_new = dict((v, tmp2 * val) for v, val in L2_dict.items())
+            d2_new = dict((v, tmp2 * val) for v, val in U2_dict.items())
             L_new = surf2(d2_new, d_new, 0.0)
 
         L_new.c = vals[0] - getattr(L_new, Attributes[0])(domain, domain_ind)
