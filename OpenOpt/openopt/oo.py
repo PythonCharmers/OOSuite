@@ -9,6 +9,7 @@ from QP import QP as CQP
 from MILP import MILP as CMILP
 from STAB import STAB as CSTAB
 from MCP import MCP as CMCP
+from DSP import DSP as CDSP
 from TSP import TSP as CTSP
 from KSP import KSP as CKSP
 from BPP import BPP as CBPP
@@ -170,7 +171,35 @@ def MCP(*args, **kwargs):
     """
     return CMCP(*args, **kwargs)
 
+def DSP(*args, **kwargs):
+    """
+    DSP: constructor for domminating set problem assignment
+    
+    valid calls are:
+    p = DSP(graph, <params as kwargs>)
+    p = DSP(graph = graph, <params as kwargs>)
+    See also: /examples/mcp_*.py
 
+    :Parameters:
+    graph: networkx graph instance
+
+    :Returns:
+    OpenOpt DSP class instance
+
+    Notes
+    -----
+    Solving of OpenOpt DSP problems is performed via
+    r = p.solve(string_name_of_solver)
+    or r = p.manage(string_name_of_solver) (to enable basic GUI)
+    r.solution - desired solution (python list of nodes)
+    r.ff - objFun value (NaN if a problem occured)
+    (see also other r fields)
+    Solvers available for now:  
+       * interalg (BSD license)
+       * MILP solvers at http://openopt.org/MILP
+    """
+    return CDSP(*args, **kwargs)
+    
 def TSP(*args, **kwargs):
     """
     TSP: constructor for traveling salesman problem assignment
