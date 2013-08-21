@@ -8,59 +8,75 @@ class STAB(MatrixProblem):
     showGoal = False
     
     def solve(self, *args, **kw):
-        if len(args) > 1:
-            self.err('''
-            incorrect number of arguments for solve(), 
-            must be at least 1 (solver), other must be keyword arguments''')
-        solver = args[0] if len(args) != 0 else kw.get('solver', self.solver)
-        
-        graph = self.graph # must be networkx instance
-        nodes = graph.nodes()
-        edges = graph.edges()
-        
-        n = len(nodes)
-        
-        node2index = dict([(node, i) for i, node in enumerate(nodes)])
-        index2node = dict([(i, node) for i, node in enumerate(nodes)])
-        
-        import FuncDesigner as fd, openopt
-        x = fd.oovars(n, domain=bool)
-        objective = fd.sum(x)
-        startPoint = {x:[0]*n}
-        
-        fixedVars = {}
-       
-        includedNodes = getattr(kw, 'includedNodes', None)
-        if includedNodes is None:
-            includedNodes = getattr(self, 'includedNodes', ())
-        for node in includedNodes:
-            fixedVars[x[node2index[node]]] = 1
+        return set_routine(self,  *args, **kw)
 
-        excludedNodes = getattr(kw, 'excludedNodes', None)
-        if excludedNodes is None:
-            excludedNodes = getattr(self, 'excludedNodes', ())
-        for node in excludedNodes:
-            fixedVars[x[node2index[node]]] = 0
-
-        if openopt.oosolver(solver).__name__ == 'interalg':
-            constraints =  [fd.NAND(x[node2index[i]], x[node2index[j]]) for i, j in edges]
-            P = openopt.GLP
-        else:
-            constraints =  [x[node2index[i]]+x[node2index[j]] <=1 for i, j in edges]
-            P = openopt.MILP
-            
-        p = P(objective, startPoint, constraints = constraints, fixedVars = fixedVars, goal = 'max')
-        
-        for key, val in kw.items():
-            setattr(p, key, val)
-        r = p.solve(solver, **kw)
-        r.solution = [index2node[i] for i in range(n) if r.xf[x[i]] == 1]
-        r.ff = len(r.solution)
-        return r
     
     
 #    def objFunc(self, x):
 #        return dot(self.f, x) + self._c
 
 
+def set_routine(p,  *args, **kw):
+    if len(args) > 1:
+        p.err('''
+        incorrect number of arguments for solve(), 
+        must be at least 1 (solver), other must be keyword arguments''')
+    solver = args[0] if len(args) != 0 else kw.get('solver', p.solver)
+    
+    import FuncDesigner as fd, openopt
+    is_interalg = openopt.oosolver(solver).__name__ == 'interalg'
+    
+    graph = p.graph # must be networkx instance
+    nodes = graph.nodes()
+    edges = graph.edges()
+    
+    n = len(nodes)
+    
+    node2index = dict((node, i) for i, node in enumerate(nodes))
+    index2node = dict((i, node) for i, node in enumerate(nodes))
+    
+    
+    x = fd.oovars(n, domain=bool)
+    objective = fd.sum(x)
+    startPoint = {x:[0]*n}
+    
+    fixedVars = {}
+   
+    includedNodes = getattr(kw, 'includedNodes', None)
+    if includedNodes is None:
+        includedNodes = getattr(p, 'includedNodes', ())
+    for node in includedNodes:
+        fixedVars[x[node2index[node]]] = 1
 
+    excludedNodes = getattr(kw, 'excludedNodes', None)
+    if excludedNodes is None:
+        excludedNodes = getattr(p, 'excludedNodes', ())
+    for node in excludedNodes:
+        fixedVars[x[node2index[node]]] = 0
+
+    if p.probType == 'DSP':
+        constraints = []
+        engine = fd.OR if is_interalg else lambda List: fd.sum(List) >= 1
+        Engine = lambda d, n: engine([x[node2index[k]] for k in (list(d.keys())+[n])]) 
+        for node in nodes:
+            adjacent_nodes_dict = graph[node]
+            if len(adjacent_nodes_dict) == 0:
+                fixedVars[x[node2index[node]]] = 1
+                continue
+            constraints.append(Engine(adjacent_nodes_dict, node))
+    else:
+        constraints = \
+        [fd.NAND(x[node2index[i]], x[node2index[j]]) for i, j in edges] \
+        if is_interalg else \
+        [x[node2index[i]]+x[node2index[j]] <=1 for i, j in edges]
+    
+    P = openopt.GLP if is_interalg else openopt.MILP
+    goal = 'min' if p.probType == 'DSP' else 'max' 
+    p = P(objective, startPoint, constraints = constraints, fixedVars = fixedVars, goal = goal)
+    
+    for key, val in kw.items():
+        setattr(p, key, val)
+    r = p.solve(solver, **kw)
+    r.solution = [index2node[i] for i in range(n) if r.xf[x[i]] == 1]
+    r.ff = len(r.solution)
+    return r
