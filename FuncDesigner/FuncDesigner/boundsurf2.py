@@ -53,6 +53,10 @@ class surf2(surf):
             C.append(_r)
             new_D[k] = new_d1
             
+        for k, v in D.items():
+            if k not in D2:
+                new_D[k] = v
+                
         c = self.c + PythonSum(C)
 #        print '----'
 #        print _argextr

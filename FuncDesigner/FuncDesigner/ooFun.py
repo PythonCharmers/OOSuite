@@ -319,9 +319,9 @@ class oofun(object):
                 if len(Tmp):
                     R = R.exclude(Tmp)
                     if domain.useSave:
-                        domain.storedIntervals[self] = R if type(R) in (boundsurf, boundsurf2) else (R, definiteRange)
+                        domain.storedIntervals[self] = (R, definiteRange)#R if type(R) in (boundsurf, boundsurf2) else (R, definiteRange)
                     if v is not None and self._usedIn > 1:
-                        domain.localStoredIntervals[self] = R if type(R) in (boundsurf, boundsurf2) else (R, definiteRange)
+                        domain.localStoredIntervals[self] =  (R, definiteRange)#R if type(R) in (boundsurf, boundsurf2) else (R, definiteRange)
             
             if type(R) in (boundsurf, boundsurf2):
                 if ia_surf_level == 1 and R.level == 2:
