@@ -270,7 +270,7 @@ def mul_interval(self, other, isOtherOOFun, Prod, domain, dtype):
     return t, definiteRange
 
 
-def div_interval(self, other, domain, dtype):
+def div_interval(self, other, Div, domain, dtype):
     
     lb2_ub2, definiteRange2 = other._interval(domain, dtype, ia_surf_level = 2)
 
@@ -300,7 +300,7 @@ def div_interval(self, other, domain, dtype):
         tmp = lb1_ub1 * Tmp2
         #tmp = lb1_ub1 * (1.0 / tmp2[::-1]) 
     elif firstIsBoundsurf and secondIsBoundsurf:
-        tmp = lb1_ub1 / lb2_ub2 
+        tmp = lb1_ub1.__div__(lb2_ub2, domain.resolveSchedule.get(Div, ()))
     if tmp is not None:
         if type(tmp) in (boundsurf, boundsurf2):
             tmp.definiteRange = definiteRange
@@ -363,7 +363,7 @@ def get_inv_b2_coeffs(ll, uu, dll, duu, c_l, c_u):
 
 #    a = dl**2 * point_val**-3  
 #    b = -(2*dl**2+dl) * point_val**-2
-    a = dl**2 * point_val**-3  
+    a = 2*dl**2 * point_val**-3  
     b = - (2 * dl**2 * argmin/point_val - dl) * point_val**-2 
 #    a/=2
     a[ind_z] = b[ind_z] = 0.0
@@ -372,6 +372,20 @@ def get_inv_b2_coeffs(ll, uu, dll, duu, c_l, c_u):
     c = 1.0/point_val - (a * argmin + b) * argmin
 #    print a, b, c
 #    a, b, c = 0, 0, 0
+
+#    from numpy.linalg import solve
+#    from numpy import array, vstack
+#    a, b, c = solve(vstack([[2*u, 1, 0], [l**2, l, 1], [u**2, u, 1]]), array([-dl/u2**2, 1/l2, 1/u2]))
+
+    #new
+#    a = dl**2 * point_val**-3  #
+    a = argmin ** -3.0
+    b = - argmin ** -2.0 - 2 * a *  argmin
+    a[ind_z] = b[ind_z] = 0.0
+    ind_z2 = logical_or(logical_not(isfinite(a)), logical_not(isfinite(b)))
+    a[ind_z2] = b[ind_z2] = 0.0
+    c = 1.0 / argmin - (a * argmin + b) * argmin
+    #/new
     koeffs_l = array((a, b, c))
     
     
@@ -391,6 +405,11 @@ def get_inv_b2_coeffs(ll, uu, dll, duu, c_l, c_u):
     u2_2 = u2 ** 2
     a = (1.0/l2  - 1.0/u2 + dl*(l-u)/u2_2) / (u-l)**2
     b = -dl/u2_2 - 2*a*u
+    
+    
+    
+    
+
     a[ind_z] = b[ind_z] = 0.0
     ind_z2 = logical_or(logical_not(isfinite(a)), logical_not(isfinite(b)))
     a[ind_z2] = b[ind_z2] = 0.0
@@ -433,38 +452,60 @@ def pow_const_interval(self, r, other, domain, dtype):
     arg_isNonPositive = all(lb_ub_resolved <= 0)
     
     #changes
-#    if other == -1 and (arg_isNonNegative or arg_isNonPositive) and isBoundSurf and len(lb_ub.dep)==1:
-#        k = list(lb_ub.dep)[0]
-#        l, u = domain[k]
-#        if arg_isNonPositive:
+    if 0 and other == -1 and (arg_isNonNegative or arg_isNonPositive) and isBoundSurf and len(lb_ub.dep)==1:
+        k = list(lb_ub.dep)[0]
+        l, u = domain[k]
+        if arg_isNonPositive:
 #            print('arg_isNonPositive')
-#            lb_ub = -lb_ub
-#        d_l, d_u = lb_ub.l.d[k], lb_ub.u.d[k]
-#        c_l, c_u = lb_ub.l.c, lb_ub.u.c 
-#
-#        koeffs_l, koeffs_u = get_inv_b2_coeffs(l, u, d_l, d_u, c_l, c_u)
-#        if arg_isNonPositive:
-#            lb_ub = -lb_ub
-#            koeffs_l, koeffs_u = -koeffs_u, -koeffs_l
-#        ###############
-#        from numpy import linspace
-#        x = linspace(l, u, 10000)
-#        d_l, d_u = lb_ub.l.d[k], lb_ub.u.d[k]
-#        c_l, c_u = lb_ub.l.c, lb_ub.u.c 
-#        import pylab
-#        if 1:
-#            pylab.plot(x, 1.0/(d_l*x+c_l), 'b')
-#            pylab.plot(x, koeffs_l[0]*x**2+koeffs_l[1]*x+koeffs_l[2], 'r')
-#        else:
-#            pylab.plot(x, 1.0/(d_u*x+c_u), 'g')
-#            pylab.plot(x, koeffs_u[0]*x**2+koeffs_u[1]*x+koeffs_u[2], 'k')
-#        pylab.show()
-#        ###############
+            lb_ub = -lb_ub
+            l, u = -u, -l
+        d_l, d_u = lb_ub.l.d[k], lb_ub.u.d[k]
+        c_l, c_u = lb_ub.l.c, lb_ub.u.c 
+#        print lb_ub_resolved
+        print l, u, d_l, d_u, c_l, c_u
+        koeffs_l, koeffs_u = get_inv_b2_coeffs(l, u, d_l, d_u, c_l, c_u)
+        
+        ###########
+        from boundsurf2 import apply_quad_lin
+        a, b, c = koeffs_l
+        s_l = apply_quad_lin(a, b, c, lb_ub.l)
+        a, b, c = koeffs_u
+        s_u = apply_quad_lin(a, b, c, lb_ub.u)
+        ###########
+        print koeffs_l, koeffs_u
+        if arg_isNonPositive:
+            s_l, s_u = -s_u, -s_l
+            lb_ub = -lb_ub
+            
+            l, u = -u, -l
+        koeffs_l = s_l.d2[k], s_l.d[k], s_l.c
+        koeffs_u = s_u.d2[k], s_u.d[k], s_u.c
+        #############
+        
+        
+        
 #        a, b, c = koeffs_l
 #        s_l = surf2({k:a}, {k:b}, c)
-#        a, b, c = koeffs_u
-#        s_u = surf2({k:a}, {k:b}, c)
-#        return boundsurf2(s_l, s_u, definiteRange, domain), definiteRange
+
+        #s_u = surf2({k:a}, {k:b}, c)
+        
+        ###############
+        from numpy import linspace
+        x = linspace(l, u, 10000)
+        d_l, d_u = lb_ub.l.d[k], lb_ub.u.d[k]
+        c_l, c_u = lb_ub.l.c, lb_ub.u.c 
+        import pylab
+        if 1:
+            pylab.plot(x, 1.0/(d_l*x+c_l), 'b')
+            pylab.plot(x, koeffs_l[0]*x**2+koeffs_l[1]*x+koeffs_l[2], 'r')
+        else:
+            pylab.plot(x, 1.0/(d_u*x+c_u), 'b')
+            pylab.plot(x, koeffs_u[0]*x**2+koeffs_u[1]*x+koeffs_u[2], 'k')
+        pylab.show()
+        ###############
+
+
+        return boundsurf2(s_l, s_u, definiteRange, domain), definiteRange
         
     #changes end
     

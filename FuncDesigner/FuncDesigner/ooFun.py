@@ -614,7 +614,7 @@ class oofun(object):
                 order1, order2 = self.getOrder(*args, **kwargs), other.getOrder(*args, **kwargs)
                 return order1 if order2 == 0 else inf
             r.getOrder = getOrder
-            r._interval_ = lambda *args, **kw: div_interval(self, other, *args, **kw)
+            r._interval_ = lambda *args, **kw: div_interval(self, other, r, *args, **kw)
         else:
             # TODO: mb remove it?
             other = array(other,'float')# TODO: handle float128

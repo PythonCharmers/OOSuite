@@ -318,3 +318,11 @@ class boundsurf2(boundsurf):
     __rmul__ = __mul__
 
     
+def apply_quad_lin(a, b, c, s):
+    assert type(s) == surf
+    D, C = s.d, s.c
+    d2 = dict((k, a*v**2) for k, v in D.items())
+    tmp = 2*a*C+b
+    d = dict((k, v*tmp) for k, v in D.items())
+    c_ = c + (a*C+b)*C
+    return surf2(d2, d, c_)

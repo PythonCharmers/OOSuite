@@ -186,6 +186,8 @@ class boundsurf(object):#object is added for Python2 compatibility
         elif type(other) == np.ndarray:
             assert other.shape[0] == 2, 'unimplemented yet'
             return boundsurf(self.l+other[0], self.u+other[1], self.definiteRange, self.domain)
+        elif isinstance(other, boundsurf): # boundsurf2
+            return other + self
         else:
             assert 0, 'unimplemented yet'
             
@@ -252,24 +254,19 @@ class boundsurf(object):#object is added for Python2 compatibility
                 len(set.union(set(self.l.d.keys()), set(self.u.d.keys()), set(other.l.d.keys()), set(other.u.d.keys()))) == 1:
                     r = b2mult(Self, Other)
                 else:
-                    if 1:
-                        _r = Self.log() + Other.log()
-                        if len(resolveSchedule):
-#                            print(resolveSchedule)
-                            _r = _r.exclude(resolveSchedule)
-                        if type(_r) == np.ndarray:
-                            r = np.exp(_r)
-                            return r if selfPositive == R2Positive else -r[::-1], definiteRange
-                        r = _r.exp()
-                        #print type(r)
-                    else:
-                        r = (Self.log() + Other.log()).exp()
+                    _r = Self.log() + Other.log()
+                    if len(resolveSchedule):
+                        _r = _r.exclude(resolveSchedule)
+                    if type(_r) == np.ndarray:
+                        r = np.exp(_r)
+                        return r if selfPositive == R2Positive else -r[::-1], definiteRange
+                    r = _r.exp()
                     r.definiteRange = definiteRange
                     
                 rr = r if selfPositive == R2Positive else -r
             else:
                 Elems = (self, other)
-                rr = aux_mul_div_boundsurf(Elems, operator.mul)
+                rr = aux_mul_div_boundsurf(Elems, operator.mul, resolveSchedule)
 
 #            else:
 #                RR = R1*R2 if selfPositive and R2Positive \
@@ -298,11 +295,11 @@ class boundsurf(object):#object is added for Python2 compatibility
     
     __rmul__ = __mul__
     
-    def __div__(self, other):
-        isBoundSurf = type(other) == boundsurf
+    def __div__(self, other, resolveSchedule=()):
+        isBoundSurf = isinstance(other, boundsurf)
         assert isBoundSurf
         
-        r = aux_mul_div_boundsurf((self, other), operator.truediv)
+        r = aux_mul_div_boundsurf((self, other), operator.truediv, resolveSchedule)
         
 #        return r 
 #        ind_inf_z = logical_or(logical_or(R2[0]==0, R2[1]==0), logical_or(isinf(R1[0]), isinf(R1[1])))
@@ -509,7 +506,7 @@ def devided_interval(inp, r, domain, dtype, feasLB = -inf, feasUB = inf):
     return b, b.definiteRange
 
 
-def aux_mul_div_boundsurf(Elems, op):
+def aux_mul_div_boundsurf(Elems, op, resolveSchedule=()):
     _r = []
     _resolved = []
     changeSign = False
@@ -531,18 +528,33 @@ def aux_mul_div_boundsurf(Elems, op):
         _r.append(Tmp)
         _resolved.append(_R)
         definiteRange = logical_and(definiteRange, elem.definiteRange)
+        
+    use_exp = True
     if op == operator.mul:
         if len(_r) == 2 and \
         len(set.union(set(_r[0].l.d.keys()), set(_r[0].u.d.keys()), set(_r[1].l.d.keys()), set(_r[1].u.d.keys()))) == 1:
             rr = b2mult(_r[0], _r[1])
+            use_exp = False
         else:
-            rr = PythonSum(elem.log() for elem in _r).exp()
+            rr = PythonSum(elem.log() for elem in _r)#.exp()
     else:
         assert op == operator.truediv and len(Elems) == 2
-        rr = (_r[0].log() - _r[1].log()).exp()
-        
+        rr = (_r[0].log() - _r[1].log())#.exp()
+    
+
     changeSign = logical_and(changeSign, logical_not(indZ))
     keepSign = logical_and(logical_not(changeSign), logical_not(indZ))
+
+    if use_exp:
+        if len(resolveSchedule):
+            rr = rr.exclude(resolveSchedule)
+            
+            if type(rr) == np.ndarray:
+                r = np.exp(rr)
+                r[:, changeSign] = -r[:, changeSign][::-1]
+                return r, definiteRange
+        rr = rr.exp()
+    
     _rr, _inds = [], []
     if any(keepSign):
         _rr.append(rr.extract(keepSign))
@@ -781,3 +793,12 @@ def b2mult(Self, Other):
     ls, us = surf2(ld2, ld, lc), surf2(ud2, ud, uc)
     r = boundsurf2(ls, us, Self.definiteRange & Other.definiteRange, Self.domain)
     return r
+
+
+    
+    
+    
+    
+    
+    
+    
