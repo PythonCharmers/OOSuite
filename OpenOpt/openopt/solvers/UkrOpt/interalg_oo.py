@@ -252,6 +252,7 @@ class interalg(baseSolver):
                     M = np.max((M, np.max(np.atleast_1d(np.abs(r.lb)))))
                     M = np.max((M, np.max(np.atleast_1d(np.abs(r.ub)))))
                 self.dataHandling = 'raw' if M < 1e5 else 'sorted'
+                p.disp('interalg parameter dataHandling autoselected to "%s"' % self.dataHandling)
                     
             #self.dataHandling = 'sorted' if isIP or (p.__isNoMoreThanBoxBounded__() and n < 50) else 'raw'
             

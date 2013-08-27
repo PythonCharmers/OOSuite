@@ -14,27 +14,27 @@ except ImportError:
     from numpy import nanmin, nanmax
 
 hasPoint = lambda y, e, point:\
-    True if any((all(y[i]<=point) and all(e[i]>=point)) for i in range(y.shape[0])) else False
-
+    True if y.size != 0 and any([(all(y[i]<=point) and all(e[i]>=point)) for i in range(y.shape[0])]) else False
+pointInd = lambda y, e, point:\
+    where([(all(y[i]<=point) and all(e[i]>=point)) for i in range(y.shape[0])])[0]
+    
 def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
          r41, fTol, Solutions, varTols, _in, dataType, \
          maxNodes, _s, indTC, xRecord):
 
     isSNLE = p.probType in ('NLSP', 'SNLE')
-
+#    P = array([ 1.        , -1.        ,  0.19865125, -1.        ])
+#    print(0, p.iter, hasPoint(y, e, P), pointInd(y, e, P))
     maxSolutions, solutions, coords = Solutions.maxNum, Solutions.solutions, Solutions.coords
     if len(p._discreteVarsNumList):
         y, e, _s, indTC = adjustDiscreteVarBounds(y, e, _s, indTC, p)
-#    import numpy as np
-#    print np.abs(e-y).sum(axis=0) / y.shape[0]
+
     o, a, r41 = r45(y, e, vv, p, asdf1, dataType, r41, nlhc)
-#    assert not any(isnan(a))
-#    assert not any(isnan(o))
+
     fo_prev = float(0 if isSNLE else min((r41, r40 - (fTol if maxSolutions == 1 else 0))))
     if fo_prev > 1e300:
         fo_prev = 1e300
     y, e, o, a, _s, indTC, nlhc, residual = func7(y, e, o, a, _s, indTC, nlhc, residual)    
-
     if y.size == 0:
         return _in, g, fo_prev, _s, Solutions, xRecord, r41, r40
     
@@ -71,7 +71,11 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
             tmp2 = tmp_u - tmp_l
 #            ind_inf = tmp2==inf
             tmp2[tmp2<1e-300] = 1e-300
-            tmp2[o > fo_prev] = nan
+            o_exclude_ind = o > fo_prev
+            if any(o_exclude_ind):
+                tmp2[o_exclude_ind] = nan
+                if not isSNLE:
+                    g = min((g, min(o[o_exclude_ind])))
             tnlh_curr = tnlh_fixed_local - log2(tmp2)
 #            tnlh_curr[ind_inf] = 1e300
         else:
@@ -96,7 +100,6 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
     
     # TODO: don't calculate PointVals for zero-p regions
     PointVals, PointCoords = getr4Values(vv, y, e, tnlh_curr, asdf1, C, p.contol, dataType, p) 
-
     if PointVals.size != 0:
         xk, Min = r2(PointVals, PointCoords, dataType)
     else: # all points have been removed by func7
@@ -146,7 +149,7 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
 
         NN = atleast_1d([node.tnlh_curr_best for node in an])
         r10 = logical_or(isnan(NN), NN == inf)
-       
+
         if any(r10):
             ind = where(logical_not(r10))[0]
             an = an[ind]
@@ -208,12 +211,12 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
         return an, g, fo, None, Solutions, xRecord, r41, r40
     
     an, g = func9(an, fo, g, p)
-
+        
     nn = maxNodes#1 if asdf1.isUncycled and all(isfinite(o)) and p._isOnlyBoxBounded and not p.probType.startswith('MI') else maxNodes
 
     an, g = func5(an, nn, g, p)
     nNodes.append(len(an))
-
+        
     return an, g, fo, _s, Solutions, xRecord, r41, r40
 
 
