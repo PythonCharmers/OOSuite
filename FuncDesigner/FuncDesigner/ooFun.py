@@ -903,7 +903,11 @@ class oofun(object):
     def sum(self):
         def d(x):
             if type(x) == ndarray and x.ndim > 1: raise FuncDesignerException('sum(x) is not implemented yet for arrays with ndim > 1')
-            return ones_like(x)        
+            
+            #r = ones_like(x) sometimes yields ooarray with dtype object
+            r = ones(x.shape, x.dtype if x.dtype != object else int)
+            return r
+            
         def interval(domain, dtype):
             if type(domain) == ooPoint and domain.isMultiPoint:
                 raise FuncDesignerException('interval calculations are unimplemented for sum(oofun) yet')
