@@ -905,7 +905,7 @@ class oofun(object):
             #if type(x) == ndarray and x.ndim > 1: raise FuncDesignerException('sum(x) is not implemented yet for arrays with ndim > 1')
             
             #r = ones_like(x) sometimes yields ooarray with dtype object
-            print x.shape
+#            print x.shape
             r = ones(x.shape, x.dtype if x.dtype != object else int)
             return r
             
