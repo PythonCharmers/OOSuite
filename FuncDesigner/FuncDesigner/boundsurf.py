@@ -437,9 +437,10 @@ Split = lambda condition1, condition2: \
     logical_and(logical_not(condition1), logical_not(condition2))
     )
 
-import ooFun
+
 
 def devided_interval(inp, r, domain, dtype, feasLB = -inf, feasUB = inf):
+    import ooFun
 
     lb_ub, definiteRange = inp._interval(domain, dtype, ia_surf_level = 2)
     isBoundSurf = isinstance(lb_ub, boundsurf)
@@ -550,10 +551,15 @@ def aux_mul_div_boundsurf(Elems, op, resolveSchedule=()):
             rr = rr.exclude(resolveSchedule)
             
             if type(rr) == np.ndarray:
+                #print('asdf')
                 r = np.exp(rr)
                 r[:, changeSign] = -r[:, changeSign][::-1]
                 return r, definiteRange
+#        print len(rr.dep)
         rr = rr.exp()
+#        print type(rr)
+#        if type(rr) != boundsurf:
+#            print(rr.l.d2, rr.l.d, rr.l.c, '----', rr.u.d2, rr.u.d, rr.u.c)
     
     _rr, _inds = [], []
     if any(keepSign):

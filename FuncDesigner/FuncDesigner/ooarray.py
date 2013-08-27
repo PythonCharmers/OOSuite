@@ -1,3 +1,4 @@
+PythonMax = max
 from baseClasses import OOArray
 from FuncDesigner.multiarray import multiarray
 from ooFun import oofun, Constraint
@@ -79,6 +80,16 @@ class ooarray(OOArray):
             #tmp = tmp.flatten()
             return ooarray(tmp)
 
+    def __getattr__(self, attr):
+        if attr == 'dep':
+            r = set.union(*[elem.dep for elem in self.view(ndarray) if isinstance(elem, (oofun, ooarray))])
+            self.dep = r
+            return r
+        else:
+            raise AttributeError('incorrect attribute of ooarray')
+
+    def getOrder(self, *args, **kw):
+        return PythonMax([0] + [elem.getOrder(*args, **kw) for elem in self.view(ndarray) if isinstance(elem, (oofun, ooarray))])
 
     def __mul__(self, other):
         if self.size == 1:

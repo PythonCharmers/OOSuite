@@ -937,6 +937,8 @@ def sum_derivative(r_, r0, INP, dep, point, fixedVarsScheduleID, Vars=None, fixe
     isSP = hasattr(point, 'maxDistributionSize') and point.maxDistributionSize != 0
     
     for elem in INP:
+        if isinstance(elem, ooarray):
+            elem = hstack(elem)
         if not elem.is_oovar and (elem.input is None or len(elem.input)==0 or elem.input[0] is None): 
             continue # TODO: get rid if None, use [] instead
         if elem.discrete: continue
@@ -1056,7 +1058,7 @@ def sum(inp, *args, **kwargs):
     if condIterableOfOOFuns:
         d, INP, r0 = [], [], 0.0
         for elem in inp: # TODO: mb use reduce() or something like that
-            if not isinstance(elem, oofun): 
+            if not isinstance(elem, (oofun, ooarray)): 
                 # not '+=' because size can be changed from 1 to another value
                 r0 = r0 + np.asanyarray(elem) # so it doesn't work for different sizes
                 continue
@@ -1069,7 +1071,7 @@ def sum(inp, *args, **kwargs):
 
         r.storedSumsFuncs = {}
         for inp in INP:
-            Dep = [inp] if inp.is_oovar else inp._getDep()
+            Dep = [inp] if isinstance(inp, oofun) and inp.is_oovar else inp.dep
             for v in Dep:
                 if v not in r.storedSumsFuncs:
                     r.storedSumsFuncs[v] = set()
