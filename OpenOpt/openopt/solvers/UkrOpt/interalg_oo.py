@@ -233,6 +233,14 @@ class interalg(baseSolver):
 
         #from FuncDesigner.ooFun import BooleanOOFun, SmoothFDConstraint
         
+        if p.hasLogicalConstraints:
+            if self.dataHandling == 'sorted': 
+                p.warn("interalg: for general logical constraints only dataHandling='raw' mode works")
+            self.dataHandling = 'raw'
+        
+        if not isMOP and not p.hasLogicalConstraints:
+            p._isOnlyBoxBounded = p.__isNoMoreThanBoxBounded__() 
+
         if self.dataHandling == 'auto':
             if isIP or isODE:
                 self.dataHandling = 'sorted'
@@ -251,21 +259,17 @@ class interalg(baseSolver):
                     r = func.interval(domain, self.dataType)
                     M = np.max((M, np.max(np.atleast_1d(np.abs(r.lb)))))
                     M = np.max((M, np.max(np.atleast_1d(np.abs(r.ub)))))
-                self.dataHandling = 'raw' if M < 1e5 else 'sorted'
-                p.disp('interalg parameter dataHandling autoselected to "%s"' % self.dataHandling)
-                    
-            #self.dataHandling = 'sorted' if isIP or (p.__isNoMoreThanBoxBounded__() and n < 50) else 'raw'
-            
-        # TODO: is it required yet?
-        if not isMOP and not p.hasLogicalConstraints:
-            p._isOnlyBoxBounded = p.__isNoMoreThanBoxBounded__() 
-            if isODE or (asdf1.isUncycled and p._isOnlyBoxBounded and np.all(np.isfinite(p.user.f[0].interval(domain).lb))):
-                #maxNodes = 1
-                self.dataHandling = 'sorted'
                 
-        if self.dataHandling == 'sorted' and p.hasLogicalConstraints:
-            p.warn("interalg: for general logical constraints only dataHandling='raw' mode works")
-            self.dataHandling = 'raw'
+                self.dataHandling = 'raw' if M < 1e5 else 'sorted'
+                
+                # TODO: is it required yet?
+                if asdf1.isUncycled and p._isOnlyBoxBounded and np.all(np.isfinite(p.user.f[0].interval(domain).lb)):
+                    #maxNodes = 1
+                    self.dataHandling = 'sorted'
+                
+                p.disp('interalg parameter dataHandling has been autoselected to "%s"' % self.dataHandling)
+
+            #self.dataHandling = 'sorted' if isIP or (p.__isNoMoreThanBoxBounded__() and n < 50) else 'raw'
 
         self.maxActiveNodes = int(self.maxActiveNodes)
 #        if self.maxActiveNodes < 2:
