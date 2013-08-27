@@ -22,7 +22,7 @@ class surf2(surf):
     def to_linear(self, domain, cmp):
         C = []
         D, D2 = self.d, self.d2
-        new_D = {}
+        new_D = D.copy()
         for k, d2 in D2.items():
             l, u = domain[k]#[0], domain[k][1]
             
@@ -52,10 +52,6 @@ class surf2(surf):
             _r = extr_val - new_extr_val
             C.append(_r)
             new_D[k] = new_d1
-            
-        for k, v in D.items():
-            if k not in D2:
-                new_D[k] = v
                 
         c = self.c + PythonSum(C)
 #        print '----'
@@ -71,7 +67,7 @@ class surf2(surf):
             l, u = domain[k][0], domain[k][1]
             d1, d2 = D.pop(k, 0.0), D2.pop(k, None)
             if d2 is None:
-                C.append(where(d1 > 0, l, u) * d1)
+                C.append(where(cmp(d1, 0), l, u) * d1)
                 continue
             rr = np.vstack(((d2 * l + d1)*l, (d2*u + d1)*u))
             rr.sort(axis=0)
