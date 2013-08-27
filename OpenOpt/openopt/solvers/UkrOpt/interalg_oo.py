@@ -266,8 +266,8 @@ class interalg(baseSolver):
                 if asdf1.isUncycled and p._isOnlyBoxBounded and np.all(np.isfinite(p.user.f[0].interval(domain).lb)):
                     #maxNodes = 1
                     self.dataHandling = 'sorted'
-                
-                p.disp('interalg parameter dataHandling has been autoselected to "%s"' % self.dataHandling)
+                if p.iprint >= 0:
+                    p.disp('interalg parameter dataHandling has been autoselected to "%s"' % self.dataHandling)
 
             #self.dataHandling = 'sorted' if isIP or (p.__isNoMoreThanBoxBounded__() and n < 50) else 'raw'
 
