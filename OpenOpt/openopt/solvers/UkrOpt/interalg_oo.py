@@ -27,7 +27,9 @@ class interalg(baseSolver):
     __license__ = "BSD"
     __authors__ = "Dmitrey"
     __alg__ = ""
-    __optionalDataThatCanBeHandled__ = ['lb', 'ub', 'c', 'h', 'A', 'Aeq', 'b', 'beq', 'discreteVars']
+    __optionalDataThatCanBeHandled__ = [\
+    'lb', 'ub', 'c', 'h', 'A', 'Aeq', 'b', 'beq', 'discreteVars', 'QC', 'intVars'\
+    ]
     iterfcnConnected = True
     fStart = None
     dataType = np.float64
@@ -64,8 +66,11 @@ class interalg(baseSolver):
             ''' % self.__name__)
 #        if p.fixedVars is not None:
 #            p.err('solver %s cannot handle FuncDesigner problems with some variables declared as fixed' % self.__name__)
-        if p.probType in ('LP', 'MILP'):
-            p.err("the solver can't handle problems of type " + p.probType)
+#        if p.probType in ('LP', 'MILP'):
+#            p.err("the solver can't handle problems of type " + p.probType)
+        for v in p.freeVarsSet:
+            if v.domain is int or v.domain is 'int':
+                p.err('interalg cannot handle intVars yet, use domain = [val1, val2, ...,val_k]')
         if not p.isFDmodel:
             p.err('solver %s can handle only FuncDesigner problems' % self.__name__)
        

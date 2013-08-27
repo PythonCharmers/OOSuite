@@ -780,7 +780,7 @@ def func11(y, e, nlhc, indTC, residual, o, a, _s, p):
                           [o[i][k] for k in range(p.nf)], [a[i][k] for k in range(p.nf)], 
                           _s[i]) for i in range(m)]
         else:
-            assert p.probType in ('GLP', 'NLP', 'NSP', 'SNLE', 'NLSP', 'MINLP')#, 'QP')
+            assert p.probType in ('GLP', 'NLP', 'NSP', 'SNLE', 'NLSP', 'MINLP', 'QP', 'LP', 'MILP')
             
             if 0 and isSNLE:
                 nlhf = Tmp = o = a = [None]*m
