@@ -28,6 +28,7 @@ class LP(MatrixProblem):
             # but is performed for more safety wrt future changes
             _f = self._point2vector(self.f.D(self._x0, fixedVars = self.fixedVars)) 
             self.f, self._f = _f, self.f
+            self.user.f = (self._f, )
             self._init_f_vector = _f # we don't take p.goal into account here
             _c = self._f(self._x0) - dot(self.f, self.x0)
             self._c = _c
