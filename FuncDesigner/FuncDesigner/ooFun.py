@@ -906,6 +906,7 @@ class oofun(object):
             
             #r = ones_like(x) sometimes yields ooarray with dtype object
 #            print x.shape
+            x = asanyarray(x)
             r = ones(x.shape, x.dtype if x.dtype != object else int)
             return r
             
