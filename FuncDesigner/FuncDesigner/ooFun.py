@@ -816,6 +816,19 @@ class oofun(object):
         if other_is_scalar:
             r.engine_convexity = 1
             r.engine_monotonity = 1 if other > 1 else -1 if other >= 0 else nan
+            
+        def rpow_interval(r, other, domain, dtype):
+            lb_ub, definiteRange = self._interval(domain, dtype, ia_surf_level = 2)
+            
+            #!!!!! Temporary !!!!
+
+            r1, definiteRange = oofun._interval_(r, domain, dtype)
+            if 0 or type(lb_ub) == np.ndarray or len(lb_ub.l.d) > 1 or len(lb_ub.u.d) > 1 or len(lb_ub.dep) != 1:
+                return r1, definiteRange
+            from overloads import exp_b_interval
+            return exp_b_interval(log(other) * lb_ub, r1, definiteRange, domain)
+            
+        r._interval_ = lambda *args, **kw: rpow_interval(r, other, *args, **kw)
         
         return r
 

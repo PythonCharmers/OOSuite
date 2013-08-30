@@ -1053,7 +1053,7 @@ def sum(inp, *args, **kwargs):
     if not isinstance(inp, oofun) and not condIterableOfOOFuns: 
         return np.sum(inp, *args, **kwargs)
 
-    if isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp)): inp = inp.tolist()
+    if isinstance(inp, ooarray) and PythonAny(isinstance(elem, oofun) for elem in atleast_1d(inp)): inp = inp.tolist()
 
     if condIterableOfOOFuns:
         d, INP, r0 = [], [], 0.0
