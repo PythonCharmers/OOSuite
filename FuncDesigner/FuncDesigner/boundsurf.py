@@ -765,6 +765,8 @@ def mul_fixed_interval(self, R2):
     return R
 
 def mul_handle_nan(R, R1, R2, domain):
+    if all(np.isfinite(R1)) and all(np.isfinite(R2)):
+        return R
     RR = R.resolve()[0]
     R2_is_scalar = isscalar(R2)
     ind = logical_or(np.isnan(RR[0]), np.isnan(RR[1]))
