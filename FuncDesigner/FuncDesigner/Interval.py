@@ -654,9 +654,10 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
 #        arg_lb_ub = arg_lb_ub.to_linear()
 #        Ld2, Ud2 = {}, {}
     
-#    if (len(Ld2) != 0 or len(Ud2) != 0) and convexity not in (-1, 1, -101, 9):
-#        arg_lb_ub = arg_lb_ub.to_linear()
-#        Ld2, Ud2 = {}, {}
+    # !! TODO: handle monotonity = nan with boundsurf2
+    if (len(Ld2) != 0 or len(Ud2) != 0) and np.isnan(monotonity):
+        arg_lb_ub = arg_lb_ub.to_linear()
+        Ld2, Ud2 = {}, {}
 
     L, U, domain, definiteRange = arg_lb_ub.l, arg_lb_ub.u, arg_lb_ub.domain, arg_lb_ub.definiteRange
     Ld, Ud = L.d, U.d
@@ -726,8 +727,6 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
             L2_dict = U2_dict = {}
 
     if convexity == -1:
-#        print('asdf')
-#        L_dict, U_dict = U_dict, L_dict
         tmp2 = deriv(_argmax.view(multiarray)).view(ndarray).flatten()
         tmp2[ind_inf] = 0.0
 
@@ -772,15 +771,11 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
         else:
             d2_new = dict((v, tmp2 * val) for v, val in L2_dict.items())
             L_new = surf2(d2_new, d_new, 0.0)
-#        try:
         L_new.c = new_l_resolved - L_new.minimum(domain, domain_ind)
-#        except:
-#            pass
         ind_inf2 = np.isinf(new_l_resolved)
         if any(ind_inf2):
             L_new.c = where(ind_inf2, new_l_resolved, L_new.c)
         
-        # for some simple cases
         if len(U_dict) >= 1 or len(U2_dict) >= 1:
             if ind_eq.size:
                 koeffs[ind_eq] = tmp2[ind_eq]
@@ -794,7 +789,6 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
             U_new.c = new_u_resolved - U_new.maximum(domain, domain_ind)
             if any(ind_inf2):
                 U_new.c = where(ind_inf2, new_u_resolved, U_new.c)
-#            print L_new.c, L_new.d, U_new.c, U_new.d
         else:
             U_new = surf({}, new_u_resolved)
     elif convexity == -101:
