@@ -394,32 +394,54 @@ def get_inv_b2_coeffs(ll, uu, dll, duu, c_l, c_u):
     
     
     #U
-#    L2, U2 = duu * ll + c_u, duu * uu + c_u
-#    ind = L2<U2
-#    l2, u2 = np.where(ind, L2, U2), np.where(ind, U2, L2)
+##    L2, U2 = duu * ll + c_u, duu * uu + c_u
+##    ind = L2<U2
+##    l2, u2 = np.where(ind, L2, U2), np.where(ind, U2, L2)
+#    ind = duu > 0
+#    l, u = np.where(ind, ll, uu), np.where(ind, uu, ll)
+#    l2, u2 = l * duu + c_u, u * duu + c_u
+#    dl = np.where(ind, dll, duu)
+##    dl = np.where(ind, duu, dll)
+#    inv_u2, inv_l2 = 1.0/u2, 1.0/l2
+#    
+##    a = (inv_u2 - inv_l2 + (l-u) * dl * inv_l2) * (u-l) ** -2.0
+##    b = dl * inv_l2 - 2 * a * l
+#    u2_2 = u2 ** 2
+#    a = (1.0/l2  - 1.0/u2 + dl*(l-u)/u2_2) / (u-l)**2
+#    b = -dl/u2_2 - 2*a*u
+#
+#    a[ind_z] = b[ind_z] = 0.0
+#    ind_z2 = logical_or(logical_not(isfinite(a)), logical_not(isfinite(b)))
+#    a[ind_z2] = b[ind_z2] = 0.0
+#    c = inv_u2 - (a * u + b) * u
+#    
+    
+    
+    #############new
     ind = duu > 0
-    l, u = np.where(ind, ll, uu), np.where(ind, uu, ll)
-    l2, u2 = l * duu + c_u, u * duu + c_u
-    dl = np.where(ind, dll, duu)
-#    dl = np.where(ind, duu, dll)
-    inv_u2, inv_l2 = 1.0/u2, 1.0/l2
-    
-#    a = (inv_u2 - inv_l2 + (l-u) * dl * inv_l2) * (u-l) ** -2.0
-#    b = dl * inv_l2 - 2 * a * l
-    u2_2 = u2 ** 2
-    a = (1.0/l2  - 1.0/u2 + dl*(l-u)/u2_2) / (u-l)**2
-    b = -dl/u2_2 - 2*a*u
-    
-    
-    
-    
+    argmax = np.where(ind, ll, uu)
+    max_val = argmax * duu + c_u
+#    print('l:',ll,'u:',uu,'argmax:', argmax, 'dll:',dll,'c_l:',c_l,'max_val:', max_val)
 
+    dl = duu#np.where(ind, dll, duu)
+
+#    a = dl**2 * max_val**-3  
+#    b = -(2*dl**2+dl) * max_val**-2
+    a = dl**2 * max_val**-3  
+    b = - (dl*max_val+2*dl**2*argmax) * max_val**-3
+#    a/=2
     a[ind_z] = b[ind_z] = 0.0
     ind_z2 = logical_or(logical_not(isfinite(a)), logical_not(isfinite(b)))
     a[ind_z2] = b[ind_z2] = 0.0
-    c = inv_u2 - (a * u + b) * u
+    c = 1.0/max_val + dl * argmax * max_val**-2 + dl**2 * argmax ** 2 * max_val**-3
+    c[ind_z2] = 1.0/max_val[ind_z2]
+    ################
     
-#    from numpy.linalg import solve
+    
+    
+#    from numpy.linalg import solve#    from numpy.linalg import solve
+#    from numpy import array, vstack
+
 #    from numpy import array, vstack
 #    a, b, c = solve(vstack([[2*u, 1, 0], [l**2, l, 1], [u**2, u, 1]]), array([-dl/u2**2, 1/l2, 1/u2]))
     
@@ -456,6 +478,7 @@ def pow_const_interval(self, r, other, domain, dtype):
     arg_isNonPositive = all(lb_ub_resolved <= 0)
     
     #changes
+    # !!!!!!!TODO: rdiv beyond arg_isNonNegative, arg_isNonPositive
     if 1 and other == -1 and (arg_isNonNegative or arg_isNonPositive) and isBoundSurf and len(lb_ub.dep)==1:
         k = list(lb_ub.dep)[0]
         l, u = domain[k]
@@ -501,10 +524,10 @@ def pow_const_interval(self, r, other, domain, dtype):
 #        c_l, c_u = lb_ub.l.c, lb_ub.u.c 
 #        import pylab
 #        if 1:
-#            pylab.plot(x, 1.0/(d_l*x+c_l), 'b', linewidth = 2)
+#            pylab.plot(x, 1.0/(d_l*x+c_l), 'r', linewidth = 2)
 #            pylab.plot(x, koeffs_l[0]*x**2+koeffs_l[1]*x+koeffs_l[2], 'b', linewidth = 1)
 ##        else:
-#            pylab.plot(x, 1.0/(d_u*x+c_u), 'r', linewidth = 2)
+#            pylab.plot(x, 1.0/(d_u*x+c_u), 'b', linewidth = 2)
 #            pylab.plot(x, koeffs_u[0]*x**2+koeffs_u[1]*x+koeffs_u[2], 'r', linewidth = 1)
 #        pylab.grid()
 #        pylab.show()
