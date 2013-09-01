@@ -349,7 +349,7 @@ def div_interval(self, other, Div, domain, dtype):
 
 def get_inv_b2_coeffs(ll, uu, dll, duu, c_l, c_u):
     ind_z =  uu == ll
-    
+    dll, duu, c_l, c_u = duu, dll, c_u, c_l
     #L
     #L2, U2 = dll * ll + c_l, dll * uu + c_l
     #ind = L2<U2
@@ -456,7 +456,7 @@ def pow_const_interval(self, r, other, domain, dtype):
     arg_isNonPositive = all(lb_ub_resolved <= 0)
     
     #changes
-    if 1 and other == -1 and (arg_isNonNegative or arg_isNonPositive) and isBoundSurf and len(lb_ub.dep)==1:
+    if 0 and other == -1 and (arg_isNonNegative or arg_isNonPositive) and isBoundSurf and len(lb_ub.dep)==1:
         k = list(lb_ub.dep)[0]
         l, u = domain[k]
         d_l, d_u = lb_ub.l.d[k], lb_ub.u.d[k]
