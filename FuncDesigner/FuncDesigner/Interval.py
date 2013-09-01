@@ -400,9 +400,10 @@ def get_inv_b2_coeffs(ll, uu, dll, duu, c_l, c_u):
     ind = duu > 0
     l, u = np.where(ind, ll, uu), np.where(ind, uu, ll)
     l2, u2 = l * duu + c_u, u * duu + c_u
-    d = np.where(ind, dll, duu)
+    d = duu#np.where(ind, dll, duu)
 #    d = np.where(ind, duu, dll)
     inv_u2, inv_l2 = 1.0/u2, 1.0/l2
+#    print('l:',ll,'u:',uu,'duu:',duu,'c_u:',c_u)
     
 #    a = (inv_u2 - inv_l2 + (l-u) * d * inv_l2) * (u-l) ** -2.0
 #    b = d * inv_l2 - 2 * a * l
@@ -517,21 +518,21 @@ def pow_const_interval(self, r, other, domain, dtype):
         a, b, c = koeffs_u
         s_u = surf2({k:a}, {k:b}, c)
         
-        ###############
-        from numpy import linspace
-        x = linspace(l, u, 2000)
-        d_l, d_u = lb_ub.l.d[k], lb_ub.u.d[k]
-        c_l, c_u = lb_ub.l.c, lb_ub.u.c 
-        import pylab
-        if 1:
-            pylab.plot(x, 1.0/(d_l*x+c_l), 'r', linewidth = 2)
-            pylab.plot(x, koeffs_l[0]*x**2+koeffs_l[1]*x+koeffs_l[2], 'b', linewidth = 1)
-#        else:
-            pylab.plot(x, 1.0/(d_u*x+c_u), 'b', linewidth = 2)
-            pylab.plot(x, koeffs_u[0]*x**2+koeffs_u[1]*x+koeffs_u[2], 'r', linewidth = 1)
-        pylab.grid()
-        pylab.show()
-        ###############
+#        ###############
+#        from numpy import linspace
+#        x = linspace(l, u, 2000)
+#        d_l, d_u = lb_ub.l.d[k], lb_ub.u.d[k]
+#        c_l, c_u = lb_ub.l.c, lb_ub.u.c 
+#        import pylab
+#        if 1:
+#            pylab.plot(x, 1.0/(d_l*x+c_l), 'r', linewidth = 2)
+#            pylab.plot(x, koeffs_l[0]*x**2+koeffs_l[1]*x+koeffs_l[2], 'b', linewidth = 1)
+##        else:
+#            pylab.plot(x, 1.0/(d_u*x+c_u), 'b', linewidth = 2)
+#            pylab.plot(x, koeffs_u[0]*x**2+koeffs_u[1]*x+koeffs_u[2], 'r', linewidth = 1)
+#        pylab.grid()
+#        pylab.show()
+#        ###############
 
 
         return boundsurf2(s_l, s_u, definiteRange, domain), definiteRange
