@@ -107,12 +107,18 @@ class surf2(surf):
         oovars = set(self.d.keys()) | set(self.d2.keys())
         Vals = domain.values()
         n = np.asarray(Vals[0][0] if type(Vals) == list else next(iter(Vals))[0]).size
-        r = np.zeros(domain_ind.size if type(domain_ind)==np.ndarray else n) + c
+        active_domain_ind = type(domain_ind)==np.ndarray
+        r = np.zeros(domain_ind.size if active_domain_ind else n) + c
         for k in oovars:
             l, u = domain[k][0][domain_ind], domain[k][1][domain_ind]
             d1, d2 = self.d.get(k, 0.0), self.d2.get(k, None)
+            if active_domain_ind:
+                if type(d1) == np.ndarray and d1.size != 1:
+                    d1 = d1[domain_ind]
+                if type(d2) == np.ndarray and d2.size != 1:
+                    d2 = d2[domain_ind]
             if d2 is None:
-                r += where(d1 > 0, l[domain_ind], u[domain_ind]) * d1
+                r += where(d1 > 0, l, u) * d1
                 continue
             rr = np.vstack(((d2 * l + d1)*l, (d2*u + d1)*u))
             #rr.sort(axis=0)
@@ -132,12 +138,18 @@ class surf2(surf):
         oovars = set(self.d.keys()) | set(self.d2.keys())
         Vals = domain.values()
         n = np.asarray(Vals[0][0] if type(Vals) == list else next(iter(Vals))[0]).size
+        active_domain_ind = type(domain_ind)==np.ndarray
         r = np.zeros(domain_ind.size if type(domain_ind)==np.ndarray else n) + c
         for k in oovars:
             l, u = domain[k][0][domain_ind], domain[k][1][domain_ind]
             d1, d2 = self.d.get(k, 0.0), self.d2.get(k, None)
+            if active_domain_ind:
+                if type(d1) == np.ndarray and d1.size != 1:
+                    d1 = d1[domain_ind]
+                if type(d2) == np.ndarray and d2.size != 1:
+                    d2 = d2[domain_ind]
             if d2 is None:
-                r += where(d1 < 0, l[domain_ind], u[domain_ind]) * d1
+                r += where(d1 < 0, l, u) * d1
                 continue
             rr = np.vstack(((d2 * l + d1)*l, (d2*u + d1)*u))
 #            rr.sort(axis=0)
@@ -193,10 +205,10 @@ class surf2(surf):
         if isscalar(other) or isArray:
             return surf2(dict((k, v*other) for k, v in self.d2.items()), 
             dict((k, v*other) for k, v in self.d.items()), self.c * other)
-        elif type(other) == boundsurf:
-            return other * self.to_linear()
-        elif type(other) == boundsurf2:
-            return other.to_linear() * self.to_linear()
+#        elif type(other) == boundsurf:
+#            return other * self.to_linear()
+#        elif type(other) == boundsurf2:
+#            return other.to_linear() * self.to_linear()
         else:
             assert 0, 'unimplemented yet'
             
@@ -304,11 +316,14 @@ class boundsurf2(boundsurf):
             R1 = self.resolve()[0]
             R = mul_handle_nan(r, R1, R2, domain)
             return R
+            
         # temporary
-        elif isBoundSurf:
-            return self.to_linear().__mul__(other, resolveSchedule)
-        elif isBoundSurf2:
-            return self.to_linear().__mul__(other.to_linear(), resolveSchedule)
+#        elif isBoundSurf:
+#            return self.to_linear().__mul__(other, resolveSchedule)
+#        elif isBoundSurf2:
+#            return self.to_linear().__mul__(other.to_linear(), resolveSchedule)
+        elif isBoundSurf or isBoundSurf2:
+            return boundsurf.__mul__(self, other, resolveSchedule)
         else:
             assert 0, 'unimplemented yet'
         

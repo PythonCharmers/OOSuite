@@ -554,7 +554,7 @@ def pow_const_interval(self, r, other, domain, dtype):
 #            return devided_interval(self, r, domain, dtype)
         
         #prev
-        if arg_isNonNegative or (other_is_int and other > 0 and other % 2 == 0): 
+        if arg_isNonNegative:# or (other_is_int and other > 0 and other % 2 == 0): 
             return defaultIntervalEngine(lb_ub, r.fun, r.d,  
                 monotonity = 1 if other > 0 and arg_isNonNegative else -1 if arg_isNonNegative and other < 0 else np.nan,  
                 convexity = 1 if other > 1.0 or other < 0 else -1,  
@@ -772,7 +772,10 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
         else:
             d2_new = dict((v, tmp2 * val) for v, val in L2_dict.items())
             L_new = surf2(d2_new, d_new, 0.0)
+#        try:
         L_new.c = new_l_resolved - L_new.minimum(domain, domain_ind)
+#        except:
+#            pass
         ind_inf2 = np.isinf(new_l_resolved)
         if any(ind_inf2):
             L_new.c = where(ind_inf2, new_l_resolved, L_new.c)

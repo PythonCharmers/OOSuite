@@ -244,14 +244,12 @@ class boundsurf(object):#object is added for Python2 compatibility
 #            assert R2Positive or R2Negative, 'bug or unimplemented yet'
             rr = mul_fixed_interval(self, other)
 
-        elif isBoundSurf:
+        elif isBoundSurf or isBoundSurf2:
             if (selfPositive or selfNegative) and (R2Positive or R2Negative):
                 Self = self if selfPositive else -self
                 Other = other if R2Positive else -other
                 
-                if 1 and len(self.l.d) <= 1 and len(self.u.d) <= 1 \
-                and len(other.l.d) <= 1 and len(other.u.d) <= 1 and \
-                len(set.union(set(self.l.d.keys()), set(self.u.d.keys()), set(other.l.d.keys()), set(other.u.d.keys()))) == 1:
+                if self.level == other.level == 1 and len(self.dep) == 1 and self.dep == other.dep:
                     r = b2mult(Self, Other)
                 else:
                     _r = Self.log() + Other.log()
@@ -285,9 +283,9 @@ class boundsurf(object):#object is added for Python2 compatibility
             #return 0.5 * (R1*other + R2*self)
             
         else:
-            isBoundSurf2 = type(other) == boundsurf2
-            assert isBoundSurf2, 'bug or unimplemented yet (incorrect boundsurf.__mul__ type: %s)' % type(other)
-            return other * self
+            assert 0, 'bug or unimplemented yet (incorrect boundsurf.__mul__ type: %s)' % type(other)
+#            assert isBoundSurf2, 'bug or unimplemented yet (incorrect boundsurf.__mul__ type: %s)' % type(other)
+#            return other * self
             
         R = rr if type(rr) in (boundsurf, boundsurf2) else boundsurf(rr[0], rr[1], definiteRange, domain)
         R = mul_handle_nan(R, R1, R2, domain)
@@ -532,8 +530,7 @@ def aux_mul_div_boundsurf(Elems, op, resolveSchedule=()):
         
     use_exp = True
     if op == operator.mul:
-        if len(_r) == 2 and \
-        len(set.union(set(_r[0].l.d.keys()), set(_r[0].u.d.keys()), set(_r[1].l.d.keys()), set(_r[1].u.d.keys()))) == 1:
+        if len(_r) == 2 and _r[0].level == _r[1].level == 1 and len(_r[0].dep) == 1 and _r[0].dep == _r[1].dep:
             rr = b2mult(_r[0], _r[1])
             use_exp = False
         else:
@@ -645,24 +642,31 @@ def mul_fixed_interval(self, R2):
         lb1, ub1 = R1
         other_lb, other_ub = R2
         ind_other_positive, ind_other_negative, ind_z2 = split(other_lb >= 0, other_ub <= 0)
-        
-        tmp_l1 = other_lb[ind_other_positive] * l.extract(ind_other_positive)
-        tmp_l2 = other_lb[ind_other_negative] * u.extract(ind_other_negative)
-        tmp_u1 = other_ub[ind_other_positive] * u.extract(ind_other_positive)
-        tmp_u2 = other_ub[ind_other_negative] * l.extract(ind_other_negative)
-        if 1:
+        Ind, Tmp_l, Tmp_u = [], [], []
+        if ind_other_positive.size:
+            Ind.append(ind_other_positive)
+            Tmp_l.append(other_lb[ind_other_positive] * l.extract(ind_other_positive))
+            Tmp_u.append(other_ub[ind_other_positive] * u.extract(ind_other_positive))
+        if ind_other_negative.size:
+            Ind.append(ind_other_negative)
+            Tmp_l.append(other_lb[ind_other_negative] * u.extract(ind_other_negative))
+            Tmp_u.append(other_ub[ind_other_negative] * l.extract(ind_other_negative))
+            
+#        if 1:
+        if ind_z2.size:
             uu = u.extract(ind_z2)
-            tmp_l3 = other_lb[ind_z2] * uu
-            tmp_u3 = other_ub[ind_z2] * uu
-        else:
-            l2, u2 = other_lb[ind_z2], other_ub[ind_z2]
-            l1, u1 = lb1[ind_z2], ub1[ind_z2]
-            Tmp = np.vstack((l1*l2, l1*u2, l2*u1, u1*u2))
-            tmp_l3 = surf({}, nanmin(Tmp, axis=0))
-            tmp_u3 = surf({}, nanmax(Tmp, axis=0))
+            Ind.append(ind_z2)
+            Tmp_l.append(other_lb[ind_z2] * uu)
+            Tmp_u.append(other_ub[ind_z2] * uu)
+#        else:
+#            l2, u2 = other_lb[ind_z2], other_ub[ind_z2]
+#            l1, u1 = lb1[ind_z2], ub1[ind_z2]
+#            Tmp = np.vstack((l1*l2, l1*u2, l2*u1, u1*u2))
+#            tmp_l3 = surf({}, nanmin(Tmp, axis=0))
+#            tmp_u3 = surf({}, nanmax(Tmp, axis=0))
         
-        tmp_l = surf_join((ind_other_positive, ind_other_negative, ind_z2), (tmp_l1, tmp_l2, tmp_l3))
-        tmp_u = surf_join((ind_other_positive, ind_other_negative, ind_z2), (tmp_u1, tmp_u2, tmp_u3))
+        tmp_l = surf_join(Ind, Tmp_l)
+        tmp_u = surf_join(Ind, Tmp_u)
         rr = (tmp_l, tmp_u) if selfPositive else (-tmp_u, -tmp_l)
     else:
         # TODO: mb improve it
@@ -788,7 +792,8 @@ def mul_handle_nan(R, R1, R2, domain):
     return R
 
 def b2mult(Self, Other):
-    k = list(set.union(set(Self.l.d.keys()), set(Self.u.d.keys()), set(Other.l.d.keys()), set(Other.u.d.keys())))[0]
+    assert Self.level == Other.level == 1 and Self.dep == Other.dep and len(Self.dep) == 1
+    k = list(Self.dep)[0]
     ld = {k: Self.l.c*Other.l.d.get(k, 0.0) + Other.l.c*Self.l.d.get(k, 0.0)}
     ud = {k: Self.u.c*Other.u.d.get(k, 0.0) + Other.u.c*Self.u.d.get(k, 0.0)}
     ld2 = {k: Other.l.d.get(k, 0.0) * Self.l.d.get(k, 0.0)}
