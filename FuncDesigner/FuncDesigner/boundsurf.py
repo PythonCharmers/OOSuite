@@ -108,6 +108,7 @@ class surf(object):
 class boundsurf(object):#object is added for Python2 compatibility
     __array_priority__ = 15
     isRendered = False
+    resolved = False
     level = 1
     def __init__(self, lowersurf, uppersurf, definiteRange, domain):
         self.l = lowersurf
@@ -150,9 +151,11 @@ class boundsurf(object):#object is added for Python2 compatibility
         return boundsurf(self.l.extract(Ind), self.u.extract(Ind), definiteRange, self.domain)
 
     def resolve(self):
-        r = np.vstack((self.l.minimum(self.domain), self.u.maximum(self.domain)))
-        assert r.shape[0] == 2, 'bug in FD kernel'
-        return r, self.definiteRange
+        if not self.resolved:
+            self._resolved = np.vstack((self.l.minimum(self.domain), self.u.maximum(self.domain)))
+            self.resolved = True
+        assert self._resolved.shape[0] == 2, 'bug in FD kernel'
+        return self._resolved, self.definiteRange
     
     def render(self):
         if self.isRendered:
