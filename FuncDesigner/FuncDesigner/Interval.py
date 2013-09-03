@@ -352,11 +352,11 @@ def get_inv_b2_coeffs(ll, uu, dll, duu, c_l, c_u):
     dll, duu, c_l, c_u = duu, dll, c_u, c_l
     
     #L
-    ind = dll > 0
+    d = dll
+    ind = d > 0
     
     argmin = np.where(ind, uu, ll)
-    min_val = argmin * dll + c_l
-    d = dll
+    min_val = argmin * d + c_l
     
     a = d**2 * min_val**-3  
     b = - (d*min_val+2*d**2*argmin) * min_val**-3
@@ -381,7 +381,8 @@ def get_inv_b2_coeffs(ll, uu, dll, duu, c_l, c_u):
     a[ind_z] = b[ind_z] = 0.0
     ind_z2 = logical_or(logical_not(isfinite(a)), logical_not(isfinite(b)))
     a[ind_z2] = b[ind_z2] = 0.0
-    c = inv_u2 - (a * u + b) * u
+    c = inv_l2 - (a * l + b) * l
+#    c[ind_z2] = inv_l2
     
     koeffs_u = array((a, b, c))
     
@@ -441,15 +442,13 @@ def pow_const_interval(self, r, other, domain, dtype):
 #        ###########
 #        print koeffs_l, koeffs_u
         if arg_isNonPositive:
-            c_l, c_u = -c_u, -c_l
-            d_l, d_u = -d_u, -d_l
-            lb_ub = -lb_ub
+#            c_l, c_u = -c_u, -c_l
+#            d_l, d_u = -d_u, -d_l
+#            lb_ub = -lb_ub
             koeffs_l, koeffs_u = -array(koeffs_u), -array(koeffs_l)
 
         #############
-        
-        
-        
+
         a, b, c = koeffs_l
         s_l = surf2({k:a}, {k:b}, c)
         a, b, c = koeffs_u
@@ -470,7 +469,6 @@ def pow_const_interval(self, r, other, domain, dtype):
 #        pylab.grid()
 #        pylab.show()
 #        ###############
-
 
         return boundsurf2(s_l, s_u, definiteRange, domain), definiteRange
         
