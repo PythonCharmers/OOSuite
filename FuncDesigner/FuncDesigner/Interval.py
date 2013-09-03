@@ -350,63 +350,30 @@ def div_interval(self, other, Div, domain, dtype):
 def get_inv_b2_coeffs(ll, uu, dll, duu, c_l, c_u):
     ind_z =  uu == ll
     dll, duu, c_l, c_u = duu, dll, c_u, c_l
+    
     #L
-    #L2, U2 = dll * ll + c_l, dll * uu + c_l
-    #ind = L2<U2
-    #l2 = np.where(ind, L2, U2)
-#    print ll, uu, dll, duu, c_l, c_u
     ind = dll > 0
     
     argmin = np.where(ind, uu, ll)
     min_val = argmin * dll + c_l
-#    print('l:',ll,'u:',uu,'argmin:', argmin, 'dll:',dll,'c_l:',c_l,'min_val:', min_val)
-
-    dl = dll#np.where(ind, dll, duu)
-
-#    a = dl**2 * min_val**-3  
-#    b = -(2*dl**2+dl) * min_val**-2
-    a = dl**2 * min_val**-3  
-    b = - (dl*min_val+2*dl**2*argmin) * min_val**-3
-#    a/=2
+    d = dll
+    
+    a = d**2 * min_val**-3  
+    b = - (d*min_val+2*d**2*argmin) * min_val**-3
     a[ind_z] = b[ind_z] = 0.0
     ind_z2 = logical_or(logical_not(isfinite(a)), logical_not(isfinite(b)))
     a[ind_z2] = b[ind_z2] = 0.0
-    c = 1.0/min_val + dl * argmin * min_val**-2 + dl**2 * argmin ** 2 * min_val**-3
+    c = 1.0/min_val + d * argmin * min_val**-2 + d**2 * argmin ** 2 * min_val**-3
     c[ind_z2] = 1.0/min_val[ind_z2]# - (a * argmin + b) * argmin
     koeffs_l = (a, b, c)
-#    print a, b, c, a*argmin**2+b*argmin+ c, 1.0/(argmin * dll + c_l)
-#    a, b, c = 0, 0, 0
-
-#    from numpy.linalg import solve
-#    from numpy import array, vstack
-#    a, b, c = solve(vstack([[2*u, 1, 0], [l**2, l, 1], [u**2, u, 1]]), array([-dl/u2**2, 1/l2, 1/u2]))
-
-#    #new
-##    a = dl**2 * point_val**-3  #
-#    a = argmin ** -3.0
-#    b = - argmin ** -2.0 - 2 * a *  argmin
-#    a[ind_z] = b[ind_z] = 0.0
-#    ind_z2 = logical_or(logical_not(isfinite(a)), logical_not(isfinite(b)))
-#    a[ind_z2] = b[ind_z2] = 0.0
-#    c = 1.0 / argmin #- (a * argmin + b) * argmin
-#    #/new
-#    koeffs_l = array((a, b, c))
-    
     
     #U
-#    L2, U2 = duu * ll + c_u, duu * uu + c_u
-#    ind = L2<U2
-#    l2, u2 = np.where(ind, L2, U2), np.where(ind, U2, L2)
     ind = duu > 0
     l, u = np.where(ind, ll, uu), np.where(ind, uu, ll)
     l2, u2 = l * duu + c_u, u * duu + c_u
-    d = duu#np.where(ind, dll, duu)
-#    d = np.where(ind, duu, dll)
+    d = duu
     inv_u2, inv_l2 = 1.0/u2, 1.0/l2
-#    print('l:',ll,'u:',uu,'duu:',duu,'c_u:',c_u)
     
-#    a = (inv_u2 - inv_l2 + (l-u) * d * inv_l2) * (u-l) ** -2.0
-#    b = d * inv_l2 - 2 * a * l
     u2_2 = u2 ** 2
     a = (1.0/l2  - 1.0/u2 + d*(l-u)/u2_2) / (u-l)**2
     b = -d/u2_2 - 2*a*u
@@ -415,36 +382,6 @@ def get_inv_b2_coeffs(ll, uu, dll, duu, c_l, c_u):
     ind_z2 = logical_or(logical_not(isfinite(a)), logical_not(isfinite(b)))
     a[ind_z2] = b[ind_z2] = 0.0
     c = inv_u2 - (a * u + b) * u
-    
-    
-    
-    #############new
-#    ind = duu > 0
-#    argmax = np.where(ind, ll, uu)
-#    max_val = argmax * duu + c_u
-##    print('l:',ll,'u:',uu,'argmax:', argmax, 'dll:',dll,'c_l:',c_l,'max_val:', max_val)
-#
-#    dl = duu#np.where(ind, dll, duu)
-#
-##    a = dl**2 * max_val**-3  
-##    b = -(2*dl**2+dl) * max_val**-2
-#    a = dl**2 * max_val**-3  
-#    b = - (dl*max_val+2*dl**2*argmax) * max_val**-3
-##    a/=2
-#    a[ind_z] = b[ind_z] = 0.0
-#    ind_z2 = logical_or(logical_not(isfinite(a)), logical_not(isfinite(b)))
-#    a[ind_z2] = b[ind_z2] = 0.0
-#    c = 1.0/max_val + dl * argmax * max_val**-2 + dl**2 * argmax ** 2 * max_val**-3
-#    c[ind_z2] = 1.0/max_val[ind_z2]
-    ################
-    
-    
-    
-#    from numpy.linalg import solve#    from numpy.linalg import solve
-#    from numpy import array, vstack
-
-#    from numpy import array, vstack
-#    a, b, c = solve(vstack([[2*u, 1, 0], [l**2, l, 1], [u**2, u, 1]]), array([-dl/u2**2, 1/l2, 1/u2]))
     
     koeffs_u = array((a, b, c))
     
@@ -647,7 +584,6 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
     assert type(monotonity) != bool and type(convexity) != bool, 'bug in defaultIntervalEngine'
     
     Ld2, Ud2 = getattr(arg_lb_ub.l,'d2', {}),  getattr(arg_lb_ub.u,'d2', {})
-#    print convexity, type(arg_lb_ub)
 
     # DEBUG!!!!!!!!!!!!!!!!!
 #    if (len(Ld2) != 0 or len(Ud2) != 0): 
@@ -655,7 +591,8 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
 #        Ld2, Ud2 = {}, {}
     
     # !! TODO: handle monotonity = nan with boundsurf2
-    if (len(Ld2) != 0 or len(Ud2) != 0) and np.isnan(monotonity):
+    #if (len(Ld2) != 0 or len(Ud2) != 0) and np.isnan(monotonity):
+    if arg_lb_ub.level == 2 and np.isnan(monotonity):
         arg_lb_ub = arg_lb_ub.to_linear()
         Ld2, Ud2 = {}, {}
 
@@ -701,7 +638,7 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
         U2_dict, L2_dict = Ld2, Ud2
         _argmin, _argmax = r_u, r_l
     else:
-        assert len(Ld2) == len(Ud2) == 0, 'unimplemented'
+        assert arg_lb_ub.level < 2, 'unimplemented'
         ind = R2[1] > R2[0] 
         R2.sort(axis=0)
         new_l_resolved, new_u_resolved = R2
@@ -743,7 +680,6 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
         if any(ind_inf2):
             U_new.c = where(ind_inf2, new_u_resolved, U_new.c)
         
-        # for some simple cases
         if len(L_dict) >= 1 or len(L2_dict) >= 1:
             if ind_eq.size:
                 koeffs[ind_eq] = tmp2[ind_eq]
@@ -756,7 +692,6 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
                 L_new = surf2(d2_new, d_new, 0.0)
 
             L_new.c = new_l_resolved -  L_new.minimum(domain, domain_ind)
-#            print L_new.c, L_new.d, U_new.c, U_new.d
             if any(ind_inf2):
                 L_new.c = where(ind_inf2, new_l_resolved, L_new.c)
         else:
