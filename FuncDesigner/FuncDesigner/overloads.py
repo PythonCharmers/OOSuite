@@ -449,15 +449,16 @@ def get_exp_b2_coeffs(ll, uu, dll, duu, c_l, c_u):
     #L2, U2 = dll * ll + c_l, dll * uu + c_l
     #ind = L2<U2
     #l2 = np.where(ind, L2, U2)
-    ind = dll > 0
-    
+    d = dll#np.where(ind, dll, duu)
+    ind = d > 0
     l = np.where(ind, ll, uu)
-    l2 = l * dll + c_l
-    dl = np.where(ind, dll, duu)
+    
+    l2 = l * d + c_l
+    
     exp_l2 = exp(l2)
 
-    a = dl**2 * exp_l2 * 0.5 
-    b = dl * exp_l2 * (1.0 - dl * l)
+    a = d**2 * exp_l2 * 0.5 
+    b = d * exp_l2 * (1.0 - d * l)
     a[ind_z] = b[ind_z] = 0.0
     c = exp_l2 - (a * l + b) * l
     koeffs_l = (a, b, c)
@@ -467,14 +468,16 @@ def get_exp_b2_coeffs(ll, uu, dll, duu, c_l, c_u):
 #    L2, U2 = duu * ll + c_u, duu * uu + c_u
 #    ind = L2<U2
 #    l2, u2 = np.where(ind, L2, U2), np.where(ind, U2, L2)
-    ind = duu > 0
+    d = duu#np.where(ind, dll, duu)
+    ind = d > 0
     l, u = np.where(ind, ll, uu), np.where(ind, uu, ll)
-    l2, u2 = l * duu + c_u, u * duu + c_u
-    dl = np.where(ind, dll, duu)
+    
+    l2, u2 = l * d + c_u, u * d + c_u
+    
     exp_u2, exp_l2 = exp(u2), exp(l2)
     
-    a = (exp_u2 - exp_l2 + (l-u) * dl * exp_l2) * (u-l) ** -2.0
-    b = dl * exp_l2 - 2 * a * l
+    a = (exp_u2 - exp_l2 + (l-u) * d * exp_l2) * (u-l) ** -2.0
+    b = d * exp_l2 - 2 * a * l
     a[ind_z] = b[ind_z] = 0.0
     c = exp_u2 - (a * u + b) * u
     koeffs_u = (a, b, c)
@@ -533,10 +536,13 @@ def exp_b_interval(lb_ub, r1, definiteRange, domain):
     R1, R2 = r1.resolve()[0], r2.resolve()[0]
     ind = R1[1]-R1[0] < R2[1]-R2[0]
     if np.all(ind):
+#        print('case 1')
         R = r1
     elif not np.any(ind):
+#        print('case 2')
         R = r2
     else:
+#        print('case 3')
         ind1, ind2 = ind, np.logical_not(ind)
         b1, b2 = r1.extract(ind1), r2.extract(ind2)
         R = boundsurf_join((ind1, ind2), (b1, b2))
@@ -596,6 +602,82 @@ def abs(inp):
 
 __all__ += ['abs']
 
+def get_log_b2_coeffs(L, U, d_l, d_u, c_l, c_u):
+    # L
+    d = d_l
+    ind = d > 0
+    l, u = np.where(ind, L, U), np.where(ind, U, L)
+    
+    koeffs_l = get_inner_coeffs(np.log, lambda x: 1.0/x, d, l, u, d_l, d_u, c_l, c_u, pointCase='u', lineCase='l')
+#    func, func_d, d, l, u, d_l, d_u, c_l, c_u, pointCase, lineCase
+    # U
+    d = d_u
+    ind = d > 0
+    l, u = np.where(ind, L, U), np.where(ind, U, L)
+    
+    point = d*u + c_u
+    f = log(point)
+    df = d / point
+    d2f = - (d / point)**2
+    koeffs_u = get_outer_coeffs(u, f, df, d2f)
+    
+    return koeffs_l, koeffs_u
+    
+def log_b_interval(lb_ub, r1, definiteRange, domain):
+    if type(lb_ub) == boundsurf2:
+        lb_ub = lb_ub.to_linear()
+        
+    k = list(lb_ub.dep)[0]
+    l, u = domain[k]
+    d_l, d_u = lb_ub.l.d[k], lb_ub.u.d[k]
+    c_l, c_u = lb_ub.l.c, lb_ub.u.c 
+    
+    koeffs_l, koeffs_u = get_log_b2_coeffs(l, u, d_l, d_u, c_l, c_u)
+    
+    # L
+    a, b, c = koeffs_l
+    L = surf2({k:a}, {k:b}, c)
+    
+    # U
+    a, b, c = koeffs_u
+    U = surf2({k:a}, {k:b}, c)
+#########################
+#    from numpy import linspace
+#    x = linspace(l, u, 10000)
+#    import pylab
+#    pylab.plot(x, log(d_l*x+c_l), 'b', linewidth = 2)
+#    pylab.plot(x, log(d_u*x+c_u), 'r', linewidth = 2)
+#    pylab.plot(x, koeffs_l[0]*x**2+koeffs_l[1]*x+koeffs_l[2], 'b', linewidth = 1)
+#    pylab.plot(x, koeffs_u[0]*x**2+koeffs_u[1]*x+koeffs_u[2], 'r', linewidth = 1)
+#    pylab.show()
+#########################
+    definiteRange = logical_and(definiteRange, c_l+d_l*np.where(d_l>0, l, u)>=0)
+    #assert np.all(definiteRange)
+    r2 = boundsurf2(L, U, definiteRange, domain)
+    
+    R1, R2 = r1.resolve()[0], r2.resolve()[0]
+    ind = R1[1]-R1[0] < R2[1]-R2[0]
+    if np.all(ind):
+        R = r1
+    elif not np.any(ind):
+        R = r2
+    else:
+        ind1, ind2 = ind, np.logical_not(ind)
+        b1, b2 = r1.extract(ind1), r2.extract(ind2)
+        R = boundsurf_join((ind1, ind2), (b1, b2))
+#    R = r2
+    return R, definiteRange
+    
+def log_interval(r, inp, domain, dtype):
+    lb_ub, definiteRange = inp._interval(domain, dtype, ia_surf_level = 2)
+    
+    #!!!!! Temporary !!!!
+#    if type()
+    r1, definiteRange = nonnegative_interval(inp, np.log, r.d, domain, dtype, 0.0)
+    if 0 or type(lb_ub) == np.ndarray or len(lb_ub.l.d) > 1 or len(lb_ub.u.d) > 1 or len(lb_ub.dep) != 1:
+        return r1, definiteRange
+    return log_b_interval(lb_ub, r1, definiteRange, domain)
+
 st_log = (lambda x: \
 distribution.stochasticDistribution(log(x.values), x.probabilities.copy())._update(x) \
 if isinstance(x, distribution.stochasticDistribution)\
@@ -612,7 +694,8 @@ def log(inp):
     if not isinstance(inp, oofun): return np.log(inp)
     d = lambda x: Diag(1.0/x)
     r = oofun(st_log, inp, d = d, vectorized = True, engine_monotonity = 1, engine_convexity = -1)
-    r._interval_ = lambda domain, dtype: nonnegative_interval(inp, np.log, r.d, domain, dtype, 0.0)
+    #r._interval_ = lambda domain, dtype: nonnegative_interval(inp, np.log, r.d, domain, dtype, 0.0)
+    r._interval_ = lambda domain, dtype: log_interval(r, inp, domain, dtype)
     r.attach((inp>1e-300)('log_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
 
@@ -1396,3 +1479,36 @@ def errFunc(*args,  **kwargs):
 #            domain.storedIntervals[self] = r
 #        return r
 #    func._interval = f2
+
+def get_inner_coeffs(func, func_d, d, l, u, d_l, d_u, c_l, c_u, pointCase, lineCase):
+    if lineCase == 'u': # parabola must be upper the func
+        ll, uu = d_u * l + c_u, d_u * u + c_u
+    else: # parabola must be below the func
+        ll, uu = d_l * l + c_l, d_l * u + c_l
+        
+    f_l, f_u = func(ll), func(uu)
+
+    if pointCase == 'u':
+        df_u = func_d(uu)
+        a = -(f_u - f_l - d * df_u * (u-l)) * (u-l)**-2
+        b = d * df_u - 2 * a * u
+    else:
+        assert pointCase == 'l'
+        df_l = func_d(ll)
+        a = (f_u - f_l - d * df_l * (u-l)) * (u-l)**-2
+        b = d * df_l - 2 * a * l
+        
+    ind_z = np.logical_or(l == u, np.logical_not(np.isfinite(b)))
+    a[ind_z] = b[ind_z] = 0.0
+    
+    if np.all(np.isfinite(f_l)):
+        c = f_l - (a * l + b) * l
+    elif np.all(np.isfinite(f_u)):
+        c = f_u - (a * u + b) * u
+    else:
+        c = np.where(np.isfinite(f_l), f_l - (a * l + b) * l, f_u - (a * u + b) * u)
+    return a, b, c
+
+def get_outer_coeffs(point, f, df, d2f):
+    return d2f / 2.0, df - point * d2f, f - point * df + point ** 2 * d2f / 2.0
+    

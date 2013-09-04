@@ -333,20 +333,26 @@ class boundsurf(object):#object is added for Python2 compatibility
     
 #    __rtruediv__ = __rdiv__
 
-    def log(self, domain_ind = slice(None)):
+    def log(self):#, domain_ind = slice(None)):
+#        from ooFun import oofun
+#        return oofun._interval_(self, domain, dtype)
+
         from Interval import defaultIntervalEngine
-        return defaultIntervalEngine(self, np.log, lambda x: 1.0 / x, 
-                     monotonity = 1, convexity = -1, feasLB = 0.0, domain_ind = domain_ind)[0]
-    def exp(self, domain_ind = slice(None)):
+        r1 = defaultIntervalEngine(self, np.log, lambda x: x**-1.0, 
+                     monotonity = 1, convexity = -1, feasLB = 0.0)[0]
+        if len(self.l.d) > 1 or len(self.u.d) > 1 or len(self.dep) != 1:
+            return r1
+        from overloads import log_b_interval
+        r = log_b_interval(self, r1, self.definiteRange, self.domain)[0]
+        return r
+    def exp(self):#, domain_ind = slice(None)):
         from Interval import defaultIntervalEngine
         r1 = defaultIntervalEngine(self, np.exp, np.exp, 
-                     monotonity = 1, convexity = 1, domain_ind = domain_ind)[0]
-#        print len(self.l.d),  len(self.u.d), len(self.dep)
+                     monotonity = 1, convexity = 1)[0]
         if len(self.l.d) > 1 or len(self.u.d) > 1 or len(self.dep) != 1:
             return r1
         from overloads import exp_b_interval
         r = exp_b_interval(self, r1, self.definiteRange, self.domain)[0]
-#        print type(r)
         return r
 
     # TODO: rework it if __iadd_, __imul__ etc will be created
