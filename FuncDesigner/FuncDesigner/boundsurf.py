@@ -334,23 +334,42 @@ class boundsurf(object):#object is added for Python2 compatibility
 #    __rtruediv__ = __rdiv__
 
     def log(self):#, domain_ind = slice(None)):
+        from Interval import defaultIntervalEngine
 #        from ooFun import oofun
 #        return oofun._interval_(self, domain, dtype)
+#        from overloads import log_interval
+#        return log_interval(self, self.domain, float)
 
-        from Interval import defaultIntervalEngine
-        r1 = defaultIntervalEngine(self, np.log, lambda x: x**-1.0, 
-                     monotonity = 1, convexity = -1, feasLB = 0.0)[0]
-        if len(self.l.d) > 1 or len(self.u.d) > 1 or len(self.dep) != 1:
+        ia_lvl_2_unavailable = 0 or len(self.l.d) > 1 or len(self.u.d) > 1 or len(self.dep) != 1
+        is_b2 = self.level == 2
+        
+        if ia_lvl_2_unavailable or is_b2:
+            r1 = defaultIntervalEngine(self, np.log, lambda x: 1.0/x, monotonity = 1, convexity = -1, feasLB = 0.0)[0]
+        else:
+            r1 = None
+            
+        if ia_lvl_2_unavailable:
             return r1
+            
         from overloads import log_b_interval
-        r = log_b_interval(self, r1, self.definiteRange, self.domain)[0]
+        r = log_b_interval(self, r1)[0]
         return r
+        
     def exp(self):#, domain_ind = slice(None)):
         from Interval import defaultIntervalEngine
-        r1 = defaultIntervalEngine(self, np.exp, np.exp, 
-                     monotonity = 1, convexity = 1)[0]
-        if len(self.l.d) > 1 or len(self.u.d) > 1 or len(self.dep) != 1:
+        
+        ia_lvl_2_unavailable = len(self.dep) != 1
+        is_b2 = self.level == 2
+        
+        if ia_lvl_2_unavailable or is_b2:
+            r1 = defaultIntervalEngine(self, np.exp, np.exp, 
+                         monotonity = 1, convexity = 1)[0]
+        else:
+            r1 = None
+            
+        if ia_lvl_2_unavailable:
             return r1
+            
         from overloads import exp_b_interval
         r = exp_b_interval(self, r1, self.definiteRange, self.domain)[0]
         return r

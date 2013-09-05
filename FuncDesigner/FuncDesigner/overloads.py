@@ -488,10 +488,17 @@ def exp_interval(r, inp, domain, dtype):
     lb_ub, definiteRange = inp._interval(domain, dtype, ia_surf_level = 2)
     
     #!!!!! Temporary !!!!
-
-    r1, definiteRange = oofun._interval_(r, domain, dtype)
-    if 0 or type(lb_ub) == np.ndarray or len(lb_ub.l.d) > 1 or len(lb_ub.u.d) > 1 or len(lb_ub.dep) != 1:
+    ia_lvl_2_unavailable = type(lb_ub) == np.ndarray or len(lb_ub.dep) != 1
+    is_b2 = type(lb_ub) == boundsurf2
+    
+    if ia_lvl_2_unavailable or is_b2:
+        r1, definiteRange = oofun._interval_(r, domain, dtype)
+    else:
+        r1 = None
+        
+    if ia_lvl_2_unavailable:
         return r1, definiteRange
+        
     return exp_b_interval(lb_ub, r1, definiteRange, domain)
 
 def exp_b_interval(lb_ub, r1, definiteRange, domain):
@@ -533,20 +540,23 @@ def exp_b_interval(lb_ub, r1, definiteRange, domain):
     
     r2 = boundsurf2(L, U, definiteRange, domain)
     
-    R1, R2 = r1.resolve()[0], r2.resolve()[0]
-    ind = R1[1]-R1[0] < R2[1]-R2[0]
-    if np.all(ind):
-#        print('case 1')
-        R = r1
-    elif not np.any(ind):
-#        print('case 2')
-        R = r2
+    if r1 is not None:
+        R1, R2 = r1.resolve()[0], r2.resolve()[0]
+        ind = R1[1]-R1[0] < R2[1]-R2[0]
+        if np.all(ind):
+    #        print('case 1')
+            R = r1
+        elif not np.any(ind):
+    #        print('case 2')
+            R = r2
+        else:
+    #        print('case 3')
+            ind1, ind2 = ind, np.logical_not(ind)
+            b1, b2 = r1.extract(ind1), r2.extract(ind2)
+            R = boundsurf_join((ind1, ind2), (b1, b2))
     else:
-#        print('case 3')
-        ind1, ind2 = ind, np.logical_not(ind)
-        b1, b2 = r1.extract(ind1), r2.extract(ind2)
-        R = boundsurf_join((ind1, ind2), (b1, b2))
-#    R = r2
+        R = r2
+        
     return R, definiteRange
 
 def exp(inp):
@@ -623,10 +633,11 @@ def get_log_b2_coeffs(L, U, d_l, d_u, c_l, c_u):
     
     return koeffs_l, koeffs_u
     
-def log_b_interval(lb_ub, r1, definiteRange, domain):
+def log_b_interval(lb_ub, r1):
+    definiteRange, domain = lb_ub.definiteRange, lb_ub.domain
     if type(lb_ub) == boundsurf2:
         lb_ub = lb_ub.to_linear()
-        
+    
     k = list(lb_ub.dep)[0]
     l, u = domain[k]
     d_l, d_u = lb_ub.l.d[k], lb_ub.u.d[k]
@@ -655,28 +666,38 @@ def log_b_interval(lb_ub, r1, definiteRange, domain):
     #assert np.all(definiteRange)
     r2 = boundsurf2(L, U, definiteRange, domain)
     
-    R1, R2 = r1.resolve()[0], r2.resolve()[0]
-    ind = R1[1]-R1[0] < R2[1]-R2[0]
-    if np.all(ind):
-        R = r1
-    elif not np.any(ind):
-        R = r2
+    if r1 is not None:
+        R1, R2 = r1.resolve()[0], r2.resolve()[0]
+        ind = R1[1]-R1[0] < R2[1]-R2[0]
+        if np.all(ind):
+            R = r1
+        elif not np.any(ind):
+            R = r2
+        else:
+            ind1, ind2 = ind, np.logical_not(ind)
+            b1, b2 = r1.extract(ind1), r2.extract(ind2)
+            R = boundsurf_join((ind1, ind2), (b1, b2))
     else:
-        ind1, ind2 = ind, np.logical_not(ind)
-        b1, b2 = r1.extract(ind1), r2.extract(ind2)
-        R = boundsurf_join((ind1, ind2), (b1, b2))
+        R = r2
 #    R = r2
     return R, definiteRange
     
-def log_interval(r, inp, domain, dtype):
+def log_interval(inp, domain, dtype):
     lb_ub, definiteRange = inp._interval(domain, dtype, ia_surf_level = 2)
     
     #!!!!! Temporary !!!!
-#    if type()
-    r1, definiteRange = nonnegative_interval(inp, np.log, r.d, domain, dtype, 0.0)
-    if 0 or type(lb_ub) == np.ndarray or len(lb_ub.l.d) > 1 or len(lb_ub.u.d) > 1 or len(lb_ub.dep) != 1:
+    ia_lvl_2_unavailable = type(lb_ub) == np.ndarray or len(lb_ub.l.d) > 1 or len(lb_ub.u.d) > 1 or len(lb_ub.dep) != 1
+    is_b2 = type(lb_ub) == boundsurf2
+    
+    if ia_lvl_2_unavailable or is_b2:
+        r1, definiteRange = nonnegative_interval(inp, np.log, lambda x: 1.0 / x, domain, dtype, 0.0)
+    else:
+        r1 = None
+    
+    if ia_lvl_2_unavailable:
         return r1, definiteRange
-    return log_b_interval(lb_ub, r1, definiteRange, domain)
+
+    return log_b_interval(lb_ub, r1)
 
 st_log = (lambda x: \
 distribution.stochasticDistribution(log(x.values), x.probabilities.copy())._update(x) \
@@ -695,7 +716,7 @@ def log(inp):
     d = lambda x: Diag(1.0/x)
     r = oofun(st_log, inp, d = d, vectorized = True, engine_monotonity = 1, engine_convexity = -1)
     #r._interval_ = lambda domain, dtype: nonnegative_interval(inp, np.log, r.d, domain, dtype, 0.0)
-    r._interval_ = lambda domain, dtype: log_interval(r, inp, domain, dtype)
+    r._interval_ = lambda domain, dtype: log_interval(inp, domain, dtype)
     r.attach((inp>1e-300)('log_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
 
