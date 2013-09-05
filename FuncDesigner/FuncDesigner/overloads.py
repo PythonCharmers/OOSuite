@@ -1501,12 +1501,13 @@ def get_inner_coeffs(func, func_d, d, l, u, d_l, d_u, c_l, c_u, pointCase, lineC
     ind_z = np.logical_or(l == u, np.logical_not(np.isfinite(b)))
     a[ind_z] = b[ind_z] = 0.0
     
-    if np.all(np.isfinite(f_l)):
-        c = f_l - (a * l + b) * l
-    elif np.all(np.isfinite(f_u)):
-        c = f_u - (a * u + b) * u
-    else:
-        c = np.where(np.isfinite(f_l), f_l - (a * l + b) * l, f_u - (a * u + b) * u)
+    c = f_l - (a * l + b) * l
+#    if np.all(np.isfinite(f_l)):
+#        c = f_l - (a * l + b) * l
+#    elif np.all(np.isfinite(f_u)):
+#        c = f_u - (a * u + b) * u
+#    else:
+#        c = np.where(np.isfinite(f_l), f_l - (a * l + b) * l, f_u - (a * u + b) * u)
     return a, b, c
 
 def get_outer_coeffs(point, f, df, d2f):
