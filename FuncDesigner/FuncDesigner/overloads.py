@@ -729,6 +729,11 @@ if hasStochastic\
 else np.log10
 
 INV_LOG_10 = 1.0 / np.log(10)
+def log10_interval(inp, domain, dtype):
+    r, definiteRange = log_interval(inp, domain, dtype)
+    r *= INV_LOG_10
+    return r, definiteRange
+    
 def log10(inp):
     if isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp)):
         return ooarray([log10(elem) for elem in inp])    
@@ -737,7 +742,8 @@ def log10(inp):
     if not isinstance(inp, oofun): return np.log10(inp)
     d = lambda x: Diag(INV_LOG_10 / x)
     r = oofun(st_log10, inp, d = d, vectorized = True, engine_monotonity = 1, engine_convexity = -1)
-    r._interval_ = lambda domain, dtype: nonnegative_interval(inp, np.log10, r.d, domain, dtype, 0.0)
+    #r._interval_ = lambda domain, dtype: nonnegative_interval(inp, np.log10, r.d, domain, dtype, 0.0)
+    r._interval_ = lambda domain, dtype: log10_interval(inp, domain, dtype)
     r.attach((inp>1e-300)('log10_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
 
@@ -750,6 +756,11 @@ if hasStochastic\
 else np.log2
 
 INV_LOG_2 = 1.0 / np.log(2)
+def log2_interval(inp, domain, dtype):
+    r, definiteRange = log_interval(inp, domain, dtype)
+    r *= INV_LOG_2
+    return r, definiteRange
+    
 def log2(inp):
     if isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp)):
         return ooarray([log2(elem) for elem in inp])    
@@ -758,7 +769,8 @@ def log2(inp):
     if not isinstance(inp, oofun): return np.log2(inp)
     d = lambda x: Diag(INV_LOG_2/x)
     r = oofun(st_log2, inp, d = d, vectorized = True, engine_monotonity = 1, engine_convexity = -1)
-    r._interval_ = lambda domain, dtype: nonnegative_interval(inp, np.log2, r.d, domain, dtype, 0.0)
+#    r._interval_ = lambda domain, dtype: nonnegative_interval(inp, np.log2, r.d, domain, dtype, 0.0)
+    r._interval_ = lambda domain, dtype: log2_interval(inp, domain, dtype)
     r.attach((inp>1e-300)('log2_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
 
