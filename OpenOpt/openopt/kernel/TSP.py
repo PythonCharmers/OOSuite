@@ -153,7 +153,7 @@ class TSP(MatrixProblem):
                 for key, val in w.items():
                     # for undirected:
                     #if node2index[key] < node2index[out_node]: continue
-                    Val = val if self.returnToStart or node != self.start else 0
+                    Val = val if self.returnToStart or Out_nodes[i] != self.start else 0
                     if key in cr_values:
                         cr_values[key].append(Val)
                     else:
