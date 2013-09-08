@@ -782,7 +782,11 @@ class oofun(object):
                     elif other < 0: 
                         r.monotonities = (-1 if other%2 == 1 else 1, -1)
                     else: # other is int, other > 0
-                        r.monotonities = (-1 if other%2 == 0 else 1, 1)
+#                        r.monotonities = (-1 if other%2 == 0 else 1, 1)
+                        if other % 2 == 0:
+                            r.monotonities = (-1, 1)
+                        else:
+                            r.engine_monotonity = 1
                         
                     r.convexities = ((-1 if isInt and other%2 == 1 else 1 if other > 1 else -1), 
                                      (1 if other > 1 or other < 0 else -1))

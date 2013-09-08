@@ -538,21 +538,22 @@ def inv_b_interval(B, revert):
     a, b, c = koeffs_u
     s_u = surf2({k:a}, {k:b}, c)
     
-#        ###############
+#    ###############
+#    if 0:
 #        from numpy import linspace
-#        x = linspace(l, u, 2000)
+#        x = linspace(l, u, 10000)
 #        d_l, d_u = B.l.d[k], B.u.d[k]
 #        c_l, c_u = B.l.c, B.u.c 
 #        import pylab
 #        if 1:
 #            pylab.plot(x, 1.0/(d_l*x+c_l), 'r', linewidth = 2)
 #            pylab.plot(x, koeffs_l[0]*x**2+koeffs_l[1]*x+koeffs_l[2], 'b', linewidth = 1)
-##        else:
+#    #        else:
 #            pylab.plot(x, 1.0/(d_u*x+c_u), 'b', linewidth = 2)
 #            pylab.plot(x, koeffs_u[0]*x**2+koeffs_u[1]*x+koeffs_u[2], 'r', linewidth = 1)
 #        pylab.grid()
 #        pylab.show()
-#        ###############
+#    ###############
 
     return boundsurf2(s_l, s_u, B.definiteRange, B.domain), B.definiteRange
     

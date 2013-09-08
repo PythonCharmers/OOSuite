@@ -110,7 +110,9 @@ class boundsurf(object):#object is added for Python2 compatibility
     isRendered = False
     resolved = False
     level = 1
-    def __init__(self, lowersurf, uppersurf, definiteRange, domain):
+    def __init__(self, lowersurf, uppersurf, definiteRange, domain, checkType = True):
+        if checkType:
+            assert type(lowersurf) == type(uppersurf) == surf # not surf2
         self.l = lowersurf
         self.u = uppersurf
         self.definiteRange = definiteRange
@@ -307,6 +309,17 @@ class boundsurf(object):#object is added for Python2 compatibility
         #(R2[0]==0) | (R2[1]==0) | (isinf(R2[0])) | (isinf(R2[1])) | (isinf(R1[0])) | isinf(R1[1])
         
         rr = r.resolve()[0]
+        
+#        import pylab, numpy
+#        xx = numpy.linspace(-1, 0, 1000)
+#        t=r.l.d.keys()[0]
+#        tmp=r
+#        pylab.plot(xx, tmp.l.d2.get(t, 0.0)*xx**2+ tmp.l.d.get(t, 0.0)*xx+ tmp.l.c, 'r')
+#        pylab.plot(xx, tmp.u.d2.get(t, 0.0)*xx**2+ tmp.u.d.get(t, 0.0)*xx+ tmp.u.c, 'b')
+#        pylab.grid()
+#        pylab.show()
+        
+        
         # nans may be from other computations from a level below, although
         ind_nan = logical_or(isnan(rr[0]), isnan(rr[1]))
         if not any(ind_nan):
@@ -579,7 +592,7 @@ def aux_mul_div_boundsurf(Elems, op, resolveSchedule=()):
             rr = PythonSum(elem.log() for elem in _r)#.exp()
     else:
         assert op == operator.truediv and len(Elems) == 2
-        if 0 and _r[0].level == _r[1].level == 1 and _r[0].b2equiv(_r[1]):
+        if 1 and _r[0].level == _r[1].level == 1 and _r[0].b2equiv(_r[1]):
             rr = b2div(_r[0], _r[1])
             use_exp = False
         else:
@@ -862,28 +875,20 @@ def b2div(Self, Other):
     k = list(Self.dep)[0]
     L, U = Self.domain[k]
     
-#    d_l, d_u = lb_ub.l.d[k], lb_ub.u.d[k]
-#    c_l, c_u = lb_ub.l.c, lb_ub.u.c 
-    
-    prev = 1
     # L
     d1, d2 = Self.l.d[k], Other.u.d[k]
     c1, c2 = Self.l.c, Other.u.c
     
     a1 = d1 / d2
     b1 = c1 - a1 * c2
-    sign_b1 = np.sign(b1)
 
     ind_negative = b1<0
     ind_b_negative_l = where(ind_negative)[0]
     ind_b_positive_l = where(logical_not(ind_negative))[0]
-    if prev:
-        b1[ind_b_negative_l] = -b1[ind_b_negative_l]
-        d = {k: d2 / b1}
-        c = c2 / b1
-    else:
-        d = {k: d2}
-        c = c2 
+    b1[ind_b_negative_l] = -b1[ind_b_negative_l]
+
+    d = {k: d2}
+    c = c2 
     s_l = surf(d, c)    
     
     # U
@@ -891,17 +896,13 @@ def b2div(Self, Other):
     c1, c2 = Self.u.c, Other.l.c
     a2 = d1 / d2
     b2 = c1 - a2 * c2
-    sign_b2 = np.sign(b2)
     ind_negative = b2<0
     ind_b_negative_u = where(ind_negative)[0]
     ind_b_positive_u = where(logical_not(ind_negative))[0]
-    if prev:
-        b2[ind_b_negative_u] = -b2[ind_b_negative_u]
-        d = {k: d2 / b2}
-        c = c2 / b2
-    else:
-        d = {k: d2 }
-        c = c2 
+    b2[ind_b_negative_u] = -b2[ind_b_negative_u]
+
+    d = {k: d2}
+    c = c2 
     s_u = surf(d, c)
     
     tmp = boundsurf(s_l, s_u, DefiniteRange, domain)
@@ -909,14 +910,13 @@ def b2div(Self, Other):
     from Interval import inv_b_interval
     B = inv_b_interval(tmp, revert = False)[0]
     sl, su = B.l, B.u
-    if prev:
-        sl = surf_join((ind_b_positive_l, ind_b_negative_l), \
-        (sl.extract(ind_b_positive_l), -sl.extract(ind_b_negative_l))) + a1
-        su = surf_join((ind_b_positive_u, ind_b_negative_u), \
-        (su.extract(ind_b_positive_u), -su.extract(ind_b_negative_u))) + a2
-    else:
-        sl = sl*b1+a1
-        su = su*b2+a2
 
-    r = boundsurf(sl, su, DefiniteRange, domain)
+    sl2 = surf_join((ind_b_positive_l, ind_b_negative_l), \
+    (sl.extract(ind_b_positive_l), -su.extract(ind_b_negative_l)))*b1 + a1
+    su2 = surf_join((ind_b_positive_u, ind_b_negative_u), \
+    (su.extract(ind_b_positive_u), -sl.extract(ind_b_negative_u)))*b2 + a2
+
+    from boundsurf2 import boundsurf2
+    r = boundsurf2(sl2, su2, DefiniteRange, domain)
+    
     return r

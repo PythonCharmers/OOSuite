@@ -221,7 +221,8 @@ class boundsurf2(boundsurf):
 #        self.u = uppersurf
 #        self.definiteRange = definiteRange
 #        self.domain = domain
-    
+    def __init__(self, lowersurf, uppersurf, definiteRange, domain):
+        boundsurf.__init__(self, lowersurf, uppersurf, definiteRange, domain, checkType = False)
     
     def exclude(self, oovars):
         L = self.l.exclude(self.domain, oovars, Greater)
