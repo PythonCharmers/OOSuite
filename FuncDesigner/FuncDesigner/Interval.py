@@ -419,58 +419,7 @@ def pow_const_interval(self, r, other, domain, dtype):
     #changes
     # !!!!!!!TODO: rdiv beyond arg_isNonNegative, arg_isNonPositive
     if 1 and other == -1 and (arg_isNonNegative or arg_isNonPositive) and isBoundSurf and len(lb_ub.dep)==1:
-        k = list(lb_ub.dep)[0]
-        l, u = domain[k]
-        d_l, d_u = lb_ub.l.d[k], lb_ub.u.d[k]
-        c_l, c_u = lb_ub.l.c, lb_ub.u.c 
-        if arg_isNonPositive:
-#            print('arg_isNonPositive')
-#            lb_ub = -lb_ub
-            d_l, d_u = -d_u, -d_l
-            c_l, c_u = -c_u, -c_l
-
-#        print lb_ub_resolved
-#        print l, u, d_l, d_u, c_l, c_u
-        koeffs_l, koeffs_u = get_inv_b2_coeffs(l, u, d_l, d_u, c_l, c_u)
-        
-#        ###########
-#        from boundsurf2 import apply_quad_lin
-#        a, b, c = koeffs_l
-#        s_l = apply_quad_lin(a, b, c, lb_ub.l)
-#        a, b, c = koeffs_u
-#        s_u = apply_quad_lin(a, b, c, lb_ub.u)
-#        ###########
-#        print koeffs_l, koeffs_u
-        if arg_isNonPositive:
-#            c_l, c_u = -c_u, -c_l
-#            d_l, d_u = -d_u, -d_l
-#            lb_ub = -lb_ub
-            koeffs_l, koeffs_u = -array(koeffs_u), -array(koeffs_l)
-
-        #############
-
-        a, b, c = koeffs_l
-        s_l = surf2({k:a}, {k:b}, c)
-        a, b, c = koeffs_u
-        s_u = surf2({k:a}, {k:b}, c)
-        
-#        ###############
-#        from numpy import linspace
-#        x = linspace(l, u, 2000)
-#        d_l, d_u = lb_ub.l.d[k], lb_ub.u.d[k]
-#        c_l, c_u = lb_ub.l.c, lb_ub.u.c 
-#        import pylab
-#        if 1:
-#            pylab.plot(x, 1.0/(d_l*x+c_l), 'r', linewidth = 2)
-#            pylab.plot(x, koeffs_l[0]*x**2+koeffs_l[1]*x+koeffs_l[2], 'b', linewidth = 1)
-##        else:
-#            pylab.plot(x, 1.0/(d_u*x+c_u), 'b', linewidth = 2)
-#            pylab.plot(x, koeffs_u[0]*x**2+koeffs_u[1]*x+koeffs_u[2], 'r', linewidth = 1)
-#        pylab.grid()
-#        pylab.show()
-#        ###############
-
-        return boundsurf2(s_l, s_u, definiteRange, domain), definiteRange
+        return inv_b_interval(lb_ub, revert = arg_isNonPositive)
         
     #changes end
     
@@ -552,6 +501,60 @@ def pow_const_interval(self, r, other, domain, dtype):
 
     return Tmp, definiteRange    
 
+def inv_b_interval(B, revert):
+    
+    k = list(B.dep)[0]
+    l, u = B.domain[k]
+    d_l, d_u = B.l.d[k], B.u.d[k]
+    c_l, c_u = B.l.c, B.u.c 
+    if revert:
+#            print('revert')
+#            B = -B
+        d_l, d_u = -d_u, -d_l
+        c_l, c_u = -c_u, -c_l
+
+#        print B_resolved
+#        print l, u, d_l, d_u, c_l, c_u
+    koeffs_l, koeffs_u = get_inv_b2_coeffs(l, u, d_l, d_u, c_l, c_u)
+    
+#        ###########
+#        from boundsurf2 import apply_quad_lin
+#        a, b, c = koeffs_l
+#        s_l = apply_quad_lin(a, b, c, B.l)
+#        a, b, c = koeffs_u
+#        s_u = apply_quad_lin(a, b, c, B.u)
+#        ###########
+#        print koeffs_l, koeffs_u
+    if revert:
+#            c_l, c_u = -c_u, -c_l
+#            d_l, d_u = -d_u, -d_l
+#            B = -B
+        koeffs_l, koeffs_u = -array(koeffs_u), -array(koeffs_l)
+
+    #############
+
+    a, b, c = koeffs_l
+    s_l = surf2({k:a}, {k:b}, c)
+    a, b, c = koeffs_u
+    s_u = surf2({k:a}, {k:b}, c)
+    
+#        ###############
+#        from numpy import linspace
+#        x = linspace(l, u, 2000)
+#        d_l, d_u = B.l.d[k], B.u.d[k]
+#        c_l, c_u = B.l.c, B.u.c 
+#        import pylab
+#        if 1:
+#            pylab.plot(x, 1.0/(d_l*x+c_l), 'r', linewidth = 2)
+#            pylab.plot(x, koeffs_l[0]*x**2+koeffs_l[1]*x+koeffs_l[2], 'b', linewidth = 1)
+##        else:
+#            pylab.plot(x, 1.0/(d_u*x+c_u), 'b', linewidth = 2)
+#            pylab.plot(x, koeffs_u[0]*x**2+koeffs_u[1]*x+koeffs_u[2], 'r', linewidth = 1)
+#        pylab.grid()
+#        pylab.show()
+#        ###############
+
+    return boundsurf2(s_l, s_u, B.definiteRange, B.domain), B.definiteRange
     
 def pow_oofun_interval(self, other, domain, dtype): 
     # TODO: handle discrete cases

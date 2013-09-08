@@ -252,7 +252,7 @@ class boundsurf(object):#object is added for Python2 compatibility
                 Self = self if selfPositive else -self
                 Other = other if R2Positive else -other
                 
-                if self.level == other.level == 1 and len(self.dep) == 1 and self.dep == other.dep:
+                if self.level == other.level == 1 and self.b2equiv(other):
                     r = b2mult(Self, Other)
                 else:
                     _r = Self.log() + Other.log()
@@ -340,7 +340,9 @@ class boundsurf(object):#object is added for Python2 compatibility
 #        from overloads import log_interval
 #        return log_interval(self, self.domain, float)
 
-        ia_lvl_2_unavailable = 0 or len(self.l.d) > 1 or len(self.u.d) > 1 or len(self.dep) != 1
+        ia_lvl_2_unavailable = len(self.l.d) != 1 or len(self.u.d) != 1 \
+        or (self.level == 2 and (len(self.l.d2) != 1 or len(self.u.d2) != 1))
+        
         is_b2 = self.level == 2
         
         if ia_lvl_2_unavailable or is_b2:
@@ -358,7 +360,9 @@ class boundsurf(object):#object is added for Python2 compatibility
     def exp(self):#, domain_ind = slice(None)):
         from Interval import defaultIntervalEngine
         
-        ia_lvl_2_unavailable = len(self.dep) != 1
+        ia_lvl_2_unavailable = len(self.l.d) != 1 or len(self.u.d) != 1 \
+        or (self.level == 2 and (len(self.l.d2) != 1 or len(self.u.d2) != 1))
+        
         is_b2 = self.level == 2
         
         if ia_lvl_2_unavailable or is_b2:
@@ -381,6 +385,16 @@ class boundsurf(object):#object is added for Python2 compatibility
         assert '__idiv__' not in self.__dict__
         assert '__isub__' not in self.__dict__
         return self
+    
+    def b2equiv(self, other):
+        if len(self.l.d) > 1 or len(other.l.d) > 1 or len(self.u.d) > 1 or len(other.u.d) > 1:
+            return False
+        if len(getattr(self.l, 'd2', {})) > 1 or len(getattr(other.l, 'd2', {})) > 1 \
+        or len(getattr(self.u, 'd2', {})) > 1 or len(getattr(other.u, 'd2', {})) > 1:
+            return False
+        if not (self.l.d.keys() == other.l.d.keys() == self.u.d.keys() == other.u.d.keys()):
+            return False
+        return True
     
     abs = lambda self: boundsurf_abs(self)
     
@@ -413,7 +427,7 @@ def Join(inds, arrays):
     return r
 
 def surf_join(inds, S):
-    c = Join(inds, [s.c for s in S])
+    c = Join(inds, [s.c for s in S]) # list, not iterator!
     
     keys = set.union(*[set(s.d.keys()) for s in S])
     d = dict((k, Join(inds, [s.d.get(k, arrZero) for s in S])) for k in keys)
@@ -558,14 +572,18 @@ def aux_mul_div_boundsurf(Elems, op, resolveSchedule=()):
         
     use_exp = True
     if op == operator.mul:
-        if len(_r) == 2 and _r[0].level == _r[1].level == 1 and len(_r[0].dep) == 1 and _r[0].dep == _r[1].dep:
+        if len(_r) == 2 and _r[0].level == _r[1].level == 1 and _r[0].b2equiv(_r[1]):
             rr = b2mult(_r[0], _r[1])
             use_exp = False
         else:
             rr = PythonSum(elem.log() for elem in _r)#.exp()
     else:
         assert op == operator.truediv and len(Elems) == 2
-        rr = (_r[0].log() - _r[1].log())#.exp()
+        if 1 and _r[0].level == _r[1].level == 1 and _r[0].b2equiv(_r[1]):
+            rr = b2div(_r[0], _r[1])
+            use_exp = False
+        else:
+            rr = (_r[0].log() - _r[1].log())#.exp()
     
 
     changeSign = logical_and(changeSign, logical_not(indZ))
@@ -822,7 +840,7 @@ def mul_handle_nan(R, R1, R2, domain):
     return R
 
 def b2mult(Self, Other):
-    assert Self.level == Other.level == 1 and Self.dep == Other.dep and len(Self.dep) == 1
+    assert Self.level == Other.level == 1 and Self.b2equiv(Other)
     k = list(Self.dep)[0]
     ld = {k: Self.l.c*Other.l.d.get(k, 0.0) + Other.l.c*Self.l.d.get(k, 0.0)}
     ud = {k: Self.u.c*Other.u.d.get(k, 0.0) + Other.u.c*Self.u.d.get(k, 0.0)}
@@ -835,11 +853,55 @@ def b2mult(Self, Other):
     r = boundsurf2(ls, us, Self.definiteRange & Other.definiteRange, Self.domain)
     return r
 
-
+def b2div(Self, Other):
+    # Self and Other must be nonnegative
+    assert Self.level == Other.level == 1 and Self.b2equiv(Other)
+    DefiniteRange = Self.definiteRange & Other.definiteRange
+    domain = Self.domain
     
+    k = list(Self.dep)[0]
+    L, U = Self.domain[k]
     
+#    d_l, d_u = lb_ub.l.d[k], lb_ub.u.d[k]
+#    c_l, c_u = lb_ub.l.c, lb_ub.u.c 
     
+    # L
+    d1, d2 = Self.l.d[k], Other.u.d[k]
+    c1, c2 = Self.l.c, Other.u.c
     
+    a1 = d1 / d2
+    b1 = c1 - a1 * c2
+    ind_negative = b1<0
+    ind_b_negative_l = where(ind_negative)[0]
+    ind_b_positive_l = where(logical_not(ind_negative))[0]
+    b1[ind_b_negative_l] = -b1[ind_b_negative_l]
+    d = {k: d2 / b1}
+    c = c2 / b1
+    s_l = surf(d, c)
     
+    # U
+    d1, d2 = Self.u.d[k], Other.l.d[k]
+    c1, c2 = Self.u.c, Other.l.c
     
+    a2 = d1 / d2
+    b2 = c1 - a2 * c2
+    ind_negative = b2<0
+    ind_b_negative_u = where(ind_negative)[0]
+    ind_b_positive_u = where(logical_not(ind_negative))[0]
+    b2[ind_b_negative_u] = -b2[ind_b_negative_u]
+    d = {k: d2 / b2}
+    c = c2 / b2
+    s_u = surf(d, c)
     
+    tmp = boundsurf(s_l, s_u, DefiniteRange, domain)
+    
+    from Interval import inv_b_interval
+    B = inv_b_interval(tmp, revert = False)[0]
+    sl, su = B.l, B.u
+    sl = surf_join((ind_b_positive_l, ind_b_negative_l), \
+    (sl.extract(ind_b_positive_l), -sl.extract(ind_b_negative_l))) + a1
+    su = surf_join((ind_b_positive_u, ind_b_negative_u), \
+    (su.extract(ind_b_positive_u), -su.extract(ind_b_negative_u))) + a2
+    
+    r = boundsurf(sl, su, DefiniteRange, domain)
+    return r
