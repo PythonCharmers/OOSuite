@@ -878,7 +878,12 @@ def b2div(Self, Other):
     # L
     d1, d2 = Self.l.d[k], Other.u.d[k]
     c1, c2 = Self.l.c, Other.u.c
-    
+    ind_Z_l = d2 == 0.0
+    ind_z_l = where(ind_Z_l)[0]
+    if ind_z_l.size:
+        d_z_l = d1 / c2
+        c_z_l = c1 / c2
+        
     a1 = d1 / d2
     b1 = c1 - a1 * c2
 
@@ -894,6 +899,11 @@ def b2div(Self, Other):
     # U
     d1, d2 = Self.u.d[k], Other.l.d[k]
     c1, c2 = Self.u.c, Other.l.c
+    ind_Z_u = d2 == 0.0
+    ind_z_u = where(ind_Z_u)[0]
+    if ind_z_u.size:
+        d_z_u = d1 / c2
+        c_z_u = c1 / c2
     a2 = d1 / d2
     b2 = c1 - a2 * c2
     ind_negative = b2<0
@@ -915,8 +925,19 @@ def b2div(Self, Other):
     (sl.extract(ind_b_positive_l), -su.extract(ind_b_negative_l)))*b1 + a1
     su2 = surf_join((ind_b_positive_u, ind_b_negative_u), \
     (su.extract(ind_b_positive_u), -sl.extract(ind_b_negative_u)))*b2 + a2
+    
+    
+    from boundsurf2 import boundsurf2, surf2
+    if ind_z_l.size:
+        ind_nz_l = where(logical_not(ind_Z_l))[0]
+        sl2 = surf_join((ind_nz_l, ind_z_l), \
+        (sl.extract(ind_nz_l), surf2({k:0}, {k:d_z_l}, c_z_l)))
+    if ind_z_u.size:
+        ind_nz_u = where(logical_not(ind_Z_u))[0]
+        su2 = surf_join((ind_nz_u, ind_z_u), \
+        (su.extract(ind_nz_u), surf2({k:0}, {k:d_z_u}, c_z_u)))
 
-    from boundsurf2 import boundsurf2
+    
     r = boundsurf2(sl2, su2, DefiniteRange, domain)
     
     return r
