@@ -592,7 +592,7 @@ def aux_mul_div_boundsurf(Elems, op, resolveSchedule=()):
             rr = PythonSum(elem.log() for elem in _r)#.exp()
     else:
         assert op == operator.truediv and len(Elems) == 2
-        if 1 and _r[0].level == _r[1].level == 1 and _r[0].b2equiv(_r[1]):
+        if 1 and _r[1].level == _r[1].level == 1 and _r[0].b2equiv(_r[1]):
             rr = b2div(_r[0], _r[1])
             use_exp = False
         else:
@@ -868,23 +868,31 @@ def b2mult(Self, Other):
 
 def b2div(Self, Other):
     # Self and Other must be nonnegative
-    assert Self.level == Other.level == 1 and Self.b2equiv(Other)
+    assert Other.level == 1 and Self.b2equiv(Other)
     DefiniteRange = Self.definiteRange & Other.definiteRange
     domain = Self.domain
+    is_b2 = Self.level == 2
     
     k = list(Self.dep)[0]
     L, U = Self.domain[k]
     
     # L
+    if is_b2:
+        h = Self.l.d2.get(k, 0.0)
     d1, d2 = Self.l.d[k], Other.u.d[k]
     c1, c2 = Self.l.c, Other.u.c
     ind_Z_l = d2 == 0.0
     ind_z_l = where(ind_Z_l)[0]
     if ind_z_l.size:
-        d_z_l = d1 / c2
-        c_z_l = c1 / c2
-        
-    a1 = d1 / d2
+        d_z_l = where(ind_Z_l, d1 / c2, 0.0)
+        c_z_l = where(ind_Z_l, c1 / c2, 0.0)
+        if is_b2:
+            h_z_l = where(ind_Z_l, h / c2, 0.0)
+    if is_b2:
+        H1 = h / d2
+        a1 = (d1 - h * c2 / d2) / d2
+    else:
+        a1 = d1 / d2
     b1 = c1 - a1 * c2
 
     ind_negative = b1<0
@@ -897,14 +905,22 @@ def b2div(Self, Other):
     s_l = surf(d, c)    
     
     # U
+    if is_b2:
+        h = Self.u.d2.get(k, 0.0)
     d1, d2 = Self.u.d[k], Other.l.d[k]
     c1, c2 = Self.u.c, Other.l.c
     ind_Z_u = d2 == 0.0
     ind_z_u = where(ind_Z_u)[0]
     if ind_z_u.size:
-        d_z_u = d1 / c2
-        c_z_u = c1 / c2
-    a2 = d1 / d2
+        d_z_u = where(ind_Z_u, d1 / c2, 0.0)
+        c_z_u = where(ind_Z_u, c1 / c2, 0.0)
+        if is_b2:
+            h_z_u = where(ind_Z_u, h / c2, 0.0)
+    if is_b2:
+        H2 = h / d2
+        a2 = (d1 - h * c2 / d2) / d2
+    else:
+        a2 = d1 / d2
     b2 = c1 - a2 * c2
     ind_negative = b2<0
     ind_b_negative_u = where(ind_negative)[0]
@@ -920,23 +936,29 @@ def b2div(Self, Other):
     from Interval import inv_b_interval
     B = inv_b_interval(tmp, revert = False)[0]
     sl, su = B.l, B.u
-
+    
+    from boundsurf2 import boundsurf2, surf2
+    
     sl2 = surf_join((ind_b_positive_l, ind_b_negative_l), \
     (sl.extract(ind_b_positive_l), -su.extract(ind_b_negative_l)))*b1 + a1
     su2 = surf_join((ind_b_positive_u, ind_b_negative_u), \
     (su.extract(ind_b_positive_u), -sl.extract(ind_b_negative_u)))*b2 + a2
+    if is_b2:
+        sl2.d[k] = sl2.d.get(k, 0.0) + H1
+        su2.d[k] = su2.d.get(k, 0.0) + H2
     
-    
-    from boundsurf2 import boundsurf2, surf2
     if ind_z_l.size:
         ind_nz_l = where(logical_not(ind_Z_l))[0]
         sl2 = surf_join((ind_nz_l, ind_z_l), \
         (sl.extract(ind_nz_l), surf2({k:0}, {k:d_z_l}, c_z_l)))
+        if is_b2:
+            sl2.d2[k] = sl2.d2.get(k, 0.0) + h_z_l
     if ind_z_u.size:
         ind_nz_u = where(logical_not(ind_Z_u))[0]
         su2 = surf_join((ind_nz_u, ind_z_u), \
         (su.extract(ind_nz_u), surf2({k:0}, {k:d_z_u}, c_z_u)))
-
+        if is_b2:
+            su2.d2[k] = su2.d2.get(k, 0.0) + h_z_u
     
     r = boundsurf2(sl2, su2, DefiniteRange, domain)
     

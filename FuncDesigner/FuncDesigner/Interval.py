@@ -359,11 +359,12 @@ def get_inv_b2_coeffs(ll, uu, dll, duu, c_l, c_u):
     min_val = argmin * d + c_l
     
     a = d**2 * min_val**-3  
-    b = - (d*min_val+2*d**2*argmin) * min_val**-3
+    b = - d*(min_val+2*d*argmin) * min_val**-3
     a[ind_z] = b[ind_z] = 0.0
     ind_z2 = min_val == 0#logical_or(logical_not(isfinite(a)), logical_not(isfinite(b)))
     a[ind_z2] = b[ind_z2] = 0.0
     c = 1.0/min_val + d * argmin * min_val**-2 + d**2 * argmin ** 2 * min_val**-3
+    #c = ((d**2 * argmin / min_val + d) * argmin / min_val + 1.0)/min_val
     c[ind_z2] = 1.0/min_val[ind_z2]# - (a * argmin + b) * argmin
     koeffs_l = (a, b, c)
     
@@ -385,7 +386,7 @@ def get_inv_b2_coeffs(ll, uu, dll, duu, c_l, c_u):
 #    c[ind_z2] = inv_l2
     
     koeffs_u = array((a, b, c))
-    
+#    print koeffs_l, koeffs_u
     return koeffs_l, koeffs_u
 
 def pow_const_interval(self, r, other, domain, dtype):
