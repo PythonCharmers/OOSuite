@@ -592,7 +592,7 @@ def aux_mul_div_boundsurf(Elems, op, resolveSchedule=()):
             rr = PythonSum(elem.log() for elem in _r)#.exp()
     else:
         assert op == operator.truediv and len(Elems) == 2
-        if 1 and _r[1].level == _r[1].level == 1 and _r[0].b2equiv(_r[1]):
+        if 1 and  _r[1].level == 1 and _r[0].b2equiv(_r[1]):
             rr = b2div(_r[0], _r[1])
             use_exp = False
         else:
@@ -940,10 +940,20 @@ def b2div(Self, Other):
     from boundsurf2 import boundsurf2, surf2
     
     sl2 = surf_join((ind_b_positive_l, ind_b_negative_l), \
-    (sl.extract(ind_b_positive_l), -su.extract(ind_b_negative_l)))*b1 + a1
+    (sl.extract(ind_b_positive_l), -su.extract(ind_b_negative_l)))*b1 
+    ind_numericaly_unstable_l = 1e13 * np.abs(sl2.c + a1) < np.abs(sl2.c) + np.abs(a1)
+    sl2 += a1
+    
     su2 = surf_join((ind_b_positive_u, ind_b_negative_u), \
-    (su.extract(ind_b_positive_u), -sl.extract(ind_b_negative_u)))*b2 + a2
+    (su.extract(ind_b_positive_u), -sl.extract(ind_b_negative_u)))*b2 
+    ind_numericaly_unstable_u = 1e13 * np.abs(su2.c + a2) < np.abs(su2.c) + np.abs(a2)
+    su2 += a2
+    
     if is_b2:
+        ind_numericaly_unstable_l = logical_or(ind_numericaly_unstable_l, 
+                                               1e13*np.abs(sl2.d.get(k, 0.0) + H1) < np.abs(sl2.d.get(k, 0.0)) + np.abs(H1))
+        ind_numericaly_unstable_u = logical_or(ind_numericaly_unstable_u, 
+                                               1e13*np.abs(su2.d.get(k, 0.0) + H2) < np.abs(su2.d.get(k, 0.0)) + np.abs(H2))
         sl2.d[k] = sl2.d.get(k, 0.0) + H1
         su2.d[k] = su2.d.get(k, 0.0) + H2
     
@@ -953,13 +963,26 @@ def b2div(Self, Other):
         (sl.extract(ind_nz_l), surf2({k:0}, {k:d_z_l}, c_z_l)))
         if is_b2:
             sl2.d2[k] = sl2.d2.get(k, 0.0) + h_z_l
+    
     if ind_z_u.size:
         ind_nz_u = where(logical_not(ind_Z_u))[0]
         su2 = surf_join((ind_nz_u, ind_z_u), \
         (su.extract(ind_nz_u), surf2({k:0}, {k:d_z_u}, c_z_u)))
         if is_b2:
             su2.d2[k] = su2.d2.get(k, 0.0) + h_z_u
-    
+
     r = boundsurf2(sl2, su2, DefiniteRange, domain)
     
+    ind_numericaly_unstable = logical_or(ind_numericaly_unstable_l, ind_numericaly_unstable_u)
+    if any(ind_numericaly_unstable):
+        ind_numericaly_stable = logical_not(ind_numericaly_unstable)
+#        print where(ind_numericaly_stable)[0].size, where(ind_numericaly_unstable)[0].size
+        r2 = (Self.log() - Other.log()).exp()
+        r = boundsurf_join((ind_numericaly_unstable, ind_numericaly_stable), \
+        (r2.extract(ind_numericaly_unstable), r.extract(ind_numericaly_stable)))
     return r
+
+
+
+
+
