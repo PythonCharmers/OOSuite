@@ -5,7 +5,7 @@ import numpy as np
 from FDmisc import FuncDesignerException, update_mul_inf_zero, update_negative_int_pow_inf_zero, \
 update_div_zero
 from FuncDesigner.multiarray import multiarray
-from boundsurf import boundsurf, surf, devided_interval, split, boundsurf_join
+from boundsurf import boundsurf, surf, devided_interval, split, boundsurf_join, merge_boundsurfs
 from boundsurf2 import surf2, boundsurf2
 from operator import truediv as td
 
@@ -363,8 +363,8 @@ def get_inv_b2_coeffs(ll, uu, dll, duu, c_l, c_u):
     a[ind_z] = b[ind_z] = 0.0
     ind_z2 = min_val == 0#logical_or(logical_not(isfinite(a)), logical_not(isfinite(b)))
     a[ind_z2] = b[ind_z2] = 0.0
-    c = 1.0/min_val + d * argmin * min_val**-2 + d**2 * argmin ** 2 * min_val**-3
-    #c = ((d**2 * argmin / min_val + d) * argmin / min_val + 1.0)/min_val
+    #c = 1.0/min_val + d * argmin * min_val**-2 + d**2 * argmin ** 2 * min_val**-3
+    c = ((d * argmin / min_val + 1) * d * argmin / min_val + 1.0)/min_val
     c[ind_z2] = 1.0/min_val[ind_z2]# - (a * argmin + b) * argmin
     koeffs_l = (a, b, c)
     
@@ -422,6 +422,9 @@ def pow_const_interval(self, r, other, domain, dtype):
     if 1 and other == -1 and (arg_isNonNegative or arg_isNonPositive) and isBoundSurf and len(lb_ub.dep)==1:
         return inv_b_interval(lb_ub, revert = arg_isNonPositive)
         
+    # TODO: remove arg_isNonNegative
+    if 1 and 0 < other < 1 and arg_isNonNegative and isBoundSurf and len(lb_ub.dep)==1:
+        return pow_interval(r, self, other, domain, dtype)
     #changes end
     
     
@@ -557,7 +560,89 @@ def inv_b_interval(B, revert):
 #    ###############
 
     return boundsurf2(s_l, s_u, B.definiteRange, B.domain), B.definiteRange
+
+def get_pow_b2_coeffs(L, U, d_l, d_u, c_l, c_u, other):
+    from overloads import get_inner_coeffs, get_outer_coeffs
     
+    # L
+    d = d_l
+    ind = d > 0
+    l, u = np.where(ind, L, U), np.where(ind, U, L)
+    
+    koeffs_l = get_inner_coeffs(lambda x: x**other, lambda x: other * x**(other-1), \
+                                d, l, u, d_l, d_u, c_l, c_u, pointCase='u', lineCase='l')
+    #    func, func_d, d, l, u, d_l, d_u, c_l, c_u, pointCase, lineCase
+    
+    # U
+    d = d_u
+    ind = d > 0
+    l, u = np.where(ind, L, U), np.where(ind, U, L)
+    
+    point = d*u + c_u
+    f = point ** other
+    df = d *  other * point ** (other - 1)
+    d2f = d**2 * other * (other - 1) * point ** (other - 2)
+    koeffs_u = get_outer_coeffs(u, f, df, d2f)
+    
+    return koeffs_l, koeffs_u
+    
+def pow_b_interval(lb_ub, r1, other):
+    definiteRange, domain = lb_ub.definiteRange, lb_ub.domain
+    if type(lb_ub) == boundsurf2:
+        lb_ub = lb_ub.to_linear()
+    
+    k = list(lb_ub.dep)[0]
+    l, u = domain[k]
+    d_l, d_u = lb_ub.l.d[k], lb_ub.u.d[k]
+    c_l, c_u = lb_ub.l.c, lb_ub.u.c 
+    
+    koeffs_l, koeffs_u = get_pow_b2_coeffs(l, u, d_l, d_u, c_l, c_u, other)
+    
+    # L
+    a, b, c = koeffs_l
+    L = surf2({k:a}, {k:b}, c)
+    
+    # U
+    a, b, c = koeffs_u
+    U = surf2({k:a}, {k:b}, c)
+#########################
+#    from numpy import linspace
+#    x = linspace(l, u, 10000)
+#    import pylab
+#    pylab.plot(x, pow(d_l*x+c_l), 'b', linewidth = 2)
+#    pylab.plot(x, pow(d_u*x+c_u), 'r', linewidth = 2)
+#    pylab.plot(x, koeffs_l[0]*x**2+koeffs_l[1]*x+koeffs_l[2], 'b', linewidth = 1)
+#    pylab.plot(x, koeffs_u[0]*x**2+koeffs_u[1]*x+koeffs_u[2], 'r', linewidth = 1)
+#    pylab.show()
+#########################
+    if not np.array_equal(other, asarray(other, int)):
+        definiteRange = logical_and(definiteRange, c_l+d_l*np.where(d_l>0, l, u)>=0)
+    r2 = boundsurf2(L, U, definiteRange, domain)
+    R = merge_boundsurfs(r1, r2)
+    
+    return R, definiteRange
+    
+def pow_interval(r, inp, other, domain, dtype):
+    lb_ub, definiteRange = inp._interval(domain, dtype, ia_surf_level = 2)
+    
+    #!!!!! Temporary !!!!
+    ia_lvl_2_unavailable = type(lb_ub) == np.ndarray or len(lb_ub.l.d) > 1 or len(lb_ub.u.d) > 1 or len(lb_ub.dep) != 1
+    is_b2 = type(lb_ub) == boundsurf2
+    
+    if ia_lvl_2_unavailable or is_b2:
+        from ooFun import oofun
+        r1, definiteRange = oofun._interval_(r, domain, dtype)
+    else:
+        r1 = None
+    
+    if ia_lvl_2_unavailable:
+        return r1, definiteRange
+
+    return pow_b_interval(lb_ub, r1, other)
+    
+
+
+
 def pow_oofun_interval(self, other, domain, dtype): 
     # TODO: handle discrete cases
     lb1_ub1, definiteRange1 = self._interval(domain, dtype, ia_surf_level = 2)

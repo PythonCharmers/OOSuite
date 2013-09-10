@@ -938,22 +938,22 @@ def b2div(Self, Other):
     sl, su = B.l, B.u
     
     from boundsurf2 import boundsurf2, surf2
-    
+    P = 1e11
     sl2 = surf_join((ind_b_positive_l, ind_b_negative_l), \
     (sl.extract(ind_b_positive_l), -su.extract(ind_b_negative_l)))*b1 
-    ind_numericaly_unstable_l = 1e13 * np.abs(sl2.c + a1) < np.abs(sl2.c) + np.abs(a1)
+    ind_numericaly_unstable_l = P * np.abs(sl2.c + a1) < np.abs(sl2.c) + np.abs(a1)
     sl2 += a1
     
     su2 = surf_join((ind_b_positive_u, ind_b_negative_u), \
     (su.extract(ind_b_positive_u), -sl.extract(ind_b_negative_u)))*b2 
-    ind_numericaly_unstable_u = 1e13 * np.abs(su2.c + a2) < np.abs(su2.c) + np.abs(a2)
+    ind_numericaly_unstable_u = P * np.abs(su2.c + a2) < np.abs(su2.c) + np.abs(a2)
     su2 += a2
     
     if is_b2:
         ind_numericaly_unstable_l = logical_or(ind_numericaly_unstable_l, 
-                                               1e13*np.abs(sl2.d.get(k, 0.0) + H1) < np.abs(sl2.d.get(k, 0.0)) + np.abs(H1))
+                                               P*np.abs(sl2.d.get(k, 0.0) + H1) < np.abs(sl2.d.get(k, 0.0)) + np.abs(H1))
         ind_numericaly_unstable_u = logical_or(ind_numericaly_unstable_u, 
-                                               1e13*np.abs(su2.d.get(k, 0.0) + H2) < np.abs(su2.d.get(k, 0.0)) + np.abs(H2))
+                                               P*np.abs(su2.d.get(k, 0.0) + H2) < np.abs(su2.d.get(k, 0.0)) + np.abs(H2))
         sl2.d[k] = sl2.d.get(k, 0.0) + H1
         su2.d[k] = su2.d.get(k, 0.0) + H2
     
@@ -982,7 +982,25 @@ def b2div(Self, Other):
         (r2.extract(ind_numericaly_unstable), r.extract(ind_numericaly_stable)))
     return r
 
+def merge_boundsurfs(r1, r2):
+    if r1 is None:
+        return r2
+    elif r2 is None:
+        return r1
+    if type(r1) == np.ndarray:
+        r1 = boundsurf(surf({}, r1[0]), surf({}, r1[1]), r2.definiteRange, r2.domain)
+    if type(r2) == np.ndarray:
+        r2 = boundsurf(surf({}, r2[0]), surf({}, r2[1]), r1.definiteRange, r1.domain)
+    R1, R2 = r1.resolve()[0], r2.resolve()[0]
+    ind = R1[1]-R1[0] < R2[1]-R2[0]
+    if all(ind):
+        R = r1
+    elif not any(ind):
+        R = r2
+    else:
+        ind1, ind2 = ind, logical_not(ind)
+        b1, b2 = r1.extract(ind1), r2.extract(ind2)
+        R = boundsurf_join((ind1, ind2), (b1, b2))
 
-
-
+    return R
 

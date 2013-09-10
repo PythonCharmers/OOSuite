@@ -9,7 +9,7 @@ from Interval import nonnegative_interval, ZeroCriticalPointsInterval, \
 box_1_interval, defaultIntervalEngine
 from numpy import atleast_1d, logical_and
 from FuncDesigner.multiarray import multiarray
-from boundsurf import boundsurf, surf, devided_interval, boundsurf_join, split#, direct_split
+from boundsurf import boundsurf, surf, devided_interval, boundsurf_join, split, merge_boundsurfs
 from boundsurf2 import boundsurf2, surf2
     
 try:
@@ -539,24 +539,7 @@ def exp_b_interval(lb_ub, r1, definiteRange, domain):
 #    U = surf2({k:0}, r1.u.d, r1.u.c)
     
     r2 = boundsurf2(L, U, definiteRange, domain)
-    
-    if r1 is not None:
-        R1, R2 = r1.resolve()[0], r2.resolve()[0]
-        ind = R1[1]-R1[0] < R2[1]-R2[0]
-        if np.all(ind):
-    #        print('case 1')
-            R = r1
-        elif not np.any(ind):
-    #        print('case 2')
-            R = r2
-        else:
-    #        print('case 3')
-            ind1, ind2 = ind, np.logical_not(ind)
-            b1, b2 = r1.extract(ind1), r2.extract(ind2)
-            R = boundsurf_join((ind1, ind2), (b1, b2))
-    else:
-        R = r2
-        
+    R = merge_boundsurfs(r1, r2)
     return R, definiteRange
 
 def exp(inp):
@@ -570,24 +553,25 @@ def exp(inp):
     r._interval_ = lambda domain, dtype: exp_interval(r, inp, domain, dtype)
     return r
 
-st_sqrt = (lambda x: \
-distribution.stochasticDistribution(sqrt(x.values), x.probabilities.copy())._update(x) \
-if isinstance(x, distribution.stochasticDistribution)\
-else np.array([sqrt(elem) for elem in x.flat]).view(multiarray) if isinstance(x, multiarray) and isinstance(x.flat[0], distribution.stochasticDistribution)
-else np.sqrt(x))\
-if hasStochastic\
-else np.sqrt
+#st_sqrt = (lambda x: \
+#distribution.stochasticDistribution(sqrt(x.values), x.probabilities.copy())._update(x) \
+#if isinstance(x, distribution.stochasticDistribution)\
+#else np.array([sqrt(elem) for elem in x.flat]).view(multiarray) if isinstance(x, multiarray) and isinstance(x.flat[0], distribution.stochasticDistribution)
+#else np.sqrt(x))\
+#if hasStochastic\
+#else np.sqrt
 
 def sqrt(inp, attachConstraints = True):
     if isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp)):
-        return ooarray([sqrt(elem) for elem in inp])
+        return ooarray([elem ** 0.5 for elem in inp])
     if hasStochastic and  isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(sqrt(inp.values), inp.probabilities.copy())._update(inp)      
     if not isinstance(inp, oofun): 
         return np.sqrt(inp)
-    r = oofun(st_sqrt, inp, d = lambda x: Diag(0.5 / np.sqrt(x)), vectorized = True, 
-    engine_monotonity = 1, engine_convexity = -1)
-    r._interval_ = lambda domain, dtype: nonnegative_interval(inp, np.sqrt, r.d, domain, dtype, 0.0)
+#    r = oofun(st_sqrt, inp, d = lambda x: Diag(0.5 / np.sqrt(x)), vectorized = True, 
+#    engine_monotonity = 1, engine_convexity = -1)
+#    r._interval_ = lambda domain, dtype: nonnegative_interval(inp, np.sqrt, r.d, domain, dtype, 0.0)
+    r = inp ** 0.5
     if attachConstraints: r.attach((inp>0)('sqrt_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
 
@@ -663,23 +647,9 @@ def log_b_interval(lb_ub, r1):
 #    pylab.show()
 #########################
     definiteRange = logical_and(definiteRange, c_l+d_l*np.where(d_l>0, l, u)>=0)
-    #assert np.all(definiteRange)
     r2 = boundsurf2(L, U, definiteRange, domain)
+    R = merge_boundsurfs(r1, r2)
     
-    if r1 is not None:
-        R1, R2 = r1.resolve()[0], r2.resolve()[0]
-        ind = R1[1]-R1[0] < R2[1]-R2[0]
-        if np.all(ind):
-            R = r1
-        elif not np.any(ind):
-            R = r2
-        else:
-            ind1, ind2 = ind, np.logical_not(ind)
-            b1, b2 = r1.extract(ind1), r2.extract(ind2)
-            R = boundsurf_join((ind1, ind2), (b1, b2))
-    else:
-        R = r2
-#    R = r2
     return R, definiteRange
     
 def log_interval(inp, domain, dtype):

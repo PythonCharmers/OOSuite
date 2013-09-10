@@ -133,6 +133,11 @@ class oofun(object):
     _d_val_prev = None
     __array_priority__ = 15# set it greater than 1 to prevent invoking numpy array __mul__ etc
     
+    # used in ufuncs
+    _lower_domain_bound = -inf
+    _upper_domain_bound = inf
+
+    
     pWarn = lambda self, msg: pWarn(msg)
     
     def disp(self, msg): 
@@ -244,7 +249,8 @@ class oofun(object):
         
         if isBoundsurf and self.engine_convexity is not nan:# and all(isfinite(arg_lb_ub_resolved)):
             return defaultIntervalEngine(arg_lb_ub, self.fun, self.d, 
-                                         self.engine_monotonity, self.engine_convexity)
+                                         self.engine_monotonity, self.engine_convexity, 
+                                         feasLB = self._lower_domain_bound, feasUB = self._upper_domain_bound)
                                          
         arg_lb_ub_resolved = arg_lb_ub.resolve()[0] if isBoundsurf else arg_lb_ub
         
@@ -768,6 +774,10 @@ class oofun(object):
             
         r = oofun(f, input, d = d)
         if not other_is_oofun:
+            if not isInt:
+                r._lower_domain_bound = 0.0
+                r.engine_convexity = -1 if 0 < other < 1 else 1
+                
             r.getOrder = lambda *args, **kw: \
             other * self.getOrder(*args, **kw) if isInt and other >= 0 \
             else inf
