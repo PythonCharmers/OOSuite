@@ -991,8 +991,41 @@ def merge_boundsurfs(r1, r2):
         r1 = boundsurf(surf({}, r1[0]), surf({}, r1[1]), r2.definiteRange, r2.domain)
     if type(r2) == np.ndarray:
         r2 = boundsurf(surf({}, r2[0]), surf({}, r2[1]), r1.definiteRange, r1.domain)
-    R1, R2 = r1.resolve()[0], r2.resolve()[0]
-    ind = R1[1]-R1[0] < R2[1]-R2[0]
+        
+    prev = 0
+    if prev:
+        R1, R2 = r1.resolve()[0], r2.resolve()[0]
+        ind = R1[1]-R1[0] < R2[1]-R2[0] 
+    else:
+        domain = r1.domain
+        k = list(r1.dep | r2.dep)[0]
+        
+        a1, b1, c1 = getattr(r1.l, 'd2', {k:0.0}).get(k, 0.0), r1.l.d.get(k, 0.0), r1.l.c
+        a2, b2, c2 = getattr(r2.l,'d2', {k:0.0}).get(k, 0.0), r2.l.d.get(k, 0.0), r2.l.c
+        lb, ub = domain[k]
+        A, B = (lb**2 + lb*ub + ub**2) / 3.0, 0.5 * (lb + ub)
+        
+        diff_l = (a1-a2) * A + (b1-b2) * B + (c1-c2)
+        # where r1.l better than r2.l
+        ind_l = diff_l  > 0.0
+        
+        a1, b1, c1 = getattr(r1.u,'d2', {k:0.0}).get(k, 0.0), r1.u.d.get(k, 0.0), r1.u.c
+        a2, b2, c2 = getattr(r2.u,'d2', {k:0.0}).get(k, 0.0), r2.u.d.get(k, 0.0), r2.u.c
+        lb, ub = domain[k]
+        A, B = (lb**2 + lb*ub + ub**2) / 3.0, 0.5 * (lb + ub)
+        
+        diff_u = (a1-a2) * A + (b1-b2) * B + (c1-c2)
+        # where r1.u better than r2.u
+        ind_u = diff_u  < 0.0
+        
+        
+        # TODO: use ind_l, ind_u with surf processing
+        
+        ind = diff_l - diff_u > 0.0
+        
+    #debug
+    #print int(np.log10(1e-300+np.max(np.abs(R1[1]-R1[0] - (R2[1]-R2[0])))))
+    #debug end
     if all(ind):
         R = r1
     elif not any(ind):
@@ -1001,6 +1034,6 @@ def merge_boundsurfs(r1, r2):
         ind1, ind2 = ind, logical_not(ind)
         b1, b2 = r1.extract(ind1), r2.extract(ind2)
         R = boundsurf_join((ind1, ind2), (b1, b2))
-
+    #R = r2
     return R
 
