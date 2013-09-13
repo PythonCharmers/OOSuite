@@ -256,7 +256,10 @@ class boundsurf(object):#object is added for Python2 compatibility
             rr = mul_fixed_interval(self, other)
 
         elif isBoundSurf or isBoundSurf2:
-            if (selfPositive or selfNegative) and (R2Positive or R2Negative):
+            if 0 and self.level == other.level == 1 and self.u is self.l and other.u is other.l and self.b2equiv(other):
+                #print('asdf')
+                rr = b2mult_direct(self, other)
+            elif (selfPositive or selfNegative) and (R2Positive or R2Negative):
                 Self = self if selfPositive else -self
                 Other = other if R2Positive else -other
                 
@@ -870,6 +873,18 @@ def b2mult(Self, Other):
     from boundsurf2 import surf2, boundsurf2
     ls, us = surf2(ld2, ld, lc), surf2(ud2, ud, uc)
     r = boundsurf2(ls, us, Self.definiteRange & Other.definiteRange, Self.domain)
+    return r
+
+def b2mult_direct(Self, Other):
+    assert Self.level == Other.level == 1 and Self.b2equiv(Other) and Self.l is Self.u and Other.l is Other.u
+    k = list(Self.dep)[0]
+    s, o = Self.l, Other.l # = Self.u, Other.u 
+    ld = {k: s.c * o.d.get(k, 0.0) + o.c * s.d.get(k, 0.0)}
+    ld2 = {k: o.d.get(k, 0.0) * s.d.get(k, 0.0)}
+    lc = s.c * o.c
+    from boundsurf2 import surf2, boundsurf2
+    ls = surf2(ld2, ld, lc)
+    r = boundsurf2(ls, ls, Self.definiteRange & Other.definiteRange, Self.domain)
     return r
 
 def b2div(Self, Other):
