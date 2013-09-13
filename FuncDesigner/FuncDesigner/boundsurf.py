@@ -256,8 +256,7 @@ class boundsurf(object):#object is added for Python2 compatibility
             rr = mul_fixed_interval(self, other)
 
         elif isBoundSurf or isBoundSurf2:
-            if 0 and self.level == other.level == 1 and self.u is self.l and other.u is other.l and self.b2equiv(other):
-                #print('asdf')
+            if self.level == other.level == 1 and self.u is self.l and other.u is other.l and self.b2equiv(other):
                 rr = b2mult_direct(self, other)
             elif (selfPositive or selfNegative) and (R2Positive or R2Negative):
                 Self = self if selfPositive else -self
