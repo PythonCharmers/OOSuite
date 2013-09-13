@@ -489,17 +489,18 @@ def pow_const_interval(self, r, other, domain, dtype):
             return r, r.definiteRange
 
     lb_ub = lb_ub_resolved
-    Tmp = lb_ub ** other
-    Tmp.sort(axis = 0)
     lb, ub = lb_ub
-    
+    Tmp = lb_ub ** other
+
     if not other_is_int or not isOdd:
         ind_z = logical_and(lb < 0, ub >= 0)
         if any(ind_z):
             Tmp[0, ind_z] = 0.0
             if not other_is_int:
                 definiteRange = logical_and(definiteRange, logical_not(ind_z))
-
+    
+    Tmp.sort(axis = 0)
+    
     if other < 0 and other_is_int:
         update_negative_int_pow_inf_zero(lb, ub, Tmp, other)
 
