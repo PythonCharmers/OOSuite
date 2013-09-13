@@ -754,6 +754,7 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
 
     if convexity == -1:
         tmp2 = deriv(_argmax.view(multiarray)).view(ndarray).flatten()
+        tmp2[np.isinf(tmp2)] = 0.0
         tmp2[ind_inf] = 0.0
 
         d_new = dict((v, tmp2 * val) for v, val in U_dict.items())
@@ -787,6 +788,7 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
             L_new = surf({}, new_l_resolved)                        
     elif convexity == 1:
         tmp2 = deriv(_argmin.view(multiarray)).view(ndarray).flatten()
+        tmp2[np.isinf(tmp2)] = 0.0
         tmp2[ind_inf] = 0.0
         
         d_new = dict((v, tmp2 * val) for v, val in L_dict.items())
@@ -830,6 +832,7 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
         tmp2 = deriv(argvals[0].view(multiarray)).view(ndarray).flatten()
         ind_k = where((tmp2 > koeffs) if monotonity == 1 else (tmp2 < koeffs))[0]
         tmp2[ind_k] = koeffs[ind_k]
+        tmp2[np.isinf(tmp2)] = 0.0
         tmp2[ind_inf] = 0.0
         
         d_new = dict((v, tmp2 * val) for v, val in U_dict.items())
@@ -850,6 +853,7 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
         tmp2 = deriv(argvals[1].view(multiarray)).view(ndarray).flatten()
         ind_k = where((tmp2 > koeffs) if monotonity == 1 else (tmp2 < koeffs))[0]
         tmp2[ind_k] = koeffs[ind_k]
+        tmp2[np.isinf(tmp2)] = 0.0
         tmp2[ind_inf] = 0.0
         
         d_new = dict((v, tmp2 * val) for v, val in L_dict.items())
@@ -881,6 +885,7 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
         tmp2 = deriv(argvals[0].view(multiarray)).view(ndarray).flatten()
         ind_k = where(tmp2 > koeffs)[0]
         tmp2[ind_k] = koeffs[ind_k]
+        tmp2[np.isinf(tmp2)] = 0.0
         tmp2[ind_inf] = 0.0
         
         d_new = dict((v, tmp2 * val) for v, val in L_dict.items())
@@ -899,6 +904,7 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
         tmp2 = deriv(argvals[1].view(multiarray)).view(ndarray).flatten()
         ind_k = where(tmp2 > koeffs)[0]
         tmp2[ind_k] = koeffs[ind_k]
+        tmp2[np.isinf(tmp2)] = 0.0
         tmp2[ind_inf] = 0.0
         
         d_new = dict((v, tmp2 * val) for v, val in U_dict.items())

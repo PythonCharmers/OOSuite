@@ -265,7 +265,13 @@ class boundsurf2(boundsurf):
             return boundsurf2(rr[0], rr[1], self.definiteRange & other.definiteRange, self.domain)
         elif type(other) == np.ndarray:
             assert other.shape[0] == 2, 'unimplemented yet'
-            return boundsurf2(self.l+other[0], self.u+other[1], self.definiteRange, self.domain)
+            L = self.l + other[0]
+            if self.l is self.u and np.array_equal(other[0], other[1]):
+                # may be from fixed variables
+                U = L
+            else:
+                U = self.u+other[1]
+            return boundsurf2(L, U, self.definiteRange, self.domain)
         else:
             assert 0, 'unimplemented yet'
             
