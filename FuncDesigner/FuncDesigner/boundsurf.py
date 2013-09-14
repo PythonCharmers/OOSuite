@@ -532,7 +532,7 @@ def devided_interval(inp, r, domain, dtype, feasLB = -inf, feasUB = inf):
     for j, ind in enumerate(Inds[:-1]):
         if ind.size != 0:
             tmp = defaultIntervalEngine(lb_ub, r.fun, r.d, monotonity=monotonities[j], convexity=convexities[j], 
-                                        feasLB = feasLB, feasUB = feasUB, domain_ind = ind)[0]
+                                        feasLB = feasLB, feasUB = feasUB, domain_ind = ind if ind.size != m else slice(None))[0]
             if ind.size == m:
                 return tmp, tmp.definiteRange
             rr.append(tmp)
@@ -542,12 +542,12 @@ def devided_interval(inp, r, domain, dtype, feasLB = -inf, feasUB = inf):
     if _ind.size:
         if convexities == (-1, 1) and r.engine_monotonity == 1:
             tmp = defaultIntervalEngine(lb_ub, r.fun, r.d, monotonity = r.engine_monotonity, convexity=-101, 
-                                        feasLB = feasLB, feasUB = feasUB, domain_ind = _ind)[0]
+                                        feasLB = feasLB, feasUB = feasUB, domain_ind = _ind if _ind.size != m else slice(None))[0]
             if _ind.size == m:
                 return tmp, tmp.definiteRange
         elif convexities == (1, -1) and r.engine_monotonity is not np.nan:
             tmp = defaultIntervalEngine(lb_ub, r.fun, r.d, monotonity = r.engine_monotonity, convexity= 9, # 10-1 
-                                        feasLB = feasLB, feasUB = feasUB, domain_ind = _ind)[0]
+                                        feasLB = feasLB, feasUB = feasUB, domain_ind = _ind if _ind.size != m else slice(None))[0]
             if _ind.size == m:
                 return tmp, tmp.definiteRange
         else:
@@ -1012,6 +1012,8 @@ def merge_boundsurfs(r1, r2):
     if type(r2) == np.ndarray:
         r2 = boundsurf(surf({}, r2[0]), surf({}, r2[1]), r1.definiteRange, r1.domain)
         
+#    definiteRange = logical_or(r1.definiteRange, r2.definiteRange)
+#    print all(isfinite(r1.resolve()[0])), all(isfinite(r2.resolve()[0]))
     prev = 0
     if prev:
         R1, R2 = r1.resolve()[0], r2.resolve()[0]
@@ -1055,5 +1057,15 @@ def merge_boundsurfs(r1, r2):
         b1, b2 = r1.extract(ind1), r2.extract(ind2)
         R = boundsurf_join((ind1, ind2), (b1, b2))
     #R = r2
+    
+#    if not np.all(definiteRange):
+#        ind1 = where(definiteRange)[0]
+#        r1 = R.extract(ind1)
+#        ind2 = where(logical_not(definiteRange))[0]
+#        r2 = boundsurf(surf({}, new_l_resolved[ind2]), surf({}, new_u_resolved[ind2]), 
+#        definiteRange[ind2] if type(definiteRange)==ndarray and definiteRange.size != 1 else definiteRange, 
+#        domain)
+#        R = boundsurf_join((ind1, ind2), (r1, r2))
+    
     return R
 

@@ -423,7 +423,7 @@ def pow_const_interval(self, r, other, domain, dtype):
         return inv_b_interval(lb_ub, revert = arg_isNonPositive)
         
     # TODO: remove arg_isNonNegative
-    if 1 and 0 < other < 1 and arg_isNonNegative and isBoundSurf and len(lb_ub.dep)==1:
+    if 1 and 0 < other < 1 and 1 and isBoundSurf and len(lb_ub.dep)==1:
         return pow_interval(r, self, other, domain, dtype)
     #changes end
     
@@ -565,13 +565,16 @@ def inv_b_interval(B, revert):
 def get_pow_b2_coeffs(L, U, d_l, d_u, c_l, c_u, other):
     from overloads import get_inner_coeffs, get_outer_coeffs
     
+    isInt = other == asarray(other, int)
+    
     # L
     d = d_l
     ind = d > 0
     l, u = np.where(ind, L, U), np.where(ind, U, L)
-    
+#    if not isInt:
+#        point[logical_and(point)]
     koeffs_l = get_inner_coeffs(lambda x: x**other, lambda x: other * x**(other-1), \
-                                d, l, u, d_l, d_u, c_l, c_u, pointCase='u', lineCase='l')
+                                d, l, u, d_l, d_u, c_l, c_u, pointCase='u', lineCase='l', feasLB = -inf if isInt else 0.0)
     #    func, func_d, d, l, u, d_l, d_u, c_l, c_u, pointCase, lineCase
     
     # U
@@ -580,6 +583,8 @@ def get_pow_b2_coeffs(L, U, d_l, d_u, c_l, c_u, other):
     l, u = np.where(ind, L, U), np.where(ind, U, L)
     
     point = d*u + c_u
+#    if not isInt:
+#        point[logical_and(point)]
     f = point ** other
     df = d *  other * point ** (other - 1)
     d2f = d**2 * other * (other - 1) * point ** (other - 2)
@@ -598,7 +603,7 @@ def pow_b_interval(lb_ub, r1, other):
     c_l, c_u = lb_ub.l.c, lb_ub.u.c 
     
     koeffs_l, koeffs_u = get_pow_b2_coeffs(l, u, d_l, d_u, c_l, c_u, other)
-    
+    #assert all(isfinite(koeffs_l)), all(isfinite(koeffs_u))
     # L
     a, b, c = koeffs_l
     L = surf2({k:a}, {k:b}, c)
@@ -926,6 +931,16 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
         R = boundsurf(L_new, U_new, definiteRange, domain)
     else:
         R = boundsurf2(L_new, U_new, definiteRange, domain)
+    
+    if not np.all(definiteRange):
+        ind1 = where(definiteRange)[0]
+        r1 = R.extract(ind1)
+        ind2 = where(logical_not(definiteRange))[0]
+        r2 = boundsurf(surf({}, new_l_resolved[ind2]), surf({}, new_u_resolved[ind2]), 
+        definiteRange[ind2] if type(definiteRange)==ndarray and definiteRange.size != 1 else definiteRange, 
+        domain)
+        R = boundsurf_join((ind1, ind2), (r1, r2))
+    
     return R, definiteRange
 
 def adjustBounds(R0, definiteRange, feasLB, feasUB):

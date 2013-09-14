@@ -656,7 +656,7 @@ def log_interval(inp, domain, dtype):
     lb_ub, definiteRange = inp._interval(domain, dtype, ia_surf_level = 2)
     
     #!!!!! Temporary !!!!
-    ia_lvl_2_unavailable = type(lb_ub) == np.ndarray or len(lb_ub.l.d) > 1 or len(lb_ub.u.d) > 1 or len(lb_ub.dep) != 1
+    ia_lvl_2_unavailable =  type(lb_ub) == np.ndarray or len(lb_ub.l.d) > 1 or len(lb_ub.u.d) > 1 or len(lb_ub.dep) != 1
     is_b2 = type(lb_ub) == boundsurf2
     
     if ia_lvl_2_unavailable or is_b2:
@@ -885,12 +885,12 @@ def sum_interval(R0, r, INP, domain, dtype):
             if domain.isMultiPoint:
                 R = np.tile(R, (1, len(list(domain.values())[0][0])))
                 #R = np.tile(R, (1, len(domain.values()[0][0])))
-            DefiniteRange = True
+            #DefiniteRange = True
             #####################
             # !!! don't use sum([inp._interval(domain, dtype) for ...]) here
             # to reduce memory consumption
             for inp in INP:
-                arg_lb_ub, definiteRange = inp._interval(domain, dtype)
+                arg_lb_ub, definiteRange = inp._interval(domain, dtype, ia_surf_level = 2)
 #                DefiniteRange = logical_and(DefiniteRange, definiteRange)
                 if type(R)==type(arg_lb_ub)==np.ndarray and R.shape == arg_lb_ub.shape:
                     R += arg_lb_ub
@@ -1483,12 +1483,14 @@ def errFunc(*args,  **kwargs):
 #        return r
 #    func._interval = f2
 
-def get_inner_coeffs(func, func_d, d, l, u, d_l, d_u, c_l, c_u, pointCase, lineCase):
+def get_inner_coeffs(func, func_d, d, l, u, d_l, d_u, c_l, c_u, pointCase, lineCase, feasLB = -np.inf):
     if lineCase == 'u': # parabola must be upper the func
         ll, uu = d_u * l + c_u, d_u * u + c_u
     else: # parabola must be below the func
         ll, uu = d_l * l + c_l, d_l * u + c_l
         
+    if feasLB != -np.inf:
+        ll[logical_and(ll<feasLB, uu>feasLB)] = feasLB
     f_l, f_u = func(ll), func(uu)
 
     if pointCase == 'u':

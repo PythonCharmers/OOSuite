@@ -753,7 +753,10 @@ class oofun(object):
         d_y = lambda x, y: x ** y * log(x) if (isscalar(y) or y.size == 1) and not isinstance(x, multiarray) else Diag(x ** y * log(x))
         
         other_is_oofun = isinstance(other, oofun)
+        if type(other) == ndarray and other.size == 1:
+            other = other.item()
         isInt = isscalar(other) and int(other) == other
+        isIntArray = type(other) == ndarray and other.dtype in (int, int8, int16, int32, int64)
         if not other_is_oofun:
             if isscalar(other):
                 if type(other) == int: # TODO: handle numpy integer types
@@ -809,10 +812,12 @@ class oofun(object):
         else:
             r._interval_ = lambda *args, **kw: pow_oofun_interval(self, other, *args, **kw)
             
-        if isinstance(other, oofun) or (not isinstance(other, int) or (type(other) == ndarray and other.flatten()[0] != int)): 
+        if other_is_oofun or (not isInt and not isIntArray): 
             r.attach((self>0)('pow_domain_%d'%r._id, tol=-1e-7)) # TODO: if "other" is fixed oofun with integer value - omit this
 #        r.isCostly = True
         r.vectorized = True
+        if other_is_oofun or not isInt:
+            r._lower_domain_bound = 0.0
         return r
 
     def __rpow__(self, other):
