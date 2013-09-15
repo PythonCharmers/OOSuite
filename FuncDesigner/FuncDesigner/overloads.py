@@ -1504,6 +1504,9 @@ def get_inner_coeffs(func, func_d, d, l, u, d_l, d_u, c_l, c_u, pointCase, lineC
         b = d * df_l - 2 * a * l
         
     ind_z = np.logical_or(l == u, np.logical_not(np.isfinite(b)))
+    P = 1e10
+    ind_numericaly_unstable = P  < np.abs(a * l) + np.abs(b)
+    ind_z = np.logical_or(ind_z, ind_numericaly_unstable)
     a[ind_z] = b[ind_z] = 0.0
     
     c = f_l - (a * l + b) * l
