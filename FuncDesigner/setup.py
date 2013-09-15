@@ -73,7 +73,7 @@ if __name__ == "__main__":
         zip_safe=False, # the package can run out of an .egg file
         #FIXME url, download_url, ext_modules
         classifiers =
-            [ 'Development Status :: 4 - Beta',
+            [ 'Development Status :: 5 - Production/Stable',
               'Environment :: Console',
               'Intended Audience :: Developers',
               'Intended Audience :: Science/Research',
