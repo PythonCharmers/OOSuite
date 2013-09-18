@@ -618,7 +618,7 @@ def aux_mul_div_boundsurf(Elems, op, resolveSchedule=()):
                 #print('asdf')
                 r = np.exp(rr)
                 r[:, changeSign] = -r[:, changeSign][::-1]
-                return r, definiteRange
+                return r#, definiteRange
 #        print len(rr.dep)
         rr = rr.exp()
 #        print type(rr)
