@@ -412,7 +412,6 @@ def pow_const_interval(self, r, other, domain, dtype):
             s_l = surf2(dict((k, v**2) for k, v in d.items()), dict((k, 2*v*c) for k, v in d.items()), c**2)
             return boundsurf2(s_l, s_u, definiteRange, domain), definiteRange
     # changes end
-    
     lb_ub_resolved = lb_ub.resolve()[0] if isBoundSurf else lb_ub
     arg_isNonNegative = all(lb_ub_resolved >= 0)
     arg_isNonPositive = all(lb_ub_resolved <= 0)
@@ -495,7 +494,10 @@ def pow_const_interval(self, r, other, domain, dtype):
     if not other_is_int or not isOdd:
         ind_z = logical_and(lb < 0, ub >= 0)
         if any(ind_z):
-            Tmp[0, ind_z] = 0.0
+            if other > 0:
+                Tmp[0, ind_z] = 0.0
+            else:
+                Tmp[1, ind_z] = inf
             if not other_is_int:
                 definiteRange = logical_and(definiteRange, logical_not(ind_z))
     
