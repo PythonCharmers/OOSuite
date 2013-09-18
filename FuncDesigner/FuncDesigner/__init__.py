@@ -2,7 +2,7 @@ import os, sys
 curr_dir = ''.join([elem + os.sep for elem in __file__.split(os.sep)[:-1]])
 sys.path += [curr_dir]
 
-__version__ = '0.5102'
+__version__ = '0.5103'
 
 from ooVar import oovar, oovars
 #from ooFun import _getAllAttachedConstraints, broadcast, ooFun as oofun, AND, OR, NOT, NAND, NOR, XOR

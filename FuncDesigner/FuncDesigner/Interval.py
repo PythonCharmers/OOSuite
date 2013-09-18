@@ -305,8 +305,8 @@ def div_interval(self, other, Div, domain, dtype):
         if type(tmp) in (boundsurf, boundsurf2):
             tmp.definiteRange = definiteRange
             return tmp, tmp.definiteRange
-#        else:
-#            return tmp, definiteRange
+        else:
+            return tmp, definiteRange
 
     tmp1 = lb1_ub1.resolve()[0] if firstIsBoundsurf else lb1_ub1
 

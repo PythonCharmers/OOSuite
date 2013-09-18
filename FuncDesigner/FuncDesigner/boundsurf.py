@@ -316,7 +316,8 @@ class boundsurf(object):#object is added for Python2 compatibility
 #        ind_inf_z = logical_or(logical_or(R2[0]==0, R2[1]==0), logical_or(isinf(R1[0]), isinf(R1[1])))
         #(R2[0]==0) | (R2[1]==0) | (isinf(R2[0])) | (isinf(R2[1])) | (isinf(R1[0])) | isinf(R1[1])
         
-        rr = r.resolve()[0]
+        isBoundsurf = isinstance(r, boundsurf)
+        rr = r.resolve()[0] if isBoundsurf else r#[0]
         
 #        import pylab, numpy
 #        xx = numpy.linspace(-1, 0, 1000)
@@ -330,9 +331,9 @@ class boundsurf(object):#object is added for Python2 compatibility
         
         # nans may be from other computations from a level below, although
         ind_nan = logical_or(isnan(rr[0]), isnan(rr[1]))
-        if not any(ind_nan):
-            return r
-            
+        if not any(ind_nan) or not isBoundsurf:
+            return r #if isBoundsurf else rr
+
         Ind_finite = where(logical_not(ind_nan))[0]
         r_finite = r.extract(Ind_finite)
         ind_nan = where(ind_nan)[0]
