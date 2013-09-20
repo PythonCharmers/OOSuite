@@ -15,7 +15,7 @@ from boundsurf import boundsurf, surf
 
 f_none = lambda *args, **kw: None
 One = array(1.0)
-Zero = array(0.0)
+Zero = array(0.0) ## TODO: mb use 1-d array to improve indexation
 class oovar(oofun):
     is_oovar = True
     domain = None
@@ -44,7 +44,14 @@ class oovar(oofun):
                 tmp = asarray(tmp, dtype)
                 return tile(tmp, (2, 1)), True
             infinum, supremum = tmp
-            return asarray(vstack((infinum, supremum)), dtype), True
+            
+            #prev
+            #return asarray(vstack((infinum, supremum)), dtype), True
+            #new, works faster in CPython
+            r = empty((2, asarray(infinum).size), dtype)
+            r[0] = infinum
+            r[1] = supremum
+            return r, True
         else:
             S = surf({self: One}, Zero)
             return boundsurf(S, S, True, domain), True
