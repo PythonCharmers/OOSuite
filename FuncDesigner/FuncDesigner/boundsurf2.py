@@ -64,7 +64,9 @@ class surf2(surf):
         C = []
         D, D2 = self.d.copy(), self.d2.copy()
         for k in oovars:
-            l, u = domain[k][0], domain[k][1]
+            l, u = domain.get(k, (None, None))
+            if l is None:
+                continue # may be for fixed oovars
             d1, d2 = D.pop(k, 0.0), D2.pop(k, None)
             if d2 is None:
                 C.append(where(cmp(d1, 0), l, u) * d1)
@@ -223,6 +225,12 @@ class boundsurf2(boundsurf):
 #        self.domain = domain
     def __init__(self, lowersurf, uppersurf, definiteRange, domain):
         boundsurf.__init__(self, lowersurf, uppersurf, definiteRange, domain, checkType = False)
+#        assert all(all(val<1e5) for val in lowersurf.d2.values())
+#        assert all(all(val>-1e5) for val in lowersurf.d2.values())
+#        assert all(all(val<1e5) for val in uppersurf.d2.values())
+#        assert all(all(val>-1e5) for val in uppersurf.d2.values())
+#        print lowersurf.d2
+#        print uppersurf.d2
     
     def exclude(self, oovars):
         L = self.l.exclude(self.domain, oovars, Greater)
