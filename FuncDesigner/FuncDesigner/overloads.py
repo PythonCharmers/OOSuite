@@ -158,6 +158,7 @@ def sin(inp):
                  d = lambda x: Diag(np.cos(x)), 
                  vectorized = True)
     r._interval_ = lambda domain, dtype: sin_cos_interval(r, inp, domain, dtype)
+    r.repr = lambda *args: 'sin('+ inp.repr() + ')'
     return r
 
 st_cos = (lambda x: \
@@ -178,6 +179,7 @@ def cos(inp):
                  d = lambda x: Diag(-np.sin(x)), 
                  vectorized = True)
     r._interval_ = lambda domain, dtype: sin_cos_interval(r, inp, domain, dtype)
+    r.repr = lambda *args: 'cos('+ inp.repr() + ')'
     return r
 #cos = lambda inp: sin(inp+np.pi/2)
 
@@ -1174,6 +1176,18 @@ def sum(inp, *args, **kwargs):
         r_dep = r._getDep()
         r._D = lambda *args, **kw: sum_derivative(r, r0, INP, r_dep, *args, **kw)
         r.isCostly = True
+        def repr(*args):
+            Elems = [elem.repr() if isinstance(elem, oofun) else str(elem) for elem in INP]
+            r = []
+            for i, elem in enumerate(Elems):
+                r.append(elem +  ('+' if elem[0] != '-' and i != len(Elems)-1 else ''))
+            rr = ''.join(r)
+            return rr
+        r.repr = repr
+#        r.repr = lambda *args: \
+#        ''.join(elem.repr() if isinstance(elem, oofun) else str(elem) + ('+' if i != len(INP)-1 else '') for i, elem\
+#                in enumerate(INP) ) + ('+' + str(r0) if not np.array_equal(r0, 0.0) else '')
+            
         return r
     else: 
         return inp.sum(*args, **kwargs)#np.sum(inp, *args, **kwargs)
@@ -1488,9 +1502,11 @@ def get_inner_coeffs(func, func_d, d, l, u, d_l, d_u, c_l, c_u, pointCase, lineC
         ll, uu = d_u * l + c_u, d_u * u + c_u
     else: # parabola must be below the func
         ll, uu = d_l * l + c_l, d_l * u + c_l
-        
+    
+    ind_infeas = False
     if feasLB != -np.inf:
-        ll[logical_and(ll<feasLB, uu>feasLB)] = feasLB
+        ind_infeas = logical_and(ll<feasLB, uu>feasLB)
+        ll[ind_infeas] = feasLB
     f_l, f_u = func(ll), func(uu)
 
     if pointCase == 'u':
@@ -1505,8 +1521,11 @@ def get_inner_coeffs(func, func_d, d, l, u, d_l, d_u, c_l, c_u, pointCase, lineC
         
     ind_z = np.logical_or(l == u, np.logical_not(np.isfinite(b)))
     P = 1e10
-    ind_numericaly_unstable = P  < np.abs(a * l) + np.abs(b)
+    #ind_numericaly_unstable = P  < np.abs(a * l) + np.abs(b)
+    ind_numericaly_unstable = np.logical_or(P  < np.abs(a * l), P < np.abs(b))
+    
     ind_z = np.logical_or(ind_z, ind_numericaly_unstable)
+    ind_z = np.logical_or(ind_z, ind_infeas)
     a[ind_z] = b[ind_z] = 0.0
     
     c = f_l - (a * l + b) * l
