@@ -516,7 +516,9 @@ def pow_const_interval(self, r, other, domain, dtype):
     return Tmp, definiteRange    
 
 def inv_b_interval(B, revert):
-    
+    if type(B) == boundsurf2:
+        B = B.to_linear()
+        
     k = list(B.dep)[0]
     l, u = B.domain[k]
     d_l, d_u = B.l.d[k], B.u.d[k]
@@ -622,10 +624,12 @@ def pow_b_interval(lb_ub, r1, other):
     U = surf2({k:a}, {k:b}, c)
 #########################
 #    from numpy import linspace
+#    #l = 0.99
+#    print l, u
 #    x = linspace(l, u, 10000)
 #    import pylab
-#    pylab.plot(x, pow(d_l*x+c_l), 'b', linewidth = 2)
-#    pylab.plot(x, pow(d_u*x+c_u), 'r', linewidth = 2)
+#    pylab.plot(x, pow(d_l*x+c_l, other), 'b', linewidth = 2)
+#    pylab.plot(x, pow(d_u*x+c_u, other), 'r', linewidth = 2)
 #    pylab.plot(x, koeffs_l[0]*x**2+koeffs_l[1]*x+koeffs_l[2], 'b', linewidth = 1)
 #    pylab.plot(x, koeffs_u[0]*x**2+koeffs_u[1]*x+koeffs_u[2], 'r', linewidth = 1)
 #    pylab.show()
@@ -638,6 +642,7 @@ def pow_b_interval(lb_ub, r1, other):
     return R, definiteRange
     
 def pow_interval(r, inp, other, domain, dtype):
+#    other = 1.9
     lb_ub, definiteRange = inp._interval(domain, dtype, ia_surf_level = 2)
     
     #!!!!! Temporary !!!!
@@ -647,6 +652,7 @@ def pow_interval(r, inp, other, domain, dtype):
     if ia_lvl_2_unavailable or is_b2:
         from ooFun import oofun
         r1, definiteRange = oofun._interval_(r, domain, dtype)
+        #return r1, definiteRange
     else:
         r1 = None
     
