@@ -365,7 +365,8 @@ def get_inv_b2_coeffs(ll, uu, dll, duu, c_l, c_u):
     a[ind_z2] = b[ind_z2] = 0.0
     #c = 1.0/min_val + d * argmin * min_val**-2 + d**2 * argmin ** 2 * min_val**-3
     c = ((d * argmin / min_val + 1) * d * argmin / min_val + 1.0)/min_val
-    c[ind_z2] = 1.0/min_val[ind_z2]# - (a * argmin + b) * argmin
+    c[logical_or(ind_z, ind_z2)] = 1.0/min_val[ind_z]
+    #c[ind_z2] = 1.0/min_val[ind_z2]# - (a * argmin + b) * argmin
     koeffs_l = (a, b, c)
     
     #U
@@ -386,7 +387,7 @@ def get_inv_b2_coeffs(ll, uu, dll, duu, c_l, c_u):
 #    c[ind_z2] = inv_l2
     
     koeffs_u = array((a, b, c))
-#    print koeffs_l, koeffs_u
+    
     return koeffs_l, koeffs_u
 
 def pow_const_interval(self, r, other, domain, dtype):
@@ -523,16 +524,13 @@ def inv_b_interval(B, revert):
     l, u = B.domain[k]
     d_l, d_u = B.l.d[k], B.u.d[k]
     c_l, c_u = B.l.c, B.u.c 
+        
     if revert:
-#            print('revert')
-#            B = -B
         d_l, d_u = -d_u, -d_l
         c_l, c_u = -c_u, -c_l
 
-#        print B_resolved
-#        print l, u, d_l, d_u, c_l, c_u
     koeffs_l, koeffs_u = get_inv_b2_coeffs(l, u, d_l, d_u, c_l, c_u)
-    
+
 #        ###########
 #        from boundsurf2 import apply_quad_lin
 #        a, b, c = koeffs_l
