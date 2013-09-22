@@ -154,11 +154,11 @@ def sin(inp):
     elif hasStochastic and isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(sin(inp.values), inp.probabilities.copy())._update(inp)
     elif not isinstance(inp, oofun): return np.sin(inp)
-    r = oofun(st_sin, inp, 
+    r = oofun(st_sin, inp, engine = 'sin', 
                  d = lambda x: Diag(np.cos(x)), 
                  vectorized = True)
     r._interval_ = lambda domain, dtype: sin_cos_interval(r, inp, domain, dtype)
-    r.repr = lambda *args: 'sin('+ inp.repr() + ')'
+    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     return r
 
 st_cos = (lambda x: \
@@ -175,11 +175,11 @@ def cos(inp):
     elif hasStochastic and isinstance(inp, distribution.stochasticDistribution):
         return distribution.stochasticDistribution(cos(inp.values), inp.probabilities.copy())._update(inp)
     elif not isinstance(inp, oofun): return np.cos(inp)
-    r = oofun(st_cos, inp, 
+    r = oofun(st_cos, inp, engine = 'cos', 
                  d = lambda x: Diag(-np.sin(x)), 
                  vectorized = True)
     r._interval_ = lambda domain, dtype: sin_cos_interval(r, inp, domain, dtype)
-    r.repr = lambda *args: 'cos('+ inp.repr() + ')'
+    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     return r
 #cos = lambda inp: sin(inp+np.pi/2)
 
@@ -207,8 +207,9 @@ def tan(inp):
     if not isinstance(inp, oofun): return np.tan(inp)
     # TODO: move it outside of tan definition
     r = oofun(st_tan, inp, d = lambda x: Diag(1.0 / np.cos(x) ** 2), vectorized = True, \
-    engine_monotonity = 1, convexities = (-1, 1))
+    engine_monotonity = 1, convexities = (-1, 1), engine = 'tan')
     r._interval_ = lambda domain, dtype: tan_interval(inp, r, domain, dtype)
+    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     return r
     
 __all__ += ['sin', 'cos', 'tan']
@@ -237,6 +238,7 @@ def arcsin(inp):
     engine_monotonity = 1, convexities = (-1, 1), engine = 'arcsin')
 #    r.getDefiniteRange = get_box1_DefiniteRange
     r._interval_ = lambda domain, dtype: box_1_interval(inp, r, np.arcsin, domain, dtype)
+    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     r.attach((inp>-1)('arcsin_domain_lower_bound_%d' % r._id, tol=-1e-7), (inp<1)('arcsin_domain_upper_bound_%d' % r._id, tol=-1e-7))
     return r
 
@@ -256,9 +258,10 @@ def arccos(inp):
         return distribution.stochasticDistribution(arccos(inp.values), inp.probabilities.copy())._update(inp)     
     if not isinstance(inp, oofun): return np.arccos(inp)
     r = oofun(st_arccos, inp, d = lambda x: Diag(-1.0 / np.sqrt(1.0 - x**2)), vectorized = True, 
-    engine_monotonity = -1, convexities = (1, -1))
+    engine_monotonity = -1, convexities = (1, -1), engine = 'arccos')
 #    r.getDefiniteRange = get_box1_DefiniteRange
     r._interval_ = lambda domain, dtype: box_1_interval(inp, r, np.arccos, domain, dtype)
+    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     r.attach((inp>-1)('arccos_domain_lower_bound_%d' % r._id, tol=-1e-7), (inp<1)('arccos_domain_upper_bound_%d' % r._id, tol=-1e-7))
     return r
 
@@ -277,8 +280,9 @@ def arctan(inp):
         return distribution.stochasticDistribution(arctan(inp.values), inp.probabilities.copy())._update(inp)             
     if not isinstance(inp, oofun): return np.arctan(inp)
     r = oofun(st_arctan, inp, d = lambda x: Diag(1.0 / (1.0 + x**2)), 
-                 vectorized = True, engine_monotonity = 1, convexities = (1, -1))
+                 vectorized = True, engine_monotonity = 1, convexities = (1, -1), engine = 'arctan')
     r._interval_ = lambda domain, dtype: devided_interval(inp, r, domain, dtype)
+    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     return r
 
 __all__ += ['arcsin', 'arccos', 'arctan']
@@ -298,8 +302,9 @@ def sinh(inp):
         return distribution.stochasticDistribution(sinh(inp.values), inp.probabilities.copy())._update(inp)        
     if not isinstance(inp, oofun): return np.sinh(inp)
     r = oofun(st_sinh, inp, d = lambda x: Diag(np.cosh(x)), vectorized = True, 
-    engine_monotonity = 1, convexities = (-1, 1))
+    engine_monotonity = 1, convexities = (-1, 1), engine = 'sinh')
     r._interval_ = lambda domain, dtype: devided_interval(inp, r, domain, dtype)
+    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     return r
 
 #def asdf(x):
@@ -341,8 +346,10 @@ def cosh(inp):
         return distribution.stochasticDistribution(cosh(inp.values), inp.probabilities.copy())._update(inp)                
     if not isinstance(inp, oofun): 
         return np.cosh(inp)
-    return oofun(st_cosh, inp, d = lambda x: Diag(np.sinh(x)), engine_convexity = 1, vectorized = True, \
-    _interval_=ZeroCriticalPointsInterval(inp, np.cosh))
+    r =oofun(st_cosh, inp, d = lambda x: Diag(np.sinh(x)), engine_convexity = 1, vectorized = True, \
+    _interval_=ZeroCriticalPointsInterval(inp, np.cosh), engine = 'cosh')
+    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
+    return r
     
 __all__ += ['sinh', 'cosh']
 
@@ -361,8 +368,9 @@ def tanh(inp):
         return distribution.stochasticDistribution(tanh(inp.values), inp.probabilities.copy())._update(inp)              
     if not isinstance(inp, oofun): return np.tanh(inp)
     r = oofun(st_tanh, inp, d = lambda x: Diag(1.0/np.cosh(x)**2), vectorized = True, 
-    engine_monotonity = 1, convexities = (1, -1))
+    engine_monotonity = 1, convexities = (1, -1), engine = 'tanh')
     r._interval_ = lambda domain, dtype: devided_interval(inp, r, domain, dtype)
+    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     return r
     
 st_arctanh = (lambda x: \
@@ -380,9 +388,10 @@ def arctanh(inp):
         return distribution.stochasticDistribution(arctanh(inp.values), inp.probabilities.copy())._update(inp)          
     if not isinstance(inp, oofun): return np.arctanh(inp)
     r = oofun(st_arctanh, inp, d = lambda x: Diag(1.0/(1.0-x**2)), vectorized = True, 
-    engine_monotonity = 1, convexities = (-1, 1))
+    engine_monotonity = 1, convexities = (-1, 1), engine = 'arctanh')
 #    r.getDefiniteRange = get_box1_DefiniteRange
     r._interval_ = lambda domain, dtype: box_1_interval(inp, r, np.arctanh, domain, dtype)
+    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     return r
 
 __all__ += ['tanh', 'arctanh']
@@ -402,8 +411,9 @@ def arcsinh(inp):
         return distribution.stochasticDistribution(arcsinh(inp.values), inp.probabilities.copy())._update(inp)      
     if not isinstance(inp, oofun): return np.arcsinh(inp)
     r = oofun(st_arcsinh, inp, d = lambda x: Diag(1.0/np.sqrt(1+x**2)), 
-    vectorized = True, engine_monotonity = 1, convexities = (1, -1))
+    vectorized = True, engine_monotonity = 1, convexities = (1, -1), engine = 'arcsinh')
     r._interval_ = lambda domain, dtype: devided_interval(inp, r, domain, dtype)
+    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     return r
 
 st_arccosh = (lambda x: \
@@ -421,9 +431,10 @@ def arccosh(inp):
         return distribution.stochasticDistribution(arccosh(inp.values), inp.probabilities.copy())._update(inp)      
     if not isinstance(inp, oofun): return np.arccosh(inp)
     r = oofun(st_arccosh, inp, d = lambda x: Diag(1.0/np.sqrt(x**2-1.0)), vectorized = True, 
-    engine_monotonity = 1, engine_convexity = -1)
+    engine_monotonity = 1, engine_convexity = -1, engine = 'arccosh')
     F0, shift = 0.0, 1.0
     r._interval_ = lambda domain, dtype: nonnegative_interval(inp, np.arccosh, r.d, domain, dtype, F0, shift)
+    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     return r
 
 __all__ += ['arcsinh', 'arccosh']
@@ -551,8 +562,9 @@ def exp(inp):
         return distribution.stochasticDistribution(exp(inp.values), inp.probabilities.copy())._update(inp)      
     if not isinstance(inp, oofun): return np.exp(inp)
     r = oofun(st_exp, inp, d = lambda x: Diag(np.exp(x)), vectorized = True, 
-    engine_convexity = 1, engine_monotonity = 1)
+    engine_convexity = 1, engine_monotonity = 1, engine = 'exp')
     r._interval_ = lambda domain, dtype: exp_interval(r, inp, domain, dtype)
+    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     return r
 
 #st_sqrt = (lambda x: \
@@ -574,6 +586,8 @@ def sqrt(inp, attachConstraints = True):
 #    engine_monotonity = 1, engine_convexity = -1)
 #    r._interval_ = lambda domain, dtype: nonnegative_interval(inp, np.sqrt, r.d, domain, dtype, 0.0)
     r = inp ** 0.5
+    r.engine = 'sqrt'
+    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     if attachConstraints: r.attach((inp>0)('sqrt_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
 
@@ -594,8 +608,11 @@ def abs(inp):
         return distribution.stochasticDistribution(abs(inp.values), inp.probabilities.copy())._update(inp)      
     if not isinstance(inp, oofun): return np.abs(inp)
     
-    return oofun(st_abs, inp, d = lambda x: Diag(np.sign(x)), vectorized = True, _interval_ = ZeroCriticalPointsInterval(inp, np.abs))
-
+    r = oofun(st_abs, inp, d = lambda x: Diag(np.sign(x)), vectorized = True, 
+    _interval_ = ZeroCriticalPointsInterval(inp, np.abs), engine = 'abs')
+    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
+    return r
+    
 __all__ += ['abs']
 
 def get_log_b2_coeffs(L, U, d_l, d_u, c_l, c_u):
@@ -686,9 +703,11 @@ def log(inp):
         return distribution.stochasticDistribution(log(inp.values), inp.probabilities.copy())._update(inp)      
     if not isinstance(inp, oofun): return np.log(inp)
     d = lambda x: Diag(1.0/x)
-    r = oofun(st_log, inp, d = d, vectorized = True, engine_monotonity = 1, engine_convexity = -1)
+    r = oofun(st_log, inp, d = d, vectorized = True, engine_monotonity = 1, engine_convexity = -1, 
+              engine = 'log')
     #r._interval_ = lambda domain, dtype: nonnegative_interval(inp, np.log, r.d, domain, dtype, 0.0)
     r._interval_ = lambda domain, dtype: log_interval(inp, domain, dtype)
+    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     r.attach((inp>1e-300)('log_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
 
@@ -713,9 +732,11 @@ def log10(inp):
         return distribution.stochasticDistribution(log10(inp.values), inp.probabilities.copy())._update(inp)              
     if not isinstance(inp, oofun): return np.log10(inp)
     d = lambda x: Diag(INV_LOG_10 / x)
-    r = oofun(st_log10, inp, d = d, vectorized = True, engine_monotonity = 1, engine_convexity = -1)
+    r = oofun(st_log10, inp, d = d, vectorized = True, engine_monotonity = 1, engine_convexity = -1, 
+              engine = 'log10')
     #r._interval_ = lambda domain, dtype: nonnegative_interval(inp, np.log10, r.d, domain, dtype, 0.0)
     r._interval_ = lambda domain, dtype: log10_interval(inp, domain, dtype)
+    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     r.attach((inp>1e-300)('log10_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
 
@@ -740,9 +761,11 @@ def log2(inp):
         return distribution.stochasticDistribution(log2(inp.values), inp.probabilities.copy())._update(inp)       
     if not isinstance(inp, oofun): return np.log2(inp)
     d = lambda x: Diag(INV_LOG_2/x)
-    r = oofun(st_log2, inp, d = d, vectorized = True, engine_monotonity = 1, engine_convexity = -1)
+    r = oofun(st_log2, inp, d = d, vectorized = True, engine_monotonity = 1, engine_convexity = -1, 
+              engine = 'log2')
 #    r._interval_ = lambda domain, dtype: nonnegative_interval(inp, np.log2, r.d, domain, dtype, 0.0)
     r._interval_ = lambda domain, dtype: log2_interval(inp, domain, dtype)
+    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     r.attach((inp>1e-300)('log2_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
 
@@ -766,9 +789,14 @@ def d_dot(x, y):
 
 def dot(inp1, inp2):
     if not isinstance(inp1, oofun) and not isinstance(inp2, oofun): return np.dot(inp1, inp2)
-    r = oofun(f_dot, [inp1, inp2], d=(lambda x, y: d_dot(x, y), lambda x, y: d_dot(y, x)))
+    r = oofun(f_dot, [inp1, inp2], d=(lambda x, y: d_dot(x, y), lambda x, y: d_dot(y, x)), engine = 'dot')
     r.getOrder = lambda *args, **kwargs: (inp1.getOrder(*args, **kwargs) if isinstance(inp1, oofun) else 0) + (inp2.getOrder(*args, **kwargs) if isinstance(inp2, oofun) else 0)
     #r.isCostly = True
+    r.expression = lambda *args, **kw: r.engine+'('+ \
+                                                  (inp1.expression() if isinstance (inp1, oofun) else str(inp1)) + \
+                                                  ',' + \
+                                                  (inp2.expression() if isinstance (inp2, oofun) else str(inp2)) + \
+                                                  ')'
     return r
 
 def cross_d(x, y):
@@ -778,8 +806,13 @@ def cross_d(x, y):
 def cross(a, b):
     if not isinstance(a, oofun) and not isinstance(b, oofun): return np.cross(a, b)
    
-    r = oofun(np.cross, [a, b], d=(lambda x, y: -cross_d(x, y), lambda x, y: cross_d(y, x)))
+    r = oofun(np.cross, [a, b], d=(lambda x, y: -cross_d(x, y), lambda x, y: cross_d(y, x)), engine = 'cross')
     r.getOrder = lambda *args, **kwargs: (a.getOrder(*args, **kwargs) if isinstance(a, oofun) else 0) + (b.getOrder(*args, **kwargs) if isinstance(b, oofun) else 0)
+    r.expression = lambda *args, **kw: r.engine+'('+ \
+                                              (a.expression() if isinstance (a, oofun) else str(a)) + \
+                                              ',' + \
+                                              (b.expression() if isinstance (b, oofun) else str(b)) + \
+                                              ')'
     return r
 
 __all__ += ['dot', 'cross']
@@ -788,16 +821,18 @@ def ceil(inp):
     if isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp)):
         return ooarray([ceil(elem) for elem in inp])        
     if not isinstance(inp, oofun): return np.ceil(inp)
-    r = oofun(lambda x: np.ceil(x), inp, vectorized = True, engine_monotonity = 1)
+    r = oofun(lambda x: np.ceil(x), inp, vectorized = True, engine_monotonity = 1, engine = 'ceil')
     r._D = lambda *args, **kwargs: raise_except('derivative for FD ceil is unimplemented yet')
+    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     return r
 
 def floor(inp):
     if isinstance(inp, ooarray) and any(isinstance(elem, oofun) for elem in atleast_1d(inp)):
         return ooarray([floor(elem) for elem in inp])        
     if not isinstance(inp, oofun): return np.floor(inp)
-    r = oofun(lambda x: np.floor(x), inp, vectorized = True, engine_monotonity = 1)
+    r = oofun(lambda x: np.floor(x), inp, vectorized = True, engine_monotonity = 1, engine = 'floor')
     r._D = lambda *args, **kwargs: raise_except('derivative for FD floor is unimplemented yet')
+    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     return r
 
 st_sign = (lambda x: \
@@ -815,7 +850,8 @@ def sign(inp):
         return distribution.stochasticDistribution(sign(inp.values), inp.probabilities.copy())._update(inp)      
     if not isinstance(inp, oofun): 
         return np.sign(inp)
-    r = oofun(st_sign, inp, vectorized = True, d = lambda x: 0.0, engine_monotonity = 1)
+    r = oofun(st_sign, inp, vectorized = True, d = lambda x: 0.0, engine_monotonity = 1, engine = 'sign')
+    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     return r
 
 __all__ += ['ceil', 'floor', 'sign']
@@ -1176,18 +1212,16 @@ def sum(inp, *args, **kwargs):
         r_dep = r._getDep()
         r._D = lambda *args, **kw: sum_derivative(r, r0, INP, r_dep, *args, **kw)
         r.isCostly = True
-        def repr(*args):
-            Elems = [elem.repr() if isinstance(elem, oofun) else str(elem) for elem in INP]
+        
+        def expression(*args):
+            Elems = [elem.expression() if isinstance(elem, oofun) else str(elem) for elem in INP]
             r = []
             for i, elem in enumerate(Elems):
                 r.append(elem +  ('+' if elem[0] != '-' and i != len(Elems)-1 else ''))
             rr = ''.join(r)
             return rr
-        r.repr = repr
-#        r.repr = lambda *args: \
-#        ''.join(elem.repr() if isinstance(elem, oofun) else str(elem) + ('+' if i != len(INP)-1 else '') for i, elem\
-#                in enumerate(INP) ) + ('+' + str(r0) if not np.array_equal(r0, 0.0) else '')
-            
+        r.expression = expression
+        
         return r
     else: 
         return inp.sum(*args, **kwargs)#np.sum(inp, *args, **kwargs)
@@ -1204,10 +1238,13 @@ def prod(inp, *args, **kwargs):
 def norm(*args, **kwargs):
     if len(kwargs) or len(args) > 1:
         return np.linalg.norm(*args, **kwargs)
-    r = sqrt(sum(args[0]**2),  attachConstraints=False)
     if isinstance(r, oofun) and len(kwargs) == 0 and (len(args) == 1 or args[1] == 2):
+        r = sqrt(sum(args[0]**2),  attachConstraints=False)
         r.engine = 'norm2'
         r._norm_arg = args[0]#used in SOCP
+        r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
+    else:
+        assert 0, 'FuncDesigner norm() is implemented for n = 2 only'
     return r
  
 __all__ += ['sum', 'prod', 'norm']

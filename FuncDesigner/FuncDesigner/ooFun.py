@@ -104,6 +104,7 @@ class oofun(object):
     engine = 'unspecified'
     engine_convexity = nan # nan for undefined, 0 for linear, +1 for convex, -1 for concave
     engine_monotonity = nan
+    monotonities = None
 
     # finite-difference aproximation step
     diffInt = 1.5e-8
@@ -164,6 +165,8 @@ class oofun(object):
         elif attr == 'resolveSchedule':
             formResolveSchedule(self)
             return self.resolveSchedule
+        elif attr == 'expr':
+            return self.expression()
         elif attr != 'size': 
             raise AttributeError('you are trying to obtain incorrect attribute "%s" for FuncDesigner oofun "%s"' %(attr, self.name))
         
@@ -215,9 +218,12 @@ class oofun(object):
                             Elem._usedIn += 1
 #                    levels.append(elem._level)
 #            self._level = max(levels)+1
-
+    
     __hash__ = lambda self: self._id
-        
+    
+    def expression(self, *args, **kw):
+        return self.name if self.is_oovar else self.name + str(tuple(self.dep))
+
     def attach(self, *args,  **kwargs):
         if len(kwargs) != 0:
             raise FuncDesignerException('keyword arguments are not implemented for FuncDesigner function "attach"')
@@ -254,13 +260,21 @@ class oofun(object):
                                          
         arg_lb_ub_resolved = arg_lb_ub.resolve()[0] if isBoundsurf else arg_lb_ub
         
-        if self.engine_monotonity is not nan:
+        
+        
+        if self.engine_monotonity is not nan:# or self.monotonities is not None:
+            if self.engine_monotonity is nan:
+                assert len(self.monotonities) == 2, 'unimplemented'
             arg_infinum, arg_supremum = arg_lb_ub_resolved#[0], arg_lb_ub_resolved[1]
             if (not isscalar(arg_infinum) and arg_infinum.size > 1) and not self.vectorized:
                 raise FuncDesignerException('not implemented for vectorized oovars yet')
             Tmp = self.fun(arg_lb_ub_resolved)
             if self.engine_monotonity == -1:
                 Tmp = Tmp[::-1]
+            elif self.engine_monotonity is nan:
+                # TODO: mb improve it
+                assert not any(logical_and(arg_infinum<0, arg_supremum>0))
+                Tmp = Tmp.sort(axis=0)
             else:
                 # func has to be monotonically growing
                 assert self.engine_monotonity in (0, 1), \
@@ -557,6 +571,12 @@ class oofun(object):
             if isscalar(other) or asarray(other).size == 1 or ('size' in self.__dict__ and self.size is asarray(other).size):
                 r._D = lambda *args,  **kwargs: self._D(*args,  **kwargs) 
         r.vectorized = True
+        def expression(*args, **kw):
+            tmp2 = (other.expression(**kw) if isinstance (other, oofun) else str(other))
+            r = self.expression(**kw) + (' - ' + tmp2[1:] if tmp2[0] == '-' else ' + ' + tmp2)
+            return r
+
+        r.expression = expression
         return r
     
     __radd__ = __add__
@@ -576,6 +596,14 @@ class oofun(object):
         r.d = raise_except
         r.vectorized = True
         r._interval_ = lambda *args, **kw: neg_interval(self, *args, **kw)
+        def expression(*args, **kw):
+            r = self.expression(**kw)
+            needBrackets = '+' in r or '-' in r
+            if needBrackets:
+                return '-(' + r + ')'
+            return '-' + r
+            
+        r.expression = expression#lambda *args, **kw: '-' + self.expression(**kw)
         return r
         
     # overload "a-b"
@@ -641,6 +669,18 @@ class oofun(object):
         # r.discrete = self.discrete and (?)
         #r.isCostly = True
         r.vectorized = True
+        
+        def expression(*args, **kw):
+            r1 = self.expression(**kw)
+            needBrackets1 = '+' in r1 or '-' in r1  or '/' in r1#or '*' in r1
+            R1 = '(' + r1 + ')' if needBrackets1 else r1
+
+            r2 = other.expression(**kw) if isinstance(other, oofun) else  str(other)
+            needBrackets2 = '+' in r2 or '-' in r2 or '*' in r2 or '/' in r2
+            R2 = '(' + r2 + ')' if needBrackets2 else r2
+
+            return R1 + '/' + R2
+        r.expression = expression
         return r
 
     def __rdiv__(self, other):
@@ -665,6 +705,14 @@ class oofun(object):
             return 0 if order == 0 else inf
         r.getOrder = getOrder
         r.vectorized = True
+        
+        def expression(*args, **kw):
+            r1 = self.expression(**kw)
+            needBrackets1 = '+' in r1 or '-' in r1  or '/' in r1 or '*' in r1
+            R1 = '(' + r1 + ')' if needBrackets1 else r1
+
+            return str(other) + '/' + R1
+        r.expression = expression
         return r
 
     # overload "a*b"
@@ -737,8 +785,22 @@ class oofun(object):
         elems1 = [self] if not self._isProd else self._prod_elements
         # TODO: handle ooarray here
         #elems2 = [other] if not isinstance(other, (oofun, OOArray)) or not other._isProd else other._prod_elements
-        elems2 = [other] if not isinstance(other, oofun) or not other._isProd else other._prod_elements
+        elems2 = [other] if not isOtherOOFun or not other._isProd else other._prod_elements
         r._prod_elements = elems1 + elems2#[self, other]
+        
+        def expression(*args, **kw):
+            isOOFun = isinstance(other, oofun)
+            r1 = self.expression(**kw)
+            needBrackets1 = '+' in r1 or '-' in r1# or '*' in r1 or '/' in r1
+            R1 = '(' + r1 + ')' if needBrackets1 else r1
+
+            r2 = other.expression(**kw) if isOOFun else str(other)
+            needBrackets2 = '+' in r2 or '-' in r2 #or '*' in r2 or '/' in r2
+            R2 = '(' + r2 + ')' if needBrackets2 else r2
+            r = R2 + '*' + R1 if isOOFun else R1 + '*' + R2
+            return r
+            
+        r.expression = expression
         return r
 
     __rmul__ = __mul__
@@ -818,6 +880,19 @@ class oofun(object):
         r.vectorized = True
         if other_is_oofun or not isInt:
             r._lower_domain_bound = 0.0
+        
+        def expression(*args, **kw):
+            r1 = self.expression(**kw)
+            needBrackets1 = '+' in r1 or '-' in r1 or '*' in r1 or '/' in r1 or '^' in r1
+            R1 = '(' + r1 + ')' if needBrackets1 else r1
+
+            r2 = other.expression(**kw) if isinstance(other, oofun) else str(other)
+            needBrackets2 = '+' in r2 or '-' in r2 or '*' in r2 or '/' in r2 or '^' in r2
+            R2 = '(' + r2 + ')' if needBrackets2 else r2
+            pow_symbol = kw.get('pow', '^') 
+            return R1 + pow_symbol + R2
+            
+        r.expression = expression
         return r
 
     def __rpow__(self, other):
@@ -848,7 +923,13 @@ class oofun(object):
             return exp_b_interval(log(other) * lb_ub, r1, definiteRange, domain)
             
         r._interval_ = lambda *args, **kw: rpow_interval(r, other, *args, **kw)
-        
+        def expression(*args, **kw):
+            r1 = self.expression(**kw)
+            needBrackets1 = '+' in r1 or '-' in r1  or '/' in r1 or '*' in r1 or '^' in r1
+            R1 = '(' + r1 + ')' if needBrackets1 else r1
+            pow_symbol = kw.get('pow', '^') 
+            return str(other) + pow_symbol + R1
+        r.expression = expression
         return r
 
     def __xor__(self, other): raise FuncDesignerException('For power of oofuns use a**b, not a^b')
@@ -949,6 +1030,7 @@ class oofun(object):
             lb, ub = lb_ub[0], lb_ub[1]
             return vstack((npSum(lb, 0), npSum(ub, 0))), definiteRange
         r = oofun(npSum, self, getOrder = self.getOrder, _interval_ = interval, d=d)
+        r.expression = lambda *args, **kw: 'sum(' + self.expression(**kw) + ')'
         return r
     
     def prod(self):
@@ -970,6 +1052,7 @@ class oofun(object):
 
             return r 
         r.d = d
+        r.expression = lambda *args, **kw: 'prod(' + self.expression(**kw) + ')'
         return r
 
 
@@ -991,6 +1074,11 @@ class oofun(object):
         Other = str(other) if not isinstance(other, ndarray) or other.size < 5\
         else '[%s %s ... %s %s]' % (other[0], other[1], other[-2], other[-1])
         r.name = self.name + ' >= ' + Other
+        def expression(*args, **kw):
+            r1 = self.expression(**kw)
+            r2 = other.expression(**kw) if isinstance(other, oofun) else Other if kw.get('truncation', True) else str(other)
+            return r1 + ' >= '  + r2
+        r.expression = expression
         return r
 
     # overload for >=
@@ -1012,6 +1100,11 @@ class oofun(object):
         Other = str(other) if not isinstance(other, ndarray) or other.size < 5\
         else '[%s %s ... %s %s]' % (other[0], other[1], other[-2], other[-1])
         r.name = self.name + ' <= ' + Other
+        def expression(*args, **kw):
+            r1 = self.expression(**kw)
+            r2 = other.expression(**kw) if isinstance(other, oofun) else Other if kw.get('truncation', True) else str(other)
+            return r1 + ' <= ' + r2
+        r.expression = expression
         return r            
 
     # overload for <=
@@ -1035,9 +1128,9 @@ class oofun(object):
             #r = (self == ind)(tol=0.5)
             r = Constraint(self - ind, ub = 0.0, lb = 0.0, tol=0.5)
             if self.is_oovar: r.nlh = lambda Lx, Ux, p, dataType: self.nlh(Lx, Ux, p, dataType, ind)
-        
+            
         elif 'startswith' in dir(other): 
-            return False
+            return False # TODO: check it - is it required yet?
         #if self.is_oovar and not isinstance(other, oofun):
             #raise FuncDesignerException('Constraints like this: "myOOVar = <some value>" are not implemented yet and are not recommended; for openopt use freeVars / fixedVars instead')
         else:
@@ -1052,6 +1145,13 @@ class oofun(object):
             Other = str(other) if not isinstance(other, ndarray) or other.size < 5\
             else '[%s %s ... %s %s]' %(other[0], other[1], other[-2], other[-1])
             r.name = self.name + ' == ' + Other
+            
+        def expression(*args, **kw):
+            r1 = self.expression(**kw)
+            r2 = other.expression(**kw) if isinstance(other, oofun) else Other if kw.get('truncation', True) else str(other)
+            return r1 + ' == ' + r2
+        r.expression = expression
+        
         return r  
 
     """                                             getInput                                              """
