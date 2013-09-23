@@ -249,33 +249,50 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
 
     
     try:
-        if 0 and isConverter:
-            pass
-            # TODO: will R be somewhere used?
-            #R = converter(solverName, **solver_params)
-        else:
-            nErr = check(p)
-            if nErr: p.err("prob check results: " +str(nErr) + "ERRORS!")#however, I guess this line will be never reached.
-            if p.probType not in ('IP', 'EIG'): p.iterfcn(p.x0)
-            if hasSetproctitleModule:
-                try:
-                    originalName = setproctitle.getproctitle()
-                    if originalName.startswith('OpenOpt-'):
-                        originalName = None
-                    else:
-                        s = 'OpenOpt-' + p.solver.__name__
-                        # if p.name != 'unnamed':
-                        s += '-' + p.name
-                        setproctitle.setproctitle(s)
-                except:
+#        if 0 and isConverter:
+#            pass
+#            # TODO: will R be somewhere used?
+#            #R = converter(solverName, **solver_params)
+#        else:
+        nErr = check(p)
+        if nErr: p.err("prob check results: " +str(nErr) + "ERRORS!")#however, I guess this line will be never reached.
+        if p.probType not in ('IP', 'EIG'): p.iterfcn(p.x0)
+        if hasSetproctitleModule:
+            try:
+                originalName = setproctitle.getproctitle()
+                if originalName.startswith('OpenOpt-'):
                     originalName = None
-            else:
-                p.pWarn('''
-                please install setproctitle module 
-                (it's available via easy_install and Linux soft channels like apt-get)''')
-            solver(p)
-            if hasSetproctitleModule and originalName is not None:
-                setproctitle.setproctitle(originalName)
+                else:
+                    s = 'OpenOpt-' + p.solver.__name__
+                    # if p.name != 'unnamed':
+                    s += '-' + p.name
+                    setproctitle.setproctitle(s)
+            except:
+                originalName = None
+        else:
+            p.pWarn('''
+            please install setproctitle module 
+            (it's available via easy_install and Linux soft channels like apt-get)''')
+        
+#        import os, cProfile
+#        print '----'
+#        print 'p.n, p.nb, p.nbeq, p.nc, p.nh:',  p.n, p.nb, p.nbeq, p.nc, p.nh
+#        if p.solver.__name__ == 'interalg':
+#            cProfile.runctx( 'solver(p)', globals(), locals(), filename="t.profile" )
+#        #os.system('runsnake t.profile')
+#        else:
+#            solver(p)
+            
+        solver(p)
+        
+#        if p.solver.__name__ == 'interalg':
+#            
+#            print p.extras
+#            os.system('pyprof2calltree -i t.profile -o myfile.prof.grind')
+#            os.system('kcachegrind myfile.prof.grind')
+#        print p.xk
+#        print '===='
+
 #    except killThread:
 #        if p.plot:
 #            print 'exiting pylab'
@@ -297,6 +314,10 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
         if p.istop == 0: p.istop = 1000
     finally:
         seterr(**old_err)
+        
+    if hasSetproctitleModule and originalName is not None:
+        setproctitle.setproctitle(originalName)
+    
     ############################
     p.contol = p.primalConTol
 

@@ -682,7 +682,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
 
     def handleConstraint(self, c, StartPointVars, areFixed, oovD, A, b, Aeq, beq, Z, D_kwargs, LB, UB, inplaceLinearRender):
         #import FuncDesigner as fd
-        from FuncDesigner.ooFun import SmoothFDConstraint, BooleanOOFun
+        from FuncDesigner.constraints import SmoothFDConstraint
+        from FuncDesigner.BooleanOOFun import BooleanOOFun
         if not isinstance(c, SmoothFDConstraint) and isinstance(c, BooleanOOFun): 
             self.hasLogicalConstraints = True
             #continue
