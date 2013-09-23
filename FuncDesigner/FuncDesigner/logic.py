@@ -227,7 +227,7 @@ def reverse_l2P(l2P):
     
 
 def AND(*args):
-    from ooFun import BooleanOOFun
+    from BooleanOOFun import BooleanOOFun
     Args = args[0] if len(args) == 1 and isinstance(args[0], (ndarray, tuple, list, set)) else args
     assert not isinstance(args[0], ndarray), 'unimplemented yet' 
     Args2 = []
@@ -260,7 +260,7 @@ def alt_AND_engine(*input):
 XOR_prev = lambda arg1, arg2: (arg1 & ~arg2) | (~arg1 & arg2)
 
 def XOR(*args):
-    from ooFun import BooleanOOFun
+    from BooleanOOFun import BooleanOOFun
     Args = args[0] if len(args) == 1 and isinstance(args[0], (ndarray, tuple, list, set)) else args
     assert not isinstance(args[0], ndarray), 'unimplemented yet' 
     for arg in Args:
@@ -283,7 +283,7 @@ def NOT(_bool_oofun):
         return True
     elif _bool_oofun is True:
         return False
-    from ooFun import BooleanOOFun
+    from BooleanOOFun import BooleanOOFun
     assert not isinstance(_bool_oofun, (ndarray, list, tuple, set)), 'disjunctive and other logical constraint are not implemented for ooarrays/ndarrays/lists/tuples yet' 
     if not isinstance(_bool_oofun, OOFun):
         raise FuncDesignerException('FuncDesigner logical NOT currently is implemented for oofun instances only')

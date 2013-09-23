@@ -117,6 +117,8 @@ class boundsurf(object):#object is added for Python2 compatibility
         self.u = uppersurf
         self.definiteRange = definiteRange
         self.domain = domain
+#        print lowersurf.d, lowersurf.c
+#        print uppersurf.d, uppersurf.c
         
     Size = lambda self: max((len(self.l.d), len(self.u.d), 1))
     
@@ -414,7 +416,7 @@ class boundsurf(object):#object is added for Python2 compatibility
         if len(getattr(self.l, 'd2', {})) > 1 or len(getattr(other.l, 'd2', {})) > 1 \
         or len(getattr(self.u, 'd2', {})) > 1 or len(getattr(other.u, 'd2', {})) > 1:
             return False
-        if not (self.l.d.keys() == other.l.d.keys() == self.u.d.keys() == other.u.d.keys()):
+        if not (set(self.l.d.keys()) == set(other.l.d.keys()) == set(self.u.d.keys()) == set(other.u.d.keys())):
             return False
         return True
     

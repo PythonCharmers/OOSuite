@@ -1,7 +1,8 @@
 PythonMax = max
 from baseClasses import OOArray
 from FuncDesigner.multiarray import multiarray
-from ooFun import oofun, Constraint
+from ooFun import oofun
+from constraints import Constraint
 from numpy import isscalar, asscalar, ndarray, asarray, atleast_1d, asanyarray
 import numpy as np
 from FDmisc import FuncDesignerException

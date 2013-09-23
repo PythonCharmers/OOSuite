@@ -31,7 +31,7 @@ pow_const_interval, pow_oofun_interval, div_interval, add_interval, add_const_in
 neg_interval, defaultIntervalEngine#, rdiv_interval
 #import inspect
 from baseClasses import OOArray, Stochastic, OOFun
-from logic import AND, OR, NOT, EQUIVALENT, nlh_not
+from logic import AND, NOT, EQUIVALENT, nlh_not
 
 Copy = lambda arg: asscalar(arg) if type(arg)==ndarray and arg.size == 1 else arg.copy() if hasattr(arg, 'copy') else copy(arg)
 Len = lambda x: 1 if isscalar(x) else x.size if type(x)==ndarray else x.values.size if isinstance(x, Stochastic) else len(x)
@@ -227,6 +227,7 @@ class oofun(OOFun):
         return name + Args_repr
 
     def attach(self, *args,  **kwargs):
+        from constraints import BaseFDConstraint
         if len(kwargs) != 0:
             raise FuncDesignerException('keyword arguments are not implemented for FuncDesigner function "attach"')
         assert len(args) != 0
@@ -1047,6 +1048,7 @@ class oofun(OOFun):
     
     # TODO: fix it for discrete problems like MILP, MINLP
     def __gt__(self, other): # overload for >
+        from constraints import BoxBoundConstraint, Constraint
         if self.is_oovar and not isinstance(other, (oofun, OOArray)) \
         and not (isinstance(other, ndarray) and str(other.dtype) =='object'):
             r = BoxBoundConstraint(self, lb = other)
@@ -1073,6 +1075,7 @@ class oofun(OOFun):
     def __lt__(self, other): # overload for <
         # TODO:
         #(self.is_oovar or self.is_oovarSlice)
+        from constraints import BoxBoundConstraint, Constraint
         if self.is_oovar and not isinstance(other, (oofun, OOArray))\
         and not(isinstance(other, ndarray) and str(other.dtype) =='object'):
             r = BoxBoundConstraint(self, ub = other)
@@ -1098,6 +1101,7 @@ class oofun(OOFun):
     __eq__ = lambda self, other: self.eq(other)
   
     def eq(self, other):
+        from constraints import Constraint
         if other is None or other is () or (type(other) == list and len(other) == 0): return False
         if type(other) in (str, string_): 
         #if self.domain is not None and self.domain is not bool and self.domain is not 'bool':
@@ -1862,278 +1866,6 @@ class oofun(OOFun):
     
     """                                             End of class oofun                                             """
 
-
-class BooleanOOFun(oofun):
-    # an oofun that returns True/False
-    _unnamedBooleanOOFunNumber = 0
-    discrete = True
-    def __init__(self, func, _input, *args, **kwargs):
-        oofun.__init__(self, func, _input, *args, **kwargs)
-        #self.input = oofun_Involved.input
-        BooleanOOFun._unnamedBooleanOOFunNumber += 1
-        self.name = 'unnamed_boolean_oofun_' + str(BooleanOOFun._unnamedBooleanOOFunNumber)
-        self.oofun = oofun(lambda *args, **kw: asanyarray(func(*args, **kw), int8), _input, vectorized = True)
-        # TODO: THIS SHOULD BE USED IN UP-LEVEL ONLY
-        self.lb = self.ub = 1
-    
-    __hash__ = oofun.__hash__
-        
-    def size(self, *args, **kwargs): raise FuncDesignerException('currently BooleanOOFun.size() is disabled')
-    def D(self, *args, **kwargs): raise FuncDesignerException('currently BooleanOOFun.D() is disabled')
-    def _D(self, *args, **kwargs): raise FuncDesignerException('currently BooleanOOFun._D() is disabled')
-    
-    def nlh(self, *args, **kw):
-        raise FuncDesignerException('This is virtual method to be overloaded in derived class instance')
-    
-    __and__ = AND
-    
-    #IMPLICATION = IMPLICATION
-    __eq__ = EQUIVALENT
-    __ne__ = lambda self, arg: NOT(self==arg)
-    
-    def __or__(self, other):
-        if other is False: return self
-        return ~((~self) & (~other))
-        
-#        print('__or__')
-#        r = BooleanOOFun(logical_or, (self, other), vectorized = True)
-#        r.nlh = lambda *args: nlh_or((self, other), r._getDep(), *args)
-#        r.oofun = r
-#        return r
-        
-    
-    def __xor__(self, other):
-        return BooleanOOFun(logical_xor, (self, other), vectorized = True)
-    
-    def __invert__(self):
-        r = BooleanOOFun(logical_not, self, vectorized = True)
-        r.nlh = lambda *args: nlh_not(self, r._getDep(), *args)
-        r.oofun = r
-        return r
-    
-class BaseFDConstraint(BooleanOOFun):
-    isConstraint = True
-    tol = 0.0 
-    expected_kwargs = set(['tol', 'name'])
-    __hash__ = oofun.__hash__
-    descriptor = None
-    #def __getitem__(self, point):
-
-    def __call__(self, *args,  **kwargs):
-        expected_kwargs = self.expected_kwargs
-        if not set(kwargs.keys()).issubset(expected_kwargs):
-            raise FuncDesignerException('Unexpected kwargs: should be in '+str(expected_kwargs)+' got: '+str(kwargs.keys()))
-            
-        for elem in expected_kwargs:
-            if elem in kwargs:
-                setattr(self, elem, kwargs[elem])
-        
-        if len(args) > 1: raise FuncDesignerException('No more than single argument is expected')
-        
-        if len(args) == 0:
-           if len(kwargs) == 0: raise FuncDesignerException('You should provide at least one argument')
-           return self
-           
-        if isinstance(args[0], str):
-            self.name = args[0]
-            return self
-        elif hasattr(args[0], 'xf'):
-            return self(args[0].xf)
-            
-        return self._getFuncCalcEngine(*args,  **kwargs)
-        
-    def _getFuncCalcEngine(self, *args,  **kwargs):
-        
-        if not isinstance(args[0], dict): 
-            raise FuncDesignerException('unexpected type: %s' % type(args[0]))
-            
-        isMultiPoint = isinstance(args[0], ooPoint) and args[0].isMultiPoint == True
-        
-        val = self.oofun(args[0])
-        Tol = max((0.0, self.tol))
-        
-        if isMultiPoint:
-            return logical_and(self.lb-Tol<= val, val <= self.ub + Tol)
-        elif any(isnan(val)):
-            return False
-        if any(atleast_1d(self.lb-val)>Tol):
-            return False
-        elif any(atleast_1d(val-self.ub)>Tol):
-            return False
-        return True
-            
-
-    def __init__(self, oofun_Involved, *args, **kwargs):
-        BooleanOOFun.__init__(self, oofun_Involved._getFuncCalcEngine, (oofun_Involved.input if not oofun_Involved.is_oovar else oofun_Involved), *args, **kwargs)
-        #oofun.__init__(self, lambda x: oofun_Involved(x), input = oofun_Involved)
-        if len(args) != 0:
-            raise FuncDesignerException('No args are allowed for FuncDesigner constraint constructor, only some kwargs')
-            
-        # TODO: replace self.oofun by self.engine
-        self.oofun = oofun_Involved
-    
-#    def __ge__(self, other):
-#        from overloads import hstack
-#        x, op, y = self.descriptor
-#        if op == '<':
-#            x, y = y, x
-#        return hstack((self, y>other))
-#        
-#    __gt__ = __ge__
-#    
-#    def __le__(self, other):
-#        from overloads import hstack
-#        x, op, y = self.descriptor
-#        if op == '>':
-#            x, y = y, x
-#        return hstack((self, other<x))
-#    __lt__ = __le__
-
-class SmoothFDConstraint(BaseFDConstraint):
-        
-    __getitem__ = lambda self, point: self.__call__(point)
-    __hash__ = oofun.__hash__
-
-    def __init__(self, *args, **kwargs):
-        BaseFDConstraint.__init__(self, *args, **kwargs)
-        self.lb, self.ub = -inf, inf
-        for key, val in kwargs.items():
-            if key in ['lb', 'ub', 'tol']:
-                setattr(self, key, asfarray(val))
-            else:
-                raise FuncDesignerException('Unexpected key in FuncDesigner constraint constructor kwargs')
-    
-    def lh(self, *args, **kw): # overwritten in ooVar, mb something else
-        if '_invert' not in self.__dict__:
-            self._invert = NOT(self)
-        return self._invert.nlh(*args, **kw)
-    
-    def nlh(self, Lx, Ux, p, dataType):
-        m = Lx.shape[0] # is changed in the cycle
-        if m == 0:
-            assert 0, 'bug in FuncDesigner'
-            #return None, None, None
-        
-        tol = self.tol if self.tol > 0.0 else p.contol if self.tol == 0 else 0.0 # 0 for negative tolerances
-        # TODO: check it
-        if p.solver.dataHandling == 'sorted': tol = 0
-        selfDep = (self.oofun._getDep() if not self.oofun.is_oovar else set([self.oofun]))
-        
-        # TODO: improve it
-        domainData = [(v, (Lx[:, k], Ux[:, k])) for k, v in enumerate(p._freeVarsList) if v in selfDep]
-
-        domain = ooPoint(domainData, skipArrayCast=True)
-        domain.isMultiPoint = True
-        domain.dictOfFixedFuncs = p.dictOfFixedFuncs
-        r, r0 = self.oofun.iqg(domain, dataType, self.lb, self.ub)
-        Lf, Uf = r0.lb, r0.ub
-        tmp = getSmoothNLH(tile(Lf, (2, 1)), tile(Uf, (2, 1)), self.lb, self.ub, tol, m, dataType)
-        T02 = tmp
-        T0 = T02[:, tmp.shape[1]/2:].flatten()
-        
-        res = {}
-        if len(r):
-            dep = selfDep.intersection(domain.keys()) # TODO: Improve it
-            for v in dep:
-                Lf, Uf = vstack((r[v][0].lb, r[v][1].lb)), vstack((r[v][0].ub, r[v][1].ub))
-                
-                # TODO: 1) FIX IT it for matrix definiteRange
-                # 2) seems like DefiniteRange = (True, True) for any variable is enough for whole range to be defined in the involved node
-#                DefiniteRange = logical_and(DefiniteRange, r[v][0].definiteRange)
-#                DefiniteRange = logical_and(DefiniteRange, r[v][1].definiteRange)
-                
-                tmp = getSmoothNLH(Lf, Uf, self.lb, self.ub, tol, m, dataType) #- T02
-                #tmp[isnan(tmp)] = inf
-                res[v] = tmp 
-        return T0, res, r0.definiteRange
-        
-def getSmoothNLH(Lf, Uf, lb, ub, tol, m, dataType):
-
-    M = prod(Lf.shape) / (2*m)
-
-    Lf, Uf  = Lf.reshape(2*M, m).T, Uf.reshape(2*M, m).T
-    
-    lf1, lf2, uf1, uf2 = Lf[:, 0:M], Lf[:, M:2*M], Uf[:, 0:M], Uf[:, M:2*M]
-
-    UfLfDiff = Uf - Lf
-    if UfLfDiff.dtype.type in [int8, int16, int32, int64, int]:
-        UfLfDiff = asfarray(UfLfDiff)
-    #UfLfDiff[UfLfDiff > 1e200] = 1e200
-    if lb == ub:
-        val = ub
-        
-        ind1, ind2 = val - tol > Uf, val+tol < Lf
-#        residual[ind1] += val - tol - Uf[ind1]
-#        residual[ind2] += Lf[ind2] - (val + tol)
-        
-        Uf_t,  Lf_t = Uf.copy(), Lf.copy()
-        if Uf.dtype.type in [int8, int16, int32, int64, int] or Lf.dtype.type in [int8, int16, int32, int64, int]:
-            Uf_t,  Lf_t = asfarray(Uf_t), asfarray(Lf_t)
-        
-        Uf_t[Uf_t > val + tol] = val + tol
-        Lf_t[Lf_t < val - tol] = val - tol
-        allowedLineSegmentLength = Uf_t - Lf_t
-        tmp = allowedLineSegmentLength / UfLfDiff
-        tmp[logical_or(isinf(Lf), isinf(Uf))] = 1e-10 #  (to prevent inf/inf=nan); TODO: rework it
-        
-        tmp[allowedLineSegmentLength == 0.0] = 1.0 # may be encountered if Uf == Lf, especially for integer probs
-        tmp[tmp<1e-300] = 1e-300 # TODO: improve it
-
-        # TODO: for non-exact interval quality increase nlh while moving from 0.5*(Ux-Lx)
-        tmp[val - tol > Uf] = 0
-        tmp[val + tol < Lf] = 0
-
-    elif isfinite(lb) and not isfinite(ub):
-        tmp = (Uf - (lb - tol)) / UfLfDiff
-        
-        #ind = Lf < lb-tol
-        #residual[ind] += lb-Lf[ind]
-        
-        tmp[logical_and(isinf(Lf), logical_not(isinf(Uf)))] = 1e-10 # (to prevent inf/inf=nan); TODO: rework it
-        tmp[isinf(Uf)] = 1-1e-10 # (to prevent inf/inf=nan); TODO: rework it
-        
-        tmp[tmp<1e-300] = 1e-300 # TODO: improve it
-        tmp[tmp>1.0] = 1.0
-        
-        tmp[lb-tol > Uf] = 0
-        
-        tmp[lb <= Lf] = 1
-        
-    elif isfinite(ub) and not isfinite(lb):
-        tmp = (ub + tol - Lf ) / UfLfDiff
-        
-        #ind = Uf > ub+tol
-        #residual[ind] += Uf[ind]-ub
-        
-        tmp[isinf(Lf)] = 1-1e-10 # (to prevent inf/inf=nan);TODO: rework it
-        tmp[logical_and(isinf(Uf), logical_not(isinf(Lf)))] = 1e-10 # (to prevent inf/inf=nan); TODO: rework it
-        
-        tmp[tmp<1e-300] = 1e-300 # TODO: improve it
-        tmp[tmp>1.0] = 1.0
-        
-        tmp[ub+tol < Lf] = 0
-        #tmp[ub < Lf] = 0
-        
-        tmp[ub >= Uf] = 1
-
-    else:
-        raise FuncDesignerException('this part of interalg code is unimplemented for double-box-bound constraints yet')
-    
-    tmp = -log2(tmp)
-    tmp[isnan(tmp)] = inf # to prevent some issues in disjunctive cons    
-    return tmp
-
-class Constraint(SmoothFDConstraint):
-    __hash__ = oofun.__hash__
-    def __init__(self, *args, **kwargs):
-        
-        SmoothFDConstraint.__init__(self, *args, **kwargs)
-        
-        
-class BoxBoundConstraint(SmoothFDConstraint):
-    def __init__(self, *args, **kwargs):
-        SmoothFDConstraint.__init__(self, *args, **kwargs)
-    __hash__ = oofun.__hash__
         
 class Derivative(dict):
     def __init__(self):

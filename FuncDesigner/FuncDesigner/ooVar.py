@@ -5,7 +5,9 @@ asfarray, isscalar, ndarray, int16, int32, int64, float64, tile, vstack, searchs
 asanyarray, arange, log2, logical_and, ceil
 import numpy as np
 from FDmisc import FuncDesignerException, isPyPy
-from ooFun import oofun, BooleanOOFun, AND, OR, NOT, EQUIVALENT
+from ooFun import oofun
+from logic import AND, OR, NOT, EQUIVALENT
+from BooleanOOFun import BooleanOOFun
 #from FuncDesigner import IMPLICATION
 from ooarray import ooarray
 #from FuncDesigner.Interval import adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain
