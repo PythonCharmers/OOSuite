@@ -21,3 +21,7 @@ class Stochastic(object):
         self._str = stochasticDistribution
     __repr__ = lambda self: self._str
     __add__ = __mul__ = __pow__ = __rpow__ = __rmul__ = __radd__ = __neg__ = __pos__ = distrib_err_fcn
+
+class OOFun(object):
+    pass
+    

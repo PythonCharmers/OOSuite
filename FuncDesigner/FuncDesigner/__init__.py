@@ -6,13 +6,13 @@ __version__ = '0.5107'
 
 from ooVar import oovar, oovars
 #from ooFun import _getAllAttachedConstraints, broadcast, ooFun as oofun, AND, OR, NOT, NAND, NOR, XOR
-from ooFun import oofun, AND, OR, NOT, NAND, NOR, XOR
+from ooFun import oofun
 
 from ooSystem import ooSystem as oosystem
 from translator import FuncDesignerTranslator as ootranslator
 
 from ooPoint import ooPoint as oopoint, ooMultiPoint 
-#from logic import *
+from logic import AND, OR, XOR, NOT, EQUIVALENT, NAND, NOR
 from baseClasses import Stochastic as _Stochastic
 from FDmisc import FuncDesignerException, _getDiffVarsID, _getAllAttachedConstraints, broadcast
 
