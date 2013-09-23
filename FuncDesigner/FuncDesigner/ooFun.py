@@ -15,6 +15,7 @@ try:
 except ImportError:
     from numpy import nanmin, nanmax
 
+from expression import getitem_expression, add_expression, mul_expression
 from boundsurf import boundsurf
 try:
     from boundsurf2 import boundsurf2
@@ -222,7 +223,10 @@ class oofun(object):
     __hash__ = lambda self: self._id
     
     def expression(self, *args, **kw):
-        return self.name if self.is_oovar else self.name + str(tuple(self.dep))
+        name = self.name if self.engine == 'unspecified' else self.engine
+        Args = [inp.expression() + ', ' if isinstance (inp, oofun) else str(inp) for inp in self.input]
+        Args_repr = '(' + ''.join(Args)[:-2] + ')'
+        return name + Args_repr
 
     def attach(self, *args,  **kwargs):
         if len(kwargs) != 0:
@@ -571,12 +575,7 @@ class oofun(object):
             if isscalar(other) or asarray(other).size == 1 or ('size' in self.__dict__ and self.size is asarray(other).size):
                 r._D = lambda *args,  **kwargs: self._D(*args,  **kwargs) 
         r.vectorized = True
-        def expression(*args, **kw):
-            tmp2 = (other.expression(**kw) if isinstance (other, oofun) else str(other))
-            r = self.expression(**kw) + (' - ' + tmp2[1:] if tmp2[0] == '-' else ' + ' + tmp2)
-            return r
-
-        r.expression = expression
+        r.expression = lambda *args, **kw: add_expression(self, other, *args, **kw)
         return r
     
     __radd__ = __add__
@@ -600,8 +599,8 @@ class oofun(object):
             r = self.expression(**kw)
             needBrackets = '+' in r or '-' in r
             if needBrackets:
-                return '-(' + r + ')'
-            return '-' + r
+                return '- (' + r + ')'
+            return '- ' + r
             
         r.expression = expression#lambda *args, **kw: '-' + self.expression(**kw)
         return r
@@ -787,20 +786,7 @@ class oofun(object):
         #elems2 = [other] if not isinstance(other, (oofun, OOArray)) or not other._isProd else other._prod_elements
         elems2 = [other] if not isOtherOOFun or not other._isProd else other._prod_elements
         r._prod_elements = elems1 + elems2#[self, other]
-        
-        def expression(*args, **kw):
-            isOOFun = isinstance(other, oofun)
-            r1 = self.expression(**kw)
-            needBrackets1 = '+' in r1 or '-' in r1# or '*' in r1 or '/' in r1
-            R1 = '(' + r1 + ')' if needBrackets1 else r1
-
-            r2 = other.expression(**kw) if isOOFun else str(other)
-            needBrackets2 = '+' in r2 or '-' in r2 #or '*' in r2 or '/' in r2
-            R2 = '(' + r2 + ')' if needBrackets2 else r2
-            r = R2 + '*' + R1 if isOOFun else R1 + '*' + R2
-            return r
-            
-        r.expression = expression
+        r.expression = lambda *args, **kw:  mul_expression(self, other, *args, **kw)
         return r
 
     __rmul__ = __mul__
@@ -965,8 +951,8 @@ class oofun(object):
                     r = zeros_like(x)
                     r[ind] = 1
                 return r
-                
-        r = oofun(f, self, d = d, size = 1, getOrder = self.getOrder)
+        expression = lambda *args, **kw: getitem_expression(self, ind, *args, **kw)
+        r = oofun(f, self, d = d, size = 1, getOrder = self.getOrder, expression = expression)
         # TODO: check me!
         # what about a[a.size/2:]?
             
@@ -1005,7 +991,8 @@ class oofun(object):
                 m3 = zeros((ind2-ind1, x.size - ind2))
                 r = hstack((m1, m2, m3))
             return r
-        r = oofun(f, self, d = d, getOrder = self.getOrder)
+        expression = lambda *args, **kw: getitem_expression(self, slice(ind1, ind2), *args, **kw)
+        r = oofun(f, self, d = d, getOrder = self.getOrder, expression = expression)
 
         return r
    

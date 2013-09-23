@@ -36,8 +36,11 @@ class oovar(oofun):
             kwargs['name'] = name
         oofun.__init__(self, f_none, *args, **kwargs)
     
+    def expression(self, *args, **kw):
+        return self.name
+    
     def _interval_(self, domain, dtype = float64):
-        if self in domain.resolveSchedule:
+        if 0 or self in domain.resolveSchedule:
             tmp = domain.get(self, None)
             if tmp is None: return None
             if isinstance(tmp, ndarray) or isscalar(tmp): # thus variable value is fixed for this calculation

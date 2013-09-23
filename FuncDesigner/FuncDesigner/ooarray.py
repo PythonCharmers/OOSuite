@@ -80,14 +80,19 @@ class ooarray(OOArray):
             #tmp = tmp.flatten()
             return ooarray(tmp)
 
+    def expression(self, *args, **kw):
+        return str([elem.expression(*args, **kw) if isinstance(elem, oofun) else str(elem) for elem in self.view(ndarray)])
+    
     def __getattr__(self, attr):
         if attr == 'dep':
             r = set.union(*[elem.dep for elem in self.view(ndarray) if isinstance(elem, (oofun, ooarray))])
             self.dep = r
             return r
+        elif attr == 'expr':
+            return str([elem.expr if isinstance(elem, oofun) else str(elem) for elem in self.view(ndarray)])
         else:
             raise AttributeError('incorrect attribute of ooarray')
-
+    
     def getOrder(self, *args, **kw):
         return PythonMax([0] + [elem.getOrder(*args, **kw) for elem in self.view(ndarray) if isinstance(elem, (oofun, ooarray))])
 

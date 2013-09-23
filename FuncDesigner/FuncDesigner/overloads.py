@@ -158,7 +158,6 @@ def sin(inp):
                  d = lambda x: Diag(np.cos(x)), 
                  vectorized = True)
     r._interval_ = lambda domain, dtype: sin_cos_interval(r, inp, domain, dtype)
-    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     return r
 
 st_cos = (lambda x: \
@@ -179,7 +178,6 @@ def cos(inp):
                  d = lambda x: Diag(-np.sin(x)), 
                  vectorized = True)
     r._interval_ = lambda domain, dtype: sin_cos_interval(r, inp, domain, dtype)
-    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     return r
 #cos = lambda inp: sin(inp+np.pi/2)
 
@@ -209,7 +207,6 @@ def tan(inp):
     r = oofun(st_tan, inp, d = lambda x: Diag(1.0 / np.cos(x) ** 2), vectorized = True, \
     engine_monotonity = 1, convexities = (-1, 1), engine = 'tan')
     r._interval_ = lambda domain, dtype: tan_interval(inp, r, domain, dtype)
-    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     return r
     
 __all__ += ['sin', 'cos', 'tan']
@@ -238,7 +235,6 @@ def arcsin(inp):
     engine_monotonity = 1, convexities = (-1, 1), engine = 'arcsin')
 #    r.getDefiniteRange = get_box1_DefiniteRange
     r._interval_ = lambda domain, dtype: box_1_interval(inp, r, np.arcsin, domain, dtype)
-    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     r.attach((inp>-1)('arcsin_domain_lower_bound_%d' % r._id, tol=-1e-7), (inp<1)('arcsin_domain_upper_bound_%d' % r._id, tol=-1e-7))
     return r
 
@@ -261,7 +257,6 @@ def arccos(inp):
     engine_monotonity = -1, convexities = (1, -1), engine = 'arccos')
 #    r.getDefiniteRange = get_box1_DefiniteRange
     r._interval_ = lambda domain, dtype: box_1_interval(inp, r, np.arccos, domain, dtype)
-    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     r.attach((inp>-1)('arccos_domain_lower_bound_%d' % r._id, tol=-1e-7), (inp<1)('arccos_domain_upper_bound_%d' % r._id, tol=-1e-7))
     return r
 
@@ -282,7 +277,6 @@ def arctan(inp):
     r = oofun(st_arctan, inp, d = lambda x: Diag(1.0 / (1.0 + x**2)), 
                  vectorized = True, engine_monotonity = 1, convexities = (1, -1), engine = 'arctan')
     r._interval_ = lambda domain, dtype: devided_interval(inp, r, domain, dtype)
-    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     return r
 
 __all__ += ['arcsin', 'arccos', 'arctan']
@@ -304,7 +298,6 @@ def sinh(inp):
     r = oofun(st_sinh, inp, d = lambda x: Diag(np.cosh(x)), vectorized = True, 
     engine_monotonity = 1, convexities = (-1, 1), engine = 'sinh')
     r._interval_ = lambda domain, dtype: devided_interval(inp, r, domain, dtype)
-    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     return r
 
 #def asdf(x):
@@ -348,7 +341,6 @@ def cosh(inp):
         return np.cosh(inp)
     r =oofun(st_cosh, inp, d = lambda x: Diag(np.sinh(x)), engine_convexity = 1, vectorized = True, \
     _interval_=ZeroCriticalPointsInterval(inp, np.cosh), engine = 'cosh')
-    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     return r
     
 __all__ += ['sinh', 'cosh']
@@ -370,7 +362,6 @@ def tanh(inp):
     r = oofun(st_tanh, inp, d = lambda x: Diag(1.0/np.cosh(x)**2), vectorized = True, 
     engine_monotonity = 1, convexities = (1, -1), engine = 'tanh')
     r._interval_ = lambda domain, dtype: devided_interval(inp, r, domain, dtype)
-    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     return r
     
 st_arctanh = (lambda x: \
@@ -391,7 +382,6 @@ def arctanh(inp):
     engine_monotonity = 1, convexities = (-1, 1), engine = 'arctanh')
 #    r.getDefiniteRange = get_box1_DefiniteRange
     r._interval_ = lambda domain, dtype: box_1_interval(inp, r, np.arctanh, domain, dtype)
-    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     return r
 
 __all__ += ['tanh', 'arctanh']
@@ -413,7 +403,6 @@ def arcsinh(inp):
     r = oofun(st_arcsinh, inp, d = lambda x: Diag(1.0/np.sqrt(1+x**2)), 
     vectorized = True, engine_monotonity = 1, convexities = (1, -1), engine = 'arcsinh')
     r._interval_ = lambda domain, dtype: devided_interval(inp, r, domain, dtype)
-    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     return r
 
 st_arccosh = (lambda x: \
@@ -434,7 +423,6 @@ def arccosh(inp):
     engine_monotonity = 1, engine_convexity = -1, engine = 'arccosh')
     F0, shift = 0.0, 1.0
     r._interval_ = lambda domain, dtype: nonnegative_interval(inp, np.arccosh, r.d, domain, dtype, F0, shift)
-    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     return r
 
 __all__ += ['arcsinh', 'arccosh']
@@ -564,7 +552,6 @@ def exp(inp):
     r = oofun(st_exp, inp, d = lambda x: Diag(np.exp(x)), vectorized = True, 
     engine_convexity = 1, engine_monotonity = 1, engine = 'exp')
     r._interval_ = lambda domain, dtype: exp_interval(r, inp, domain, dtype)
-    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     return r
 
 #st_sqrt = (lambda x: \
@@ -587,7 +574,6 @@ def sqrt(inp, attachConstraints = True):
 #    r._interval_ = lambda domain, dtype: nonnegative_interval(inp, np.sqrt, r.d, domain, dtype, 0.0)
     r = inp ** 0.5
     r.engine = 'sqrt'
-    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     if attachConstraints: r.attach((inp>0)('sqrt_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
 
@@ -610,7 +596,6 @@ def abs(inp):
     
     r = oofun(st_abs, inp, d = lambda x: Diag(np.sign(x)), vectorized = True, 
     _interval_ = ZeroCriticalPointsInterval(inp, np.abs), engine = 'abs')
-    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     return r
     
 __all__ += ['abs']
@@ -707,7 +692,6 @@ def log(inp):
               engine = 'log')
     #r._interval_ = lambda domain, dtype: nonnegative_interval(inp, np.log, r.d, domain, dtype, 0.0)
     r._interval_ = lambda domain, dtype: log_interval(inp, domain, dtype)
-    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     r.attach((inp>1e-300)('log_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
 
@@ -736,7 +720,6 @@ def log10(inp):
               engine = 'log10')
     #r._interval_ = lambda domain, dtype: nonnegative_interval(inp, np.log10, r.d, domain, dtype, 0.0)
     r._interval_ = lambda domain, dtype: log10_interval(inp, domain, dtype)
-    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     r.attach((inp>1e-300)('log10_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
 
@@ -765,7 +748,6 @@ def log2(inp):
               engine = 'log2')
 #    r._interval_ = lambda domain, dtype: nonnegative_interval(inp, np.log2, r.d, domain, dtype, 0.0)
     r._interval_ = lambda domain, dtype: log2_interval(inp, domain, dtype)
-    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     r.attach((inp>1e-300)('log2_domain_zero_bound_%d' % r._id, tol=-1e-7))
     return r
 
@@ -792,11 +774,6 @@ def dot(inp1, inp2):
     r = oofun(f_dot, [inp1, inp2], d=(lambda x, y: d_dot(x, y), lambda x, y: d_dot(y, x)), engine = 'dot')
     r.getOrder = lambda *args, **kwargs: (inp1.getOrder(*args, **kwargs) if isinstance(inp1, oofun) else 0) + (inp2.getOrder(*args, **kwargs) if isinstance(inp2, oofun) else 0)
     #r.isCostly = True
-    r.expression = lambda *args, **kw: r.engine+'('+ \
-                                                  (inp1.expression() if isinstance (inp1, oofun) else str(inp1)) + \
-                                                  ',' + \
-                                                  (inp2.expression() if isinstance (inp2, oofun) else str(inp2)) + \
-                                                  ')'
     return r
 
 def cross_d(x, y):
@@ -807,12 +784,9 @@ def cross(a, b):
     if not isinstance(a, oofun) and not isinstance(b, oofun): return np.cross(a, b)
    
     r = oofun(np.cross, [a, b], d=(lambda x, y: -cross_d(x, y), lambda x, y: cross_d(y, x)), engine = 'cross')
-    r.getOrder = lambda *args, **kwargs: (a.getOrder(*args, **kwargs) if isinstance(a, oofun) else 0) + (b.getOrder(*args, **kwargs) if isinstance(b, oofun) else 0)
-    r.expression = lambda *args, **kw: r.engine+'('+ \
-                                              (a.expression() if isinstance (a, oofun) else str(a)) + \
-                                              ',' + \
-                                              (b.expression() if isinstance (b, oofun) else str(b)) + \
-                                              ')'
+    r.getOrder = lambda *args, **kwargs: \
+    (a.getOrder(*args, **kwargs) if isinstance(a, oofun) else 0)\
+    + (b.getOrder(*args, **kwargs) if isinstance(b, oofun) else 0)
     return r
 
 __all__ += ['dot', 'cross']
@@ -823,7 +797,6 @@ def ceil(inp):
     if not isinstance(inp, oofun): return np.ceil(inp)
     r = oofun(lambda x: np.ceil(x), inp, vectorized = True, engine_monotonity = 1, engine = 'ceil')
     r._D = lambda *args, **kwargs: raise_except('derivative for FD ceil is unimplemented yet')
-    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     return r
 
 def floor(inp):
@@ -832,7 +805,6 @@ def floor(inp):
     if not isinstance(inp, oofun): return np.floor(inp)
     r = oofun(lambda x: np.floor(x), inp, vectorized = True, engine_monotonity = 1, engine = 'floor')
     r._D = lambda *args, **kwargs: raise_except('derivative for FD floor is unimplemented yet')
-    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     return r
 
 st_sign = (lambda x: \
@@ -851,7 +823,6 @@ def sign(inp):
     if not isinstance(inp, oofun): 
         return np.sign(inp)
     r = oofun(st_sign, inp, vectorized = True, d = lambda x: 0.0, engine_monotonity = 1, engine = 'sign')
-    r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     return r
 
 __all__ += ['ceil', 'floor', 'sign']
@@ -1213,12 +1184,15 @@ def sum(inp, *args, **kwargs):
         r._D = lambda *args, **kw: sum_derivative(r, r0, INP, r_dep, *args, **kw)
         r.isCostly = True
         
-        def expression(*args):
-            Elems = [elem.expression() if isinstance(elem, oofun) else str(elem) for elem in INP]
+        def expression(*args, **kw):
+            Elems = [elem.expression(**kw) if isinstance(elem, oofun) else str(elem) for elem in INP]
             r = []
-            for i, elem in enumerate(Elems):
-                r.append(elem +  ('+' if elem[0] != '-' and i != len(Elems)-1 else ''))
-            rr = ''.join(r)
+            for i in range(len(Elems)):
+                r.append(Elems[i] +  (' + ' if i != len(Elems)-1 and Elems[i+1][0] != '-' else ' '))
+            rr = ''.join(r)[:-1]
+            if not np.array_equal(r0, 0.0):
+                str_r0 = str(r0)
+                rr += ' + ' + str_r0 if str_r0[0] != '-' else ' - ' + str_r0[1:]
             return rr
         r.expression = expression
         
@@ -1242,7 +1216,6 @@ def norm(*args, **kwargs):
         r = sqrt(sum(args[0]**2),  attachConstraints=False)
         r.engine = 'norm2'
         r._norm_arg = args[0]#used in SOCP
-        r.expression = lambda *args, **kw: r.engine+'('+ inp.expression() + ')'
     else:
         assert 0, 'FuncDesigner norm() is implemented for n = 2 only'
     return r
@@ -1310,7 +1283,7 @@ def ifThenElse(condition, val1, val2, *args, **kwargs):
     elif isinstance(condition, oofun):
         f = lambda conditionResult, value1Result, value2Result: value1Result if conditionResult else value2Result
         # !!! Don't modify it elseware function will evaluate both expressions despite of condition value 
-        r = oofun(f, [condition, val1, val2])
+        r = oofun(f, [condition, val1, val2], engine = 'ifThenElse')
         r.D = lambda point, *args, **kwargs: (Val1.D(point, *args, **kwargs) if isinstance(Val1, oofun) else {}) if condition(point) else \
         (Val2.D(point, *args, **kwargs) if isinstance(Val2, oofun) else {})
         r._D = lambda point, *args, **kwargs: (Val1._D(point, *args, **kwargs) if isinstance(Val1, oofun) else {}) if condition(point) else \
@@ -1371,7 +1344,7 @@ def max(inp,  *args,  **kwargs):
             r1[r1<tmp] = tmp
             r2[r2<tmp] = tmp
             return np.vstack((r1, r2)), DefiniteRange
-        r = oofun(f, inp, size = 1, _interval_ = interval)
+        r = oofun(f, inp, size = 1, _interval_ = interval, engine = 'max')
         def _D(point, *args, **kwargs):
             ind = np.argmax([(s(point) if isinstance(s, oofun) else s) for s in r.input])
             return r.input[ind]._D(point, *args, **kwargs) if isinstance(r.input[ind], oofun) else {}
@@ -1418,7 +1391,7 @@ def min(inp,  *args,  **kwargs):
                 r2[r2>tmp] = tmp
             return np.vstack((r1, r2)), DefiniteRange
             
-        r = oofun(f, inp, size = 1, _interval_ = interval)
+        r = oofun(f, inp, size = 1, _interval_ = interval, engine = 'min')
         def _D(point, *args, **kwargs):
             ind = np.argmin([(s(point) if isinstance(s, oofun) else s) for s in r.input])
             return r.input[ind]._D(point, *args, **kwargs) if isinstance(r.input[ind], oofun) else {}
@@ -1481,7 +1454,7 @@ def hstack(tup): # overload for oofun[ind]
         return np.max(orders)
     
             
-    r = oofun(f, tup, getOrder = getOrder)
+    r = oofun(f, tup, getOrder = getOrder, engine = 'hstack')
     
     #!!!!!!!!!!!!!!!!! TODO: sparse 
 
