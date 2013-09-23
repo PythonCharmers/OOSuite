@@ -1212,8 +1212,11 @@ def prod(inp, *args, **kwargs):
 def norm(*args, **kwargs):
     if len(kwargs) or len(args) > 1:
         return np.linalg.norm(*args, **kwargs)
-    if isinstance(r, oofun) and len(kwargs) == 0 and (len(args) == 1 or args[1] == 2):
-        r = sqrt(sum(args[0]**2),  attachConstraints=False)
+        
+    r = sqrt(sum(args[0]**2),  attachConstraints=False)
+
+    if isinstance(r, oofun) and len(kwargs) == 0:
+        assert len(args) == 1 or args[1] == 2, 'FuncDesigner norm() is implemented for n = 2 only'
         r.engine = 'norm2'
         r._norm_arg = args[0]#used in SOCP
     else:
