@@ -1,14 +1,46 @@
 PythonSum = sum
-from numpy import asscalar, isscalar, asfarray, ndarray, prod, logical_and, logical_or, inf, atleast_1d, any
+PythonAny = any
+from numpy import asscalar, isscalar, asfarray, ndarray, prod, logical_and, logical_or, inf, atleast_1d, any, \
+where, hstack, atleast_2d, vstack
 import numpy as np
 from baseClasses import MultiArray, Stochastic
 
-scipyInstalled = True
 try:
-    import scipy
     import scipy.sparse as SP
+    from scipy.sparse import hstack as HstackSP, vstack as VstackSP, eye as SP_eye, \
+    lil_matrix as SparseMatrixConstructor, isspmatrix
+    def Hstack(Tuple):
+        ind = where([isscalar(elem) or prod(elem.shape)!=0 for elem in Tuple])[0].tolist()
+        elems = [Tuple[i] for i in ind]
+        if PythonAny(isspmatrix(elem) for elem in elems):
+            return HstackSP(elems)
+        
+        s = set([(0 if isscalar(elem) else elem.ndim) for elem in elems])
+        ndim = max(s)
+        if ndim <= 1:  return hstack(elems)
+        assert ndim <= 2 and 1 not in s, 'bug in FuncDesigner kernel, inform developers'
+        return hstack(elems) if 0 not in s else hstack([atleast_2d(elem) for elem in elems])
+    def Vstack(Tuple):
+        ind = where([isscalar(elem) or prod(elem.shape)!=0 for elem in Tuple])[0].tolist()
+        elems = [Tuple[i] for i in ind]
+        if PythonAny(isspmatrix(elem) for elem in elems):
+            return VstackSP(elems)
+        else:
+            return vstack(elems)
+#        s = set([(0 if isscalar(elem) else elem.ndim) for elem in elems])
+#        ndim = max(s)
+#        if ndim <= 1:  return hstack(elems)
+#        assert ndim <= 2 and 1 not in s, 'bug in FuncDesigner kernel, inform developers'
+#        return hstack(elems) if 0 not in s else hstack([atleast_2d(elem) for elem in elems])        
+    scipyInstalled = True
 except:
+    isspmatrix = lambda *args,  **kwargs:  False
+    Hstack = hstack
+    Vstack = vstack
+    SparseMatrixConstructor = None
+    SP_eye = None
     scipyInstalled = False
+
 
 class FuncDesignerException(BaseException):
     def __init__(self,  msg):

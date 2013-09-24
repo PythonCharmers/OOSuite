@@ -2,8 +2,9 @@ PythonSum = sum
 PythonMax = max
 PythonAny = any
 import numpy as np
-from FDmisc import FuncDesignerException, Diag, Eye, raise_except, diagonal, DiagonalType, dictSum
-from ooFun import atleast_oofun, Vstack, Copy, oofun
+from FDmisc import FuncDesignerException, Diag, Eye, raise_except, \
+diagonal, DiagonalType, dictSum, Vstack, Copy
+from ooFun import atleast_oofun, oofun
 from ooarray import ooarray
 from Interval import nonnegative_interval, ZeroCriticalPointsInterval, \
 box_1_interval, defaultIntervalEngine

@@ -1,9 +1,13 @@
+PythonAll = all
 from FDmisc import Len, FuncDesignerException, DiagonalType, scipyAbsentMsg, pWarn, scipyInstalled, Diag, \
-Copy
+Copy, Eye, isPyPy, isspmatrix
 
-from baseClasses import OOFun
-from numpy import isscalar, ndarray, atleast_2d, prod, int64
+
+from baseClasses import OOFun, Stochastic
+from numpy import isscalar, ndarray, atleast_2d, prod, int64, asarray, ones_like, array_equal, asscalar
+import numpy as np
 from multiarray import multiarray
+from ooPoint import ooPoint
 
 try:
     from DerApproximator import get_d1#, check_d1
@@ -11,6 +15,163 @@ try:
 except:
     DerApproximatorIsInstalled = False
     
+
+def _D(Self, x, fixedVarsScheduleID, Vars=None, fixedVars = None, useSparse = 'auto'):
+    if Self.is_oovar: 
+        if (fixedVars is not None and Self in fixedVars) or (Vars is not None and Self not in Vars):
+            return {} 
+        tmp = x[Self]
+        return {Self:Eye(asarray(tmp).size)} if not isinstance(tmp, multiarray) else {Self: ones_like(tmp).view(multiarray)}
+        
+    if Self.input[0] is None: return {} # fixed oofun. TODO: implement input = [] properly
+        
+    if Self.discrete: 
+        return {}
+        #raise FuncDesignerException('The oofun or oovar instance has been declared as discrete, no derivative is available')
+    
+    CondSamePointByID = True if isinstance(x, ooPoint) and Self._point_id1 == x._id else False
+    sameVarsScheduleID = fixedVarsScheduleID == Self._lastDiffVarsID 
+    
+    dep = Self._getDep()
+    
+    rebuildFixedCheck = not sameVarsScheduleID
+    if rebuildFixedCheck:
+        Self._isFixed = (fixedVars is not None and dep.issubset(fixedVars)) or (Vars is not None and dep.isdisjoint(Vars))
+    if Self._isFixed: return {}
+    ##########################
+    
+    # TODO: optimize it. Omit it for simple cases.
+    #isTransmit = Self._usedIn == 1 # Exactly 1! not 0, 2, ,3, 4, etc
+    #involveStore = not isTransmit or Self._directlyDwasInwolved
+    involveStore = Self.isCostly
+
+    #cond_same_point = hasattr(Self, '_d_key_prev') and sameDerivativeVariables and (CondSamePointByID or (involveStore and         all([array_equal(x[elem], Self.d_key_prev[elem]) for elem in dep])))
+    
+    cond_same_point = sameVarsScheduleID and \
+    ((CondSamePointByID and Self._d_val_prev is not None) or \
+    (involveStore and Self._d_key_prev is not None \
+    and PythonAll(array_equal(x[elem], Self._d_key_prev[elem]) for elem in dep)))
+    
+    if cond_same_point:
+        Self.same_d += 1
+        #return deepcopy(Self.d_val_prev)
+        return dict((key, Copy(val)) for key, val in Self._d_val_prev.items())
+    else:
+        Self.evals_d += 1
+
+    if isinstance(x, ooPoint): Self._point_id1 = x._id
+    if fixedVarsScheduleID != -1: Self._lastDiffVarsID = fixedVarsScheduleID
+
+    derivativeSelf = Self._getDerivativeSelf(x, fixedVarsScheduleID, Vars, fixedVars)
+
+    r = Derivative()
+    ac = -1
+    for i, inp in enumerate(Self.input):
+        if not isinstance(inp, OOFun): continue
+        if inp.discrete: continue
+
+        if inp.is_oovar: 
+            if (Vars is not None and inp not in Vars) or (fixedVars is not None and inp in fixedVars):
+                continue                
+            ac += 1
+            tmp = derivativeSelf[ac]
+            val = r.get(inp, None)
+            if val is not None:
+                if isscalar(tmp) or (type(val) == type(tmp) == ndarray and prod(tmp.shape) <= prod(val.shape)): # some sparse matrices has no += implemented 
+                    r[inp] += tmp
+                else:
+                    if isspmatrix(val) and type(tmp) == DiagonalType:
+                        tmp = tmp.resolve(True)
+                    r[inp] = r[inp] + tmp
+            else:
+                r[inp] = tmp
+        else:
+            ac += 1
+            
+            elem_d = inp._D(x, fixedVarsScheduleID, Vars=Vars, fixedVars=fixedVars, useSparse = useSparse) 
+            
+            t1 = derivativeSelf[ac]
+            
+            for key, val in elem_d.items():
+                #if isinstance(t1, Stochastic) or isinstance(val, Stochastic):
+                    #rr = t1 * val
+                if isinstance(t1, Stochastic) or ((isscalar(val) or isinstance(val, multiarray)) and (isscalar(t1) or isinstance(t1, multiarray))):
+                    rr = t1 * val
+                elif isinstance(val, Stochastic):
+                    rr = val * t1
+                elif type(t1) == DiagonalType and type(val) == DiagonalType:
+                    rr = t1 * val
+                elif type(t1) == DiagonalType or type(val) == DiagonalType:
+                    if isspmatrix(t1): # thus val is DiagonalType
+                        rr = t1._mul_sparse_matrix(val.resolve(True))
+                    else:
+                        if not isPyPy or type(val) != DiagonalType:
+                            rr = t1 *  val #if  type(t1) == DiagonalType or type(val) not in (ndarray, DiagonalType) else (val.T * t1).T   # for PyPy compatibility
+                        else:
+                            rr = (val * t1.T).T
+                elif isscalar(val) or isscalar(t1) or prod(t1.shape)==1 or prod(val.shape)==1:
+                    rr = (t1 if isscalar(t1) or prod(t1.shape)>1 else asscalar(t1) if isinstance(t1, ndarray) else t1[0, 0]) \
+                    * (val if isscalar(val) or prod(val.shape)>1 else asscalar(val) if isinstance(val, ndarray) else val[0, 0])
+                else:
+                    if val.ndim < 2: val = atleast_2d(val)
+                    if useSparse is False:
+                        t2 = val
+                    else:
+                        t1, t2 = considerSparse(t1, val)
+                    
+                    if not type(t1) == type(t2) == ndarray:
+                        # CHECKME: is it trigger somewhere?
+                        if not scipyInstalled:
+                            Self.pWarn(scipyAbsentMsg)
+                            rr = np.dot(t1, t2)
+                        else:
+                            from scipy.sparse import isspmatrix_csc, isspmatrix_csr, isspmatrix, csc_matrix, csr_matrix
+                            t1 = t1 if isspmatrix_csc(t1) else t1.tocsc() if isspmatrix(t1)  else csc_matrix(t1)
+                            t2 = t2 if isspmatrix_csr(t2) else t2.tocsr() if isspmatrix(t2)  else csr_matrix(t2)
+                            if t2.shape[0] != t1.shape[1]:
+                                if t2.shape[1] == t1.shape[1]:
+                                    t2 = t2.T
+                                else:
+                                    raise FuncDesignerException('incorrect shape in FuncDesigner function _D(), inform developers about the bug')
+                            rr = t1._mul_sparse_matrix(t2)
+                            if useSparse is False:
+                                rr = rr.toarray() 
+                    else:
+                        rr = np.dot(t1, t2)
+                #assert rr.ndim>1
+                
+                Val = r.get(key, None)
+                ValType = type(Val)
+                if Val is not None:
+                    if type(rr) == DiagonalType:
+                        if ValType == DiagonalType:
+                            
+                            Val = Val + rr # !!!! NOT inplace! (elseware will overwrite stored data used somewhere else)
+                            
+                        else:
+                            tmp  = rr.resolve(useSparse)
+                            if type(tmp) == ndarray and hasattr(Val, 'toarray'):
+                                Val = Val.toarray()
+                            if type(tmp) == ValType == ndarray and Val.size >= tmp.size:
+                                Val += tmp
+                            else: # may be problems with sparse matrices inline operation, which are badly done in scipy.sparse for now
+                                Val = Val + tmp
+                    else:
+                        if isinstance(Val, ndarray) and hasattr(rr, 'toarray'): # i.e. rr is sparse matrix
+                            rr = rr.toarray() # I guess r[key] will hardly be all-zeros
+                        elif hasattr(Val, 'toarray') and isinstance(rr, ndarray): # i.e. Val is sparse matrix
+                            Val = Val.toarray()
+                        if type(rr) == ValType == ndarray and rr.size == Val.size: 
+                            Val += rr
+                        else: 
+                            Val = Val + rr
+                    r[key] = Val
+                else:
+                    r[key] = rr
+    Self._d_val_prev = dict((key, Copy(value)) for key, value in r.items())
+    Self._d_key_prev = dict((elem, Copy(x[elem])) for elem in dep) if involveStore else None
+    return r
+
 
 def getDerivativeSelf(Self, x, fixedVarsScheduleID, Vars,  fixedVars):
     Input = Self._getInput(x, fixedVarsScheduleID=fixedVarsScheduleID, Vars=Vars,  fixedVars=fixedVars)
@@ -117,7 +278,7 @@ def getDerivativeSelf(Self, x, fixedVarsScheduleID, Vars,  fixedVars):
 #                    s += '(%d, %d) expected, (%d, %d) obtained' % (Self.outputTotalLength, Self.inputTotalLength,  derivativeSelf.shape[0], derivativeSelf.shape[1])
 #                    raise FuncDesignerException(s)
     else:
-        if Vars is not None or fixedVars is not None: raise FuncDesignerException("sorry, custom oofun derivatives don't work with Vars/fixedVars arguments yet")
+        if Vars is not None or (fixedVars is not None and len(fixedVars) != 0): raise FuncDesignerException("sorry, custom oofun derivatives don't work with Vars/fixedVars arguments yet")
         if not DerApproximatorIsInstalled:
             raise FuncDesignerException('To perform this operation you should have DerApproximator installed, see http://openopt.org/DerApproximator')
             
@@ -164,4 +325,6 @@ def mul_aux_d(x, y):
     else:
         raise FuncDesignerException('for oofun multiplication a*b should be size(a)=size(b) or size(a)=1 or size(b)=1')   
 
-
+class Derivative(dict):
+    def __init__(self):
+        pass
