@@ -1,16 +1,9 @@
-from ooMisc import assignScript
 from baseProblem import MatrixProblem
-from numpy import asfarray, ones, inf, dot, nan, zeros, any, all, isfinite, eye, vstack, hstack, flatnonzero, isscalar, ndarray, atleast_2d, zeros_like
+from numpy import inf, dot, zeros, hstack, flatnonzero, ndarray, zeros_like
 from ooMisc import norm
 from oologfcn import OpenOptException
-import NLP
-from nonOptMisc import scipyInstalled, Vstack
+from nonOptMisc import scipyInstalled, Vstack, csr_matrix
 
-try:
-    import scipy
-    scipyInstalled = True
-except:
-    scipyInstalled = False
 
 class SLE(MatrixProblem):
     expectedArgs = ['C', 'd']# for FD it should be Cd and x0
@@ -34,12 +27,10 @@ class SLE(MatrixProblem):
         else:
             # TODO: omit code clone in FD ooFun.py, function _D
             t1 = self.C_as_csc
-            t2 = scipy.sparse.csr_matrix(x)
+            t2 = csr_matrix(x)
             if t2.shape[0] != t1.shape[1]:
-                if t2.shape[1] == t1.shape[1]:
-                    t2 = t2.T
-                else:
-                    raise FuncDesignerException('incorrect shape in FuncDesigner function _D(), inform developers about the bug')
+                assert t2.shape[1] == t1.shape[1], 'incorrect shape in OpenOpt SLE, inform developers about the bug'
+                t2 = t2.T
             rr =  t1._mul_sparse_matrix(t2)            
             return norm(rr.toarray().flatten() - self.d, inf)
 
