@@ -1,7 +1,7 @@
 PythonSum = sum
 from numpy import asscalar, isscalar, asfarray, ndarray, prod, logical_and, logical_or, inf, atleast_1d, any
 import numpy as np
-from baseClasses import MultiArray
+from baseClasses import MultiArray, Stochastic
 
 scipyInstalled = True
 try:
@@ -9,8 +9,6 @@ try:
     import scipy.sparse as SP
 except:
     scipyInstalled = False
-    
-from baseClasses import Stochastic
 
 class FuncDesignerException(BaseException):
     def __init__(self,  msg):
@@ -328,5 +326,9 @@ def update_div_zero(lb1, ub1, lb2, ub2, r):
         r1[atleast_1d(logical_or(logical_and(ind2_zero_minus, ub1>0), logical_and(ind2_zero_plus, lb1<0)))] = -inf
         r2[atleast_1d(logical_or(logical_and(ind2_zero_minus, lb1<0), logical_and(ind2_zero_plus, ub1>0)))] = inf
 
+Len = lambda x: 1 if isscalar(x) else x.size if type(x)==ndarray \
+else x.values.size if isinstance(x, Stochastic) else len(x)
 
+Copy = lambda arg: asscalar(arg) if type(arg)==ndarray and arg.size == 1 \
+else arg.copy() if hasattr(arg, 'copy') else np.copy(arg)
 

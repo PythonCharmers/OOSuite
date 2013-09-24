@@ -2,10 +2,10 @@
 PythonSum = sum
 PythonAny = any
 PythonMax = max
-from numpy import inf, asfarray, copy, all, any, atleast_2d, zeros, dot, asarray, atleast_1d, \
+from numpy import inf, asfarray, all, any, atleast_2d, zeros, dot, asarray, atleast_1d, \
 ones, ndarray, where, array, nan, vstack, eye, array_equal, isscalar, log, hstack, sum as npSum, prod, nonzero,\
-isnan, asscalar, zeros_like, ones_like, logical_and, logical_or, isinf, logical_not, logical_xor, \
-tile, float64, searchsorted, int8, int16, int32, int64, isfinite, log2, string_, asanyarray, bool_
+asscalar, zeros_like, ones_like, logical_and, logical_or, \
+tile, float64, searchsorted, int8, int16, int32, int64, string_, asanyarray, bool_
 
 import operator, numpy as np
 
@@ -15,7 +15,9 @@ try:
 except ImportError:
     from numpy import nanmin, nanmax
 
-from expression import getitem_expression, add_expression, mul_expression
+from expression import getitem_expression, add_expression, mul_expression, neg_expression, div_expression, \
+rdiv_expression, pow_expression, rpow_expression
+
 from boundsurf import boundsurf
 try:
     from boundsurf2 import boundsurf2
@@ -23,21 +25,19 @@ except ImportError:
     boundsurf2 = boundsurf
     
 from FDmisc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scipyInstalled, \
-raise_except, DiagonalType, isPyPy, formResolveSchedule
+raise_except, DiagonalType, isPyPy, formResolveSchedule, Len, Copy
 from ooPoint import ooPoint
 from FuncDesigner.multiarray import multiarray
+from derivativeMisc import getDerivativeSelf, considerSparse, mul_aux_d
 from Interval import Interval, adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain, mul_interval,\
 pow_const_interval, pow_oofun_interval, div_interval, add_interval, add_const_interval, \
 neg_interval, defaultIntervalEngine#, rdiv_interval
 #import inspect
 from baseClasses import OOArray, Stochastic, OOFun
-from logic import AND, NOT, EQUIVALENT, nlh_not
-
-Copy = lambda arg: asscalar(arg) if type(arg)==ndarray and arg.size == 1 else arg.copy() if hasattr(arg, 'copy') else copy(arg)
-Len = lambda x: 1 if isscalar(x) else x.size if type(x)==ndarray else x.values.size if isinstance(x, Stochastic) else len(x)
+#from logic import AND, NOT, EQUIVALENT, nlh_not
 
 try:
-    from DerApproximator import get_d1, check_d1
+    from DerApproximator import check_d1
     DerApproximatorIsInstalled = True
 except:
     DerApproximatorIsInstalled = False
@@ -506,7 +506,6 @@ class oofun(OOFun):
             
     __pos__ = lambda self: self
 
-        
     # overload "a+b"
     # @checkSizes
     def __add__(self, other):
@@ -594,14 +593,7 @@ class oofun(OOFun):
         r.d = raise_except
         r.vectorized = True
         r._interval_ = lambda *args, **kw: neg_interval(self, *args, **kw)
-        def expression(*args, **kw):
-            r = self.expression(**kw)
-            needBrackets = '+' in r or '-' in r
-            if needBrackets:
-                return '- (' + r + ')'
-            return '- ' + r
-            
-        r.expression = expression#lambda *args, **kw: '-' + self.expression(**kw)
+        r.expression =  lambda *args, **kw: neg_expression(self, *args, **kw)
         return r
         
     # overload "a-b"
@@ -661,24 +653,13 @@ class oofun(OOFun):
 
 #            if other.size == 1 or 'size' in self.__dict__ and self.size in (1, other.size):
             if other.size == 1:
-                r._D = lambda *args, **kwargs: dict([(key, value/other) for key, value in self._D(*args, **kwargs).items()])
+                r._D = lambda *args, **kwargs: dict((key, value/other) for key, value in self._D(*args, **kwargs).items())
                 r.d = raise_except
             
         # r.discrete = self.discrete and (?)
         #r.isCostly = True
         r.vectorized = True
-        
-        def expression(*args, **kw):
-            r1 = self.expression(**kw)
-            needBrackets1 = '+' in r1 or '-' in r1  or '/' in r1#or '*' in r1
-            R1 = '(' + r1 + ')' if needBrackets1 else r1
-
-            r2 = other.expression(**kw) if isinstance(other, oofun) else  str(other)
-            needBrackets2 = '+' in r2 or '-' in r2 or '*' in r2 or '/' in r2
-            R2 = '(' + r2 + ')' if needBrackets2 else r2
-
-            return R1 + '/' + R2
-        r.expression = expression
+        r.expression = lambda *args, **kw: div_expression(self, other, *args, **kw)
         return r
 
     def __rdiv__(self, other):
@@ -703,14 +684,8 @@ class oofun(OOFun):
             return 0 if order == 0 else inf
         r.getOrder = getOrder
         r.vectorized = True
-        
-        def expression(*args, **kw):
-            r1 = self.expression(**kw)
-            needBrackets1 = '+' in r1 or '-' in r1  or '/' in r1 or '*' in r1
-            R1 = '(' + r1 + ')' if needBrackets1 else r1
 
-            return str(other) + '/' + R1
-        r.expression = expression
+        r.expression = lambda *args, **kw: rdiv_expression(self, other, *args, **kw)
         return r
 
     # overload "a*b"
@@ -771,7 +746,7 @@ class oofun(OOFun):
             r._getFuncCalcEngine = lambda *args,  **kwargs: other * self._getFuncCalcEngine(*args,  **kwargs)
 
             if isscalar(other) or asarray(other).size == 1:  # other may be array-like
-                r._D = lambda *args, **kwargs: dict([(key, value * other) for key, value in self._D(*args, **kwargs).items()])
+                r._D = lambda *args, **kwargs: dict((key, value * other) for key, value in self._D(*args, **kwargs).items())
                 r.d = raise_except
             else:
                 r.d = lambda x: mul_aux_d(x, other)
@@ -865,19 +840,8 @@ class oofun(OOFun):
         r.vectorized = True
         if other_is_oofun or not isInt:
             r._lower_domain_bound = 0.0
-        
-        def expression(*args, **kw):
-            r1 = self.expression(**kw)
-            needBrackets1 = '+' in r1 or '-' in r1 or '*' in r1 or '/' in r1 or '^' in r1
-            R1 = '(' + r1 + ')' if needBrackets1 else r1
-
-            r2 = other.expression(**kw) if isinstance(other, oofun) else str(other)
-            needBrackets2 = '+' in r2 or '-' in r2 or '*' in r2 or '/' in r2 or '^' in r2
-            R2 = '(' + r2 + ')' if needBrackets2 else r2
-            pow_symbol = kw.get('pow', '^') 
-            return R1 + pow_symbol + R2
             
-        r.expression = expression
+        r.expression = lambda *args, **kw: pow_expression(self, other, *args, **kw)
         return r
 
     def __rpow__(self, other):
@@ -908,13 +872,8 @@ class oofun(OOFun):
             return exp_b_interval(log(other) * lb_ub, r1, definiteRange, domain)
             
         r._interval_ = lambda *args, **kw: rpow_interval(r, other, *args, **kw)
-        def expression(*args, **kw):
-            r1 = self.expression(**kw)
-            needBrackets1 = '+' in r1 or '-' in r1  or '/' in r1 or '*' in r1 or '^' in r1
-            R1 = '(' + r1 + ')' if needBrackets1 else r1
-            pow_symbol = kw.get('pow', '^') 
-            return str(other) + pow_symbol + R1
-        r.expression = expression
+
+        r.expression = lambda *args, **kw: rpow_expression(self, other, *args, **kw)
         return r
 
     def __xor__(self, other): raise FuncDesignerException('For power of oofuns use a**b, not a^b')
@@ -1204,7 +1163,7 @@ class oofun(OOFun):
                 r_oofuns.append(tmp)
             r = set(r_oovars)
 
-            # Python 2.5 sel.update fails on empty input
+            # Python 2.5 set.update fails on empty input
             if len(r_oofuns)!=0: r.update(*r_oofuns)
             if len(r_oovars) + sum([len(elem) for elem in r_oofuns]) != len(r):
                 isUncycled = False
@@ -1373,7 +1332,7 @@ class oofun(OOFun):
 
             # TODO: rework it (for input with ooarays)
             try:
-                t1 = dict([(elem, (x if isinstance(x, dict) else x.xf)[elem]) for elem in dep]) if self.isCostly else None
+                t1 = dict((elem, (x if isinstance(x, dict) else x.xf)[elem]) for elem in dep) if self.isCostly else None
                 #t1 = dict([(elem, copy((x if isinstance(x, dict) else x.xf)[elem])) for elem in dep]) if self.isCostly else None
                 if t1 is not None:
                     t2 = tmp.copy() if isinstance(tmp, (ndarray, Stochastic)) else tmp
@@ -1547,7 +1506,7 @@ class oofun(OOFun):
                         if useSparse is False:
                             t2 = val
                         else:
-                            t1, t2 = self._considerSparse(t1, val)
+                            t1, t2 = considerSparse(t1, val)
                         
                         if not type(t1) == type(t2) ==  ndarray:
                             # CHECKME: is it trigger somewhere?
@@ -1597,145 +1556,11 @@ class oofun(OOFun):
                         r[key] = Val
                     else:
                         r[key] = rr
-        self._d_val_prev = dict([(key, Copy(value)) for key, value in r.items()])
-        self._d_key_prev = dict([(elem, Copy(x[elem])) for elem in dep]) if involveStore else None
+        self._d_val_prev = dict((key, Copy(value)) for key, value in r.items())
+        self._d_key_prev = dict((elem, Copy(x[elem])) for elem in dep) if involveStore else None
         return r
 
-    # TODO: handle 2**15 & 0.25 as parameters
-    def _considerSparse(self, t1, t2):  
-        if int64(prod(t1.shape)) * int64(prod(t2.shape)) > 2**15 and   (isinstance(t1, ndarray) and t1.nonzero()[0].size < 0.25*t1.size) or \
-        (isinstance(t2, ndarray) and t2.nonzero()[0].size < 0.25*t2.size):
-            if scipy is None: 
-                self.pWarn(scipyAbsentMsg)
-                return t1,  t2
-            if not isinstance(t1, scipy.sparse.csc_matrix): 
-                t1 = scipy.sparse.csc_matrix(t1)
-            if t1.shape[1] != t2.shape[0]: # can be from flattered t1
-                assert t1.shape[0] == t2.shape[0], 'bug in FuncDesigner Kernel, inform developers'
-                t1 = t1.T
-            if not isinstance(t2, scipy.sparse.csr_matrix): 
-                t2 = scipy.sparse.csr_matrix(t2)
-        return t1,  t2
-
-    def _getDerivativeSelf(self, x, fixedVarsScheduleID, Vars,  fixedVars):
-        Input = self._getInput(x, fixedVarsScheduleID=fixedVarsScheduleID, Vars=Vars,  fixedVars=fixedVars)
-        expectedTotalInputLength = sum([Len(elem) for elem in Input])
-        
-#        if hasattr(self, 'size') and isscalar(self.size): nOutput = self.size
-#        else: nOutput = self(x).size 
-
-        hasUserSuppliedDerivative = self.d is not None
-        if hasUserSuppliedDerivative:
-            derivativeSelf = []
-            if type(self.d) == tuple:
-                if len(self.d) != len(self.input):
-                   raise FuncDesignerException('oofun error: num(derivatives) not equal to neither 1 nor num(inputs)')
-                   
-                for i, deriv in enumerate(self.d):
-                    inp = self.input[i]
-                    if not isinstance(inp, oofun) or inp.discrete: 
-                        #if deriv is not None: 
-                            #raise FuncDesignerException('For an oofun with some input oofuns declared as discrete you have to set oofun.d[i] = None')
-                        continue
-                    
-                    #!!!!!!!!! TODO: handle fixed cases properly!!!!!!!!!!!!
-                    #if hasattr(inp, 'fixed') and inp.fixed: continue
-                    if inp.is_oovar and ((Vars is not None and inp not in Vars) or (fixedVars is not None and inp in fixedVars)):
-                        continue
-                        
-                    if deriv is None:
-                        if not DerApproximatorIsInstalled:
-                            raise FuncDesignerException('To perform gradients check you should have DerApproximator installed, see http://openopt.org/DerApproximator')
-                        derivativeSelf.append(get_d1(self.fun, Input, diffInt=self.diffInt, stencil = self.stencil, \
-                                                     args=self.args, varForDifferentiation = i, pointVal = self._getFuncCalcEngine(x), exactShape = True))
-                    else:
-                        # !!!!!!!!!!!!!! TODO: add check for user-supplied derivative shape
-                        tmp = deriv(*Input)
-                        if not isscalar(tmp) and type(tmp) in (ndarray, tuple, list) and type(tmp) != DiagonalType: # i.e. not a scipy.sparse matrix
-                            tmp = atleast_2d(tmp)
-                            
-                            ########################################
-
-                            _tmp = Input[i]
-                            Tmp = 1 if isscalar(_tmp) or prod(_tmp.shape) == 1 else len(Input[i])
-                            if tmp.shape[1] != Tmp: 
-                                # TODO: add debug msg
-#                                print('incorrect shape in FD AD _getDerivativeSelf')
-#                                print tmp.shape[0], nOutput, tmp
-                                if tmp.shape[0] != Tmp: raise FuncDesignerException('error in getDerivativeSelf()')
-                                tmp = tmp.T
-                                    
-                            ########################################
-
-                        derivativeSelf.append(tmp)
-            else:
-                tmp = self.d(*Input)
-                if not isscalar(tmp) and type(tmp) in (ndarray, tuple, list): # i.e. not a scipy.sparse matrix
-                    tmp = atleast_2d(tmp)
-                    
-                    if tmp.shape[1] != expectedTotalInputLength: 
-                        # TODO: add debug msg
-                        if tmp.shape[0] != expectedTotalInputLength: raise FuncDesignerException('error in getDerivativeSelf()')
-                        tmp = tmp.T
-                        
-                ac = 0
-                if isinstance(tmp, ndarray) and hasattr(tmp, 'toarray') and not isinstance(tmp, multiarray): tmp = tmp.A # is dense matrix
-                
-                #if not isinstance(tmp, ndarray) and not isscalar(tmp) and type(tmp) != DiagonalType:
-                if len(Input) == 1:
-#                    if type(tmp) == DiagonalType: 
-#                            # TODO: mb rework it
-#                            if Input[0].size > 150 and tmp.size > 150:
-#                                tmp = tmp.resolve(True).tocsc()
-#                            else: tmp =  tmp.resolve(False) 
-                    derivativeSelf = [tmp]
-                else:
-                    for i, inp in enumerate(Input):
-                        t = self.input[i]
-                        if t.discrete or (t.is_oovar and ((Vars is not None and t not in Vars) or (fixedVars is not None and t in fixedVars))):
-                            ac += inp.size
-                            continue                                    
-                        if isinstance(tmp, ndarray):
-                            TMP = tmp[:, ac:ac+Len(inp)]
-                        elif isscalar(tmp):
-                            TMP = tmp
-                        elif type(tmp) == DiagonalType: 
-                            if tmp.size == inp.size and ac == 0:
-                                TMP = tmp
-                            else:
-                                # print debug warning here
-                                # TODO: mb rework it
-                                if inp.size > 150 and tmp.size > 150:
-                                    tmp = tmp.resolve(True).tocsc()
-                                else: tmp =  tmp.resolve(False) 
-                                TMP = tmp[:, ac:ac+inp.size]
-                        else: # scipy.sparse matrix
-                            TMP = tmp.tocsc()[:, ac:ac+inp.size]
-                        ac += Len(inp)
-                        derivativeSelf.append(TMP)
-                    
-            # TODO: is it required?
-#                if not hasattr(self, 'outputTotalLength'): self(x)
-#                
-#                if derivativeSelf.shape != (self.outputTotalLength, self.inputTotalLength):
-#                    s = 'incorrect shape for user-supplied derivative of oofun '+self.name+': '
-#                    s += '(%d, %d) expected, (%d, %d) obtained' % (self.outputTotalLength, self.inputTotalLength,  derivativeSelf.shape[0], derivativeSelf.shape[1])
-#                    raise FuncDesignerException(s)
-        else:
-            if Vars is not None or fixedVars is not None: raise FuncDesignerException("sorry, custom oofun derivatives don't work with Vars/fixedVars arguments yet")
-            if not DerApproximatorIsInstalled:
-                raise FuncDesignerException('To perform this operation you should have DerApproximator installed, see http://openopt.org/DerApproximator')
-                
-            derivativeSelf = get_d1(self.fun, Input, diffInt=self.diffInt, stencil = self.stencil, args=self.args, pointVal = self._getFuncCalcEngine(x), exactShape = True)
-            if type(derivativeSelf) == tuple:
-                derivativeSelf = list(derivativeSelf)
-            elif type(derivativeSelf) != list:
-                derivativeSelf = [derivativeSelf]
-        
-        #assert all([elem.ndim > 1 for elem in derivativeSelf])
-       # assert len(derivativeSelf[0])!=16
-        #assert (type(derivativeSelf[0]) in (int, float)) or derivativeSelf[0][0]>480.00006752 or derivativeSelf[0][0]<480.00006750
-        return derivativeSelf
+    _getDerivativeSelf = getDerivativeSelf
 
     def D2(self, x):
         raise FuncDesignerException('2nd derivatives for obj-funcs are not implemented yet')
@@ -1884,14 +1709,3 @@ def atleast_oofun(arg):
     else:
         #return oofun(lambda *args, **kwargs: arg(*args,  **kwargs), input=None, discrete=True)
         raise FuncDesignerException('incorrect type for the function _atleast_oofun')
-
-def mul_aux_d(x, y):
-    Xsize, Ysize = Len(x), Len(y)
-    if Xsize == 1:
-        return Copy(y)
-    elif Ysize == 1:
-        return Diag(None, scalarMultiplier = y, size = Xsize)
-    elif Xsize == Ysize:
-        return Diag(y)
-    else:
-        raise FuncDesignerException('for oofun multiplication a*b should be size(a)=size(b) or size(a)=1 or size(b)=1')   
