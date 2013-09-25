@@ -125,7 +125,7 @@ def _D(Self, x, fixedVarsScheduleID, Vars=None, fixedVars = None, useSparse = 'a
                             Self.pWarn(scipyAbsentMsg)
                             rr = np.dot(t1, t2)
                         else:
-                            from scipy.sparse import isspmatrix_csc, isspmatrix_csr, isspmatrix, csc_matrix, csr_matrix
+                            from scipy.sparse import isspmatrix_csc, isspmatrix_csr, csc_matrix, csr_matrix
                             t1 = t1 if isspmatrix_csc(t1) else t1.tocsc() if isspmatrix(t1)  else csc_matrix(t1)
                             t2 = t2 if isspmatrix_csr(t2) else t2.tocsr() if isspmatrix(t2)  else csr_matrix(t2)
                             if t2.shape[0] != t1.shape[1]:
