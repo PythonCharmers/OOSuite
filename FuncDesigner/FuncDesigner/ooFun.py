@@ -841,7 +841,7 @@ class oofun(OOFun):
         r.name = self.name + ' >= ' + Other
         def expression(*args, **kw):
             r1 = self.expression(**kw)
-            r2 = other.expression(**kw) if isinstance(other, oofun) else Other if kw.get('truncation', True) else str(other)
+            r2 = other.expression(**kw) if isinstance(other, oofun) else Other if kw.get('truncation', False) else str(other)
             return r1 + ' >= '  + r2
         r.expression = expression
         return r
@@ -868,7 +868,7 @@ class oofun(OOFun):
         r.name = self.name + ' <= ' + Other
         def expression(*args, **kw):
             r1 = self.expression(**kw)
-            r2 = other.expression(**kw) if isinstance(other, oofun) else Other if kw.get('truncation', True) else str(other)
+            r2 = other.expression(**kw) if isinstance(other, oofun) else Other if kw.get('truncation', False) else str(other)
             return r1 + ' <= ' + r2
         r.expression = expression
         return r            

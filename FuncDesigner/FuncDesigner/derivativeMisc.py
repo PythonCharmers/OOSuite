@@ -303,13 +303,13 @@ def considerSparse(t1, t2):
             pWarn(scipyAbsentMsg)
             return t1,  t2
             
-        from scipy.sparse import csc_matrix, csr_matrix
-        if not isinstance(t1, csc_matrix): 
+        from scipy.sparse import csc_matrix, csr_matrix, isspmatrix_csc, isspmatrix_csr
+        if not isspmatrix_csc(t1): 
             t1 = csc_matrix(t1)
         if t1.shape[1] != t2.shape[0]: # can be from flattered t1
             assert t1.shape[0] == t2.shape[0], 'bug in FuncDesigner Kernel, inform developers'
             t1 = t1.T
-        if not isinstance(t2, csr_matrix): 
+        if not isspmatrix_csr(t2): 
             t2 = csr_matrix(t2)
             
     return t1, t2
