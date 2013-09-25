@@ -258,11 +258,11 @@ class boundsurf(object):#object is added for Python2 compatibility
             rr = mul_fixed_interval(self, other)
 
         elif isBoundSurf or isBoundSurf2:
-            is_line_1 = self.l is self.u
-            is_line_2 = other.l is other.u
-            if self.level == other.level == 1 and is_line_1 and is_line_2 and self.b2equiv(other):
+            sameBounds_1 = self.l is self.u
+            sameBounds_2 = other.l is other.u
+            if self.level == other.level == 1 and sameBounds_1 and sameBounds_2 and self.b2equiv(other):
                 rr = b2mult_direct(self, other)
-            elif ((selfPositive or selfNegative) and is_line_1) or ((R2Positive or R2Negative) and is_line_2)\
+            elif ((selfPositive or selfNegative) and sameBounds_1) or ((R2Positive or R2Negative) and sameBounds_2)\
             and self.level == other.level == 1 and self.b2equiv(other):
                 Self = self if selfPositive else -self
                 Other = other if R2Positive else -other
@@ -682,8 +682,15 @@ def mul_fixed_interval(self, R2):
     R1 = self.resolve()[0]
     selfPositive = all(R1 >= 0)
     selfNegative = all(R1 <= 0)
-        
-    if selfPositive and R2Positive:
+    
+    SelfSameBounds = self.l is self.u
+#    print('0', SelfSameBounds, selfPositive, selfNegative)
+    if 1 and SelfSameBounds and (selfPositive or selfNegative):
+        bound = self.l # equal to self.u
+#        if selfPositive or selfNegative:
+        rr = (bound * R2[0], bound * R2[1]) if selfPositive else (bound * R2[1], bound * R2[0])
+
+    elif selfPositive and R2Positive:
         rr = (self.l * R2[0], self.u * R2[1]) 
     elif selfPositive and R2Negative:
         rr = (self.u * R2[0], self.l * R2[1])

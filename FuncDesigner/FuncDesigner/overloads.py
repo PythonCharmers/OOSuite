@@ -1,6 +1,7 @@
 PythonSum = sum
 PythonMax = max
 PythonAny = any
+PythonAll = all
 import numpy as np
 from FDmisc import FuncDesignerException, Diag, Eye, raise_except, \
 diagonal, DiagonalType, dictSum, Vstack, Copy
@@ -1005,24 +1006,34 @@ def sum_interval(R0, r, INP, domain, dtype):
 
     
 def boundsurf_sum(B, s, DefiniteRange, domain):
+    
+    sameBounds = np.array_equal(s[0], s[1]) and PythonAll(b.l is b.u for b in B)
     L = PythonSum(b.l.c for b in B) + s[0]
-    U = PythonSum(b.u.c for b in B) + s[1]
+    U = L if sameBounds else PythonSum(b.u.c for b in B) + s[1]
     
     ##############################
     # dictSum works with Python lists, not iterables!
     Ld = dictSum([b.l.d for b in B])
-    Ud = dictSum([b.u.d for b in B])
+    Ud = Ld if sameBounds else dictSum([b.u.d for b in B])
     ##############################
     
     l2 = [elem for elem in (getattr(b.l, 'd2', None) for b in B) if elem is not None]
-    u2 = [elem for elem in (getattr(b.u, 'd2', None) for b in B) if elem is not None]
+    u2 = l2 if sameBounds else [elem for elem in (getattr(b.u, 'd2', None) for b in B) if elem is not None]
 
     if len(l2) == len(u2) == 0:
-        return boundsurf(surf(Ld, L), surf(Ud, U), DefiniteRange, domain)
+        if sameBounds:
+            s1 = s2 = surf(Ld, L)
+        else:
+            s1, s2 = surf(Ld, L), surf(Ud, U)
+        return boundsurf(s1, s2, DefiniteRange, domain)
     else:
         Ld2 = dictSum(l2)
-        Ud2 = dictSum(u2)
-        return boundsurf2(surf2(Ld2, Ld, L), surf2(Ud2, Ud, U), DefiniteRange, domain)
+        Ud2 = Ld2 if sameBounds else dictSum(u2)
+        if sameBounds:
+            s1 = s2 = surf2(Ld2, Ld, L)
+        else:
+            s1, s2 = surf2(Ld2, Ld, L), surf2(Ud2, Ud, U)
+        return boundsurf2(s1, s2, DefiniteRange, domain)
 
 def sum_derivative(r_, r0, INP, dep, point, fixedVarsScheduleID, Vars=None, fixedVars = None, useSparse = 'auto'):
     # TODO: handle involvePrevData
