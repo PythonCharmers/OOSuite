@@ -917,7 +917,7 @@ class oofun(OOFun):
             
         def expression(*args, **kw):
             r1 = self.expression(**kw)
-            r2 = other.expression(**kw) if isinstance(other, oofun) else Other if kw.get('truncation', True) else str(other)
+            r2 = other.expression(**kw) if isinstance(other, oofun) else Other if kw.get('truncation', False) else str(other)
             return r1 + ' == ' + r2
         r.expression = expression
         
@@ -1233,7 +1233,7 @@ class oofun(OOFun):
     ##########################
 
     def D2(self, x):
-        raise FuncDesignerException('2nd derivatives for obj-funcs are not implemented yet')
+        raise FuncDesignerException('2nd derivatives for oofuns are not implemented yet')
 
     def check_d1(self, point):
         if self.d is None:

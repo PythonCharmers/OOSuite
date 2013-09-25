@@ -258,8 +258,16 @@ class boundsurf(object):#object is added for Python2 compatibility
             rr = mul_fixed_interval(self, other)
 
         elif isBoundSurf or isBoundSurf2:
-            if self.level == other.level == 1 and self.u is self.l and other.u is other.l and self.b2equiv(other):
+            is_line_1 = self.l is self.u
+            is_line_2 = other.l is other.u
+            if self.level == other.level == 1 and is_line_1 and is_line_2 and self.b2equiv(other):
                 rr = b2mult_direct(self, other)
+            elif ((selfPositive or selfNegative) and is_line_1) or ((R2Positive or R2Negative) and is_line_2)\
+            and self.level == other.level == 1 and self.b2equiv(other):
+                Self = self if selfPositive else -self
+                Other = other if R2Positive else -other
+                r = b2mult(Self, Other)
+                rr = r if selfPositive == R2Positive else -r
             elif (selfPositive or selfNegative) and (R2Positive or R2Negative):
                 Self = self if selfPositive else -self
                 Other = other if R2Positive else -other
@@ -274,6 +282,7 @@ class boundsurf(object):#object is added for Python2 compatibility
                         r = np.exp(_r)
                         return r if selfPositive == R2Positive else -r[::-1], definiteRange
                     r = _r.exp()
+                    # is definiteRange required here?
                     r.definiteRange = definiteRange
                     
                 rr = r if selfPositive == R2Positive else -r
