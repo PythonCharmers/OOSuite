@@ -20,7 +20,21 @@ class surf(object):
         self.c = np.asarray(c) # (multiarray of) constant(s)
 
     value = lambda self, point: self.c + PythonSum(point[k] * v for k, v in self.d.items())
-
+    
+#    def invert(self, ind=None):
+#        ind_is_None = ind is None
+#        C = -self.c if ind_is_None else where(ind, -self.c, self.c)
+#        D = dict((k, 
+#                  (-v if ind_is_None else where(ind, -v, v))) \
+#                  for k, v in self.d.items())
+#        if 'd2' not in self.__dict__:
+#            return surf(D, C)
+#        from boundsurf2 import surf2
+#        D2 = dict((k, 
+#                  (-v if ind_is_None else where(ind, -v, v))) \
+#                  for k, v in self.d2.items())
+#        return surf2(D2, D, C)
+        
 #    resolve = lambda self, domain, cmp: \
 #    self.c + PythonSum(where(cmp(v, 0), domain[k][0], domain[k][1])*v for k, v in self.d.items())
     
@@ -160,6 +174,25 @@ class boundsurf(object):#object is added for Python2 compatibility
             self.resolved = True
         assert self._resolved.shape[0] == 2, 'bug in FD kernel'
         return self._resolved, self.definiteRange
+    
+    def invert(self, ind=None):
+        B = self.__class__
+        if ind is None:
+            return B(-self.u, -self.l, self.definiteRange, self.domain)
+#            if ind.dtype != bool:
+#                bool_ind = np.zeros()
+        assert ind.dtype == bool, 'unimplemented yet'
+        ind_same, ind_invert = where(logical_not(ind))[0], where(ind)[0]
+        l1, u1 = self.l.extract(ind_same), self.u.extract(ind_same)
+        l2, u2 = self.l.extract(ind_invert), self.u.extract(ind_invert)
+        b1 = B(l1, u1, False, self.domain)
+        b2 = B(-u2, -l2, False, self.domain)
+        b = boundsurf_join((ind_same, ind_invert), (b1, b2))
+        b.definiteRange = self.definiteRange
+#        l, u = self.u.invert(ind), self.l.invert(ind)
+#        if ind is None:
+        return b
+#        l_unchanged, u_unchanged = self.l.extract()
     
     def render(self):
         if self.isRendered:
@@ -717,10 +750,32 @@ def mul_fixed_interval(self, R2):
         Tmp = np.vstack((l1*l2, l1*u2, l2*u1, u1*u2))
         tmp_l3 = surf({}, nanmin(Tmp, axis=0))
         tmp_u3 = surf({}, nanmax(Tmp, axis=0))
-        
 
         tmp_l = surf_join((ind_positive, ind_negative, ind_z), (tmp_l1, tmp_l2, tmp_l3))
         tmp_u = surf_join((ind_positive, ind_negative, ind_z), (tmp_u1, tmp_u2, tmp_u3))
+
+#        Inds, L, U = [], [], []
+#        if ind_positive.size:
+#            tmp_l1 = other_lb[ind_positive] * l.extract(ind_positive)
+#            tmp_u1 = other_ub[ind_positive] * u.extract(ind_positive)
+#            Inds.append(ind_positive)
+#            L.append(tmp_l1)
+#            U.append(tmp_u1)
+#        if ind_negative.size:
+#            tmp_l2 = other_ub[ind_negative] * l.extract(ind_negative)
+#            tmp_u2 = other_lb[ind_negative] * u.extract(ind_negative)
+#            Inds.append(ind_negative)
+#            L.append(tmp_l2)
+#            U.append(tmp_u2)
+#        if ind_z.size:
+#            l2, u2 = other_lb[ind_z], other_ub[ind_z]
+#            l1, u1 = lb1[ind_z], ub1[ind_z]
+#            Tmp = np.vstack((l1*l2, l1*u2, l2*u1, u1*u2))
+#            tmp_l3 = surf({}, nanmin(Tmp, axis=0))
+#            tmp_u3 = surf({}, nanmax(Tmp, axis=0))
+#            Inds.append(ind_z)
+#            L.append(tmp_l3)
+#            U.append(tmp_u3)
 
         rr = (tmp_l, tmp_u) if R2Positive else (-tmp_u, -tmp_l)
     elif selfPositive or selfNegative:

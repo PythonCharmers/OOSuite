@@ -1,11 +1,11 @@
 from numpy import ndarray, asscalar, isscalar, inf, nan, searchsorted, logical_not, \
-copy as Copy, logical_and, where, asarray, any, all, atleast_1d, vstack, logical_or, isfinite, array
+copy as Copy, logical_and, where, asarray, any, all, atleast_1d, vstack, logical_or, array
 
 import numpy as np
 from FDmisc import FuncDesignerException, update_mul_inf_zero, update_negative_int_pow_inf_zero, \
 update_div_zero
 from FuncDesigner.multiarray import multiarray
-from boundsurf import boundsurf, surf, devided_interval, split, boundsurf_join, merge_boundsurfs
+from boundsurf import boundsurf, surf, devided_interval, Split, split, boundsurf_join, merge_boundsurfs
 from boundsurf2 import surf2, boundsurf2
 from operator import truediv as td
 
@@ -397,21 +397,76 @@ def pow_const_interval(self, r, other, domain, dtype):
     # changes
     if 1 and isBoundSurf and other == 2 and lb_ub.level == 1 and len(lb_ub.l.d) == 1 and len(lb_ub.u.d) == 1:
         L, U = lb_ub.l, lb_ub.u
-        d, c = L.d, L.c
-        s_l = surf2(dict((k, v**2) for k, v in d.items()), dict((k, 2*v*c) for k, v in d.items()), c**2)
         
         if lb_ub.l is lb_ub.u:
+            d, c = L.d, L.c
+            s_l = surf2(dict((k, v**2) for k, v in d.items()), dict((k, 2*v*c) for k, v in d.items()), c**2)
             return boundsurf2(s_l, s_l, definiteRange, domain), definiteRange
         
-        d, c = U.d, U.c
         lb_ub_resolved = lb_ub.resolve()[0]
-        if all(lb_ub_resolved >= 0):
-            s_u = surf2(dict((k, v**2) for k, v in d.items()), dict((k, 2*v*c) for k, v in d.items()), c**2)
-            return boundsurf2(s_l, s_u, definiteRange, domain), definiteRange
-        elif all(lb_ub_resolved <= 0):
-            s_u = s_l
-            s_l = surf2(dict((k, v**2) for k, v in d.items()), dict((k, 2*v*c) for k, v in d.items()), c**2)
-            return boundsurf2(s_l, s_u, definiteRange, domain), definiteRange
+        lb, ub = lb_ub_resolved
+        
+        ind_positive, ind_negative, ind_z = split(lb >= 0, ub <= 0)
+        
+        #new
+        m = lb.size
+        if ind_negative.size:
+            ind_negative_bool = ub <= 0
+            lb_ub = lb_ub.invert(ind_negative_bool)
+            L, U = lb_ub.l, lb_ub.u
+            
+        d_l, d_u = L.d, U.d
+            
+        ind = logical_or(lb >= 0, ub <= 0)
+        Ind_nonz = where(ind)[0]
+        
+        if Ind_nonz.size != 0:
+            d_u2 = dict_reduce(d_u, Ind_nonz)
+            c = U.c if type(U.c) != ndarray or U.c.size == 1 else U.c[Ind_nonz]
+            s_u = surf2(dict((k, v**2) for k, v in d_u2.items()), dict((k, 2*v*c) for k, v in d_u2.items()), c**2)
+            
+            d_l2 = dict_reduce(d_l, Ind_nonz)
+            c = L.c if type(L.c) != ndarray or L.c.size == 1 else L.c[Ind_nonz]
+            s_l = surf2(dict((k, v**2) for k, v in d_l2.items()), dict((k, 2*v*c) for k, v in d_l2.items()), c**2)
+            
+            r_nz = boundsurf2(s_l, s_u, False, domain)
+            if Ind_nonz.size == m:
+                r_nz.definiteRange = definiteRange
+                return r_nz, definiteRange
+
+        r0, definiteRange0 = defaultIntervalEngine(lb_ub, r.fun, r.d,  
+            monotonity = np.nan, convexity = 1,  
+            criticalPoint = 0.0, criticalPointValue = 0.0, domain_ind = ind_z)
+        if Ind_nonz.size == 0:
+            return r0, definiteRange
+        
+        r = boundsurf_join((Ind_nonz, ind_z), (r_nz, r0))
+        
+        #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        r.definiteRange = definiteRange
+        ####################
+        
+        return r, definiteRange
+            
+        #prev
+#        L, U = lb_ub.l, lb_ub.u
+#        d, c = L.d, L.c
+#        s_l = surf2(dict((k, v**2) for k, v in d.items()), dict((k, 2*v*c) for k, v in d.items()), c**2)
+#        
+#        if lb_ub.l is lb_ub.u:
+#            return boundsurf2(s_l, s_l, definiteRange, domain), definiteRange
+#        
+#        d, c = U.d, U.c
+#        lb_ub_resolved = lb_ub.resolve()[0]
+#        if all(lb_ub_resolved >= 0):
+#            s_u = surf2(dict((k, v**2) for k, v in d.items()), dict((k, 2*v*c) for k, v in d.items()), c**2)
+#            return boundsurf2(s_l, s_u, definiteRange, domain), definiteRange
+#        elif all(lb_ub_resolved <= 0):
+#            s_u = s_l
+#            s_l = surf2(dict((k, v**2) for k, v in d.items()), dict((k, 2*v*c) for k, v in d.items()), c**2)
+#            return boundsurf2(s_l, s_u, definiteRange, domain), definiteRange
+        
+                
     # changes end
     lb_ub_resolved = lb_ub.resolve()[0] if isBoundSurf else lb_ub
     arg_isNonNegative = all(lb_ub_resolved >= 0)
