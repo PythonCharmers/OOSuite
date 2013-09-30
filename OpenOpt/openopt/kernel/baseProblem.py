@@ -620,7 +620,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     self.handleConstraint(c, *handleConstraint_args)
 
             if len(b) != 0:
-                self.A, self.b = Vstack(A), Hstack([ravel(elem) for elem in b])#Vstack(b).flatten()
+                self.A, self.b = Vstack(A), Hstack([asfarray(elem).flatten() for elem in b])#Vstack(b).flatten()
                 if hasattr(self.b, 'toarray'): self.b = self.b.toarray()
             if len(beq) != 0:
                 self.Aeq, self.beq = Vstack(Aeq), Hstack([ravel(elem) for elem in beq])#Vstack(beq).flatten()

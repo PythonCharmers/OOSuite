@@ -401,6 +401,9 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
 
 ##################################################################
 def finalTextOutput(p, r):
+    if type(p.msg) == ndarray: # from fmincon etc
+        msg = asarray(p.msg.flatten(),int).tolist()
+        p.msg = ''.join(chr(c) for c in msg)
     if p.iprint >= 0:
         if len(p.msg):  
             p.disp("istop: " + str(r.istop) + ' (' + p.msg +')')
