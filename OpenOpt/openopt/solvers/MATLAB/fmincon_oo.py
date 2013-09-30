@@ -1,11 +1,11 @@
-import numpy as np # used in MATLAB execute
+#import numpy as np # used in MATLAB execute
 from openopt.kernel.baseSolver import *
-try:
-    from scipy.sparse import find, isspmatrix
-except ImportError:
-    isspmatrix = lambda *args, **kw: False
+#try:
+#    from scipy.sparse import find, isspmatrix
+#except ImportError:
+#    isspmatrix = lambda *args, **kw: False
 #from openopt.kernel.setDefaultIterFuncs import *
-import os
+from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X,  SMALL_DELTA_F
 from wh import wh
 ArrAttribs = ('x0', 'lb', 'ub', 'A', 'Aeq', 'b', 'beq', 'nc', 'nh')
 FuncAttribs = ('f', 'df', 'c', 'dc', 'h', 'dh')
@@ -43,6 +43,8 @@ class fmincon(baseSolver):
         
 #        if p.nc != 0: r.append(p._getPattern(p.user.c))
 #        if p.nh != 0: r.append(p._getPattern(p.user.h))
+        p.kernelIterFuncs.pop(SMALL_DELTA_X, None)
+        p.kernelIterFuncs.pop(SMALL_DELTA_F, None)
         
         Data = {'p': p, 'TolFun': p.ftol, \
         'TolCon': p.contol, 'TolX': p.xtol}
@@ -56,11 +58,5 @@ class fmincon(baseSolver):
         wh(Data, self.matlab)
         if p.istop == 0:
             p.istop = 1000
-        #execfile('/home/dmitrey/Install/Wormhole-0.1a/open_wormhole.py')
         
-        
-        
-#        exec(open('/home/dmitrey/Install/Wormhole-0.1a/open_wormhole.py').read())
-#        p.xf = xf
-#        import open_wormhole 
-    
+
