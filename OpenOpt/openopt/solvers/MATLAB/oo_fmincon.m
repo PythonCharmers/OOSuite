@@ -1,25 +1,48 @@
 W = Wormhole;
+solver_id = W.get('solver_id');
 
-A = getDenseOrSparseArray(W, 'A');
-b = W.get('b');
-Aeq = getDenseOrSparseArray(W, 'Aeq');
-beq = W.get('beq'); 
-lb = W.get('lb'); ub = W.get('ub'); x0 = W.get('x0'); nc = W.get('nc'); nh = W.get('nh');
-options = optimset('fmincon');
-options.GradObj = 'on';
+is_fmincon = solver_id == 1;
+is_fsolve = solver_id == 2;
+if is_fmincon
+    A = getDenseOrSparseArray(W, 'A');
+    b = W.get('b');
+    Aeq = getDenseOrSparseArray(W, 'Aeq');
+    beq = W.get('beq'); 
+    lb = W.get('lb'); ub = W.get('ub'); nc = W.get('nc'); nh = W.get('nh');
+    options = optimset('fmincon');
+    options.GradObj = 'on';
+    has_nonlinear = nc + nh > 0;
+    handleConstraints = true;
+elseif is_fsolve
+    options = optimset('fsolve');
+    options.Jacobian = 'on';
+    has_nonlinear = false;
+    handleConstraints = false;
+end
+
+x0 = W.get('x0'); 
+
 options.TolFun = W.get('TolFun');
 options.TolCon = W.get('TolCon');
 options.TolX = W.get('TolX');
+options.Display = 'off';
+options.OutputFcn = @(x, optimValues, state) OpenOpt_iter(x, optimValues, state, W, handleConstraints);
 
-options.OutputFcn = @(x, optimValues, state) OpenOpt_iter(x, optimValues, state, W);
-if nc + nh > 0
+if has_nonlinear
     nonlcon = @(x) OpenOpt_nlc(x,W,nc,nh);
     options.GradConstr = 'on';
 else
     nonlcon = [];
 end
+
 obj = @(x) OpenOpt_obj(x, W);
-[x,fval,exitflag,output] = fmincon(obj,x0,A,b,Aeq,beq,lb,ub,nonlcon,options);
+
+if is_fmincon
+    [x,fval,exitflag,output] = fmincon(obj,x0,A,b,Aeq,beq,lb,ub,nonlcon,options);
+elseif is_fsolve
+    [x,fval,exitflag,output] = fsolve(obj,x0,options);
+end
+
 W.put('xf',x);
 W.put('msg', output.message);
 W.execute('p.xf=p.xk=xf.flatten(); p.msg = msg');
