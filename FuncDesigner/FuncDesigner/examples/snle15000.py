@@ -29,6 +29,7 @@ p = SNLE(equations, startPoint)
 # p.constraints = [z<70,  z>50,  z + sin(x) < 60]
 
 r = p.solve('matlab_fsolve', matlab='/usr/local/MATLAB/R2012a/bin/matlab')
+# Notebook Intel Atom 1.6 GHz:
 # Solver:   Time Elapsed = 189.23 	(MATLAB preload time ~ 30 sec)
 # peak memory consumption for n = 5000 (thus 15000 variables) 160 MB
 
