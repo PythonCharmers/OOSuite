@@ -11,7 +11,10 @@ n = 5000
 
 equations = (
              x + 2* y + 1 == 3*z,  # n equations
+             
+             #x[i] + x[i+1] + y[i] + log(z[i]^2+15) = i+1, i = 0, 1, ..., n-1
              x+hstack((x[1:n], x[0])) + y + log(z**2 + 15) == arange(1, n+1), # n equations
+             
              z + 2*x + 5*y == 100 # n equations
              )
 # alternatively, since FD 0.32: you can use equations and require custom tolerances
