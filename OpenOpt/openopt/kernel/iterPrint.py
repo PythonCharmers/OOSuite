@@ -1,11 +1,11 @@
-from numpy import atleast_1d, asfarray, log10
+from numpy import log10
 def signOfFeasible(p):
     r = '-'
     if p.isFeas(p.xk): r = '+'
     return r
 
 textOutputDict = {\
-'objFunVal': lambda p: p.iterObjFunTextFormat % (-p.fk if p.invertObjFunc else p.fk), 
+'objFunVal': lambda p: p.iterObjFunTextFormat % (-p.Fk if p.invertObjFunc else p.Fk), 
 'log10(maxResidual)': lambda p: '%0.2f' % log10(p.rk+1e-100), 
 'log10(MaxResidual/ConTol)':lambda p: '%0.2f' % log10(max((p.rk/p.contol, 1e-100))), 
 'residual':lambda p: '%0.1e' % p._Residual, 
