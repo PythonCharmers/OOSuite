@@ -50,7 +50,7 @@ class ode:
         self.times = times
         self._fd_func, self._startPoint, self._timeVariable, self._times, self._kwargs = equations, startPoint, timeVariable, times,  kwargs
         
-        startPoint = dict([(key, val) for key, val in startPoint.items()])
+        startPoint = startPoint.copy()#dict((key, val) for key, val in startPoint.items())
         if timeVariable is not None:
             startPoint[timeVariable] = times[0]
         y0 = []
@@ -78,16 +78,18 @@ class ode:
         self.varSizes = [y.size for y in y0]
         ooT = FuncDesignerTranslator(Point4TranslatorAssignment)
         self.ooT = ooT
-        def func (y, t): 
+        def func(y, t): 
             tmp = dict(ooT.vector2point(y))
             if timeVariable is not None:
                 tmp[timeVariable] = t
-            return hstack([func(tmp) for func in Funcs])
+            r = hstack([func(tmp) for func in Funcs])
+            return r
         self.func = func
         
         
         _FDVarsID = _getDiffVarsID()
         def derivative(y, t):
+#            print('d')
             tmp = dict(ooT.vector2point(y))
             if timeVariable is not None:
                 tmp[timeVariable] = t
@@ -95,7 +97,7 @@ class ode:
             for func in Funcs:
                 tt = func.D(tmp, fixedVarsScheduleID = _FDVarsID)
                 if timeVariable is not None:
-                    tt.pop(timeVariable)
+                    tt.pop(timeVariable, None)
                 r.append(ooT.pointDerivative2array(tt))
             return vstack(r)
         self.derivative = derivative
@@ -105,14 +107,20 @@ class ode:
         if len(args) > 0:
             raise FuncDesignerException('no args are currently available for the function ode::solve')
         solverName = solver if isinstance(solver, str) else solver.__name__
-        if solverName.startswith('interalg'):
+        
+        is_scipy_lsoda = solverName == 'scipy_lsoda'
+        is_matlab_solver = solverName.startswith('ode')
+        is_interalg = solverName.startswith('interalg')
+        
+        if not is_scipy_lsoda:
             try:
                 from openopt import ODE
             except ImportError:
                 raise FuncDesignerException('You should have openopt insalled')
-            prob = ODE(self._fd_func, self._startPoint, **self._kwargs)
-            prob.timeVariable = self.timeVariable
-            prob.times = self.times
+            
+            
+        if is_interalg:
+            prob = ODE(self._fd_func, self._startPoint, self.times, **self._kwargs)
             r = prob.solve(solver, **kwargs)
             y_var = list(prob._x0.keys())[0]
             res = 0.5 * (prob.extras[y_var]['infinums'] + prob.extras[y_var]['supremums'])
@@ -154,20 +162,31 @@ class ode:
                 r.xf[self._timeVariable] = times
                 r._xf[self._timeVariable.name] = times
         else:
-            if solver != 'scipy_lsoda': raise  FuncDesignerException('incorrect ODE solver')
-            try:
-                from scipy import integrate
-            except ImportError:
-                raise FuncDesignerException('to solve ode you mush have scipy installed, see http://openop.org/SciPy')
-            y, infodict = integrate.odeint(self.func, self.y0, self.times, Dfun = self.derivative, full_output=True)
+            
+            if is_scipy_lsoda: 
+                try:
+                    from scipy import integrate
+                except ImportError:
+                    raise FuncDesignerException('to solve ode you mush have scipy installed, see http://openop.org/SciPy')
+                y, infodict = integrate.odeint(self.func, self.y0, self.times, Dfun = self.derivative, full_output=True)
+            elif solverName.startswith('ode'): #MATLAB solver
+                prob = ODE(self.func, self.y0, self.times, d = self.derivative, **self._kwargs)
+                prob._Prepare()
+                prob.f, prob.df = self.func, self.derivative
+                r = prob.solve(solver, **kwargs)
+                y = prob._xf 
+            else:
+                raise  FuncDesignerException('incorrect ODE solver')
+                
             resultDict = dict(self.ooT.vector2point(y.T))
             
             for key, value in resultDict.items():
                 if min(value.shape) == 1:
                     resultDict[key] = value.flatten()
             r = FuncDesigner_ODE_Result(resultDict)
-            r.msg = infodict['message']
-            r.extras = {'infodict': infodict}
+                
+            r.msg = infodict['message'] if is_scipy_lsoda else ''
+            r.extras = {'infodict': infodict} if is_scipy_lsoda else {}
         return r
         
 
@@ -176,7 +195,7 @@ class FuncDesigner_ODE_Result:
     def __init__(self, resultDict):
         self.xf = resultDict
         if not hasattr(self, '_xf'):
-            self._xf = dict([(var.name, value) for var, value in resultDict.items()])
+            self._xf = dict((var.name, value) for var, value in resultDict.items())
     def __call__(self, *args):
         r = [(self._xf[arg] if isinstance(arg,  str) else self.xf[arg]) for arg in args]
         return r[0] if len(args)==1 else r
