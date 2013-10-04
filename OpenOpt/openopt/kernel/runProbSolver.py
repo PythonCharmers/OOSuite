@@ -363,7 +363,7 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
     #if not hasattr(p, 'xf'): p.xf = p.xk
     if type(p.xf) in (list, tuple) or isscalar(p.xf): p.xf = asarray(p.xf)
     p.xf = p.xf.flatten()
-    p.rf = p.getMaxResidual(p.xf) if not p.probType == 'IP' else p.rk
+    p.rf = p.getMaxResidual(p.xf) if p.probType not in ('IP', 'ODE') else p.rk
 
     if not p.isFeasible and p.istop > 0: p.istop = -100-p.istop/1000.0
     

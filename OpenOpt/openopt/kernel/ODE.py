@@ -8,8 +8,9 @@ class ODE(NonLinProblem):
     showGoal = False
     _optionalData = []
     FuncDesignerSign = 'equations'
-    expectedArgs = ['equations', 'startPoint']
+    expectedArgs = ['equations', 'startPoint', 'times']
     ftol = None
+    reltol = 1e-3
     def __init__(self, *args, **kwargs):
         NonLinProblem.__init__(self, *args, **kwargs)
         domain= args[1]
