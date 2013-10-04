@@ -2,7 +2,6 @@ from wh_conn_solver import wh_conn_solver
 
 class fmincon(wh_conn_solver):
     __name__ = 'fmincon'
-    __license__ = "proprietary"
     __authors__ = ""
     __alg__ = ""
     __optionalDataThatCanBeHandled__ = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'c', 'h']

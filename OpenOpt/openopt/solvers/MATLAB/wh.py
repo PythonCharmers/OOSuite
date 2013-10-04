@@ -10,13 +10,13 @@ import socket, subprocess
 #from time import sleep
 TCP_IP = '127.0.0.1'
 TCP_PORT = 5001
-import os
-from os.path import abspath, dirname
+
+from os.path import abspath, dirname, normpath
 path = dirname(abspath(__file__))
 
 def wh(d, matlabExecutable):
     args = ['-nodesktop', 
-                   '-r',  '"addpath %s; oo_fmincon"' %os.path.normpath(path)
+                   '-r',  '"addpath %s ; OpenOpt_Proxy"' %normpath(path)
                    ]
     Matlab = matlabExecutable+' '+' '.join(args)
     subprocess.Popen(Matlab, shell=True)

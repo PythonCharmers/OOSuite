@@ -4,7 +4,7 @@ from wh import wh
 
 def FuncWrapper(p, attr):
     Func = getattr(p, attr)
-    func = lambda x: Func(x.flatten())
+    func = lambda *args : Func(*(arg.flatten() for arg in args))
     return func
 
 class wh_conn_solver(baseSolver):
@@ -26,8 +26,14 @@ class wh_conn_solver(baseSolver):
         p.kernelIterFuncs.pop(SMALL_DELTA_X, None)
         p.kernelIterFuncs.pop(SMALL_DELTA_F, None)
         
-        Data = {'p': p, 'TolFun': p.ftol, \
-        'TolCon': p.contol, 'TolX': p.xtol, 'solver_id': self.solver_id}
+        Data = {
+        'p': p, 
+        'TolFun': p.ftol, 
+        'RelTol': getattr(p, 'reltol', None),  # used in ODE
+        'TolCon': p.contol, 
+        'TolX': p.xtol, 
+        'solver_id': self.solver_id
+        }
         for attr in self.arrAttribs:
             Data[attr] = getattr(p, attr)
         for attr in self.funcAttribs:

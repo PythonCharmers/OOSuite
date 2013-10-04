@@ -2,7 +2,6 @@ from wh_conn_solver import wh_conn_solver
 
 class matlab_fsolve(wh_conn_solver):
     __name__ = 'matlab_fsolve'
-    __license__ = "proprietary"
     __authors__ = ""
     __alg__ = ""
     __optionalDataThatCanBeHandled__ = ()
