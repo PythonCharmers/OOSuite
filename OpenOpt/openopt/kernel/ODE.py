@@ -10,7 +10,8 @@ class ODE(NonLinProblem):
     FuncDesignerSign = 'equations'
     expectedArgs = ['equations', 'startPoint', 'times']
     ftol = None
-    reltol = 1e-3
+    reltol = 1.49012e-8
+    abstol = 1.49012e-8
     def __init__(self, *args, **kwargs):
         NonLinProblem.__init__(self, *args, **kwargs)
         domain= args[1]
