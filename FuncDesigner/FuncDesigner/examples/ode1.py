@@ -1,33 +1,62 @@
 """ Basic FuncDesigner example for solving ODE with automatic differentiation """
 
 from FuncDesigner import *
-from numpy import arange
+from numpy import linspace
 
 # create some variables
-x, y, z, t = oovars('x', 'y', 'z', 't')
+x, y, z, t = oovars('x y z t')
 # or just x, y, z, t = oovars(4)
 
+S = 15
 # Python dict of ODEs
 equations = {
-             x: 2*x + cos(3*y-2*z) + exp(5-2*t), # dx/dt
-             y: arcsin(t/5) + 2*x + sinh(2**(-4*t)) + (2+t+sin(z))**(1e-1*(t-sin(x)+cos(y))), # dy/dt
-             z: x + 4*y - 45 - sin(100*t) # dz/dt
+             x: 2*x + S*sin(S*t), # dx/dt
+             y: y + S*cos(2*S*t + 1), # dy/dt
+             z: x + 4*y + S*sin(t+4)# dz/dt
              }
 
 startPoint = {x: 3, y: 4, z: 5}
 
-timeArray = arange(0, 1, 0.01) # 0, 0.01, 0.02, 0.03, ..., 0.99
+timeArray = linspace(0, 1, 101) # 0, 0.01, 0.02, 0.03, ..., 0.99, 1.0
 
 # assign ODE. 3rd argument (here "t") is time variable that is involved in differentiation.
 myODE = ode(equations, startPoint, {t: timeArray})
+# if your equations are time-independend you can use just 
+#myODE = ode(equations, startPoint, timeArray)
 
-r = myODE.solve()
+# Choose solver: 
+#solver = 'ode15s'
+#solver = 'ode23'
+#solver = 'ode113'
+#solver = 'ode23t'
+#solver = 'ode23tb'
+#solver = 'ode45'
+solver = 'ode23s'
+#solver = 'vode'
+#solver = 'zvode'
+#solver = 'lsoda'
+#solver =  'dopri5'
+#solver =  'dop853'
+#solver = 'scipy_lsoda' # that is Python wrapper for Fortran package lsoda
+
+
+r = myODE.solve(solver, 
+                abstol = 0.00015, # OpenOpt default: 1.49012e-8
+                reltol = 0.00015, # OpenOpt default: 1.49012e-8
+                # if "matlab" from command prompt doesn't work
+                # set path to matlab executable
+                matlab = '/usr/local/MATLAB/R2012a/bin/matlab' 
+                )
+
+# FuncDesigner automatic differentiation will be involved
+# although it is not used in some solvers
+# and seems like essentially matters for ode23s only
+
 X,  Y,  Z = r(x, y, z)
-print(X[50:55], Y[50:55], Z[50:55])
-print(r.msg) # r.extras.infodict contains whole scipy.integrate.odeint infodict
+print(X[0:5], Y[50:55], Z[-5:])
+
 """
-(array([  95.32215541,   97.80251715,  100.32319065,  102.88116657, 105.47545552]), 
-array([ 50.26075725,  52.20594513,  54.2008745 ,  56.24637088,  58.34441539]), 
-array([ 44.40064889,  46.96317981,  49.62269611,  52.38990533,  55.2741921 ]))
-Integration successful.
+(array([ 3.        ,  3.07193008,  3.16782576,  3.28733903,  3.42969264]), 
+array([ 5.78536885,  5.70732574,  5.65359904,  5.63434194,  5.65678894]), 
+array([ 26.20644978,  26.69463043,  27.19504442,  27.70965187,  28.23994139]))
 """
