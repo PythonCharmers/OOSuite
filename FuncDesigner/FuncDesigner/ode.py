@@ -89,7 +89,7 @@ class ode:
         
         _FDVarsID = _getDiffVarsID()
         def derivative(y, t):
-            print('d')
+#            print('d')
             tmp = dict(ooT.vector2point(y))
             if timeVariable is not None:
                 tmp[timeVariable] = t
