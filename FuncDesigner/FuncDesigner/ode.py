@@ -89,7 +89,7 @@ class ode:
         
         _FDVarsID = _getDiffVarsID()
         def derivative(y, t):
-#            print('d')
+            print('d')
             tmp = dict(ooT.vector2point(y))
             if timeVariable is not None:
                 tmp[timeVariable] = t
@@ -109,6 +109,15 @@ class ode:
         solverName = solver if isinstance(solver, str) else solver.__name__
         
         is_scipy_lsoda = solverName == 'scipy_lsoda'
+        is_scipy_solver = solverName in ('vode', 'zvode', 'lsoda', 'dopri5', 'dop853')
+        
+        if is_scipy_lsoda or is_scipy_solver:
+            try:
+                from scipy import integrate
+            except ImportError:
+                raise FuncDesignerException('to solve ode you mush have scipy installed, see http://openop.org/SciPy')
+                
+        
         is_matlab_solver = solverName.startswith('ode')
         is_interalg = solverName.startswith('interalg')
         
@@ -162,13 +171,42 @@ class ode:
                 r.xf[self._timeVariable] = times
                 r._xf[self._timeVariable.name] = times
         else:
+            kw = self._kwargs
             
+            if 'rtol' in kw:
+                ODE.warn('For OpenOpt ODE you should use reltol instead of rtol')
+                kw['reltol'] = kw.pop('rtol')
+                
+            if 'atol' in kw:
+                ODE.warn('For OpenOpt ODE you should use abstol instead of atol')
+                kw['abstol'] = kw.pop('atol')
+                
+            KW = {'rtol': kw.get('reltol', 1.49012e-8), 'atol': kw.get('abstol', 1.49012e-8)}
+            if solverName in ('vode', 'zvode', 'lsoda'):
+                KW['with_jacobian'] = True
+            else:
+                assert solverName.startswith('ode') or solverName in ('dopri5', 'dop853', 'scipy_lsoda')
+                # ode* are matlab solvers
+                    
             if is_scipy_lsoda: 
-                try:
-                    from scipy import integrate
-                except ImportError:
-                    raise FuncDesignerException('to solve ode you mush have scipy installed, see http://openop.org/SciPy')
-                y, infodict = integrate.odeint(self.func, self.y0, self.times, Dfun = self.derivative, full_output=True)
+                y, infodict = integrate.odeint(self.func, self.y0, 
+                                               self.times, Dfun = self.derivative, full_output=True, **KW)
+            elif is_scipy_solver: 
+                F, D = lambda t, y: self.func(y, t), lambda t, y: self.derivative(y, t)
+                prob = integrate.ode(F, D).set_integrator(solverName, **KW)
+                prob.set_initial_value(self.y0, self.times[0])
+                T, Y = [prob.t], [prob.y]
+                while self.times[0] <= prob.t < self.times[-1] or self.times[-1] < prob.t <= self.times[0]:
+                    prob.integrate(self.times[-1], step=True)
+                    T.append(prob.t)
+                    Y.append(prob.y)
+                if len(self.times) > 2:
+                    from scipy import interpolate
+                    Y = asarray(Y).T
+                    y = asarray([interpolate.interp1d(T, _y)(self.times) for _y in Y]).T
+                else:
+                    y = asarray(Y)
+                
             elif solverName.startswith('ode'): #MATLAB solver
                 prob = ODE(self.func, self.y0, self.times, d = self.derivative, **self._kwargs)
                 prob._Prepare()
