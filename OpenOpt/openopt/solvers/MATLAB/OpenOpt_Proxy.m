@@ -49,6 +49,7 @@ elseif is_ode
     obj = @(x,t) OpenOpt_ode_obj(x, t, W);
     options.Jacobian = @(x,t) OpenOpt_ode_jac(x, t, W);
     options.RelTol = W.get('RelTol');
+    options.AbsTol = W.get('AbsTol');
     times = W.get('times');
 end
 

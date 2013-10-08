@@ -30,6 +30,7 @@ class wh_conn_solver(baseSolver):
         'p': p, 
         'TolFun': p.ftol, 
         'RelTol': getattr(p, 'reltol', None),  # used in ODE
+        'AbsTol': getattr(p, 'abstol', None),  # used in ODE
         'TolCon': p.contol, 
         'TolX': p.xtol, 
         'solver_id': self.solver_id
