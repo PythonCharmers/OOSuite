@@ -171,7 +171,8 @@ class ode:
                 r.xf[self._timeVariable] = times
                 r._xf[self._timeVariable.name] = times
         else:
-            kw = self._kwargs
+            kw = self._kwargs.copy()
+            kw.update(kwargs)
             
             if 'rtol' in kw:
                 ODE.warn('For OpenOpt ODE you should use reltol instead of rtol')
@@ -208,10 +209,10 @@ class ode:
                     y = asarray(Y)
                 
             elif solverName.startswith('ode'): #MATLAB solver
-                prob = ODE(self.func, self.y0, self.times, d = self.derivative, **self._kwargs)
+                prob = ODE(self.func, self.y0, self.times, d = self.derivative)
                 prob._Prepare()
                 prob.f, prob.df = self.func, self.derivative
-                r = prob.solve(solver, **kwargs)
+                r = prob.solve(solver, **kw)
                 y = prob._xf 
             else:
                 raise  FuncDesignerException('incorrect ODE solver')
