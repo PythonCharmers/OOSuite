@@ -323,7 +323,10 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
 
     # Solving finished
     if hasattr(p, '_bestPoint') and not any(isnan(p._bestPoint.x)) and p.probType != 'ODE':
-        p.iterfcn(p._bestPoint)
+        try:
+            p.iterfcn(p._bestPoint)
+        except isSolved:
+            pass
     if p.probType != 'EIG':
         if not hasattr(p, 'xf') and not hasattr(p, 'xk'): p.xf = p.xk = ones(p.n)*nan
         if hasattr(p, 'xf') and (not hasattr(p, 'xk') or array_equal(p.xk, p.x0)): p.xk = p.xf
