@@ -295,7 +295,7 @@ class boundsurf(object):#object is added for Python2 compatibility
             sameBounds_2 = other.l is other.u
             if self.level == other.level == 1 and sameBounds_1 and sameBounds_2 and self.b2equiv(other):
                 rr = b2mult_direct(self, other)
-            elif ((selfPositive or selfNegative) and sameBounds_1) or ((R2Positive or R2Negative) and sameBounds_2)\
+            elif (((selfPositive or selfNegative) and sameBounds_1) or ((R2Positive or R2Negative) and sameBounds_2))\
             and self.level == other.level == 1 and self.b2equiv(other):
                 Self = self if selfPositive else -self
                 Other = other if R2Positive else -other
