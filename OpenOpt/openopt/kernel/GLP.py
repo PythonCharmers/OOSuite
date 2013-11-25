@@ -45,4 +45,4 @@ class GLP(NonLinProblem):
                 self.lb = -inf * ones(self.n)
             if not hasattr(self, 'ub'):
                 self.ub =  inf * ones(self.n)
-            if 'x0' not in kwargs.keys(): self.x0 = (asarray(self.lb) + asarray(self.ub)) / 2.0
+            #if 'x0' not in kwargs.keys(): self.x0 = (asarray(self.lb) + asarray(self.ub)) / 2.0
