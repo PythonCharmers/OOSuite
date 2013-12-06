@@ -5,7 +5,7 @@ import numpy as np
 from FDmisc import FuncDesignerException, update_mul_inf_zero, update_negative_int_pow_inf_zero, \
 update_div_zero
 from FuncDesigner.multiarray import multiarray
-from boundsurf import boundsurf, surf, devided_interval, Split, split, boundsurf_join, merge_boundsurfs
+from boundsurf import boundsurf, surf, devided_interval, split, boundsurf_join, merge_boundsurfs
 from boundsurf2 import surf2, boundsurf2
 from operator import truediv as td
 
@@ -553,6 +553,7 @@ def pow_const_interval(self, r, other, domain, dtype):
     lb_ub = lb_ub_resolved
     lb, ub = lb_ub
     Tmp = lb_ub ** other
+    Tmp.sort(axis = 0)
 
     if not other_is_int or not isOdd:
         ind_z = logical_and(lb < 0, ub >= 0)
@@ -563,8 +564,7 @@ def pow_const_interval(self, r, other, domain, dtype):
                 Tmp[1, ind_z] = inf
             if not other_is_int:
                 definiteRange = logical_and(definiteRange, logical_not(ind_z))
-    
-    Tmp.sort(axis = 0)
+            Tmp.sort(axis = 0)
     
     if other < 0 and other_is_int:
         update_negative_int_pow_inf_zero(lb, ub, Tmp, other)
