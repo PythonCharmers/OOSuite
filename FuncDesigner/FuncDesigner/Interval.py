@@ -553,14 +553,18 @@ def pow_const_interval(self, r, other, domain, dtype):
     lb_ub = lb_ub_resolved
     lb, ub = lb_ub
     Tmp = lb_ub ** other
-    Tmp.sort(axis = 0)
+    
+    # correct nan handling
+    #Tmp.sort(axis = 0)
+    ind = where(Tmp[0]>Tmp[1])[0]
+    Tmp[0, ind], Tmp[1, ind] = Tmp[1, ind], Tmp[0, ind]
 
     if not other_is_int or not isOdd:
         ind_z = logical_and(lb < 0, ub >= 0)
         if any(ind_z):
-            if other > 0:
+            if (not other_is_int and other > 0) or not isOdd: 
                 Tmp[0, ind_z] = 0.0
-            else:
+            if other < 0:
                 Tmp[1, ind_z] = inf
             if not other_is_int:
                 definiteRange = logical_and(definiteRange, logical_not(ind_z))
