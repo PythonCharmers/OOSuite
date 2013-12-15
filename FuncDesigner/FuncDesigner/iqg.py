@@ -140,7 +140,7 @@ def _iqg(Self, domain, dtype, r0):
     middle = 0.5 * (lb+ub)
     
     if v.domain is not None:
-        middle1, middle2 = middle.copy(), middle.copy()
+        middle1, middle2 = middle.copy(), middle#.copy()
         adjust_ux_WithDiscreteDomain(middle1, v)
         adjust_lx_WithDiscreteDomain(middle2, v)
     else:
