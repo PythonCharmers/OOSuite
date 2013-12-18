@@ -3,7 +3,7 @@ try:
 except:
     print('you should have setuptools installed (http://pypi.python.org/pypi/setuptools), for some Linux distribs you can get it via [sudo] apt-get install python-setuptools')
     print('press Enter for exit...')
-    raw_input()
+    input()
     exit()
 
 import os, sys
