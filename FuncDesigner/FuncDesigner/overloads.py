@@ -866,20 +866,20 @@ def sum_engine(r0, *args):
     return r1 
 
 def sum_interval(R0, r, INP, domain, dtype):
-    if len(INP) <= 10:
-        B = []
-        _r = [R0]
-        DefiniteRange = True
-        for inp in INP:
-            arg_lb_ub, definiteRange = inp._interval(domain, dtype, ia_surf_level = 2)
-            DefiniteRange = np.logical_and(DefiniteRange, definiteRange)
-            if type(arg_lb_ub) in (boundsurf, boundsurf2):
-                B.append(arg_lb_ub)
-            else:
-                _r.append(arg_lb_ub)
-        _r = PythonSum(_r)
-        R = _r if len(B) == 0 else boundsurf_sum(B, _r, DefiniteRange, domain)
-        return R, DefiniteRange
+#    if len(INP) <= 10:
+#        B = []
+#        _r = [R0]
+#        DefiniteRange = True
+#        for inp in INP:
+#            arg_lb_ub, definiteRange = inp._interval(domain, dtype, ia_surf_level = 2)
+#            DefiniteRange = np.logical_and(DefiniteRange, definiteRange)
+#            if type(arg_lb_ub) in (boundsurf, boundsurf2):
+#                B.append(arg_lb_ub)
+#            else:
+#                _r.append(arg_lb_ub)
+#        _r = PythonSum(_r)
+#        R = _r if len(B) == 0 else boundsurf_sum(B, _r, DefiniteRange, domain)
+#        return R, DefiniteRange
         
     v = domain.modificationVar
     if v is not None:
@@ -911,7 +911,13 @@ def sum_interval(R0, r, INP, domain, dtype):
             return R, DefiniteRange
 
         #R = R.copy() - domain.storedSums[r][v]
-        R = (R - domain.storedSums[r][v])# not inplace!
+        if type(R) == np.ndarray:
+            assert type(domain.storedSums[r][v]) == np.ndarray
+            R = (R - domain.storedSums[r][v])# not inplace!
+        else:
+            # boundsurf
+            R = R.direct_sub(domain.storedSums[r][v])
+            
 #        if R.__class__ == boundsurf:
 #            R = R.resolve()[0] 
         R2 = np.zeros((2, 1))

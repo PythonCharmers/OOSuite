@@ -252,6 +252,27 @@ class boundsurf(object):#object is added for Python2 compatibility
     # TODO: mb rework it
     __sub__ = lambda self, other: self.__add__(-other)
     __rsub__ = lambda self, other: (-self).__add__(other)
+    
+    def direct_sub(self, other):
+        self_lvl = self.level
+        if isinstance(other, boundsurf):
+            other_lvl = other.level
+            if self_lvl == 2 or other_lvl == 2:
+                from boundsurf2 import boundsurf2
+                B = boundsurf2
+            else:
+                B = boundsurf
+            L, U = other.l, other.u
+            return B(self.l - L, self.u - U, logical_and(self.definiteRange, other.definiteRange), self.domain)
+        elif type(other) == np.ndarray:
+            assert other.shape[0] == 2, 'probably bug'
+            L, U = other
+            B = type(self)
+            # definiteRange must be computed in higher level
+            return B(self.l - L, self.u - U, self.definiteRange, self.domain)
+        else:
+            assert 0, 'probably bug'
+            
         
     def __mul__(self, other, resolveSchedule = ()):
         from boundsurf2 import boundsurf2
