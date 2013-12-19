@@ -871,7 +871,7 @@ def sum_interval(R0, r, INP, domain, dtype):
         _r = [R0]
         DefiniteRange = True
         for inp in INP:
-            arg_lb_ub, definiteRange = inp._interval(domain, dtype, ia_surf_level = 1)
+            arg_lb_ub, definiteRange = inp._interval(domain, dtype, ia_surf_level = 2)
             DefiniteRange = np.logical_and(DefiniteRange, definiteRange)
             if type(arg_lb_ub) in (boundsurf, boundsurf2):
                 B.append(arg_lb_ub)
