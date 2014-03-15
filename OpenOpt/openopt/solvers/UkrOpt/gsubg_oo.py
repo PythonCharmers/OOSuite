@@ -36,6 +36,9 @@ class gsubg(baseSolver):
     
     dual = True
     addASG = False
+    
+    # TODO: involve it?
+    useLinePoints = True
 
     def __init__(self): 
         self.approach = 'all active'
@@ -410,6 +413,10 @@ class gsubg(baseSolver):
                     g1 = D.getDilatedVector(g1)
                     #g1 = tmp
                 
+                if not isinstance(g1, ndarray) or isinstance(g1, matrix):
+                    g1 = g1.A
+                
+                g1 = g1.flatten()
                 
                 if any(g1): 
                     g1 /= p.norm(g1)
@@ -425,10 +432,6 @@ class gsubg(baseSolver):
                 
                 hs_cumsum = 0
                 hs_start = hs
-                if not isinstance(g1, ndarray) or isinstance(g1, matrix):
-                    g1 = g1.A
-                
-                g1 = g1.flatten()
                 
                 hs_mult = 4.0
                 for ls in range(p.maxLineSearch):
