@@ -52,16 +52,20 @@ class surf(object):
 #    split = lambda self, inds: [extract(self, ind) for ind in inds]
     
     #self.resolve(domain, GREATER)
-    minimum = lambda self, domain, domain_ind = slice(None): \
+    minimum = lambda self, domain, domain_ind = None: \
     self.c +\
+    (PythonSum(where(v > 0, 
+    domain[k][0], domain[k][1])*v for k, v in self.d.items()) if domain_ind is None else
     PythonSum(where(v > 0, 
-    domain[k][0][domain_ind], domain[k][1][domain_ind])*v for k, v in self.d.items())
+    domain[k][0][domain_ind], domain[k][1][domain_ind])*v for k, v in self.d.items()))
     
     #self.resolve(domain, LESS)
-    maximum = lambda self, domain, domain_ind = slice(None): \
+    maximum = lambda self, domain, domain_ind = None: \
     self.c +\
-    PythonSum(where(v  < 0, 
-    domain[k][0][domain_ind], domain[k][1][domain_ind])*v for k, v in self.d.items())
+    (PythonSum(where(v < 0, 
+    domain[k][0], domain[k][1])*v for k, v in self.d.items()) if domain_ind is None else
+    PythonSum(where(v < 0, 
+    domain[k][0][domain_ind], domain[k][1][domain_ind])*v for k, v in self.d.items()))
     
     def render(self, domain, cmp):
         self.rendered = dict((k, where(cmp(v, 0), domain[k][0], domain[k][1])*v) for k, v in self.d.items())
