@@ -55,7 +55,7 @@ except:
         raise OpenOptException('error in OpenOpt kernel, inform developers')
 
 try:
-    import numpypy
+    import __pypy__
     isPyPy = True
 except ImportError:
     isPyPy = False
