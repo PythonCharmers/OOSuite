@@ -1,9 +1,10 @@
 PythonSum = sum
 PythonAll = all
 import numpy as np
-from numpy import all, any, logical_and, logical_not, isscalar, where, inf, logical_or, logical_xor, isnan
+from numpy import all, any, logical_and, logical_not, isscalar, inf, logical_or, logical_xor, isnan#where
 from operator import gt as Greater, lt as Less, truediv as td
-from FDmisc import update_mul_inf_zero, update_div_zero
+from FDmisc import update_mul_inf_zero, update_div_zero, where
+
 import operator
 
 try:
@@ -512,8 +513,13 @@ def boundsurf_abs(b):
 
 
 def Join(inds, arrays):
+#    print(type(inds), type(arrays), len(inds), len(arrays))
+#    print(PythonSum(ind.size for ind in inds), arrays[0].dtype)
     r = np.empty(PythonSum(ind.size for ind in inds), arrays[0].dtype)
+#    print(r.shape, r.dtype)
     for ind, arr in zip(inds, arrays):
+        if ind.size == 0: continue
+#        print (ind.shape, arr.shape)
         r[ind] = arr
     return r
 
@@ -551,7 +557,9 @@ def boundsurf_join(inds, B):
 #    )
 
 def split(*conditions):
-    Rest = np.ones_like(conditions[0]) # dtype bool
+    #Rest = np.ones_like(conditions[0]) # dtype bool
+    #Temporary for PyPy:
+    Rest = np.ones(conditions[0].shape, conditions[0].dtype) 
     r = []
     for c in conditions:
         tmp = logical_and(c, Rest)

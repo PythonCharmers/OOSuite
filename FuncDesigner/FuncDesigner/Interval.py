@@ -3,7 +3,7 @@ copy as Copy, logical_and, where, asarray, any, all, atleast_1d, vstack, logical
 
 import numpy as np
 from FDmisc import FuncDesignerException, update_mul_inf_zero, update_negative_int_pow_inf_zero, \
-update_div_zero
+update_div_zero, where
 from FuncDesigner.multiarray import multiarray
 from boundsurf import boundsurf, surf, devided_interval, split, boundsurf_join, merge_boundsurfs
 from boundsurf2 import surf2, boundsurf2
@@ -212,8 +212,9 @@ def neg_interval(self, domain, dtype):
     r, definiteRange = self._interval(domain, dtype, ia_surf_level = 2)
     if type(r) == ndarray:
         assert r.shape[0] == 2
-        #return (-r[1], -r[0])
-        return -np.flipud(r), definiteRange
+        #return -np.flipud(r), definiteRange
+        # for PyPy:
+        return -r[::-1, :], definiteRange
     else:
         #assert type(r) == boundsurf
         return -r, definiteRange
@@ -355,7 +356,7 @@ def get_inv_b2_coeffs(ll, uu, dll, duu, c_l, c_u):
     d = dll
     ind = d > 0
     
-    argmin = np.where(ind, uu, ll)
+    argmin = where(ind, uu, ll)
     min_val = argmin * d + c_l
     
     a = d**2 * min_val**-3  
@@ -371,7 +372,7 @@ def get_inv_b2_coeffs(ll, uu, dll, duu, c_l, c_u):
     
     #U
     ind = duu > 0
-    l, u = np.where(ind, ll, uu), np.where(ind, uu, ll)
+    l, u = where(ind, ll, uu), where(ind, uu, ll)
     l2, u2 = l * duu + c_u, u * duu + c_u
     d = duu
     inv_u2, inv_l2 = 1.0/u2, 1.0/l2
@@ -561,6 +562,7 @@ def pow_const_interval(self, r, other, domain, dtype):
 
     if not other_is_int or not isOdd:
         ind_z = logical_and(lb < 0, ub >= 0)
+        assert type(ind_z) == np.ndarray
         if any(ind_z):
             if (not other_is_int and other > 0) or not isOdd: 
                 Tmp[0, ind_z] = 0.0
@@ -638,7 +640,7 @@ def get_pow_b2_coeffs(L, U, d_l, d_u, c_l, c_u, other):
     # L
     d = d_l
     ind = d > 0
-    l, u = np.where(ind, L, U), np.where(ind, U, L)
+    l, u = where(ind, L, U), where(ind, U, L)
 #    if not isInt:
 #        point[logical_and(point)]
     koeffs_l = get_inner_coeffs(lambda x: x**other, lambda x: other * x**(other-1), \
@@ -648,7 +650,7 @@ def get_pow_b2_coeffs(L, U, d_l, d_u, c_l, c_u, other):
     # U
     d = d_u
     ind = d > 0
-    l, u = np.where(ind, L, U), np.where(ind, U, L)
+    l, u = where(ind, L, U), where(ind, U, L)
     
     point = d*u + c_u
 #    if not isInt:
@@ -692,7 +694,7 @@ def pow_b_interval(lb_ub, r1, other):
 #    pylab.show()
 #########################
     if not np.array_equal(other, asarray(other, int)):
-        definiteRange = logical_and(definiteRange, c_l+d_l*np.where(d_l>0, l, u)>=0)
+        definiteRange = logical_and(definiteRange, c_l+d_l*where(d_l>0, l, u)>=0)
     r2 = boundsurf2(L, U, definiteRange, domain)
     R = merge_boundsurfs(r1, r2)
     
@@ -786,7 +788,7 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
     r_l, r_u = R0
     R2 = fun(R0)
     
-    ind_inf = np.where(np.logical_or(np.isinf(R2[0]), np.isinf(R2[1])))[0]
+    ind_inf = where(np.logical_or(np.isinf(R2[0]), np.isinf(R2[1])))[0]
 
     koeffs = (R2[1] - R2[0]) / (r_u - r_l)
     koeffs[ind_inf] = 0.0

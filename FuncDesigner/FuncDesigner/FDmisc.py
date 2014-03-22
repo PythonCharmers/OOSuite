@@ -238,7 +238,7 @@ DiffVarsID = fixedVarsScheduleID()
 _getDiffVarsID = lambda *args: DiffVarsID._getDiffVarsID(*args)
 
 try:
-    import numpypy
+    import __pypy__
     isPyPy = True
 except ImportError:
     isPyPy = False
@@ -364,3 +364,30 @@ else x.values.size if isinstance(x, Stochastic) else len(x)
 Copy = lambda arg: asscalar(arg) if type(arg)==ndarray and arg.size == 1 \
 else arg.copy() if hasattr(arg, 'copy') else np.copy(arg)
 
+
+# temporary, until normal pypy implementation
+def PyPy_where(*args):
+    if len(args) == 3:
+        return np.where(*args)
+    elif len(args) != 1:
+        assert 0, 'number of arguments for numpy.where must be 1 or 3'
+    A = np.asarray(args[0])
+    if A.ndim > 2:
+        assert 0, 'unimplemented yet'
+    if A.ndim == 0:
+        return (np.array([0]),) if A != 0 else (np.array([], dtype=np.int32),)
+    if A.ndim == 1:
+        r = (np.array([i for i, elem in enumerate(A) if elem != 0.0]),)
+        return r
+        
+    # A.ndim == 2
+    I, J = [], []
+    for i in range(A.shape[0]):
+        for j in range(A.shape[1]):
+            if A[i, j] != 0.0:
+                I.append(i)
+                J.append(j)
+    return (np.array(I), np.array(J))
+
+
+where = PyPy_where if isPyPy else np.where
