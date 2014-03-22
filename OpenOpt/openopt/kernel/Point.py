@@ -1,8 +1,8 @@
 # created by Dmitrey
-from numpy import copy, isnan, array, argmax, abs, vstack, zeros, any, isfinite, all, where, asscalar, \
-dot, sqrt, nanmax, logical_or, matrix, prod, arange, ndarray, asarray, sum
+from numpy import copy, isnan, array, argmax, abs, zeros, any, isfinite, all, asscalar, \
+dot, sqrt, nanmax, logical_or, prod, arange, ndarray, asarray, sum#where
 from ooMisc import norm
-from nonOptMisc import Copy, isPyPy
+from nonOptMisc import Copy, isPyPy, where
 #from pointProjection import pointProjection
 empty_arr = array(())
 try:

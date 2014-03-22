@@ -1,8 +1,8 @@
-import os
+import os, sys, numpy as np
 from oologfcn import OpenOptException
 from numpy import zeros, hstack, vstack, ndarray, copy, where, prod, isscalar, atleast_2d, eye, \
 diag, asfarray
-import sys
+
 syspath = sys.path
 Sep = os.sep
 
@@ -54,9 +54,36 @@ except:
     def Find(*args, **kwargs): 
         raise OpenOptException('error in OpenOpt kernel, inform developers')
 
+
+# temporary, until normal pypy implementation
+def PyPy_where(*args):
+    if len(args) == 3:
+        return np.where(*args)
+    elif len(args) != 1:
+        assert 0, 'number of arguments for numpy.where must be 1 or 3'
+    A = np.asarray(args[0])
+    if A.ndim > 2:
+        assert 0, 'unimplemented yet'
+    if A.ndim == 0:
+        return (np.array([0]),) if A != 0 else (np.array([], dtype=np.int32),)
+    if A.ndim == 1:
+        r = (np.array([i for i, elem in enumerate(A) if elem != 0.0]),)
+        return r
+        
+    # A.ndim == 2
+    I, J = [], []
+    for i in range(A.shape[0]):
+        for j in range(A.shape[1]):
+            if A[i, j] != 0.0:
+                I.append(i)
+                J.append(j)
+    return (np.array(I), np.array(J))
+
+
 try:
     import __pypy__
     isPyPy = True
+    where = PyPy_where
 except ImportError:
     isPyPy = False
 
