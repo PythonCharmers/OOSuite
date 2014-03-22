@@ -1,5 +1,6 @@
 #from numpy import asfarray, argmax, sign, inf, log10
 from openopt.kernel.baseSolver import baseSolver
+from openopt.kernel.nonOptMisc import where
 #from numpy import asfarray,  inf,  atleast_1d
 from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X,  SMALL_DELTA_F
 import numpy as np
@@ -324,7 +325,7 @@ def _eval_pop(pop, p):
             bestPoint = p.point(pop[j])
             #bestPoint.i = j
         else:
-            IND = np.where(ind)[0]
+            IND = where(ind)[0]
             #print(IND, pop.shape)
             try:
                 P2 = np.atleast_2d(pop[IND])
@@ -335,7 +336,7 @@ def _eval_pop(pop, p):
             J = np.nanargmin(F)
             bestPoint = p.point(P2[J], f=F[J])# TODO: other fields
             #bestPoint.i = IND[J]
-            #bestPoint.i = np.where(ind)[0]
+            #bestPoint.i = where(ind)[0]
 
         best = (bestPoint.f(), bestPoint.mr() + nanPenalty * bestPoint.nNaNs(), bestPoint.x)
 #    print(vals, constr_vals)
@@ -367,10 +368,10 @@ def _correct_box_constraints(lb, ub, pop):
         scale /= 2
 
     # temporary fix
-    ind = np.where(pop<lb)
+    ind = where(pop<lb)
     if ind[0].size:
         pop[ind] = lb[ind[1]]
-    ind = np.where(pop>ub)
+    ind = where(pop>ub)
     if ind[0].size:
         pop[ind] = ub[ind[1]]
 

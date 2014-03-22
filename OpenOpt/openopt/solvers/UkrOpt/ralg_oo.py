@@ -1,4 +1,4 @@
-from numpy import diag, array, sqrt,  eye, ones, inf, any, copy, zeros, dot, where, all, sum, isfinite, float64, isnan, log10, \
+from numpy import diag, array, sqrt,  eye, ones, inf, any, copy, zeros, dot, all, sum, isfinite, float64, isnan, log10, \
 max, sign, array_equal, logical_and, matrix
 from openopt.kernel.ooMisc import norm
 
@@ -23,6 +23,8 @@ from openopt.kernel.baseSolver import *
 from openopt.kernel.ooMisc import economyMult, Len
 from openopt.kernel.setDefaultIterFuncs import *
 from openopt.solvers.UkrOpt.UkrOptMisc import getBestPointAfterTurn
+# for PyPy
+from openopt.kernel.nonOptMisc import where
 
 class ralg(baseSolver):
     __name__ = 'ralg'
@@ -53,6 +55,8 @@ class ralg(baseSolver):
     skipPrevIterNaNsInDilation = True
     innerState = None
     penalties = False # True means for nonlinear equalities only
+    useLinePoints = True
+    lineSearchFunc = None # used in some special problems
     #new_s = False
 
     def needRej(self, p, b, g, g_dilated):
@@ -102,12 +106,12 @@ class ralg(baseSolver):
             p.nbeq += nEQ
             
         if not self.newLinEq or p.nbeq == 0:
-            needProjection = False
+            #needProjection = False
             B0 = eye(n,  dtype=T)
             restoreProb = lambda *args: 0
             Aeq_r, beq_r, nbeq_r = None, None, 0
         else:
-            needProjection = True
+            #needProjection = True
             B0 = self.getPrimevalDilationMatrixWRTlinEqConstraints(p)
             #Aeq, beq, nbeq = p.Aeq, p.beq, p.nbeq
             
@@ -166,9 +170,9 @@ class ralg(baseSolver):
         HS = []
         LS = []
         
-        SwitchEncountered = False
+        #SwitchEncountered = False
         selfNeedRej = False
-        doScale = False
+        #doScale = False
         
         #directionVectorsList = []
 #        #pass-by-ref! not copy!
@@ -182,7 +186,7 @@ class ralg(baseSolver):
 #            #asdf = asdf_0.copy()
 
 
-        fTol = p.fTol if p.fTol is not None else 15*p.ftol
+        #fTol = p.fTol if p.fTol is not None else 15*p.ftol
         
         # CHANGES
         if self.penalties:
@@ -205,15 +209,11 @@ class ralg(baseSolver):
                 else:
                     HH = eye(n)
                 qp = openopt.QP(H=HH, f=df, Aeq=_Aeq, beq=_beq)
-    #                print ('len(_beq): %d' % len(_beq))
-    #                assert len(_beq) != 0
                 QPsolver = openopt.oosolver('cvxopt_qp', iprint=-1)
                 if not QPsolver.isInstalled:
-                    #p.pWarn('to use ')
                     S = None
                 else:
                     r = qp.solve(QPsolver)
-                    #S = 2.0*abs(r.duals).sum() if r.istop > 0 else 0
                     S = 10.0*sum(abs(r.duals)) if r.istop > 0 else None
                 
                 while any(p.h(x)) > p.contol:
@@ -255,8 +255,7 @@ class ralg(baseSolver):
                         
                     else: # failed to solve QP
                         break
-                    
-        #print 'b:', b, '\nhs:', hs
+
         # CHANGES END
 
         """                           Ralg main cycle                                    """
