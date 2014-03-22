@@ -16,25 +16,48 @@ except ImportError:
 hasPoint = lambda y, e, point:\
     True if y.size != 0 and any([(all(y[i]<=point) and all(e[i]>=point)) for i in range(y.shape[0])]) else False
 pointInd = lambda y, e, point:\
-    where([(all(y[i]<=point) and all(e[i]>=point)) for i in range(y.shape[0])])[0]
+    where([(all(y[i]<=point) and all(e[i]>=point)) for i in range(y.shape[0])])[0].tolist()
     
 def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
          r41, fTol, Solutions, varTols, _in, dataType, \
          maxNodes, _s, indTC, xRecord):
 
     isSNLE = p.probType in ('NLSP', 'SNLE')
-#    P = array([ 1.        , -1.        ,  0.19865125, -1.        ])
+    
+#    P = array([-0.63521194458007812, -0.3106536865234375, 0.0905609130859375, 0.001522064208984375, -0.69999999999999996, -0.99993896484375, 0.90000152587890625, 1.0, 4.0])
+#    p.cp = P
 #    print(0, p.iter, hasPoint(y, e, P), pointInd(y, e, P))
+#    if p.iter == 13:
+#        print y[1]
+#        print e[1]
+#        y = y[1].reshape(1, -1)
+#        e = e[1].reshape(1, -1)
+#        _s = atleast_1d([_s[1]])
+#        indTC = atleast_1d([indTC[1]])
+        
+#    if p.iter == 99:
+#        y = y[14].reshape(1, -1)
+#        e = e[14].reshape(1, -1)
+
     maxSolutions, solutions, coords = Solutions.maxNum, Solutions.solutions, Solutions.coords
     if len(p._discreteVarsNumList):
         y, e, _s, indTC = adjustDiscreteVarBounds(y, e, _s, indTC, p)
 
     o, a, r41 = r45(y, e, vv, p, asdf1, dataType, r41, nlhc)
-
+#    print(o, a)
+#    print 'LF:', o
+#    print 'a:', a
+#    if p.iter == 13:
+#        print y[1]
+#        print e[1]
+#        print o[1]
+#        print a[1]
+        
     fo_prev = float(0 if isSNLE else min((r41, r40 - (fTol if maxSolutions == 1 else 0))))
     if fo_prev > 1e300:
         fo_prev = 1e300
     y, e, o, a, _s, indTC, nlhc, residual = func7(y, e, o, a, _s, indTC, nlhc, residual)    
+
     if y.size == 0:
         return _in, g, fo_prev, _s, Solutions, xRecord, r41, r40
     

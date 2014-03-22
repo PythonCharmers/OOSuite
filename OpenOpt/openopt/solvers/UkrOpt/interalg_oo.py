@@ -280,8 +280,6 @@ class interalg(baseSolver):
 #        if self.maxActiveNodes < 2:
 #            p.warn('maxActiveNodes should be at least 2 while you have provided %d. Setting it to 2.' % self.maxActiveNodes)
         self.maxNodes = int(self.maxNodes)
-
-        _in = np.array([], object)
         
         g = np.inf
         C = p._FD.nonBoxConsWithTolShift
@@ -315,13 +313,15 @@ class interalg(baseSolver):
         if isODE or (isIP and p.n == 1):
             interalg_ODE_routine(p, self)
             return
-
+        
+        _in = np.array([], object)
         while 1:
             if len(C0) != 0: # SNLE also can have constraints
                 y, e, nlhc, residual, definiteRange, indT, _s = processConstraints(C0, y, e, _s, p, dataType)
             else:
                 nlhc, residual, definiteRange, indT = None, None, True, None
-            
+#            P = array([-0.63521194458007812, -0.3106536865234375, 0.0905609130859375, 0.001522064208984375, -0.69999999999999996, -0.99993896484375, 0.90000152587890625, 1.0, 4.0])
+#            print('-', p.iter, hasPoint(y, e, P), pointInd(y, e, P))
             if y.size != 0:
                 an, g, fo, _s, Solutions, xRecord, r41, r40 = \
                 pb(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, \

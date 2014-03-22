@@ -1,7 +1,8 @@
-from numpy import hstack,  asarray, abs, atleast_1d, where, \
+from numpy import hstack,  asarray, abs, atleast_1d, \
 logical_not, argsort, vstack, sum, array, nan, all
 import numpy as np
-from FuncDesigner import oopoint
+from FuncDesigner import oopoint, FDmisc
+where = FDmisc.where
 #from FuncDesigner.boundsurf import boundsurf
 
 
@@ -90,6 +91,13 @@ def interalg_ODE_routine(p, solver):
                     val_u =  a * A + b * B + c 
                     r20 = val_u - val_l
                     approx_value = 0.5 * (val_l + val_u)
+#                    import pylab, numpy
+#                    xx = numpy.linspace(-1, 0, 1000)
+#                    pylab.plot(xx, tmp.l.d2.get(t, 0.0)[1]*xx**2+ tmp.l.d.get(t, 0.0)[1]*xx+ tmp.l.c[1], 'r')
+#                    pylab.plot(xx, tmp.u.d2.get(t, 0.0)[1]*xx**2+ tmp.u.d.get(t, 0.0)[1]*xx+ tmp.u.c[1], 'b')
+#                    pylab.grid()
+#                    pylab.show()
+                    
             elif isODE:
                 l, u = tmp.l, tmp.u
                 assert len(l.d) <= 1 and len(u.d) <= 1 # at most time variable
