@@ -2,6 +2,7 @@ from baseProblem import NonLinProblem
 
 from ooMisc import norm
 from numpy import inf, asfarray, atleast_1d, dot, abs, ndarray
+import numpy as np
 from setDefaultIterFuncs import FVAL_IS_ENOUGH, SMALL_DELTA_F
 import NLP
 try:
@@ -26,7 +27,9 @@ class NLSP(NonLinProblem):
             self.f = [self.f]
 
     def objFuncMultiple2Single(self, fv):
-        return norm(atleast_1d(asfarray(fv)), inf)
+        #return norm(atleast_1d(asfarray(fv)), inf)
+        # for pypy:
+        return np.max(np.abs(fv))
 
     def nlsp2nlp(self, solver, **solver_params):
         ff = lambda x: sum(asfarray(self.f(x))**2)
