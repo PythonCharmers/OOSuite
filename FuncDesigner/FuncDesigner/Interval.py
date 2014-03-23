@@ -98,7 +98,12 @@ def ZeroCriticalPointsInterval(inp, func):
         TMP.sort(axis=0)
         if any(ind):
             F0 = func(0.0)
-            TMP[0, atleast_1d(logical_and(ind, TMP[0] > F0))] = F0
+            
+            #TMP[0, atleast_1d(logical_and(ind, TMP[0] > F0))] = F0
+            # temporary for pypy:
+            TMP[0, where(atleast_1d(logical_and(ind, TMP[0] > F0)))[0]] = F0
+            
+            
 #            TMP[atleast_1d(logical_and(ind, t_max < F0))] = F0
         return TMP, definiteRange
     return interval
@@ -137,7 +142,11 @@ def nonnegative_interval(inp, func, deriv, domain, dtype, F0, shift = 0.0):
     
     if any(ind):
         lb_ub_resolved = lb_ub_resolved.copy()
-        lb_ub_resolved[0, logical_and(ind, ub >= th)] = th
+        
+        #lb_ub_resolved[0, logical_and(ind, ub >= th)] = th
+        # for pypy:
+        lb_ub_resolved[0, where(logical_and(ind, ub >= th))[0]] = th
+        
         if definiteRange is not False:
             if type(definiteRange) != np.ndarray:
                 definiteRange = np.empty_like(lb, bool)
