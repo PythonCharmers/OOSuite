@@ -1,6 +1,10 @@
-from numpy import isnan, take, any, all, logical_or, logical_and, logical_not, atleast_1d, where, \
-asarray, argmin, argsort, isfinite
+from numpy import isnan, take, any, all, logical_or, logical_and, logical_not, atleast_1d, \
+asarray, argmin, argsort, isfinite#where
 import numpy as np
+
+# for PyPy
+from openopt.kernel.nonOptMisc import where
+
 from bisect import bisect_right
 from FuncDesigner.Interval import adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain
 try:
@@ -62,7 +66,8 @@ def func9(an, fo, g, p):
             g = nanmin((g, nanmin(mino[ind])))
             ind2 = where(logical_not(ind))[0]
             #an = take(an, ind2, axis=0, out=an[:ind2.size])
-            an = asarray(an[ind2])
+            #an = asarray(an[ind2])
+            an = [an[i] for i in ind2]
             return an, g
             
         
@@ -86,10 +91,10 @@ def func9(an, fo, g, p):
         else:
             ind = where(r10)[0]
             g = nanmin((g, nanmin(atleast_1d(mino)[ind])))
-            an = asarray(an)
+            #an = asarray(an)
             ind2 = where(logical_not(r10))[0]
             #an = take(an, ind2, axis=0, out=an[:ind2.size])
-            an = asarray(an[ind2])
+            an = [an[i] for i in ind2]
             return an, g
 
         # NEW 2
@@ -112,7 +117,7 @@ def func5(an, nn, g, p):
         ind = argmin(mino)
         assert ind in (0, 1), 'error in interalg engine'
         g = nanmin((mino[1-ind], g))
-        an = atleast_1d([an[ind]])
+        an = [an[i] for i in ind]
     elif m > nn:
         if p.solver.dataHandling == 'raw':
             ind = argsort(mino)
@@ -120,7 +125,7 @@ def func5(an, nn, g, p):
             ind2 = where(mino < th)[0]
             g = nanmin((th, g))
             #an = take(an, ind2, axis=0, out=an[:ind2.size])
-            an = an[ind2]
+            an = [an[i] for i in ind2]#an[ind2]
         else:
             g = nanmin((mino[nn], g))
             an = an[:nn]
@@ -219,8 +224,10 @@ def truncateByPlane(y, e, indT, A, b):
             #alt_ub = S1_[:, _i] / A[i]
             alt_ub = Alt_ub[:, _i]
             ind = e[:, i] > alt_ub
-            e[ind, i] = alt_ub[ind]
-            indT[ind] = True
+            Ind = where(ind)[0]
+            if Ind.size:
+                e[Ind, i] = alt_ub[Ind]
+                indT[Ind] = True
     
     if ind_negative.size != 0:
         S2_ = b - S.reshape(-1, 1) + S2
@@ -231,8 +238,10 @@ def truncateByPlane(y, e, indT, A, b):
             #alt_lb = S2_[:, _i] / A[i]
             alt_lb = Alt_lb[:, _i]
             ind = y[:, i] < alt_lb
-            y[ind, i] = alt_lb[ind]
-            indT[ind] = True
+            Ind = where(ind)[0]
+            if Ind.size:
+                y[Ind, i] = alt_lb[Ind]
+                indT[Ind] = True
 
     ind = np.all(e>=y, 1)
     if not np.all(ind):

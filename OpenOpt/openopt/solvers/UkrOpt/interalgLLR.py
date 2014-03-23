@@ -1,6 +1,11 @@
 from numpy import tile, isnan, array, atleast_1d, asarray, logical_and, all, logical_or, any, nan, isinf, \
-arange, vstack, inf, where, logical_not, take, abs, hstack, empty, \
-prod, int16, int32, int64, log2, searchsorted, cumprod
+arange, vstack, inf, logical_not, take, abs, hstack, empty, \
+prod, int16, int32, int64, log2, searchsorted, cumprod#where
+
+# for PyPy
+from openopt.kernel.nonOptMisc import where, isPyPy
+from bisect import bisect
+
 import numpy as np
 from FuncDesigner import oopoint
 from interalgT import *
@@ -9,6 +14,65 @@ try:
     from bottleneck import nanargmin, nanmin, nanargmax, nanmax
 except ImportError:
     from numpy import nanmin, nanargmin, nanargmax, nanmax
+    
+    
+def nanargmin_axis(a, axis = None):
+    if axis is None:
+        ind = -1
+        Min = inf
+        for i, elem in enumerate(a.flat):
+            if elem <= Min:
+                ind = i
+                Min = elem
+        return np.nan if ind == -1 else ind
+    
+    assert axis in (0, 1), 'unimplemented yet'
+    
+    A = a if type(a) == np.ndarray and a.ndim > 1 else atleast_2d(a)
+    
+    inds = np.empty(A.shape[1-axis], int)
+    inds.fill(-1)
+    Mins = np.empty(A.shape[1-axis], A.dtype)
+    if str(A.dtype).startswith('float'):
+        Mins.fill(np.inf)
+    elif axis == 0:
+        Mins = A[:, 0].copy()
+    else:
+        Mins = A[0].copy()
+    for i in range(A.shape[axis]):
+        tmp = A[i] if axis == 0 else A[:, i]
+        ind = tmp <= Mins
+        Mins[ind] = tmp[ind]
+        inds[ind] = i
+    return inds
+
+def nanargmax_axis(A, axis = None):
+    if axis is None:
+        ind = -1
+        Max = -inf
+        for i, elem in enumerate(A.flat):
+            if elem >= Max:
+                ind = i
+                Max = elem
+        return np.nan if ind == -1 else ind
+    
+    assert axis in (0, 1), 'unimplemented yet'
+    
+    inds = np.empty(A.shape[1-axis], int)
+    inds.fill(-1)
+    Maxs = np.empty(A.shape[1-axis], A.dtype)
+    Maxs.fill(-np.inf)
+    for i in range(A.shape[axis]):
+        tmp = A[i] if axis == 0 else A[:, i]
+        ind = tmp >= Maxs
+        Maxs[ind] = tmp[ind]
+        inds[ind] = i
+    return inds
+
+if isPyPy:
+    nanargmin = nanargmin_axis
+    nanargmax = nanargmax_axis
+    
     
 def func82(y, e, vv, f, dataType, p, Th = None):
     domain = oopoint([(v, (y[:, i], e[:, i])) for i, v in enumerate(vv)], skipArrayCast=True, isMultiPoint=True)
@@ -208,7 +272,7 @@ def r2(PointVals, PointCoords, dataType):
 def func3(an, maxActiveNodes, dataHandling):
     m = len(an)
     if m <= maxActiveNodes:
-        return an, array([], object)
+        return an, []#array([], object)
     
     an1, _in = an[:maxActiveNodes], an[maxActiveNodes:]    
         
@@ -219,7 +283,11 @@ def func3(an, maxActiveNodes, dataHandling):
         #changes
         tmp = 2 ** (-tnlh_curr_best_values)
         Tmp = -cumprod(1.0-tmp)
-        ind2 = searchsorted(Tmp, -0.05)
+        
+        if isPyPy:
+            ind2 = bisect(Tmp.tolist(), -0.05)
+        else:
+            ind2 = searchsorted(Tmp, -0.05)
         #changes end
         
 #        ind = min((ind, ind2))
@@ -238,21 +306,23 @@ def func3(an, maxActiveNodes, dataHandling):
         
         tmp1, tmp2 = an1[:M], an1[M:]
         an1 = tmp1
-        _in = hstack((tmp2, _in))
+        _in = tmp2 + _in#hstack((tmp2, _in))
         
     # TODO: implement it for MOP as well
-    cond_min_uf = 0 and dataHandling == 'raw' and hasattr(an[0], 'key')            
-    
-    if cond_min_uf:
-        num_nlh = min((max((1, int(0.8*maxActiveNodes))), an1.size))
-        num_uf = min((maxActiveNodes - num_nlh, int(maxActiveNodes/2)))
-        if num_uf < 15:
-            num_uf = 15
-        #an1, _in = an[:num_nlh], an[num_nlh:]    
-        Ind = np.argsort([node.key for node in _in])
-        min_uf_nodes = _in[Ind[:num_uf]]
-        _in = _in[Ind[num_uf:]]
-        an1 = np.hstack((an1, min_uf_nodes))
+#    cond_min_uf = 0 and dataHandling == 'raw' and hasattr(an[0], 'key')            
+#    
+#    if cond_min_uf:
+#        num_nlh = min((max((1, int(0.8*maxActiveNodes))), len(an1)))
+#        num_uf = min((maxActiveNodes - num_nlh, int(maxActiveNodes/2)))
+#        if num_uf < 15:
+#            num_uf = 15
+#        #an1, _in = an[:num_nlh], an[num_nlh:]    
+#        Ind = np.argsort([node.key for node in _in])
+#        
+#        min_uf_nodes = _in[Ind[:num_uf]]
+#        _in = _in[Ind[num_uf:]]
+#        
+#        an1 = an1 + min_uf_node#np.hstack((an1, min_uf_nodes))
         
     # changes end
     #print maxActiveNodes, len(an1), len(_in)
@@ -400,7 +470,9 @@ def func13(o, a):
     L = where(logical_or(L2<L1, isnan(L1)), L2, L1)
     return nanmax(U-L, 1)
 
-def func2(y, e, t, vv, tnlhf_curr):
+def func2(y, e, t, vv):#, tnlhf_curr):
+    #assert y.size != 0
+    if y.size == 0: return y.copy(), e.copy() # especially for PyPy
     new_y, new_e = y.copy(), e.copy()
     m, n = y.shape
     w = arange(m)
@@ -425,17 +497,18 @@ def func2(y, e, t, vv, tnlhf_curr):
             new_y[w, t] = 1
             new_e[w, t] = 0
     else:
+#        print new_y.shape, w.shape, t.shape, th.shape
         new_y[w, t] = th
         new_e[w, t] = th
     
     new_y = vstack((y, new_y))
     new_e = vstack((new_e, e))
     
-    if tnlhf_curr is not None:
-        tnlhf_curr_local = hstack((tnlhf_curr[w, t], tnlhf_curr[w, n+t]))
-    else:
-        tnlhf_curr_local = None
-    return new_y, new_e, tnlhf_curr_local
+#    if tnlhf_curr is not None:
+#        tnlhf_curr_local = hstack((tnlhf_curr[w, t], tnlhf_curr[w, n+t]))
+#    else:
+#        tnlhf_curr_local = None
+    return new_y, new_e#, tnlhf_curr_local
 
 
 def func12(an, maxActiveNodes, p, Solutions, vv, varTols, fo):
@@ -671,14 +744,16 @@ def func12(an, maxActiveNodes, p, Solutions, vv, varTols, fo):
         else:
             _s = tile(_s, 2)
 
-        yc, ec, tnlhf_curr_local = func2(yc, ec, t, vv, tnlhf_curr)
+        #yc, ec, tnlhf_curr_local = func2(yc, ec, t, vv, tnlhf_curr)
+        yc, ec = func2(yc, ec, t, vv)
 
         if NewD and indD is not None:
             yc = vstack((yc, yf))
             ec = vstack((ec, ef))
             
         if maxSolutions == 1 or len(solutions) == 0: 
-            y, e, Tnlhf_curr_local = yc, ec, tnlhf_curr_local
+            #y, e, Tnlhf_curr_local = yc, ec, tnlhf_curr_local
+            y, e = yc, ec
             break
         
         # TODO: change cycle variable if len(solutions) >> maxActiveNodes

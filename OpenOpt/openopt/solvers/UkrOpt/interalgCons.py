@@ -1,6 +1,10 @@
-from numpy import empty, where, logical_and, logical_not, take, zeros, isfinite, any, asarray, ndarray, bool_
+from numpy import empty, logical_and, logical_not, take, zeros, isfinite, any, \
+asarray, ndarray, bool_#where
 from interalgT import adjustDiscreteVarBounds, truncateByPlane
 import numpy as np
+
+# for PyPy
+from openopt.kernel.nonOptMisc import where
 
 hasPoint = lambda y, e, point:\
     True if y.size != 0 and any([(np.all(y[i]<=point) and np.all(e[i]>=point)) for i in range(y.shape[0])]) else False

@@ -314,7 +314,8 @@ class interalg(baseSolver):
             interalg_ODE_routine(p, self)
             return
         
-        _in = np.array([], object)
+        #_in = np.array([], object)
+        _in = []
         while 1:
             if len(C0) != 0: # SNLE also can have constraints
                 y, e, nlhc, residual, definiteRange, indT, _s = processConstraints(C0, y, e, _s, p, dataType)
@@ -332,7 +333,10 @@ class interalg(baseSolver):
             else:
                 an = _in
                 fo = 0.0 if isSNLE or isMOP else min((r41, r40 - (fTol if Solutions.maxNum == 1 else 0.0))) 
-            pnc = max((len(np.atleast_1d(an)), pnc))
+            pnc = max(
+                                    (len(np.atleast_1d(an) if type(an) == np.ndarray else an), 
+                                    pnc)
+                                    )
             
             y, e, _in, _s = \
                 func12(an, self.maxActiveNodes, p, Solutions, vv, varTols, np.inf if isIP else fo)

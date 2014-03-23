@@ -2,6 +2,9 @@ from interalgLLR import *
 from numpy import inf, prod, all, sum, zeros
 #from FuncDesigner.boundsurf import boundsurf
 
+# for PyPy
+from openopt.kernel.nonOptMisc import where, isPyPy
+
 def r14IP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, CBKPMV, g, nNodes,  \
          frc, fTol, Solutions, varTols, _in, dataType, \
          maxNodes, _s, indTC, xRecord):
@@ -67,7 +70,8 @@ def r14IP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, CBKPMV, g, nNode
 
     nodes = func11(y, e, None, indTC, None, o, a, _s, p)
 
-    an = nodes if len(_in) == 0 else hstack((_in, nodes)).tolist()
+    #an = nodes if len(_in) == 0 else hstack((_in, nodes)).tolist()
+    an = nodes + _in
     
     if 1: 
         an.sort(key = lambda obj: obj.key, reverse=False)
@@ -86,8 +90,10 @@ def r14IP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, CBKPMV, g, nNode
     residuals = ao_diff[ind] * v
     p._residual += residuals.sum()
     p._volume += v.sum()
-    an = asarray(an, object)
-    an = an[where(logical_not(r10))[0]]
+    
+    #an = asarray(an, object)
+    #an = an[where(logical_not(r10))[0]]
+    an = [elem for i,  elem in enumerate(an) if not r10[i]]
         
     nNodes.append(len(an))
    

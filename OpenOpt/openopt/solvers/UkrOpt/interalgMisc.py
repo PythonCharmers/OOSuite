@@ -1,5 +1,9 @@
 from numpy import isnan, array, atleast_1d, asarray, all, searchsorted, logical_or, any, nan, \
 vstack, inf, where, logical_not, min, abs, hstack, insert, logical_xor, argsort
+
+# for PyPy
+from openopt.kernel.nonOptMisc import isPyPy
+
 try:
     from numpy import append
 except ImportError:
@@ -83,7 +87,7 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
         else:
             for i, node in enumerate(nodes): node.tnlhf = node.nlhc + node.nlhf 
             
-        an = hstack((nodes, _in))
+        an = nodes + _in#hstack((nodes, _in))
         
         #tnlh_fixed = vstack([node.tnlhf for node in an])
         tnlh_fixed_local = vstack([node.tnlhf for node in nodes])#tnlh_fixed[:len(nodes)]
@@ -154,7 +158,8 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
 #                  print 'o MB:', float(o_tmp.nbytes) / 1e6
 #                  print 'percent:', 100*float(ind_update.size) / len(an) 
             if update_nlh:
-                nodesToUpdate = an[ind_update]
+                #nodesToUpdate = an[ind_update]
+                nodesToUpdate = [an[i] for i in ind_update]
 #                    from time import time
 #                    tt = time()
                 updateNodes(nodesToUpdate, fo)
@@ -175,7 +180,7 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
 
         if any(r10):
             ind = where(logical_not(r10))[0]
-            an = an[ind]
+            an = [an[i] for i in ind]#an[ind]
             #tnlh = take(tnlh, ind, axis=0, out=tnlh[:ind.size])
             #NN = take(NN, ind, axis=0, out=NN[:ind.size])
             NN = NN[ind]
@@ -184,7 +189,7 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
             #pass
             astnlh = argsort(NN)
 #            print(astnlh[:10])
-            an = an[astnlh]
+            an = [an[i] for i in astnlh]#an[astnlh]
             
 #        print(an[0].nlhc, an[0].tnlh_curr_best)
         # Changes
@@ -198,7 +203,10 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
     
     else: #if p.solver.dataHandling == 'sorted':
         if isSNLE and p.maxSolutions != 1: 
-            an = hstack((nodes, _in))
+            an = nodes + _in#hstack((nodes, _in))
+        elif isPyPy:
+            an = nodes + _in
+            an.sort(key = lambda obj: obj.key)
         else:
             nodes.sort(key = lambda obj: obj.key)
 
