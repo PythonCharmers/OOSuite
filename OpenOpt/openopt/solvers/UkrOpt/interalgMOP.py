@@ -351,10 +351,6 @@ def r44(Solutions, r5Coords, r5F, targets, sigma):
                     indLeftPositions = where(indLeft)[0]
                     newSolNumber = Solutions.coords.shape[0] - r50.size + 1
                     Solutions.coords = take(Solutions.coords, indLeftPositions, axis=0, out = Solutions.coords[:newSolNumber])
-                    
-                    #solutionsF2 = asarray(Solutions.F, object)
-                    #solutionsF2 = take(solutionsF2, indLeftPositions, axis=0, out = solutionsF2[:newSolNumber])
-                    #Solutions.F = solutionsF2.tolist()
                     Solutions.F = [Solutions.F[i] for i in indLeftPositions]
             else:
                 Solutions.coords = vstack((Solutions.coords, r5Coords[j]))
