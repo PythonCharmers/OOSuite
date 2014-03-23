@@ -557,17 +557,22 @@ def pow_const_interval(self, r, other, domain, dtype):
     
     # correct nan handling
     #Tmp.sort(axis = 0)
+    
     ind = where(Tmp[0]>Tmp[1])[0]
-    Tmp[0, ind], Tmp[1, ind] = Tmp[1, ind], Tmp[0, ind]
+    if ind.size: # PyPy doesn't work w/o this check
+        Tmp[0, ind], Tmp[1, ind] = Tmp[1, ind], Tmp[0, ind]
 
     if not other_is_int or not isOdd:
         ind_z = logical_and(lb < 0, ub >= 0)
         assert type(ind_z) == np.ndarray
         if any(ind_z):
+            Ind_z = where(ind_z)[0]
             if (not other_is_int and other > 0) or not isOdd: 
-                Tmp[0, ind_z] = 0.0
+#                print ind_z, type(ind_z), ind_z.shape
+#                print Tmp
+                Tmp[0, Ind_z] = 0.0
             if other < 0:
-                Tmp[1, ind_z] = inf
+                Tmp[1, Ind_z] = inf
             if not other_is_int:
                 definiteRange = logical_and(definiteRange, logical_not(ind_z))
             Tmp.sort(axis = 0)

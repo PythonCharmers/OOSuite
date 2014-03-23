@@ -3,9 +3,12 @@ PythonSum = sum
 PythonAny = any
 PythonMax = max
 from numpy import inf, asfarray, all, any, atleast_2d, zeros, dot, asarray, atleast_1d, \
-ones, ndarray, where, array, nan, vstack, eye, array_equal, isscalar, log, hstack, sum as npSum, prod, nonzero,\
+ones, ndarray, array, nan, vstack, eye, array_equal, isscalar, log, hstack, sum as npSum, prod, nonzero,\
 asscalar, zeros_like, logical_and, \
-tile, searchsorted, int8, int16, int32, int64, string_, asanyarray
+tile, searchsorted, int8, int16, int32, int64, string_, asanyarray#where
+
+# for PyPy
+from FDmisc import where
 
 import operator, numpy as np
 

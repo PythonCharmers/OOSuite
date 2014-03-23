@@ -1,8 +1,11 @@
 from ooPoint import ooPoint
-from numpy import all, atleast_1d, logical_or, logical_and, where, bool_, vstack
+from numpy import all, atleast_1d, logical_or, logical_and, bool_, vstack
 import numpy as np
 from Interval import adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain
 from FDmisc import Copy
+
+# for PyPy
+from FDmisc import where
 
 try:
     from bottleneck import nanmin, nanmax
