@@ -556,13 +556,14 @@ def func12(an, maxActiveNodes, p, Solutions, vv, varTols, fo):
         
         if p.probType != 'IP': 
             #nlhc = asarray([t.nlhc for t in an1Candidates])
-            indtc = asarray([t.indtc for t in an1Candidates])
+            
             #residual = asarray([t.residual for t in an1Candidates]) 
             residual = None
             
             indT = func4(p, yc, ec, oc, ac, fo, tnlhf_curr)
 
-            if indtc[0] is not None:
+            if an1Candidates[0].indtc is not None:
+                indtc = asarray([t.indtc for t in an1Candidates])
                 indT = logical_or(indT, indtc)
         else:
             residual = None

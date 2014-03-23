@@ -1,15 +1,16 @@
 PythonSum = sum
 from numpy import isnan, array, atleast_1d, asarray, logical_and, all, logical_or, any, \
-arange, vstack, inf, where, logical_not, take, abs, hstack, empty, \
-isfinite, argsort, ones, zeros, log1p, array_split
+arange, vstack, inf, logical_not, take, abs, hstack, empty, \
+isfinite, argsort, ones, zeros, log1p, array_split#where
 
+# for PyPy
+from openopt.kernel.nonOptMisc import where
+
+#try:
+#    from bottleneck import nanargmin, nanmin
+#except ImportError:
+#    from numpy import nanmin, nanargmin
 from interalgLLR import *
-
-try:
-    from bottleneck import nanargmin, nanmin
-except ImportError:
-    from numpy import nanmin, nanargmin
-
 
 def r43_seq(Arg):
     targets_vals, targets_tols, solutionsF, lf, uf = Arg
@@ -182,10 +183,12 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,
     
     # TODO: better of nlhc for unconstrained probs
 
-    if len(_in) != 0:
-        an = hstack((nodes,  _in))
-    else:
-        an = atleast_1d(nodes)
+#    if len(_in) != 0:
+#        an = hstack((nodes,  _in))
+#    else:
+#        an = atleast_1d(nodes)
+
+    an = nodes + _in
 
     hasNewParetoNodes = False if nIncome == 0 else True
     if hasNewParetoNodes:
@@ -203,8 +206,8 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,
     r10 = logical_not(any(isfinite(tnlh_all), 1))
     if any(r10):
         ind = where(logical_not(r10))[0]
-        #an = take(an, ind, axis=0, out=an[:ind.size])
-        an = asarray(an[ind])
+#        an = asarray(an[ind])
+        an = [an[i] for i in ind]
         tnlh_all = take(tnlh_all, ind, axis=0, out=tnlh_all[:ind.size])
     
 #    else:
@@ -222,15 +225,19 @@ def r14MOP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,
         node.tnlh_curr_best = NN[i]
         
     astnlh = argsort(NN)
-    an = an[astnlh]
+    
+#    an = an[astnlh]
+    an = [an[i] for i in astnlh]
 
     p._t = t
     
     # TODO: form _s in other level (for active nodes only), to reduce calculations
     if len(an) != 0:
-        nlhf_fixed = asarray([node.nlhf for node in an])
-        nlhc_fixed = asarray([node.nlhc for node in an])
-        T = nlhf_fixed + nlhc_fixed if nlhc_fixed[0] is not None else nlhf_fixed 
+        T = asarray([node.nlhf for node in an])
+#        nlhc_fixed = asarray([node.nlhc for node in an])
+        if an[0].nlhc is not None:
+            T += asarray([node.nlhc for node in an])
+#        T = nlhf_fixed + nlhc_fixed if nlhc_fixed[0] is not None else nlhf_fixed 
         p.__s = \
         nanmin(vstack(([T[w, t], T[w, n+t]])), 0)
     else:
@@ -344,9 +351,11 @@ def r44(Solutions, r5Coords, r5F, targets, sigma):
                     indLeftPositions = where(indLeft)[0]
                     newSolNumber = Solutions.coords.shape[0] - r50.size + 1
                     Solutions.coords = take(Solutions.coords, indLeftPositions, axis=0, out = Solutions.coords[:newSolNumber])
-                    solutionsF2 = asarray(Solutions.F, object)
-                    solutionsF2 = take(solutionsF2, indLeftPositions, axis=0, out = solutionsF2[:newSolNumber])
-                    Solutions.F = solutionsF2.tolist()
+                    
+                    #solutionsF2 = asarray(Solutions.F, object)
+                    #solutionsF2 = take(solutionsF2, indLeftPositions, axis=0, out = solutionsF2[:newSolNumber])
+                    #Solutions.F = solutionsF2.tolist()
+                    Solutions.F = [Solutions.F[i] for i in indLeftPositions]
             else:
                 Solutions.coords = vstack((Solutions.coords, r5Coords[j]))
                 Solutions.F.append(r5F[j])
