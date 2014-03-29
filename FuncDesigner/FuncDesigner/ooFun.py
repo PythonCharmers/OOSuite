@@ -488,17 +488,19 @@ class oofun(OOFun):
         
         # without the code it somehow doesn't fork in either Python3 or latest numpy
         #if isinstance(other,  Stochastic) or (isinstance(other, OOArray) and any([isinstance(elem, oofun) for elem in atleast_1d(other)])):
-        if isinstance(other, OOArray) and any([isinstance(elem, oofun) for elem in atleast_1d(other)]):
+        if isinstance(other, OOArray) and PythonAny(isinstance(elem, oofun) for elem in atleast_1d(other)):
             return other.__div__(self)
-       
+        
         other = array(other, 'float') # TODO: sparse matrices handling!
+        if other.size == 1:
+            other = other.item()
         r = oofun(lambda x: operator.truediv(other, x), self, discrete = self.discrete)
         r.d = lambda x: Diag(operator.truediv(- other, x**2))
         r.monotonities = (-1, -1)
         r.convexities = (-1, 1)
         
-        aux_inteval_oofun = other * self**-1
-        r._interval_ = aux_inteval_oofun._interval_
+        aux_interval_oofun = other * self**-1
+        r._interval_ = aux_interval_oofun._interval_
         #r._interval_ = lambda *args, **kw: rdiv_interval(self, r, other, *args, **kw)
         #r.isCostly = True
         def getOrder(*args, **kwargs):

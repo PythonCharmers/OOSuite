@@ -8,7 +8,7 @@ from baseClasses import MultiArray, Stochastic
 try:
     import scipy.sparse as SP
     from scipy.sparse import hstack as HstackSP, vstack as VstackSP, eye as SP_eye, \
-    lil_matrix as SparseMatrixConstructor, isspmatrix
+    lil_matrix as SparseMatrixConstructor, isspmatrix, find as Find
     def Hstack(Tuple):
         ind = where([isscalar(elem) or prod(elem.shape)!=0 for elem in Tuple])[0].tolist()
         elems = [Tuple[i] for i in ind]
@@ -40,7 +40,8 @@ except:
     SparseMatrixConstructor = None
     SP_eye = None
     scipyInstalled = False
-
+    def Find(*args, **kwargs): 
+        raise FuncDesignerException('error in FuncDesigner kernel, inform developers')
 
 class FuncDesignerException(BaseException):
     def __init__(self,  msg):
