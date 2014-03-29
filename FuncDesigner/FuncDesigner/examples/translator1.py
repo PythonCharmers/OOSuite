@@ -51,9 +51,28 @@ func2_d = T.pointDerivative2array(pointDerivative2) # numpy 2d array of shape (3
 from scipy.optimize import fmin_bfgs
 objective = lambda x: func1(T.vector2point(x))
 x0 = T.point2vector(point)
-derivative = lambda x: T.pointDerivative2array(func1.D(T.vector2point(x))).flatten() # without flatten it may be 2d array, e.g. 1 x 114
+derivative = lambda x: T.pointDerivative2array(func1.D(T.vector2point(x))).flatten() 
+# without flatten it may be 2d array, e.g. 1 x 114 or 114 x 1
+
 x_opt = fmin_bfgs(objective, x0, derivative)
 optPoint = T.vector2point(x_opt) # Python dict {a:a_opt, b:b_opt, c:c_opt, d:d_opt}
 a_opt,  b_opt,  c_opt,  d_opt = optPoint[a], optPoint[b], optPoint[c], optPoint[d] # numpy arrays of size 3, 10, 100, 1
 
-# Attention! Involving sparsity in ootranslator is possible but is undocumented yet.
+# Using sparse matrices
+ff = 4 * c**2 # R^100 -> R^100
+# param useSparse can be True,  False,  'auto'
+# default False; if not, you must check type(result) each time by yourself,
+# it can be scalar, numpy.array, one of scipy.sparse matrix types (using isspmatrix() is recommended)
+pointDerivative1 = ff.D(point, useSparse = True)
+
+# way 1: use useSparse as pointDerivative2array argument
+ff_d = T.pointDerivative2array(pointDerivative1, useSparse = True)
+print(type(ff_d))
+#with scipy installed: <class 'scipy.sparse.coo.coo_matrix'>
+#also you can check scipy.sparse.isspmatrix(ff_d)
+
+# way 2: use useSparse as translator argument in ootranslator constructor
+T = ootranslator([a, b, c, d], useSparse = 'auto') # or True
+# or direct assignment
+T = ootranslator([a, b, c, d])
+T.useSparse = True # or 'auto'
