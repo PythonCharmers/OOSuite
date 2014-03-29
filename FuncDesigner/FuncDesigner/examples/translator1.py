@@ -67,8 +67,8 @@ pointDerivative1 = ff.D(point, useSparse = True)
 
 # way 1: use useSparse as pointDerivative2array argument
 ff_d = T.pointDerivative2array(pointDerivative1, useSparse = True)
-print(type(ff_d))
-#with scipy installed: <class 'scipy.sparse.coo.coo_matrix'>
+print(type(ff_d), ff_d.shape)
+#with scipy installed: <class 'scipy.sparse.coo.coo_matrix'>, (100, 114)
 #also you can check scipy.sparse.isspmatrix(ff_d)
 
 # way 2: use useSparse as translator argument in ootranslator constructor
