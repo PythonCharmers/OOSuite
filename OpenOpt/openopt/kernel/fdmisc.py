@@ -68,7 +68,7 @@ def setStartVectorAndTranslators(p):
     # TODO: use ordered set instead
     freeVars.sort(key=lambda elem: elem._id)
 #    fixedVars.sort()
-    p._freeVarsList = freeVars # to use in interalg, a global solver from UkrOpt
+    p._freeVarsList = freeVars 
     p._discreteVarsNumList = []
     p._discreteVarsList = []
     for i, v in enumerate(p._freeVarsList):
@@ -202,7 +202,7 @@ def setStartVectorAndTranslators(p):
 #                            inds.append(ind_start)
 #                        else:
                         Ind = np.where(Val)[0]
-                        r2 += Val.tolist()
+                        r2 += Val[Ind].tolist()
                         inds += (ind_start+Ind).tolist()
                     elif isspmatrix(val):
                         I, J, vals = Find(val)

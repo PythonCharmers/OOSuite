@@ -1,7 +1,6 @@
 from baseProblem import NonLinProblem
 
-from ooMisc import norm
-from numpy import inf, asfarray, atleast_1d, dot, abs, ndarray
+from numpy import asfarray, dot, abs, ndarray
 import numpy as np
 from setDefaultIterFuncs import FVAL_IS_ENOUGH, SMALL_DELTA_F
 import NLP
