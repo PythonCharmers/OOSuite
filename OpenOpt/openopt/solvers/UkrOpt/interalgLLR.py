@@ -258,9 +258,10 @@ def adjustr4WithDiscreteVariables(wr4, p):
     #print where(wr4==0)[0].size, where(wr4==1)[0].size
 
 def r2(PointVals, PointCoords, dataType):
-    r23 = nanargmin(PointVals)
-    if isnan(r23):
-        r23 = 0
+#    r23 = nanargmin(PointVals)
+#    if isnan(r23):
+    # for bottleneck v >= 0.8:
+    r23 = 0 if np.all(isnan(PointVals)) else nanargmin(PointVals)
     # TODO: check it , maybe it can be improved
     #bestCenter = cs[r23]
     #r7 = array([(val[0][r23]+val[1][r23]) / 2 for val in domain.values()], dtype=dataType)
