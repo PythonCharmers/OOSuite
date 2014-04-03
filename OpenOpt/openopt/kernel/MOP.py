@@ -68,7 +68,7 @@ class MOP(NonLinProblem):
         for v in self._categoricalVars:
             for elem in r.solutions:
                 elem.useAsMutable = True
-                elem[v] = v.aux_domain[elem[v]]
+                elem[v] = v.reverse_aux_domain[int(elem[v])]
                 elem.useAsMutable = False
         return r
 
