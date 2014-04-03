@@ -4,7 +4,7 @@ prod, int16, int32, int64, log2, searchsorted, cumprod#where
 
 # for PyPy
 from openopt.kernel.nonOptMisc import where, isPyPy
-from bisect import bisect
+from bisect import bisect, bisect_left, bisect_right
 
 import numpy as np
 from FuncDesigner import oopoint
@@ -236,8 +236,13 @@ def adjustr4WithDiscreteVariables(wr4, p):
         else:
             tmp = wr4[:, i]
             d = v.domain 
-            ind = searchsorted(d, tmp, side='left')
-            ind2 = searchsorted(d, tmp, side='right')
+            if isPyPy:
+                d2 = d.tolist()
+                ind = atleast_1d([bisect_left(d2, val) for val in tmp])
+                ind2 = atleast_1d([bisect_right(d2, val) for val in tmp])
+            else:
+                ind = searchsorted(d, tmp, side='left')
+                ind2 = searchsorted(d, tmp, side='right')
             ind3 = where(ind!=ind2)[0]
             Tmp = tmp[ind3].copy()
             
