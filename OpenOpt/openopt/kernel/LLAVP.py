@@ -26,7 +26,7 @@ class LLAVP(MatrixProblem):
         if hasattr(self,'x0'): p = NSP.NSP(ff, self.x0, df=dff)
         else: p = NSP.NSP(ff, zeros(self.n), df=dff)
         p.args.f = self # DO NOT USE p.args = self IN PROB ASSIGNMENT!
-        self.inspire(p)
+        self.fill(p)
         self.iprint = -1
         # for LLAVP plot is via NLP
         p.show = self.show

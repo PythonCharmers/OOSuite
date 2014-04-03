@@ -1,6 +1,6 @@
 from baseProblem import NonLinProblem
 from ooMisc import assignScript
-from numpy import sum, dot, asfarray, atleast_2d, array, zeros
+from numpy import dot, asfarray, atleast_2d, array, zeros
 import NLP
 
 class DFP(NonLinProblem):
@@ -65,7 +65,7 @@ class DFP(NonLinProblem):
             
         #p = NLP.NLP(lambda x: self.f(x), self.x0)
         #if self.userProvided.df: p.df = dff
-        self.inspire(p, sameConstraints=True)
+        self.fill(p, sameConstraints=True)
         p.f = ff # to prefent overwriting
 
         def dfp_iterfcn(*args,  **kwargs):

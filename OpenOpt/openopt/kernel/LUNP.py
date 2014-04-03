@@ -1,6 +1,5 @@
-from ooMisc import assignScript
 from baseProblem import MatrixProblem
-from numpy import asfarray, ones, inf, dot, nan, zeros, any, all, isfinite, eye, hstack, vstack, asarray, atleast_2d
+from numpy import ones, inf, dot, zeros, hstack, vstack, atleast_2d
 from ooMisc import norm
 import LP
 
@@ -35,10 +34,10 @@ class LUNP(MatrixProblem):
         f = hstack((zeros(nVars)))
         f[-1] = 1
         p = LP.LP(f)
-        # TODO: check - is it performed in self.inspire(p)?
+        # TODO: check - is it performed in self.fill(p)?
         if hasattr(self,'x0'): p.x0 = self.x0
         #p.args.f = self # DO NOT USE p.args = self IN PROB ASSIGNMENT!
-        self.inspire(p)
+        self.fill(p)
         p.x0 = hstack((p.x0, [0]))
         p.A = vstack((hstack((self.A, zeros((atleast_2d(self.A).shape[0], 1)))), \
                       hstack((self.C, -ones((nObj, 1)))), \

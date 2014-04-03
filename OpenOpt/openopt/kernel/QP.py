@@ -73,7 +73,7 @@ class QP(MatrixProblem):
         else: p = NLP.NLP(ff, zeros(self.n), df=dff, d2f=d2ff)
         p.args.f = self # DO NOT USE p.args = self IN PROB ASSIGNMENT!
         p.iprint = self.iprint
-        self.inspire(p)
+        self.fill(p)
         self.iprint = -1
         
 

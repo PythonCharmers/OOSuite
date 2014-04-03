@@ -22,7 +22,7 @@ class NLLSP(NonLinProblem):
         ff = lambda x: sum(asfarray(self.f(x))**2)
         p = NLP.NLP(ff, self.x0)
         #p = NLP.NLP(FF, self.x0)
-        self.inspire(p, sameConstraints=True)
+        self.fill(p, sameConstraints=True)
         if self.userProvided.df:
             p.df = lambda x: dot(2*asfarray(self.f(x)), asfarray(self.df(x,useSparse=False)))
         p.f = ff

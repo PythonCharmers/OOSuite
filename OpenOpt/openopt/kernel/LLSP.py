@@ -51,7 +51,7 @@ class LLSP(MatrixProblem):
         if hasattr(self,'x0'): p = NLP.NLP(ff, self.x0, df=dff, d2f=d2ff)
         else: p = NLP.NLP(ff, zeros(self.n), df=dff, d2f=d2ff)
         p.args.f = self # DO NOT USE p.args = self IN PROB ASSIGNMENT!
-        self.inspire(p)
+        self.fill(p)
         self.iprint = -1
         # for LLSP plot is via NLP
         p.show = self.show

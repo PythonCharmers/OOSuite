@@ -78,7 +78,7 @@ class LP(MatrixProblem):
         dff = lambda x: self.f
         if hasattr(self,'x0'): p = NLP.NLP(ff, self.x0, df=dff)
         else: p = NLP.NLP(ff, zeros(self.n), df=dff)
-        self.inspire(p)
+        self.fill(p)
         self.iprint = -1
 
         # for LP plot is via NLP

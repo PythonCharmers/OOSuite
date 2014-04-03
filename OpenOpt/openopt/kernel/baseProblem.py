@@ -253,7 +253,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         if asfarray(f).size != 1: self.err('unexpected f size. The function should be redefined in OO child class, inform OO developers')
         return f
 
-    def inspire(self, newProb, sameConstraints=True):
+    def fill(self, newProb, sameConstraints=True):
         # fills some fields of new prob with old prob values
         newProb.castFrom = self.probType
 
