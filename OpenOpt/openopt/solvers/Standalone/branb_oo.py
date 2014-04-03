@@ -131,7 +131,7 @@ def fminconset(p_current, bestPoint, p):
 
 def milpTransfer(originProb):
     newProb = NLP(originProb.f, originProb.x0)
-    originProb.inspire(newProb)
+    originProb.fill(newProb)
     newProb.discreteVars = originProb.discreteVars
     def err(s): # to prevent text output
         raise OpenOptException(s)
