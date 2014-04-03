@@ -518,7 +518,8 @@ def Join(inds, arrays):
     r = np.empty(PythonSum(ind.size for ind in inds), arrays[0].dtype)
 #    print(r.shape, r.dtype)
     for ind, arr in zip(inds, arrays):
-        if ind.size == 0: continue
+        if ind.size == 0: 
+            continue
 #        print (ind.shape, arr.shape)
         r[ind] = arr
     return r

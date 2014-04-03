@@ -880,8 +880,6 @@ class oofun(OOFun):
 
     # overload for <=
     __le__ = __lt__
-    
-    __eq__ = lambda self, other: self.eq(other)
   
     def eq(self, other):
         from constraints import Constraint
@@ -894,10 +892,16 @@ class oofun(OOFun):
                 self.formAuxDomain()
 #            if len(self.domain) != len(self.aux_domain):
 #                raise FuncDesignerException('probably you have changed domain of categorical oovar, that is not allowed')
-            ind = searchsorted(self.aux_domain, other, 'left')
-            if self.aux_domain[ind] != other:
+            
+            # prev
+#            ind = searchsorted(self.aux_domain, other, 'left')
+#            if self.aux_domain[ind] != other:
+#                raise FuncDesignerException('compared value %s is absent in oovar %s domain' %(other, self.name))
+            #new
+            ind = self.aux_domain.get(other, -1)
+            if ind == -1:
                 raise FuncDesignerException('compared value %s is absent in oovar %s domain' %(other, self.name))
-            #r = (self == ind)(tol=0.5)
+            
             r = Constraint(self - ind, ub = 0.0, lb = 0.0, tol=0.5)
             if self.is_oovar: r.nlh = lambda Lx, Ux, p, dataType: self.nlh(Lx, Ux, p, dataType, ind)
             Other = other
@@ -927,6 +931,8 @@ class oofun(OOFun):
         r.expression = expression
         
         return r  
+    
+    __eq__ = eq
 
     """                                             getInput                                              """
     def _getInput(self, *args, **kwargs):

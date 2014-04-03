@@ -2,7 +2,7 @@
 
 from numpy import asarray, empty, inf, any, array, \
 asfarray, isscalar, ndarray, int16, int32, int64, float64, tile, vstack, searchsorted, logical_or, where, \
-asanyarray, arange, log2, logical_and, ceil
+asanyarray, arange, log2, logical_and, ceil, string_, atleast_1d
 import numpy as np
 from FDmisc import FuncDesignerException, isPyPy
 from ooFun import oofun
@@ -136,15 +136,24 @@ class oovar(oofun):
     
     def formAuxDomain(self):
         if 'aux_domain' in self.__dict__: return
-        self.domain = asanyarray(self.domain)
         d = self.domain
 #        if d.dtype.type not in [string_, unicode, str]:
 #            raise FuncDesignerException('to compare string with oovar latter should have domain of string type')
-
-        if any(d[1:] < d[:-1]):
-            d.sort()
-        #self.ub = d.size - 1
-        D = int(2 ** ceil(log2(d.size)))
+        if type(d[0]) in (str, string_):
+            d = dict((elem, i) for i, elem in enumerate(d))
+            D = int(2 ** ceil(log2(len(d))))
+            self.reverse_aux_domain = dict((i, elem) for i, elem in enumerate(d))
+        else:    
+            d = asanyarray(d)
+            if any(d[1:] < d[:-1]):
+#                if type(d) == tuple:
+#                    d = list(d)
+                d.sort()
+            #self.ub = d.size - 1
+            
+            D = int(2 ** ceil(log2(len(atleast_1d(d)))))
+        # atleast_1d - for domain from 1 element if it will be somewhere generated and obtained here
+        
         self.domain, self.aux_domain = arange(D), d    
     
 #        if isinstance(x, dict):
