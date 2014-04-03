@@ -1,13 +1,14 @@
 from numpy import ndarray, asscalar, isscalar, inf, nan, searchsorted, logical_not, \
-copy as Copy, logical_and, where, asarray, any, all, atleast_1d, vstack, logical_or, array
+copy as Copy, logical_and, asarray, any, all, atleast_1d, vstack, logical_or, array
 
 import numpy as np
 from FDmisc import FuncDesignerException, update_mul_inf_zero, update_negative_int_pow_inf_zero, \
-update_div_zero, where
+isPyPy, update_div_zero, where
 from FuncDesigner.multiarray import multiarray
 from boundsurf import boundsurf, surf, devided_interval, split, boundsurf_join, merge_boundsurfs
 from boundsurf2 import surf2, boundsurf2
 from operator import truediv as td
+from bisect import bisect_left, bisect_right
 
 try:
     from bottleneck import nanmin, nanmax
@@ -180,32 +181,41 @@ def adjust_lx_WithDiscreteDomain(Lx, v):
         Lx[Lx != 0] = 1
     else:
         d = v.domain 
-        ind = searchsorted(d, Lx, 'left')
-        ind2 = searchsorted(d, Lx, 'right')
+        if isPyPy:
+            d2 = d.tolist()
+            ind = atleast_1d([bisect_left(d2, val) for val in Lx])
+            ind2 = atleast_1d([bisect_right(d2, val) for val in Lx])
+        else:
+            ind = searchsorted(d, Lx, 'left')
+            ind2 = searchsorted(d, Lx, 'right')
         ind3 = where(ind!=ind2)[0]
-        #Tmp = Lx[:, ind3].copy()
         Tmp = d[ind[ind3]]
         #if any(ind==d.size):print 'asdf'
         ind[ind==d.size] -= 1# Is it ever encountered?
     #    ind[ind==d.size-1] -= 1
         Lx[:] = d[ind]
-        Lx[ind3] = asarray(Tmp, dtype=Lx.dtype)
+        if ind3.size:
+            Lx[ind3] = asarray(Tmp, dtype=Lx.dtype)
 
-        
 def adjust_ux_WithDiscreteDomain(Ux, v):
     if v.domain is bool or v.domain is 'bool':
         Ux[Ux != 1] = 0
     else:
         d = v.domain 
-        ind = searchsorted(d, Ux, 'left')
-        ind2 = searchsorted(d, Ux, 'right')
+        if isPyPy:
+            d2 = d.tolist()
+            ind = atleast_1d([bisect_left(d2, val) for val in Ux])
+            ind2 = atleast_1d([bisect_right(d2, val) for val in Ux])
+        else:
+            ind = searchsorted(d, Ux, 'left')
+            ind2 = searchsorted(d, Ux, 'right')
         ind3 = where(ind!=ind2)[0]
-        #Tmp = Ux[:, ind3].copy()
         Tmp = d[ind[ind3]]
         #ind[ind==d.size] -= 1
         ind[ind==0] = 1
         Ux[:] = d[ind-1]
-        Ux[ind3] = asarray(Tmp, dtype=Ux.dtype)
+        if ind3.size:
+            Ux[ind3] = asarray(Tmp, dtype=Ux.dtype)
 
 def add_interval(self, other, domain, dtype):
     domain1, definiteRange1 = self._interval(domain, dtype, ia_surf_level = 2)
