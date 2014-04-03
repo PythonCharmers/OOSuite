@@ -485,8 +485,9 @@ class OpenOptResult:
         if p.isFDmodel:
             from FuncDesigner import oopoint
             self.xf = dict((v, asscalar(val) if isinstance(val, ndarray) and val.size ==1 \
-                             else v.aux_domain[val] if 'aux_domain' in v.__dict__ else val) \
-                             for v, val in p.xf.items())
+                            else v.reverse_aux_domain[int(val)] if 'reverse_aux_domain' in v.__dict__\
+                            else v.aux_domain[val] if 'aux_domain' in v.__dict__ else val) \
+                            for v, val in p.xf.items())
             if not hasattr(self, '_xf'):
                 #self._xf = dict([(v.name, asscalar(val) if isinstance(val, ndarray) and val.size ==1 else val) for v, val in p.xf.items()])
                 self._xf = dict((v.name, val) for v, val in self.xf.items())
