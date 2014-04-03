@@ -219,7 +219,7 @@ class ralg(baseSolver):
                 while any(p.h(x)) > p.contol:
                     if S is not None:
                         p2 = getattr(openopt, p.probType)(p.f, x)
-                        p.inspire(p2)
+                        p.fill(p2)
                         p2.x0 = x
                         p2.h = p2.dh = None
                         p2.userProvided.h = p2.userProvided.dh = False
