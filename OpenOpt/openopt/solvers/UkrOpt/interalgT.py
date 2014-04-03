@@ -31,7 +31,8 @@ def adjustDiscreteVarBounds(y, e, _s, indT, p):
         y = take(y, ind, axis=0, out=y[:s])
         e = take(e, ind, axis=0, out=e[:s])
         _s = _s[ind]
-        indT = indT[ind]
+        if indT is not None:
+            indT = indT[ind]
     return y, e, _s, indT
 
     
