@@ -436,7 +436,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 if type(val) in (str, string_):
                     self._categoricalVars.add(key)
                     key.formAuxDomain()
-                    self.x0[key] = searchsorted(key.aux_domain, val, 'left')
+                    self.x0[key] = key.aux_domain[val]#searchsorted(key.aux_domain, val, 'left')
                 elif key.domain is not None and key.domain is not bool and key.domain is not 'bool' \
                 and key.domain is not int and key.domain is not 'int' and val not in key.domain:
                     self.x0[key] = key.domain[0]
