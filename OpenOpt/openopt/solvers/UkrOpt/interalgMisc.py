@@ -1,5 +1,6 @@
+PythonMin = min
 from numpy import isnan, array, atleast_1d, asarray, all, searchsorted, logical_or, any, nan, \
-vstack, inf, where, logical_not, min, abs, hstack, insert, logical_xor, argsort
+vstack, inf, where, logical_not, min, abs, insert, logical_xor, argsort
 
 # for PyPy
 from openopt.kernel.nonOptMisc import isPyPy
@@ -56,10 +57,10 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
 #        print e[1]
 #        print o[1]
 #        print a[1]
-        
-    fo_prev = float(0 if isSNLE else min((r41, r40 - (fTol if maxSolutions == 1 else 0))))
-    if fo_prev > 1e300:
-        fo_prev = 1e300
+    fo_prev = \
+    float(0 if isSNLE else PythonMin((r41, r40 - (fTol if maxSolutions == 1 else 0))))
+    fo_prev  =  PythonMin((1e300, fo_prev))
+    
     y, e, o, a, _s, indTC, nlhc, residual = func7(y, e, o, a, _s, indTC, nlhc, residual)    
 
     if y.size == 0:
@@ -136,10 +137,11 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
     if r40 > Min:
         r40 = Min
         xRecord = xk.copy()# TODO: is copy required?
-    if r41 > Min:
-        r41 = Min
     
-    fo = float(0 if isSNLE else min((r41, r40 - (fTol if maxSolutions == 1 else 0))))
+    r41 = PythonMin((Min, r41))
+    
+    fo = \
+    float(0 if isSNLE else PythonMin((r41, r40 - (fTol if maxSolutions == 1 else 0))))
 
     if p.solver.dataHandling == 'raw':
         
