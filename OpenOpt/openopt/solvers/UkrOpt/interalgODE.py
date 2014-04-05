@@ -43,6 +43,11 @@ def interalg_ODE_routine(p, solver):
 #        r30 = np.linspace(r30[0], r30[-1], 150)
     r28 = asarray(atleast_1d(r30[:-1]), dataType)
     r29 = asarray(atleast_1d(r30[1:]), dataType)
+    
+    r20_store = array([], float)
+    r38_store = array([], float)
+    r39_store = array([], float)
+    maxActiveNodes = 150000#solver.maxActiveNodes
 
     storedr28 = []
     r27 = []
@@ -56,10 +61,10 @@ def interalg_ODE_routine(p, solver):
     for itn in range(p.maxIter+1):
         p.extras['nNodes'].append(r28.size)
         p.extras['nActiveNodes'].append(r28.size)
-        if r30[-1] > r30[0]:
-            mp = oopoint({t: [r28, r29]}, skipArrayCast = True)
-        else:
-            mp = oopoint({t: [r29, r28]}, skipArrayCast = True)
+        mp = oopoint(
+                     {t: [r28, r29] if r30[-1] > r30[0] else [r29, r28]}, 
+                     skipArrayCast = True
+                     )
         mp.isMultiPoint = True
         
         mp.dictOfFixedFuncs = p.dictOfFixedFuncs
@@ -177,17 +182,43 @@ def interalg_ODE_routine(p, solver):
             r33 -= Tmp
             if isIP: p._residual += Tmp
             r37 -= sum(tmp)
-        ind = where(logical_not(r36))[0]
-        if ind.size == 0:
-            p.istop = 1000
-            p.msg = 'problem has been solved according to required user-defined accuracy %0.1g' % ftol
-            break
-            
-        r38, r39 = r28[ind], r29[ind]
-        r40 = 0.5 * (r38 + r39)
-        r28 = vstack((r38, r40)).flatten()
-        r29 = vstack((r40, r39)).flatten()
         
+        ind = where(logical_not(r36))[0]
+        if 1:#new
+            if ind.size == 0 and r20_store.size == 0:
+                p.istop = 1000
+                p.msg = 'problem has been solved according to required user-defined accuracy %0.1g' % ftol
+                break
+            if ind.size != 0:
+                # TODO: use merge sorted lists
+                if r20_store.size != 0:
+                    r20_store = hstack((r20_store, r20[ind]*abs(r29[ind] - r28[ind])))
+                    r38_store =  hstack((r38_store, r28[ind]))
+                    r39_store =  hstack((r39_store, r29[ind]))
+                else:
+                    r20_store = r20[ind]*abs(r29[ind] - r28[ind])
+                    r38_store, r39_store = r28[ind], r29[ind]
+                ind_a = argsort(r20_store)
+                r20_store = r20_store[ind_a]
+                r38_store = r38_store[ind_a]
+                r39_store = r39_store[ind_a]
+            r38_store, r38 = r38_store[:-maxActiveNodes], r38_store[-maxActiveNodes:]
+            r39_store, r39 = r39_store[:-maxActiveNodes], r39_store[-maxActiveNodes:]
+            r20_store = r20_store[:-maxActiveNodes]
+            r40 = 0.5 * (r38 + r39)
+            r28 = vstack((r38, r40)).flatten()
+            r29 = vstack((r40, r39)).flatten()
+        else:
+            if ind.size == 0:
+                p.istop = 1000
+                p.msg = 'problem has been solved according to required user-defined accuracy %0.1g' % ftol
+                break
+                
+            r38, r39 = r28[ind], r29[ind]
+            r40 = 0.5 * (r38 + r39)
+            r28 = vstack((r38, r40)).flatten()
+            r29 = vstack((r40, r39)).flatten()
+            
         # !!! unestablished !!!
         if isODE:
             p.iterfcn(fk = r33/ftol)
