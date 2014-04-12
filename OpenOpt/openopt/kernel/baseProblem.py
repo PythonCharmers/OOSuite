@@ -641,7 +641,8 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             if self.probType in ['LLSP', 'LLAVP', 'LUNP']: arr.append('D')
             for fn in arr:
                 if not hasattr(self, fn): continue
-                fv = asarray(getattr(self, fn))
+                tmp = getattr(self, fn)
+                fv = asarray(tmp) if not isspmatrix(tmp) else tmp.A
                 if any(isfinite(fv)):
                     self.x0 = zeros(fv.size)
                     break

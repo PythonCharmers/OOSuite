@@ -465,7 +465,9 @@ class OpenOptResult:
             raise OpenOptException('Is callable for FuncDesigner models only')
         r = []
         for arg in args:
-            tmp = [(self._xf[elem] if isinstance(elem,  str) else self.xf[elem]) for elem in (arg.tolist() if isinstance(arg, ndarray) else arg if type(arg) in (tuple, list) else [arg])]
+            tmp = [(self._xf[elem] if isinstance(elem,  str) \
+                    else self.xf[elem]) for elem in (arg.tolist() if isinstance(arg, ndarray) \
+                    else arg if type(arg) in (tuple, list) else [arg])]
             tmp = [asscalar(item) if type(item) in (ndarray, matrix) and item.size == 1 \
                    #else item[0] if type(item) in (list, tuple) and len(item) == 0 \
                    else item for item in tmp]
