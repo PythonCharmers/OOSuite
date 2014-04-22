@@ -90,6 +90,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
     contol = 1e-6
     discrtol = 1e-5 # tolerance required for discrete constraints 
     fTol = None
+    rTol = 1e-8#used in interalg
 
     minIter = 0
     minFunEvals = 0
@@ -354,7 +355,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     fTol = self.ftol
                 self.fTol = self.ftol = fTol
                 appender = lambda arg: [appender(elem) for elem in arg] if isinstance(arg, (ndarray, list, tuple, set))\
-                else ((arg.oofun*(fTol/arg.tol) if arg.tol != 0 else arg.oofun) if arg.isConstraint else arg)
+                else ((arg.oofun*(fTol/arg.tol) if arg.tol != fTol and arg.tol != 0 else arg.oofun) if arg.isConstraint else arg)
                 EQs = []
                 for eq in equations:
                     rr = appender(eq)
@@ -364,7 +365,9 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                         EQs.append(rr)
                 #EQs = [((elem.oofun*(fTol/elem.tol) if elem.tol != 0 else elem.oofun) if elem.isConstraint else elem) for elem in equations]
                 if self.probType in ('SLE', 'LLSP'): self.C = EQs
-                elif self.probType in ('NLSP', 'SNLE'): self.f = EQs
+                elif self.probType in ('NLSP', 'SNLE'): 
+                    self.f = EQs
+#                    self.user.F = EQs
                 else: raise OpenOptException('bug in OO kernel')
             else:
                 F = [self.f]
