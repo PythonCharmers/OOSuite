@@ -192,15 +192,6 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C,
                     
             tmp = asarray([node.key for node in an])
             cond = tmp > fo
-            if not isSNLE and isfinite(r40):
-                cond2 = r40 - tmp <= \
-                p.rTol * where(abs(tmp) < abs(r40), abs(tmp), abs(r40))
-#                tmp1 = r40
-##                tmp2 = PythonMin(nanmin(o), PythonMin([1e300]+[node.key for node in _in]))
-#                rTol = p.rTol * (tmp1 - tmp2) / (1e-300+PythonMin(abs(tmp1), abs(tmp2)))
-#                fTol = PythonMax(rTol, fTol)
-#                print p.iter, fTol
-                cond = logical_or(cond, cond2)
             r10 = where(cond)[0]
             g = PythonMin([an[i].key for i in r10]+[g])
             ind_remain = where(logical_not(cond))[0]
@@ -265,12 +256,23 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C,
     
     #p.iterfcn(xk, Min)
     p.iterfcn(xRecord, r40)
+    if not isSNLE and isfinite(r40) and len(an):
+        tmp = array([node.key for node in an])
+        cond_exclude = r40 - tmp <= \
+        p.rTol * where(abs(tmp) < abs(r40), abs(tmp), abs(r40))
+        g = PythonMin([g] + [an[j].key for j in where(cond_exclude)[0]])
+        cond_remain = logical_not(cond_exclude)
+        ind = where(cond_remain)[0]
+        an = [an[i] for i in ind]
+    
     if p.istop != 0: 
         return an, g, fo, None, Solutions, xRecord, r41, r40
     if isSNLE and maxSolutions == 1 and Min <= fTol:
         # TODO: rework it for nonlinear systems with non-bound constraints
         p.istop, p.msg = 1000, 'required solution has been obtained'
         return an, g, fo, None, Solutions, xRecord, r41, r40
+    
+
     
     an, g = func9(an, fo, g, p)
         
