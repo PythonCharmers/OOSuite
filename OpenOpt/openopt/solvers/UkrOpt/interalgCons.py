@@ -20,7 +20,7 @@ def processConstraints(C0, y, e, _s, p, dataType):
     m = y.shape[0]
     indT = empty(m, bool)
     indT.fill(False)
-#    isSNLE = p.probType in ('NLSP', 'SNLE')
+    isSNLE = p.probType in ('NLSP', 'SNLE')
     
     for i in range(p.nb):
         y, e, indT, ind_trunc = truncateByPlane(y, e, indT, p.A[i], p.b[i]+p.contol)
@@ -43,16 +43,24 @@ def processConstraints(C0, y, e, _s, p, dataType):
     m = y.shape[0]
     nlh = zeros((m, 2*n))
     nlh_0 = zeros(m)
+    fullOutput = False#isSNLE and not p.hasLogicalConstraints
+    residual = zeros((m, 2*n)) if fullOutput else None
+    residual_0 = zeros(m) if fullOutput else None
     
     for itn, (c, f, lb, ub, tol) in enumerate(C0):
 #        print ('c_1', itn, c.dep, hasPoint(y, e, P))
         m = y.shape[0] # is changed in the cycle
         if m == 0: 
-            return y.reshape(0, n), e.reshape(0, n), nlh.reshape(0, 2*n), None, True, False, _s
+            return y.reshape(0, n), e.reshape(0, n), nlh.reshape(0, 2*n), residual, True, False, _s
             #return y.reshape(0, n), e.reshape(0, n), nlh.reshape(0, 2*n), residual.reshape(0, 2*n), True, False, _s
         assert nlh.shape[0] == y.shape[0]
-
-        T0, res, DefiniteRange2 = c.nlh(y, e, p, dataType)
+        
+        if fullOutput:
+            (T0, Res0), (res, R_res), DefiniteRange2 = c.nlh(y, e, p, dataType, fullOutput = True)
+            residual_0 += Res0
+        else:
+            # may be logical constraint and doesn't have kw fullOutput at all
+            T0, res, DefiniteRange2 = c.nlh(y, e, p, dataType)
         DefiniteRange = logical_and(DefiniteRange, DefiniteRange2)
         
         assert T0.ndim <= 1, 'unimplemented yet'
@@ -65,9 +73,14 @@ def processConstraints(C0, y, e, _s, p, dataType):
                 tmp = res.get(v, None)
                 if tmp is None:
                     continue
-                else:
-                    nlh[:, n+j] += tmp[:, tmp.shape[1]/2:].flatten() - T0
-                    nlh[:, j] += tmp[:, :tmp.shape[1]/2].flatten() - T0
+
+                nlh[:, n+j] += tmp[:, tmp.shape[1]/2:].flatten() - T0
+                nlh[:, j] += tmp[:, :tmp.shape[1]/2].flatten() - T0
+                if fullOutput:
+                    Tmp = R_res[v]
+                    residual[:, n+j] += Tmp[:, Tmp.shape[1]/2:].flatten() - Res0
+                    residual[:, j] += Tmp[:, :Tmp.shape[1]/2].flatten() - Res0
+                    
         assert nlh.shape[0] == m
         ind = where(logical_and(any(isfinite(nlh), 1), isfinite(nlh_0)))[0]
         lj = ind.size
@@ -76,16 +89,19 @@ def processConstraints(C0, y, e, _s, p, dataType):
             e = take(e, ind, axis=0, out=e[:lj])
             nlh = take(nlh, ind, axis=0, out=nlh[:lj])
             nlh_0 = nlh_0[ind]
-    #            residual = take(residual, ind, axis=0, out=residual[:lj])
+#            residual = take(residual, ind, axis=0, out=residual[:lj])
             indT = indT[ind]
             _s = _s[ind]
+            if fullOutput:
+                residual_0 = residual_0[ind]
+                residual = take(residual, ind, axis=0, out=residual[:lj])
             if asarray(DefiniteRange).size != 1: 
                 DefiniteRange = take(DefiniteRange, ind, axis=0, out=DefiniteRange[:lj])
 #            print ('c_2', itn, c.dep, hasPoint(y, e, P))
         assert nlh.shape[0] == y.shape[0]
 
 
-        ind = logical_not(isfinite((nlh)))
+        ind = logical_not(isfinite(nlh))
         if any(ind):
             indT[any(ind, 1)] = True
             
@@ -108,6 +124,9 @@ def processConstraints(C0, y, e, _s, p, dataType):
             
             # copy() is used because += and -= operators are involved on nlh in this cycle and probably some other computations
             nlh_l[ind_u], nlh_u[ind_l] = nlh_u[ind_u].copy(), nlh_l[ind_l].copy()   
+            if fullOutput:
+                residual_l, residual_u = residual[:, residual.shape[1]/2:], residual[:, :residual.shape[1]/2]
+                residual_l[ind_u], residual_u[ind_l] = residual_u[ind_u].copy(), residual_l[ind_l].copy()   
 #            print ('c_3', itn, c.dep, hasPoint(y, e, P))
 
     if nlh.size != 0:
@@ -119,7 +138,12 @@ def processConstraints(C0, y, e, _s, p, dataType):
             assert type(DefiniteRange) in (bool, bool_, ndarray)
     # !! matrix - vector
     nlh += nlh_0.reshape(-1, 1)
-    residual = None
+    
+    if fullOutput:
+        # !! matrix - vector
+        residual += residual_0.reshape(-1, 1)
+        residual[residual_0>=1e300] = 1e300
+    
     #print('c2', p.iter, hasPoint(y, e, P), pointInd(y, e, P))
     return y, e, nlh, residual, DefiniteRange, indT, _s
 

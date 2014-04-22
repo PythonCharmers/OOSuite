@@ -1,6 +1,6 @@
-PythonMin = min
+PythonMin, PythonMax = min, max
 from numpy import isnan, array, atleast_1d, asarray, all, searchsorted, logical_or, any, nan, \
-vstack, inf, where, logical_not, min, abs, insert, logical_xor, argsort
+vstack, inf, where, logical_not, min, abs, insert, logical_xor, argsort, zeros_like
 
 # for PyPy
 from openopt.kernel.nonOptMisc import isPyPy
@@ -23,9 +23,10 @@ hasPoint = lambda y, e, point:\
 pointInd = lambda y, e, point:\
     where([(all(y[i]<=point) and all(e[i]>=point)) for i in range(y.shape[0])])[0].tolist()
     
-def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
-         r41, fTol, Solutions, varTols, _in, dataType, \
-         maxNodes, _s, indTC, xRecord):
+def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, 
+                 r40, g, nNodes, 
+                 r41, fTol, Solutions, varTols, _in, dataType,
+                 maxNodes, _s, indTC, xRecord):
 
     isSNLE = p.probType in ('NLSP', 'SNLE')
     
@@ -48,7 +49,17 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
     if len(p._discreteVarsNumList):
         y, e, _s, indTC = adjustDiscreteVarBounds(y, e, _s, indTC, p)
 
-    o, a, r41 = r45(y, e, vv, p, asdf1, dataType, r41, nlhc)
+    if 0 and isSNLE:
+        a = residual
+        o = zeros_like(a)
+        o2, a2, r41 = r45(y, e, vv, p, asdf1, dataType, r41, nlhc)
+#        print p.iter,nanmax(a/a2) / nanmin(a/a2)
+#        o, a = o2, a2
+        a = a2
+        o = zeros_like(a)
+    else:
+        o, a, r41 = r45(y, e, vv, p, asdf1, dataType, r41, nlhc)
+
 #    print(o, a)
 #    print 'LF:', o
 #    print 'a:', a
@@ -57,11 +68,20 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
 #        print e[1]
 #        print o[1]
 #        print a[1]
+
+#    if not isSNLE and isfinite(r40):
+#        tmp1 = r40
+#        tmp2 = PythonMin(nanmin(o), PythonMin([1e300]+[node.key for node in _in]))
+#        rTol = p.rTol * (tmp1 - tmp2) / (1e-300+PythonMin(abs(tmp1), abs(tmp2)))
+#        fTol = PythonMax(rTol, fTol)
+#        print p.iter, fTol
+
     fo_prev = \
     float(0 if isSNLE else PythonMin((r41, r40 - (fTol if maxSolutions == 1 else 0))))
-    fo_prev  =  PythonMin((1e300, fo_prev))
+    fo_prev  =  PythonMin(1e300, fo_prev)
     
-    y, e, o, a, _s, indTC, nlhc, residual = func7(y, e, o, a, _s, indTC, nlhc, residual)    
+    y, e, o, a, _s, indTC, nlhc, residual = \
+    func7(y, e, o, a, _s, indTC, nlhc, residual)    
 
     if y.size == 0:
         return _in, g, fo_prev, _s, Solutions, xRecord, r41, r40
@@ -72,26 +92,26 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
     
 
     if p.solver.dataHandling == 'raw':
-        
-        tmp = o.copy()
-        tmp[tmp > fo_prev] = -inf
-        M = atleast_1d(nanmax(tmp, 1))
-        for i, node in enumerate(nodes):
-            node.th_key = M[i]
             
         if not isSNLE:
-            for node in nodes:
+            tmp = o.copy()
+            tmp[tmp > fo_prev] = -inf
+            M = atleast_1d(nanmax(tmp, 1))
+            for i, node in enumerate(nodes):
+                node.th_key = M[i]
                 node.fo = fo_prev       
                 
-        if p.__isNoMoreThanBoxBounded__():#nlhc is not None and not isSNLE:
-            for i, node in enumerate(nodes): node.tnlhf = node.nlhf 
+        if 0 or p.__isNoMoreThanBoxBounded__():#nlhc is not None and not isSNLE:
+            for node in nodes: node.tnlhf = node.nlhf 
         else:
-            for i, node in enumerate(nodes): node.tnlhf = node.nlhc + node.nlhf 
+            for node in nodes: node.tnlhf = node.nlhc + node.nlhf 
             
         an = nodes + _in#hstack((nodes, _in))
         
         #tnlh_fixed = vstack([node.tnlhf for node in an])
-        tnlh_fixed_local = vstack([node.tnlhf for node in nodes])#tnlh_fixed[:len(nodes)]
+        tnlh_fixed_local = vstack([node.nlhf for node in nodes])#tnlh_fixed[:len(nodes)]
+#        if isSNLE:
+#            tnlh_curr = tnlh_fixed_local#vstack([node.nlhc for node in nodes])
         if 1:
             tmp_u = where(a>fo_prev, fo_prev, a)#a.copy()
             tmp_l = where(o==-inf, -1e300, o)
@@ -171,11 +191,20 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, r40, g, nNodes,  \
 #                        p.Time += time() - tt
                     
             tmp = asarray([node.key for node in an])
-            r10 = where(tmp > fo)[0]
-            if r10.size != 0:
-                mino = [an[i].key for i in r10]
-                mmlf = nanmin(asarray(mino))
-                g = nanmin((g, mmlf))
+            cond = tmp > fo
+            if not isSNLE and isfinite(r40):
+                cond2 = r40 - tmp <= \
+                p.rTol * where(abs(tmp) < abs(r40), abs(tmp), abs(r40))
+#                tmp1 = r40
+##                tmp2 = PythonMin(nanmin(o), PythonMin([1e300]+[node.key for node in _in]))
+#                rTol = p.rTol * (tmp1 - tmp2) / (1e-300+PythonMin(abs(tmp1), abs(tmp2)))
+#                fTol = PythonMax(rTol, fTol)
+#                print p.iter, fTol
+                cond = logical_or(cond, cond2)
+            r10 = where(cond)[0]
+            g = PythonMin([an[i].key for i in r10]+[g])
+            ind_remain = where(logical_not(cond))[0]
+            an = [an[i] for i in ind_remain]
 
         NN = atleast_1d([node.tnlh_curr_best for node in an])
         r10 = logical_or(isnan(NN), NN == inf)

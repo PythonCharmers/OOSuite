@@ -1,3 +1,4 @@
+PythonMin, PythonMax = min, max
 import numpy as np
 
 #from numpy.linalg import norm, solve#, LinAlgError
@@ -372,18 +373,25 @@ class interalg(baseSolver):
         if isSNLE:
             lf = inf
         else:
-            lf = asarray([t.o for t in an]).flatten()
+            lf = asarray([t.key for t in an])#.flatten()
             if lf.size != 0:
                 g = nanmin([nanmin(lf), g])
 
         if not isMOP:
+
+            cond_rTol = \
+            r40 - g <= p.rTol * PythonMin(abs(r40), abs(g))
+            
+            cond_fTol = ff - g < fTol
+            
             p.extras['isRequiredPrecisionReached'] = \
-            True if ff - g < fTol and isFeas else False
+            True if(cond_fTol or cond_rTol) and isFeas else False
             # and (k is False or (isSNLE and (p._nObtainedSolutions >= maxSolutions or maxSolutions==1))) 
 
         if not isMOP and not p.extras['isRequiredPrecisionReached'] and p.istop > 0:
             p.istop = -1
-            p.msg = 'required precision is not guarantied'
+            p.msg = 'required precision is not guarantied' if p.probType not in ('NLP', 'GLP', 'NSP') else\
+            'required precision (fTol = %g, rTol = %g) is not guarantied' % (fTol, rTol)
             
         # TODO: simplify it
         if not isMOP:
@@ -412,8 +420,13 @@ class interalg(baseSolver):
         if p.iprint >= 0 and not isMOP:
 #            s = 'Solution with required tolerance %0.1e \n is%s guarantied (obtained precision: %0.1e)' \
 #                   %(fTol, '' if p.extras['isRequiredPrecisionReached'] else ' NOT', tmp[1]-tmp[0])
+            
             s = 'Solution with required tolerance %0.1e \n is%s guarantied' \
-            %(fTol, '' if p.extras['isRequiredPrecisionReached'] else ' NOT')
+            %(fTol, '' if p.extras['isRequiredPrecisionReached'] else ' NOT') \
+            if p.probType not in ('NLP', 'GLP', 'NSP')\
+            else 'Solution with required tolerances fTol = %g, rTol = %g \n is%s guarantied' \
+            %(fTol, p.rTol, '' if p.extras['isRequiredPrecisionReached'] else ' NOT')
+            
             if not isIP and p.maxSolutions == 1:
                 s += ' (obtained precision: %0.1e)' % np.abs(tmp[1]-tmp[0])
             if not p.extras['isRequiredPrecisionReached'] and pnc == self.maxNodes: s += '\nincrease maxNodes (current value %d)' % self.maxNodes
