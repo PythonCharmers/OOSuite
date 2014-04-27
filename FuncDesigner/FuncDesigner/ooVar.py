@@ -134,7 +134,7 @@ class oovar(oofun):
         else:
             return oofun.__eq__(self, other)
     
-    def formAuxDomain(self):
+    def formAuxDomain(self, sort = True):
         if 'aux_domain' in self.__dict__: return
         d = self.domain
 #        if d.dtype.type not in [string_, unicode, str]:
@@ -143,18 +143,21 @@ class oovar(oofun):
             d = dict((elem, i) for i, elem in enumerate(d))
             D = int(2 ** ceil(log2(len(d))))
             self.reverse_aux_domain = dict((i, elem) for i, elem in enumerate(d))
-        else:    
+        elif sort:    
             d = asanyarray(d)
-            if any(d[1:] < d[:-1]):
+            if any(d[1:] > d[:-1]):
 #                if type(d) == tuple:
 #                    d = list(d)
                 d.sort()
             #self.ub = d.size - 1
             
             D = int(2 ** ceil(log2(len(atleast_1d(d)))))
+        else:
+            d = asanyarray(d)
         # atleast_1d - for domain from 1 element if it will be somewhere generated and obtained here
         
         self.domain, self.aux_domain = arange(D), d    
+        self.sortedDomain = all(d[1:] <= d[:-1])
     
 #        if isinstance(x, dict):
 #            tmp = x.get(self, None)
