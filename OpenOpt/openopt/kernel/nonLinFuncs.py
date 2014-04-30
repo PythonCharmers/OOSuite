@@ -1,4 +1,5 @@
-from numpy import *
+from numpy import array, nan, atleast_1d, copy, vstack, hstack, isscalar, ndarray, prod, int32
+import numpy as np
 from setDefaultIterFuncs import USER_DEMAND_EXIT
 from ooMisc import killThread, setNonLinFuncsNumber
 from nonOptMisc import scipyInstalled, Vstack, isspmatrix, isPyPy
@@ -338,7 +339,7 @@ class nonLinFuncs:
                 return nan
         derivativesType = 'd'+ funcType
         prevKey = p.prevVal[derivativesType]['key']
-        if prevKey is not None and p.iter > 0 and array_equal(x, prevKey) and ind is None and not ignorePrev:
+        if prevKey is not None and p.iter > 0 and np.array_equal(x, prevKey) and ind is None and not ignorePrev:
             #TODO: add counter of the situations
             assert p.prevVal[derivativesType]['val'] is not None
             return copy(p.prevVal[derivativesType]['val'])
@@ -467,7 +468,7 @@ class nonLinFuncs:
             result = ind
         else:
             try:
-                result = atleast_1d(asarray(ind, dtype=int32)).tolist()
+                result = atleast_1d(np.asarray(ind, dtype=int32)).tolist()
             except:
                 raise ValueError('%s is an unknown func index type!'%type(ind))
         return result
@@ -493,10 +494,10 @@ def getFuncsAndExtractIndexes(p, funcs, ind, userFunctionType):
     arr_of_indexes = getattr(p, 'arr_of_indexes_' + userFunctionType)
     
     if isPyPy: # temporary walkaround the bug "int32 is unhashable"
-        Left_arr_indexes = searchsorted(arr_of_indexes, ind) 
+        Left_arr_indexes = np.searchsorted(arr_of_indexes, ind) 
         left_arr_indexes = [int(elem) for elem in atleast_1d(Left_arr_indexes)]
     else:
-        left_arr_indexes = searchsorted(arr_of_indexes, ind) 
+        left_arr_indexes = np.searchsorted(arr_of_indexes, ind) 
 
     indLenght = len(ind)
     

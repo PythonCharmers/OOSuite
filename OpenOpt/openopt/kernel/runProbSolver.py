@@ -315,6 +315,9 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
 
         if p.istop == 0: p.istop = 1000
     finally:
+        for v in p.freeVarsSet | p.fixedVarsSet:
+            if v.fields != ():
+                v.domain, v.aux_domain = v.aux_domain, v.domain
         seterr(**old_err)
         
     if hasSetproctitleModule and originalName is not None:
@@ -483,10 +486,11 @@ class OpenOptResult:
         self.probType = p.probType
         if p.probType == 'EIG':
             self.eigenvalues, self.eigenvectors = p.eigenvalues, p.eigenvectors
-              
+        
         if p.isFDmodel:
             from FuncDesigner import oopoint
             self.xf = dict((v, asscalar(val) if isinstance(val, ndarray) and val.size ==1 \
+                            else dict((field, v.domain[int(val)][j]) for j, field in enumerate(v.fields)) if v.fields != ()\
                             else v.reverse_aux_domain[int(val)] if 'reverse_aux_domain' in v.__dict__\
                             else v.aux_domain[val] if 'aux_domain' in v.__dict__ else val) \
                             for v, val in p.xf.items())
@@ -496,6 +500,13 @@ class OpenOptResult:
             self.xf = oopoint(self.xf, maxDistributionSize = p.maxDistributionSize, skipArrayCast = True)
         else:
             self.xf = p.xf
+        
+        # TODO: mb use the fields in MOP
+        if p.probType == 'MOP':
+            for attr in ('xf', 'ff', 'rf', '_xf'):
+                delattr(self, attr)
+
+        
         #if len(p.solutions) == 0 and p.isFeas(p.xk): p.solutions = [p.xk]
         
         # TODO: mb perform check on each solution for more safety?

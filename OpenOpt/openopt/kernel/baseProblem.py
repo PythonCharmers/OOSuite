@@ -1,5 +1,7 @@
-__docformat__ = "restructuredtext en"
-from numpy import *
+PythonMax = max
+from numpy import all, any, isfinite, inf, nan, ndarray, string_, zeros_like, ones, array_equal, array, copy, asscalar, \
+where, ravel, asfarray, prod, asarray, isscalar
+import numpy as np
 from oologfcn import *
 from oographics import Graphics
 from setDefaultIterFuncs import setDefaultIterFuncs, denyingStopFuncs
@@ -440,7 +442,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     self._categoricalVars.add(key)
                     key.formAuxDomain()
                     self.x0[key] = key.aux_domain[val]#searchsorted(key.aux_domain, val, 'left')
-                elif key.domain is not None and key.domain is not bool and key.domain is not 'bool' \
+                elif key.fields == () and key.domain is not None and key.domain is not bool and key.domain is not 'bool' \
                 and key.domain is not int and key.domain is not 'int' and val not in key.domain:
                     self.x0[key] = key.domain[0]
             
@@ -496,6 +498,9 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
 
             self.constraints = set(self.constraints)
             for v in self._x0.keys():
+                if v.fields != ():
+                    v.aux_domain = v.domain
+                    v.domain = np.arange(len(v.domain))
                 if not array_equal(v.lb, -inf):
                     self.constraints.add(v >= v.lb)
                 if not array_equal(v.ub, inf):
@@ -563,7 +568,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     v.domain.sort()
                     self.constraints.update([v >= v.domain[0], v <= v.domain[-1]])
                     if hasattr(v, 'aux_domain'):
-                        self.constraints.add(v - (len(v.aux_domain)-1)<=0)
+                        self.constraints.add(v <= len(v.aux_domain)-1)
                     
 #            for v in self._categoricalVars:
 #                if isFixed(v):
@@ -971,7 +976,7 @@ class NonLinProblem(baseProblem, nonLinFuncs, Args):
             if not self.solver.iterfcnConnected:
                 if self.solver.funcForIterFcnConnection == 'f':
                     if not hasattr(self, 'f_iter'):
-                        self.f_iter = max((self.n, 4))
+                        self.f_iter = PythonMax(self.n, 4)
                 else:
                     if not hasattr(self, 'df_iter'):
                         self.df_iter = True

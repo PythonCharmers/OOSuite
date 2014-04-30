@@ -1,6 +1,6 @@
 __docformat__ = "restructuredtext en"
-from numpy import *
-
+#from numpy import *
+import numpy as np
 #TODO: add stopcases -10,-11,-12, -13
 SMALL_DF = 2
 SMALL_DELTA_X = 3
@@ -59,7 +59,7 @@ def setDefaultIterFuncs(className):
 def small_df(p):
     if not hasattr(p, '_df') or p._df is None: return False
     if hasattr(p._df, 'toarray'):p._df = p._df.toarray()
-    if p.norm(p._df) >= p.gtol or not all(isfinite(p._df)) or not p.isFeas(p.iterValues.x[-1]): return False
+    if p.norm(p._df) >= p.gtol or not np.all(np.isfinite(p._df)) or not p.isFeas(p.iterValues.x[-1]): return False
     return (True, '|| gradient F(X[k]) || < gtol')
     #return False if not hasattr(p, 'dF') or p.dF == None or p.norm(p.dF) > p.gtol else True
 
@@ -75,19 +75,20 @@ def small_deltaX(p):
 def small_deltaF(p):
     if p.iter == 0: return False
     #r = False if p.norm(p.fk - p.f_prev) > p.ftol else True
-    if  isnan(p.iterValues.f[-1]) or isnan(p.iterValues.f[-2]) or p.norm(p.iterValues.f[-1] - p.iterValues.f[-2]) >= p.ftol: # or (p.iterValues.r[-1] > p.contol and p.iterValues.r[-1] - p.iterValues.r[-2] < p.contol):
+    if  np.isnan(p.iterValues.f[-1]) or np.isnan(p.iterValues.f[-2]) or\
+    p.norm(p.iterValues.f[-1] - p.iterValues.f[-2]) >= p.ftol: # or (p.iterValues.r[-1] > p.contol and p.iterValues.r[-1] - p.iterValues.r[-2] < p.contol):
             return False
     else: return (True, '|| F[k] - F[k-1] || < ftol')
 
 
 def isEnough(p):
 #    asscalar(asarray(p.Fk)) was added for compatibility with ironpython
-    if p.fEnough > asscalar(asarray(p.Fk)) and p.isFeas(p.xk): #TODO: mb replace by p.rk<p.contol? or other field like p.iterValues.isFeasible?
+    if p.fEnough > np.asscalar(np.asarray(p.Fk)) and p.isFeas(p.xk): #TODO: mb replace by p.rk<p.contol? or other field like p.iterValues.isFeasible?
        return (True, 'fEnough has been reached')
     else: return False
 
 def isNanInX(p):
-    if any(isnan(p.xk)):
+    if np.any(np.isnan(p.xk)):
        return (True, 'NaN in X[k] coords has been obtained')
     else: return False
 
