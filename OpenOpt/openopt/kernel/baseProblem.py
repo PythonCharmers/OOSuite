@@ -38,7 +38,7 @@ class oomatrix:
     def matMultVec(self, x, y):
         return dot(x, y) if not isspmatrix(x) else x._mul_sparse_matrix(csr_matrix(y.reshape((y.size, 1)))).A.flatten() 
     def matmult(self, x, y):
-        return dot(x, y)
+        return np.dot(x, y)
         #return asarray(x) ** asarray(y)
     def dotmult(self, x, y):
         return x * y
