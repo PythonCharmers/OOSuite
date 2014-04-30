@@ -391,7 +391,7 @@ class interalg(baseSolver):
         if not isMOP and not p.extras['isRequiredPrecisionReached'] and p.istop > 0:
             p.istop = -1
             p.msg = 'required precision is not guarantied' if p.probType not in ('NLP', 'GLP', 'NSP') else\
-            'required precision (fTol = %g, rTol = %g) is not guarantied' % (fTol, rTol)
+            'required precision (fTol = %g, rTol = %g) is not guarantied' % (fTol, p.rTol)
             
         # TODO: simplify it
         if not isMOP:
@@ -405,6 +405,9 @@ class interalg(baseSolver):
         if isMOP:
             for i, s in enumerate(p.solutions):
                 s.useAsMutable = True
+                for v, val in s.items():
+                    if v.fields != ():
+                        s[v] = dict((field, v.aux_domain[int(val)][v.fields.index(field)]) for field in v.fields)
                 for j, goal in enumerate(p.user.f):
                     s[goal] = Solutions.F[i][j]
                 s.useAsMutable = False
