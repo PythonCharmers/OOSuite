@@ -5,7 +5,7 @@ PythonMax = max
 from numpy import inf, asfarray, all, any, atleast_2d, zeros, dot, asarray, atleast_1d, \
 ones, ndarray, array, nan, vstack, eye, array_equal, isscalar, log, hstack, sum as npSum, prod, nonzero,\
 asscalar, zeros_like, logical_and, \
-tile, searchsorted, int8, int16, int32, int64, string_, asanyarray#where
+tile, int8, int16, int32, int64, string_, asanyarray#where
 
 # for PyPy
 from FDmisc import where
@@ -135,6 +135,9 @@ class oofun(OOFun):
             return self.resolveSchedule
         elif attr == 'expr':
             return self.expression()
+        elif attr in self.fields:
+            from categorical import categoricalAttribute
+            return categoricalAttribute(self, attr)
         elif attr != 'size': 
             raise AttributeError('you are trying to obtain incorrect attribute "%s" for FuncDesigner oofun "%s"' %(attr, self.name))
         
@@ -152,6 +155,7 @@ class oofun(OOFun):
         self.fun = fun
         self.attachedConstraints = set()
         self.args = ()
+        self.fields = () # for categorical veriables
         
         #self._broadcast_id = 0
         self._id = oofun._id
@@ -690,7 +694,7 @@ class oofun(OOFun):
             #!!!!! Temporary !!!!
 
             r1, definiteRange = oofun._interval_(r, domain, dtype)
-            if 0 or type(lb_ub) == np.ndarray or len(lb_ub.l.d) > 1 or len(lb_ub.u.d) > 1 or len(lb_ub.dep) != 1:
+            if type(lb_ub) == np.ndarray or len(lb_ub.l.d) > 1 or len(lb_ub.u.d) > 1 or len(lb_ub.dep) != 1:
                 return r1, definiteRange
             from overloads import exp_b_interval
             return exp_b_interval(log(other) * lb_ub, r1, definiteRange, domain)
