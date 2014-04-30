@@ -315,9 +315,10 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
 
         if p.istop == 0: p.istop = 1000
     finally:
-        for v in p.freeVarsSet | p.fixedVarsSet:
-            if v.fields != ():
-                v.domain, v.aux_domain = v.aux_domain, v.domain
+        if p.isFDmodel:
+            for v in p.freeVarsSet | p.fixedVarsSet:
+                if v.fields != ():
+                    v.domain, v.aux_domain = v.aux_domain, v.domain
         seterr(**old_err)
         
     if hasSetproctitleModule and originalName is not None:
