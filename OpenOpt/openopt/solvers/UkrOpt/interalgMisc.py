@@ -123,7 +123,7 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C,
             if any(o_exclude_ind):
                 tmp2[o_exclude_ind] = nan
                 if not isSNLE:
-                    g = min((g, min(o[o_exclude_ind])))
+                    g = PythonMin(g, min(o[o_exclude_ind]))
             tnlh_curr = tnlh_fixed_local - log2(tmp2)
 #            tnlh_curr[ind_inf] = 1e300
         else:
@@ -158,10 +158,10 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C,
         r40 = Min
         xRecord = xk.copy()# TODO: is copy required?
     
-    r41 = PythonMin((Min, r41))
+    r41 = PythonMin(Min, r41)
     
     fo = \
-    float(0 if isSNLE else PythonMin((r41, r40 - (fTol if maxSolutions == 1 else 0))))
+    float(0 if isSNLE else PythonMin(r41, r40 - (fTol if maxSolutions == 1 else 0)))
 
     if p.solver.dataHandling == 'raw':
         
@@ -190,7 +190,7 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C,
 #                    else:
 #                        p.Time += time() - tt
                     
-            tmp = asarray([node.key for node in an])
+            tmp = array([node.key for node in an])
             cond = tmp > fo
             r10 = where(cond)[0]
             g = PythonMin([an[i].key for i in r10]+[g])
