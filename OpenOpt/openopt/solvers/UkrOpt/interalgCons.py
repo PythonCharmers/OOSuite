@@ -20,7 +20,7 @@ def processConstraints(C0, y, e, _s, p, dataType):
     m = y.shape[0]
     indT = empty(m, bool)
     indT.fill(False)
-    isSNLE = p.probType in ('NLSP', 'SNLE')
+#    isSNLE = p.probType in ('NLSP', 'SNLE')
     
     for i in range(p.nb):
         y, e, indT, ind_trunc = truncateByPlane(y, e, indT, p.A[i], p.b[i]+p.contol)
@@ -68,18 +68,15 @@ def processConstraints(C0, y, e, _s, p, dataType):
         nlh_0 += T0
         assert nlh.shape[0] == m
         # TODO: rework it for case len(p._freeVarsList) >> 1
-        if len(res):
-            for j, v in enumerate(p._freeVarsList):
-                tmp = res.get(v, None)
-                if tmp is None:
-                    continue
 
-                nlh[:, n+j] += tmp[:, tmp.shape[1]/2:].flatten() - T0
-                nlh[:, j] += tmp[:, :tmp.shape[1]/2].flatten() - T0
-                if fullOutput:
-                    Tmp = R_res[v]
-                    residual[:, n+j] += Tmp[:, Tmp.shape[1]/2:].flatten() - Res0
-                    residual[:, j] += Tmp[:, :Tmp.shape[1]/2].flatten() - Res0
+        for v, tmp in res.items():
+            j = p._freeVarsDict.get(v)
+            nlh[:, n+j] += tmp[:, tmp.shape[1]/2:].flatten() - T0
+            nlh[:, j] += tmp[:, :tmp.shape[1]/2].flatten() - T0
+            if fullOutput:
+                Tmp = R_res[v]
+                residual[:, n+j] += Tmp[:, Tmp.shape[1]/2:].flatten() - Res0
+                residual[:, j] += Tmp[:, :Tmp.shape[1]/2].flatten() - Res0
                     
         assert nlh.shape[0] == m
         ind = where(logical_and(any(isfinite(nlh), 1), isfinite(nlh_0)))[0]

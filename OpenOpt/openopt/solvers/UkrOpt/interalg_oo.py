@@ -84,6 +84,7 @@ class interalg(baseSolver):
             self.dataType = dataType
         
         vv = list(p._freeVarsList)
+        p._freeVarsDict = dict((v, i) for i, v in enumerate(vv))
         x0 = dict((v, p._x0[v]) for v in vv)
         domain = oopoint([(v, [atleast_1d(p.lb[i]), atleast_1d(p.ub[i])]) for i,  v in enumerate(vv)], skipArrayCast = True)
         domain.dictOfFixedFuncs = p.dictOfFixedFuncs
@@ -333,11 +334,11 @@ class interalg(baseSolver):
                     break
             else:
                 an = _in
-                fo = 0.0 if isSNLE or isMOP else min((r41, r40 - (fTol if Solutions.maxNum == 1 else 0.0))) 
-            pnc = max(
-                                    (len(np.atleast_1d(an) if type(an) == np.ndarray else an), 
-                                    pnc)
-                                    )
+                fo = 0.0 if isSNLE or isMOP else \
+                PythonMin(r41, \
+                          r40 - (fTol if Solutions.maxNum == 1 else 0.0))
+            pnc = PythonMax(pnc, 
+                                    len(np.atleast_1d(an) if type(an) == np.ndarray else an))
             
             y, e, _in, _s = \
                 func12(an, self.maxActiveNodes, p, Solutions, vv, varTols, np.inf if isIP else fo)
@@ -361,7 +362,7 @@ class interalg(baseSolver):
 #        ff = p._bestPoint.f()
 #        p.xk = p._bestPoint.x
         if isIP: 
-            p.xk = np.array([np.nan]*p.n)
+            p.xk = array([np.nan]*p.n)
             p.rk = p._residual
             p.fk = p._F
         
@@ -373,14 +374,14 @@ class interalg(baseSolver):
         if isSNLE:
             lf = inf
         else:
-            lf = asarray([t.key for t in an])#.flatten()
+            lf = array([t.key for t in an])#.flatten()
             if lf.size != 0:
                 g = nanmin([nanmin(lf), g])
 
         if not isMOP:
 
             cond_rTol = \
-            r40 - g <= p.rTol * PythonMin(abs(r40), abs(g))
+            ff - g <= p.rTol * PythonMin(abs(ff), abs(g))
             
             cond_fTol = ff - g < fTol
             
