@@ -256,10 +256,10 @@ def r14(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C,
     
     #p.iterfcn(xk, Min)
     p.iterfcn(xRecord, r40)
-    if not isSNLE and isfinite(r40) and len(an):
+    if not isSNLE and isfinite(r41) and len(an):
         tmp = array([node.key for node in an])
-        cond_exclude = r40 - tmp <= \
-        p.rTol * where(abs(tmp) < abs(r40), abs(tmp), abs(r40))
+        cond_exclude = r41 - tmp <= \
+        p.rTol * where(abs(tmp) < abs(r41), abs(tmp), abs(r41))
         g = PythonMin([g] + [an[j].key for j in where(cond_exclude)[0]])
         cond_remain = logical_not(cond_exclude)
         ind = where(cond_remain)[0]
