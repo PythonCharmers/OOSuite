@@ -84,8 +84,7 @@ def func9(an, fo, g, p):
     elif p.solver.dataHandling == 'raw':
         
         #NEW
-        mino = [node.key for node in an]
-        mino = atleast_1d(mino)
+        mino = atleast_1d([node.key for node in an])
         r10 = mino > fo
         if not any(r10):
             return an, g
@@ -112,7 +111,7 @@ def func5(an, nn, g, p):
     m = len(an)
     if m <= nn: return an, g
     
-    mino = [node.key for node in an]
+    mino = np.array([node.key for node in an])
     
     if nn == 1: # box-bound probs with exact interval analysis
         ind = argmin(mino)
