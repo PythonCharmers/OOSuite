@@ -388,7 +388,7 @@ class nonLinFuncs:
                 #agregate_counter += m
             #TODO: inline ind modification!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             
-            derivatives = Vstack(derivatives) if any(isspmatrix(derivatives)) else vstack(derivatives)
+            derivatives = Vstack(derivatives)# if any(isspmatrix(derivatives)) else vstack(derivatives)
             if ind is None:
                 p.nEvals[derivativesType] += 1
             else:
