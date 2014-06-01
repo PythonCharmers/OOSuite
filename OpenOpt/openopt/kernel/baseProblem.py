@@ -1,6 +1,6 @@
 PythonMax = max
 from numpy import all, any, isfinite, inf, nan, ndarray, string_, zeros_like, ones, array_equal, array, copy, asscalar, \
-where, ravel, asfarray, prod, asarray, isscalar, atleast_1d
+where, ravel, asfarray, prod, asarray, isscalar, atleast_1d, isinf
 import numpy as np
 from oologfcn import *
 from oographics import Graphics
