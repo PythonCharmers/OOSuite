@@ -18,15 +18,13 @@ from openopt import DFP
 from numpy import inf
 
 f = lambda z, X: z[0]**3 + z[1]*X[0] + z[2]*X[1] + z[3]*(X[0]+X[1])**2
+df = lambda z, X: [3*z[0]**2, X[0], X[1], (X[0]+X[1])**2]
 initEstimation = [0] * 4 # start point for solver: [0, 0, 0, 0]
 X = ([0, 1], [1, 0], [1, 1], [3, 4], [1, 15]) # list, tuple, numpy array or array-like are OK as well
 Y = [15, 8, 80, 100, 150]
 lb = [4, -inf, -inf, -inf]
 ub = [inf, inf, 30, inf]
-p = DFP(f, initEstimation, X, Y, lb=lb, ub=ub)
-
-# optional: derivative
-p.df = lambda z, X: [3*z[0]**2, X[0], X[1], (X[0]+X[1])**2]
+p = DFP(f, initEstimation, X, Y, df = df, lb=lb, ub=ub)
 
 r = p.solve('nlp:ralg', plot=0, iprint = 10)
 print('solution: '+str(r.xf)+'\n||residuals||^2 = '+str(r.ff)+'\nresiduals: '+str([f(p.xf, X[i])-Y[i] for i in xrange(len(Y))]))
