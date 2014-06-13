@@ -1,5 +1,5 @@
 # created by Dmitrey
-
+#PythonAll = all
 from numpy import asarray, empty, inf, any, array, \
 asfarray, isscalar, ndarray, int16, int32, int64, float64, tile, vstack, searchsorted, logical_or, where, \
 asanyarray, arange, log2, logical_and, ceil, string_, atleast_1d
@@ -62,6 +62,7 @@ class oovar(oofun):
             return boundsurf(S, S, True, domain), True
     
     def _getFuncCalcEngine(self, x, **kwargs):
+        #print x
         if hasattr(x, 'xf'):
             #return x.xf[self]
             if x.probType == 'MOP':
@@ -142,7 +143,7 @@ class oovar(oofun):
         if type(d[0]) in (str, string_):
             d = dict((elem, i) for i, elem in enumerate(d))
             D = int(2 ** ceil(log2(len(d))))
-            self.reverse_aux_domain = dict((i, elem) for i, elem in enumerate(d))
+            self.reverse_aux_domain = dict((i, elem) for i, elem in enumerate(self.domain))
         elif sort:    
             d = asanyarray(d)
             if any(d[1:] > d[:-1]):
@@ -157,8 +158,11 @@ class oovar(oofun):
         # atleast_1d - for domain from 1 element if it will be somewhere generated and obtained here
         
         self.domain, self.aux_domain = arange(D), d    
-        self.sortedDomain = all(d[1:] <= d[:-1])
-    
+#        self.domainSortOrder = \
+#        1 if PythonAll(d[i] <= d[i+1] for i in range(D-1)) else \
+#        -1 if PythonAll(d[i] >= d[i+1] for i in range(D-1)) else\
+#        0
+
 #        if isinstance(x, dict):
 #            tmp = x.get(self, None)
 #            if tmp is not None:
