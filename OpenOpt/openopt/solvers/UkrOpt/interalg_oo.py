@@ -1,7 +1,6 @@
 PythonMin, PythonMax = min, max
 import numpy as np
 
-#from numpy.linalg import norm, solve#, LinAlgError
 from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X,  SMALL_DELTA_F, MAX_NON_SUCCESS, IS_NAN_IN_X
 from openopt.kernel.baseSolver import *
 from openopt.kernel.MOP import MOPsolutions
@@ -400,31 +399,26 @@ class interalg(baseSolver):
             if p.goal in ['max', 'maximum']: tmp = (-tmp[1], -tmp[0])
             p.extras['extremumBounds'] = tmp if not isIP else 'unimplemented for IP yet'
         
-        
-        p.solutions = [p._vector2point(s) for s in Solutions.coords] if not isMOP else \
-        MOPsolutions([p._vector2point(s) for s in Solutions.coords])
+        if isMOP or p.maxSolutions != 1:
+            p.solutions = (MOPsolutions if isMOP else list)([p._vector2point(s) for s in Solutions.coords])
         if isMOP:
             for i, s in enumerate(p.solutions):
                 s.useAsMutable = True
                 for v, val in s.items():
                     if v.fields != ():
-                        s[v] = dict((field, v.aux_domain[int(val)][v.fields.index(field)]) for field in v.fields)
+                        s[v] = dict((field, v.aux_domain[int(val)][j]) for j, field in enumerate(v.fields))
                 for j, goal in enumerate(p.user.f):
                     s[goal] = Solutions.F[i][j]
                 s.useAsMutable = False
             p.solutions.values = np.asarray(Solutions.F)
             p.solutions.coords = Solutions.coords
-        if not isMOP and p.maxSolutions == 1: delattr(p, 'solutions')
         if isSNLE and p.maxSolutions != 1:
-            for v in p._categoricalVars:
+            for v in p._stringVars:
                 for elem in r.solutions:
                     elem.useAsMutable = True
                     elem[v] = v.aux_domain[elem[v]]
                     elem.useAsMutable = False
         if p.iprint >= 0 and not isMOP:
-#            s = 'Solution with required tolerance %0.1e \n is%s guarantied (obtained precision: %0.1e)' \
-#                   %(fTol, '' if p.extras['isRequiredPrecisionReached'] else ' NOT', tmp[1]-tmp[0])
-            
             s = 'Solution with required tolerance %0.1e \n is%s guarantied' \
             %(fTol, '' if p.extras['isRequiredPrecisionReached'] else ' NOT') \
             if p.probType not in ('NLP', 'GLP', 'NSP')\
