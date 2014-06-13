@@ -65,7 +65,7 @@ class MOP(NonLinProblem):
         else:
             keyfunc = lambda elem: abs(T0.val - elem[T0.func])
         r.solutions.sort(key=keyfunc)
-        for v in self._categoricalVars:
+        for v in self._stringVars:
             for elem in r.solutions:
                 elem.useAsMutable = True
                 elem[v] = v.reverse_aux_domain[int(elem[v])]

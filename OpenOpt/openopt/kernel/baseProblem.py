@@ -435,11 +435,11 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     
             self.probDep = probDep
             self.x0 = Tmp
-            self._categoricalVars = set()
+            self._stringVars = set()
             for key, val in self.x0.items():
                 #if key.domain is not None and key.domain is not bool and key.domain is not 'bool':
                 if type(val) in (str, string_):
-                    self._categoricalVars.add(key)
+                    self._stringVars.add(key)
                     key.formAuxDomain()
                     self.x0[key] = key.aux_domain[val]#searchsorted(key.aux_domain, val, 'left')
                 elif key.fields == () and key.domain is not None and key.domain is not bool and key.domain is not 'bool' \
@@ -498,9 +498,14 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
 
             self.constraints = set(self.constraints)
             for v in self._x0.keys():
-                if v.fields != ():
-                    v.aux_domain = v.domain
-                    v.domain = np.arange(len(v.domain))
+#                if v.fields != ():
+#                    v.aux_domain = Copy(v.domain)
+##                    # TODO: mb rework it
+##                    ind_numeric = [j for j, elem in enumerate(v.aux_domain[0]) if type(elem) not in (str, np.str_)]
+##                    if len(ind_numeric):
+##                        ind_first_numeric = ind_numeric[0]
+##                        v.aux_domain.sort(key = lambda elem: elem[ind_first_numeric])
+#                    v.domain = np.arange(len(v.domain))
                 if not array_equal(v.lb, -inf):
                     self.constraints.add(v >= v.lb)
                 if not array_equal(v.ub, inf):
@@ -570,7 +575,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                     if hasattr(v, 'aux_domain'):
                         self.constraints.add(v <= len(v.aux_domain)-1)
                     
-#            for v in self._categoricalVars:
+#            for v in self._stringVars:
 #                if isFixed(v):
 #                    ind = searchsorted(v.aux_domain, p._x0[v], 'left')
 #                    if v.aux_domain
