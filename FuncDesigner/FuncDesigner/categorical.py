@@ -14,16 +14,15 @@ def categoricalAttribute(oof, attr):
         ind_numeric = [j for j, elem in enumerate(oof.aux_domain[0]) if type(elem) not in (str, np.str_)]
         if len(ind_numeric):
             ind_first_numeric = ind_numeric[0]
-            #oof.aux_domain.sort(key = lambda elem: elem[ind_first_numeric])
+            oof.aux_domain.sort(key = lambda elem: elem[ind_first_numeric])
         oof.domain = np.arange(len(oof.domain))
     ind = oof.fields.index(attr)
-#    dom = [oof.domain[j][ind] for j in range(L)]
-#    f = lambda x: dom[int(x)] if type(x) != np.ndarray else np.array([dom[i] for i in np.asarray(x, int)])
     dom = np.array([oof.aux_domain[j][ind] for j in range(L)])
-    #f = lambda x: dom[int(x)] if type(x) != np.ndarray else dom[np.asarray(x, int)]
-    def f(x): 
-#        print min([dom[int(x)]] if type(x) != np.ndarray else dom[np.asarray(x, int)]), max([dom[int(x)]] if type(x) != np.ndarray else dom[np.asarray(x, int)])
-        return dom[int(x)] if type(x) != np.ndarray else dom[np.asarray(x, int)]
+#    f = lambda x: dom[int(x)] if type(x) != np.ndarray else np.array([dom[i] for i in np.asarray(x, int)])
+    f = lambda x: dom[int(x)] if type(x) != np.ndarray else dom[np.asarray(x, int)]
+#    def f(x): 
+##        print min([dom[int(x)]] if type(x) != np.ndarray else dom[np.asarray(x, int)]), max([dom[int(x)]] if type(x) != np.ndarray else dom[np.asarray(x, int)])
+#        return dom[int(x)] if type(x) != np.ndarray else dom[np.asarray(x, int)]
     r = oofun(f, oof, engine = attr, vectorized = True, domain = dom)
     r._interval_ = lambda domain, dtype: categorical_interval(r, oof, domain, dtype)
     return r
