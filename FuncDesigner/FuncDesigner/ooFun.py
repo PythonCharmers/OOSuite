@@ -809,9 +809,10 @@ class oofun(OOFun):
     def prod(self):
         # TODO: consider using r.isCostly = True
         r = oofun(prod, self)
+        # TODO: IMPLEMENT IT 
         #r.getOrder = lambda *args, **kwargs: self.getOrder(*args, **kwargs)*self.size
         def d(x):
-            x = asarray(x) # prod is used rarely, so optimizing it is not important
+            x = asarray(x) 
             if x.ndim > 1: raise FuncDesignerException('prod(x) is not implemented yet for arrays with ndim > 1')
             ind_zero = where(x==0)[0].tolist()
             ind_nonzero = nonzero(x)[0].tolist()
@@ -896,12 +897,7 @@ class oofun(OOFun):
                 self.formAuxDomain()
 #            if len(self.domain) != len(self.aux_domain):
 #                raise FuncDesignerException('probably you have changed domain of categorical oovar, that is not allowed')
-            
-            # prev
-#            ind = searchsorted(self.aux_domain, other, 'left')
-#            if self.aux_domain[ind] != other:
-#                raise FuncDesignerException('compared value %s is absent in oovar %s domain' %(other, self.name))
-            #new
+
             ind = self.aux_domain.get(other, -1)
             if ind == -1:
                 raise FuncDesignerException('compared value %s is absent in oovar %s domain' %(other, self.name))
@@ -912,8 +908,6 @@ class oofun(OOFun):
             
         elif 'startswith' in dir(other): 
             return False # TODO: check it - is it required yet?
-        #if self.is_oovar and not isinstance(other, oofun):
-            #raise FuncDesignerException('Constraints like this: "myOOVar = <some value>" are not implemented yet and are not recommended; for openopt use freeVars / fixedVars instead')
         else:
             r = Constraint(self - other, ub = 0.0, lb = 0.0) # do not perform check for other == 0, copy should be returned, not self!
             if self.is_oovar and isscalar(other) and self.domain is not None:
@@ -957,20 +951,7 @@ class oofun(OOFun):
         else:
             if type(self.input) not in (list, tuple) and not isinstance(self.input, OOArray):
                 self.input = [self.input]
-            #OLD
-#            r = set()
-#            for oofunInstance in self.input:
-#                if not isinstance(oofunInstance, oofun): continue
-#                if oofunInstance.is_oovar:
-#                    r.add(oofunInstance)
-#                    continue
-#                tmp = oofunInstance._getDep()
-#                if tmp is None: continue
-#                r.update(tmp)
-#            self.dep = r    
-            # / OLD
             
-            # NEW
             r_oovars = []
             r_oofuns = []
             isUncycled = True
@@ -980,11 +961,7 @@ class oofun(OOFun):
                     for _elem in Elem:
                         if isinstance(_elem, oofun):
                             Tmp.add(_elem)
-#                        _tmp = _elem._getDep()
-#                        if _tmp is not None or (isinstance(_tmp, oofun) and _tmp.is_oovar):
-#                            Tmp.add(_tmp)
-                    
-            #Tmp.update([[_elem._getDep() for _elem in Elem] for Elem in self.input if isinstance(Elem, OOArray)])
+                            
             for Elem in (list(Tmp) + self.input):
                 if not isinstance(Elem, oofun): continue
                 if Elem.is_oovar:
@@ -1004,7 +981,6 @@ class oofun(OOFun):
             self.isUncycled = isUncycled            
             
             self.dep = r    
-            # /NEW
             
         return self.dep
 
@@ -1023,32 +999,6 @@ class oofun(OOFun):
                     Args = (x,)+args[1:]
                 if self.is_oovar:
                     return self._getFuncCalcEngine(*Args, **kwargs)
-#                    if isinstance(x, dict):
-#                        tmp = x.get(self, None)
-#                        if tmp is not None:
-#                            # currently tmp hasn't to be sparse matrix, mb for future
-#                            if isinstance(tmp, Stochastic):
-#                                r = getattr(x, 'maxDistributionSize', inf)
-#                                tmp.maxDistributionSize = r
-#                                return tmp
-#                            else:
-#                                return float(tmp) if isscalar(tmp) and type(tmp)==int else asfarray(tmp) if not isspmatrix(tmp) else tmp
-#                        elif self.name in x:
-#                            tmp = x[self.name]
-#                            return float(tmp) if isscalar(tmp) and type(tmp)==int else asfarray(tmp) if not isspmatrix(tmp) else tmp
-#                        else:
-#                            s = 'for oovar ' + self.name + \
-#                            " the point involved doesn't contain neither name nor the oovar instance. Maybe you try to get function value or derivative in a point where value for an oovar is missing"
-#                            raise FuncDesignerException(s)
-#                    elif hasattr(x, 'xf'):
-#                        if x.probType == 'MOP': # x is MOP result struct
-#                            s = 'evaluation of MOP result on arguments is unimplemented yet, use r.solutions'
-#                            raise FuncDesignerException(s)
-#                        # TODO: possibility of squeezing
-#                        return x.xf[self]
-#                    else:
-#                        raise FuncDesignerException('Incorrect data type (%s) while obtaining oovar %s value' %(type(x), self.name))
-            
             else:
                 self.name = args[0]
                 return self
@@ -1162,7 +1112,8 @@ class oofun(OOFun):
             tmp.maxDistributionSize = maxDistributionSize
         
         
-        if ((type(x) == ooPoint and not x.isMultiPoint) and not (isinstance(tmp, ndarray) and type(tmp) != ndarray)) or self._isFixed:# or self.isCostly:
+        if ((type(x) == ooPoint and not x.isMultiPoint) and not (isinstance(tmp, ndarray) and type(tmp) != ndarray))\
+        or self._isFixed:# or self.isCostly:
 
             # TODO: rework it (for input with ooarays)
             try:
