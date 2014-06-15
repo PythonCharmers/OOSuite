@@ -704,8 +704,6 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         probtol = self.contol
         f, tol = c.oofun, c.tol
         _lb, _ub = c.lb, c.ub
-        #f0, lb_0, ub_0 = f, copy(_lb), copy(_ub)
-        lb_0, ub_0 = copy(_lb), copy(_ub)
         Name = f.name
         
         dep = set([f]) if f.is_oovar else f._getDep()
