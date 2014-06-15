@@ -657,7 +657,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
                 tmp = getattr(self, fn)
                 fv = asarray(tmp) if not isspmatrix(tmp) else tmp.A
                 if any(isfinite(fv)):
-                    self.x0 = zeros(fv.size)
+                    self.x0 = np.zeros(fv.size)
                     break
         self.x0 = ravel(self.x0)
         
