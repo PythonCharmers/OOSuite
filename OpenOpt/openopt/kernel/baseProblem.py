@@ -469,7 +469,6 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             variableTolerancesDict = dict((v, v.tol) for v in self._freeVars)
             self.variableTolerances = self._point2vector(variableTolerancesDict)
             
-            #Z = self._vector2point(zeros(self.n))
             if len(self._fixedVars) < len(self._freeVars) and 'isdisjoint' in dir(set()):
                 areFixed = lambda dep: dep.issubset(self.fixedVarsSet)
                 #isFixed = lambda v: v in self._fixedVars
@@ -683,9 +682,9 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
         SizeThreshold = 2 ** 15
         if scipyInstalled:
             from scipy.sparse import csc_matrix
-            if isspmatrix(self.A) or (nA > SizeThreshold  and flatnonzero(self.A).size < 0.25*nA):
+            if isspmatrix(self.A) or (nA > SizeThreshold  and np.flatnonzero(self.A).size < 0.25*nA):
                 self._A = csc_matrix(self.A)
-            if isspmatrix(self.Aeq) or (nAeq > SizeThreshold and flatnonzero(self.Aeq).size < 0.25*nAeq):
+            if isspmatrix(self.Aeq) or (nAeq > SizeThreshold and np.flatnonzero(self.Aeq).size < 0.25*nAeq):
                 self._Aeq = csc_matrix(self.Aeq)
             
         elif nA > SizeThreshold or nAeq > SizeThreshold:
