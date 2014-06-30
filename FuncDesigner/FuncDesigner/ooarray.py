@@ -3,7 +3,7 @@ from baseClasses import OOArray
 from FuncDesigner.multiarray import multiarray
 from ooFun import oofun
 from constraints import Constraint
-from numpy import isscalar, asscalar, ndarray, asarray, atleast_1d, asanyarray
+from numpy import isscalar, asscalar, ndarray, atleast_1d, asanyarray, array
 import numpy as np
 from FDmisc import FuncDesignerException
 
@@ -14,7 +14,7 @@ class ooarray(OOArray):
         #assert len(kwargs) == 0
         tmp = args[0] if len(args) == 1 else args
         
-        obj = asarray(tmp).view(self)
+        obj = array(tmp, object).view(self)
         #if obj.ndim != 1: raise FuncDesignerException('only 1-d ooarrays are implemented now')
         #if obj.dtype != object:obj = np.asfarray(obj) #TODO: FIXME !
 
@@ -132,7 +132,7 @@ class ooarray(OOArray):
             # TODO: mb return mere ooarray(self.view(ndarray)*other)?or other.view(ndarray)
             return ooarray(self*asscalar(other) if other.size == 1 else [self[i]*other[i] for i in range(other.size)])
         elif type(other) in (list, tuple):
-            r = self * asarray(other)
+            r = self * array(other)
             return r
         else:
             raise FuncDesignerException('bug in multiplication')
