@@ -1,6 +1,7 @@
+from __future__ import absolute_import
 from openopt.kernel.baseSolver import *
 from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X,  SMALL_DELTA_F
-from wh import wh
+from .wh import wh
 
 def FuncWrapper(p, attr):
     Func = getattr(p, attr)

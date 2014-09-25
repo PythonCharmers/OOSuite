@@ -1,6 +1,7 @@
 """
 Basic example of using FuncDesigner ooSystem
 """
+from __future__ import print_function
 from FuncDesigner import *
 a, b, c = oovars('a', 'b', 'c')
 f = (sum(a*[1, 2])**2+b**2+c**2)('func 1')

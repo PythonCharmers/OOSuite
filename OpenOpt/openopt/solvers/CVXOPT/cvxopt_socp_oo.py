@@ -1,5 +1,6 @@
+from __future__ import absolute_import
 from openopt.kernel.baseSolver import baseSolver
-from CVXOPT_SOCP_Solver import CVXOPT_SOCP_Solver
+from .CVXOPT_SOCP_Solver import CVXOPT_SOCP_Solver
 
 class cvxopt_socp(baseSolver):
     __name__ = 'cvxopt_socp'

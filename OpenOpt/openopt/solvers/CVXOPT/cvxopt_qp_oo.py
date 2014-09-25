@@ -1,5 +1,6 @@
+from __future__ import absolute_import
 from openopt.kernel.baseSolver import baseSolver
-from CVXOPT_QP_Solver import CVXOPT_QP_Solver
+from .CVXOPT_QP_Solver import CVXOPT_QP_Solver
 
 class cvxopt_qp(baseSolver):
     __name__ = 'cvxopt_qp'

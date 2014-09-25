@@ -12,6 +12,7 @@ Concider the LCP problem w = Mz + q
     q = array([1.09389333, -0.53851907, -0.05537426, -0.79389333, 0.83851907, 0.35537426])
 
 """
+from __future__ import print_function
 from numpy import *
 from openopt import LCP
 

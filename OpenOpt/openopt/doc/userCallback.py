@@ -20,18 +20,19 @@ flag = True or 1 means user want to stop calculations
 works for ralg and lincher, but may doesn't work for some other solvers
 (like scipy_cobyla, that has neither native callback nor call gradient)
 """
+from __future__ import print_function
 
 def MyIterFcn(p):
     # observing non-feasible ralg iter points
 
     if p.rk > p.contol: # p.rk is current iter max residual
-        print '--= non-feasible ralg iter =--'
-        print 'itn:',  p.iter
+        print('--= non-feasible ralg iter =--')
+        print('itn:',  p.iter)
         #however, I inted to change p.iter to p.iter in OpenOpt code soon
 
-        print 'curr f:',  p.fk
+        print('curr f:',  p.fk)
         # print 'curr x[:8]:',  p.xk[:8]
-        print 'max constraint value',  p.rk
+        print('max constraint value',  p.rk)
 
     """
     BTW you can store data in any unique field of p
@@ -73,7 +74,7 @@ p = NSP(f,  x0,  df=df,  c=c, callback=MyIterFcn,  contol = 1e-5,  maxIter = 1e4
 #optional:
 #p.plot = 1
 r = p.solve('ralg')
-print r.xf[:8]
+print(r.xf[:8])
 
 """
 -----------------------------------------------------

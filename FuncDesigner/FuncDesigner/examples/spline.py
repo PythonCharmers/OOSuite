@@ -1,3 +1,4 @@
+from __future__ import print_function
 from FuncDesigner import *
 a, b, c = oovars('a', 'b', 'c') 
 point1 = {a:1, b: 0, c:[1, 2, 3]}

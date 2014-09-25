@@ -1,9 +1,10 @@
+from __future__ import absolute_import
 PythonSum = sum
 PythonAll = all
 import numpy as np
 from numpy import all, any, logical_and, logical_not, isscalar, inf, logical_or, logical_xor, isnan#where
 from operator import gt as Greater, lt as Less, truediv as td
-from FDmisc import update_mul_inf_zero, update_div_zero, where
+from .FDmisc import update_mul_inf_zero, update_div_zero, where
 
 import operator
 
@@ -263,7 +264,7 @@ class boundsurf(object):#object is added for Python2 compatibility
         if isinstance(other, boundsurf):
             other_lvl = other.level
             if self_lvl == 2 or other_lvl == 2:
-                from boundsurf2 import boundsurf2
+                from .boundsurf2 import boundsurf2
                 B = boundsurf2
             else:
                 B = boundsurf
@@ -280,7 +281,7 @@ class boundsurf(object):#object is added for Python2 compatibility
             
         
     def __mul__(self, other, resolveSchedule = ()):
-        from boundsurf2 import boundsurf2
+        from .boundsurf2 import boundsurf2
         
         domain = self.domain
         definiteRange = self.definiteRange
@@ -426,7 +427,7 @@ class boundsurf(object):#object is added for Python2 compatibility
 #    __rtruediv__ = __rdiv__
 
     def log(self):#, domain_ind = slice(None)):
-        from Interval import defaultIntervalEngine
+        from .Interval import defaultIntervalEngine
 #        from ooFun import oofun
 #        return oofun._interval_(self, domain, dtype)
 #        from overloads import log_interval
@@ -445,12 +446,12 @@ class boundsurf(object):#object is added for Python2 compatibility
         if ia_lvl_2_unavailable:
             return r1
             
-        from overloads import log_b_interval
+        from .overloads import log_b_interval
         r = log_b_interval(self, r1)[0]
         return r
         
     def exp(self):#, domain_ind = slice(None)):
-        from Interval import defaultIntervalEngine
+        from .Interval import defaultIntervalEngine
         
         ia_lvl_2_unavailable = len(self.l.d) != 1 or len(self.u.d) != 1 \
         or (self.level == 2 and (len(self.l.d2) != 1 or len(self.u.d2) != 1))
@@ -466,7 +467,7 @@ class boundsurf(object):#object is added for Python2 compatibility
         if ia_lvl_2_unavailable:
             return r1
             
-        from overloads import exp_b_interval
+        from .overloads import exp_b_interval
         r = exp_b_interval(self, r1, self.definiteRange, self.domain)[0]
         return r
 
@@ -505,7 +506,7 @@ def boundsurf_abs(b):
     if all(ind_u):
         return -b, b.definiteRange
     
-    from Interval import defaultIntervalEngine
+    from .Interval import defaultIntervalEngine
         
     return defaultIntervalEngine(b, np.abs, np.sign, 
                          monotonity = np.nan, convexity = 1, 
@@ -535,7 +536,7 @@ def surf_join(inds, S):
         return surf(d, c)
         
     d2 = dict((k, Join(inds, [getattr(s, 'd2', {}).get(k, arrZero) for s in S])) for k in keys)
-    from boundsurf2 import surf2
+    from .boundsurf2 import surf2
     return surf2(d2, d, c)
 
 def boundsurf_join(inds, B):
@@ -546,7 +547,7 @@ def boundsurf_join(inds, B):
     definiteRange = True \
     if PythonAll(np.array_equiv(True, b.definiteRange) for b in B)\
     else Join(inds, [np.asarray(b.definiteRange) for b in B])
-    from boundsurf2 import boundsurf2
+    from .boundsurf2 import boundsurf2
     b = boundsurf if type(L) == type(U) == surf else boundsurf2
     return b(L, U, definiteRange, B[0].domain)
 
@@ -580,7 +581,7 @@ Split = lambda condition1, condition2: \
 
 
 def devided_interval(inp, r, domain, dtype, feasLB = -inf, feasUB = inf):
-    import ooFun
+    from . import ooFun
 
     lb_ub, definiteRange = inp._interval(domain, dtype, ia_surf_level = 2)
     isBoundSurf = isinstance(lb_ub, boundsurf)
@@ -590,7 +591,7 @@ def devided_interval(inp, r, domain, dtype, feasLB = -inf, feasUB = inf):
     lb_ub_resolved = lb_ub.resolve()[0]
     
     if feasLB != -inf or feasUB != inf:
-        from Interval import adjustBounds
+        from .Interval import adjustBounds
         lb_ub_resolved, definiteRange = adjustBounds(lb_ub_resolved, definiteRange, feasLB, feasUB)
         lb_ub.definiteRange = definiteRange
         
@@ -606,7 +607,7 @@ def devided_interval(inp, r, domain, dtype, feasLB = -inf, feasUB = inf):
     m = PythonSum(ind_.size for ind_ in Inds)
     inds, rr = [], []
     
-    from Interval import defaultIntervalEngine
+    from .Interval import defaultIntervalEngine
     
     for j, ind in enumerate(Inds[:-1]):
         if ind.size != 0:
@@ -737,7 +738,7 @@ def mul_fixed_interval(self, R2):
     if type(self) == boundsurf:
         Boundsurf = boundsurf
     else:
-        from boundsurf2 import boundsurf2
+        from .boundsurf2 import boundsurf2
         Boundsurf = boundsurf2
     domain = self.domain
     definiteRange = self.definiteRange
@@ -977,7 +978,7 @@ def b2mult(Self, Other):
     ud2 = {k: Other.u.d.get(k, 0.0) * Self.u.d.get(k, 0.0)}
     lc = Self.l.c * Other.l.c
     uc = Self.u.c * Other.u.c
-    from boundsurf2 import surf2, boundsurf2
+    from .boundsurf2 import surf2, boundsurf2
     ls, us = surf2(ld2, ld, lc), surf2(ud2, ud, uc)
     r = boundsurf2(ls, us, Self.definiteRange & Other.definiteRange, Self.domain)
     return r
@@ -989,7 +990,7 @@ def b2mult_direct(Self, Other):
     ld = {k: s.c * o.d.get(k, 0.0) + o.c * s.d.get(k, 0.0)}
     ld2 = {k: o.d.get(k, 0.0) * s.d.get(k, 0.0)}
     lc = s.c * o.c
-    from boundsurf2 import surf2, boundsurf2
+    from .boundsurf2 import surf2, boundsurf2
     ls = surf2(ld2, ld, lc)
     r = boundsurf2(ls, ls, Self.definiteRange & Other.definiteRange, Self.domain)
     return r
@@ -1061,11 +1062,11 @@ def b2div(Self, Other):
     
     tmp = boundsurf(s_l, s_u, DefiniteRange, domain)
     
-    from Interval import inv_b_interval
+    from .Interval import inv_b_interval
     B = inv_b_interval(tmp, revert = False)[0]
     sl, su = B.l, B.u
     
-    from boundsurf2 import boundsurf2, surf2
+    from .boundsurf2 import boundsurf2, surf2
     P = 1e11
     sl2 = surf_join((ind_b_positive_l, ind_b_negative_l), \
     (sl.extract(ind_b_positive_l), -su.extract(ind_b_negative_l)))*b1 

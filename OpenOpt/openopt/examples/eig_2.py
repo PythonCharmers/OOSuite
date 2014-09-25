@@ -1,3 +1,4 @@
+from __future__ import print_function
 # An example of OpenOpt EIG, see http://openopt.org/EIG for more examples and details
 from openopt import EIG
 

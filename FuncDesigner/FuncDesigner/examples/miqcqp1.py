@@ -1,3 +1,4 @@
+from __future__ import print_function
 from FuncDesigner import *
 from openopt import QP
 from numpy import zeros, arange

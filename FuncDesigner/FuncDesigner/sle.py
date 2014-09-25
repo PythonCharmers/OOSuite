@@ -1,4 +1,5 @@
-from FDmisc import FuncDesignerException
+from __future__ import absolute_import
+from .FDmisc import FuncDesignerException
 from numpy import nan, zeros, isscalar, inf
 
 class sle:

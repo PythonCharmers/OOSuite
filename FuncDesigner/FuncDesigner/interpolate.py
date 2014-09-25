@@ -1,9 +1,11 @@
-from ooFun import oofun
+from __future__ import print_function
+from __future__ import absolute_import
+from .ooFun import oofun
 import numpy as np
 from numpy import all
-from FDmisc import FuncDesignerException, Diag
-from boundsurf import boundsurf
-from Interval import defaultIntervalEngine
+from .FDmisc import FuncDesignerException, Diag
+from .boundsurf import boundsurf
+from .Interval import defaultIntervalEngine
 
 try:
     from scipy import interpolate

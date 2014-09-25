@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from openopt.kernel.baseSolver import baseSolver
 from openopt import OpenOptException
 
@@ -17,5 +18,5 @@ class glpk(baseSolver):
             raise OpenOptException('for solver glpk cvxopt is required, but it was not found')
 
     def __solver__(self, p):
-        from CVXOPT_LP_Solver import CVXOPT_LP_Solver
+        from .CVXOPT_LP_Solver import CVXOPT_LP_Solver
         return CVXOPT_LP_Solver(p, 'glpk')

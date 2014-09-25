@@ -76,7 +76,7 @@ for j in range(len(solvers)):
 ##    p.check.dh = 1
     r = p.solve(solver)
     for fn in ('h','c'):
-        if not r.evals.has_key(fn): r.evals[fn]=0 # if no c or h are used in problem
+        if fn not in r.evals: r.evals[fn]=0 # if no c or h are used in problem
     results[solver] = (r.ff, p.getMaxResidual(r.xf), r.elapsed['solver_time'], r.elapsed['solver_cputime'], r.evals['f'], r.evals['c'], r.evals['h'])
     subplot(2,1,1)
     F0 = asscalar(p.f(p.x0))

@@ -3,6 +3,7 @@ This is OpenOpt SDP example,
 for the problem
 http://openopt.org/images/1/12/SDP.png
 """
+from __future__ import print_function
 
 from numpy import mat
 from openopt import SDP

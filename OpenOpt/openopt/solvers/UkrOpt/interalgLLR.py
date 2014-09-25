@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from numpy import tile, isnan, array, atleast_1d, asarray, logical_and, all, logical_or, any, nan, isinf, \
 arange, vstack, inf, logical_not, take, abs, hstack, empty, \
 prod, int16, int32, int64, log2, searchsorted, cumprod#where
@@ -8,7 +9,7 @@ from bisect import bisect, bisect_left, bisect_right
 
 import numpy as np
 from FuncDesigner import oopoint
-from interalgT import *
+from .interalgT import *
 
 try:
     from bottleneck import nanargmin, nanmin, nanargmax, nanmax

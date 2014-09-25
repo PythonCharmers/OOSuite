@@ -1,19 +1,20 @@
+from __future__ import absolute_import
 # created by Dmitrey
 #PythonAll = all
 from numpy import asarray, empty, inf, any, array, \
 asfarray, isscalar, ndarray, int16, int32, int64, float64, tile, vstack, searchsorted, logical_or, where, \
 asanyarray, arange, log2, logical_and, ceil, string_, atleast_1d
 import numpy as np
-from FDmisc import FuncDesignerException, isPyPy
-from ooFun import oofun
-from logic import AND, OR, NOT, EQUIVALENT
-from BooleanOOFun import BooleanOOFun
+from .FDmisc import FuncDesignerException, isPyPy
+from .ooFun import oofun
+from .logic import AND, OR, NOT, EQUIVALENT
+from .BooleanOOFun import BooleanOOFun
 #from FuncDesigner import IMPLICATION
-from ooarray import ooarray
+from .ooarray import ooarray
 #from FuncDesigner.Interval import adjust_lx_WithDiscreteDomain, adjust_ux_WithDiscreteDomain
-from baseClasses import Stochastic
+from .baseClasses import Stochastic
 
-from boundsurf import boundsurf, surf
+from .boundsurf import boundsurf, surf
 
 f_none = lambda *args, **kw: None
 One = array(1.0)

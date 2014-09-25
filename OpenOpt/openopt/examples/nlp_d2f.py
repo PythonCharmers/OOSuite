@@ -6,6 +6,7 @@ and/or other NLP solvers
 
 //Dmitrey
 """
+from __future__ import print_function
 from openopt import NLP
 from numpy import cos, arange, ones, asarray, abs, zeros, diag
 N = 300

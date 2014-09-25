@@ -1,20 +1,21 @@
+from __future__ import absolute_import
 PythonMax = max
 from numpy import all, any, isfinite, inf, nan, ndarray, string_, zeros_like, ones, array_equal, array, copy, asscalar, \
 where, ravel, asfarray, prod, asarray, isscalar, atleast_1d, isinf
 import numpy as np
-from oologfcn import *
-from oographics import Graphics
-from setDefaultIterFuncs import setDefaultIterFuncs, denyingStopFuncs
-from nonLinFuncs import nonLinFuncs
-from residuals import residuals
-from ooIter import ooIter
+from .oologfcn import *
+from .oographics import Graphics
+from .setDefaultIterFuncs import setDefaultIterFuncs, denyingStopFuncs
+from .nonLinFuncs import nonLinFuncs
+from .residuals import residuals
+from .ooIter import ooIter
 
 #from Point import Point currently lead to bug
 from openopt.kernel.Point import Point
 
-from iterPrint import ooTextOutput
-from ooMisc import setNonLinFuncsNumber, assignScript, norm
-from nonOptMisc import isspmatrix, scipyInstalled, scipyAbsentMsg, csr_matrix, Vstack, Hstack, EmptyClass, isPyPy, oosolver
+from .iterPrint import ooTextOutput
+from .ooMisc import setNonLinFuncsNumber, assignScript, norm
+from .nonOptMisc import isspmatrix, scipyInstalled, scipyAbsentMsg, csr_matrix, Vstack, Hstack, EmptyClass, isPyPy, oosolver
 from copy import copy as Copy
 try:
     from DerApproximator import check_d1
@@ -23,9 +24,9 @@ except:
     DerApproximatorIsInstalled = False
 
 ProbDefaults = {'diffInt': 1.5e-8,  'xtol': 1e-6,  'noise': 0}
-from runProbSolver import runProbSolver
-import GUI
-from fdmisc import setStartVectorAndTranslators
+from .runProbSolver import runProbSolver
+from . import GUI
+from .fdmisc import setStartVectorAndTranslators
 
 
 class user:

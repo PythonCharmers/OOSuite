@@ -1,4 +1,5 @@
-from wh_conn_solver import wh_conn_solver
+from __future__ import absolute_import
+from .wh_conn_solver import wh_conn_solver
 
 class matlab_fsolve(wh_conn_solver):
     __name__ = 'matlab_fsolve'

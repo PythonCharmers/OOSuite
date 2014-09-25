@@ -1,4 +1,5 @@
 """ Basic FuncDesigner example for solving ODE with automatic differentiation """
+from __future__ import print_function
 
 from FuncDesigner import *
 from numpy import linspace
@@ -53,7 +54,7 @@ r = myODE.solve(solver,
 # and seems like essentially matters for ode23s only
 
 X,  Y,  Z = r(x, y, z)
-print(X[0:5], Y[50:55], Z[-5:])
+print((X[0:5], Y[50:55], Z[-5:]))
 
 """
 (array([ 3.        ,  3.07193008,  3.16782576,  3.28733903,  3.42969264]), 

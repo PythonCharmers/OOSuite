@@ -9,6 +9,7 @@ but it's better than having nothing at all,
 and allows using of nonsmooth and noisy funcs.
 This solver is intended to be enhanced in future.
 """
+from __future__ import print_function
 from numpy import *
 from openopt import *
 
@@ -46,7 +47,7 @@ p = MMP(f,  x0,  lb = lb,  ub = ub,   A=A,  b=b,   Aeq = Aeq,  beq = beq,  c=c, 
 # optional, matplotlib is required:
 #p.plot=1
 r = p.solve('nsmm', iprint=1, NLPsolver = 'ralg', maxIter=1e3, minIter=1e2)
-print 'MMP result:',  r.ff
+print('MMP result:',  r.ff)
 
 #
 ### let's check result via comparison with NSP solution

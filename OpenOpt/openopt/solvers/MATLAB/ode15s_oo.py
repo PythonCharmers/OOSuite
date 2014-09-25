@@ -1,4 +1,5 @@
-from matlab_ode import matlab_ode
+from __future__ import absolute_import
+from .matlab_ode import matlab_ode
 
 class ode15s(matlab_ode):
     __name__ = 'ode15s'

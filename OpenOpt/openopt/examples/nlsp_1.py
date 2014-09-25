@@ -4,6 +4,7 @@ x[0]**3+x[1]**3-9 = 0
 x[0]-0.5*x[1] = 0
 cos(x[2])+x[0]-1.5 = 0
 """
+from __future__ import print_function
 
 from openopt import SNLE
 from numpy import asfarray, zeros, cos, sin

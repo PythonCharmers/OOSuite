@@ -1,4 +1,5 @@
-from baseProblem import MatrixProblem
+from __future__ import absolute_import
+from .baseProblem import MatrixProblem
 from numpy import asfarray, ones, inf, dot, asfarray, nan, zeros, isfinite, all
 
 

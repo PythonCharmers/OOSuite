@@ -1,3 +1,4 @@
+from __future__ import print_function
 from numpy import cos, arange
 from FuncDesigner import *
 from openopt import NSP
@@ -16,7 +17,7 @@ p = NSP(objective, startPoint, maxIter = 1e5, constraints = constraints)
 
 r = p.solve('ralg')
 x_opt, y_opt = x(r), y(r)
-print(max(abs(x_opt)), y_opt)
+print((max(abs(x_opt)), y_opt))
 
 '''
 expected output:

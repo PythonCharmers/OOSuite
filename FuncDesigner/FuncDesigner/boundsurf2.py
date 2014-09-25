@@ -1,11 +1,12 @@
+from __future__ import absolute_import
 PythonSum = sum
 import numpy as np
 from numpy import logical_and, isscalar, any#, where
 
 # for PyPy
-from FDmisc import where
+from .FDmisc import where
 
-from boundsurf import surf, boundsurf, mul_fixed_interval, mul_handle_nan
+from .boundsurf import surf, boundsurf, mul_fixed_interval, mul_handle_nan
 from operator import gt as Greater, lt as Less
 try:
     from bottleneck import nanmin, nanmax

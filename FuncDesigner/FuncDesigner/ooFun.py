@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import absolute_import
 # created by Dmitrey
 PythonSum = sum
 PythonAny = any
@@ -8,7 +10,7 @@ asscalar, zeros_like, logical_and, \
 tile, int8, int16, int32, int64, string_, asanyarray#where
 
 # for PyPy
-from FDmisc import where
+from .FDmisc import where
 
 import operator, numpy as np
 
@@ -18,24 +20,24 @@ try:
 except ImportError:
     from numpy import nanmin, nanmax
 
-from expression import getitem_expression, add_expression, mul_expression, neg_expression, div_expression, \
+from .expression import getitem_expression, add_expression, mul_expression, neg_expression, div_expression, \
 rdiv_expression, pow_expression, rpow_expression
-from iqg import iqg
+from .iqg import iqg
 
-from boundsurf import boundsurf
-from boundsurf2 import boundsurf2
+from .boundsurf import boundsurf
+from .boundsurf2 import boundsurf2
     
-from FDmisc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scipyInstalled, \
+from .FDmisc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg, scipyInstalled, \
 raise_except, DiagonalType, isPyPy, formResolveSchedule, Len, SP_eye, SparseMatrixConstructor, \
 isspmatrix, Hstack
 
-from ooPoint import ooPoint
+from .ooPoint import ooPoint
 from FuncDesigner.multiarray import multiarray
-from derivativeMisc import getDerivativeSelf, mul_aux_d, _D
-from Interval import Interval, mul_interval, pow_const_interval, pow_oofun_interval, div_interval, \
+from .derivativeMisc import getDerivativeSelf, mul_aux_d, _D
+from .Interval import Interval, mul_interval, pow_const_interval, pow_oofun_interval, div_interval, \
 add_interval, add_const_interval, neg_interval, defaultIntervalEngine#, rdiv_interval
 #import inspect
-from baseClasses import OOArray, Stochastic, OOFun
+from .baseClasses import OOArray, Stochastic, OOFun
 
 try:
     from DerApproximator import check_d1
@@ -136,7 +138,7 @@ class oofun(OOFun):
         elif attr == 'expr':
             return self.expression()
         elif attr in self.fields:
-            from categorical import categoricalAttribute
+            from .categorical import categoricalAttribute
             return categoricalAttribute(self, attr)
         elif attr != 'size': 
             raise AttributeError('you are trying to obtain incorrect attribute "%s" for FuncDesigner oofun "%s"' %(attr, self.name))
@@ -200,7 +202,7 @@ class oofun(OOFun):
         return name + Args_repr
 
     def attach(self, *args,  **kwargs):
-        from constraints import BaseFDConstraint
+        from .constraints import BaseFDConstraint
         if len(kwargs) != 0:
             raise FuncDesignerException('keyword arguments are not implemented for FuncDesigner function "attach"')
         assert len(args) != 0
@@ -350,7 +352,7 @@ class oofun(OOFun):
         
         other_is_sum = isinstance(other, oofun) and other._isSum
         
-        from overloads import sum
+        from .overloads import sum
         if self._isSum and other_is_sum:
             return sum(self._summation_elements + other._summation_elements)
         elif self._isSum:
@@ -409,7 +411,7 @@ class oofun(OOFun):
         if self._neg_elem is not None:
             return self._neg_elem
         if self._isSum:
-            from overloads import sum as FDsum
+            from .overloads import sum as FDsum
             return FDsum([-elem for elem in self._summation_elements])
         r = oofun(operator.neg, self, d = lambda a: -Eye(Len(a)))
         r._neg_elem = self
@@ -696,7 +698,7 @@ class oofun(OOFun):
             r1, definiteRange = oofun._interval_(r, domain, dtype)
             if type(lb_ub) == np.ndarray or len(lb_ub.l.d) > 1 or len(lb_ub.u.d) > 1 or len(lb_ub.dep) != 1:
                 return r1, definiteRange
-            from overloads import exp_b_interval
+            from .overloads import exp_b_interval
             return exp_b_interval(log(other) * lb_ub, r1, definiteRange, domain)
             
         r._interval_ = lambda *args, **kw: rpow_interval(r, other, *args, **kw)
@@ -836,7 +838,7 @@ class oofun(OOFun):
     
     # TODO: fix it for discrete problems like MILP, MINLP
     def __gt__(self, other): # overload for >
-        from constraints import BoxBoundConstraint, Constraint
+        from .constraints import BoxBoundConstraint, Constraint
         if self.is_oovar and not isinstance(other, (oofun, OOArray)) \
         and not (isinstance(other, ndarray) and str(other.dtype) =='object'):
             r = BoxBoundConstraint(self, lb = other)
@@ -863,7 +865,7 @@ class oofun(OOFun):
     def __lt__(self, other): # overload for <
         # TODO:
         #(self.is_oovar or self.is_oovarSlice)
-        from constraints import BoxBoundConstraint, Constraint
+        from .constraints import BoxBoundConstraint, Constraint
         if self.is_oovar and not isinstance(other, (oofun, OOArray))\
         and not(isinstance(other, ndarray) and str(other.dtype) =='object'):
             r = BoxBoundConstraint(self, ub = other)
@@ -887,7 +889,7 @@ class oofun(OOFun):
     __le__ = __lt__
   
     def eq(self, other):
-        from constraints import Constraint
+        from .constraints import Constraint
         if other is None or other is () or (type(other) == list and len(other) == 0): return False
         if type(other) in (str, string_): 
         #if self.domain is not None and self.domain is not bool and self.domain is not 'bool':

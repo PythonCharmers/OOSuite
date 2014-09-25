@@ -1,6 +1,7 @@
+from __future__ import absolute_import
 from numpy import asfarray,  ones, all, isfinite, copy, nan, concatenate, dot
 from openopt.kernel.ooMisc import WholeRepr2LinConst, xBounds2Matrix, xBounds2cvxoptMatrix
-from cvxopt_misc import *
+from .cvxopt_misc import *
 import cvxopt.solvers as cvxopt_solvers
 
 def CVXOPT_LLSP_Solver(p, solverName):

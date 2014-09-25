@@ -2,6 +2,8 @@
 The test is related to obsolete OpenOpt version and doesn't work for now
 It was used to write an article related to numerical optimization.
 """
+from __future__ import print_function
+from __future__ import absolute_import
 
 from numpy import *
 from openopt import *
@@ -71,7 +73,7 @@ for n in TestCollection:
     ########################################################
 
     ########################################################
-    from blockMisc import *
+    from .blockMisc import *
 
     #def blockEngineFunc(inp, AdditionalMasses, y_limit, blockID):
     def blockEngineFunc(inp, AdditionalMasses, blockID):
@@ -225,7 +227,7 @@ for n in TestCollection:
 
         p = NLP(f, c=c, goal = 'max', gtol = 1e-6,  plot=0, contol = contol, maxFunEvals = 1e10)
         def callback(p):
-            print p.c(p.xk)
+            print(p.c(p.xk))
             return 0
         #p.callback = callback
         if solver == 'scipy_cobyla':
@@ -241,7 +243,7 @@ for n in TestCollection:
         Results[(n, p.solver.__name__)] = r
         if r.isFeasible: msgF = '+'
         else: msgF = '-'
-        print 'n=%d' % n, ('f=%3.2f'% r.ff)+'['+msgF+']','Time=%3.1f' % r.elapsed['solver_time']
+        print('n=%d' % n, ('f=%3.2f'% r.ff)+'['+msgF+']','Time=%3.1f' % r.elapsed['solver_time'])
 
 
         if PLOT:

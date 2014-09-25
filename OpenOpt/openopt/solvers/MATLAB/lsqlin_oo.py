@@ -1,4 +1,5 @@
-from MATLAB_BASE import MATLAB_BASE
+from __future__ import absolute_import
+from .MATLAB_BASE import MATLAB_BASE
 
 class lsqlin(MATLAB_BASE):
     __name__ = 'lsqlin'

@@ -1,3 +1,4 @@
+from __future__ import print_function
 from openopt import EIG
 
 # create a 5 x 5 matrix

@@ -1,8 +1,9 @@
+from __future__ import absolute_import
 from numpy import array, nan, atleast_1d, copy, vstack, hstack, isscalar, ndarray, prod, int32
 import numpy as np
-from setDefaultIterFuncs import USER_DEMAND_EXIT
-from ooMisc import killThread, setNonLinFuncsNumber
-from nonOptMisc import scipyInstalled, Vstack, isspmatrix, isPyPy
+from .setDefaultIterFuncs import USER_DEMAND_EXIT
+from .ooMisc import killThread, setNonLinFuncsNumber
+from .nonOptMisc import scipyInstalled, Vstack, isspmatrix, isPyPy
 try:
     from DerApproximator import get_d1
     DerApproximatorIsInstalled = True

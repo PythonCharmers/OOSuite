@@ -2,6 +2,7 @@
 An example of solving global optimization problem
 with guaranteed precision |f-f*| < fTol
 '''
+from __future__ import print_function
 from numpy import zeros
 from FuncDesigner import *
 from openopt import *

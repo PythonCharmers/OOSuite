@@ -1,6 +1,7 @@
+from __future__ import absolute_import
 from numpy import isfinite, any
 from openopt.kernel.baseSolver import *
-from sqlcp import sqlcp as SQLCP
+from .sqlcp import sqlcp as SQLCP
 from numpy.linalg import LinAlgError
 
 class sqlcp(baseSolver):

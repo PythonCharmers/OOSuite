@@ -6,6 +6,7 @@ Solving nonsmooth problem
 x_opt = all-zeros
 f_opt = 0
 """
+from __future__ import print_function
 
 from numpy import *
 from openopt import NSP
@@ -46,4 +47,4 @@ for i, solver in enumerate(solvers):
 #    #p.checkdf()
 #    r2 = p2.solve(solver, maxVectorNum=15, iprint=1, showLS=1, plot=0, color=colors[i], show=solver==solvers[-1]) # ralg is name of a solver
 #print 'x_opt:\n', r.xf
-print 'f_opt:', r.ff  # should print small positive number like 0.00056
+print('f_opt:', r.ff)  # should print small positive number like 0.00056

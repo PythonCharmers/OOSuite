@@ -1,4 +1,5 @@
-from baseProblem import MatrixProblem
+from __future__ import absolute_import
+from .baseProblem import MatrixProblem
 import numpy as np
 #from MOP import MOPsolutions
 

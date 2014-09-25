@@ -11,6 +11,7 @@ x[0] - 3.5 = 0
 
 Now we will solve the one using solver scipy_leastsq
 """
+from __future__ import print_function
 from openopt import NLLSP
 from numpy import *
 
@@ -47,6 +48,6 @@ r = p.solve('nlp:ralg', iprint = 1, plot=1)
 #r = p.solve('nlp:ipopt',plot=1), r = p.solve('nlp:algencan'), r = p.solve('nlp:ralg'), etc
 #(some NLP solvers require additional installation)
 
-print 'x_opt:', r.xf # 2.74930862,  +/-2.5597651
-print 'funcs Values:', p.f(r.xf) # [-0.888904734668, 0.0678251418575, -0.750691380965]
-print 'f_opt:', r.ff, '; sum of squares (should be same value):', (p.f(r.xf) ** 2).sum() # 1.35828942657
+print('x_opt:', r.xf) # 2.74930862,  +/-2.5597651
+print('funcs Values:', p.f(r.xf)) # [-0.888904734668, 0.0678251418575, -0.750691380965]
+print('f_opt:', r.ff, '; sum of squares (should be same value):', (p.f(r.xf) ** 2).sum()) # 1.35828942657

@@ -1,3 +1,4 @@
+from __future__ import print_function
 from time import time
 from numpy import linspace, pi
 from FuncDesigner import *

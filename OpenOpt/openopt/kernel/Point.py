@@ -1,8 +1,9 @@
+from __future__ import absolute_import
 # created by Dmitrey
 from numpy import copy, isnan, array, argmax, abs, zeros, any, isfinite, all, asscalar, \
 dot, sqrt, nanmax, logical_or, prod, arange, ndarray, asarray, sum#where
-from ooMisc import norm
-from nonOptMisc import Copy, isPyPy, where
+from .ooMisc import norm
+from .nonOptMisc import Copy, isPyPy, where
 #from pointProjection import pointProjection
 empty_arr = array(())
 try:

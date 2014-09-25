@@ -1,5 +1,6 @@
-from ooSystem import ooSystem as oosystem
-from FDmisc import FuncDesignerException
+from __future__ import absolute_import
+from .ooSystem import ooSystem as oosystem
+from .FDmisc import FuncDesignerException
 from numpy import ndarray
 
 class dae:

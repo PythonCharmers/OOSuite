@@ -1,4 +1,5 @@
 ''' A simple FuncDesigner stochastic optimization example '''
+from __future__ import print_function
 from FuncDesigner import *
 from openopt import GLP
 

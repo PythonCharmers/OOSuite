@@ -1,7 +1,8 @@
-from baseProblem import NonLinProblem
-from ooMisc import assignScript
+from __future__ import absolute_import
+from .baseProblem import NonLinProblem
+from .ooMisc import assignScript
 from numpy import dot, asfarray, atleast_2d, array, zeros
-import NLP
+from . import NLP
 
 class DFP(NonLinProblem):
     _optionalData = ['lb', 'ub', 'A', 'Aeq', 'b', 'beq', 'c', 'h']

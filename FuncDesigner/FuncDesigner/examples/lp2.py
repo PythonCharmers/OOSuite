@@ -1,3 +1,4 @@
+from __future__ import print_function
 from FuncDesigner import *
 N = 100
 a = oovars(N) # create array of N oovars
@@ -9,7 +10,7 @@ for i in range(N):
     point[a[i]] = 1.5 * i**2
     point[b[i]] = 1.5 * i**3
 # BTW we could use 1-dimensional arrays here, eg point[a[25]] = [2,3,4,5], point[a[27]] = [1,2,5] etc
-print f(point) # prints 40899980.
+print(f(point)) # prints 40899980.
 
 from openopt import LP
 # define prob

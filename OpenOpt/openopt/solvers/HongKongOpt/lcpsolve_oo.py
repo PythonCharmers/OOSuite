@@ -1,8 +1,9 @@
+from __future__ import absolute_import
 from numpy import isfinite, any, hstack
 from openopt.kernel.baseSolver import *
-from sqlcp import sqlcp as SQLCP
+from .sqlcp import sqlcp as SQLCP
 from numpy.linalg import LinAlgError
-from LCPSolve import LCPSolve
+from .LCPSolve import LCPSolve
 
 class lcpsolve(baseSolver):
     __name__ = 'lcp'

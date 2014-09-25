@@ -1,3 +1,4 @@
+from __future__ import print_function
 from SpaceFuncs import Triangle, Plot
 
 # Consider a triangle in 3D space

@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 # created by Dmitrey
 
 #from numpy import inf, asfarray, copy, all, any, empty, atleast_2d, zeros, dot, asarray, atleast_1d, empty, ones, ndarray, \
@@ -6,8 +7,8 @@
 #from misc import FuncDesignerException, Diag, Eye, pWarn, scipyAbsentMsg
 #from copy import deepcopy
 
-from FDmisc import FuncDesignerException
-from baseClasses import Stochastic
+from .FDmisc import FuncDesignerException
+from .baseClasses import Stochastic
 from numpy import ndarray, isscalar, atleast_1d
 try:
     from scipy.sparse import isspmatrix

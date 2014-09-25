@@ -3,6 +3,7 @@ example of rendering FuncDesigner SLE
 (system of linear equations)
 into ordinary SLE (Ax=b)
 """
+from __future__ import print_function
 from FuncDesigner import *
 
 # Create some variables

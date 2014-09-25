@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 PythonSum = sum
 from numpy import isnan, array, atleast_1d, asarray, logical_and, all, logical_or, any, \
 arange, vstack, inf, logical_not, take, abs, hstack, empty, \
@@ -10,7 +11,7 @@ from openopt.kernel.nonOptMisc import where
 #    from bottleneck import nanargmin, nanmin
 #except ImportError:
 #    from numpy import nanmin, nanargmin
-from interalgLLR import *
+from .interalgLLR import *
 
 def r43_seq(Arg):
     targets_vals, targets_tols, solutionsF, lf, uf = Arg

@@ -1,5 +1,6 @@
-from NLOPT_AUX import NLOPT_AUX
-from NLOPT_BASE import NLOPT_BASE
+from __future__ import absolute_import
+from .NLOPT_AUX import NLOPT_AUX
+from .NLOPT_BASE import NLOPT_BASE
 import nlopt
 
 class bobyqa(NLOPT_BASE):

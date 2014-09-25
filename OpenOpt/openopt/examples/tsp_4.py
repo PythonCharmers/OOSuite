@@ -6,6 +6,7 @@ and FuncDesigner installed.
 For some solvers limitations on time, cputime, "enough" value, basic GUI features are available.
 See http://openopt.org/TSP for more details
 '''
+from __future__ import print_function
 from openopt import *
 from numpy import sin, cos#, abs
 

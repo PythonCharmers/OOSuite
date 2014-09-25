@@ -1,3 +1,4 @@
+from __future__ import print_function
 from FuncDesigner import *
 a, b, c = oovars('a', 'b', 'c')
 f1, f2 = sin(a) + cos(b) - log2(c) + sqrt(b), sum(c) + c * cosh(b) / arctan(a) + c[0] * c[1] + c[-1] / (a * c.size)

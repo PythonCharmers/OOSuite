@@ -1,8 +1,9 @@
-from baseProblem import MatrixProblem
+from __future__ import absolute_import
+from .baseProblem import MatrixProblem
 from numpy import inf, dot, zeros, hstack, flatnonzero, ndarray, zeros_like
-from ooMisc import norm
-from oologfcn import OpenOptException
-from nonOptMisc import scipyInstalled, Vstack, csr_matrix
+from .ooMisc import norm
+from .oologfcn import OpenOptException
+from .nonOptMisc import scipyInstalled, Vstack, csr_matrix
 
 
 class SLE(MatrixProblem):

@@ -1,3 +1,4 @@
+from __future__ import print_function
 from FuncDesigner import *
 from numpy import *
 
@@ -10,8 +11,8 @@ f2 = [1, 2, 3] + 3*b + 4 + array((1, 2, 10))
 f3 = [1, 2, 3]*a + 3*b*a + 4 + array((1, 2, 10))
 
 for f in (f1,  f2, f3):
-    print f(point)
-    print f.D(point)
+    print(f(point))
+    print(f.D(point))
 """
 [ 26.  28.  37.]
 {'a': array([ 2.,  2.,  2.])}

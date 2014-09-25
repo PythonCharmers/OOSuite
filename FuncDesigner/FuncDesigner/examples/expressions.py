@@ -9,6 +9,7 @@ For most of solvers usually you'll hardly get more than several percents speedup
 but for interalg sometimes (quite rare, although) speedup may be several times 
 or orders due to changing of interval analysis quality, e.g. for const1 / (const2 / oofun). 
 '''
+from __future__ import print_function
 
 from FuncDesigner import *
 

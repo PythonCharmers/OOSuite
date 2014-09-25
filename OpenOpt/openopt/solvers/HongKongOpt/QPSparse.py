@@ -158,7 +158,7 @@ def QPSparse(filename):
                 break;
             else:
                 f.close()
-                raise(ValueError('invalid indicator record in line '+str(lineno)+': "'+line+'"'))
+                raise ValueError
         elif section == 'NAME':
             pname = f3
         elif section == 'ROWS':
@@ -180,7 +180,7 @@ def QPSparse(filename):
                 aeqcnt += 1
             else:
                 f.close()
-                raise(ValueError('invalid row type "'+f1+'" in line '+str(lineno)+': "'+line+'"'))
+                raise ValueError
         elif section == 'COLUMNS':
             cname = f2
             rnames = [0,0]
@@ -251,14 +251,14 @@ def QPSparse(filename):
                 lb[ic] = f4
             elif f1 == 'FX':
                 # TODO add an equality constraint
-                raise(ValueError('fixed variable (FX) bound not supported in line '+str(lineno)+': "'+line+'"'))
+                raise ValueError
             elif f1 == 'FR':
                 lb[ic] = -Inf
                 ub[ic] = Inf
             elif f1 == 'MI':
                 lb[ic] = -Inf
             elif f1 == 'BV':
-                raise(ValueError('binary value (BV) bound not supported in line '+str(lineno)+': "'+line+'"'))
+                raise ValueError
                 
         elif section == 'QUADOBJ':
             ic1 = colnum[f2]
@@ -270,7 +270,7 @@ def QPSparse(filename):
             qcnt += 1
     f.close()
     if section != None:
-        raise(EOFError('unexpected EOF while in section '+section))
+        raise EOFError
         
    # Now we have all necessary info and we can build A,b,Aeq and Beq      
     if acnt > 0:
@@ -328,7 +328,7 @@ def QPSparse(filename):
             elif rt == 'G': #
                 b1 = b[index] - abs(value) # sign???
             elif rt == 'E': #
-                raise(ValueError('RANGES for rows of type E not yet supported in line '+str(lineno)+': "'+line+'"'))
+                raise ValueError
                 #b1 = b[index] - value
 
             addA[index,:] = -A[index,:]    # append to A duplicate of index row, with sign changed

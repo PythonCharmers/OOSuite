@@ -1,8 +1,9 @@
+from __future__ import absolute_import
 from openopt.kernel.baseSolver import *
 #from openopt.kernel.Point import Point
 #from openopt.kernel.setDefaultIterFuncs import *
 from numpy import isfinite
-from amsg2p import amsg2p as Solver
+from .amsg2p import amsg2p as Solver
 
 class amsg2p(baseSolver):
     __name__ = 'amsg2p'

@@ -1,18 +1,19 @@
+from __future__ import absolute_import
 PythonSum = sum
 PythonMax = max
 PythonAny = any
 PythonAll = all
 import numpy as np
-from FDmisc import FuncDesignerException, Diag, Eye, raise_except, \
+from .FDmisc import FuncDesignerException, Diag, Eye, raise_except, \
 diagonal, DiagonalType, dictSum, Vstack, Copy
-from ooFun import atleast_oofun, oofun
-from ooarray import ooarray
-from Interval import nonnegative_interval, ZeroCriticalPointsInterval, \
+from .ooFun import atleast_oofun, oofun
+from .ooarray import ooarray
+from .Interval import nonnegative_interval, ZeroCriticalPointsInterval, \
 box_1_interval, defaultIntervalEngine
 from numpy import atleast_1d, logical_and
 from FuncDesigner.multiarray import multiarray
-from boundsurf import boundsurf, surf, devided_interval, boundsurf_join, split, merge_boundsurfs
-from boundsurf2 import boundsurf2, surf2
+from .boundsurf import boundsurf, surf, devided_interval, boundsurf_join, split, merge_boundsurfs
+from .boundsurf2 import boundsurf2, surf2
     
 try:
     from scipy.sparse import isspmatrix, lil_matrix as Zeros
@@ -43,7 +44,7 @@ __all__ = []
 #    return oofun(lambda x: np.sin(x), inp, d = d)
 
 try:
-    import distribution
+    from . import distribution
     hasStochastic = True
 except:
     hasStochastic = False

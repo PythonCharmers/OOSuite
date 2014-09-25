@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from numpy import  inf, any, copy, dot, where, all, nan, isfinite, float64, isnan,  \
 max, sign, array_equal, matrix, delete, ndarray
 from numpy.linalg import norm#, solve, LinAlgError
@@ -57,7 +58,7 @@ class gsubg(baseSolver):
             #dilation = True if p.n < 150 else False
             p.debugmsg('%s: autoselect set dilation to %s' %(self.__name__, dilation))
         if dilation:
-            from Dilation import Dilation
+            from .Dilation import Dilation
             D = Dilation(p)
         
 #        LB, UB = p.lb, p.ub

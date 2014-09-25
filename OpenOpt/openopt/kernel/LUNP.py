@@ -1,7 +1,8 @@
-from baseProblem import MatrixProblem
+from __future__ import absolute_import
+from .baseProblem import MatrixProblem
 from numpy import ones, inf, dot, zeros, hstack, vstack, atleast_2d
-from ooMisc import norm
-import LP
+from .ooMisc import norm
+from . import LP
 
 class LUNP(MatrixProblem):
     probType = 'LUNP'

@@ -19,9 +19,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 '''
+from __future__ import absolute_import
 
 from numpy import *
-from LCPSolve import LCPSolve
+from .LCPSolve import LCPSolve
 
 def QPSolve(Q, e, A=None, b=None, Aeq=None, beq=None, lb=None, ub=None):
     '''

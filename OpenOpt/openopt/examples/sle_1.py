@@ -1,3 +1,4 @@
+from __future__ import print_function
 __docformat__ = "restructuredtext en"
 
 from numpy import *

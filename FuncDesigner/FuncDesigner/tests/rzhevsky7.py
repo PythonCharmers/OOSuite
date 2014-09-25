@@ -1,3 +1,4 @@
+from __future__ import print_function
 from numpy import arange, array, ones,  zeros, cos, ceil, hstack, asarray
 from numpy.linalg import norm
 from openopt import NSP, oosolver

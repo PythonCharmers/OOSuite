@@ -56,7 +56,7 @@ def test(complexity=0, **kwargs):
     for i, solver in enumerate(solvers):
         p = NLP(f, x0, df=df, c=c, h=h, dc=dc, dh=dh, lb=lb, ub=ub, A=A, b=b, Aeq=Aeq, beq=beq, maxIter = 1e4, \
                 show = solver==solvers[-1], color=colors[i],  **kwargs )
-        if not kwargs.has_key('iprint'): p.iprint = -1
+        if 'iprint' not in kwargs: p.iprint = -1
 #        p.checkdf()
 #        p.checkdc()
 #        p.checkdh()

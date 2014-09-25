@@ -14,6 +14,7 @@ Splitting f into separate funcs could benefit some solvers
 (ralg, algencan; see NLP docpage for more details)
 but is not implemented yet
 """
+from __future__ import print_function
 from numpy import *
 from openopt import *
 
@@ -52,13 +53,13 @@ p = MMP(f,  x0,  lb = lb,  ub = ub,   A=A,  b=b,   Aeq = Aeq,  beq = beq,  c=c, 
 # optional, matplotlib is required:
 p.plot=1
 r = p.solve('nlp:ipopt', iprint=50, maxIter=1e3)
-print 'MMP result:',  r.ff
+print('MMP result:',  r.ff)
 
 ### let's check result via comparison with NSP solution
 F= lambda x: max([f1(x),  f2(x),  f3(x)])
 p = NSP(F,  x0, iprint=50, lb = lb, ub = ub,  c=c,  h=h,  A=A,  b=b,  Aeq = Aeq,  beq = beq, xtol = 1e-6, ftol=1e-6)
 r_nsp = p.solve('ipopt', maxIter = 1e3)
-print 'NSP result:',  r_nsp.ff,  'difference:', r_nsp.ff - r.ff
+print('NSP result:',  r_nsp.ff,  'difference:', r_nsp.ff - r.ff)
 """
 -----------------------------------------------------
 solver: ipopt   problem: unnamed   goal: minimax

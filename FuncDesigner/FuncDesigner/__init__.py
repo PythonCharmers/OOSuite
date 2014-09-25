@@ -1,24 +1,26 @@
+from __future__ import print_function
+from __future__ import absolute_import
 import os, sys
 curr_dir = ''.join([elem + os.sep for elem in __file__.split(os.sep)[:-1]])
 sys.path += [curr_dir]
 
 __version__ = '0.5402'
 
-from ooVar import oovar, oovars
+from .ooVar import oovar, oovars
 #from ooFun import _getAllAttachedConstraints, broadcast, ooFun as oofun, AND, OR, NOT, NAND, NOR, XOR
-from ooFun import oofun
+from .ooFun import oofun
 
-from ooSystem import ooSystem as oosystem
-from translator import FuncDesignerTranslator as ootranslator
+from .ooSystem import ooSystem as oosystem
+from .translator import FuncDesignerTranslator as ootranslator
 
-from ooPoint import ooPoint as oopoint, ooMultiPoint 
-from logic import AND, OR, XOR, NOT, EQUIVALENT, NAND, NOR
-from baseClasses import Stochastic as _Stochastic
-from FDmisc import FuncDesignerException, _getDiffVarsID, _getAllAttachedConstraints, broadcast
+from .ooPoint import ooPoint as oopoint, ooMultiPoint 
+from .logic import AND, OR, XOR, NOT, EQUIVALENT, NAND, NOR
+from .baseClasses import Stochastic as _Stochastic
+from .FDmisc import FuncDesignerException, _getDiffVarsID, _getAllAttachedConstraints, broadcast
 
 try:
-    import distribution
-    from distribution import P, mean, var, std
+    from . import distribution
+    from .distribution import P, mean, var, std
 except ImportError:
     def sp_err(self, *args,  **kw): 
         raise FuncDesignerException('''
@@ -32,7 +34,7 @@ except ImportError:
     distribution = Distribution()
     P = mean = var = std = sp_err
     
-from ooarray import ooarray
+from .ooarray import ooarray
 from numpy import ndarray
 #def IMPLICATION(condition, *args):
 #    if condition is False: 
@@ -55,14 +57,14 @@ def IMPLICATION(condition, *args):
     
 ifThen = IMPLICATION
 
-from sle import sle
-from ode import ode
-from dae import dae
-from overloads import *
-from stencils import d, d2
+from .sle import sle
+from .ode import ode
+from .dae import dae
+from .overloads import *
+from .stencils import d, d2
 #from overloads import _sum as sum
-from interpolate import scipy_InterpolatedUnivariateSpline as interpolator
-from integrate import integrator
+from .interpolate import scipy_InterpolatedUnivariateSpline as interpolator
+from .integrate import integrator
 
 
 isE = False

@@ -1,3 +1,4 @@
+from __future__ import print_function
 from FuncDesigner import *
 
 a, b, c = oovars('a', 'b', 'c') # or just oovars(3)
@@ -16,7 +17,7 @@ testSuite = t1
 #testSuite = t2
 
 for i, point in enumerate([point1, point2, point3]):
-    print '=' * 80
+    print('=' * 80)
     print('checking point ' + str(i))
     for j, f in enumerate(testSuite):
             print('checking function ' +str(j))

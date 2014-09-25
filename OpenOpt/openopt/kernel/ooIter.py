@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 __docformat__ = "restructuredtext en"
 
 from time import time, clock
@@ -8,7 +9,7 @@ from numpy import isscalar,  array_equal
 from openopt.kernel.ooMisc import isSolved 
 ######################
 
-from setDefaultIterFuncs import USER_DEMAND_STOP, IS_NAN_IN_X, SMALL_DELTA_X, IS_MAX_ITER_REACHED, \
+from .setDefaultIterFuncs import USER_DEMAND_STOP, IS_NAN_IN_X, SMALL_DELTA_X, IS_MAX_ITER_REACHED, \
 IS_MAX_CPU_TIME_REACHED, IS_MAX_TIME_REACHED, IS_MAX_FUN_EVALS_REACHED
 
 has_Tkinter = True

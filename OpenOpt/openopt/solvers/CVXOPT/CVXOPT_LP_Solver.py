@@ -1,6 +1,7 @@
+from __future__ import absolute_import
 from numpy import asarray,  ones, nan, concatenate, array
 from openopt.kernel.ooMisc import xBounds2Matrix
-from cvxopt_misc import *
+from .cvxopt_misc import *
 import cvxopt.solvers as cvxopt_solvers
 from cvxopt.base import matrix
 from openopt.kernel.setDefaultIterFuncs import SOLVED_WITH_UNIMPLEMENTED_OR_UNKNOWN_REASON,  IS_MAX_ITER_REACHED, IS_MAX_TIME_REACHED, FAILED_WITH_UNIMPLEMENTED_OR_UNKNOWN_REASON, UNDEFINED

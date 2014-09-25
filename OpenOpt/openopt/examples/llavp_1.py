@@ -1,3 +1,4 @@
+from __future__ import print_function
 from numpy import empty, sin, cos, arange, ones
 from openopt import LLAVP
 

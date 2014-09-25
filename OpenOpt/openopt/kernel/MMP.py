@@ -1,5 +1,6 @@
-from baseProblem import NonLinProblem
-from NLP import NLP
+from __future__ import absolute_import
+from .baseProblem import NonLinProblem
+from .NLP import NLP
 from numpy import max, array, hstack, vstack, zeros, ones, inf, asfarray, atleast_2d
 
 class MMP(NonLinProblem):

@@ -1,12 +1,13 @@
+from __future__ import absolute_import
 from numpy import ndarray, asscalar, isscalar, inf, nan, searchsorted, logical_not, \
 copy as Copy, logical_and, asarray, any, all, atleast_1d, vstack, logical_or, array
 
 import numpy as np
-from FDmisc import FuncDesignerException, update_mul_inf_zero, update_negative_int_pow_inf_zero, \
+from .FDmisc import FuncDesignerException, update_mul_inf_zero, update_negative_int_pow_inf_zero, \
 isPyPy, update_div_zero, where
 from FuncDesigner.multiarray import multiarray
-from boundsurf import boundsurf, surf, devided_interval, split, boundsurf_join, merge_boundsurfs
-from boundsurf2 import surf2, boundsurf2
+from .boundsurf import boundsurf, surf, devided_interval, split, boundsurf_join, merge_boundsurfs
+from .boundsurf2 import surf2, boundsurf2
 from operator import truediv as td
 from bisect import bisect_left, bisect_right
 
@@ -657,7 +658,7 @@ def inv_b_interval(B, revert):
     return boundsurf2(s_l, s_u, B.definiteRange, B.domain), B.definiteRange
 
 def get_pow_b2_coeffs(L, U, d_l, d_u, c_l, c_u, other):
-    from overloads import get_inner_coeffs, get_outer_coeffs
+    from .overloads import get_inner_coeffs, get_outer_coeffs
     
     isInt = other == asarray(other, int)
     
@@ -733,7 +734,7 @@ def pow_interval(r, inp, other, domain, dtype):
     is_b2 = type(lb_ub) == boundsurf2
     
     if ia_lvl_2_unavailable or is_b2:
-        from ooFun import oofun
+        from .ooFun import oofun
         r1, definiteRange = oofun._interval_(r, domain, dtype)
         #return r1, definiteRange
     else:

@@ -6,6 +6,7 @@ For maximum clique problem you could use STAB on complementary graph, for networ
 Unlike networkx maximum_independent_set() we search for *exact* solution.
 Limitations on time, cputime, "enough" value, basic GUI features are available.
 '''
+from __future__ import print_function
 from openopt import STAB
 
 import networkx as nx
@@ -34,7 +35,7 @@ r = p.solve('interalg', iprint = 0) # set it to -1 to completely suppress intera
 # for linux use [sudo] easy_install tk or [sodo] apt-get install python-tk
 #r = p.manage('cplex')
 
-print(r.ff, r.solution)
+print((r.ff, r.solution))
 '''
 Solver:   Time Elapsed = 0.34   CPU Time Elapsed = 0.28
 (6, [1, 3, 5, 8, 12, 14])

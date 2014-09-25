@@ -1,10 +1,11 @@
-from FDmisc import FuncDesignerException, pWarn, _getAllAttachedConstraints
-from ooFun import oofun
-from constraints import BaseFDConstraint
-from ooarray import ooarray
-from ooPoint import ooPoint
+from __future__ import absolute_import
+from .FDmisc import FuncDesignerException, pWarn, _getAllAttachedConstraints
+from .ooFun import oofun
+from .constraints import BaseFDConstraint
+from .ooarray import ooarray
+from .ooPoint import ooPoint
 from numpy import isnan, ndarray, isfinite, asscalar, all, asarray, atleast_1d, array_equal
-from sle import sle
+from .sle import sle
 
 class ooSystem:
     def __init__(self, *args,  **kwargs):

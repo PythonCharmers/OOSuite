@@ -1,8 +1,9 @@
+from __future__ import absolute_import
 #PythonSum = sum
 import numpy as np, copy
 
 def categoricalAttribute(oof, attr):
-    from ooFun import oofun
+    from .ooFun import oofun
     L = len(oof.domain)
     if not hasattr(oof, 'aux_domain'):
         oof.aux_domain = copy.copy(oof.domain)

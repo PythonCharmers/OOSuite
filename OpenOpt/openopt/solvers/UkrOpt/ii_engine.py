@@ -1,4 +1,5 @@
-from interalgLLR import *
+from __future__ import absolute_import
+from .interalgLLR import *
 from numpy import inf, prod, all, sum, zeros
 #from FuncDesigner.boundsurf import boundsurf
 

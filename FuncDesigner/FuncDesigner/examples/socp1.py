@@ -3,6 +3,7 @@
 FuncDesigner SOCP example
 for the problem http://openopt.org/images/2/28/SOCP.png
 """
+from __future__ import print_function
 
 from numpy import *
 from FuncDesigner import *

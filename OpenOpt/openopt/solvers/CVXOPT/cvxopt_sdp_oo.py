@@ -1,5 +1,6 @@
+from __future__ import absolute_import
 from openopt.kernel.baseSolver import baseSolver
-from CVXOPT_SDP_Solver import CVXOPT_SDP_Solver
+from .CVXOPT_SDP_Solver import CVXOPT_SDP_Solver
 
 class cvxopt_sdp(baseSolver):
     __name__ = 'cvxopt_sdp'

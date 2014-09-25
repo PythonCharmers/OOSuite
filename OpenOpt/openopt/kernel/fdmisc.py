@@ -1,7 +1,8 @@
+from __future__ import absolute_import
 # Handling of FuncDesigner probs
 from numpy import hstack, vstack, atleast_1d, cumsum, asarray, zeros,  ndarray,\
 prod, ones, copy, nan, flatnonzero, array_equal, asanyarray, int64
-from nonOptMisc import scipyInstalled, Hstack, Vstack, Find, \
+from .nonOptMisc import scipyInstalled, Hstack, Vstack, Find, \
 isspmatrix, SparseMatrixConstructor, DenseMatrixConstructor
 import numpy as np
 
@@ -315,7 +316,7 @@ def setStartVectorAndTranslators(p):
             else:
                 lin_oofun = elem
             if lin_oofun.getOrder(p.freeVars, p.fixedVars) > 1:
-                from oologfcn import OpenOptException
+                from .oologfcn import OpenOptException
                 raise OpenOptException("this function hasn't been intended to work with nonlinear FuncDesigner oofuns")
             C.append(p._pointDerivative2array(lin_oofun.D(Z, **p._D_kwargs), useSparse = p.useSparse))
             d.append(-lin_oofun(Z))

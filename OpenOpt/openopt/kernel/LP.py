@@ -1,6 +1,7 @@
-from baseProblem import MatrixProblem
+from __future__ import absolute_import
+from .baseProblem import MatrixProblem
 from numpy import asarray, ones, inf, dot, zeros, asfarray, atleast_1d
-import NLP
+from . import NLP
 
 class LP(MatrixProblem):
     _optionalData = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub']
@@ -118,7 +119,7 @@ class LP(MatrixProblem):
         try: from lp_maker import lp_maker, lpsolve
         except ImportError: self.err('To export LP/MILP in files you should have lpsolve and its Python binding properly installed')
         self._Prepare()
-        from ooMisc import LinConst2WholeRepr
+        from .ooMisc import LinConst2WholeRepr
         LinConst2WholeRepr(self)
         
         # set goal to  min/max

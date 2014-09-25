@@ -1,7 +1,8 @@
+from __future__ import absolute_import
 __docformat__ = "restructuredtext en"
 from numpy import zeros, ones, copy, isfinite, where, asarray, inf, int64, \
 array, dot, ndarray, prod, flatnonzero, max, abs, sqrt, sum, atleast_1d, asscalar
-from nonOptMisc import scipyAbsentMsg, scipyInstalled, isspmatrix, Hstack, Vstack, coo_matrix, isPyPy
+from .nonOptMisc import scipyAbsentMsg, scipyInstalled, isspmatrix, Hstack, Vstack, coo_matrix, isPyPy
 
 Copy = lambda arg: asscalar(arg) if type(arg)==ndarray and arg.size == 1 else arg.copy() if hasattr(arg, 'copy') else copy(arg)
 

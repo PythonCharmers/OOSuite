@@ -1,9 +1,10 @@
-from baseProblem import NonLinProblem
+from __future__ import absolute_import
+from .baseProblem import NonLinProblem
 
 from numpy import asfarray, dot, abs, ndarray
 import numpy as np
-from setDefaultIterFuncs import FVAL_IS_ENOUGH, SMALL_DELTA_F
-import NLP
+from .setDefaultIterFuncs import FVAL_IS_ENOUGH, SMALL_DELTA_F
+from . import NLP
 try:
     import scipy
     solver = 'scipy_fsolve'

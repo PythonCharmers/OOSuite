@@ -1,6 +1,7 @@
+from __future__ import absolute_import
 from numpy import all, abs
-from overloads import hstack
-from FDmisc import FuncDesignerException
+from .overloads import hstack
+from .FDmisc import FuncDesignerException
 
 def d(arg, v, **kw):#, *args, **kw):
     N = len(v)

@@ -1,7 +1,8 @@
-from ooFun import oofun
-from BooleanOOFun import BooleanOOFun
-from FDmisc import FuncDesignerException
-from ooPoint import ooPoint
+from __future__ import absolute_import
+from .ooFun import oofun
+from .BooleanOOFun import BooleanOOFun
+from .FDmisc import FuncDesignerException
+from .ooPoint import ooPoint
 from numpy import atleast_1d, isnan, logical_and, inf, asfarray, tile, vstack, prod, int8, int16, int32, int64, \
 isinf, logical_or, logical_not, isfinite, log2, any
 
@@ -98,7 +99,7 @@ class SmoothFDConstraint(BaseFDConstraint):
     
     def lh(self, *args, **kw): # overwritten in ooVar, mb something else
         if '_invert' not in self.__dict__:
-            from logic import NOT
+            from .logic import NOT
             self._invert = NOT(self)
         return self._invert.nlh(*args, **kw)
     

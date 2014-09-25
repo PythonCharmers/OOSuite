@@ -1,3 +1,4 @@
+from __future__ import print_function
 __docformat__ = "restructuredtext en"
 
 from numpy import *
@@ -17,6 +18,6 @@ p = LUNP(C, d, lb=lb, ub=ub)
 
 r = p.solve('lp:glpk', iprint = -1)
 
-print 'f_opt:', r.ff
+print('f_opt:', r.ff)
 #print 'x_opt:', r.xf
 

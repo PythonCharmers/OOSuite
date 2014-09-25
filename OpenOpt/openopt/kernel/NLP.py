@@ -1,5 +1,6 @@
-from ooMisc import assignScript
-from baseProblem import NonLinProblem
+from __future__ import absolute_import
+from .ooMisc import assignScript
+from .baseProblem import NonLinProblem
 from numpy import asarray, ones, inf, array
 
 

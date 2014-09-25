@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 # sometimes Tkinter is not installed
 TkinterIsInstalled = True
 import platform
@@ -17,9 +18,9 @@ else:
 
 from threading import Thread
 from openopt import __version__ as ooversion
-from setDefaultIterFuncs import BUTTON_ENOUGH_HAS_BEEN_PRESSED, USER_DEMAND_EXIT
-from ooMisc import killThread
-from runProbSolver import finalShow
+from .setDefaultIterFuncs import BUTTON_ENOUGH_HAS_BEEN_PRESSED, USER_DEMAND_EXIT
+from .ooMisc import killThread
+from .runProbSolver import finalShow
 
 def manage(p, *args, **kwargs):
     p.isManagerUsed = True

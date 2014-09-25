@@ -1,4 +1,5 @@
-from runProbSolver import runProbSolver
+from __future__ import absolute_import
+from .runProbSolver import runProbSolver
 def ooRun(prob, solvers, *args, **kwargs):
     r = []
     for solver in solvers:

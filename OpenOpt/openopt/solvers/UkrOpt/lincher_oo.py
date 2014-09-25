@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import absolute_import
 __docformat__ = "restructuredtext en"
 
 from numpy import diag, ones, inf, any, copy, sqrt, vstack, concatenate, asarray, nan, where, array, zeros, exp, isfinite
@@ -8,7 +10,7 @@ from openopt.kernel.ooMisc import WholeRepr2LinConst
 #from scipy.optimize import line_search as scipy_optimize_linesearch
 #from scipy.optimize.linesearch import line_search as scipy_optimize_linesearch_f
 from numpy import arange, sign, hstack
-from UkrOptMisc import getDirectionOptimPoint, getConstrDirection
+from .UkrOptMisc import getDirectionOptimPoint, getConstrDirection
 import os
 
 class lincher(baseSolver):
@@ -291,7 +293,7 @@ def chLineSearch(p, x0, direction, N, isBB):
         iterValues.r0 = p.getMaxResidual(x0)
         #counter = 1
         while 1:
-            print 'stage 1'
+            print('stage 1')
             if lsF(x0 + direction*alpha) <= lsF_x0 - alpha * C1 and p.getMaxResidual(x0 + direction*alpha) <= max(p.contol, iterValues.r0):
                 assert alpha>=0
                 #print counter, C1
@@ -302,7 +304,7 @@ def chLineSearch(p, x0, direction, N, isBB):
                 if p.debug: p.warn('alpha less alpha_min')
                 break
         if alpha == 1.0:
-            print 'stage 2'
+            print('stage 2')
             K = 1.5
             lsF_prev = lsF_x0
             for i in range(p.maxLineSearch):

@@ -1,4 +1,5 @@
-from baseProblem import MatrixProblem
+from __future__ import absolute_import
+from .baseProblem import MatrixProblem
 
 class MCP(MatrixProblem):
     _optionalData = []

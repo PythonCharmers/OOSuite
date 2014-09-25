@@ -1,3 +1,4 @@
+from __future__ import print_function
 __docformat__ = "restructuredtext en"
 
 from numpy import diag,  ones, sin, cos, arange, sqrt, vstack, zeros, dot
@@ -21,6 +22,6 @@ NLPsolver = 'scipy_lbfgsb'# you could try scipy_tnc or ralg as well
 p2 = LLSP(C, d, lb=lb, ub=ub)
 r2=p2.solve('nlp:'+NLPsolver)
 ##################################################################
-print '###########Results:###########'
-print 'LLSP solver '+ LLSPsolver + ':', r.ff
-print 'NLP solver '+ NLPsolver + ':', r2.ff
+print('###########Results:###########')
+print('LLSP solver '+ LLSPsolver + ':', r.ff)
+print('NLP solver '+ NLPsolver + ':', r2.ff)

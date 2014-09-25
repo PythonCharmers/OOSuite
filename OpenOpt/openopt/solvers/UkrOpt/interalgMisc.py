@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 PythonMin, PythonMax = min, max
 from numpy import isnan, array, atleast_1d, asarray, all, searchsorted, logical_or, any, nan, \
 vstack, inf, where, logical_not, min, abs, insert, logical_xor, argsort, zeros_like
@@ -11,7 +12,7 @@ except ImportError:
     def append(*args, **kw):
         raise ImportError('function append() is absent in PyPy yet')
         
-from interalgLLR import *
+from .interalgLLR import *
 
 try:
     from bottleneck import nanmin, nanmax

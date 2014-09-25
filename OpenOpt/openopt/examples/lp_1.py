@@ -12,6 +12,7 @@ x1 + 10x2 + 100x3 = 80           (7)
 x1 >= 4                                     (8)
 -8 >= x2 >= -80                        (9)
 """
+from __future__ import print_function
 
 from numpy import *
 from openopt import LP

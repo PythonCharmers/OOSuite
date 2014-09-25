@@ -1,4 +1,5 @@
-from baseProblem import NonLinProblem
+from __future__ import absolute_import
+from .baseProblem import NonLinProblem
 from numpy import inf
 
 from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X,  SMALL_DELTA_F

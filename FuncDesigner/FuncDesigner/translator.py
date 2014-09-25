@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 # Handling of FuncDesigner probs
 
 from numpy import hstack, atleast_1d, cumsum, asfarray, asarray, zeros, \
@@ -5,9 +6,9 @@ ndarray, prod, nan, array_equal, copy, array, flatnonzero
 import numpy as np
 #from nonOptMisc import scipyInstalled, isspmatrix, SparseMatrixConstructor#, DenseMatrixConstructor
 
-from FDmisc import FuncDesignerException, SparseMatrixConstructor, scipyInstalled, isspmatrix, \
+from .FDmisc import FuncDesignerException, SparseMatrixConstructor, scipyInstalled, isspmatrix, \
 Hstack, Find
-from ooPoint import ooPoint
+from .ooPoint import ooPoint
 DenseMatrixConstructor = np.zeros
 #isspmatrix = lambda *args: False
 
@@ -137,7 +138,7 @@ def vector2point(S, x):
     
     # without copy() ipopt and probably others can replace it by noise after closing
     kw = {'skipArrayCast':True} if isComplexArray else {}
-    r = ooPoint((v, x[S.oovar_indexes[i]:S.oovar_indexes[i+1]]) for i, v in enumerate(S._variables), **kw)
+    r = ooPoint(((v, x[S.oovar_indexes[i]:S.oovar_indexes[i+1]]) for (i, v) in enumerate(S._variables)), **kw)
     
     S._SavedValues['prevVal'] = r
     S._SavedValues['prevX'] = copy(x)

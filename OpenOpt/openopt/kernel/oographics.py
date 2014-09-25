@@ -1,7 +1,8 @@
+from __future__ import absolute_import
 from numpy import hstack, ravel, isnan, asfarray, log10, array,  isfinite
 from openopt import __version__ as ooversion
 ooversion = str(ooversion)
-from setDefaultIterFuncs import stopcase
+from .setDefaultIterFuncs import stopcase
 
 class Graphics:
     def __init__(self):

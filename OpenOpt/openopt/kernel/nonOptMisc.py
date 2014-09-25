@@ -1,5 +1,7 @@
+from __future__ import print_function
+from __future__ import absolute_import
 import os, sys, numpy as np
-from oologfcn import OpenOptException
+from .oologfcn import OpenOptException
 from numpy import zeros, hstack, vstack, ndarray, copy, where, prod, isscalar, atleast_2d, eye, \
 diag, asfarray
 

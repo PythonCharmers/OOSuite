@@ -1,5 +1,6 @@
+from __future__ import absolute_import
 from openopt.kernel.baseSolver import baseSolver
-from QPSolve import QPSolve
+from .QPSolve import QPSolve
 
 class qlcp(baseSolver):
     __license__ = "MIT"

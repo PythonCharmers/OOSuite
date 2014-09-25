@@ -1,3 +1,4 @@
+from __future__ import print_function
 from numpy import inf
 from FuncDesigner import *
 a, b=oovars('a', 'b')
@@ -59,4 +60,4 @@ c18 = sin(a); assert c18.getOrder() == inf
 c19 = ifThenElse(a>1, a, b); assert c19.getOrder() == inf
 # TODO: try to set correct value from val1, val2 if condition is fixed
 
-print 'passed'
+print('passed')

@@ -7,6 +7,7 @@ x0 = [cos(1), cos(2), ..., cos(N)]
 x_opt = all-zeros
 f_opt = 0
 """
+from __future__ import print_function
 
 from numpy import *
 from openopt import NSP

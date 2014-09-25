@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 lvl1_ops = ('+', '-')
 lvl2_ops = ('*', )
 lvl3_ops = ('/', )
@@ -17,13 +18,13 @@ def getitem_expression(oof, ind, *args, **kw):
     return r + '[' + Ind + ']'
 
 def add_expression(Self, Other, *args, **kw):
-    from ooFun import oofun
+    from .ooFun import oofun
     tmp2 = (Other.expression(**kw) if isinstance (Other, oofun) else str(Other))
     r = Self.expression(**kw) + (' - ' + tmp2[1:] if tmp2[0] == '-' else ' + ' + tmp2)
     return r
 
 def mul_expression(Self, Other, *args, **kw):
-    from ooFun import oofun
+    from .ooFun import oofun
     isOOFun = isinstance(Other, oofun)
     r1 = Self.expression(**kw)
     needBrackets1 = '+' in r1 or '-' in r1# or '*' in r1 or '/' in r1
@@ -41,7 +42,7 @@ def neg_expression(Self, *args, **kw):
     return '- (' + r + ')' if needBrackets else '- ' + r
 
 def div_expression(Self, Other, *args, **kw):
-    from ooFun import oofun
+    from .ooFun import oofun
     r1 = Self.expression(**kw)
     needBrackets1 = '+' in r1 or '-' in r1  or '/' in r1#or '*' in r1
     R1 = '(' + r1 + ')' if needBrackets1 else r1
@@ -60,7 +61,7 @@ def rdiv_expression(Self, other, *args, **kw):
     return str(other) + '/' + R1
 
 def pow_expression(Self, other, *args, **kw):
-    from ooFun import oofun
+    from .ooFun import oofun
     r1 = Self.expression(**kw)
     needBrackets1 = '+' in r1 or '-' in r1 or '*' in r1 or '/' in r1 or '^' in r1
     R1 = '(' + r1 + ')' if needBrackets1 else r1

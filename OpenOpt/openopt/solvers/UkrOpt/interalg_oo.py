@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 PythonMin, PythonMax = min, max
 import numpy as np
 
@@ -7,11 +8,11 @@ from openopt.kernel.MOP import MOPsolutions
 
 from openopt.solvers.UkrOpt.interalgMisc import *
 from FuncDesigner import sum as fd_sum, abs as fd_abs, oopoint
-from ii_engine import *
-from interalgCons import processConstraints
-from interalgODE import interalg_ODE_routine
+from .ii_engine import *
+from .interalgCons import processConstraints
+from .interalgODE import interalg_ODE_routine
 
-from interalgLLR import adjustr4WithDiscreteVariables
+from .interalgLLR import adjustr4WithDiscreteVariables
 
 bottleneck_is_present = False
 try:
@@ -51,7 +52,7 @@ class interalg(baseSolver):
         
         isMOP = p.probType == 'MOP'
         if isMOP:
-            from interalgMOP import r14MOP
+            from .interalgMOP import r14MOP
         #isOpt = p.probType in ['NLP', 'NSP', 'GLP', 'MINLP']
         isODE = p.probType == 'ODE'
         isSNLE = p.probType in ('NLSP', 'SNLE')

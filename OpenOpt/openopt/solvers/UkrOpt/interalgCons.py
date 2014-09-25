@@ -1,6 +1,8 @@
+from __future__ import print_function
+from __future__ import absolute_import
 from numpy import empty, logical_and, logical_not, take, zeros, isfinite, any, \
 asarray, ndarray, bool_#where
-from interalgT import adjustDiscreteVarBounds, truncateByPlane
+from .interalgT import adjustDiscreteVarBounds, truncateByPlane
 import numpy as np
 
 # for PyPy

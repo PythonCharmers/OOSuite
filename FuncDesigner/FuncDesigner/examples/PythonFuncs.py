@@ -1,3 +1,4 @@
+from __future__ import print_function
 # The example illustrates how oovars can pass through ordinary Python functions 
 # provided FuncDesigner has appropriate overloads for all functions/operators used inside those ones 
 

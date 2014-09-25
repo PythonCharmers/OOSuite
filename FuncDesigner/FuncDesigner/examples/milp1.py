@@ -1,3 +1,4 @@
+from __future__ import print_function
 # Example of creating MILP in FuncDesigner
 # and solving it via OpenOpt
 

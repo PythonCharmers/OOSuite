@@ -1,4 +1,5 @@
 """ Advanced FuncDesigner example for solving ODE with automatic differentiation """
+from __future__ import print_function
 
 from FuncDesigner import *
 from numpy import arange, zeros,  ones

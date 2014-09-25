@@ -1,6 +1,7 @@
 '''
 interalg example for global MINLP with 100 variables and some constraints
 '''
+from __future__ import print_function
 from FuncDesigner import *
 from openopt import *
  

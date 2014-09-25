@@ -1,3 +1,4 @@
+from __future__ import print_function
 from numpy import dot, sign, zeros, all, isfinite, array, sqrt, any, isnan, pi, sin, arccos, inf, argmax, asfarray
 import numpy
 from numpy.linalg import norm
@@ -51,7 +52,7 @@ class Dilation():
         
         #self.units.add(DilationUnit(vector.copy(), dilationCoeff))
         self.units.append(DilationUnit(v, dilationCoeff))
-        print 'add new dilation vector; curr num: ', len(self.units)
+        print('add new dilation vector; curr num: ', len(self.units))
         
     def getProjections(self, vv):
         #assert len(self.units) != 0
@@ -120,7 +121,7 @@ class Dilation():
                 unit.dilationCoeff  *= 2.0
             elif c > 0.25 :
                 unit.dilationCoeff  /= 2.0
-            print i, unit.dilationCoeff
+            print(i, unit.dilationCoeff)
             
             
     def updateDilationCoeffs(self, scalarComponents, rest):
@@ -171,7 +172,7 @@ class Dilation():
         
         for i, unit in enumerate(self.units):
             unit.dilationCoeff = r[i]
-        print 'nU=%d k=%0.1g r_min=%0.1g r_max=%0.1g' % (self.unitsNum, k, min(r), max(r))
+        print('nU=%d k=%0.1g r_min=%0.1g r_max=%0.1g' % (self.unitsNum, k, min(r), max(r)))
         #print r
             #print i, unit.dilationCoeff
 #        print 'old sum:', S2,'new sum:', sum(array([unit.dilationCoeff*scalarComponents[i] for i, unit in enumerate(self.units)])**2)
@@ -189,7 +190,7 @@ class Dilation():
 #                scs.pop(0)
 #            scs.append(scalarComponent)
         
-        print 'norm(rest1):', norm(rest)
+        print('norm(rest1):', norm(rest))
         #cond_add = norm(rest1) > 1e-2
         s = abs(asfarray([scalarComponent for (scalarComponent, component, unit) in projectionsInfo]))
         #cond_add = self.unitsNum == 0 or any(norm(rest1) > 64.0*asfarray([unit.dilationCoeff * s[i] for i, unit in enumerate(self.units)]))
@@ -197,7 +198,7 @@ class Dilation():
         if cond_add: 
             self.addDilationUnit(rest)
             projectionsInfo, rest = self.getProjections(_dilationDirection_)
-            print 'norm(rest11):', norm(rest)
+            print('norm(rest11):', norm(rest))
         
         #print '!>', dot(dilatedDirectionComponent1, rest1) / norm(dilatedDirectionComponent1) / norm(rest1)
         #print '!!>', dilatedDirectionComponent1, rest1
@@ -263,7 +264,7 @@ class Dilation():
 #                unit.dilationCoeff /= miUnit.dilationCoeff
             #print 'mi removed:', ind_mi
         nRemoved = self.cleanUnnessesaryDilationUnits()     
-        if nRemoved: print 'nRemoved:', nRemoved
+        if nRemoved: print('nRemoved:', nRemoved)
         return r            
             #d = 1.0
         
@@ -340,7 +341,7 @@ class Dilation():
         indUnitsToRemove = []
         for i, unit in enumerate(self.units):
             if unit.dilationCoeff > self.dilationCoeffThreshold:
-                print '>>', unit.dilationCoeff ,  self.dilationCoeffThreshold
+                print('>>', unit.dilationCoeff ,  self.dilationCoeffThreshold)
                 indUnitsToRemove.append(i)
                 #unitsToRemove.add(unit)
         for j in xrange(len(indUnitsToRemove)):

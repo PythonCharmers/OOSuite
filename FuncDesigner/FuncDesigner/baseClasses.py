@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from numpy import ndarray
 
 class OOArray(ndarray):
@@ -7,7 +8,7 @@ class MultiArray(ndarray):
     pass
 
 def distrib_err_fcn(*args, **kw):
-    from FDmisc import FuncDesignerException
+    from .FDmisc import FuncDesignerException
     raise FuncDesignerException('''
             direct operations (like +, -, *, /, ** etc) on stochastic distributions are forbidden,
             you should declare FuncDesigner variables, define function(s) on them 

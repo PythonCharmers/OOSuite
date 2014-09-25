@@ -1,10 +1,11 @@
+from __future__ import absolute_import
 __docformat__ = "restructuredtext en"
 from time import time, clock
 from numpy import asfarray, nan, ones, all, atleast_1d, any, isnan, \
 array_equal, asscalar, asarray, ndarray, isscalar, matrix, seterr, isinf #where
-from setDefaultIterFuncs import stopcase,  SMALL_DELTA_X,  SMALL_DELTA_F, IS_MAX_ITER_REACHED
-from check import check
-from oologfcn import OpenOptException
+from .setDefaultIterFuncs import stopcase,  SMALL_DELTA_X,  SMALL_DELTA_F, IS_MAX_ITER_REACHED
+from .check import check
+from .oologfcn import OpenOptException
 from openopt import __version__ as version
 
 
@@ -14,7 +15,7 @@ from openopt.kernel.ooMisc import isSolved
 ######################
 
 #from baseProblem import ProbDefaults
-from nonOptMisc import getSolverFromStringName, EmptyClass
+from .nonOptMisc import getSolverFromStringName, EmptyClass
 # for PyPy
 from openopt.kernel.nonOptMisc import where
 

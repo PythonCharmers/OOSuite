@@ -1,3 +1,4 @@
+from __future__ import print_function
 from numpy import arange, array
 from numpy.linalg import norm
 from openopt import NSP, oosolver
@@ -45,7 +46,7 @@ f = f1 + f2
 
 
 
-print 'start point: f1 = %e   f2 = %e' % (f1(startPoint), f2(startPoint))
+print('start point: f1 = %e   f2 = %e' % (f1(startPoint), f2(startPoint)))
 #print "start point: norm(f1') = %e   norm(f2') = %e" % (norm(f1.D(startPoint, y)), norm(f2.D(startPoint, x)))
 
 ralg = oosolver('ralg')
@@ -72,4 +73,4 @@ for i, solver in enumerate(solvers):
     #p.constraints = (y > 5)(tol=1e-4) #x>1e-1 #[2*y<sin(arange(N))]
     #r = p.manage(solver, iprint=10, xtol = 1e-9, ftol = 1e-9, show = solver == solvers[-1], maxIter = 10000)
     r = p.solve(solver, iprint=10, xtol = 1e-6, ftol = 1e-6, debug=0, show = solver == solvers[-1], plot = 0)
-    print 'end point: f1 = %e   f2 = %e' % (f1(r.xf), f2(r.xf))
+    print('end point: f1 = %e   f2 = %e' % (f1(r.xf), f2(r.xf)))

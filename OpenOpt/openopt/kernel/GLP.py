@@ -1,6 +1,7 @@
-from baseProblem import NonLinProblem
+from __future__ import absolute_import
+from .baseProblem import NonLinProblem
 from numpy import asarray, ones, inf
-from setDefaultIterFuncs import MAX_NON_SUCCESS 
+from .setDefaultIterFuncs import MAX_NON_SUCCESS 
 
 class GLP(NonLinProblem):
     probType = 'GLP'

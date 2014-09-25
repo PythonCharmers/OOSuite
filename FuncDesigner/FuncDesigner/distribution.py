@@ -1,18 +1,20 @@
+from __future__ import print_function
+from __future__ import absolute_import
 import numpy as np
 import operator
-from ooarray import ooarray
+from .ooarray import ooarray
 from FuncDesigner.multiarray import multiarray
-import overloads as o
-from ooFun import oofun, FuncDesignerException
+from . import overloads as o
+from .ooFun import oofun, FuncDesignerException
 try:
-    from constraints import BaseFDConstraint
+    from .constraints import BaseFDConstraint
 except:
     # for previous versions, TODO: remove in future
-    from ooFun import BaseFDConstraint
+    from .ooFun import BaseFDConstraint
     
 #from FuncDesigner.FDmisc import raise_except
 
-from baseClasses import Stochastic, distrib_err_fcn
+from .baseClasses import Stochastic, distrib_err_fcn
 
 
 class stochasticDistribution(Stochastic):

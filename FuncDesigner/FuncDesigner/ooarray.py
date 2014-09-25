@@ -1,11 +1,12 @@
+from __future__ import absolute_import
 PythonMax = max
-from baseClasses import OOArray
+from .baseClasses import OOArray
 from FuncDesigner.multiarray import multiarray
-from ooFun import oofun
-from constraints import Constraint
+from .ooFun import oofun
+from .constraints import Constraint
 from numpy import isscalar, asscalar, ndarray, atleast_1d, asanyarray, array
 import numpy as np
-from FDmisc import FuncDesignerException
+from .FDmisc import FuncDesignerException
 
 class ooarray(OOArray):
     __array_priority__ = 25 # !!! it should exceed oofun.__array_priority__ !!!

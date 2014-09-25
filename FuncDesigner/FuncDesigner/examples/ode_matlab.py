@@ -1,4 +1,5 @@
 """ Basic FuncDesigner example for solving ODE with automatic differentiation """
+from __future__ import print_function
 
 from FuncDesigner import *
 from numpy import linspace
@@ -38,7 +39,7 @@ solver = 'ode23s'
 # other matlab ode parameters, e.g. abstol, are unimplemented yet
 r = myODE.solve(solver, reltol=0.00015, matlab = '/usr/local/MATLAB/R2012a/bin/matlab')
 X,  Y,  Z = r(x, y, z)
-print(X[0:5], Y[50:55], Z[-5:])
+print((X[0:5], Y[50:55], Z[-5:]))
 
 """
 (array([ 3.        ,  3.07193008,  3.16782576,  3.28733903,  3.42969264]), 

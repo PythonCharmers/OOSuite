@@ -1,6 +1,7 @@
+from __future__ import absolute_import
 from numpy import ceil, floor, argmax, ndarray, copy, arange
-from setDefaultIterFuncs import SMALL_DELTA_X, SMALL_DELTA_F
-from LP import LP
+from .setDefaultIterFuncs import SMALL_DELTA_X, SMALL_DELTA_F
+from .LP import LP
 
 class MILP(LP):
     _optionalData = ['A', 'Aeq', 'b', 'beq', 'lb', 'ub', 'intVars', 'boolVars']

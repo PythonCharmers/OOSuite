@@ -1,7 +1,8 @@
-from baseProblem import MatrixProblem
+from __future__ import absolute_import
+from .baseProblem import MatrixProblem
 from numpy import ones, inf, dot, zeros, any, all, isfinite, eye
-from ooMisc import norm
-import NLP
+from .ooMisc import norm
+from . import NLP
 
 class LLSP(MatrixProblem):
     _optionalData = ['damp', 'X', 'c']

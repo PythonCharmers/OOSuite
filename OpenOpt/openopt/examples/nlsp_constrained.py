@@ -15,6 +15,7 @@ Note:
 and hence using h(x)=0 constraints is not 100% same
 to some additional f coords
 """
+from __future__ import print_function
 
 from openopt import SNLE
 from numpy import *

@@ -1,8 +1,9 @@
-from ooMisc import assignScript
-from baseProblem import MatrixProblem
+from __future__ import absolute_import
+from .ooMisc import assignScript
+from .baseProblem import MatrixProblem
 from numpy import asfarray, ones, inf, dot, nan, zeros, any, isfinite, sign
-from ooMisc import norm
-import NSP
+from .ooMisc import norm
+from . import NSP
 
 class LLAVP(MatrixProblem):
     _optionalData = ['damp', 'X', 'c']

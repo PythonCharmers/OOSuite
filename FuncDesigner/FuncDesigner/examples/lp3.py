@@ -5,6 +5,7 @@ for Nvariables = 25000
 glpk peak memory ~70 Mb, 
 time elapsed = 35.79, CPU time elapsed = 35.0
 """
+from __future__ import print_function
 
 from openopt import LP
 from numpy import arange

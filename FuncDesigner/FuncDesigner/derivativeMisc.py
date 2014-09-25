@@ -1,13 +1,14 @@
+from __future__ import absolute_import
 PythonAll = all
-from FDmisc import Len, FuncDesignerException, DiagonalType, scipyAbsentMsg, pWarn, scipyInstalled, Diag, \
+from .FDmisc import Len, FuncDesignerException, DiagonalType, scipyAbsentMsg, pWarn, scipyInstalled, Diag, \
 Copy, Eye, isPyPy, isspmatrix
 
 
-from baseClasses import OOFun, Stochastic
+from .baseClasses import OOFun, Stochastic
 from numpy import isscalar, ndarray, atleast_2d, prod, int64, asarray, ones_like, array_equal, asscalar
 import numpy as np
-from multiarray import multiarray
-from ooPoint import ooPoint
+from .multiarray import multiarray
+from .ooPoint import ooPoint
 
 try:
     from DerApproximator import get_d1#, check_d1

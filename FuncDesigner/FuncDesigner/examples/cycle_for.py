@@ -1,3 +1,4 @@
+from __future__ import print_function
 # The example illustrates using "for" cycle in FD code
 from FuncDesigner import *
 a, b, c = oovars('a', 'b', 'c')

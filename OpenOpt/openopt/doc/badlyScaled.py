@@ -1,3 +1,4 @@
+from __future__ import print_function
 from numpy import *
 from openopt import *
 
@@ -14,7 +15,7 @@ someModifiedStopCriteria = {'gtol': 1e-15,  'ftol': 1e-13,  'xtol': 1e-13, 'maxI
 # using default diffInt = 1e-7 is inappropriate:
 p = NLP(f, x0, c=c, iprint = 100, **someModifiedStopCriteria)
 r = p.solve('ralg')
-print r.ff,  r.xf #  will print something like "6424.9999886000014 [ 15.0000005   4.       ]"
+print(r.ff,  r.xf) #  will print something like "6424.9999886000014 [ 15.0000005   4.       ]"
 """
  for to improve the solution we will use
  changing either p.diffInt from default 1e-7 to [1e-7,  1]
@@ -32,7 +33,7 @@ print r.ff,  r.xf #  will print something like "6424.9999886000014 [ 15.0000005 
  """
 p = NLP(f, x0, c=c, scale = [1,  coeff], iprint = 100, **someModifiedStopCriteria)
 r = p.solve('ralg')
-print r.ff,  r.xf # "24.999996490694787 [  1.50000004e+01   8.00004473e+09]" - much better
+print(r.ff,  r.xf) # "24.999996490694787 [  1.50000004e+01   8.00004473e+09]" - much better
 """
 Full Output:
 -----------------------------------------------------

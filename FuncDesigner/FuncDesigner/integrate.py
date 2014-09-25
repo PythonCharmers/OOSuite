@@ -1,9 +1,10 @@
-from ooFun import oofun, atleast_oofun
+from __future__ import absolute_import
+from .ooFun import oofun, atleast_oofun
 import numpy as np
-from FDmisc import FuncDesignerException
-from translator import FuncDesignerTranslator
-from ooPoint import ooPoint as oopoint
-from ooVar import oovar
+from .FDmisc import FuncDesignerException
+from .translator import FuncDesignerTranslator
+from .ooPoint import ooPoint as oopoint
+from .ooVar import oovar
 
 try:
     from scipy import integrate

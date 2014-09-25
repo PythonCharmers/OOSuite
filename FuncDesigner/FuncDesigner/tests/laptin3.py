@@ -1,3 +1,4 @@
+from __future__ import print_function
 from FuncDesigner import *
 from numpy import ones, arange
 nVar = 50

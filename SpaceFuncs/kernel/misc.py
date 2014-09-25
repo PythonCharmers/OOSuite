@@ -1,3 +1,4 @@
+from __future__ import print_function
 
 class SpaceFuncsException(BaseException):
     def __init__(self,  msg):

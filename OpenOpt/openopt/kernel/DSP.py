@@ -1,5 +1,6 @@
-from baseProblem import MatrixProblem
-from STAB import set_routine
+from __future__ import absolute_import
+from .baseProblem import MatrixProblem
+from .STAB import set_routine
 
 class DSP(MatrixProblem):
     _optionalData = []

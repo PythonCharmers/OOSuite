@@ -1,7 +1,8 @@
+from __future__ import absolute_import
 import numpy as np, operator as o
 from numpy import ndarray
 from FuncDesigner.FDmisc import FuncDesignerException
-from baseClasses import *
+from .baseClasses import *
 
 if 'div' in o.__dict__:
     div = o.div

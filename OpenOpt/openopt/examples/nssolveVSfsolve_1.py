@@ -20,6 +20,7 @@ is ~ 10-15%
 
 This test runs ~ a minute on my AMD 3800+
 """
+from __future__ import print_function
 noise = 1e-8
 
 from openopt import SNLE
@@ -72,12 +73,12 @@ desired_ftol = 1e-6
 assert desired_ftol - noise*len(x0) > 1e-7
 #w/o gradient:
 scipy_fsolve_failed, fs = 0, []
-print '----------------------------------'
-print 'desired ftol:', desired_ftol, 'objFunc noise:', noise
+print('----------------------------------')
+print('desired ftol:', desired_ftol, 'objFunc noise:', noise)
 ############################################################################
-print '---------- fsolve fails ----------'
+print('---------- fsolve fails ----------')
 t = time()
-print 'N log10(MaxResidual) MaxResidual'
+print('N log10(MaxResidual) MaxResidual')
 for i in xrange(N):
     p = SNLE(f, x0, ftol = desired_ftol - noise*len(x0), iprint = -1, maxFunEvals = int(1e7))
     r = p.solve('scipy_fsolve')
@@ -85,18 +86,18 @@ for i in xrange(N):
     fs.append(log10(v))
     if v > desired_ftol:
         scipy_fsolve_failed += 1
-        print i+1, '       %0.2f       ' % log10(v), v
+        print(i+1, '       %0.2f       ' % log10(v), v)
     else:
-        print i+1, 'OK'
-print 'fsolve time elapsed', time()-t
+        print(i+1, 'OK')
+print('fsolve time elapsed', time()-t)
 #print 'fsolve_failed number:', scipy_fsolve_failed , '(from', N, '),', 100.0*scipy_fsolve_failed / N, '%'
-print 'counters:', count1, count2, count3
+print('counters:', count1, count2, count3)
 ############################################################################
 count1 = count2 = count3 = 0
 t = time()
-print '---------- nssolve fails ---------'
+print('---------- nssolve fails ---------')
 nssolve_failed, ns = 0, []
-print 'N log10(MaxResidual) MaxResidual'
+print('N log10(MaxResidual) MaxResidual')
 for i in xrange(N):
     p = SNLE(f, x0, ftol = desired_ftol - noise*len(x0), iprint = -1, maxFunEvals = int(1e7))
     r = p.solve('nssolve')
@@ -106,16 +107,16 @@ for i in xrange(N):
     ns.append(log10(v))
     if  v > desired_ftol:
         nssolve_failed += 1
-        print i+1, '       %0.2f       ' % log10(v), v
+        print(i+1, '       %0.2f       ' % log10(v), v)
     else:
-        print i+1, 'OK'
-print 'nssolve time elapsed', time()-t
-print 'nssolve_failed number:', nssolve_failed , '(from', N, '),', 100.0 * nssolve_failed / N, '%'
-print 'counters:', count1, count2, count3
+        print(i+1, 'OK')
+print('nssolve time elapsed', time()-t)
+print('nssolve_failed number:', nssolve_failed , '(from', N, '),', 100.0 * nssolve_failed / N, '%')
+print('counters:', count1, count2, count3)
 ############################################################################
-print '------------ SUMMARY -------------'
-print 'fsolve_failed number:', scipy_fsolve_failed , '(from', N, '),', 100.0*scipy_fsolve_failed / N, '%'
-print 'nssolve_failed number:', nssolve_failed , '(from', N, '),', 100.0 * nssolve_failed / N, '%'
+print('------------ SUMMARY -------------')
+print('fsolve_failed number:', scipy_fsolve_failed , '(from', N, '),', 100.0*scipy_fsolve_failed / N, '%')
+print('nssolve_failed number:', nssolve_failed , '(from', N, '),', 100.0 * nssolve_failed / N, '%')
 
 #try:
 from pylab import *

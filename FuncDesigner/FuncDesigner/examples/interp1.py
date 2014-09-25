@@ -5,6 +5,7 @@ and yielded the oofun interpolate.scipy_UnivariateSpline with exactly same args/
 see http://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.UnivariateSpline.html
 for whole list of possible parameters
 """
+from __future__ import print_function
 
 from FuncDesigner import *
 a, b, c = oovars('a', 'b', 'c') 

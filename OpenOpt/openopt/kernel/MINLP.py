@@ -1,4 +1,5 @@
-from baseProblem import NonLinProblem
+from __future__ import absolute_import
+from .baseProblem import NonLinProblem
 from numpy import  sort, ndarray
 
 class MINLP(NonLinProblem):

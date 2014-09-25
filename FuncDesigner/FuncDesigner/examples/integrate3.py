@@ -1,3 +1,4 @@
+from __future__ import print_function
 from numpy import pi
 sigma = 1e-5
 # here order z, y, x is used instead of x,y,z  to keep it in accordance with scipy.integrate.tplquad API

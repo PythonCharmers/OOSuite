@@ -1,3 +1,4 @@
+from __future__ import print_function
 class OpenOptException(BaseException):
     def __init__(self,  msg):
         self.msg = msg

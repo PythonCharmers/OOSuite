@@ -5,6 +5,7 @@ x - 0.5 * y + z * sinh(t) = 0
 z + x = 1.5
 with a fixed variable, using oosystem
 """
+from __future__ import print_function
 from FuncDesigner import *
 x, y, z, t = oovars(4)
 S = oosystem()

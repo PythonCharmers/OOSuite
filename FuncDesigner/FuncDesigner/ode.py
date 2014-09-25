@@ -1,8 +1,10 @@
-from translator import FuncDesignerTranslator
-from FDmisc import FuncDesignerException, _getDiffVarsID
+from __future__ import print_function
+from __future__ import absolute_import
+from .translator import FuncDesignerTranslator
+from .FDmisc import FuncDesignerException, _getDiffVarsID
 from numpy import ndarray, hstack, vstack, isscalar, asarray
-from ooVar import oovar
-from ooFun import atleast_oofun
+from .ooVar import oovar
+from .ooFun import atleast_oofun
 
 class ode:
     # Ordinary differential equations

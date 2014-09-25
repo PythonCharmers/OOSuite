@@ -1,3 +1,4 @@
+from __future__ import print_function
 from FuncDesigner import *
 from SpaceFuncs import *
 spaceDimension = 2

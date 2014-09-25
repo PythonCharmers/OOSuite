@@ -1,3 +1,4 @@
+from __future__ import print_function
 from DerApproximator import *
 from numpy import *
 ff=lambda x: sum(x**2) + x[0]*x[2]

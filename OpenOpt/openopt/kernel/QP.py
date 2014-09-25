@@ -1,8 +1,9 @@
+from __future__ import absolute_import
 #PythonSum = sum
-import NLP
+from . import NLP
 
-from ooMisc import isspmatrix
-from baseProblem import MatrixProblem
+from .ooMisc import isspmatrix
+from .baseProblem import MatrixProblem
 from numpy import asfarray, dot, nan, zeros, isfinite, all, ravel, diag, isscalar, arange, ndarray
 from copy import copy as PythonCopy
 
@@ -118,7 +119,7 @@ def processConstraint(c, order_kw, p):
         p.QC.append((H, f, -c.ub + C))
         
 
-from nonOptMisc import scipyInstalled
+from .nonOptMisc import scipyInstalled
 import numpy as np
 
 def quad_render(arg, p):

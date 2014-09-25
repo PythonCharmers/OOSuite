@@ -1,4 +1,5 @@
-from MATLAB_BASE import MATLAB_BASE
+from __future__ import absolute_import
+from .MATLAB_BASE import MATLAB_BASE
 #import numpy as np
 
 class bintprog(MATLAB_BASE):

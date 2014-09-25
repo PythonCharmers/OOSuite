@@ -1,3 +1,4 @@
+from __future__ import print_function
 from numpy import *
 from DerApproximator import get_d1
 func = lambda x: (x**4).sum()

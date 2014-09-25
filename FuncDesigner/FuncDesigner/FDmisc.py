@@ -1,9 +1,11 @@
+from __future__ import print_function
+from __future__ import absolute_import
 PythonSum = sum
 PythonAny = any
 from numpy import asscalar, isscalar, asfarray, ndarray, prod, logical_and, logical_or, inf, atleast_1d, any, \
 where, hstack, atleast_2d, vstack
 import numpy as np
-from baseClasses import MultiArray, Stochastic
+from .baseClasses import MultiArray, Stochastic
 
 try:
     import scipy.sparse as SP
@@ -252,7 +254,7 @@ class Extras:
 
 # TODO: make it work for ooSystem as well
 def broadcast(func, oofuncs, useAttachedConstraints, *args, **kwargs):
-    from ooFun import oofun
+    from .ooFun import oofun
     if isinstance(oofuncs, oofun):
         oofuncs = [oofuncs]
     oofun._BroadCastID += 1

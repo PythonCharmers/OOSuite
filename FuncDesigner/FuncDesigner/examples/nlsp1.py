@@ -4,6 +4,7 @@ x**3 + y**3 - 9 = 0
 x - 0.5*y = 0
 cos(z) + x - 1.5 = 0
 """
+from __future__ import print_function
 from FuncDesigner import *
 from openopt import NLSP
 

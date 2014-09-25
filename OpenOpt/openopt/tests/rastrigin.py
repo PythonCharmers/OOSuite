@@ -1,3 +1,4 @@
+from __future__ import print_function
 from openopt import GLP
 from numpy import *
 
@@ -6,4 +7,4 @@ p = GLP(f, lb = -ones(10)*5.12,  ub = ones(10)*5.12,  maxIter = 1e3,  maxFunEval
 
 r = p.solve('de', plot=0)
 x_opt,  f_opt = r.xf,  r.ff
-print x_opt
+print(x_opt)

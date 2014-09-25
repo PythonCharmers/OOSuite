@@ -1,4 +1,6 @@
 #!/usr/bin/python
+from __future__ import print_function
+from __future__ import absolute_import
 import numpy as np
 import random
 random.seed(15)
@@ -133,7 +135,7 @@ def run_anneal(init_function,move_operator,objective_function,max_iterations,sta
         usage();
         print("missing --cooling start_temp:alpha for annealing")
         sys.exit(1)
-    from sa import anneal
+    from .sa import anneal
     iterations,score,best=anneal(init_function,move_operator,objective_function,max_iterations,start_temp,alpha, p)
     return iterations,score,best
 

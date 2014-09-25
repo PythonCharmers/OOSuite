@@ -1,5 +1,7 @@
 #! /usr/bin/env python
 
+from __future__ import print_function
+from __future__ import absolute_import
 descr   = """
 """
 
@@ -13,7 +15,7 @@ MAINTAINER_EMAIL    = 'dmitrey-at-openopt-dot-org'
 URL                 = 'http://openopt.org'
 LICENSE             = 'new BSD'
 
-from __init__ import __version__ as Ver
+from .__init__ import __version__ as Ver
 
 #DOWNLOAD_URL        = 'http://openopt.org/images/6/6a/DerApproximator.zip'
 

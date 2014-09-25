@@ -1,8 +1,9 @@
+from __future__ import absolute_import
 from openopt.kernel.ooMisc import norm
 from numpy import dot, asfarray, atleast_1d,  zeros, ones, float64, where, inf, ndarray, flatnonzero
 from openopt.kernel.baseSolver import baseSolver
 from openopt.kernel.nonOptMisc import isspmatrix, scipyInstalled, scipyAbsentMsg, isPyPy
-from lsqr import lsqr as LSQR
+from .lsqr import lsqr as LSQR
 
 try:
     from scipy.sparse import csc_matrix, csr_matrix

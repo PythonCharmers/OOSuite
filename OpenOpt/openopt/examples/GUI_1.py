@@ -2,6 +2,7 @@
 OpenOpt GUI:
      function manage() usage example
 """
+from __future__ import print_function
 
 from openopt import NLP, manage
 from numpy import cos, arange, ones, asarray, abs, zeros
@@ -44,5 +45,5 @@ r = p.manage('algencan', plot=1)
 """
 if r is not None:
     # r is None if user has pressed "Exit" button
-    print 'objfunc val:', r.ff
+    print('objfunc val:', r.ff)
 

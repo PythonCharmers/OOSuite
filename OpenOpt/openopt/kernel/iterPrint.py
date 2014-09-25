@@ -1,3 +1,4 @@
+from __future__ import print_function
 from numpy import log10
 def signOfFeasible(p):
     r = '-'

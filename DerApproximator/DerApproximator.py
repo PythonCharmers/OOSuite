@@ -2,6 +2,7 @@
 finite-difference derivatives approximation
 made by Dmitrey
 """
+from __future__ import print_function
 
 try:
     import numpypy as numpy

@@ -1,3 +1,4 @@
+from __future__ import print_function
 from FuncDesigner import *
 
 t=oovar('t')
@@ -8,4 +9,4 @@ assert f2.getOrder(fixedVars=t) == 0
 f3 = f + f2*f/(f2-f)
 assert f3.getOrder(fixedVars=t) == 0
 
-print 'OK'
+print('OK')

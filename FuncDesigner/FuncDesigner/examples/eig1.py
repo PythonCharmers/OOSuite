@@ -1,3 +1,4 @@
+from __future__ import print_function
 # An example of FuncDesigner eigenvalues/eigenvectors for a linear equations system,
 # see http://openopt.org/EIG for more examples and details
 from FuncDesigner import *

@@ -4,6 +4,7 @@ requires networkx (http://networkx.lanl.gov)
 and FuncDesigner installed.
 Limitations on time, cputime, "enough" value, basic GUI features are available.
 '''
+from __future__ import print_function
 from openopt import DSP
 
 import networkx as nx
@@ -34,7 +35,7 @@ r = p.solve('glpk', iprint=0) # see http://openopt.org/MILP for other MILP solve
 # for linux use [sudo] easy_install tk or [sodo] apt-get install python-tk
 #r = p.manage('cplex')
 
-print(r.ff, r.solution)
+print((r.ff, r.solution))
 '''
 Solver:   Time Elapsed = 0.08 	CPU Time Elapsed = 0.04
 objFunValue: 3 (feasible, MaxResidual = 0)

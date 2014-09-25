@@ -1,3 +1,4 @@
+from __future__ import print_function
 from FuncDesigner import *
 from openopt import NLP
 from numpy import arange
@@ -27,7 +28,7 @@ p = NLP(objective, startPoint, fixedVars = fixedVars, constraints = constraints)
 
 r = p.solve('ralg')
 
-print('opt_a: ', a(r))
+print(('opt_a: ', a(r)))
 
 '''
 # Alternatively, you can set freeVars instead of fixedVars: 

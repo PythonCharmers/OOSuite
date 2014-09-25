@@ -1,3 +1,4 @@
+from __future__ import print_function
 from openopt import NLP
 from numpy import cos, arange, ones, asarray, abs, zeros, sqrt, asscalar
 from pylab import legend, show, plot, subplot, xlabel, subplots_adjust
@@ -68,7 +69,7 @@ for j in range(len(solvers)):
         p.debug = 1
 
     r = p.solve(solver, debug=1)
-    print 'c1 evals:', cc1, 'c2 evals:', cc2, 'c3 evals:', cc3
+    print('c1 evals:', cc1, 'c2 evals:', cc2, 'c3 evals:', cc3)
     results[solver] = (r.ff, p.getMaxResidual(r.xf), r.elapsed['solver_time'], r.elapsed['solver_cputime'], r.evals['f'], r.evals['c'], r.evals['h'])
     subplot(2,1,1)
     F0 = asscalar(p.f(p.x0))

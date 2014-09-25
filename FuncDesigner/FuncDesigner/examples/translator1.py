@@ -8,6 +8,7 @@ scipy odr; scipy.interate ode; maybe some user-defined routines; etc.
 Of course, some routines mentioned above are already connected to FuncDesigner but 
 an awful lot of other is not yet and some of them (especially user-defined) will never be
 """
+from __future__ import print_function
 
 from FuncDesigner import *
 
@@ -67,7 +68,7 @@ pointDerivative1 = ff.D(point, useSparse = True)
 
 # way 1: use useSparse as pointDerivative2array argument
 ff_d = T.pointDerivative2array(pointDerivative1, useSparse = True)
-print(type(ff_d), ff_d.shape)
+print((type(ff_d), ff_d.shape))
 #with scipy installed: <class 'scipy.sparse.coo.coo_matrix'>, (100, 114)
 #also you can check scipy.sparse.isspmatrix(ff_d)
 
