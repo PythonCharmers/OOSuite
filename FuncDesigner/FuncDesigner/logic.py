@@ -1,8 +1,9 @@
+from __future__ import absolute_import
 PythonSum = sum
 from numpy import array, inf, logical_and, all, isnan, ndarray, where, atleast_1d, isfinite, log2, logical_not
 #from ooFun import oofun, BooleanOOFun
-from FDmisc import FuncDesignerException, raise_except
-from baseClasses import OOFun
+from .FDmisc import FuncDesignerException, raise_except
+from .baseClasses import OOFun
 
 #def discreteNLH(_input_bool_oofun, Lx, Ux, p, dataType):
 #    
@@ -208,7 +209,7 @@ def nlh_xor(_input, dep, Lx, Ux, p, dataType):
 
 def nlh_not(_input_bool_oofun, dep, Lx, Ux, p, dataType):
     if _input_bool_oofun is True or _input_bool_oofun is False:
-        raise 'unimplemented for non-oofun input yet'
+        raise Exception('unimplemented for non-oofun input yet')
        
     T0, res, DefiniteRange = _input_bool_oofun.nlh(Lx, Ux, p, dataType)
     T = reverse_l2P(T0)
@@ -227,7 +228,7 @@ def reverse_l2P(l2P):
     
 
 def AND(*args):
-    from BooleanOOFun import BooleanOOFun
+    from .BooleanOOFun import BooleanOOFun
     Args = args[0] if len(args) == 1 and isinstance(args[0], (ndarray, tuple, list, set)) else args
     assert not isinstance(args[0], ndarray), 'unimplemented yet' 
     Args2 = []
@@ -260,7 +261,7 @@ def alt_AND_engine(*input):
 XOR_prev = lambda arg1, arg2: (arg1 & ~arg2) | (~arg1 & arg2)
 
 def XOR(*args):
-    from BooleanOOFun import BooleanOOFun
+    from .BooleanOOFun import BooleanOOFun
     Args = args[0] if len(args) == 1 and isinstance(args[0], (ndarray, tuple, list, set)) else args
     assert not isinstance(args[0], ndarray), 'unimplemented yet' 
     for arg in Args:
@@ -283,7 +284,7 @@ def NOT(_bool_oofun):
         return True
     elif _bool_oofun is True:
         return False
-    from BooleanOOFun import BooleanOOFun
+    from .BooleanOOFun import BooleanOOFun
     assert not isinstance(_bool_oofun, (ndarray, list, tuple, set)), 'disjunctive and other logical constraint are not implemented for ooarrays/ndarrays/lists/tuples yet' 
     if not isinstance(_bool_oofun, OOFun):
         raise FuncDesignerException('FuncDesigner logical NOT currently is implemented for oofun instances only')
