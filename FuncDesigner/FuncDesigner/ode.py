@@ -1,12 +1,13 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from future.builtins import object
 from .translator import FuncDesignerTranslator
 from .FDmisc import FuncDesignerException, _getDiffVarsID
 from numpy import ndarray, hstack, vstack, isscalar, asarray
 from .ooVar import oovar
 from .ooFun import atleast_oofun
 
-class ode:
+class ode(object):
     # Ordinary differential equations
     
     _isInitialized = False
@@ -62,7 +63,7 @@ class ode:
         # thus Point4TranslatorAssignment is used instead
         Point4TranslatorAssignment = {}
         
-        for v, func in equations.items():
+        for v, func in list(equations.items()):
             func = atleast_oofun(func)
 #            if not isinstance(func,  oofun):
 #                func = fixed_oofun(func)
@@ -221,7 +222,7 @@ class ode:
                 
             resultDict = dict(self.ooT.vector2point(y.T))
             
-            for key, value in resultDict.items():
+            for key, value in list(resultDict.items()):
                 if min(value.shape) == 1:
                     resultDict[key] = value.flatten()
             r = FuncDesigner_ODE_Result(resultDict)
@@ -231,12 +232,12 @@ class ode:
         return r
         
 
-class FuncDesigner_ODE_Result:
+class FuncDesigner_ODE_Result(object):
     # TODO: prevent code clone with runprobsolver.py
     def __init__(self, resultDict):
         self.xf = resultDict
         if not hasattr(self, '_xf'):
-            self._xf = dict((var.name, value) for var, value in resultDict.items())
+            self._xf = dict((var.name, value) for var, value in list(resultDict.items()))
     def __call__(self, *args):
         r = [(self._xf[arg] if isinstance(arg,  str) else self.xf[arg]) for arg in args]
         return r[0] if len(args)==1 else r

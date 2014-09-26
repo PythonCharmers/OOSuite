@@ -1,3 +1,4 @@
+from future.builtins import str
 #from numpy import asfarray, argmax, sign, inf, log10
 from openopt.kernel.baseSolver import baseSolver
 from numpy import isfinite, array, asfarray, ravel #asfarray,  inf,  atleast_1d

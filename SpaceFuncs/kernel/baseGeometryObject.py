@@ -1,5 +1,6 @@
+from future.builtins import object
 from .misc import SpaceFuncsException
-class baseGeometryObject:
+class baseGeometryObject(object):
     _AttributesDict = {'spaceDimension': '_spaceDimension'}
     
     def __init__(self, *args, **kw):

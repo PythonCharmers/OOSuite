@@ -1,3 +1,4 @@
+from future.builtins import range
 from .Polytope import Polytope
 from FuncDesigner import ooarray, sqrt, angle, abs, sum
 from numpy import arange, isscalar
@@ -15,7 +16,7 @@ table = {
          'P': 'perimeter', 
          'S': 'area', 
 }
-table = dict([(key, '_'+val) for key, val in table.items()] + [(val, '_'+val) for key, val in table.items()])
+table = dict([(key, '_'+val) for key, val in list(table.items())] + [(val, '_'+val) for key, val in list(table.items())])
 others = ['sides', 'angles', 'area']
 table.update([(s, '_'+s) for s in others])
 

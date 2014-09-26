@@ -1,3 +1,5 @@
+from future.builtins import range
+from future.builtins import object
 from numpy import concatenate, vstack, hstack, inf, ones, zeros, diag, dot, abs, where, max, min
 from openopt import NLP, LLSP
 from openopt.kernel.ooMisc import norm
@@ -62,7 +64,7 @@ def getConstrDirection(p,  x, regularization = 1e-7):
     r_sp = p_sp.solve('BVLS', BVLS_inf=1e30)
     return r_sp.xf[:p.n]
 
-class DirectionOptimPoint:
+class DirectionOptimPoint(object):
     def __init__(self):
         pass
 

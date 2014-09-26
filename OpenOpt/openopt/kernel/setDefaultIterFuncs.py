@@ -124,7 +124,7 @@ def denyingStopFuncs(ProblemGroup=None):
     #mb in future it will be class-dependend,  like Matrix,  Nonlinear etc
     return {isMinIterReached : 'min iter is not reached yet', isMinTimeReached : 'min time is not reached yet', isMinCPUTimeReached:'min cputime is not reached yet', isMinFunEvalsReached:'min objective function evaluations nuber is not reached yet'}
 
-isMinFunEvalsReached = lambda p: p.minFunEvals==0 or ('f' in p.nEvals.keys() and p.nEvals['f'] >= p.minFunEvals)
+isMinFunEvalsReached = lambda p: p.minFunEvals==0 or ('f' in list(p.nEvals.keys()) and p.nEvals['f'] >= p.minFunEvals)
 
 isMinTimeReached = lambda p: p.currtime - p.timeStart > p.minTime + p.timeElapsedForPlotting[-1]
 

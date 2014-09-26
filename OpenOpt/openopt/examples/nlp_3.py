@@ -1,4 +1,6 @@
 from __future__ import print_function
+from future.builtins import str
+from future.builtins import range
 from openopt import NLP
 from numpy import cos, arange, ones, asarray, abs, zeros, sqrt, asscalar
 from pylab import legend, show, plot, subplot, xlabel, subplots_adjust

@@ -53,7 +53,7 @@ def r14IP(p, nlhc, residual, definiteRange, y, e, vv, asdf1, C, CBKPMV, g, nNode
             o, a = val_l, val_u
         # changes end
         else:
-            cs = oopoint((v, asarray(0.5*(val[0] + val[1]), dataType)) for v, val in ip.items())
+            cs = oopoint((v, asarray(0.5*(val[0] + val[1]), dataType)) for v, val in list(ip.items()))
             cs.dictOfFixedFuncs = p.dictOfFixedFuncs
             o, a = tmp.values(cs)
         

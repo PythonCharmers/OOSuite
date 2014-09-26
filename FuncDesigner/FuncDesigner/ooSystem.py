@@ -1,4 +1,6 @@
 from __future__ import absolute_import
+from future.builtins import str
+from future.builtins import object
 from .FDmisc import FuncDesignerException, pWarn, _getAllAttachedConstraints
 from .ooFun import oofun
 from .constraints import BaseFDConstraint
@@ -7,7 +9,7 @@ from .ooPoint import ooPoint
 from numpy import isnan, ndarray, isfinite, asscalar, all, asarray, atleast_1d, array_equal
 from .sle import sle
 
-class ooSystem:
+class ooSystem(object):
     def __init__(self, *args,  **kwargs):
         assert len(kwargs) == 0, 'ooSystem constructor has no implemented kwargs yet'
         self.items = set()
@@ -208,7 +210,7 @@ class ooSystem:
         return self._AllConstraints
         
 ####################### ooSystemState #########################
-class ooSystemState:
+class ooSystemState(object):
     def __init__(self, keysAndValues, *args, **kwargs):
         assert len(args) ==0
         assert len(kwargs) ==0
@@ -217,7 +219,7 @@ class ooSystemState:
         self._byNames = dict((key.name, val) for key, val in keysAndValues)
         #self.update(self._byNames)
     
-    __repr__ = lambda self: ''.join(['\n'+key+' = '+str(val) for key, val in self._byNames.items()])[1:]
+    __repr__ = lambda self: ''.join(['\n'+key+' = '+str(val) for key, val in list(self._byNames.items())])[1:]
     
     def __call__(self, *args,  **kwargs):
         assert len(kwargs) == 0, "ooSystemState method '__call__' has no implemented kwargs yet"

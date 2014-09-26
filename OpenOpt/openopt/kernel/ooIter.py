@@ -1,4 +1,6 @@
 from __future__ import absolute_import
+from future import standard_library
+standard_library.install_hooks()
 __docformat__ = "restructuredtext en"
 
 from time import time, clock
@@ -14,7 +16,7 @@ IS_MAX_CPU_TIME_REACHED, IS_MAX_TIME_REACHED, IS_MAX_FUN_EVALS_REACHED
 
 has_Tkinter = True
 try:
-    import Tkinter
+    import tkinter
 except ImportError:
     has_Tkinter = False
 
@@ -66,7 +68,7 @@ def ooIter(p, *args,  **kwargs):
         #TODO: turn off xtol and ftol for artifically iterfcn funcs
 
         if not p.userStop and (not condEqualLastPoints or p.probType == 'GLP' or p.solver.__name__ in ('de', 'pswarm', 'interalg')):
-            for key, fun in p.kernelIterFuncs.items():
+            for key, fun in list(p.kernelIterFuncs.items()):
                 r =  fun(p)
                 if r is not False:
                     p.stopdict[key] = True
@@ -76,11 +78,11 @@ def ooIter(p, *args,  **kwargs):
                             p.msg = r[1]
                         else:
                             p.msg = 'unkown, if you see the message inform openopt developers'
-            if IS_NAN_IN_X in p.stopdict.keys():pass
-            elif SMALL_DELTA_X in p.stopdict.keys() and array_equal(p.iterValues.x[-1], p.iterValues.x[-2]): pass
+            if IS_NAN_IN_X in list(p.stopdict.keys()):pass
+            elif SMALL_DELTA_X in list(p.stopdict.keys()) and array_equal(p.iterValues.x[-1], p.iterValues.x[-2]): pass
             else:
                 p.nonStopMsg = ''
-                for fun in p.denyingStopFuncs.keys():
+                for fun in list(p.denyingStopFuncs.keys()):
                     if not fun(p):
                         p.istop = 0
                         p.stopdict = {}

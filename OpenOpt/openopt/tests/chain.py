@@ -4,12 +4,14 @@ It was used to write an article related to numerical optimization.
 """
 from __future__ import print_function
 from __future__ import absolute_import
+from future.builtins import str
+from future.builtins import range
 
 from numpy import *
 from openopt import *
 #from pylab import *
 
-TestCollection = xrange(5, 26)
+TestCollection = range(5, 26)
 #TestCollection = xrange(5, 11)
 #TestCollection = [5]
 TestCollection = [21]
@@ -188,7 +190,7 @@ for n in TestCollection:
     ooFuncs, c = [], []
     constrYmax = []
 
-    for i in xrange(n):
+    for i in range(n):
         oof = oofun(blockEngineFunc, args = copy(i), name = 'blockEngine'+str(i))
 
         if i == 0:

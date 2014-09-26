@@ -1,3 +1,5 @@
+from future.builtins import range
+from future.builtins import object
 from scipy.optimize import fmin_slsqp
 import openopt
 from openopt.kernel.setDefaultIterFuncs import *
@@ -5,7 +7,7 @@ from openopt.kernel.ooMisc import WholeRepr2LinConst, xBounds2Matrix
 from openopt.kernel.baseSolver import baseSolver
 from numpy import *
 
-class EmptyClass: pass
+class EmptyClass(object): pass
 
 class scipy_slsqp(baseSolver):
     __name__ = 'scipy_slsqp'

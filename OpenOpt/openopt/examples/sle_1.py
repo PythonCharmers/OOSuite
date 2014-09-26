@@ -1,4 +1,5 @@
 from __future__ import print_function
+from future.builtins import range
 __docformat__ = "restructuredtext en"
 
 from numpy import *
@@ -8,7 +9,7 @@ N = 1000
 C = empty((N,N))
 d =  1.5+80*sin(arange(N))
 
-for j in xrange(N):
+for j in range(N):
     C[j] = 8*sin(4.0+arange(j, N+j)**2) + 15*cos(j)
 
 p = SLE(C, d)

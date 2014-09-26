@@ -1,5 +1,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from future.builtins import range
+from future.builtins import object
 import os, sys, numpy as np
 from .oologfcn import OpenOptException
 from numpy import zeros, hstack, vstack, ndarray, copy, where, prod, isscalar, atleast_2d, eye, \
@@ -175,7 +177,7 @@ def oosolver(solverName, *args,  **kwargs):
         solverClass = solver_import(solverPaths[solverName], solverName)
         solverClassInstance = solverClass()
         solverClassInstance.fieldsForProbInstance = {}
-        for key, value in kwargs.items():
+        for key, value in list(kwargs.items()):
             if hasattr(solverClassInstance, key):
                 setattr(solverClassInstance, key, value)
             else:
@@ -193,4 +195,4 @@ def oosolver(solverName, *args,  **kwargs):
 def Copy(arg): 
     return arg.copy() if isinstance(arg, ndarray) or isspmatrix(arg) else copy(arg)
 
-class EmptyClass: pass
+class EmptyClass(object): pass

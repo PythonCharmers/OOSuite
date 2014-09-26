@@ -30,8 +30,8 @@ class SDP(MatrixProblem):
                 self.err('cvxopt must be installed')
         else:
             matrixConverter = asfarray
-        for i in self.S.keys(): self.S[i] = matrixConverter(self.S[i])
-        for i in self.d.keys(): self.d[i] = matrixConverter(self.d[i])
+        for i in list(self.S.keys()): self.S[i] = matrixConverter(self.S[i])
+        for i in list(self.d.keys()): self.d[i] = matrixConverter(self.d[i])
 #        if len(S) != len(d): self.err('semidefinite constraints S and d should have same length, got '+len(S) + ' vs '+len(d)+' instead')
 #        for i in range(len(S)):
 #            d[i] = matrixConverter(d[i])

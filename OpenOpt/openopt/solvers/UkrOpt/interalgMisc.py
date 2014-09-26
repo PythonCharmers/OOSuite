@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from future.builtins import range
 PythonMin, PythonMax = min, max
 from numpy import isnan, array, atleast_1d, asarray, all, searchsorted, logical_or, any, nan, \
 vstack, inf, where, logical_not, min, abs, insert, logical_xor, argsort, zeros_like

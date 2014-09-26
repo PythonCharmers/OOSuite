@@ -1,3 +1,5 @@
+from future.builtins import range
+from future.builtins import object
 from scipy.optimize import fmin_cobyla
 import openopt
 from openopt.kernel.setDefaultIterFuncs import *
@@ -6,7 +8,7 @@ from openopt.kernel.baseSolver import baseSolver
 from numpy import inf, array, copy
 #from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X,  SMALL_DELTA_F
 
-class EmptyClass: pass
+class EmptyClass(object): pass
 
 class scipy_cobyla(baseSolver):
     __name__ = 'scipy_cobyla'

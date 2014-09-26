@@ -1,5 +1,6 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from future.builtins import range
 from numpy import empty, logical_and, logical_not, take, zeros, isfinite, any, \
 asarray, ndarray, bool_#where
 from .interalgT import adjustDiscreteVarBounds, truncateByPlane
@@ -71,7 +72,7 @@ def processConstraints(C0, y, e, _s, p, dataType):
         assert nlh.shape[0] == m
         # TODO: rework it for case len(p._freeVarsList) >> 1
 
-        for v, tmp in res.items():
+        for v, tmp in list(res.items()):
             j = p._freeVarsDict.get(v)
             nlh[:, n+j] += tmp[:, tmp.shape[1]/2:].flatten() - T0
             nlh[:, j] += tmp[:, :tmp.shape[1]/2].flatten() - T0

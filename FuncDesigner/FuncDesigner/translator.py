@@ -1,4 +1,7 @@
 from __future__ import absolute_import
+from future.builtins import str
+from future.builtins import next
+from future.builtins import object
 # Handling of FuncDesigner probs
 
 from numpy import hstack, atleast_1d, cumsum, asfarray, asarray, zeros, \
@@ -44,7 +47,7 @@ def pointDerivative2array(S, pointDerivative,  **kw):
         else:
             raise FuncDesignerException('unclear error, maybe you have function|constraint independend on any optimization variables') 
 
-    Items = pointDerivative.items()
+    Items = list(pointDerivative.items())
     key, val = Items[0] if type(Items) == list else next(iter(Items))
     var_inds = oovarsIndDict[key]
     
@@ -54,7 +57,7 @@ def pointDerivative2array(S, pointDerivative,  **kw):
     if useSparse == 'auto':
         # Calculate number of zero/nonzero elements
         nTotal = n * funcLen#sum([prod(elem.shape) for elem in pointDerivative.values()])
-        nNonZero = sum((elem.size if isspmatrix(elem) else count_nonzero(elem)) for elem in pointDerivative.values())
+        nNonZero = sum((elem.size if isspmatrix(elem) else count_nonzero(elem)) for elem in list(pointDerivative.values()))
         involveSparse = 4*nNonZero < nTotal and nTotal > 1000
     else:
         involveSparse = useSparse
@@ -63,7 +66,7 @@ def pointDerivative2array(S, pointDerivative,  **kw):
         r2 = []
         if funcLen == 1:
             inds = []
-            for oov, val in pointDerivative.items():
+            for oov, val in list(pointDerivative.items()):
                 ind_start, ind_end = oovarsIndDict[oov]
                 
                 # works faster than isscalar()
@@ -109,7 +112,7 @@ def pointDerivative2array(S, pointDerivative,  **kw):
         else:
             r = SparseMatrixConstructor((funcLen, n)) if involveSparse else DenseMatrixConstructor((funcLen, n)) 
         
-        for key, val in pointDerivative.items():
+        for key, val in list(pointDerivative.items()):
             indexes = oovarsIndDict[key]
             if not involveSparse and isspmatrix(val): val = val.A
             if r.ndim == 1:
@@ -144,7 +147,7 @@ def vector2point(S, x):
     S._SavedValues['prevX'] = copy(x)
     return r
     
-class FuncDesignerTranslator:
+class FuncDesignerTranslator(object):
 #    freeVars = []
 #    fixedVars = []
     def __init__(self, PointOrVariables, **kwargs): #, freeVars=None, fixedVars=None

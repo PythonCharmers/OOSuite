@@ -1,4 +1,9 @@
 from __future__ import absolute_import
+from future.builtins import str
+from future import standard_library
+standard_library.install_hooks()
+from future.builtins import range
+from future.builtins import object
 from .baseProblem import NonLinProblem
 from numpy import inf
 
@@ -136,8 +141,8 @@ import platform
 if platform.python_version()[0] == '2': 
     # Python2
     try:
-        from Tkinter import Tk
-        from tkFileDialog import asksaveasfilename
+        from tkinter import Tk
+        from tkinter.filedialog import asksaveasfilename
     except:
         TkinterIsInstalled = False
 else: 
@@ -247,7 +252,7 @@ def _export_to_xls(p, r, *args, **kw):
     wb.save(xls_file)
     p.disp('export MOP %s result to xls file finished' % p.name)
     
-class target:
+class target(object):
     pass
     
 class MOPsolutions(list):

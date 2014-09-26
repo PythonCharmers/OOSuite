@@ -43,7 +43,7 @@ def iqg(Self, domain, dtype = float, lb=None, ub=None, UB = None):
         if 0 and j.size < 0.85*ind.size:  # at least 15% of values to skip
             useSlicing = True
             tmp = []
-            for key, val in domain.storedIntervals.items():
+            for key, val in list(domain.storedIntervals.items()):
                 Interval, definiteRange = val
                 if type(definiteRange) not in (bool, bool_):
                     definiteRange = definiteRange[j]
@@ -51,7 +51,7 @@ def iqg(Self, domain, dtype = float, lb=None, ub=None, UB = None):
             _storedIntervals = dict(tmp)
             
             Tmp = []
-            for key, val in domain.storedSums.items():
+            for key, val in list(domain.storedSums.items()):
                 # TODO: rework it
                 R0, DefiniteRange0 = val.pop(-1)
                 #R0, DefiniteRange0 = val[-1]
@@ -59,7 +59,7 @@ def iqg(Self, domain, dtype = float, lb=None, ub=None, UB = None):
                 if type(DefiniteRange0) not in (bool, bool_):
                     DefiniteRange0 = DefiniteRange0[j]
                 tmp = []
-                for k,v in val.items():
+                for k,v in list(val.items()):
                     # TODO: rework it
 #                        if k is (-1): continue
                     v = v[:, j]
@@ -71,7 +71,7 @@ def iqg(Self, domain, dtype = float, lb=None, ub=None, UB = None):
             #domain.storedSums = dict(tmp)
             
             Tmp = []
-            for key, val in domain.items():
+            for key, val in list(domain.items()):
                 lb_,ub_ = val
                 # TODO: rework it when lb, ub will be implemented as 2-dimensional
                 Tmp.append((key, (lb_[j],ub_[j])))
@@ -86,7 +86,7 @@ def iqg(Self, domain, dtype = float, lb=None, ub=None, UB = None):
     domain.useAsMutable = True
     
     r = {}
-    Dep = (Self._getDep() if not Self.is_oovar else set([Self])).intersection(domain.keys())
+    Dep = (Self._getDep() if not Self.is_oovar else set([Self])).intersection(list(domain.keys()))
     
     for i, v in enumerate(Dep):
         domain.modificationVar = v
@@ -112,7 +112,7 @@ def iqg(Self, domain, dtype = float, lb=None, ub=None, UB = None):
                 L[L<lf] = lf[L<lf].copy()
                 U[U>uf] = uf[U>uf].copy()
     if not Self.isUncycled:
-        for R in r.values():
+        for R in list(r.values()):
             r1, r2 = R
             if type(r1.lb) != np.ndarray:
                 r1.lb, r2.lb, r1.ub, r2.ub = atleast_1d(r1.lb), atleast_1d(r2.lb), atleast_1d(r1.ub), atleast_1d(r2.ub)

@@ -58,8 +58,8 @@ def llavp_init(prob, kwargs):
     prob.n = kwargs['C'].shape[1]
     prob.lb = -inf * ones(prob.n)
     prob.ub =  inf * ones(prob.n)
-    if 'damp' not in kwargs.keys(): kwargs['damp'] = None
-    if 'X' not in kwargs.keys(): kwargs['X'] = nan*ones(prob.n)
+    if 'damp' not in list(kwargs.keys()): kwargs['damp'] = None
+    if 'X' not in list(kwargs.keys()): kwargs['X'] = nan*ones(prob.n)
 
     if prob.x0 is None: prob.x0 = zeros(prob.n)
 

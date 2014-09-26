@@ -8,6 +8,7 @@ x_opt = all-zeros
 f_opt = 0
 """
 from __future__ import print_function
+from future.builtins import range
 
 from numpy import *
 from openopt import NSP
@@ -15,7 +16,7 @@ from openopt import NSP
 N = 75
 objFun = lambda x: sum(1.2 ** arange(len(x)) * abs(x))
 
-x0 = cos(1+asfarray(range(N)))
+x0 = cos(1+asfarray(list(range(N))))
 
 p = NSP(objFun, x0, maxFunEvals = 1e7, xtol = 1e-8)
 #These assignments are also correct:

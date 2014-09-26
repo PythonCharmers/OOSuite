@@ -1,10 +1,11 @@
 from __future__ import absolute_import
+from future.builtins import object
 __docformat__ = "restructuredtext en"
 from numpy import asarray, copy, ravel, isnan, isscalar, asscalar#where
 from .nonOptMisc import where
 from openopt.kernel.Point import Point
 
-class baseSolver:
+class baseSolver(object):
     def __init__(self):pass
     __name__ = 'Undefined. If you are a user and got the message, inform developers please.'
     __license__ = "Undefined. If you are a user and got the message, inform developers please."
@@ -50,7 +51,7 @@ class baseSolver:
             if p.solver._requiresBestPointDetection and (p.iter == 0 or point.betterThan(p._bestPoint)): p._bestPoint = point
         else:
             if len(args)>0: p.xk = args[0]
-            elif 'xk' in kwargs.keys(): p.xk = kwargs['xk']
+            elif 'xk' in list(kwargs.keys()): p.xk = kwargs['xk']
             elif not hasattr(p, 'xk'): p.err('iterfcn must get x value, if you see it inform oo developers')
             if p._baseClassName == 'NonLin': 
                 C = p.c(p.xk)
@@ -60,13 +61,13 @@ class baseSolver:
                 currPoint = p.point(p.xk)
                 if p.iter == 0 or currPoint.betterThan(p._bestPoint): p._bestPoint = currPoint
             if len(args)>1: p.fk = args[1]
-            elif 'fk' in kwargs.keys(): p.fk = kwargs['fk']
+            elif 'fk' in list(kwargs.keys()): p.fk = kwargs['fk']
             else: fArg = False
 
             if len(args)>2: 
                 #p.pWarn('executing deprecated code, inform developers')
                 p.rk = args[2]
-            elif 'rk' in kwargs.keys(): 
+            elif 'rk' in list(kwargs.keys()): 
                 #p.pWarn('executing deprecated code, inform developers')
                 p.rk = kwargs['rk']
             else:

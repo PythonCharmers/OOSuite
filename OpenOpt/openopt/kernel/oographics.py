@@ -1,10 +1,13 @@
 from __future__ import absolute_import
+from future.builtins import str
+from future.builtins import range
+from future.builtins import object
 from numpy import hstack, ravel, isnan, asfarray, log10, array,  isfinite
 from openopt import __version__ as ooversion
 ooversion = str(ooversion)
 from .setDefaultIterFuncs import stopcase
 
-class Graphics:
+class Graphics(object):
     def __init__(self):
         self.drawFuncs = [self.oodraw]
         self.specifierStart = 'd'
@@ -186,7 +189,7 @@ class Graphics:
                 else:
                     yySave = [p.f(p.x0)]
 
-        if tx == 'iter': xx = range(IND_start, IND_end)
+        if tx == 'iter': xx = list(range(IND_start, IND_end))
         elif tx == 'cputime':
             if len(p.iterTime) != len(p.cpuTimeElapsedForPlotting): p.iterTime.append(p.iterTime[-1])
             xx = asfarray(p.iterCPUTime[IND_start:IND_end]) - asfarray(p.cpuTimeElapsedForPlotting[IND_start:IND_end])

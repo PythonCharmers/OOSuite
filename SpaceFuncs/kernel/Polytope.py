@@ -1,10 +1,11 @@
+from future.builtins import range
 from .baseGeometryObject import baseGeometryObject
 from .baseObjects import Point
 from numpy import ndarray
 from FuncDesigner import ooarray, sum
 
 table = {'M':'centroid'}
-table = dict([(key, '_'+val) for key, val in table.items()] + [(val, '_'+val) for key, val in table.items()])
+table = dict([(key, '_'+val) for key, val in list(table.items())] + [(val, '_'+val) for key, val in list(table.items())])
 
 class Polytope(baseGeometryObject):
     nVertices = 0 # unknown

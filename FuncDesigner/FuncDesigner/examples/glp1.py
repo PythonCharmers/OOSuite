@@ -5,6 +5,7 @@ searching for global minimum of the func
 subjected to some constraints
 See http://openopt.org/GLP for more info and examples.
 """
+from future.builtins import range
 from openopt import GLP
 from FuncDesigner import *
 

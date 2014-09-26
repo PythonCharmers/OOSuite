@@ -1,5 +1,8 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from future.builtins import str
+from future.builtins import range
+from future.builtins import object
 PythonSum = sum
 PythonAny = any
 from numpy import asscalar, isscalar, asfarray, ndarray, prod, logical_and, logical_or, inf, atleast_1d, any, \
@@ -65,7 +68,7 @@ def pWarn(msg):
     print('FuncDesigner warning: ' + msg)
 
 
-class diagonal:
+class diagonal(object):
     isOnes = False
     __array_priority__ = 150000# set it greater than 1 to prevent invoking numpy array __mul__ etc
     
@@ -227,12 +230,12 @@ def dictSum(dicts):
     K = set.union(*[set(d.keys()) for d in dicts])
     R = dict((v, []) for v in K)
     for d in dicts:
-        for k, val in d.items():
+        for k, val in list(d.items()):
           R[k].append(val)
-    r = dict((k, PythonSum(val)) for k, val in R.items())
+    r = dict((k, PythonSum(val)) for k, val in list(R.items()))
     return r
 
-class fixedVarsScheduleID:
+class fixedVarsScheduleID(object):
     fixedVarsScheduleID = 0
     def _getDiffVarsID(*args):
         fixedVarsScheduleID.fixedVarsScheduleID += 1
@@ -249,7 +252,7 @@ except ImportError:
 def raise_except(*args, **kwargs):
     raise FuncDesignerException('bug in FuncDesigner engine, inform developers')
     
-class Extras:
+class Extras(object):
     pass
 
 # TODO: make it work for ooSystem as well
@@ -288,7 +291,7 @@ def formResolveSchedule(oof):
     def F(ff, depsNumberDict, baseFuncDepsNumber, R):
         tmp = depsNumberDict[ff]
         s = []
-        for k, v in tmp.items():
+        for k, v in list(tmp.items()):
             if baseFuncDepsNumber[k] == v:
                 s.append(k)
                 baseFuncDepsNumber[k] -= 1

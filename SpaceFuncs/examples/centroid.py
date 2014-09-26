@@ -6,6 +6,7 @@ so number of possibilities is 5^m, where m is number of points; moreover, we hav
 (requirements on distances). Fortunately, OpenOpt has awesome solver interalg, that easily solves this problem (for quite small m, although); 
 we will consider 3 points of weights [15, -0.15, 3].
 '''
+from future.builtins import range
 from SpaceFuncs import *
 from FuncDesigner import *
 from openopt import *

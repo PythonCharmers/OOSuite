@@ -81,6 +81,7 @@ ENDATA
 
 
 """
+from future.builtins import range
 from numpy import *
 
 def QPSparse(filename):

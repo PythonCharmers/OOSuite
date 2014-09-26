@@ -1,4 +1,6 @@
 from __future__ import absolute_import
+from future.builtins import range
+from future.builtins import object
 from .baseProblem import MatrixProblem
 import numpy as np
 from .MOP import MOPsolutions
@@ -144,7 +146,7 @@ class KSP(MatrixProblem):
             r.xf = dict(tmp) if requireCount else tmp
         return r
 
-class D:
+class D(object):
     def __init__(self):
         self.used_vals = set()
     def __getitem__(self, item):

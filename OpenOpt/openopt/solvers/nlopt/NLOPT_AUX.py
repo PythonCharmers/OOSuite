@@ -28,7 +28,7 @@ def NLOPT_AUX(p, solver, opts=None):
     
     
     if opts is not None:
-        for option, val in opts.items():
+        for option, val in list(opts.items()):
             getattr(opt, option)(val)
         
     opt.set_min_objective(myfunc)

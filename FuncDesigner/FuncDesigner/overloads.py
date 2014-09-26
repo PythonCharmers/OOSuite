@@ -1,4 +1,6 @@
 from __future__ import absolute_import
+from future.builtins import str
+from future.builtins import range
 PythonSum = sum
 PythonMax = max
 PythonAny = any
@@ -837,7 +839,7 @@ def sum_engine(r0, *args):
     Args, Args_st = [], {}
     for elem in args:
         if isinstance(elem, distribution.stochasticDistribution):
-            stDep = frozenset(elem.stochDep.keys())
+            stDep = frozenset(list(elem.stochDep.keys()))
             tmp = Args_st.get(stDep, None)
             if tmp is None:
                 Args_st[stDep] = [elem]
@@ -850,10 +852,10 @@ def sum_engine(r0, *args):
         return r
     
     # temporary
-    for key, val in Args_st.items():
+    for key, val in list(Args_st.items()):
         maxDistributionSize = val[0].maxDistributionSize
         break
-    stValues = Args_st.values()
+    stValues = list(Args_st.values())
 #            stValues = Args_st.values()
 #            T = list(set(stValues))[0]
 #            maxDistributionSize = next(iter(T)).maxDistributionSize
@@ -1084,7 +1086,7 @@ def sum_derivative(r_, r0, INP, dep, point, fixedVarsScheduleID, Vars=None, fixe
                     r[elem] = tmpres
         else:
             tmp = elem._D(point, fixedVarsScheduleID, Vars, fixedVars, useSparse = useSparse)
-            for key, val in tmp.items():
+            for key, val in list(tmp.items()):
                 r_val = r.get(key, None)
                 if isSP:
                     if r_val is not None:
@@ -1112,12 +1114,12 @@ def sum_derivative(r_, r0, INP, dep, point, fixedVarsScheduleID, Vars=None, fixe
                         r[key] = Copy(val)
     
     if isSP:
-        for key, val in r.items():
+        for key, val in list(r.items()):
             r[key] = sum_engine(0.0, *val)
             
     
     if useSparse is False:
-        for key, val in r.items():
+        for key, val in list(r.items()):
             #if np.isscalar(val): val = np.asfarray(val)
             if hasattr(val, 'toarray'):# and not isinstance(val, multiarray): # i.e. sparse matrix
                 r[key] = val.toarray()
@@ -1133,7 +1135,7 @@ def sum_derivative(r_, r0, INP, dep, point, fixedVarsScheduleID, Vars=None, fixe
                 Size = np.asarray(r_._getFuncCalcEngine(point, Vars = Vars, fixedVars = fixedVars, fixedVarsScheduleID = fixedVarsScheduleID)).size
 
         if Size != 1 and not point.isMultiPoint:
-            for key, val in r.items():
+            for key, val in list(r.items()):
                 if not isinstance(val, diagonal):
                     if np.isscalar(val) or np.prod(val.shape) <= 1:
                         tmp = np.empty((Size, 1))

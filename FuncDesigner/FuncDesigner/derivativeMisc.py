@@ -56,7 +56,7 @@ def _D(Self, x, fixedVarsScheduleID, Vars=None, fixedVars = None, useSparse = 'a
     if cond_same_point:
         Self.same_d += 1
         #return deepcopy(Self.d_val_prev)
-        return dict((key, Copy(val)) for key, val in Self._d_val_prev.items())
+        return dict((key, Copy(val)) for key, val in list(Self._d_val_prev.items()))
     else:
         Self.evals_d += 1
 
@@ -93,7 +93,7 @@ def _D(Self, x, fixedVarsScheduleID, Vars=None, fixedVars = None, useSparse = 'a
             
             t1 = derivativeSelf[ac]
             
-            for key, val in elem_d.items():
+            for key, val in list(elem_d.items()):
                 #if isinstance(t1, Stochastic) or isinstance(val, Stochastic):
                     #rr = t1 * val
                 if isinstance(t1, Stochastic) or ((isscalar(val) or isinstance(val, multiarray)) and (isscalar(t1) or isinstance(t1, multiarray))):
@@ -169,7 +169,7 @@ def _D(Self, x, fixedVarsScheduleID, Vars=None, fixedVars = None, useSparse = 'a
                     r[key] = Val
                 else:
                     r[key] = rr
-    Self._d_val_prev = dict((key, Copy(value)) for key, value in r.items())
+    Self._d_val_prev = dict((key, Copy(value)) for key, value in list(r.items()))
     Self._d_key_prev = dict((elem, Copy(x[elem])) for elem in dep) if involveStore else None
     return r
 

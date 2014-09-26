@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from future.builtins import range
 PythonSum = sum
 from numpy import array, inf, logical_and, all, isnan, ndarray, where, atleast_1d, isfinite, log2, logical_not
 #from ooFun import oofun, BooleanOOFun
@@ -50,7 +51,7 @@ def nlh_and(_input, dep, Lx, Ux, p, dataType):
         
         T_0_vect = T0.reshape(-1, 1) if type(T0) == ndarray else T0
         
-        for v, val in res.items():
+        for v, val in list(res.items()):
             r = R.get(v, None)
             if r is None:
                 R[v] = val - T_0_vect
@@ -59,7 +60,7 @@ def nlh_and(_input, dep, Lx, Ux, p, dataType):
         
     nlh_0_shape = nlh_0.shape
     nlh_0 = nlh_0.reshape(-1, 1)
-    for v, val in R.items():
+    for v, val in list(R.items()):
         # TODO: check it
         #assert all(isfinite(val))
         tmp =  val + nlh_0
@@ -126,7 +127,7 @@ def nlh_xor(_input, dep, Lx, Ux, p, dataType):
             
         nlh_list.append(T0)
         
-        for v, val in res.items():
+        for v, val in list(res.items()):
             T_inf_v = where(isfinite(val), 0, 1)
             val_noninf = where(isfinite(val), val, 0)
             T0v = val_noninf - T0.reshape(-1, 1)
@@ -175,7 +176,7 @@ def nlh_xor(_input, dep, Lx, Ux, p, dataType):
     nlh_0 = nlh_0.reshape(-1, 1)
     num_inf_0 = num_inf_0.reshape(-1, 1)
 
-    for v, nlh_diff in R_diff.items():
+    for v, nlh_diff in list(R_diff.items()):
         nlh = nlh_0 + nlh_diff
         nlh_1 = [nlh - elem.reshape(-1, 1) for elem in nlh_list]
         
@@ -194,7 +195,7 @@ def nlh_xor(_input, dep, Lx, Ux, p, dataType):
         R[v] = -log2(S1 - S2)
         #R[v] = -log1p(S2 - S1) * 1.4426950408889634
         
-    for v, val in R.items():
+    for v, val in list(R.items()):
         val[isnan(val)] = inf
         val[val < 0.0] = 0.0
 #    print('-'*10)
@@ -213,7 +214,7 @@ def nlh_not(_input_bool_oofun, dep, Lx, Ux, p, dataType):
        
     T0, res, DefiniteRange = _input_bool_oofun.nlh(Lx, Ux, p, dataType)
     T = reverse_l2P(T0)
-    R = dict([(v, reverse_l2P(val)) for v, val in res.items()])
+    R = dict([(v, reverse_l2P(val)) for v, val in list(res.items())])
     return T, R, DefiniteRange
 
 

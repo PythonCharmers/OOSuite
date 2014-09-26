@@ -1,3 +1,4 @@
+from future.builtins import str
 # created by Dmitrey
 from numpy import all, ndarray, array, asscalar, asarray, pi, sin, cos
 #import numpy as np

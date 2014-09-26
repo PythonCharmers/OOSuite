@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from future.builtins import str
 from .ooFun import oofun
 from .BooleanOOFun import BooleanOOFun
 from .FDmisc import FuncDesignerException
@@ -17,7 +18,7 @@ class BaseFDConstraint(BooleanOOFun):
     def __call__(self, *args,  **kwargs):
         expected_kwargs = self.expected_kwargs
         if not set(kwargs.keys()).issubset(expected_kwargs):
-            raise FuncDesignerException('Unexpected kwargs: should be in '+str(expected_kwargs)+' got: '+str(kwargs.keys()))
+            raise FuncDesignerException('Unexpected kwargs: should be in '+str(expected_kwargs)+' got: '+str(list(kwargs.keys())))
             
         for elem in expected_kwargs:
             if elem in kwargs:
@@ -91,7 +92,7 @@ class SmoothFDConstraint(BaseFDConstraint):
     def __init__(self, *args, **kwargs):
         BaseFDConstraint.__init__(self, *args, **kwargs)
         self.lb, self.ub = -inf, inf
-        for key, val in kwargs.items():
+        for key, val in list(kwargs.items()):
             if key in ['lb', 'ub', 'tol']:
                 setattr(self, key, asfarray(val))
             else:
@@ -128,7 +129,7 @@ class SmoothFDConstraint(BaseFDConstraint):
         
         res = {}
         if len(r):
-            dep = selfDep.intersection(domain.keys()) # TODO: Improve it
+            dep = selfDep.intersection(list(domain.keys())) # TODO: Improve it
             for v in dep:
                 Lf, Uf = vstack((r[v][0].lb, r[v][1].lb)), vstack((r[v][0].ub, r[v][1].ub))
                 

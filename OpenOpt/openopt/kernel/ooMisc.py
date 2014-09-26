@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from future.builtins import range
 __docformat__ = "restructuredtext en"
 from numpy import zeros, ones, copy, isfinite, where, asarray, inf, int64, \
 array, dot, ndarray, prod, flatnonzero, max, abs, sqrt, sum, atleast_1d, asscalar
@@ -63,21 +64,21 @@ def xBounds2Matrix(p):
 
     if  nLB>0 or nUB>0:
         if p.useSparse is True or (isspmatrix(p.A) or (scipyInstalled and nLB+nUB>=p.A.shape[0]) and p.useSparse is not False):
-            R1 = coo_matrix((-ones(nLB), (range(nLB), indLB)), shape=(nLB, p.n)) if nLB != 0 else zeros((0, p.n))
-            R2 = coo_matrix((ones(nUB), (range(nUB), indUB)), shape=(nUB, p.n)) if nUB != 0 else zeros((0, p.n))
+            R1 = coo_matrix((-ones(nLB), (list(range(nLB)), indLB)), shape=(nLB, p.n)) if nLB != 0 else zeros((0, p.n))
+            R2 = coo_matrix((ones(nUB), (list(range(nUB)), indUB)), shape=(nUB, p.n)) if nUB != 0 else zeros((0, p.n))
         else:
             R1 = zeros((nLB, p.n))
             if isPyPy:
                 for i in range(nLB):
                     R1[i, indLB[i]] = -1
             else:
-                R1[range(nLB), indLB] = -1
+                R1[list(range(nLB)), indLB] = -1
             R2 = zeros((nUB, p.n))
             if isPyPy:
                 for i in range(nUB):
                     R2[i, indUB[i]] = -1
             else:
-                R2[range(nUB), indUB] = 1
+                R2[list(range(nUB)), indUB] = 1
         
         p.A = Vstack((p.A, R1, R2))
         if hasattr(p, '_A'): delattr(p, '_A')
@@ -93,7 +94,7 @@ def xBounds2Matrix(p):
     if nEQ>0:
         
         if p.useSparse is True or (isspmatrix(p.Aeq) or (scipyInstalled and nEQ>=p.Aeq.shape[0]) and p.useSparse is not False):
-            R = coo_matrix(([1]*nEQ, (range(nEQ), indEQ)), shape=(nEQ, p.n))
+            R = coo_matrix(([1]*nEQ, (list(range(nEQ)), indEQ)), shape=(nEQ, p.n))
         else:
             R = zeros((nEQ, p.n))
         #raise 0
@@ -200,7 +201,7 @@ def WholeRepr2LinConst(p):
     p.dwhole = None
 
 def assignScript(p, dictOfParams):
-    for key, val in dictOfParams.items():
+    for key, val in list(dictOfParams.items()):
         if key == 'manage': 
             #p._useGUIManager = val
             continue

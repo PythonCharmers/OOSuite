@@ -3,6 +3,7 @@ Example of MINLP
 It is recommended to read help(NLP) before
 and /examples/nlp_1.py 
 """
+from future.builtins import range
 from openopt import MINLP
 from numpy import *
 N = 150
@@ -41,7 +42,7 @@ p.name = 'minlp_1'
 nlpSolver = 'ipopt'
 
 # coords of discrete variables and sets of allowed values
-p.discreteVars = {7:range(3, 10), 8:range(3, 10), 9:[2, 3.1, 9]}
+p.discreteVars = {7:list(range(3, 10)), 8:list(range(3, 10)), 9:[2, 3.1, 9]}
 
 # required tolerance for discrete variables, default 10^-5
 p.discrtol = 1.1e-5

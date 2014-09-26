@@ -1,3 +1,4 @@
+from future.builtins import zip
 import numpy as np
 from openopt.kernel.baseSolver import baseSolver
 from openopt.kernel.setDefaultIterFuncs import *
@@ -56,11 +57,11 @@ class cplex(baseSolver):
             senses = ''.join(where(p.dwhole == -1, 'L', 'E').tolist())
             P.linear_constraints.add(rhs=np.asarray(p.bwhole).tolist(), senses = senses)
             if p.Awhole.size != 0:
-                P.linear_constraints.set_coefficients(zip(*Find(p.Awhole)))
+                P.linear_constraints.set_coefficients(list(zip(*Find(p.Awhole))))
         
         if p.probType.endswith('QP') or p.probType == 'SOCP':
 #            assert p.probType in ('QP', 'QCQP','SOCP')
-            P.objective.set_quadratic_coefficients(zip(*Find(p.H)))
+            P.objective.set_quadratic_coefficients(list(zip(*Find(p.H))))
             for q, u, v in p.QC:
                 rows,  cols,  vals = Find(q)
                 quad_expr = CPLEX.SparseTriple(ind1=rows, ind2=cols, val = vals)

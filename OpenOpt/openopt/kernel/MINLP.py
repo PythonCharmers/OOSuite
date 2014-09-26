@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from future.builtins import str
 from .baseProblem import NonLinProblem
 from numpy import  sort, ndarray
 
@@ -30,7 +31,7 @@ class MINLP(NonLinProblem):
             self.discreteVars = r
         # TODO: use something else instead of dict.keys()
         new_discr = {}
-        for key, fv in self.discreteVars.items():
+        for key, fv in list(self.discreteVars.items()):
             if type(fv) not in [list, tuple, ndarray] and fv not in ('bool', bool):
                 self.err('each element from discreteVars dictionary should be list or tuple of allowed values')
             if fv is not bool and fv is not 'bool': 

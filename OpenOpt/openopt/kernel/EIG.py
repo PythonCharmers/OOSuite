@@ -64,8 +64,8 @@ class EIG(MatrixProblem):
             N = 0
             varSizes = {}
             for d in C:
-                K.update(d.keys())
-                for key in d.keys():
+                K.update(list(d.keys()))
+                for key in list(d.keys()):
                     if key in varSizes:
                         if varSizes[key] != d[key].shape[1]:
                             s = 'incorrect shape 2nd coordinate %d for variable %s, defined in other array as %d' %(d[key].shape[1], key.name, varSizes[key])
@@ -74,7 +74,7 @@ class EIG(MatrixProblem):
                         varSizes[key] = d[key].shape[1] if not isscalar(d[key]) else 1
                 tmp = list(d.values())
                 N += tmp[0].shape[0] if not isscalar(tmp[0]) else 1
-            P = dict([(key, [0]*val) for key, val in varSizes.items()])
+            P = dict([(key, [0]*val) for key, val in list(varSizes.items())])
             T = ootranslator(P)
             C2 = vstack([T.pointDerivative2array(d) for d in C])
             self.C = C2

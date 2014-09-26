@@ -2,6 +2,7 @@
 FuncDesigner sparse SLE example
 """
 from __future__ import print_function
+from future.builtins import str
 
 from FuncDesigner import *
 from numpy import arange

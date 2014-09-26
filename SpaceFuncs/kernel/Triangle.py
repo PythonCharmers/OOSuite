@@ -1,3 +1,4 @@
+from future.builtins import range
 # created by Dmitrey
 from FuncDesigner import sqrt, sum, ooarray, angle  #, stack
 from .baseObjects import Line, Circle
@@ -11,7 +12,7 @@ table = {
          'O': 'circumCircleCenter', 
          'I': 'incenter'
          }
-table = dict([(key, '_'+val) for key, val in table.items()] + [(val, '_'+val) for key, val in table.items()])
+table = dict([(key, '_'+val) for key, val in list(table.items())] + [(val, '_'+val) for key, val in list(table.items())])
 others = ['CircumCircle', 'InscribedCircle']
 table.update([(s, '_'+s) for s in others])
 

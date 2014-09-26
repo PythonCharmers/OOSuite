@@ -1,8 +1,10 @@
 from __future__ import absolute_import
+from future.builtins import range
+from future.builtins import object
 from .FDmisc import FuncDesignerException
 from numpy import nan, zeros, isscalar, inf
 
-class sle:
+class sle(object):
     # System of linear equations
     
     _isInitialized = False
@@ -23,7 +25,7 @@ class sle:
             raise FuncDesignerException(s)
         
         self.decodeArgs(*args, **kwargsForOpenOptSLEconstructor)
-        if 'iprint' not in kwargsForOpenOptSLEconstructor.keys():
+        if 'iprint' not in list(kwargsForOpenOptSLEconstructor.keys()):
             kwargsForOpenOptSLEconstructor['iprint'] = -1
         self.p = SLE(self.equations, self.startPoint, **kwargsForOpenOptSLEconstructor)
         self.p._Prepare()
@@ -40,7 +42,7 @@ class sle:
             return r
         else:
             R = {}
-            for key, value in self.p.x0.items(): 
+            for key, value in list(self.p.x0.items()): 
                 R[key] = value * nan
             r.xf = R
             r.ff = inf

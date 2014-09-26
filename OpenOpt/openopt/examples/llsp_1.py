@@ -1,4 +1,5 @@
 from __future__ import print_function
+from future.builtins import range
 import sys
 sys.path.append('/home/dmitrey/OOSuite/OpenOpt')
 

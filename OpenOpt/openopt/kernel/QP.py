@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from future.builtins import range
 #PythonSum = sum
 from . import NLP
 
@@ -63,7 +64,7 @@ class QP(MatrixProblem):
                 self.x0 = args[1]
             self.f = args[0]
         else:
-            if len(args) > 1 or 'f' in kwargs.keys():
+            if len(args) > 1 or 'f' in list(kwargs.keys()):
                 self.f = ravel(self.f)
 
     def objFunc(self, x):
@@ -158,10 +159,10 @@ def quad_render(arg, p):
     
     if p.fixedVars is None or (p.freeVars is not None and len(p.freeVars)<len(p.fixedVars)):
         order_kw = {'Vars': p.freeVarsSet}
-        Z = dict((v, np.zeros_like(p._x0[v]) if v in p._freeVars else p._x0[v]) for v in p._x0.keys())
+        Z = dict((v, np.zeros_like(p._x0[v]) if v in p._freeVars else p._x0[v]) for v in list(p._x0.keys()))
     else:
         order_kw = {'fixedVars': p.fixedVarsSet}
-        Z = dict((v, np.zeros_like(p._x0[v]) if v not in p._fixedVars else p._x0[v]) for v in p._x0.keys())
+        Z = dict((v, np.zeros_like(p._x0[v]) if v not in p._fixedVars else p._x0[v]) for v in list(p._x0.keys()))
     Z = ooPoint(Z)
     D_kwargs = p._D_kwargs
     D_kwargs['useSparse'] = useSparse
@@ -266,8 +267,8 @@ def quad_render(arg, p):
                     H[Ind[0], Ind[0]] += Tmp2
                     f[Ind[0]] += Tmp1
                 else:
-                    H[range(Ind[0], Ind[1]), range(Ind[0], Ind[1])] += Tmp2
-                    f[range(Ind[0], Ind[1])] += Tmp1
+                    H[list(range(Ind[0], Ind[1])), list(range(Ind[0], Ind[1]))] += Tmp2
+                    f[list(range(Ind[0], Ind[1]))] += Tmp1
                 c += Tmp0 if isscalar(Tmp0) else Tmp0.sum()
 #                for k, v in d.items():
 #                    pass
@@ -288,7 +289,7 @@ def quad_render(arg, p):
 
 def asdf(p, pointDerivative, useSparse, f):
     if 1 or useSparse is False:
-        for k, v in pointDerivative.items():
+        for k, v in list(pointDerivative.items()):
             Ind = p._oovarsIndDict[k]
             if type(v) in (float, np.float64):
                 f[Ind[0]]+=v

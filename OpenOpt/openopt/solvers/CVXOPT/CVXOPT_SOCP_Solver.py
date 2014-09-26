@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from future.builtins import range
 from numpy import asarray,  ones, all, isfinite, copy, nan, concatenate, array, hstack, vstack, atleast_1d
 from openopt.kernel.ooMisc import WholeRepr2LinConst, xBounds2Matrix
 #from openopt.kernel.nonOptMisc import Vstack

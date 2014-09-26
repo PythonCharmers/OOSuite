@@ -1,4 +1,5 @@
 from __future__ import print_function
+from future.builtins import str
 # Example of creating MILP in FuncDesigner
 # and solving it via OpenOpt
 

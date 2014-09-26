@@ -46,7 +46,7 @@ class NLSP(NonLinProblem):
                 # TODO: add nNaNs
             elif len(args) > 1:
                 p.primalIterFcn(args[0], max(abs(self.f(args[0]))), *args[2:],  **kwargs)
-            elif 'fk' in kwargs.keys():
+            elif 'fk' in list(kwargs.keys()):
                 kwargs['fk'] = max(abs(self.f(args[0])))
                 p.primalIterFcn(*args, **kwargs)
             else:
@@ -73,7 +73,7 @@ class NLSP(NonLinProblem):
                 return False
 
         self.callback = [nlsp_callback]
-        if SMALL_DELTA_F in self.kernelIterFuncs.keys():self.kernelIterFuncs.pop(SMALL_DELTA_F)
+        if SMALL_DELTA_F in list(self.kernelIterFuncs.keys()):self.kernelIterFuncs.pop(SMALL_DELTA_F)
         p.primalIterFcn,  p.iterfcn = self.iterfcn, nlsp_iterfcn
         p.goal = 'min'
         #self.fEnough = self.ftol

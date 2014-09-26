@@ -1,4 +1,5 @@
 from __future__ import print_function
+from future.builtins import range
 # An example of FuncDesigner eigenvalues/eigenvectors for an automatic differentiation result,
 # see http://openopt.org/EIG for more examples and details
 from FuncDesigner import *
@@ -21,7 +22,7 @@ f3 = sum(f2) / arctan(c) - c**2
 
 # Also, we could use matrix multiplication, eg f5 = dot(someMatrix, f4):
 # create a matrix
-rng = 1.5 + cos(range(2*n)).reshape(-1, 1) # define 2n x 1 vector
+rng = 1.5 + cos(list(range(2*n))).reshape(-1, 1) # define 2n x 1 vector
 R = dot(rng, rng.T) # create a matrix of shape 2n x 2n
 
 # use matrix dot product

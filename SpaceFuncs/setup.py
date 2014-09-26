@@ -2,6 +2,7 @@
 
 from __future__ import print_function
 from __future__ import absolute_import
+from future.builtins import input
 descr   = """
 """
 
@@ -24,7 +25,7 @@ try:
 except:
     print('you should have setuptools installed (http://pypi.python.org/pypi/setuptools), for some Linux distribs you can get it via [sudo] apt-get install python-setuptools')
     print('press Enter for exit...')
-    raw_input()
+    input()
     exit()
     
 

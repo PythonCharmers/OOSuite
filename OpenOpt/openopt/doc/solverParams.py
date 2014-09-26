@@ -3,6 +3,7 @@ Modifying of some solver default parameters is performed via
 either kwargs for p.solve() (they can be solver or prob attributes)
 or using oosolver (see examples/oosolver.py for more details).
 """
+from future.builtins import str
 from numpy import *
 from openopt import *
 f = lambda x: (x[0]-1.5)**2 + sin(0.8 * x[1] ** 2 + 15)**4 + cos(0.8 * x[2] ** 2 + 15)**4 + (x[3]-7.5)**4

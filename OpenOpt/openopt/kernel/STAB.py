@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from future.builtins import range
 from .baseProblem import MatrixProblem
 
 class STAB(MatrixProblem):
@@ -75,7 +76,7 @@ def set_routine(p,  *args, **kw):
     goal = 'min' if p.probType == 'DSP' else 'max' 
     p = P(objective, startPoint, constraints = constraints, fixedVars = fixedVars, goal = goal)
     
-    for key, val in kw.items():
+    for key, val in list(kw.items()):
         setattr(p, key, val)
     r = p.solve(solver, **kw)
     r.solution = [index2node[i] for i in range(n) if r.xf[x[i]] == 1]

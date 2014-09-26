@@ -1,4 +1,8 @@
 from __future__ import absolute_import
+from future.builtins import str
+from future.builtins import zip
+from future.builtins import range
+from future.builtins import object
 from .baseProblem import MatrixProblem
 import numpy as np
 
@@ -110,7 +114,7 @@ class TSP(MatrixProblem):
         for node in nodes:
             Edges = graph[node]
             node_out_edges_num.append(len(Edges))
-            out_nodes = Edges.keys()
+            out_nodes = list(Edges.keys())
             if len(out_nodes) == 0:
                 self.err('input graph has node %s that does not lead to any other node; solution is impossible' % node)            
             
@@ -151,7 +155,7 @@ class TSP(MatrixProblem):
                 EdgesCoords.append((node, Out_nodes[i]))
                 EdgesDescriptors.append(w)
 
-                for key, val in w.items():
+                for key, val in list(w.items()):
                     # for undirected:
                     #if node2index[key] < node2index[out_node]: continue
                     Val = val if self.returnToStart or Out_nodes[i] != self.start else 0
@@ -253,7 +257,7 @@ class TSP(MatrixProblem):
         # number of outcoming edges = 1
         
         if not interalg_gdp:
-            for node, edges_inds in dictFrom.items():
+            for node, edges_inds in list(dictFrom.items()):
                 # !!!!!!!!!! TODO for interalg_raw_mode: and if all edges have sign similar to goal
                 if 1 and is_interalg_raw_mode:
                     c = engine([x[j] for j in edges_inds])
@@ -263,7 +267,7 @@ class TSP(MatrixProblem):
                 constraints.append(c)
 
         # number of incoming edges = 1
-        for node, edges_inds in dictTo.items():
+        for node, edges_inds in list(dictTo.items()):
             if len(edges_inds) == 0:
                 self.err('input graph has node %s that has no edge from any other node; solution is impossible' % node)
             
@@ -343,7 +347,7 @@ class TSP(MatrixProblem):
         if P != oo.MOP:
             r.ff = p.ff
             if interalg_gdp:
-                x_ind_val2edge_ind = dict([(elem[1], elem[0]) for elem in edge_ind2x_ind_val.items()])
+                x_ind_val2edge_ind = dict([(elem[1], elem[0]) for elem in list(edge_ind2x_ind_val.items())])
                 SolutionEdges = [(EdgesCoords[i][0], EdgesCoords[i][1], EdgesDescriptors[i]) for i in [x_ind_val2edge_ind[(ind, x[ind](r))] for ind in range(n)]]
             else:
                 SolutionEdges = [(EdgesCoords[i][0], EdgesCoords[i][1], EdgesDescriptors[i]) for i in range(m) if r.xf[x[i]] == 1]
@@ -382,7 +386,7 @@ class TSP(MatrixProblem):
 #            else:
 #                SolutionEdges = [(EdgesCoords[i][0], EdgesCoords[i][1], EdgesDescriptors[i]) for i in range(m) if r.xf[x[i]] == 1]
             if interalg_gdp: # default for MOP
-                x_ind_val2edge_ind = dict([(elem[1], elem[0]) for elem in edge_ind2x_ind_val.items()])
+                x_ind_val2edge_ind = dict([(elem[1], elem[0]) for elem in list(edge_ind2x_ind_val.items())])
                 r.solutions = MOPsolutions([[(EdgesCoords[i][0], EdgesCoords[i][1], EdgesDescriptors[i]) for i in [x_ind_val2edge_ind[(ind, x[ind](Point))] for ind in range(n)]] for Point in r.solutions])
             else:# non-default
                 r.solutions = MOPsolutions([[(EdgesCoords[i][0], EdgesCoords[i][1], EdgesDescriptors[i]) for i in range(m) if Point[x[i]] == 1] for Point in r.solutions])
@@ -394,7 +398,7 @@ class TSP(MatrixProblem):
 class MOPsolutions(list):
     pass
 
-class D:
+class D(object):
     def __init__(self):
         self.used_vals = set()
     def __getitem__(self, item):

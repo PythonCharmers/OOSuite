@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 from __future__ import print_function
+from future.builtins import input
 descr   = """
 """
 import os
@@ -22,7 +23,7 @@ try:
 except:
     print('you should have setuptools installed (http://pypi.python.org/pypi/setuptools), for some Linux distribs you can get it via [sudo] apt-get install python-setuptools')
     print('press Enter for exit...')
-    raw_input()
+    input()
     exit()
 
 from numpy.distutils.core import setup

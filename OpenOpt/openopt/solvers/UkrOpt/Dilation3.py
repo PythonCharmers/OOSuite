@@ -1,9 +1,11 @@
 from __future__ import print_function
+from future.builtins import range
+from future.builtins import object
 from numpy import dot, sign, zeros, all, isfinite, array, sqrt, any, isnan, pi, sin, arccos, inf, argmax, asfarray
 import numpy
 from numpy.linalg import norm
 
-class DilationUnit():
+class DilationUnit(object):
     
     #vectorNorm = 0 # TODO: remove it?
     #dilationCoeff = 1.0
@@ -18,7 +20,7 @@ class DilationUnit():
         #self.vectorDirection, self.vectorNorm, self.dilationCoeff = vector/nv, nv, dilationCoeff
         self.vectorDirection, self.dilationCoeff = vector/nv, dilationCoeff
         
-class Dilation():
+class Dilation(object):
     #maxUnits = 10
     #treshhold = 1.01
     th_phi = 0.1
@@ -90,7 +92,7 @@ class Dilation():
             dilatedDirection += t
         r = dilatedDirection+rest
         nr = norm(r)
-        for i in xrange(len(s)):
+        for i in range(len(s)):
             if ns[i] < 1e-10*nr:
                 r += 1e-10*nr*s[i]/ns[i]-s[i]
         return projectionsInfo, r
@@ -339,7 +341,7 @@ class Dilation():
                 print('>>', unit.dilationCoeff ,  self.dilationCoeffThreshold)
                 indUnitsToRemove.append(i)
                 #unitsToRemove.add(unit)
-        for j in xrange(len(indUnitsToRemove)):
+        for j in range(len(indUnitsToRemove)):
             self.units.pop(indUnitsToRemove[-1-j])
         nRemoved = len(indUnitsToRemove)
         self.unitsNum -= nRemoved

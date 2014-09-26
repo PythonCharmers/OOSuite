@@ -1,6 +1,8 @@
 '''
 Another one interalg example for global MOP
 '''
+from future.builtins import str
+from future.builtins import range
 from FuncDesigner import *
 from openopt import *
  

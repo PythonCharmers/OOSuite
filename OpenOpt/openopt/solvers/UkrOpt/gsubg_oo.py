@@ -1,4 +1,6 @@
 from __future__ import absolute_import
+from future.builtins import str
+from future.builtins import range
 from numpy import  inf, any, copy, dot, where, all, nan, isfinite, float64, isnan,  \
 max, sign, array_equal, matrix, delete, ndarray
 from numpy.linalg import norm#, solve, LinAlgError
@@ -286,7 +288,7 @@ class gsubg(baseSolver):
                 indToBeRemovedBySameAngle.sort(reverse=True)
 
                 if p.debug: p.debugmsg('indToBeRemovedBySameAngle: ' + str(indToBeRemovedBySameAngle) + ' from %d'  %nVec)
-                if indToBeRemovedBySameAngle == range(nVec-1, nVec-nAddedVectors-1, -1) and ns > 5:
+                if indToBeRemovedBySameAngle == list(range(nVec-1, nVec-nAddedVectors-1, -1)) and ns > 5:
 #                    print 'ns =', ns, 'hs =', hs, 'iterStartPoint.f():', iterStartPoint.f(), 'prevInnerCycleIterStartPoint.f()', prevInnerCycleIterStartPoint.f(), \
 #                    'diff:', iterStartPoint.f()-prevInnerCycleIterStartPoint.f()
                     
@@ -725,13 +727,13 @@ class gsubg(baseSolver):
 #                    s2 = 0
                     
                 if not s2 and any(p.stopdict.values()):
-                    for key,  val in p.stopdict.items():
+                    for key,  val in list(p.stopdict.items()):
                         if val == True:
                             s2 = key
                             break
                 p.istop = s2
                 
-                for key,  val in p.stopdict.items():
+                for key,  val in list(p.stopdict.items()):
                     if key < 0 or key in set([FVAL_IS_ENOUGH, USER_DEMAND_STOP, BUTTON_ENOUGH_HAS_BEEN_PRESSED]):
                         #p.iterfcn(bestPoint)
                         return

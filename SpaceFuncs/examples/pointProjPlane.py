@@ -1,4 +1,5 @@
 from __future__ import print_function
+from future.builtins import str
 from SpaceFuncs import *
 
 # 3D example

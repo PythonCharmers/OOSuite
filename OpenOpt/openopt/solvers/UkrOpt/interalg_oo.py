@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from future.builtins import object
 PythonMin, PythonMax = min, max
 import numpy as np
 
@@ -104,7 +105,7 @@ class interalg(baseSolver):
             pb = r14
 
         
-        for val in p._x0.values():
+        for val in list(p._x0.values()):
             if isinstance(val,  (list, tuple, np.ndarray)) and len(val) > 1:
                 p.pWarn('''
                 solver %s currently can handle only single-element variables, 
@@ -113,7 +114,7 @@ class interalg(baseSolver):
                 '''% self.__name__)
 
         
-        for val in x0.values():
+        for val in list(x0.values()):
             if isinstance(val,  (list, tuple, np.ndarray)) and len(val) > 1:
                 p.err('''
                 solver %s currently can handle only single-element variables, 
@@ -405,7 +406,7 @@ class interalg(baseSolver):
         if isMOP:
             for i, s in enumerate(p.solutions):
                 s.useAsMutable = True
-                for v, val in s.items():
+                for v, val in list(s.items()):
                     if v.fields != ():
                         s[v] = dict((field, v.aux_domain[int(val)][j]) for j, field in enumerate(v.fields))
                 for j, goal in enumerate(p.user.f):
@@ -431,7 +432,7 @@ class interalg(baseSolver):
             if not p.extras['isRequiredPrecisionReached'] and pnc == self.maxNodes: s += '\nincrease maxNodes (current value %d)' % self.maxNodes
             p.info(s)
 
-class Solution:
+class Solution(object):
     pass
     
 

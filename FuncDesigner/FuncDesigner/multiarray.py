@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from future.builtins import str
 import numpy as np, operator as o
 from numpy import ndarray
 from FuncDesigner.FDmisc import FuncDesignerException
@@ -77,7 +78,7 @@ class multiarray(MultiArray):
     def sum(self, *args, **kw):
         if any(v is not None for v in args): # somehow triggered from pswarm
             raise FuncDesignerException('arguments for FD multiarray sum are not implemened yet')
-        if any(v is not None for v in kw.values()):
+        if any(v is not None for v in list(kw.values())):
             raise FuncDesignerException('keyword arguments for FD multiarray sum are not implemened yet')
         tmp = self.reshape(-1, 1) if self.ndim < 2 else self
         return np.sum(tmp.view(ndarray), 1).view(multiarray)

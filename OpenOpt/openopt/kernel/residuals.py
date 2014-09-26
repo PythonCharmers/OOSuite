@@ -1,3 +1,5 @@
+from future.builtins import range
+from future.builtins import object
 __docformat__ = "restructuredtext en"
 from numpy import asfarray, array, asarray, argmax, zeros, isfinite, all, isnan, arange
 
@@ -19,7 +21,7 @@ except:
 #        return A._mul_sparse_matrix(t2).toarray()         
 
 
-class residuals:
+class residuals(object):
     def __init__(self):
         pass
     def _get_nonLinInEq_residuals(self, x):
@@ -174,7 +176,7 @@ class residuals:
     def discreteConstraintsAreSatisfied(self, x):
         k = -1
         A = array([0, 1])
-        for i in self.discreteVars.keys():#range(m):	# check x-vector
+        for i in list(self.discreteVars.keys()):#range(m):	# check x-vector
             # TODO: replace it by "for i, val in dict.itervalues()"
             s = self.discreteVars[i] if self.discreteVars[i] is not bool and self.discreteVars[i] is not 'bool' else A
             if not any(abs(x[i] - s) < self.discrtol):
@@ -185,6 +187,6 @@ class residuals:
         else:
             return False
         
-class EmptyClass:
+class EmptyClass(object):
     pass
 

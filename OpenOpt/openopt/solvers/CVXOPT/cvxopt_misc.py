@@ -1,3 +1,4 @@
+from future.builtins import range
 import cvxopt # to ensure cvxopt is installed
 import cvxopt.base
 from openopt.kernel.ooMisc import Len

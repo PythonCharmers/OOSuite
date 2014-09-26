@@ -1,4 +1,6 @@
 from __future__ import absolute_import
+from future.builtins import str
+from future.builtins import object
 from numpy import ndarray, asscalar, isscalar, inf, nan, searchsorted, logical_not, \
 copy as Copy, logical_and, asarray, any, all, atleast_1d, vstack, logical_or, array
 
@@ -16,7 +18,7 @@ try:
 except ImportError:
     from numpy import nanmin, nanmax
     
-class Interval:
+class Interval(object):
     def __init__(self, l, u, definiteRange):
         if isinstance(l, ndarray) and l.size == 1: l = asscalar(l)
         if isinstance(u, ndarray) and u.size == 1: u = asscalar(u)
@@ -421,7 +423,7 @@ def pow_const_interval(self, r, other, domain, dtype):
         
         if lb_ub.l is lb_ub.u:
             d, c = L.d, L.c
-            s_l = surf2(dict((k, v**2) for k, v in d.items()), dict((k, 2*v*c) for k, v in d.items()), c**2)
+            s_l = surf2(dict((k, v**2) for k, v in list(d.items())), dict((k, 2*v*c) for k, v in list(d.items())), c**2)
             return boundsurf2(s_l, s_l, definiteRange, domain), definiteRange
         
         lb_ub_resolved = lb_ub.resolve()[0]
@@ -444,11 +446,11 @@ def pow_const_interval(self, r, other, domain, dtype):
         if Ind_nonz.size != 0:
             d_u2 = dict_reduce(d_u, Ind_nonz)
             c = U.c if type(U.c) != ndarray or U.c.size == 1 else U.c[Ind_nonz]
-            s_u = surf2(dict((k, v**2) for k, v in d_u2.items()), dict((k, 2*v*c) for k, v in d_u2.items()), c**2)
+            s_u = surf2(dict((k, v**2) for k, v in list(d_u2.items())), dict((k, 2*v*c) for k, v in list(d_u2.items())), c**2)
             
             d_l2 = dict_reduce(d_l, Ind_nonz)
             c = L.c if type(L.c) != ndarray or L.c.size == 1 else L.c[Ind_nonz]
-            s_l = surf2(dict((k, v**2) for k, v in d_l2.items()), dict((k, 2*v*c) for k, v in d_l2.items()), c**2)
+            s_l = surf2(dict((k, v**2) for k, v in list(d_l2.items())), dict((k, 2*v*c) for k, v in list(d_l2.items())), c**2)
             
             r_nz = boundsurf2(s_l, s_u, False, domain)
             if Ind_nonz.size == m:
@@ -861,12 +863,12 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
         tmp2[np.isinf(tmp2)] = 0.0
         tmp2[ind_inf] = 0.0
 
-        d_new = dict((v, tmp2 * val) for v, val in U_dict.items())
+        d_new = dict((v, tmp2 * val) for v, val in list(U_dict.items()))
         
         if len(U2_dict) == 0:
             U_new = surf(d_new, 0.0)
         else:
-            d2_new = dict((v, tmp2 * val) for v, val in U2_dict.items())
+            d2_new = dict((v, tmp2 * val) for v, val in list(U2_dict.items()))
             U_new = surf2(d2_new, d_new, 0.0)
 
         U_new.c = new_u_resolved - U_new.maximum(domain, domain_ind)
@@ -877,12 +879,12 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
         if len(L_dict) >= 1 or len(L2_dict) >= 1:
             if ind_eq.size:
                 koeffs[ind_eq] = tmp2[ind_eq]
-            d_new = dict((v, koeffs * val) for v, val in L_dict.items())
+            d_new = dict((v, koeffs * val) for v, val in list(L_dict.items()))
             
             if len(L2_dict) == 0:
                 L_new = surf(d_new, 0.0)
             else:
-                d2_new = dict((v, koeffs * val) for v, val in L2_dict.items())
+                d2_new = dict((v, koeffs * val) for v, val in list(L2_dict.items()))
                 L_new = surf2(d2_new, d_new, 0.0)
 
             L_new.c = new_l_resolved -  L_new.minimum(domain, domain_ind)
@@ -895,11 +897,11 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
         tmp2[np.isinf(tmp2)] = 0.0
         tmp2[ind_inf] = 0.0
         
-        d_new = dict((v, tmp2 * val) for v, val in L_dict.items())
+        d_new = dict((v, tmp2 * val) for v, val in list(L_dict.items()))
         if len(L2_dict) == 0:
             L_new = surf(d_new, 0.0)
         else:
-            d2_new = dict((v, tmp2 * val) for v, val in L2_dict.items())
+            d2_new = dict((v, tmp2 * val) for v, val in list(L2_dict.items()))
             L_new = surf2(d2_new, d_new, 0.0)
         L_new.c = new_l_resolved - L_new.minimum(domain, domain_ind)
         ind_inf2 = np.isinf(new_l_resolved)
@@ -909,11 +911,11 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
         if len(U_dict) >= 1 or len(U2_dict) >= 1:
             if ind_eq.size:
                 koeffs[ind_eq] = tmp2[ind_eq]
-            d_new = dict((v, koeffs * val) for v, val in U_dict.items())
+            d_new = dict((v, koeffs * val) for v, val in list(U_dict.items()))
             if len(U2_dict) == 0:
                 U_new = surf(d_new, 0.0)
             else:
-                d2_new = dict((v, koeffs * val) for v, val in U2_dict.items())
+                d2_new = dict((v, koeffs * val) for v, val in list(U2_dict.items()))
                 U_new = surf2(d2_new, d_new, 0.0)
 
             U_new.c = new_u_resolved - U_new.maximum(domain, domain_ind)
@@ -939,11 +941,11 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
         tmp2[np.isinf(tmp2)] = 0.0
         tmp2[ind_inf] = 0.0
         
-        d_new = dict((v, tmp2 * val) for v, val in U_dict.items())
+        d_new = dict((v, tmp2 * val) for v, val in list(U_dict.items()))
         if len(L2_dict) == 0:
             L_new = surf(d_new, 0.0)
         else:
-            d2_new = dict((v, tmp2 * val) for v, val in U2_dict.items())
+            d2_new = dict((v, tmp2 * val) for v, val in list(U2_dict.items()))
             L_new = surf2(d2_new, d_new, 0.0)
 
         L_new.c = vals[0] - getattr(L_new, Attributes[0])(domain, domain_ind)
@@ -960,12 +962,12 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
         tmp2[np.isinf(tmp2)] = 0.0
         tmp2[ind_inf] = 0.0
         
-        d_new = dict((v, tmp2 * val) for v, val in L_dict.items())
+        d_new = dict((v, tmp2 * val) for v, val in list(L_dict.items()))
 #        U_new = surf(d_new, 0.0)
         if len(L2_dict) == 0:
             U_new = surf(d_new, 0.0)
         else:
-            d2_new = dict((v, koeffs * val) for v, val in L2_dict.items())
+            d2_new = dict((v, koeffs * val) for v, val in list(L2_dict.items()))
             U_new = surf2(d2_new, d_new, 0.0)
                 
         U_new.c = vals[1] - getattr(U_new, Attributes[1])(domain, domain_ind)
@@ -992,12 +994,12 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
         tmp2[np.isinf(tmp2)] = 0.0
         tmp2[ind_inf] = 0.0
         
-        d_new = dict((v, tmp2 * val) for v, val in L_dict.items())
+        d_new = dict((v, tmp2 * val) for v, val in list(L_dict.items()))
         
         if len(L2_dict) == 0:
             L_new = surf(d_new, 0.0)
         else:
-            d2_new = dict((v, tmp2 * val) for v, val in L2_dict.items())
+            d2_new = dict((v, tmp2 * val) for v, val in list(L2_dict.items()))
             L_new = surf2(d2_new, d_new, 0.0)
 
         L_new.c = vals[0] - getattr(L_new, Attributes[0])(domain, domain_ind)
@@ -1011,11 +1013,11 @@ def defaultIntervalEngine(arg_lb_ub, fun, deriv, monotonity, convexity, critical
         tmp2[np.isinf(tmp2)] = 0.0
         tmp2[ind_inf] = 0.0
         
-        d_new = dict((v, tmp2 * val) for v, val in U_dict.items())
+        d_new = dict((v, tmp2 * val) for v, val in list(U_dict.items()))
         if len(U2_dict) == 0:
             U_new = surf(d_new, 0.0)
         else:
-            d2_new = dict((v, tmp2 * val) for v, val in U2_dict.items())
+            d2_new = dict((v, tmp2 * val) for v, val in list(U2_dict.items()))
             U_new = surf2(d2_new, d_new, 0.0)
         
         U_new.c = vals[1] - getattr(U_new, Attributes[1])(domain, domain_ind)
@@ -1070,5 +1072,5 @@ def adjustBounds(R0, definiteRange, feasLB, feasUB):
             
     return R0, definiteRange
 
-dict_reduce = lambda d, ind: dict((k, v if v.size == 1 else v[ind]) for k, v in d.items())
+dict_reduce = lambda d, ind: dict((k, v if v.size == 1 else v[ind]) for k, v in list(d.items()))
 

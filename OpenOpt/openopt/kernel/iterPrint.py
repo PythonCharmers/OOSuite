@@ -1,4 +1,6 @@
 from __future__ import print_function
+from future.builtins import str
+from future.builtins import object
 from numpy import log10
 def signOfFeasible(p):
     r = '-'
@@ -18,7 +20,7 @@ textOutputDict = {\
 }
 delimiter = '   '
 
-class ooTextOutput:
+class ooTextOutput(object):
     def __init__(self):
         pass
 

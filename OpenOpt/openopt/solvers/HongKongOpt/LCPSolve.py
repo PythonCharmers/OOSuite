@@ -41,6 +41,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 '''
+from future.builtins import range
    
 from numpy import *
 
@@ -57,7 +58,7 @@ def LCPSolve(M,q, pivtol=1e-8): # pivtol = smallest allowable pivot element
         # Create initial tableau
         tableau = hstack([eye(dimen), -M, -ones((dimen, 1)), asarray(asmatrix(q).T)])
         # Let artificial variable enter the basis
-        basis = range(dimen) # basis contains a set of COLUMN indices in the tableau 
+        basis = list(range(dimen)) # basis contains a set of COLUMN indices in the tableau 
         locat = argmin(tableau[:,2*dimen+1]) # row of minimum element in column 2*dimen+1 (last of tableau)
         basis[locat] = 2*dimen # replace that choice with the row 
         cand = locat + dimen

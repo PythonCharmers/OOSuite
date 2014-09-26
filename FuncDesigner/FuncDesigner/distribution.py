@@ -1,5 +1,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from future.builtins import str
+from future.builtins import object
 import numpy as np
 import operator
 from .ooarray import ooarray
@@ -198,7 +200,7 @@ class continuous(stochasticDistribution):
         stochasticDistribution.__init__(self, *args, **kw)
         self.distribType = 'continuous'
 
-class stochFunc:
+class stochFunc(object):
     #_str = None
     def __init__(self, distrib):
         d = distrib
@@ -354,7 +356,7 @@ def mergeDistributions(d1, d2, operation):
                                  distribType)
         if is_d1_stoch and is_d2_stoch:
             r.stochDep = d1.stochDep.copy()
-            for key, val in d2.stochDep.items():
+            for key, val in list(d2.stochDep.items()):
                 if key in r.stochDep:
                     r.stochDep[key] += val
                 else:
@@ -399,7 +401,7 @@ def mergeDistributions(d1, d2, operation):
             If gradient-based solver is involved, sometimes using derivative-free one instead (e.g. scipy_cobyla, de, bobyqa) can be successful
             ''')
         stochDep = d1.stochDep.copy()
-        for key, val in d2.stochDep.items():
+        for key, val in list(d2.stochDep.items()):
             if key in stochDep:
                 stochDep[key] += val
             else:
@@ -623,7 +625,7 @@ def mean(arg, *args, **kw):
             def _D(*args, **kw):
                 if not isinstance(arg, oofun): return {}
                 res = arg._D(*args, **kw)
-                res = dict([(key, elem.Mean if isinstance(elem, stochasticDistribution) else elem) for key, elem in res.items()])
+                res = dict([(key, elem.Mean if isinstance(elem, stochasticDistribution) else elem) for key, elem in list(res.items())])
                 return res
             r._D = _D
     else:

@@ -1,7 +1,8 @@
+from future.builtins import object
 from numpy import dot, zeros, float64, diag, ones, ndarray, isfinite, all, asarray
 from numpy.linalg import norm
 
-class Dilation():
+class Dilation(object):
     def __init__(self, p): 
         self.T = float64
 #        if hasattr(numpy, 'float128'):

@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from future.builtins import object
 # created by Dmitrey
 from numpy import copy, isnan, array, argmax, abs, zeros, any, isfinite, all, asscalar, \
 dot, sqrt, nanmax, logical_or, prod, arange, ndarray, asarray, sum#where
@@ -13,7 +14,7 @@ except ImportError:
     scipyInstalled = False
     isspmatrix = lambda *args,  **kwargs:  False
 
-class Point:
+class Point(object):
     """
     the class is used to prevent calling non-linear constraints more than once
     f, c, h are funcs for obtaining objFunc, non-lin ineq and eq constraints.
@@ -26,7 +27,7 @@ class Point:
         self.isMultiArray = self.x.ndim > 1
         for i, arg in enumerate(args):
             setattr(self, '_' + self.__expectedArgs__[i], args[i])
-        for name, val in kwargs.items():
+        for name, val in list(kwargs.items()):
             setattr(self, '_' + name, val)
         #assert self.x is not None
 

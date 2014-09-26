@@ -1,4 +1,6 @@
 from __future__ import absolute_import
+from future.builtins import next
+from past.builtins import cmp
 PythonSum = sum
 import numpy as np
 from numpy import logical_and, isscalar, any#, where
@@ -21,14 +23,14 @@ class surf2(surf):
         
     value = lambda self, point: \
     self.c + \
-    PythonSum(point[k] * v for k, v in self.d.items()) +\
-    PythonSum(point[k]**2 * v for k, v in self.d2.items())
+    PythonSum(point[k] * v for k, v in list(self.d.items())) +\
+    PythonSum(point[k]**2 * v for k, v in list(self.d2.items()))
     
     def to_linear(self, domain, cmp):
         C = []
         D, D2 = self.d, self.d2
         new_D = D.copy()
-        for k, d2 in D2.items():
+        for k, d2 in list(D2.items()):
             l, u = domain[k]#[0], domain[k][1]
             
             #d1 = D.pop(k, 0.0)
@@ -112,7 +114,7 @@ class surf2(surf):
     def minimum(self, domain, domain_ind = slice(None)):
         c = self.c
         oovars = set(self.d.keys()) | set(self.d2.keys())
-        Vals = domain.values()
+        Vals = list(domain.values())
         n = np.asarray(Vals[0][0] if type(Vals) == list else next(iter(Vals))[0]).size
         active_domain_ind = type(domain_ind)==np.ndarray
         r = np.zeros(domain_ind.size if active_domain_ind else n) + c
@@ -143,7 +145,7 @@ class surf2(surf):
     def maximum(self, domain, domain_ind = slice(None)):
         c = self.c
         oovars = set(self.d.keys()) | set(self.d2.keys())
-        Vals = domain.values()
+        Vals = list(domain.values())
         n = np.asarray(Vals[0][0] if type(Vals) == list else next(iter(Vals))[0]).size
         active_domain_ind = type(domain_ind)==np.ndarray
         r = np.zeros(domain_ind.size if type(domain_ind)==np.ndarray else n) + c
@@ -174,14 +176,14 @@ class surf2(surf):
     def extract(self, ind): 
 #        if ind.dtype == bool:
 #            ind = where(ind)[0]
-        d = dict((k, v if v.size == 1 else v[ind]) for k, v in self.d.items()) 
-        d2 = dict((k, v if v.size == 1 else v[ind]) for k, v in self.d2.items()) 
+        d = dict((k, v if v.size == 1 else v[ind]) for k, v in list(self.d.items())) 
+        d2 = dict((k, v if v.size == 1 else v[ind]) for k, v in list(self.d2.items())) 
         C = self.c 
         c = C if C.size == 1 else C[ind] 
         return surf2(d2, d, c) 
 
 
-    __neg__ = lambda self: surf2(dict((k, -v) for k, v in self.d2.items()), dict((k, -v) for k, v in self.d.items()), -self.c)
+    __neg__ = lambda self: surf2(dict((k, -v) for k, v in list(self.d2.items())), dict((k, -v) for k, v in list(self.d.items())), -self.c)
     
     def __add__(self, other):
         if type(other) in (surf, surf2):
@@ -210,8 +212,8 @@ class surf2(surf):
     def __mul__(self, other):
         isArray = type(other) == np.ndarray
         if isscalar(other) or isArray:
-            return surf2(dict((k, v*other) for k, v in self.d2.items()), 
-            dict((k, v*other) for k, v in self.d.items()), self.c * other)
+            return surf2(dict((k, v*other) for k, v in list(self.d2.items())), 
+            dict((k, v*other) for k, v in list(self.d.items())), self.c * other)
 #        elif type(other) == boundsurf:
 #            return other * self.to_linear()
 #        elif type(other) == boundsurf2:
@@ -293,11 +295,11 @@ class boundsurf2(boundsurf):
     def __neg__(self):
         l, u = self.l, self.u
         if l is u:
-            tmp = surf2(dict((k, -v) for k, v in u.d2.items()), dict((k, -v) for k, v in u.d.items()), -u.c)
+            tmp = surf2(dict((k, -v) for k, v in list(u.d2.items())), dict((k, -v) for k, v in list(u.d.items())), -u.c)
             L, U = tmp, tmp
         else: 
-            L = surf2(dict((k, -v) for k, v in u.d2.items()), dict((k, -v) for k, v in u.d.items()), -u.c)
-            U = surf2(dict((k, -v) for k, v in l.d2.items()), dict((k, -v) for k, v in l.d.items()), -l.c)
+            L = surf2(dict((k, -v) for k, v in list(u.d2.items())), dict((k, -v) for k, v in list(u.d.items())), -u.c)
+            U = surf2(dict((k, -v) for k, v in list(l.d2.items())), dict((k, -v) for k, v in list(l.d.items())), -l.c)
         return boundsurf2(L, U, self.definiteRange, self.domain)
     
     def __mul__(self, other, resolveSchedule=()):
@@ -356,8 +358,8 @@ class boundsurf2(boundsurf):
 def apply_quad_lin(a, b, c, s):
     assert type(s) == surf
     D, C = s.d, s.c
-    d2 = dict((k, a*v**2) for k, v in D.items())
+    d2 = dict((k, a*v**2) for k, v in list(D.items()))
     tmp = 2*a*C+b
-    d = dict((k, v*tmp) for k, v in D.items())
+    d = dict((k, v*tmp) for k, v in list(D.items()))
     c_ = c + (a*C+b)*C
     return surf2(d2, d, c_)

@@ -1,5 +1,6 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from future.builtins import object
 import os, sys
 curr_dir = ''.join([elem + os.sep for elem in __file__.split(os.sep)[:-1]])
 sys.path += [curr_dir]
@@ -29,7 +30,7 @@ except ImportError:
         (this addon is commercial, free for research/educational small-scale problems only).
         Visit http://openopt.org/StochasticProgramming for more details.
         ''')
-    class Distribution:
+    class Distribution(object):
         __getattr__ = sp_err
     distribution = Distribution()
     P = mean = var = std = sp_err

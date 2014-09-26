@@ -1,4 +1,6 @@
 from __future__ import print_function
+from future.builtins import str
+from future.builtins import range
 from numpy import diag, array, sqrt,  eye, ones, inf, any, copy, zeros, dot, all, sum, isfinite, float64, isnan, log10, \
 max, sign, array_equal, logical_and, matrix
 from openopt.kernel.ooMisc import norm
@@ -756,13 +758,13 @@ class ralg(baseSolver):
 #                    s2 = 0
                     
                 if not s2 and any(p.stopdict.values()):
-                    for key,  val in p.stopdict.items():
+                    for key,  val in list(p.stopdict.items()):
                         if val == True:
                             s2 = key
                             break
                 p.istop = s2
                 
-                for key,  val in p.stopdict.items():
+                for key,  val in list(p.stopdict.items()):
                     if key < 0 or key in set([FVAL_IS_ENOUGH, USER_DEMAND_STOP, BUTTON_ENOUGH_HAS_BEEN_PRESSED]):
                         p.iterfcn(bestPoint)
                         self.innerState = {'B': b, 'hs': hs}

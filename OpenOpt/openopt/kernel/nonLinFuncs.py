@@ -1,4 +1,6 @@
 from __future__ import absolute_import
+from future.builtins import range
+from future.builtins import object
 from numpy import array, nan, atleast_1d, copy, vstack, hstack, isscalar, ndarray, prod, int32
 import numpy as np
 from .setDefaultIterFuncs import USER_DEMAND_EXIT
@@ -11,7 +13,7 @@ except:
     DerApproximatorIsInstalled = False
 
 
-class nonLinFuncs:
+class nonLinFuncs(object):
     def __init__(self): pass
 
     def wrapped_func(p, x, IND, userFunctionType, ignorePrev, getDerivative):#, _linePointDescriptor = None):
@@ -487,7 +489,7 @@ def getFuncsAndExtractIndexes(p, funcs, ind, userFunctionType):
         else:
             inner_ind = ind[i]
             
-        if left_arr_indexes[i] in IndDict.keys():
+        if left_arr_indexes[i] in list(IndDict.keys()):
             IndDict[left_arr_indexes[i]].append(inner_ind)
         else:
             IndDict[left_arr_indexes[i]] = [inner_ind]

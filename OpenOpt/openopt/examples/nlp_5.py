@@ -1,3 +1,5 @@
+from future.builtins import str
+from future.builtins import range
 from openopt import NLP
 from numpy import cos, arange, ones, asarray, abs, zeros, sqrt, asscalar, inf
 from string import rjust, ljust, expandtabs, center, lower

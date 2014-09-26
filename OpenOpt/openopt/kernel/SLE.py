@@ -46,9 +46,9 @@ class SLE(MatrixProblem):
             AsSparse = bool(self.useSparse) if type(self.useSparse) != str else self._useSparse()
             C, d = [], []
             if len(self._fixedVars) < len(self._freeVars):
-                Z = dict([(v, zeros_like(self._x0[v]) if v not in self._fixedVars else self._x0[v]) for v in self._x0.keys()])
+                Z = dict([(v, zeros_like(self._x0[v]) if v not in self._fixedVars else self._x0[v]) for v in list(self._x0.keys())])
             else:
-                Z = dict([(v, zeros_like(self._x0[v]) if v in self._freeVars else self._x0[v]) for v in self._x0.keys()])
+                Z = dict([(v, zeros_like(self._x0[v]) if v in self._freeVars else self._x0[v]) for v in list(self._x0.keys())])
             #Z = self.x0#self._vector2point(zeros(self.n))
 
             for lin_oofun in equations:

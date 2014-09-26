@@ -1,4 +1,6 @@
 from __future__ import absolute_import
+from future.builtins import str
+from future.builtins import range
 PythonMax = max
 from .baseClasses import OOArray
 from FuncDesigner.multiarray import multiarray

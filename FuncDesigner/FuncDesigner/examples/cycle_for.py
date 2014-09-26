@@ -1,4 +1,5 @@
 from __future__ import print_function
+from future.builtins import range
 # The example illustrates using "for" cycle in FD code
 from FuncDesigner import *
 a, b, c = oovars('a', 'b', 'c')

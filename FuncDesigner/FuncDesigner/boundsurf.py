@@ -1,4 +1,7 @@
 from __future__ import absolute_import
+from future.builtins import zip
+from past.builtins import cmp
+from future.builtins import object
 PythonSum = sum
 PythonAll = all
 import numpy as np
@@ -21,7 +24,7 @@ class surf(object):
         self.d = d # dict of variables and linear coefficients on them (probably as multiarrays)
         self.c = np.asarray(c) # (multiarray of) constant(s)
 
-    value = lambda self, point: self.c + PythonSum(point[k] * v for k, v in self.d.items())
+    value = lambda self, point: self.c + PythonSum(point[k] * v for k, v in list(self.d.items()))
     
 #    def invert(self, ind=None):
 #        ind_is_None = ind is None
@@ -57,27 +60,27 @@ class surf(object):
     minimum = lambda self, domain, domain_ind = None: \
     self.c +\
     (PythonSum(where(v > 0, 
-    domain[k][0], domain[k][1])*v for k, v in self.d.items()) if domain_ind is None else
+    domain[k][0], domain[k][1])*v for k, v in list(self.d.items())) if domain_ind is None else
     PythonSum(where(v > 0, 
-    domain[k][0][domain_ind], domain[k][1][domain_ind])*v for k, v in self.d.items()))
+    domain[k][0][domain_ind], domain[k][1][domain_ind])*v for k, v in list(self.d.items())))
     
     #self.resolve(domain, LESS)
     maximum = lambda self, domain, domain_ind = None: \
     self.c +\
     (PythonSum(where(v < 0, 
-    domain[k][0], domain[k][1])*v for k, v in self.d.items()) if domain_ind is None else
+    domain[k][0], domain[k][1])*v for k, v in list(self.d.items())) if domain_ind is None else
     PythonSum(where(v < 0, 
-    domain[k][0][domain_ind], domain[k][1][domain_ind])*v for k, v in self.d.items()))
+    domain[k][0][domain_ind], domain[k][1][domain_ind])*v for k, v in list(self.d.items())))
     
     def render(self, domain, cmp):
-        self.rendered = dict((k, where(cmp(v, 0), domain[k][0], domain[k][1])*v) for k, v in self.d.items())
+        self.rendered = dict((k, where(cmp(v, 0), domain[k][0], domain[k][1])*v) for k, v in list(self.d.items()))
         self.resolved = PythonSum(self.rendered) + self.c
         self.isRendered = True
     
     def extract(self, ind): 
 #        if ind.dtype == bool:
 #            ind = where(ind)[0]
-        d = dict((k, v if v.size == 1 else v[ind]) for k, v in self.d.items()) 
+        d = dict((k, v if v.size == 1 else v[ind]) for k, v in list(self.d.items())) 
         C = self.c 
         c = C if C.size == 1 else C[ind] 
         return surf(d, c) 
@@ -101,12 +104,12 @@ class surf(object):
     
     __sub__ = lambda self, other: self.__add__(-other)
     
-    __neg__ = lambda self: surf(dict((k, -v) for k, v in self.d.items()), -self.c)
+    __neg__ = lambda self: surf(dict((k, -v) for k, v in list(self.d.items())), -self.c)
     
     def __mul__(self, other):
         isArray = type(other) == np.ndarray
         if isscalar(other) or isArray:
-            return surf(dict((k, v*other) for k, v in self.d.items()), self.c * other)
+            return surf(dict((k, v*other) for k, v in list(self.d.items())), self.c * other)
         else:
             assert 0, 'unimplemented yet'
             
@@ -248,11 +251,11 @@ class boundsurf(object):#object is added for Python2 compatibility
     def __neg__(self):
         l, u = self.l, self.u
         if l is u:
-            tmp = surf(dict((k, -v) for k, v in u.d.items()), -u.c)
+            tmp = surf(dict((k, -v) for k, v in list(u.d.items())), -u.c)
             L, U = tmp, tmp
         else: 
-            L = surf(dict((k, -v) for k, v in u.d.items()), -u.c)
-            U = surf(dict((k, -v) for k, v in l.d.items()), -l.c)
+            L = surf(dict((k, -v) for k, v in list(u.d.items())), -u.c)
+            U = surf(dict((k, -v) for k, v in list(l.d.items())), -l.c)
         return boundsurf(L, U, self.definiteRange, self.domain)
     
     # TODO: mb rework it

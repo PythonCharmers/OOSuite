@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 '''
 from __future__ import absolute_import
+from future.builtins import range
 from numpy import *
 from .qlcp import qlcp
 try:

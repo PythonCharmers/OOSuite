@@ -1,20 +1,26 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
+from future.builtins import input
+from future.builtins import str
+from future import standard_library
+standard_library.install_hooks()
+from future.builtins import range
+from future.builtins import object
 from numpy import inf, copy, floor, log10, asfarray, asscalar, argsort
 
 TkinterIsInstalled = True
 try:
-    from Tkinter import Tk, Button, Entry, Label, Frame, StringVar, DISABLED, END, IntVar, \
+    from tkinter import Tk, Button, Entry, Label, Frame, StringVar, DISABLED, END, IntVar, \
     Radiobutton, Canvas
-    from tkFileDialog import asksaveasfilename, askopenfile 
-    from tkMessageBox import showerror
+    from tkinter.filedialog import asksaveasfilename, askopenfile 
+    from tkinter.messagebox import showerror
 except ImportError:
     TkinterIsInstalled = False
 
 xtolScaleFactor = 1e-5
 
-class mfa:
+class mfa(object):
     filename = None # Python pickle file where to save results
     x0 = None
     solved = False
@@ -32,7 +38,7 @@ class mfa:
             see http://openopt.org/nlopt'''
             print(s)
             showerror('OpenOpt', s)
-            raw_input()
+            input()
             return
         import os
         hd = os.getenv("HOME")
@@ -271,7 +277,7 @@ class mfa:
         Next.destroy()
         #reverse = True if goal == 'min' else False
         
-        calculated_items = self.calculated_points.items() if isinstance(self.calculated_points, dict) else self.calculated_points
+        calculated_items = list(self.calculated_points.items()) if isinstance(self.calculated_points, dict) else self.calculated_points
         vals = [calculated_items[i][1] for i in range(len(calculated_items))]
         ind = argsort(vals)
         j = ind[0] if goal == 'min' else ind[-1]
@@ -304,7 +310,7 @@ class mfa:
         import pickle 
         S = pickle.load(file)
         if type(S['calculated_points']) == dict: # for backward compatibility
-            S['calculated_points'] = S['calculated_points'].items()
+            S['calculated_points'] = list(S['calculated_points'].items())
         #S['goal']='max'
         self.x0 = S.get('x0', None) # this line should be BEFORE self.create(S)
         
@@ -398,7 +404,7 @@ class mfa:
         # TODO: minor code cleanup
         CP = self.calculated_points
         if isinstance(CP, dict):
-            CP = CP.items()
+            CP = list(CP.items())
         for i in range(len(CP)):
             key,  val = CP[i]
             ws.write(10+i, 0, i+1)

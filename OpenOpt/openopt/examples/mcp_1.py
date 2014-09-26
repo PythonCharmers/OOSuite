@@ -5,6 +5,7 @@ and FuncDesigner installed.
 Limitations on time, cputime, "enough" value, basic GUI features are available.
 '''
 from __future__ import print_function
+from future.builtins import range
 from openopt import MCP
 
 import networkx as nx

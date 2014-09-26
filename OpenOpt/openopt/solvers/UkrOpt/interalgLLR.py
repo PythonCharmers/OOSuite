@@ -1,4 +1,7 @@
 from __future__ import absolute_import
+from future.builtins import str
+from future.builtins import range
+from future.builtins import object
 from numpy import tile, isnan, array, atleast_1d, asarray, logical_and, all, logical_or, any, nan, isinf, \
 arange, vstack, inf, logical_not, take, abs, hstack, empty, \
 prod, int16, int32, int64, log2, searchsorted, cumprod#where
@@ -885,7 +888,7 @@ def func11(y, e, nlhc, indTC, residual, o, a, _s, p):
 #        r18, r19 = r3[:, :n], r3[:, n:]
 #        return [si(FuncValFields, Tmp[i], y[i], e[i], nlhf[i], nlhc[i] if nlhc is not None else None, o[i], a[i], _s[i], r18[i], r19[i]) for i in range(m)]
 
-class si:
+class si(object):
     def __init__(self, fields, *args, **kwargs):
         for i in range(len(fields)):
             setattr(self, fields[i], args[i])

@@ -1,3 +1,5 @@
+from future.builtins import str
+from future.builtins import range
 #from numpy import asfarray, argmax, sign, inf, log10
 from openopt.kernel.baseSolver import baseSolver
 from openopt.kernel.nonOptMisc import where

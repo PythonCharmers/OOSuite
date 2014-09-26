@@ -21,6 +21,7 @@ is ~ 10-15%
 This test runs ~ a minute on my AMD 3800+
 """
 from __future__ import print_function
+from future.builtins import range
 noise = 1e-8
 
 from openopt import SNLE
@@ -79,7 +80,7 @@ print('desired ftol:', desired_ftol, 'objFunc noise:', noise)
 print('---------- fsolve fails ----------')
 t = time()
 print('N log10(MaxResidual) MaxResidual')
-for i in xrange(N):
+for i in range(N):
     p = SNLE(f, x0, ftol = desired_ftol - noise*len(x0), iprint = -1, maxFunEvals = int(1e7))
     r = p.solve('scipy_fsolve')
     v = fvn(r.xf)
@@ -98,7 +99,7 @@ t = time()
 print('---------- nssolve fails ---------')
 nssolve_failed, ns = 0, []
 print('N log10(MaxResidual) MaxResidual')
-for i in xrange(N):
+for i in range(N):
     p = SNLE(f, x0, ftol = desired_ftol - noise*len(x0), iprint = -1, maxFunEvals = int(1e7))
     r = p.solve('nssolve')
     #r = p.solve('nlp:amsg2p')

@@ -16,8 +16,8 @@ class LLSP(MatrixProblem):
     
     def __init__(self, *args, **kwargs):
         MatrixProblem.__init__(self, *args, **kwargs)
-        if 'damp' not in kwargs.keys(): self.damp = None
-        if 'f' not in kwargs.keys(): self.f = None
+        if 'damp' not in list(kwargs.keys()): self.damp = None
+        if 'f' not in list(kwargs.keys()): self.f = None
         
         if not self._isFDmodel():
             if len(args)>0:

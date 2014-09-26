@@ -1,4 +1,7 @@
 from __future__ import absolute_import
+from future.builtins import str
+from future.builtins import range
+from future.builtins import object
 PythonMax = max
 from numpy import all, any, isfinite, inf, nan, ndarray, string_, zeros_like, ones, array_equal, array, copy, asscalar, \
 where, ravel, asfarray, prod, asarray, isscalar, atleast_1d, isinf
@@ -29,11 +32,11 @@ from . import GUI
 from .fdmisc import setStartVectorAndTranslators
 
 
-class user:
+class user(object):
     def __init__(self):
         pass
 
-class oomatrix:
+class oomatrix(object):
     def __init__(self):
         pass
     def matMultVec(self, x, y):
@@ -45,7 +48,7 @@ class oomatrix:
         return x * y
         #return asarray(x) * asarray(y)
 
-class autocreate:
+class autocreate(object):
     def __init__(self): pass
 
 class baseProblem(oomatrix, residuals, ooTextOutput):
@@ -399,7 +402,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             x0 = self.x0.copy()
 
             tmp = []
-            for key, val in x0.items():
+            for key, val in list(x0.items()):
                 if not isinstance(key, (list, tuple, ndarray)):
                     tmp.append((key, val))
                 else: # can be only ooarray although
@@ -415,7 +418,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             Tmp = dict(tmp)
             
             if isinstance(self.fixedVars, dict):
-                for key, val in self.fixedVars.items():
+                for key, val in list(self.fixedVars.items()):
                     if isinstance(key, (list, tuple, ndarray)): # can be only ooarray although
                         if len(key) != len(val):
                             self.err('''
@@ -437,7 +440,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             self.probDep = probDep
             self.x0 = Tmp
             self._stringVars = set()
-            for key, val in self.x0.items():
+            for key, val in list(self.x0.items()):
                 #if key.domain is not None and key.domain is not bool and key.domain is not 'bool':
                 if type(val) in (str, string_):
                     self._stringVars.add(key)
@@ -473,11 +476,11 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             if len(self._fixedVars) < len(self._freeVars) and 'isdisjoint' in dir(set()):
                 areFixed = lambda dep: dep.issubset(self.fixedVarsSet)
                 #isFixed = lambda v: v in self._fixedVars
-                Z = dict((v, zeros_like(val) if v not in self.fixedVarsSet else val) for v, val in self._x0.items())
+                Z = dict((v, zeros_like(val) if v not in self.fixedVarsSet else val) for v, val in list(self._x0.items()))
             else:
                 areFixed = lambda dep: dep.isdisjoint(self.freeVarsSet)
                 #isFixed = lambda v: v not in self._freeVars
-                Z = dict((v, zeros_like(val) if v in self.freeVarsSet else val) for v, val in self._x0.items())
+                Z = dict((v, zeros_like(val) if v in self.freeVarsSet else val) for v, val in list(self._x0.items()))
             Z = oopoint(Z, maxDistributionSize = self.maxDistributionSize)
             self._Z = Z
            
@@ -497,7 +500,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             C = list(self.constraints)
 
             self.constraints = set(self.constraints)
-            for v in self._x0.keys():
+            for v in list(self._x0.keys()):
 #                if v.fields != ():
 #                    v.aux_domain = Copy(v.domain)
 ##                    # TODO: mb rework it
@@ -638,10 +641,10 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             if len(beq) != 0:
                 self.Aeq, self.beq = Vstack(Aeq), Hstack([ravel(elem) for elem in beq])#Vstack(beq).flatten()
                 if hasattr(self.beq, 'toarray'): self.beq = self.beq.toarray()
-            for vName, vVal in LB.items():
+            for vName, vVal in list(LB.items()):
                 inds = oovD[vName]
                 lb[inds[0]:inds[1]] = vVal
-            for vName, vVal in UB.items():
+            for vName, vVal in list(UB.items()):
                 inds = oovD[vName]
                 ub[inds[0]:inds[1]] = vVal
             self.lb, self.ub = lb, ub
@@ -771,7 +774,7 @@ class baseProblem(oomatrix, residuals, ooTextOutput):
             D = f.D(Z, **D_kwargs2)
             if inplaceLinearRender:
                 # interalg only
-                if any([asarray(val).size > 1 for val in D.values()]):
+                if any([asarray(val).size > 1 for val in list(D.values())]):
                     self.err('currently interalg can handle only FuncDesigner.oovars(n), not FuncDesigner.oovar() with size > 1')
                 f = linear_render(f, D, Z)
         else:
@@ -881,7 +884,7 @@ class MatrixProblem(baseProblem):
         return True
 
 
-class Parallel:
+class Parallel(object):
     def __init__(self):
         self.f = False# 0 - don't use parallel calclations, 1 - use
         self.c = False
@@ -889,7 +892,7 @@ class Parallel:
         #TODO: add paralell func!
         #self.parallel.fun = dfeval
 
-class Args:
+class Args(object):
     def __init__(self): pass
     f, c, h = (), (), ()
 
@@ -1072,7 +1075,7 @@ def linear_render(f, D, Z):
         return f
     ff = f(Z)
     name, tol, _id = f.name, f.tol, f._id
-    tmp = [(v if isscalar(val) and val == 1.0 else v * (val if type(val) != ndarray or val.ndim < 2 else val.flatten())) for v, val in D.items()]
+    tmp = [(v if isscalar(val) and val == 1.0 else v * (val if type(val) != ndarray or val.ndim < 2 else val.flatten())) for v, val in list(D.items())]
     c = ff if isscalar(ff) or ff.ndim <= 1 else asscalar(ff)
     if c != 0: tmp.append(c)
     f = tmp[0] if len(tmp) == 1 else tmp[0]+tmp[1] if len(tmp) == 2 else fd.sum(tmp)

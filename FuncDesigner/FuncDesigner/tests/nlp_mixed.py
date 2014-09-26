@@ -1,3 +1,4 @@
+from future.builtins import range
 from FuncDesigner import *
 from openopt import NLP, oosolver
 from numpy import arange

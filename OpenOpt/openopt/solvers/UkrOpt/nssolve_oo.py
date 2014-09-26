@@ -32,8 +32,8 @@ class nssolve(baseSolver):
 
     def __init__(self):pass
     def __solver__(self, p):
-        if SMALL_DELTA_X in p.kernelIterFuncs.keys(): p.kernelIterFuncs.pop(SMALL_DELTA_X)
-        if SMALL_DELTA_F in p.kernelIterFuncs.keys(): p.kernelIterFuncs.pop(SMALL_DELTA_F)
+        if SMALL_DELTA_X in list(p.kernelIterFuncs.keys()): p.kernelIterFuncs.pop(SMALL_DELTA_X)
+        if SMALL_DELTA_F in list(p.kernelIterFuncs.keys()): p.kernelIterFuncs.pop(SMALL_DELTA_F)
 
         if self.nspSolver == 'autoselect':
             nspSolver = 'amsg2p' if p.isUC else 'ralg'

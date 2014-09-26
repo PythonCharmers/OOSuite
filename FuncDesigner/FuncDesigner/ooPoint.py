@@ -52,7 +52,7 @@ class ooPoint(dict):
 #            Asanyarray = lambda arg: asanyarray(arg) if not isinstance(arg, Stochastic) else arg#if not isspmatrix(arg) else arg
             
         assert args or kwargs, 'incorrect oopoint constructor arguments'
-        Iterator = (args[0].items() if isinstance(args[0], dict) else args[0]) if args else kwargs.items()
+        Iterator = (list(args[0].items()) if isinstance(args[0], dict) else args[0]) if args else list(kwargs.items())
         # TODO: remove float() after Python 3 migration
         
         if self.skipArrayCast: 

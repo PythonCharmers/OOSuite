@@ -1,4 +1,5 @@
 from __future__ import print_function
+from future.builtins import range
 from FuncDesigner import *
 
 a, b, c = oovars('a', 'b', 'c')

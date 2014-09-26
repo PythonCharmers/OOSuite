@@ -1,3 +1,4 @@
+from future.builtins import range
 # created by Dmitrey
 #from numpy import array, asscalar, isscalar, ndarray
 from FuncDesigner import dot, cross, sum, det3, norm #, sqrt, sum, oofun, ooarray, anglet  #, stack
@@ -15,7 +16,7 @@ table = {
 #         'H': 'orthocenter', 
          'V': 'volume'
          }
-table = dict([(key, '_'+val) for key, val in table.items()] + [(val, '_'+val) for key, val in table.items()])
+table = dict([(key, '_'+val) for key, val in list(table.items())] + [(val, '_'+val) for key, val in list(table.items())])
 others = ['CircumSphere', 'InscribedSphere', 'reducedVertices', 'reducedVerticesCrossProduct']
 table.update([(s, '_'+s) for s in others])
 

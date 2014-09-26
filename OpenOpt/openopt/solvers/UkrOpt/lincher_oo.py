@@ -1,5 +1,8 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from future.builtins import str
+from future.builtins import range
+from future.builtins import object
 __docformat__ = "restructuredtext en"
 
 from numpy import diag, ones, inf, any, copy, sqrt, vstack, concatenate, asarray, nan, where, array, zeros, exp, isfinite

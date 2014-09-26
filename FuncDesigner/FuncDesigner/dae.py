@@ -1,9 +1,12 @@
 from __future__ import absolute_import
+from future.builtins import next
+from future.builtins import str
+from future.builtins import object
 from .ooSystem import ooSystem as oosystem
 from .FDmisc import FuncDesignerException
 from numpy import ndarray
 
-class dae:
+class dae(object):
     def __init__(self, equations, time, startPoint = None):#, **kw):
         self.equations = equations
         self.startPoint = startPoint
@@ -12,7 +15,7 @@ class dae:
         if type(time) == dict:
             if len(time) != 1:
                 raise FuncDesignerException(s + 'got dict of len ' + str(len(time)))
-            self.timeInterval = asarray(next(iter(time.values())))
+            self.timeInterval = asarray(next(iter(list(time.values()))))
             self.N = self.timeInterval.size
         else:
             if type(time) not in (list, tuple, ndarray):

@@ -1,4 +1,7 @@
 from __future__ import absolute_import
+from future.builtins import chr
+from future.builtins import str
+from future.builtins import object
 __docformat__ = "restructuredtext en"
 from time import time, clock
 from numpy import asfarray, nan, ones, all, atleast_1d, any, isnan, \
@@ -56,7 +59,7 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
 
     if solver_str_or_instance is None:
         if hasattr(p, 'solver'): solver_str_or_instance = p.solver
-        elif 'solver' in kwargs.keys(): solver_str_or_instance = kwargs['solver']
+        elif 'solver' in list(kwargs.keys()): solver_str_or_instance = kwargs['solver']
 
     if type(solver_str_or_instance) is str and ':' in solver_str_or_instance:
         isConverter = True
@@ -76,13 +79,13 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
                 solver %s seems to be uninstalled yet, 
                 check http://openopt.org/%s for install instructions''' % (solver_str_or_instance.__name__, p.probType))
             p.solver = solver_str_or_instance
-            for key, value  in solver_str_or_instance.fieldsForProbInstance.items():
+            for key, value  in list(solver_str_or_instance.fieldsForProbInstance.items()):
                 setattr(p, key, value)
     p.isConverterInvolved = isConverter
 
     old_err = seterr(all= 'ignore')
     
-    if 'debug' in kwargs.keys():
+    if 'debug' in list(kwargs.keys()):
        p.debug =  kwargs['debug']
 
     probAttributes = set(p.__dict__)
@@ -99,7 +102,7 @@ def runProbSolver(p_, solver_str_or_instance=None, *args, **kwargs):
 
     solver = p.solver.__solver__
     
-    for key, value in kwargs.items():
+    for key, value in list(kwargs.items()):
         if hasattr(p.solver, key):
             if isConverter:
                 solver_params[key] = value
@@ -462,7 +465,7 @@ def finalShow(p):
 #        if os.fork():
             pylab.show()
 
-class OpenOptResult: 
+class OpenOptResult(object): 
     # TODO: implement it
     #extras = EmptyClass() # used for some optional output
     def __call__(self, *args):
@@ -495,10 +498,10 @@ class OpenOptResult:
                             else dict((field, v.domain[int(val)][j]) for j, field in enumerate(v.fields)) if v.fields != ()\
                             else v.reverse_aux_domain[int(val)] if 'reverse_aux_domain' in v.__dict__\
                             else v.aux_domain[val] if 'aux_domain' in v.__dict__ else val) \
-                            for v, val in p.xf.items())
+                            for v, val in list(p.xf.items()))
             if not hasattr(self, '_xf'):
                 #self._xf = dict([(v.name, asscalar(val) if isinstance(val, ndarray) and val.size ==1 else val) for v, val in p.xf.items()])
-                self._xf = dict((v.name, val) for v, val in self.xf.items())
+                self._xf = dict((v.name, val) for v, val in list(self.xf.items()))
             self.xf = oopoint(self.xf, maxDistributionSize = p.maxDistributionSize, skipArrayCast = True)
         else:
             self.xf = p.xf
@@ -545,7 +548,7 @@ class OpenOptResult:
         self.elapsed['solver_time'] -= self.elapsed['plot_time']
         self.elapsed['solver_cputime'] -= self.elapsed['plot_cputime']
 
-        self.evals = dict([(key, val if type(val) == int else round(val *10) /10.0) for key, val in p.nEvals.items()])
+        self.evals = dict([(key, val if type(val) == int else round(val *10) /10.0) for key, val in list(p.nEvals.items())])
         self.evals['iter'] = p.iter
         
 

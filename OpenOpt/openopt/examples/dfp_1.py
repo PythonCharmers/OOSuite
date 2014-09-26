@@ -15,6 +15,8 @@ subjected to a>=4, c<=30
 (we could handle other constraints as well: Ax <= b, Aeq x = beq, c(x) <= 0, h(x) = 0)
 """
 from __future__ import print_function
+from future.builtins import str
+from future.builtins import range
 from openopt import DFP
 from numpy import inf
 
@@ -28,7 +30,7 @@ ub = [inf, inf, 30, inf]
 p = DFP(f, initEstimation, X, Y, df = df, lb=lb, ub=ub)
 
 r = p.solve('nlp:ralg', plot=0, iprint = 10)
-print('solution: '+str(r.xf)+'\n||residuals||^2 = '+str(r.ff)+'\nresiduals: '+str([f(p.xf, X[i])-Y[i] for i in xrange(len(Y))]))
+print('solution: '+str(r.xf)+'\n||residuals||^2 = '+str(r.ff)+'\nresiduals: '+str([f(p.xf, X[i])-Y[i] for i in range(len(Y))]))
 #solution: [  3.99999936   5.99708861 -12.25696614   1.04221073]
 #||residuals||^2 = 5992.63887806
 #residuals: [37.785213926923028, 63.039268675751572, -18.091065285780857, -15.968303801844399, 2.9485118103557397]

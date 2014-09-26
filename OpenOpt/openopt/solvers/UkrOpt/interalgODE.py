@@ -1,3 +1,4 @@
+from future.builtins import range
 from numpy import hstack,  asarray, abs, atleast_1d, \
 logical_not, argsort, vstack, sum, array, nan, all
 import numpy as np
@@ -81,7 +82,7 @@ def interalg_ODE_routine(p, solver):
             if isIP:
                 if tmp.level == 1:
                     #adjustr4WithDiscreteVariables(wr4, p)
-                    cs = oopoint([(v, asarray(0.5*(val[0] + val[1]), dataType)) for v, val in mp.items()])
+                    cs = oopoint([(v, asarray(0.5*(val[0] + val[1]), dataType)) for v, val in list(mp.items())])
                     cs.dictOfFixedFuncs = p.dictOfFixedFuncs
                     r21, r22 = tmp.values(cs)
                     o, a = atleast_1d(r21), atleast_1d(r22)
@@ -111,11 +112,11 @@ def interalg_ODE_routine(p, solver):
                 l_c, u_c = l.c, u.c
 #                dT = r29 - r28 if r30[-1] > r30[0] else r28 - r29
                 
-                ends = oopoint([(v, asarray(val[1], dataType)) for v, val in mp.items()])
+                ends = oopoint([(v, asarray(val[1], dataType)) for v, val in list(mp.items())])
                 ends.dictOfFixedFuncs = p.dictOfFixedFuncs
                 ends_L, ends_U = tmp.values(ends)
                 
-                starts = oopoint([(v, asarray(val[0], dataType)) for v, val in mp.items()])
+                starts = oopoint([(v, asarray(val[0], dataType)) for v, val in list(mp.items())])
                 starts.dictOfFixedFuncs = p.dictOfFixedFuncs
                 starts_L, starts_U = tmp.values(starts)
 

@@ -1,5 +1,8 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from future.builtins import zip
+from future.builtins import str
+from future.builtins import range
 # created by Dmitrey
 PythonSum = sum
 PythonAny = any
@@ -165,11 +168,11 @@ class oofun(OOFun):
         oofun._id += 1 # CHECK: it should be int32! Other types cannot be has keys!
         
 
-        if 'name' not in kwargs.keys():
+        if 'name' not in list(kwargs.keys()):
             self.name = 'unnamed_oofun_' + str(oofun._unnamedFunNumber)
             oofun._unnamedFunNumber += 1
         
-        for key, item in kwargs.items():
+        for key, item in list(kwargs.items()):
             #assert key in self.__allowedFields__ # TODO: make set comparison
             setattr(self, key, item)
             
@@ -417,7 +420,7 @@ class oofun(OOFun):
         r._neg_elem = self
         r._getFuncCalcEngine = lambda *args,  **kwargs: -self._getFuncCalcEngine(*args,  **kwargs)
         r.getOrder = self.getOrder
-        r._D = lambda *args, **kwargs: dict((key, -value) for key, value in self._D(*args, **kwargs).items())
+        r._D = lambda *args, **kwargs: dict((key, -value) for key, value in list(self._D(*args, **kwargs).items()))
         r.d = raise_except
         r.vectorized = True
         r._interval_ = lambda *args, **kw: neg_interval(self, *args, **kw)
@@ -481,7 +484,7 @@ class oofun(OOFun):
 
 #            if other.size == 1 or 'size' in self.__dict__ and self.size in (1, other.size):
             if other.size == 1:
-                r._D = lambda *args, **kwargs: dict((key, value/other) for key, value in self._D(*args, **kwargs).items())
+                r._D = lambda *args, **kwargs: dict((key, value/other) for key, value in list(self._D(*args, **kwargs).items()))
                 r.d = raise_except
             
         # r.discrete = self.discrete and (?)
@@ -576,7 +579,7 @@ class oofun(OOFun):
             r._getFuncCalcEngine = lambda *args,  **kwargs: other * self._getFuncCalcEngine(*args,  **kwargs)
 
             if isscalar(other) or asarray(other).size == 1:  # other may be array-like
-                r._D = lambda *args, **kwargs: dict((key, value * other) for key, value in self._D(*args, **kwargs).items())
+                r._D = lambda *args, **kwargs: dict((key, value * other) for key, value in list(self._D(*args, **kwargs).items()))
                 r.d = raise_except
             else:
                 r.d = lambda x: mul_aux_d(x, other)
@@ -1082,7 +1085,7 @@ class oofun(OOFun):
                 N = PythonMax([1] + [inp.size for inp in Input if type(inp) == ndarray])
 
             Temp = [inp.flatten().tolist() if isinstance(inp, multiarray) else [inp]*N for inp in Input]
-            inputs = zip(*Temp)
+            inputs = list(zip(*Temp))
             
             # Check it!
             Tmp = [self.fun(*inp) if self.args == () else self.fun(*(inp + self.args)) for inp in inputs]
@@ -1166,7 +1169,7 @@ class oofun(OOFun):
                     raise FuncDesignerException('argument fixedVars is expected as oovar or python list/tuple of oovar instances')
                 fixedVars = set([fixedVars])
         r = self._D(x, fixedVarsScheduleID, Vars, fixedVars, useSparse = useSparse)
-        r = dict((key, (val if type(val)!=DiagonalType else val.resolve(useSparse))) for key, val in r.items())
+        r = dict((key, (val if type(val)!=DiagonalType else val.resolve(useSparse))) for key, val in list(r.items()))
         is_oofun = isinstance(initialVars, oofun)
         if is_oofun and not initialVars.is_oovar:
             # TODO: handle it with input of type list/tuple/etc as well
@@ -1178,7 +1181,7 @@ class oofun(OOFun):
         elif resultKeysType == 'vars':
             rr = {}
             #!!! TODO: mb remove the cycle!!!!
-            for oov, tmp in r.items():
+            for oov, tmp in list(r.items()):
                 if (fixedVars is not None and oov in fixedVars) or (Vars is not None and oov not in Vars):
                     continue
                 if useSparse == False and hasattr(tmp, 'toarray'): tmp = tmp.toarray()
@@ -1315,7 +1318,7 @@ class oofun(OOFun):
                     raise FuncDesignerException('dict of deviations miss %d variable(s) (oovars): %s' % (nAbsent, list(set_diff)))
         
         d = self.D(point, exactShape=True) if nAbsent == 0 else self.D(point, fixedVars = set_diff, exactShape=True)
-        tmp = [dot(val, (deviations[key] if isscalar(deviations[key]) else asarray(deviations[key]).reshape(-1, 1)))**2 for key, val in d.items()]
+        tmp = [dot(val, (deviations[key] if isscalar(deviations[key]) else asarray(deviations[key]).reshape(-1, 1)))**2 for key, val in list(d.items())]
         tmp = [asscalar(elem) if isinstance(elem, ndarray) and elem.size == 1 else elem for elem in tmp]
         r = atleast_2d(hstack(tmp)).sum(1)
         return r ** 0.5

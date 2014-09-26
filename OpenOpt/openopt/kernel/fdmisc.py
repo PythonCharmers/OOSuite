@@ -1,4 +1,6 @@
 from __future__ import absolute_import
+from future.builtins import next
+from future.builtins import range
 # Handling of FuncDesigner probs
 from numpy import hstack, vstack, atleast_1d, cumsum, asarray, zeros,  ndarray,\
 prod, ones, copy, nan, flatnonzero, array_equal, asanyarray, int64
@@ -63,7 +65,7 @@ def setStartVectorAndTranslators(p):
             else:
                 fixedVars.append(v)
             if freeVars is None:
-                freeVars = p.freeVars = startPoint.keys()
+                freeVars = p.freeVars = list(startPoint.keys())
             del freeVars[nn-1-i]
 
     # TODO: use ordered set instead
@@ -167,7 +169,7 @@ def setStartVectorAndTranslators(p):
             else:
                 p.err('unclear error, maybe you have constraint independend on any optimization variables') 
 
-        Items = pointDerivative.items()
+        Items = list(pointDerivative.items())
         key, val = Items[0] if type(Items) == list else next(iter(Items))
         
         if isinstance(val, float) or (isinstance(val, ndarray) and val.shape == ()):
@@ -182,13 +184,13 @@ def setStartVectorAndTranslators(p):
         involveSparse = useSparse
         if useSparse == 'auto':
             nTotal = n * funcLen#sum([prod(elem.shape) for elem in pointDerivative.values()])
-            nNonZero = sum((elem.size if isspmatrix(elem) else count_nonzero(elem)) for elem in pointDerivative.values())
+            nNonZero = sum((elem.size if isspmatrix(elem) else count_nonzero(elem)) for elem in list(pointDerivative.values()))
             involveSparse = 4*nNonZero < nTotal and nTotal > 1000
         if involveSparse:
             r2 = []
             if funcLen == 1:
                 inds = []
-                for oov, val in pointDerivative.items():
+                for oov, val in list(pointDerivative.items()):
                     ind_start, ind_end = oovarsIndDict[oov]
                     
                     # works faster than isscalar()
@@ -242,7 +244,7 @@ def setStartVectorAndTranslators(p):
             else:
                 r = SparseMatrixConstructor((funcLen, n)) if involveSparse else DenseMatrixConstructor((funcLen, n)) 
             
-            for key, val in pointDerivative.items():
+            for key, val in list(pointDerivative.items()):
                 indexes = oovarsIndDict[key]
                 if not involveSparse and isspmatrix(val): val = val.A
 #                if isscalar(val) or prod(val.shape)==1:

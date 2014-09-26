@@ -1,3 +1,5 @@
+from future.builtins import str
+from future.builtins import range
 from numpy import arange, array, ones, zeros, cos, ceil, asarray, hstack
 from numpy.linalg import norm
 from openopt import NSP, oosolver

@@ -21,6 +21,7 @@ works for ralg and lincher, but may doesn't work for some other solvers
 (like scipy_cobyla, that has neither native callback nor call gradient)
 """
 from __future__ import print_function
+from future.builtins import range
 
 def MyIterFcn(p):
     # observing non-feasible ralg iter points
@@ -64,7 +65,7 @@ from numpy import cos,  asfarray,  arange,  sign
 N = 75
 f = lambda x: sum(1.2 ** arange(len(x)) * abs(x))
 df = lambda x: 1.2 ** arange(len(x)) * sign(x)
-x0 = cos(1+asfarray(range(N)))
+x0 = cos(1+asfarray(list(range(N))))
 
 #non-linear constraint c(x) <= 0:
 c = lambda x: abs(x[4]-0.8) + abs(x[5]-1.5) - 0.015 

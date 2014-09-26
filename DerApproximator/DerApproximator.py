@@ -3,6 +3,9 @@ finite-difference derivatives approximation
 made by Dmitrey
 """
 from __future__ import print_function
+from future.builtins import str
+from future.builtins import range
+from future.builtins import object
 
 try:
     import numpypy as numpy
@@ -68,7 +71,7 @@ except ImportError:
     from numpy import concatenate
     hstack = lambda arg: concatenate(arg, 1)
 
-class DerApproximatorException:
+class DerApproximatorException(object):
     def __init__(self,  msg):
         self.msg = msg
     def __str__(self):

@@ -264,10 +264,10 @@ def truncateByPlane2(cs, centerValues, y, e, indT, gradient, fo, p):
         return y, e, indT, ind_trunc
 
     oovarsIndDict = p._oovarsIndDict
-    ind = np.array([oovarsIndDict[oov][0] for oov in gradient.keys()])
+    ind = np.array([oovarsIndDict[oov][0] for oov in list(gradient.keys())])
     y2, e2 = y[:, ind], e[:, ind]
     
-    A = np.vstack([np.asarray(elem).reshape(1, -1) for elem in gradient.values()]).T
+    A = np.vstack([np.asarray(elem).reshape(1, -1) for elem in list(gradient.values())]).T
     cs = 0.5 * (y2 + e2)
     b = np.sum(A * cs, 1) - centerValues.view(np.ndarray) + fo
 

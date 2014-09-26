@@ -1,3 +1,4 @@
+from future.builtins import str
 from openopt.kernel.baseSolver import baseSolver
 from openopt.kernel.ooMisc import isSolved
 from openopt.kernel.setDefaultIterFuncs import IS_NAN_IN_X, SMALL_DELTA_X, SMALL_DELTA_F
@@ -28,7 +29,7 @@ class branb(baseSolver):
         # TODO: check it
         # it can be removed in other place during prob preparation
         for key in [IS_NAN_IN_X, SMALL_DELTA_X, SMALL_DELTA_F]:
-            if key in p.kernelIterFuncs.keys():
+            if key in list(p.kernelIterFuncs.keys()):
                 p.kernelIterFuncs.pop(key)
         
         p.nlpSolver = self.nlpSolver
@@ -61,7 +62,7 @@ def fminconset(p_current, bestPoint, p):
     # check if all discrete constraints are satisfied
     x = curr_NLP_Point.x
     k = -1
-    for i in p.discreteVars.keys():#range(m):	# check x-vector
+    for i in list(p.discreteVars.keys()):#range(m):	# check x-vector
         # TODO: replace it by "for i, val in dict.itervalues()"
         if not any(abs(x[i] - p.discreteVars[i]) < p.discrtol):
             k=i	# Violation of this set constraint.

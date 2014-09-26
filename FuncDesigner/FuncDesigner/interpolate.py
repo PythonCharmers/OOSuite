@@ -1,5 +1,6 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from future.builtins import object
 from .ooFun import oofun
 import numpy as np
 from numpy import all
@@ -26,7 +27,7 @@ def scipy_InterpolatedUnivariateSpline(*args, **kwargs):
         # TODO: check does isCostly = True better than False for small-scale, medium-scale, large-scale
 #    return SplineGenerator
 
-class SplineGenerator:
+class SplineGenerator(object):
     def __call__(self, INP):
         us = self._un_sp
         if not isinstance(INP, oofun):

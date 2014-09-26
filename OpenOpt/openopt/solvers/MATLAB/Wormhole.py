@@ -1,7 +1,10 @@
+from future.builtins import map
+from future.builtins import str
+from future.builtins import object
 import numpy as np
 import socket
 
-class Wormhole:
+class Wormhole(object):
     def __init__(self):
         TCP_IP = '127.0.0.1'
         TCP_PORT = 5002

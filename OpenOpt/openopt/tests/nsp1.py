@@ -8,6 +8,7 @@ x_opt = all-zeros
 f_opt = 0
 """
 from __future__ import print_function
+from future.builtins import range
 
 from numpy import *
 from openopt import NSP
@@ -42,7 +43,7 @@ df = lambda x: df1(x) + df2(x)
 
 #objFun = lambda x: sum(x**2)
 
-x0 = cos(1+asfarray(range(N)))
+x0 = cos(1+asfarray(list(range(N))))
 
 
 #OPTIONAL: user-supplied gradient/subgradient

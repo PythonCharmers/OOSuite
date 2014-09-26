@@ -1,6 +1,8 @@
 #!/usr/bin/python
 from __future__ import print_function
 from __future__ import absolute_import
+from future.builtins import str
+from future.builtins import range
 import numpy as np
 import random
 random.seed(15)

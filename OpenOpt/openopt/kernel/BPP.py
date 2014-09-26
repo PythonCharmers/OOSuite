@@ -1,4 +1,6 @@
 from __future__ import absolute_import
+from future.builtins import range
+from future.builtins import object
 from .baseProblem import MatrixProblem
 import numpy as np
 #from MOP import MOPsolutions
@@ -91,7 +93,7 @@ class BPP(MatrixProblem):
         nBins = bins.get('n', -1)
         if nBins == -1:
             if len(UsedValues) == 1 and type(bins) == dict:
-                Tmp_items = sum(list(cr_values.values()[0]))
+                Tmp_items = sum(list(list(cr_values.values())[0]))
                 Tmp_bins = bins[list(UsedValues)[0]]
                 approx_n_bins = int(np.ceil((2.0 * Tmp_items) / Tmp_bins))
             else:
@@ -141,7 +143,7 @@ class BPP(MatrixProblem):
             constraints += tmp
         
         # 2. Constraints from bins parameters
-        for k, v in bins.items():
+        for k, v in list(bins.items()):
             if k != 'n':
                 constraints += [fd.sum(X[:, j].view(fd.ooarray) * cr_values[k]) <= v*y[j] for j in range(nBins)]
         
@@ -196,7 +198,7 @@ class BPP(MatrixProblem):
 #            r.xf = dict(tmp) if requireCount else tmp
         return r
 
-class D:
+class D(object):
     def __init__(self):
         self.used_vals = set()
     def __getitem__(self, item):

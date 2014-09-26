@@ -1,11 +1,13 @@
 from __future__ import absolute_import
+from future import standard_library
+standard_library.install_hooks()
 # sometimes Tkinter is not installed
 TkinterIsInstalled = True
 import platform
 if platform.python_version()[0] == '2': 
     # Python2
     try:
-        from Tkinter import Tk, Toplevel, Button, Entry, Menubutton, Label, Frame, StringVar, DISABLED, ACTIVE
+        from tkinter import Tk, Toplevel, Button, Entry, Menubutton, Label, Frame, StringVar, DISABLED, ACTIVE
     except:
         TkinterIsInstalled = False
 else: 
@@ -36,7 +38,7 @@ def manage(p, *args, **kwargs):
 
     start = kwargs.pop('start', True)
 
-    if 'solver' in kwargs.keys(): p.solver = kwargs['solver']
+    if 'solver' in list(kwargs.keys()): p.solver = kwargs['solver']
 
     # root
 

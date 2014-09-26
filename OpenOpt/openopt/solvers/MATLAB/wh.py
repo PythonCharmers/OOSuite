@@ -1,3 +1,5 @@
+from future.builtins import str
+from future.builtins import map
 import numpy as np
 try:
     from scipy.sparse import find, isspmatrix
@@ -20,7 +22,7 @@ def wh(d, matlabExecutable):
                    ]
     Matlab = matlabExecutable+' '+' '.join(args)
     subprocess.Popen(Matlab, shell=True)
-    for k, v in d.items():
+    for k, v in list(d.items()):
         exec(k + '=v')
 #    is_sparse = False # to suppress Python3 issue
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

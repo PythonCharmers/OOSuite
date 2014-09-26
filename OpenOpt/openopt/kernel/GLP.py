@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from future.builtins import str
 from .baseProblem import NonLinProblem
 from numpy import asarray, ones, inf
 from .setDefaultIterFuncs import MAX_NON_SUCCESS 
@@ -37,9 +38,9 @@ class GLP(NonLinProblem):
                 return False
         
         self.kernelIterFuncs[MAX_NON_SUCCESS] = maxNonSuccess
-        if 'lb' in kwargs.keys():
+        if 'lb' in list(kwargs.keys()):
             self.n = len(kwargs['lb'])
-        elif 'ub' in kwargs.keys():
+        elif 'ub' in list(kwargs.keys()):
             self.n = len(kwargs['ub'])
         if hasattr(self, 'n'):
             if not hasattr(self, 'lb'):

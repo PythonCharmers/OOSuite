@@ -1,3 +1,5 @@
+from future.builtins import range
+from future.builtins import object
 #from numpy import asfarray, argmax, sign, inf, log10
 from openopt.kernel.baseSolver import baseSolver
 from numpy import asfarray,  inf,  atleast_1d
@@ -97,7 +99,7 @@ class galileo(baseSolver):
 
 from random import Random
 
-class Chromosome:
+class Chromosome(object):
   """The Chromosome class represents a single chromosome in a population.
   A Chromosome contains some number of genes (Python objects), and can
   be treated as a list, with indices and slices and all that good stuff
@@ -210,7 +212,7 @@ class Chromosome:
     """
     return (self.genes == other.genes)
 
-class Population:
+class Population(object):
   """The Population class represents an entire population of a single
   generation of Chromosomes. This population is replaced with each iteration
   of the algorithm. Functions are provided for storing generations for later

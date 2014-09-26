@@ -14,8 +14,8 @@ class IP(NonLinProblem):
     def __init__(self, *args, **kwargs):
         NonLinProblem.__init__(self, *args, **kwargs)
         domain = args[1]
-        self.x0 = dict([(v, 0.5*(val[0]+val[1])) for v, val in domain.items()])
-        self.constraints = [v>bounds[0] for v,  bounds in domain.items()] + [v<bounds[1] for v,  bounds in domain.items()]
+        self.x0 = dict([(v, 0.5*(val[0]+val[1])) for v, val in list(domain.items())])
+        self.constraints = [v>bounds[0] for v,  bounds in list(domain.items())] + [v<bounds[1] for v,  bounds in list(domain.items())]
         #self.data4TextOutput = ['objFunVal', 'residual']
         self._Residual = inf
 

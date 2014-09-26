@@ -1,3 +1,4 @@
+from future.builtins import object
 import random
 import math
 #import logging
@@ -10,7 +11,7 @@ def P(prev_score,next_score,temperature):
     else:
         return math.exp( -abs(next_score-prev_score)/temperature )
 
-class ObjectiveFunction:
+class ObjectiveFunction(object):
     '''class to wrap an objective function and 
     keep track of the best solution evaluated'''
     def __init__(self,objective_function):

@@ -1,3 +1,4 @@
+from future.builtins import range
 from openopt import NLP
 from numpy import cos, arange, ones, asarray, zeros, mat, array
 N = 100
@@ -14,13 +15,13 @@ x0 = 8*cos(arange(N))
 # c(x) <= 0 constraints
 def c(x):
     r = zeros(N-1)
-    for i in xrange(N-1):
+    for i in range(N-1):
         r[i] = x[i]**2 + x[i+1]**2 - 1
     return r
 
 def dc(x):
     r = zeros((N-1, N))
-    for i in xrange(N-1):
+    for i in range(N-1):
         r[i, i] = 2*x[i]
         r[i, i+1] = 2*x[i+1]
     return r

@@ -11,19 +11,19 @@ def converter_to_CVXOPT_SDP_Matrices_from_OO_SDP_Class(OO_SDP_Class_2D_Dict_S,  
     a = OO_SDP_Class_2D_Dict_S
     #r = []
     R = {}
-    for i, j in a.keys():
-        if i not in R.keys():
+    for i, j in list(a.keys()):
+        if i not in list(R.keys()):
             R[i] = zeros((nVars, asarray(a[i, 0]).size))
         R[i][j] = asfarray(a[i, j]).flatten()
     r = []
-    for i in R.keys():
+    for i in list(R.keys()):
         r.append(Matrix(R[i].T))
     return r
             
 def DictToList(d):
     i = 0
     r = []
-    while i in d.keys():
+    while i in list(d.keys()):
         r.append(matrix(d[i], tc = 'd'))
         i += 1
     return r

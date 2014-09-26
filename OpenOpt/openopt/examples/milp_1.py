@@ -1,4 +1,5 @@
 from __future__ import print_function
+from future.builtins import range
 __docformat__ = "restructuredtext en"
 
 from numpy import *
@@ -16,8 +17,8 @@ lb = -1.5 * ones(8)
 ub = 15 * ones(8)
 A = zeros((5, 8))
 b = zeros(5)
-for i in xrange(5):
-    for j in xrange(8):
+for i in range(5):
+    for j in range(8):
         A[i,j] = -8+sin(8*i) + cos(15*j)
     b[i] = -150 + 80*sin(80*i)
 

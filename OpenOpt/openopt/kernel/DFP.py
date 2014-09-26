@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from future.builtins import range
 from .baseProblem import NonLinProblem
 from .ooMisc import assignScript
 from numpy import dot, asfarray, atleast_2d, array, zeros
