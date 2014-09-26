@@ -7,6 +7,7 @@ descr   = """
 """
 
 import os
+import sys
 
 DISTNAME            = 'DerApproximator'
 DESCRIPTION         = 'A python module for finite-differences derivatives approximation'
@@ -16,7 +17,8 @@ MAINTAINER_EMAIL    = 'dmitrey-at-openopt-dot-org'
 URL                 = 'http://openopt.org'
 LICENSE             = 'new BSD'
 
-from .__init__ import __version__ as Ver
+sys.path.append(os.getcwd())
+from DerApproximator.__init__ import __version__ as Ver
 
 #DOWNLOAD_URL        = 'http://openopt.org/images/6/6a/DerApproximator.zip'
 

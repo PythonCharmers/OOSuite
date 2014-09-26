@@ -7,7 +7,7 @@ copy as Copy, logical_and, asarray, any, all, atleast_1d, vstack, logical_or, ar
 import numpy as np
 from .FDmisc import FuncDesignerException, update_mul_inf_zero, update_negative_int_pow_inf_zero, \
 isPyPy, update_div_zero, where
-from FuncDesigner.multiarray import multiarray
+from .multiarray import multiarray
 from .boundsurf import boundsurf, surf, devided_interval, split, boundsurf_join, merge_boundsurfs
 from .boundsurf2 import surf2, boundsurf2
 from operator import truediv as td

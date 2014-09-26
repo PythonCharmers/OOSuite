@@ -3,7 +3,7 @@ from future.builtins import str
 from future.builtins import range
 PythonMax = max
 from .baseClasses import OOArray
-from FuncDesigner.multiarray import multiarray
+from .multiarray import multiarray
 from .ooFun import oofun
 from .constraints import Constraint
 from numpy import isscalar, asscalar, ndarray, atleast_1d, asanyarray, array

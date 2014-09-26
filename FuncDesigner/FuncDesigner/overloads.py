@@ -13,7 +13,7 @@ from .ooarray import ooarray
 from .Interval import nonnegative_interval, ZeroCriticalPointsInterval, \
 box_1_interval, defaultIntervalEngine
 from numpy import atleast_1d, logical_and
-from FuncDesigner.multiarray import multiarray
+from .multiarray import multiarray
 from .boundsurf import boundsurf, surf, devided_interval, boundsurf_join, split, merge_boundsurfs
 from .boundsurf2 import boundsurf2, surf2
     

@@ -35,7 +35,7 @@ raise_except, DiagonalType, isPyPy, formResolveSchedule, Len, SP_eye, SparseMatr
 isspmatrix, Hstack
 
 from .ooPoint import ooPoint
-from FuncDesigner.multiarray import multiarray
+from .multiarray import multiarray
 from .derivativeMisc import getDerivativeSelf, mul_aux_d, _D
 from .Interval import Interval, mul_interval, pow_const_interval, pow_oofun_interval, div_interval, \
 add_interval, add_const_interval, neg_interval, defaultIntervalEngine#, rdiv_interval

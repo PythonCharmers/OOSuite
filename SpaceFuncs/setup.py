@@ -3,6 +3,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from future.builtins import input
+import sys
 descr   = """
 """
 
@@ -16,7 +17,9 @@ MAINTAINER_EMAIL    = 'dmitrey-at-openopt-dot-org'
 URL                 = 'http://openopt.org'
 LICENSE             = 'new BSD'
 
-from .__version__ import __version__ as Ver
+sys.path.append(os.getcwd() + os.sep + 'SpaceFuncs')
+from __version__ import __version__ as Ver
+# from . import __version__ as Ver
 
 #DOWNLOAD_URL        = 'http://openopt.org/images/4/4e/SpaceFuncs.zip'
 
