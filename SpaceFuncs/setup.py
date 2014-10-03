@@ -73,7 +73,7 @@ if __name__ == "__main__":
     #data_files = ['test_data/' + i for i in TEST_DATA_FILES]
     #data_files.extend(['docs/' + i for i in doc_files])
     setup(configuration = configuration,
-        install_requires='numpy', # can also add version specifiers   #namespace_packages=['kernel'],
+        install_requires=['numpy', 'future'], # can also add version specifiers   #namespace_packages=['kernel'],
         #py_modules = ['kernel', 'tests', 'examples', 'solvers'],
         packages=setuptools.find_packages(),
         include_package_data = True,
