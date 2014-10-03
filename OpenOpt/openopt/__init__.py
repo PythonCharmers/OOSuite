@@ -6,7 +6,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 import os, sys
 curr_dir = ''.join([elem + os.sep for elem in __file__.split(os.sep)[:-1]])
-sys.path += [curr_dir, curr_dir + 'kernel']
+# sys.path += [curr_dir, curr_dir + 'kernel']
 
 from .ooVersionNumber import __version__
 from .oo import *
@@ -15,10 +15,10 @@ from .oo import *
 #from kernel.oologfcn import OpenOptException
 #from kernel.nonOptMisc import oosolver
 
-from GUI import manage
-from oologfcn import OpenOptException
-from nonOptMisc import oosolver
-from mfa import MFA
+from .kernel.GUI import manage
+from .kernel.oologfcn import OpenOptException
+from .kernel.nonOptMisc import oosolver
+from .kernel.mfa import MFA
 
 
 isE = False

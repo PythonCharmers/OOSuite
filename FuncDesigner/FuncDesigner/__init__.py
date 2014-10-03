@@ -1,9 +1,11 @@
 from __future__ import print_function
 from __future__ import absolute_import
-from future.builtins import object
 import os, sys
+
+from numpy import ndarray
+
 curr_dir = ''.join([elem + os.sep for elem in __file__.split(os.sep)[:-1]])
-sys.path += [curr_dir]
+# sys.path += [curr_dir]
 
 __version__ = '0.5402'
 
@@ -20,7 +22,7 @@ from .baseClasses import Stochastic as _Stochastic
 from .FDmisc import FuncDesignerException, _getDiffVarsID, _getAllAttachedConstraints, broadcast
 
 try:
-    from . import distribution
+    # from . import distribution
     from .distribution import P, mean, var, std
 except ImportError:
     def sp_err(self, *args,  **kw): 
@@ -36,7 +38,6 @@ except ImportError:
     P = mean = var = std = sp_err
     
 from .ooarray import ooarray
-from numpy import ndarray
 #def IMPLICATION(condition, *args):
 #    if condition is False: 
 #        return True
@@ -96,4 +97,5 @@ if isE:
     """
     print(s)
     
-del(isE, curr_dir, os, sys)
+# del(isE, curr_dir, os, sys)
+del(isE, os, sys)

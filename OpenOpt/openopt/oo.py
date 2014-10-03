@@ -1,34 +1,35 @@
+from __future__ import absolute_import
 import os,sys
-sys.path.append(os.getcwd()+os.sep+'kernel')
+# sys.path.append(os.getcwd()+os.sep+'kernel')
 
-from LP import LP as CLP
-from LCP import LCP as CLCP
-from EIG import EIG as CEIG
-from SDP import SDP as CSDP
-from QP import QP as CQP
-from MILP import MILP as CMILP
-from STAB import STAB as CSTAB
-from MCP import MCP as CMCP
-from DSP import DSP as CDSP
-from TSP import TSP as CTSP
-from KSP import KSP as CKSP
-from BPP import BPP as CBPP
-from NSP import NSP as CNSP
-from NLP import NLP as CNLP
-from MOP import MOP as CMOP
-from MINLP import MINLP as CMINLP
-from NLSP import NLSP as CNLSP
-from NLLSP import NLLSP as CNLLSP
-from GLP import GLP as CGLP
-from SLE import SLE as CSLE
-from LLSP import LLSP as CLLSP
-from MMP import MMP as CMMP
-from LLAVP import LLAVP as CLLAVP
-from LUNP import LUNP as CLUNP
-from SOCP import SOCP as CSOCP
-from DFP import DFP as CDFP
-from IP import IP as CIP
-from ODE import ODE as CODE
+from .kernel.LP import LP as CLP
+from .kernel.LCP import LCP as CLCP
+from .kernel.EIG import EIG as CEIG
+from .kernel.SDP import SDP as CSDP
+from .kernel.QP import QP as CQP
+from .kernel.MILP import MILP as CMILP
+from .kernel.STAB import STAB as CSTAB
+from .kernel.MCP import MCP as CMCP
+from .kernel.DSP import DSP as CDSP
+from .kernel.TSP import TSP as CTSP
+from .kernel.KSP import KSP as CKSP
+from .kernel.BPP import BPP as CBPP
+from .kernel.NSP import NSP as CNSP
+from .kernel.NLP import NLP as CNLP
+from .kernel.MOP import MOP as CMOP
+from .kernel.MINLP import MINLP as CMINLP
+from .kernel.NLSP import NLSP as CNLSP
+from .kernel.NLLSP import NLLSP as CNLLSP
+from .kernel.GLP import GLP as CGLP
+from .kernel.SLE import SLE as CSLE
+from .kernel.LLSP import LLSP as CLLSP
+from .kernel.MMP import MMP as CMMP
+from .kernel.LLAVP import LLAVP as CLLAVP
+from .kernel.LUNP import LUNP as CLUNP
+from .kernel.SOCP import SOCP as CSOCP
+from .kernel.DFP import DFP as CDFP
+from .kernel.IP import IP as CIP
+from .kernel.ODE import ODE as CODE
 
 
 def MILP(*args, **kwargs):

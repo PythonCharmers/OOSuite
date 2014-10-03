@@ -1,7 +1,7 @@
 from __future__ import print_function
 from future.builtins import range
 import sys
-sys.path.append('/home/dmitrey/OOSuite/OpenOpt')
+# sys.path.append('/home/dmitrey/OOSuite/OpenOpt')
 
 from numpy import empty, sin, cos, arange
 from openopt import LLSP
