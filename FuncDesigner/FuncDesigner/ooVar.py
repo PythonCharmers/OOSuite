@@ -1,6 +1,4 @@
 from __future__ import absolute_import
-from future.builtins import str
-from future.builtins import range
 # created by Dmitrey
 #PythonAll = all
 from numpy import asarray, empty, inf, any, array, \

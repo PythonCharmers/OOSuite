@@ -2,8 +2,6 @@
 interalg example for global MINLP with 9 variables and some constraints
 '''
 from __future__ import print_function
-from future.builtins import str
-from future.builtins import range
 from FuncDesigner import *
 from openopt import *
  

@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from future.builtins import str
 lvl1_ops = ('+', '-')
 lvl2_ops = ('*', )
 lvl3_ops = ('/', )

@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from future.builtins import str
 import numpy as np, operator as o
 from numpy import ndarray
 from .FDmisc import FuncDesignerException

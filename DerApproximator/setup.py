@@ -2,7 +2,6 @@
 
 from __future__ import print_function
 from __future__ import absolute_import
-from future.builtins import input
 descr   = """
 """
 
@@ -17,7 +16,7 @@ MAINTAINER_EMAIL    = 'dmitrey-at-openopt-dot-org'
 URL                 = 'http://openopt.org'
 LICENSE             = 'new BSD'
 
-sys.path.append(os.getcwd())
+# sys.path.append(os.getcwd())
 from DerApproximator.__init__ import __version__ as Ver
 
 #DOWNLOAD_URL        = 'http://openopt.org/images/6/6a/DerApproximator.zip'
@@ -27,7 +26,10 @@ try:
 except:
     print('you should have setuptools installed (http://pypi.python.org/pypi/setuptools), for some Linux distribs you can get it via [sudo] apt-get install python-setuptools')
     print('press Enter for exit...')
-    input()
+    if sys.version_info[0] == 2:
+        raw_input()
+    else:
+        input()
     exit()
     
 

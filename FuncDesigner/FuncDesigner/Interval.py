@@ -1,6 +1,4 @@
 from __future__ import absolute_import
-from future.builtins import str
-from future.builtins import object
 from numpy import ndarray, asscalar, isscalar, inf, nan, searchsorted, logical_not, \
 copy as Copy, logical_and, asarray, any, all, atleast_1d, vstack, logical_or, array
 

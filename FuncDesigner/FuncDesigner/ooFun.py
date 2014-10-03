@@ -1,8 +1,5 @@
 from __future__ import print_function
 from __future__ import absolute_import
-from future.builtins import zip
-from future.builtins import str
-from future.builtins import range
 # created by Dmitrey
 PythonSum = sum
 PythonAny = any
@@ -1085,7 +1082,7 @@ class oofun(OOFun):
                 N = PythonMax([1] + [inp.size for inp in Input if type(inp) == ndarray])
 
             Temp = [inp.flatten().tolist() if isinstance(inp, multiarray) else [inp]*N for inp in Input]
-            inputs = list(zip(*Temp))
+            inputs = zip(*Temp)
             
             # Check it!
             Tmp = [self.fun(*inp) if self.args == () else self.fun(*(inp + self.args)) for inp in inputs]

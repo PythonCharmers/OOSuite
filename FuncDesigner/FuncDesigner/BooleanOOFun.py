@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from future.builtins import str
 from numpy import asanyarray, int8, logical_xor, logical_not
 from .ooFun import oofun
 from .logic import AND, EQUIVALENT, NOT, nlh_not

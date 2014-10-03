@@ -1,8 +1,5 @@
 from __future__ import print_function
 from __future__ import absolute_import
-from future.builtins import str
-from future.builtins import range
-from future.builtins import object
 PythonSum = sum
 PythonAny = any
 from numpy import asscalar, isscalar, asfarray, ndarray, prod, logical_and, logical_or, inf, atleast_1d, any, \
@@ -48,7 +45,7 @@ except:
     def Find(*args, **kwargs): 
         raise FuncDesignerException('error in FuncDesigner kernel, inform developers')
 
-class FuncDesignerException(BaseException):
+class FuncDesignerException(Exception):
     def __init__(self,  msg):
         self.msg = msg
     def __str__(self):

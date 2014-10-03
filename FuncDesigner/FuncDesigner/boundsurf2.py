@@ -1,6 +1,4 @@
 from __future__ import absolute_import
-from future.builtins import next
-from past.builtins import cmp
 PythonSum = sum
 import numpy as np
 from numpy import logical_and, isscalar, any#, where

@@ -3,11 +3,10 @@ An example of solving global multiobjective optimization problem
 with categorical variables and general logical constraints
 with guaranteed precision |f-f*| < fTol
 '''
-from future.builtins import range
 import sys
-sys.path.append('/home/dmitrey/OOSuite/OpenOpt')
+#sys.path.append('/home/dmitrey/OOSuite/OpenOpt')
 #sys.path.append('/home/dmitrey/OOSuite/DerApproximator')
-sys.path.append('/home/dmitrey/OOSuite/FuncDesigner')
+#sys.path.append('/home/dmitrey/OOSuite/FuncDesigner')
 
 from FuncDesigner import *
 from openopt import *

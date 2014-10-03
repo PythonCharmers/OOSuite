@@ -1,6 +1,4 @@
 from __future__ import absolute_import
-from future.builtins import range
-from future.builtins import object
 from .FDmisc import FuncDesignerException
 from numpy import nan, zeros, isscalar, inf
 

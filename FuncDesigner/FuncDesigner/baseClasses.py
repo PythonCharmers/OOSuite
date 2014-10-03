@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from future.builtins import object
 from numpy import ndarray
 
 class OOArray(ndarray):

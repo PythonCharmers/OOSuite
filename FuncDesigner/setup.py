@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 
 from __future__ import print_function
-from future.builtins import input
 descr   = """
 """
 import os
@@ -23,7 +22,10 @@ try:
 except:
     print('you should have setuptools installed (http://pypi.python.org/pypi/setuptools), for some Linux distribs you can get it via [sudo] apt-get install python-setuptools')
     print('press Enter for exit...')
-    input()
+    if sys.version_info[0] == 2:
+        raw_input()
+    else:
+        input()
     exit()
 
 from numpy.distutils.core import setup
@@ -66,7 +68,7 @@ if __name__ == "__main__":
     #data_files = ['test_data/' + i for i in TEST_DATA_FILES]
     #data_files.extend(['docs/' + i for i in doc_files])
     setup(configuration = configuration,
-        install_requires=['numpy', 'scipy', 'future'], # can also add version specifiers   #namespace_packages=['kernel'],
+        install_requires=['numpy', 'scipy'], # can also add version specifiers   #namespace_packages=['kernel'],
         #py_modules = ['kernel', 'tests', 'examples', 'solvers'],
         packages=setuptools.find_packages(),
         include_package_data = True,

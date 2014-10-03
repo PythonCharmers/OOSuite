@@ -1,5 +1,4 @@
 from __future__ import print_function
-from future.builtins import str
 from numpy import arange, array
 from numpy.linalg import norm
 from openopt import NSP, oosolver

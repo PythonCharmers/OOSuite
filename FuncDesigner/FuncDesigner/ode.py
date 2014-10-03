@@ -1,6 +1,5 @@
 from __future__ import print_function
 from __future__ import absolute_import
-from future.builtins import object
 from .translator import FuncDesignerTranslator
 from .FDmisc import FuncDesignerException, _getDiffVarsID
 from numpy import ndarray, hstack, vstack, isscalar, asarray

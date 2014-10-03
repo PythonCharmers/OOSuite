@@ -1,5 +1,4 @@
 from __future__ import print_function
-from future.builtins import range
 # An example of FuncDesigner eigenvalues/eigenvectors for an automatic differentiation result,
 # see http://openopt.org/EIG for more examples and details
 from FuncDesigner import *

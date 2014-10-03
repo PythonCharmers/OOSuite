@@ -4,9 +4,9 @@ with categorical variables and general logical constraints
 with guaranteed precision |f-f*| < fTol
 '''
 import sys
-sys.path.append('/home/dmitrey/OOSuite/OpenOpt')
+#sys.path.append('/home/dmitrey/OOSuite/OpenOpt')
 #sys.path.append('/home/dmitrey/OOSuite/DerApproximator')
-sys.path.append('/home/dmitrey/OOSuite/FuncDesigner')
+#sys.path.append('/home/dmitrey/OOSuite/FuncDesigner')
 
 from FuncDesigner import *
 from openopt import *

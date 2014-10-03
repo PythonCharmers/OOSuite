@@ -1,6 +1,4 @@
 from __future__ import absolute_import
-from future.builtins import str
-from future.builtins import object
 from .FDmisc import FuncDesignerException, pWarn, _getAllAttachedConstraints
 from .ooFun import oofun
 from .constraints import BaseFDConstraint

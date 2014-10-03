@@ -4,7 +4,7 @@ import os, sys
 
 from numpy import ndarray
 
-curr_dir = ''.join([elem + os.sep for elem in __file__.split(os.sep)[:-1]])
+# curr_dir = ''.join([elem + os.sep for elem in __file__.split(os.sep)[:-1]])
 # sys.path += [curr_dir]
 
 __version__ = '0.5402'

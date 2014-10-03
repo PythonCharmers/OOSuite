@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from future.builtins import str
 from .ooFun import oofun
 from .BooleanOOFun import BooleanOOFun
 from .FDmisc import FuncDesignerException

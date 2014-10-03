@@ -1,8 +1,5 @@
-from __future__ import absolute_import
-from future.builtins import str
-from future.builtins import next
-from future.builtins import object
 # Handling of FuncDesigner probs
+from __future__ import absolute_import
 
 from numpy import hstack, atleast_1d, cumsum, asfarray, asarray, zeros, \
 ndarray, prod, nan, array_equal, copy, array, flatnonzero
@@ -47,8 +44,8 @@ def pointDerivative2array(S, pointDerivative,  **kw):
         else:
             raise FuncDesignerException('unclear error, maybe you have function|constraint independend on any optimization variables') 
 
-    Items = list(pointDerivative.items())
-    key, val = Items[0] if type(Items) == list else next(iter(Items))
+    Items = pointDerivative.items()
+    key, val = Items[0] if isinstance(Items, list) else next(iter(Items))
     var_inds = oovarsIndDict[key]
     
     # val.size works in other way (as nnz) for scipy.sparse matrices

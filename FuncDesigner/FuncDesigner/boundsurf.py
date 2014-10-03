@@ -1,7 +1,4 @@
 from __future__ import absolute_import
-from future.builtins import zip
-from past.builtins import cmp
-from future.builtins import object
 PythonSum = sum
 PythonAll = all
 import numpy as np

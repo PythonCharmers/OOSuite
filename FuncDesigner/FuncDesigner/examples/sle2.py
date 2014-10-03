@@ -3,7 +3,6 @@ Another one, more advanced example
 for solving SLE (system of linear equations)
 """
 from __future__ import print_function
-from future.builtins import range
 from FuncDesigner import *
 from numpy import arange
 n = 100

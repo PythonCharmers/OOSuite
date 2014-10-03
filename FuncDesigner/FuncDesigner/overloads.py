@@ -1,6 +1,4 @@
 from __future__ import absolute_import
-from future.builtins import str
-from future.builtins import range
 PythonSum = sum
 PythonMax = max
 PythonAny = any

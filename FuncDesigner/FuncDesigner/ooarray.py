@@ -1,6 +1,6 @@
 from __future__ import absolute_import
-from future.builtins import str
-from future.builtins import range
+import sys
+
 PythonMax = max
 from .baseClasses import OOArray
 from .multiarray import multiarray
@@ -9,6 +9,9 @@ from .constraints import Constraint
 from numpy import isscalar, asscalar, ndarray, atleast_1d, asanyarray, array
 import numpy as np
 from .FDmisc import FuncDesignerException
+
+if sys.version_info[0] == 2:
+    range = xrange
 
 class ooarray(OOArray):
     __array_priority__ = 25 # !!! it should exceed oofun.__array_priority__ !!!
@@ -228,7 +231,7 @@ class ooarray(OOArray):
         return ooarray([other[i] ** elem for i, elem in enumerate(self.tolist())])
     
     def __eq__(self, other):
-        if type(other) == str and other =='__builtins__': return False  
+        if isinstance(other, str) and other =='__builtins__': return False  
         r = self - other
         if r.dtype != object: return all(r)
         if r.size == 1: return asscalar(r)==0
