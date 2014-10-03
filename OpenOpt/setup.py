@@ -19,7 +19,7 @@ MAINTAINER_EMAIL    = 'dmitrey-at-openopt-dot-org'
 URL                 = 'http://openopt.org'
 LICENSE             = 'new BSD'
 
-from ooVersionNumber import __version__ as ooVer
+from openopt.ooVersionNumber import __version__ as ooVer
 openopt_version = ooVer
 
 #DOWNLOAD_URL        = 'http://openopt.org/images/3/33/OpenOpt.zip'
