@@ -1,4 +1,3 @@
-from future.builtins import range
 from .baseGeometryObject import baseGeometryObject
 from .baseObjects import Point
 from numpy import ndarray

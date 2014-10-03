@@ -1,5 +1,5 @@
-from future.builtins import str
 # created by Dmitrey
+from __future__ import division
 from numpy import all, ndarray, array, asscalar, asarray, pi, sin, cos
 #import numpy as np
 from FuncDesigner import  ooarray, dot, sum, sqrt, cross, norm, oofun
@@ -77,10 +77,9 @@ class Point(ooarray, baseGeometryObject):
     def projection(self, obj):
         assert isinstance(obj, baseGeometryObject), 'incorrect object for projection'
         if isinstance(obj, Line):
-            # TODO: remove 0.0 for future Python 3.X versions
             tmp = dot(self-obj.basePoint, obj.direction)
             if isinstance(tmp, oofun): tmp.size = 1
-            tmp1 = obj.direction*tmp / (0.0+sum(obj.direction**2))
+            tmp1 = obj.direction*tmp / sum(obj.direction**2)
             tmp2 = obj.basePoint
             if type(tmp1) == ooarray: # hence tmp2 is array
                 tmp2 = tmp2.view(ooarray)
@@ -93,7 +92,7 @@ class Point(ooarray, baseGeometryObject):
             e = sum(d2**2)
             c = dot(self-bp, d1)
             f =  dot(self-bp, d2)
-            delta = a*e-b*d + 0.0 # TODO: remove 0.0 when Python 2.x will be deprecated
+            delta = a*e-b*d
             alpha = (c*e-b*f) / delta
             beta = (a*f-c*d)/delta
             return Point(bp + alpha * d1 + beta * d2)

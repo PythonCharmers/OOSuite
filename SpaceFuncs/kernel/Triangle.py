@@ -1,4 +1,3 @@
-from future.builtins import range
 # created by Dmitrey
 from FuncDesigner import sqrt, sum, ooarray, angle  #, stack
 from .baseObjects import Line, Circle

@@ -2,7 +2,6 @@
 An example of optimization in SpaceFuncs with olympic rings
 Let's search 5 points (1 from each ring) that form polygon with maximum area
 '''
-from future.builtins import range
 from SpaceFuncs import *
 from FuncDesigner import *
 from openopt import *

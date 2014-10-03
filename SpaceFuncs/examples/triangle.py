@@ -1,5 +1,4 @@
 from __future__ import print_function
-from future.builtins import str
 from SpaceFuncs import Triangle, Plot
 
 # Consider a triangle in 3D space

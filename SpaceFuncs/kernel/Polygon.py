@@ -1,4 +1,3 @@
-from future.builtins import range
 from .Polytope import Polytope
 from FuncDesigner import ooarray, sqrt, angle, abs, sum
 from numpy import arange, isscalar

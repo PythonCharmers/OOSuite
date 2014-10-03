@@ -1,4 +1,3 @@
-from future.builtins import range
 # created by Dmitrey
 #from numpy import array, asscalar, isscalar, ndarray
 from FuncDesigner import dot, cross, sum, det3, norm #, sqrt, sum, oofun, ooarray, anglet  #, stack

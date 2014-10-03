@@ -1,6 +1,4 @@
 from __future__ import print_function
-from future.builtins import str
-from future.builtins import range
 from FuncDesigner import *
 from SpaceFuncs import *
 spaceDimension = 2

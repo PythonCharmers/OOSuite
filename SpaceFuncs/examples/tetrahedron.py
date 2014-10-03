@@ -1,5 +1,4 @@
 from __future__ import print_function
-from future.builtins import str
 from SpaceFuncs import *
 
 T = Tetrahedron((1, 2, 15), (2, 8, 4), (4, 6.5, 7), (14, 15, 16))
