@@ -1,5 +1,3 @@
-from future.builtins import str
-from future.builtins import range
 from openopt import *
 from numpy import cos, arange, ones, asarray, abs, zeros, sqrt, asscalar, inf
 from pylab import legend, show, plot, subplot, xlabel, subplots_adjust

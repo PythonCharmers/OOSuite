@@ -1,6 +1,4 @@
 from __future__ import absolute_import
-from future.builtins import range
-from future.builtins import object
 from numpy import array, nan, atleast_1d, copy, vstack, hstack, isscalar, ndarray, prod, int32
 import numpy as np
 from .setDefaultIterFuncs import USER_DEMAND_EXIT

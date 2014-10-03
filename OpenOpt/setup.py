@@ -2,7 +2,9 @@
 
 from __future__ import print_function
 from __future__ import absolute_import
-from future.builtins import input
+import sys
+if sys.version_info[0] == 2:
+    input = raw_input
 descr   = """
 """
 
@@ -73,7 +75,7 @@ if __name__ == "__main__":
     #data_files = ['test_data/' + i for i in TEST_DATA_FILES]
     #data_files.extend(['docs/' + i for i in doc_files])
     setup(configuration = configuration,
-        install_requires=['numpy','setproctitle', 'future'], # can also add version specifiers   #namespace_packages=['kernel'],
+        install_requires=['numpy','setproctitle'], # can also add version specifiers   #namespace_packages=['kernel'],
         #setup_requires = 'setproctitle', 
         #py_modules = ['kernel', 'tests', 'examples', 'solvers'],
         packages=setuptools.find_packages(),

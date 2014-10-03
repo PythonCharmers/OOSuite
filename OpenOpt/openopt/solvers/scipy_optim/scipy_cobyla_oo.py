@@ -1,5 +1,3 @@
-from future.builtins import range
-from future.builtins import object
 from scipy.optimize import fmin_cobyla
 import openopt
 from openopt.kernel.setDefaultIterFuncs import *

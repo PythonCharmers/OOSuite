@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from future.builtins import str
 from .baseProblem import NonLinProblem
 from numpy import asarray, ones, inf
 from .setDefaultIterFuncs import MAX_NON_SUCCESS 

@@ -1,6 +1,4 @@
 from __future__ import print_function
-from future.builtins import range
-from future.builtins import object
 from numpy import dot, sign, zeros, all, isfinite, array, sqrt, any, isnan, pi, sin, arccos, inf, argmax, asfarray
 import numpy
 from numpy.linalg import norm

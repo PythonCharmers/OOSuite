@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from future.builtins import range
 __docformat__ = "restructuredtext en"
 from numpy import zeros, ones, copy, isfinite, where, asarray, inf, int64, \
 array, dot, ndarray, prod, flatnonzero, max, abs, sqrt, sum, atleast_1d, asscalar

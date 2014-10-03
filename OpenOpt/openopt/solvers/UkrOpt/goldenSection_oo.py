@@ -1,4 +1,3 @@
-from future.builtins import range
 from openopt.kernel.baseSolver import baseSolver
 from openopt.kernel.setDefaultIterFuncs import SMALL_DELTA_X, IS_MAX_ITER_REACHED, SMALL_DELTA_F
 from numpy import nan, diff, copy

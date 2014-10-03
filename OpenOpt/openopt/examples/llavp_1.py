@@ -1,5 +1,4 @@
 from __future__ import print_function
-from future.builtins import range
 from numpy import empty, sin, cos, arange, ones
 from openopt import LLAVP
 

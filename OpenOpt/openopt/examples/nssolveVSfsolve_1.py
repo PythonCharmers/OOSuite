@@ -21,7 +21,6 @@ is ~ 10-15%
 This test runs ~ a minute on my AMD 3800+
 """
 from __future__ import print_function
-from future.builtins import range
 noise = 1e-8
 
 from openopt import SNLE

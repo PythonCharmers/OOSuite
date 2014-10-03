@@ -1,4 +1,3 @@
-from future.builtins import range
 from scipy.optimize.tnc import fmin_tnc
 import scipy.optimize.tnc as tnc
 import openopt

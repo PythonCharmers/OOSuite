@@ -1,6 +1,4 @@
 from __future__ import print_function
-from future.builtins import str
-from future.builtins import range
 from numpy import diag, array, sqrt,  eye, ones, inf, any, copy, zeros, dot, all, sum, isfinite, float64, isnan, log10, \
 max, sign, array_equal, logical_and, matrix
 from openopt.kernel.ooMisc import norm

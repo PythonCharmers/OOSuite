@@ -4,7 +4,6 @@ Created on Thu May 05 20:02:00 2011
 
 @author: Tillsten
 """
-from future.builtins import range
 #from numpy.linalg import norm
 #from numpy import dot, asfarray, atleast_1d,  zeros, ones, int, float64, where, inf
 import numpy as np

@@ -1,4 +1,3 @@
-from future.builtins import range
 # Example of export OpenOpt MILP to MPS file
 # you should have lpsolve and its Python binding properly installed
 # (you may take a look at the instructions from openopt.org/LP)

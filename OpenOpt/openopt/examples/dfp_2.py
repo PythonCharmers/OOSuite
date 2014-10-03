@@ -18,8 +18,6 @@ subjected to a>=4, c<=30
 (we could handle other constraints as well: Ax <= b, Aeq x = beq, c(x) <= 0, h(x) = 0)
 """
 from __future__ import print_function
-from future.builtins import str
-from future.builtins import range
 from openopt import DFP
 from numpy import *
 

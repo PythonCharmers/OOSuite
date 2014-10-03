@@ -8,7 +8,6 @@ x_opt = all-zeros
 f_opt = 0
 """
 from __future__ import print_function
-from future.builtins import range
 
 from numpy import *
 from openopt import NSP

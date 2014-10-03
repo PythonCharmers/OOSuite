@@ -1,4 +1,3 @@
-from future.builtins import str
 from openopt.kernel.baseSolver import baseSolver
 from openopt.kernel.ooMisc import isSolved
 from openopt.kernel.setDefaultIterFuncs import IS_NAN_IN_X, SMALL_DELTA_X, SMALL_DELTA_F

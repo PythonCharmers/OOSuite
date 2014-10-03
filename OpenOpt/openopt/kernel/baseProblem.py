@@ -1,7 +1,4 @@
 from __future__ import absolute_import
-from future.builtins import str
-from future.builtins import range
-from future.builtins import object
 PythonMax = max
 from numpy import all, any, isfinite, inf, nan, ndarray, string_, zeros_like, ones, array_equal, array, copy, asscalar, \
 where, ravel, asfarray, prod, asarray, isscalar, atleast_1d, isinf

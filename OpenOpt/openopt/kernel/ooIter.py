@@ -1,8 +1,7 @@
 from __future__ import absolute_import
-from future import standard_library
-standard_library.install_hooks()
 __docformat__ = "restructuredtext en"
 
+import sys
 from time import time, clock
 from numpy import isscalar,  array_equal
 
@@ -16,7 +15,10 @@ IS_MAX_CPU_TIME_REACHED, IS_MAX_TIME_REACHED, IS_MAX_FUN_EVALS_REACHED
 
 has_Tkinter = True
 try:
-    import tkinter
+    if sys.version_info[0] == 2:
+        import Tkinter
+    else:
+        import tkinter
 except ImportError:
     has_Tkinter = False
 

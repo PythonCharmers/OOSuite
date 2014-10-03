@@ -1,7 +1,5 @@
 from __future__ import print_function
 from __future__ import absolute_import
-from future.builtins import range
-from future.builtins import object
 import os, sys, numpy as np
 from .oologfcn import OpenOptException
 from numpy import zeros, hstack, vstack, ndarray, copy, where, prod, isscalar, atleast_2d, eye, \

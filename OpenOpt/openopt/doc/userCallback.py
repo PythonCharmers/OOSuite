@@ -21,7 +21,6 @@ works for ralg and lincher, but may doesn't work for some other solvers
 (like scipy_cobyla, that has neither native callback nor call gradient)
 """
 from __future__ import print_function
-from future.builtins import range
 
 def MyIterFcn(p):
     # observing non-feasible ralg iter points

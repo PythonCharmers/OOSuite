@@ -1,4 +1,3 @@
-from future.builtins import range
 if __name__ == '__main__':
     import sys, os.path as pth
     sys.path.insert(0,pth.split(pth.split(pth.split(pth.split(pth.realpath(pth.dirname(__file__)))[0])[0])[0])[0])

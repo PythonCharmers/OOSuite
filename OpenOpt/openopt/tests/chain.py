@@ -4,8 +4,6 @@ It was used to write an article related to numerical optimization.
 """
 from __future__ import print_function
 from __future__ import absolute_import
-from future.builtins import str
-from future.builtins import range
 
 from numpy import *
 from openopt import *

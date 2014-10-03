@@ -1,5 +1,3 @@
-from future.builtins import str
-from future.builtins import map
 import numpy as np
 try:
     from scipy.sparse import find, isspmatrix

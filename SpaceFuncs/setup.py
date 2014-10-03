@@ -2,8 +2,9 @@
 
 from __future__ import print_function
 from __future__ import absolute_import
-from future.builtins import input
 import sys
+if sys.version_info[0] == 2:
+    input = raw_input
 descr   = """
 """
 

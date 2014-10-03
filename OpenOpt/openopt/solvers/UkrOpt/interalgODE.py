@@ -1,4 +1,3 @@
-from future.builtins import range
 from numpy import hstack,  asarray, abs, atleast_1d, \
 logical_not, argsort, vstack, sum, array, nan, all
 import numpy as np

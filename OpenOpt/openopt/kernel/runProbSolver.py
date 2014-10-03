@@ -1,7 +1,4 @@
 from __future__ import absolute_import
-from future.builtins import chr
-from future.builtins import str
-from future.builtins import object
 __docformat__ = "restructuredtext en"
 from time import time, clock
 from numpy import asfarray, nan, ones, all, atleast_1d, any, isnan, \

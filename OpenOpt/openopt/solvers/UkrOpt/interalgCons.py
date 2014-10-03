@@ -1,6 +1,5 @@
 from __future__ import print_function
 from __future__ import absolute_import
-from future.builtins import range
 from numpy import empty, logical_and, logical_not, take, zeros, isfinite, any, \
 asarray, ndarray, bool_#where
 from .interalgT import adjustDiscreteVarBounds, truncateByPlane

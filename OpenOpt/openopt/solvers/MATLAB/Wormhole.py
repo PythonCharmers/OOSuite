@@ -1,6 +1,3 @@
-from future.builtins import map
-from future.builtins import str
-from future.builtins import object
 import numpy as np
 import socket
 

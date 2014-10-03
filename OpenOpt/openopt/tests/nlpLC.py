@@ -1,4 +1,3 @@
-from future.builtins import range
 from openopt import NLP
 from numpy import cos, arange, ones, asarray, zeros, mat, array
 N = 100

@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from future.builtins import range
 from .baseProblem import MatrixProblem
 
 class STAB(MatrixProblem):

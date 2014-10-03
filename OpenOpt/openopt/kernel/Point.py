@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from future.builtins import object
 # created by Dmitrey
 from numpy import copy, isnan, array, argmax, abs, zeros, any, isfinite, all, asscalar, \
 dot, sqrt, nanmax, logical_or, prod, arange, ndarray, asarray, sum#where

@@ -1,4 +1,3 @@
-from future.builtins import object
 from numpy import dot, zeros, float64, diag, ones, ndarray, isfinite, all, asarray
 from numpy.linalg import norm
 

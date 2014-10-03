@@ -42,8 +42,6 @@ Usage:
     basis: indices of the basis of the solution.
     
 '''
-from future.builtins import str
-from future.builtins import range
 from numpy import *
 #from numpy.linalg import norm
 #from numpy import dot, asfarray, atleast_1d,  zeros, ones, int, float64, where, inf, ndarray

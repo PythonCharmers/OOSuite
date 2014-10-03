@@ -1,6 +1,4 @@
 from __future__ import absolute_import
-from future.builtins import str
-from future.builtins import range
 from numpy import  inf, any, copy, dot, where, all, nan, isfinite, float64, isnan,  \
 max, sign, array_equal, matrix, delete, ndarray
 from numpy.linalg import norm#, solve, LinAlgError

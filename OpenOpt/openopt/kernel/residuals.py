@@ -1,5 +1,3 @@
-from future.builtins import range
-from future.builtins import object
 __docformat__ = "restructuredtext en"
 from numpy import asfarray, array, asarray, argmax, zeros, isfinite, all, isnan, arange
 

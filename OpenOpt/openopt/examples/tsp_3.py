@@ -7,7 +7,6 @@ For some solvers limitations on time, cputime, "enough" value, basic GUI feature
 See http://openopt.org/TSP for more details
 '''
 from __future__ import print_function
-from future.builtins import range
 from openopt import *
 from numpy import sin, cos#, abs
 import networkx as nx

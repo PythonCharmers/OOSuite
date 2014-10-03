@@ -1,13 +1,11 @@
 from __future__ import absolute_import
-from future import standard_library
-standard_library.install_hooks()
 # sometimes Tkinter is not installed
 TkinterIsInstalled = True
 import platform
 if platform.python_version()[0] == '2': 
     # Python2
     try:
-        from tkinter import Tk, Toplevel, Button, Entry, Menubutton, Label, Frame, StringVar, DISABLED, ACTIVE
+        from Tkinter import Tk, Toplevel, Button, Entry, Menubutton, Label, Frame, StringVar, DISABLED, ACTIVE
     except:
         TkinterIsInstalled = False
 else: 

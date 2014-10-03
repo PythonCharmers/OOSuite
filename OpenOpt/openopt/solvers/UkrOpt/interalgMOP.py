@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from future.builtins import range
 PythonSum = sum
 from numpy import isnan, array, atleast_1d, asarray, logical_and, all, logical_or, any, \
 arange, vstack, inf, logical_not, take, abs, hstack, empty, \

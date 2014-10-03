@@ -1,9 +1,4 @@
 from __future__ import absolute_import
-from future.builtins import str
-from future import standard_library
-standard_library.install_hooks()
-from future.builtins import range
-from future.builtins import object
 from .baseProblem import NonLinProblem
 from numpy import inf
 
@@ -141,8 +136,8 @@ import platform
 if platform.python_version()[0] == '2': 
     # Python2
     try:
-        from tkinter import Tk
-        from tkinter.filedialog import asksaveasfilename
+        from Tkinter import Tk
+        from Tkinter.filedialog import asksaveasfilename
     except:
         TkinterIsInstalled = False
 else: 

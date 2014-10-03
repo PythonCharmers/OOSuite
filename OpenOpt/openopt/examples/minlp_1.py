@@ -3,7 +3,6 @@ Example of MINLP
 It is recommended to read help(NLP) before
 and /examples/nlp_1.py 
 """
-from future.builtins import range
 from openopt import MINLP
 from numpy import *
 N = 150

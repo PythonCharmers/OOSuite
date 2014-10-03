@@ -1,20 +1,23 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
-from future.builtins import input
-from future.builtins import str
-from future import standard_library
-standard_library.install_hooks()
-from future.builtins import range
-from future.builtins import object
+import sys
 from numpy import inf, copy, floor, log10, asfarray, asscalar, argsort
+if sys.version_info[0] == 2:
+    input = raw_input
 
 TkinterIsInstalled = True
 try:
-    from tkinter import Tk, Button, Entry, Label, Frame, StringVar, DISABLED, END, IntVar, \
-    Radiobutton, Canvas
-    from tkinter.filedialog import asksaveasfilename, askopenfile 
-    from tkinter.messagebox import showerror
+    if sys.version_info[0] == 2:
+        from Tkinter import (Tk, Button, Entry, Label, Frame, StringVar, DISABLED, END, IntVar,
+                             Radiobutton, Canvas)
+        from FileDialog import asksaveasfilename, askopenfile 
+        from tkMessageBox import showerror
+    else:
+        from tkinter import (Tk, Button, Entry, Label, Frame, StringVar, DISABLED, END, IntVar, \
+                             Radiobutton, Canvas)
+        from tkinter.filedialog import asksaveasfilename, askopenfile 
+        from tkinter.messagebox import showerror
 except ImportError:
     TkinterIsInstalled = False
 

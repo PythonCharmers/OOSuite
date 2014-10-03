@@ -1,4 +1,3 @@
-from future.builtins import zip
 import numpy as np
 from openopt.kernel.baseSolver import baseSolver
 from openopt.kernel.setDefaultIterFuncs import *

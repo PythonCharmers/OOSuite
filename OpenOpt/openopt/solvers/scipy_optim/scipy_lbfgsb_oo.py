@@ -1,4 +1,3 @@
-from future.builtins import range
 from scipy.optimize.lbfgsb import fmin_l_bfgs_b
 import openopt
 from openopt.kernel.setDefaultIterFuncs import *

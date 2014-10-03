@@ -1,7 +1,4 @@
 from __future__ import absolute_import
-from future.builtins import str
-from future.builtins import range
-from future.builtins import object
 from numpy import tile, isnan, array, atleast_1d, asarray, logical_and, all, logical_or, any, nan, isinf, \
 arange, vstack, inf, logical_not, take, abs, hstack, empty, \
 prod, int16, int32, int64, log2, searchsorted, cumprod#where

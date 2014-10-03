@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from future.builtins import object
 __docformat__ = "restructuredtext en"
 from numpy import asarray, copy, ravel, isnan, isscalar, asscalar#where
 from .nonOptMisc import where

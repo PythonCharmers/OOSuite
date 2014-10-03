@@ -1,6 +1,4 @@
 from __future__ import absolute_import
-from future.builtins import range
-from future.builtins import object
 from .baseProblem import MatrixProblem
 import numpy as np
 from .MOP import MOPsolutions

@@ -1,6 +1,4 @@
 from __future__ import absolute_import
-from future.builtins import next
-from future.builtins import range
 # Handling of FuncDesigner probs
 from numpy import hstack, vstack, atleast_1d, cumsum, asarray, zeros,  ndarray,\
 prod, ones, copy, nan, flatnonzero, array_equal, asanyarray, int64

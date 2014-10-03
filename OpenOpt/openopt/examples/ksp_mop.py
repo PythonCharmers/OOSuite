@@ -5,7 +5,6 @@ requires FuncDesigner installed.
 For some solvers limitations on time, cputime, "enough" value, basic GUI features are available.
 See http://openopt.org/KSP for more details
 '''
-from future.builtins import range
 from openopt import *
 from numpy import sin, cos
 

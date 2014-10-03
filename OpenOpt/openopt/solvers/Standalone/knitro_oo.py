@@ -1,4 +1,3 @@
-from future.builtins import str
 #from numpy import *
 import numpy as np
 from openopt.kernel.baseSolver import baseSolver

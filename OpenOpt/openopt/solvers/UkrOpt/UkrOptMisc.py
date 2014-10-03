@@ -1,5 +1,3 @@
-from future.builtins import range
-from future.builtins import object
 from numpy import concatenate, vstack, hstack, inf, ones, zeros, diag, dot, abs, where, max, min
 from openopt import NLP, LLSP
 from openopt.kernel.ooMisc import norm

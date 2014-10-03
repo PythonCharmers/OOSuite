@@ -1,11 +1,13 @@
 from __future__ import print_function
-from future.builtins import input
+import sys
+if sys.version_info[0] == 2:
+    input = raw_input
 try:
     import setuptools
 except:
     print('you should have setuptools installed (http://pypi.python.org/pypi/setuptools), for some Linux distribs you can get it via [sudo] apt-get install python-setuptools')
     print('press Enter for exit...')
-    eval(input())
+    input()
     exit()
 
 import os, sys
