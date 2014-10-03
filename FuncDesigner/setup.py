@@ -13,7 +13,7 @@ MAINTAINER          = 'Dmitrey Kroshko'
 MAINTAINER_EMAIL    = 'dmitrey-at-openopt-dot-org'
 URL                 = 'http://openopt.org'
 LICENSE             = 'new BSD'
-sys.path.append(os.getcwd() + os.sep + 'FuncDesigner')
+
 from FuncDesigner import __version__ as Ver
 
 #DOWNLOAD_URL        = 'http://openopt.org/images/a/a6/FuncDesigner.zip'

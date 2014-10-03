@@ -18,9 +18,7 @@ MAINTAINER_EMAIL    = 'dmitrey-at-openopt-dot-org'
 URL                 = 'http://openopt.org'
 LICENSE             = 'new BSD'
 
-sys.path.append(os.getcwd() + os.sep + 'SpaceFuncs')
 from __version__ import __version__ as Ver
-# from . import __version__ as Ver
 
 #DOWNLOAD_URL        = 'http://openopt.org/images/4/4e/SpaceFuncs.zip'
 

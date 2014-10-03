@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 import os,sys
-# sys.path.append(os.getcwd()+os.sep+'kernel')
 
 from .kernel.LP import LP as CLP
 from .kernel.LCP import LCP as CLCP

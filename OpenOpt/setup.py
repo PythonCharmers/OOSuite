@@ -19,7 +19,6 @@ MAINTAINER_EMAIL    = 'dmitrey-at-openopt-dot-org'
 URL                 = 'http://openopt.org'
 LICENSE             = 'new BSD'
 
-sys.path.append(os.getcwd() + os.sep + 'openopt')
 from ooVersionNumber import __version__ as ooVer
 openopt_version = ooVer
 
